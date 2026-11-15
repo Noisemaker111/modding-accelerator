@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Per-user choices for launches across projects. */
+/** Per-user choices for launches across projects. Games start muted (quiet) unless the user opts out. */
 final class Preferences {
 
     private Preferences() {}
@@ -20,7 +20,7 @@ final class Preferences {
             if (value != null && !(value instanceof Boolean)) throw new IOException(
                 "Invalid " + name + " in " + path + ": expected true or false"
             );
-            if (value == null) saved.put(name, false);
+            if (value == null) saved.put(name, name.equals("quiet"));
         }
         return saved;
     }

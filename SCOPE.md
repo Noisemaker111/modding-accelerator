@@ -36,11 +36,11 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 | 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | yes, on MockBukkit (a fake Paper server, no real server): `plugin-check` |
 | 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | yes, real Paper server plus a bot player: `server-check` (MCProtocolLib, with ViaProxy for other versions) |
 | 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no: config only, done by hand (AgentCraft 26.3 to 1.21.10 passes `plugin-check`); `port` refuses plugins and names the edits |
-| 6 Platform change | e.g. Fabric → NeoForge, Forge → Paper | no | no | no | n/a | no |
+| 6 Platform change | e.g. Fabric → NeoForge, Forge → Paper | yes, to NeoForge: `convert` (Auto Omen 26.3, Pride Flags 26.1.2, in the game) | yes, to Fabric on 26.1+: `convert` (a converted mod back to Fabric) | no | n/a | no |
 
 ## 3. Policy
 
-1. **Who we're for.** People who write mods or plugins from source, and modpack users who need their installed mods to work together. `pack-check` diagnoses installed jars and CurseForge exports; porting a mod requires its source.
+1. **Who we're for.** People who write mods or plugins from source, and modpack users who need their installed mods to work together. `pack-check` diagnoses installed packs, CurseForge exports and Modrinth `.mrpack`s on Forge, NeoForge, Fabric and Quilt servers; porting a mod requires its source.
 2. **What gets first-class support.** Fabric and NeoForge first, then Forge (old modpacks), then Paper (servers). Quilt rides on Fabric. Proxy plugins and standalone datapacks have no dedicated commands.
 3. **When a platform earns the next rung.**
    - A real project someone uses needs it.
@@ -50,7 +50,7 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 5. **Plugin ↔ mod moves: yes, as part of Goal 4.**
    - Server-side code can be mapped between a loader's API and the Bukkit API: events, commands, the scheduler, config.
    - Client code, mixins into the game and new blocks or items cannot exist on a plugin server, where vanilla clients join. A move names each of them and stops; it never drops them.
-   - No conversion command exists yet.
+   - `convert` does not move mods to or from Paper yet.
 6. **Loader and platform changes stay separate from version ports**, with separate claims.
 7. **Every claim carries its rung.** The README says which rung a platform reached, never just "supports X".
 

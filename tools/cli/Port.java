@@ -2786,7 +2786,12 @@ final class Port {
 
     /** This project's port transactions, newest first. */
     static List<Path> transactions(ProjectModel project) throws IOException {
-        Path ports = project.state().resolve("ports");
+        return transactions(project, "ports");
+    }
+
+    /** The transactions recorded under one folder of the project's state (ports, or converts for convert), newest first. */
+    static List<Path> transactions(ProjectModel project, String folder) throws IOException {
+        Path ports = project.state().resolve(folder);
         if (!Files.isDirectory(ports)) return List.of();
         try (var list = Files.list(ports)) {
             return list
@@ -2854,10 +2859,16 @@ final class Port {
     }
 
     static Map<String, Object> undo(ProjectModel project, String id) throws Exception {
+        return undo(project, id, "ports");
+    }
+
+    /** Undoes one recorded transaction under the folder: a port (ports) or a loader conversion (converts). */
+    static Map<String, Object> undo(ProjectModel project, String id, String folder) throws Exception {
+        String kind = folder.equals("ports") ? "port" : "conversion";
         if (id.isBlank() || id.equals("latest")) {
             // --undo with no transaction: the newest port that has not been undone.
             Path newest = null;
-            for (Path candidate : transactions(project)) {
+            for (Path candidate : transactions(project, folder)) {
                 try {
                     if (!"undone".equals(Json.read(candidate.resolve("transaction.json")).get("status"))) {
                         newest = candidate;
@@ -2866,18 +2877,18 @@ final class Port {
                 } catch (IOException | IllegalArgumentException unreadable) {}
             }
             if (newest == null) throw new IOException(
-                "There is no port of this project to undo" +
-                (transactions(project).isEmpty() ? "." : ": every recorded port was already undone.")
+                "There is no " + kind + " of this project to undo" +
+                (transactions(project, folder).isEmpty() ? "." : ": every recorded " + kind + " was already undone.")
             );
             id = newest.toString();
         }
         // The port's own id (the name its result and receipt carry) names its transaction as well as the full path does.
-        Path transaction = id.matches("[\\w.-]+") && Files.isDirectory(project.state().resolve("ports").resolve(id))
-            ? project.state().resolve("ports").resolve(id)
+        Path transaction = id.matches("[\\w.-]+") && Files.isDirectory(project.state().resolve(folder).resolve(id))
+            ? project.state().resolve(folder).resolve(id)
             : Path.of(id).toAbsolutePath().normalize();
-        if (!transaction.startsWith(project.state().resolve("ports"))) throw new IOException(
-            "Undo must name this project's recorded port transaction: its id or its folder under " +
-            project.state().resolve("ports") +
+        if (!transaction.startsWith(project.state().resolve(folder))) throw new IOException(
+            "Undo must name this project's recorded " + kind + " transaction: its id or its folder under " +
+            project.state().resolve(folder) +
             "."
         );
         var state = Json.read(transaction.resolve("transaction.json"));
@@ -2915,11 +2926,15 @@ final class Port {
             if (original.get(relative) == null && !removed.contains(relative)) Files.delete(
                 project.root.resolve(relative)
             );
-            else Files.copy(
-                transaction.resolve("before").resolve(relative),
-                project.root.resolve(relative),
-                StandardCopyOption.REPLACE_EXISTING
-            );
+            else {
+                // A removed file may have taken its emptied folder with it.
+                Files.createDirectories(project.root.resolve(relative).getParent());
+                Files.copy(
+                    transaction.resolve("before").resolve(relative),
+                    project.root.resolve(relative),
+                    StandardCopyOption.REPLACE_EXISTING
+                );
+            }
         }
         state.put("status", "undone");
         Json.save(transaction.resolve("transaction.json"), state);
@@ -2932,8 +2947,8 @@ final class Port {
             transaction.toString(),
             "details",
             after.isEmpty()
-                ? "The port changed no files, so there was nothing to restore."
-                : "Restored " + after.size() + " file(s) to their state before the port."
+                ? "The " + kind + " changed no files, so there was nothing to restore."
+                : "Restored " + after.size() + " file(s) to their state before the " + kind + "."
         );
     }
 

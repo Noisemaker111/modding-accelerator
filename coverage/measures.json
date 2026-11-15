@@ -668,18 +668,19 @@
    "better": "higher",
    "target": {"value": 1, "by": "2027-01-29", "step": "18"},
    "points": [
-    {"date": "2026-11-09", "value": 0, "note": "none built: all 4 loader pairs in the ledger are unbuilt, and no mod ↔ plugin move exists", "source": "coverage/ledger.json loader_pairs"}
+    {"date": "2026-11-09", "value": 0, "note": "none built: all 4 loader pairs in the ledger are unbuilt, and no mod ↔ plugin move exists", "source": "coverage/ledger.json loader_pairs"},
+    {"date": "2026-11-14", "value": 2, "note": "Fabric → NeoForge (Auto Omen, Pride Flags) and NeoForge → Fabric (Auto Omen back), each with an assertion on the mod's own state in the game", "source": "coverage/ledger.json loader_pairs"}
    ]
   },
   {
-   "id": "loader.fabric-neoforge.counterparts",
+   "id": "loader.rules",
    "area": "loader",
-   "name": "Fabric calls that two or more mods make, with a known NeoForge counterpart",
-   "unit": "calls",
+   "name": "Loader-change rules, each with every class and member it names found in the loaders' published jars",
+   "unit": "rules",
    "better": "higher",
    "info": true,
    "points": [
-    {"date": "2026-11-10", "value": 15, "note": "of the 91 Fabric calls two or more of the 35 sources make; 5 of the 15 are written the same way in two or more mods, the other 10 seen in one", "source": "python bench/loader_api.py show fabric neoforge"}
+    {"date": "2026-11-14", "value": 41, "note": "5 entrypoint, metadata and datagen mappings, 7 calls, 1 type, 25 events, 2 statements, 1 integration; 143 symbols in 8 published jars", "source": "python bench/loader_api.py show"}
    ]
   },
   {
