@@ -250,7 +250,9 @@ final class PackChecks {
             suspects.stream().anyMatch(s -> String.valueOf(s.get("why")).contains("client-only"))
         );
         String named = names(suspects);
-        String summary = javaBuild != null
+        String summary = Boolean.TRUE.equals(c.start.get("machine"))
+            ? failure
+            : javaBuild != null
             ? "The pack's server did not start because of the Java build, not a mod: " + Json.array(javaBuild.get("why")).get(0) + "."
             : clientOnly
             ? "A client-only mod stopped the pack's server" +

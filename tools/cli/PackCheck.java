@@ -999,6 +999,7 @@ final class PackCheck {
         /** One server start. place makes the world; verify and open read an existing one. */
         Map<String, Object> start(String mode, String level, Map<String, String> properties) throws Exception {
             boolean alone = false;
+            int memoryRetries = 0;
             for (int round = 0;; round++) {
                 Path out = report.directory.resolve(lane + "probe-" + mode + ".json");
                 Files.deleteIfExists(out);
@@ -1066,6 +1067,32 @@ final class PackCheck {
                     alone = true;
                     if (mode.equals("place")) deleteTree(instance.resolve(level));
                     continue;
+                }
+                // The JVM itself could not get memory from the machine (other programs held it): no mod did anything. Once
+                // more alone, after a minute; if it happens again the start is reported as the machine's, naming no mod.
+                if (machineMemory(text)) {
+                    if (round < 4 && memoryRetries++ < 1) {
+                        alone = true;
+                        Thread.sleep(60_000);
+                        if (mode.equals("place")) deleteTree(instance.resolve(level));
+                        continue;
+                    }
+                    return Json.map(
+                        "opened",
+                        false,
+                        "seconds",
+                        seconds,
+                        "log",
+                        log.toString(),
+                        "ended",
+                        ended,
+                        "failure",
+                        "The machine ran out of memory for Java (\"There is insufficient memory for the Java Runtime Environment\"), twice: not a fault of the pack. Run again with more free memory, or a smaller --memory.",
+                        "suspects",
+                        List.of(),
+                        "machine",
+                        true
+                    );
                 }
                 List<String> reports = PackChecks.crashReports(instance, wall);
                 return Json.map(
@@ -1314,6 +1341,11 @@ final class PackCheck {
             out.append('\n');
         }
         return out.toString();
+    }
+
+    /** The JVM could not get native memory from the machine: HotSpot's own fatal message, which names no code of the pack. */
+    static boolean machineMemory(String log) {
+        return log.contains("There is insufficient memory for the Java Runtime Environment to continue");
     }
 
     /** A port another process held, in the start's own log: Java's bind failure. */
