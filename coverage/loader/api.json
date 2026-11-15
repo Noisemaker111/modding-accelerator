@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "91e2ca35ffecbd28019dd6845d2802f8ce8b7c8a991b279b302d5bdbf0bd3a4d",
+ "rules_sha256": "14bf7651299470ead8fe492139d8af89a586718241ae8d4ad6b2b8b91b2911d4",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -9465,6 +9465,30 @@
     "found": true
    },
    {
+    "symbol": "fabric-api|net.fabricmc.fabric.impl.command.client.ClientCommandInternals#executeCommand",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#sendUnattendedCommand",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#sendCommand",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#restrictedSuggestionsProvider",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#isValidCommand",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.ConfirmScreen",
+    "found": true
+   },
+   {
     "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents#TAGS_LOADED",
     "found": true
    },
@@ -9894,6 +9918,10 @@
    },
    {
     "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Unloading#onModConfigUnloading",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientCommandHandler#runCommand",
     "found": true
    },
    {

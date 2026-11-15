@@ -21,6 +21,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
@@ -30,6 +32,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -40,6 +43,7 @@ import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import ${package}.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import ${package}.fabric.api.client.command.v2.FabricClientCommandSource;
+import ${package}.mixin.ClientPacketListenerCommands;
 
 /**
  * Fabric's client commands on NeoForge's. Each time NeoForge posts RegisterClientCommandsEvent (when the client gets
@@ -47,9 +51,11 @@ import ${package}.fabric.api.client.command.v2.FabricClientCommandSource;
  * and each of its root literals is registered in NeoForge's dispatcher (of CommandSourceStack) as a literal of the same
  * name with a greedy argument: running it, or asking it for suggestions, parses the whole command line in the mod's own
  * dispatcher with a FabricClientCommandSource, so arguments, requirements, redirects and suggestions are the mod's
- * own. Differences from Fabric: NeoForge runs client commands typed in chat and clicked in text alike, without Fabric's
- * confirmation screen for a clicked command that needs more permissions, so attended() is always true; a command
- * NeoForge does not know (an unknown root) goes to the server, as on Fabric; Fabric's /fcc help command is not added.
+ * own. A command clicked in text (the game's sendUnattendedCommand, which NeoForge runs client commands from too) is
+ * checked as Fabric checks it: when the game's restricted suggestion provider cannot run it and the player's can, the
+ * game's confirmation screen asks the player first; a source reports attended() false while it is checked, true when it
+ * runs. A command NeoForge does not know (an unknown root) goes to the server, as on Fabric. Fabric's /fcc help command
+ * is not added.
  */
 public final class ClientCommandForwarding {
 
@@ -111,8 +117,11 @@ public final class ClientCommandForwarding {
 
     private static int run(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Source source = Source.current();
-        if (source == null || active == null) return 0;
-        return active.execute(context.getInput().substring(rootStart(context)), source);
+        CommandDispatcher<FabricClientCommandSource> dispatcher = active;
+        if (source == null || dispatcher == null) return 0;
+        String command = context.getInput().substring(rootStart(context));
+        if (UNATTENDED.get()) return runClicked(dispatcher, command, source);
+        return dispatcher.execute(command, source);
     }
 
     private static CompletableFuture<Suggestions> suggest(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
@@ -132,20 +141,67 @@ public final class ClientCommandForwarding {
         return StringRange.between(range.getStart() + by, range.getEnd() + by);
     }
 
-    /** The source of one client command: the connection's own suggestion provider, with Fabric's feedback to the chat. */
+    /**
+     * A command clicked in text: the game's restricted suggestion provider (a command the server's text can run without
+     * asking) cannot run it, and the player's own can. Fabric asks the player then (ClientCommandInternals); valid is the
+     * game's own test of a parse (ClientPacketListener.isValidCommand).
+     */
+    static <S> boolean needsConfirmation(CommandDispatcher<S> dispatcher, String command, S source, S restricted, Predicate<ParseResults<S>> valid) {
+        if (!valid.test(dispatcher.parse(command, source))) return false;
+        return !valid.test(dispatcher.parse(command, restricted));
+    }
+
+    private static int runClicked(CommandDispatcher<FabricClientCommandSource> dispatcher, String command, Source source) throws CommandSyntaxException {
+        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        Source restricted = connection == null ? null : new Source(Minecraft.getInstance(), ((ClientPacketListenerCommands) connection).mmtBridge$restrictedSuggestionsProvider(), false);
+        if (restricted == null || !needsConfirmation(dispatcher, command, source, restricted, ClientPacketListenerCommands::mmtBridge$isValidCommand)) {
+            return dispatcher.execute(command, source);
+        }
+        // As Fabric's openSendConfirmationWindow: the game's own confirmation screen, then the command as the player's.
+        Minecraft minecraft = source.getClient();
+        Screen previous = minecraft.gui.screen();
+        minecraft.gui.setScreen(new ConfirmScreen(
+            accepted -> {
+                if (accepted) {
+                    try {
+                        dispatcher.execute(command, source);
+                    } catch (CommandSyntaxException e) {
+                        source.sendError(Component.literal(e.getMessage()));
+                    }
+                }
+                minecraft.gui.setScreen(previous);
+            },
+            Component.translatable("multiplayer.confirm_command.title"),
+            Component.translatable("multiplayer.confirm_command.permissions_required", Component.literal(command).withStyle(ChatFormatting.YELLOW)),
+            Component.translatable("multiplayer.confirm_command.run_command"),
+            previous != null ? CommonComponents.GUI_BACK : CommonComponents.GUI_CANCEL
+        ));
+        return 1;
+    }
+
+    /** Set while the game runs a command clicked in text (UnattendedCommandMixin around sendUnattendedCommand). */
+    public static final ThreadLocal<Boolean> UNATTENDED = ThreadLocal.withInitial(() -> false);
+
+    /**
+     * The source of one client command: the connection's own suggestion provider, with Fabric's feedback to the chat.
+     * attended is Fabric's: true for the player's own provider (what it typed, or a clicked command once confirmed), false
+     * for the restricted one a click is checked with.
+     */
     static final class Source implements FabricClientCommandSource {
         private final Minecraft minecraft;
         private final ClientSuggestionProvider provider;
+        private final boolean attended;
 
-        private Source(Minecraft minecraft, ClientSuggestionProvider provider) {
+        Source(Minecraft minecraft, ClientSuggestionProvider provider, boolean attended) {
             this.minecraft = minecraft;
             this.provider = provider;
+            this.attended = attended;
         }
 
         static Source current() {
             Minecraft minecraft = Minecraft.getInstance();
             ClientPacketListener connection = minecraft.getConnection();
-            return connection == null ? null : new Source(minecraft, connection.getSuggestionsProvider());
+            return connection == null ? null : new Source(minecraft, connection.getSuggestionsProvider(), true);
         }
 
         @Override
@@ -176,7 +232,7 @@ public final class ClientCommandForwarding {
 
         @Override
         public boolean attended() {
-            return true;
+            return attended;
         }
 
         @Override

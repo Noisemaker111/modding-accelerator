@@ -758,8 +758,10 @@ public final class ConvertTests {
                 for (var test : group.getValue()) {
                     String name = Json.text(test, "name", ""), converted = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
                     String meta = fromNeo ? Files.readString(dir.resolve("src/main/resources/fabric.mod.json")) : "";
-                    // On NeoForge the @Mod constructor starts the Fabric bridge, which its event listeners need.
-                    boolean started = fromNeo || Files.readString(dir.resolve("src/main/java/demo/Demo.java")).contains("FabricBridge.init(modBus);");
+                    // On NeoForge the @Mod constructor starts the Fabric bridge, which its event listeners need, and Demo (also
+                    // the "demo" entrypoint other mods read) keeps the no-argument constructor Fabric makes that one with.
+                    String demo = Files.readString(dir.resolve("src/main/java/demo/Demo.java"));
+                    boolean started = fromNeo || demo.contains("FabricBridge.init(modBus);") && demo.contains(Convert.KEPT_CONSTRUCTOR + "\n\tDemo() {\n\t}\n");
                     check(
                         started && converted.equals(Json.text(test, "to", "")) &&
                         LoaderRules.strings(test.get("mixins")).stream().allMatch(forward::contains) &&
@@ -778,6 +780,7 @@ public final class ConvertTests {
                     check(
                         Json.write(meta.get("custom")).equals(Json.write(Json.object(Json.parse(fabricMeta)).get("custom"))) &&
                         Json.write(Json.object(meta.get("entrypoints")).get("demo")).equals("[\"demo.Demo\"]") &&
+                        Files.readString(dir.resolve("src/main/java/demo/Demo.java")).equals(mod.get("src/main/java/demo/Demo.java")) &&
                         !Files.exists(dir.resolve("src/main/java/demo/fabricbridge")),
                         "back to Fabric, the entrypoints and custom values other mods read are fabric.mod.json's again and the bridge is gone: " + Json.write(meta)
                     );

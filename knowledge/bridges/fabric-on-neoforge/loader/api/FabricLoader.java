@@ -132,12 +132,20 @@ public final class FabricLoader {
         return out;
     }
 
-    /** One entrypoint as Fabric's default language adapter makes it. */
+    /**
+     * One entrypoint as Fabric's default language adapter makes it: a new instance from the no-argument constructor
+     * (one per key, as Fabric makes them). A class that is also the mod's @Mod class keeps that constructor package-private
+     * (NeoForge allows one public constructor, which takes the mod's bus), so it is opened here.
+     */
     static Object make(String definition) {
         try {
             String[] parts = definition.split("::", 2);
             Class<?> owner = Class.forName(parts[0], true, FabricLoader.class.getClassLoader());
-            if (parts.length == 1) return owner.getDeclaredConstructor().newInstance();
+            if (parts.length == 1) {
+                var constructor = owner.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                return constructor.newInstance();
+            }
             for (Field field : owner.getDeclaredFields()) if (field.getName().equals(parts[1]) && Modifier.isStatic(field.getModifiers())) {
                 field.setAccessible(true);
                 return field.get(null);

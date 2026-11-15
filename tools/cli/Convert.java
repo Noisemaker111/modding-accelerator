@@ -689,6 +689,10 @@ final class Convert {
                 if (!unbridged.contains(name)) kept.add(item);
             }
             if (!kept.isEmpty()) entrypoints.put(e.getKey(), kept);
+            // A class named by a key other mods read, as well as by main, client or server, keeps a no-argument constructor.
+            if (!Set.of("main", "client", "server", "modmenu", "fabric-datagen").contains(e.getKey())) for (Object item : kept) sharedEntrypoints.add(
+                item instanceof String str ? str : Json.text(Json.object(item), "value", "")
+            );
         }
         String datagen = datagenToNeoForge(entrypoints, minecraft);
         String menu = null;
@@ -1129,6 +1133,12 @@ final class Convert {
         return out.toString();
     }
 
+    /** Classes Fabric's metadata names under a key other than main, client, server, modmenu and fabric-datagen. */
+    final Set<String> sharedEntrypoints = new HashSet<>();
+
+    /** The comment on the no-argument constructor convert keeps for such a class; the way back removes it. */
+    static final String KEPT_CONSTRUCTOR = "/** The no-argument constructor Fabric makes this class's other entrypoints with (mmt convert). */";
+
     /** Fabric entrypoints other than main, client, server, modmenu and fabric-datagen, by key: kept in modproperties. */
     final Map<String, List<String>> ownEntrypoints = new LinkedHashMap<>();
 
@@ -1256,6 +1266,20 @@ final class Convert {
             ctor.append(inner).append(unit).append("});\n");
         }
         ctor.append(inner).append("}\n");
+        // A class that is also another key's entrypoint (a plugin other mods read) is made by Fabric with its no-argument
+        // constructor. Its implicit one would go with the constructor above, and NeoForge allows one public constructor:
+        // a package-private one stays for FabricLoader.make, which opens it.
+        boolean anyConstructor = Pattern.compile("(?m)^[ \\t]*(?:(?:public|protected|private)\\s+)?" + simple + "\\s*\\(").matcher(text).find();
+        if (!holder && !anyConstructor && sharedEntrypoints.contains(name)) ctor
+            .append('\n')
+            .append(inner)
+            .append(KEPT_CONSTRUCTOR)
+            .append('\n')
+            .append(inner)
+            .append(simple)
+            .append("() {\n")
+            .append(inner)
+            .append("}\n");
         String declaration =
             c.group(1) + c.group(2) + "class " + simple + (cleaned.isBlank() ? " " : " " + cleaned.strip() + " ") + "{";
         String out =
@@ -3136,6 +3160,11 @@ final class Convert {
     /** A NeoForge @Mod class back as a Fabric entrypoint: the constructor convert wrote is removed; any other constructor is named. */
     String entryToFabric(String file, String text, Matcher annotation, String api, String method) {
         String simple = file.substring(file.lastIndexOf('/') + 1).replace(".java", "");
+        // The no-argument constructor the way to NeoForge kept for another key's entrypoint was the implicit one.
+        text = text.replaceFirst(
+            "\\n[ \\t]*" + Pattern.quote(KEPT_CONSTRUCTOR) + "\\n[ \\t]*" + simple + "\\(\\) \\{\\n[ \\t]*}\\n",
+            ""
+        );
         Matcher ctor = Pattern.compile(
             "(?s)\\n[ \\t]*/\\*\\* Runs the Fabric (?:client )?entrypoint[^\\n]*\\n[ \\t]*public " +
             simple +

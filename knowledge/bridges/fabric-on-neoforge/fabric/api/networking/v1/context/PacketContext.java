@@ -1,6 +1,7 @@
 package ${package}.fabric.api.networking.v1.context;
 
 import com.mojang.authlib.GameProfile;
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
@@ -103,21 +104,25 @@ public interface PacketContext {
         }
     }
 
-    /** One provider's values. */
+    /**
+     * One provider's values. The map holds each provider only weakly, and so does its context (a strong reference from
+     * the value would keep the weak key, and a disconnected player's level, alive): a context goes with its provider.
+     */
     final class Impl implements PacketContext {
         static final ScopedValue<PacketContext> VALUE = ScopedValue.newInstance();
         static final Map<Object, PacketContext> CONTEXTS = new WeakHashMap<>();
 
-        private final Object provider;
+        private final WeakReference<Object> provider;
         private final Map<Key<?>, Object> values = new ConcurrentHashMap<>();
 
         Impl(Object provider) {
-            this.provider = provider;
+            this.provider = new WeakReference<>(provider);
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public <T> T get(ReadKey<T> key) {
+            Object provider = this.provider.get();
             Player player = provider instanceof Player p ? p : null;
             if (key == SERVER_INSTANCE) return player == null ? null : (T) player.level().getServer();
             if (key == REGISTRY_ACCESS) return player == null ? null : (T) player.registryAccess();

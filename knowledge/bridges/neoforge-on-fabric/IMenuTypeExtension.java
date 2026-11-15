@@ -17,17 +17,17 @@ import net.minecraft.world.inventory.MenuType;
  */
 public interface IMenuTypeExtension<T> {
 
-    /** The opening data as it travels: its length, then its bytes. */
+    /**
+     * The opening data as it travels: its length, then its bytes. Read as NeoForge reads it (readByteArray, which refuses a
+     * length longer than the bytes the packet has), so a packet that claims more than it carries is refused before anything
+     * that size is made.
+     */
     StreamCodec<RegistryFriendlyByteBuf, RegistryFriendlyByteBuf> DATA = StreamCodec.of(
         (out, data) -> {
             out.writeVarInt(data.readableBytes());
             out.writeBytes(data, data.readerIndex(), data.readableBytes());
         },
-        in -> {
-            byte[] bytes = new byte[in.readVarInt()];
-            in.readBytes(bytes);
-            return new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(bytes), in.registryAccess());
-        }
+        in -> new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(in.readByteArray()), in.registryAccess())
     );
 
     static <T extends AbstractContainerMenu> MenuType<T> create(IContainerFactory<T> factory) {

@@ -13,7 +13,6 @@ import ${package}.fabric.api.transfer.v1.transaction.Transaction;
 import ${package}.fabric.api.transfer.v1.transaction.TransactionContext;
 import ${package}.team.reborn.energy.api.EnergyStorage;
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,7 +76,8 @@ import org.jspecify.annotations.Nullable;
  * called when it closes, with its result, as on Fabric. A NeoForge caller's transaction is seen as a Fabric context, and
  * the bridge opens a transaction nested in it around each call into a Fabric storage; close callbacks added to the
  * NeoForge caller's own transaction are told the result late: ABORTED when it or an enclosing transaction aborts,
- * COMMITTED when the root commits. getOpenTransaction cannot reach past the NeoForge caller's transaction.
+ * COMMITTED when the root commits. getOpenTransaction cannot reach past the NeoForge caller's transaction. Callbacks run
+ * in reverse order and a failing one never leaves the NeoForge transaction open (TransferTransactions).
  *
  * <p>Not mirrored: ItemStorage.ITEM and FluidStorage.ITEM (ContainerItemContext), the entity and item lookups, Team Reborn
  * Energy's ITEM lookup and ENERGY_COMPONENT.
@@ -260,188 +260,28 @@ public final class TransferBridge {
         }
     }
 
-    // ---- transactions -----------------------------------------------------------------------------------------
-
-    /** The bridge's Fabric transaction for each NeoForge transaction it opened, on this thread. */
-    private static final ThreadLocal<Map<net.neoforged.neoforge.transfer.transaction.TransactionContext, Tx>> OPENED = ThreadLocal.withInitial(IdentityHashMap::new);
-    /** Set while the bridge runs a transaction's close callbacks (Fabric's CLOSING), or its outer close callbacks. */
-    private static final ThreadLocal<Transaction.Lifecycle> CLOSING = new ThreadLocal<>();
+    // ---- transactions (TransferTransactions) -------------------------------------------------------------------
 
     public static Transaction openOuter() {
-        return new Tx(net.neoforged.neoforge.transfer.transaction.Transaction.openRoot(), null, true);
+        return TransferTransactions.openOuter();
     }
 
     public static Transaction.Lifecycle lifecycle() {
-        Transaction.Lifecycle closing = CLOSING.get();
-        if (closing != null) return closing;
-        return switch (net.neoforged.neoforge.transfer.transaction.Transaction.getLifecycle()) {
-            case NONE -> Transaction.Lifecycle.NONE;
-            case OPEN -> Transaction.Lifecycle.OPEN;
-            case CLOSING -> Transaction.Lifecycle.CLOSING;
-            case ROOT_CLOSING -> Transaction.Lifecycle.OUTER_CLOSING;
-        };
+        return TransferTransactions.lifecycle();
     }
 
-    @SuppressWarnings("deprecation")
     public static @Nullable TransactionContext currentUnsafe() {
-        var current = net.neoforged.neoforge.transfer.transaction.Transaction.getCurrentOpenedTransaction();
-        return current == null ? null : fabric(current);
+        return TransferTransactions.currentUnsafe();
     }
 
     /** The NeoForge transaction a Fabric context is. */
     public static net.neoforged.neoforge.transfer.transaction.TransactionContext neo(TransactionContext context) {
-        return ((Tx) context).neo;
+        return TransferTransactions.neo(context);
     }
 
     /** A NeoForge context as a Fabric one: the bridge's own when it opened it, else a view of the NeoForge caller's. */
     public static Transaction fabric(net.neoforged.neoforge.transfer.transaction.TransactionContext context) {
-        Tx opened = OPENED.get().get(context);
-        return opened != null ? opened : new Tx(context, null, false);
-    }
-
-    /** A Fabric transaction that is a NeoForge transaction. */
-    static final class Tx implements Transaction {
-
-        final net.neoforged.neoforge.transfer.transaction.TransactionContext neo;
-        private final @Nullable Tx parent;
-        /** Whether the bridge opened it: then the bridge commits or closes it and calls its callbacks exactly. */
-        private final boolean owned;
-        private boolean open = true;
-        private final List<CloseCallback> closeCallbacks = new ArrayList<>();
-        private final List<OuterCloseCallback> outerCloseCallbacks = new ArrayList<>();
-
-        Tx(net.neoforged.neoforge.transfer.transaction.TransactionContext neo, @Nullable Tx parent, boolean owned) {
-            this.neo = neo;
-            this.parent = parent;
-            this.owned = owned;
-            if (owned) OPENED.get().put(neo, this);
-        }
-
-        @Override
-        public Transaction openNested() {
-            return new Tx(net.neoforged.neoforge.transfer.transaction.Transaction.open(neo), this, true);
-        }
-
-        @Override
-        public int nestingDepth() {
-            return neo.depth();
-        }
-
-        @Override
-        public Transaction getOpenTransaction(int nestingDepth) {
-            if (nestingDepth < 0) throw new IndexOutOfBoundsException("Nesting depth may not be negative.");
-            for (Tx tx = this; tx != null; tx = tx.parent) {
-                if (tx.nestingDepth() == nestingDepth) return tx;
-            }
-            throw new IllegalStateException("The transaction at depth " + nestingDepth + " was opened by NeoForge code the bridge cannot see past.");
-        }
-
-        @Override
-        public void addCloseCallback(CloseCallback closeCallback) {
-            if (owned) {
-                closeCallbacks.add(closeCallback);
-                return;
-            }
-            // The NeoForge caller's transaction: a journal tells the result as NeoForge closes it.
-            new CallbackJournal(this, closeCallback).updateSnapshots(neo);
-        }
-
-        @Override
-        public void addOuterCloseCallback(OuterCloseCallback outerCloseCallback) {
-            Tx root = this;
-            while (root.parent != null) root = root.parent;
-            if (root.owned && root.nestingDepth() == 0) {
-                root.outerCloseCallbacks.add(outerCloseCallback);
-                return;
-            }
-            new CallbackJournal(outerCloseCallback).updateSnapshots(neo);
-        }
-
-        @Override
-        public void abort() {
-            close(Result.ABORTED);
-        }
-
-        @Override
-        public void commit() {
-            close(Result.COMMITTED);
-        }
-
-        @Override
-        public void close() {
-            if (open) close(Result.ABORTED);
-        }
-
-        private void close(Result result) {
-            if (!owned) throw new IllegalStateException("A transaction NeoForge code opened is closed by that code.");
-            if (!open) throw new IllegalStateException("Transaction operation cannot be applied to a closed transaction.");
-            open = false;
-            var neoTransaction = (net.neoforged.neoforge.transfer.transaction.Transaction) neo;
-            CLOSING.set(Lifecycle.CLOSING);
-            try {
-                for (int i = 0; i < closeCallbacks.size(); i++) closeCallbacks.get(i).onClose(this, result);
-            } finally {
-                CLOSING.remove();
-                OPENED.get().remove(neo);
-            }
-            if (result.wasCommitted()) neoTransaction.commit();
-            else neoTransaction.close();
-            if (nestingDepth() != 0 || outerCloseCallbacks.isEmpty()) return;
-            CLOSING.set(Lifecycle.OUTER_CLOSING);
-            try {
-                for (OuterCloseCallback callback : outerCloseCallbacks) callback.afterOuterClose(result);
-            } finally {
-                CLOSING.remove();
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "Transaction[depth=" + nestingDepth() + ", neoforge=" + neo + "]";
-        }
-    }
-
-    /** A Fabric callback on a transaction NeoForge code opened, told the result through a NeoForge journal. */
-    private static final class CallbackJournal extends net.neoforged.neoforge.transfer.transaction.SnapshotJournal<Boolean> {
-
-        private final @Nullable Tx transaction;
-        private final TransactionContext.@Nullable CloseCallback close;
-        private final TransactionContext.@Nullable OuterCloseCallback outer;
-        private boolean told;
-
-        CallbackJournal(Tx transaction, TransactionContext.CloseCallback close) {
-            this.transaction = transaction;
-            this.close = close;
-            this.outer = null;
-        }
-
-        CallbackJournal(TransactionContext.OuterCloseCallback outer) {
-            this.transaction = null;
-            this.close = null;
-            this.outer = outer;
-        }
-
-        @Override
-        protected Boolean createSnapshot() {
-            return Boolean.TRUE;
-        }
-
-        @Override
-        protected void revertToSnapshot(Boolean snapshot) {
-            tell(TransactionContext.Result.ABORTED);
-        }
-
-        @Override
-        protected void onRootCommit(Boolean originalState) {
-            tell(TransactionContext.Result.COMMITTED);
-        }
-
-        private void tell(TransactionContext.Result result) {
-            if (told) return;
-            told = true;
-            if (close != null) close.onClose(transaction, result);
-            if (outer != null) outer.afterOuterClose(result);
-        }
+        return TransferTransactions.fabric(context);
     }
 
     // ---- storages and handlers --------------------------------------------------------------------------------

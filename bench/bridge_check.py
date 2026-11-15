@@ -8,8 +8,11 @@ compiles inside a converted mod. This check makes that mod from a pinned NeoForg
   neoforge-on-fabric: the MDK converted to Fabric by mmt convert (which copies the bridge in), then every bridge file
                       and version-layer file, and a mixin config listing every bridge mixin, so the mixin processor sees them;
   fabric-on-neoforge: the MDK as it is (NeoForge), with every bridge file copied in under its package.
-and runs mmt compile on it, against the loaders' own published jars. The work folder is .runs/bridge-check/; the
-result is printed as JSON (exit 0 when it compiled). Launches nothing; at most one Gradle build runs.
+and runs mmt compile on it, against the loaders' own published jars. Then the bridge's runtime tests, JUnit sources in
+knowledge/bridge-tests/ID (at the path of the package they test, ${package} as in the bridge; never copied into a
+converted mod), run there with mmt test: they exercise bridge code that needs no running game (transactions, packet
+contexts, entrypoints, network codecs). The work folder is .runs/bridge-check/; the result is printed as JSON (exit 0
+when it compiled and every test passed). Launches no game.
 """
 import argparse
 import json
@@ -61,6 +64,47 @@ def templates(b, layer):
     # A layer leaves out the parts of the bridge written for newer games (Convert.dropped).
     for rel in [r for r in out if any(r.startswith(prefix) for prefix in (layer or {}).get("drops", []))]:
         del out[rel]
+    return out
+
+
+TESTS = ROOT / "knowledge" / "bridge-tests"
+TEST_BUILD = """
+// bench/bridge_check.py: the bridge's runtime tests.
+dependencies {
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
+}
+test {
+    useJUnitPlatform()
+}
+"""
+
+
+def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric):
+    """Copies knowledge/bridge-tests/ID into the host's tests and runs them; None when the bridge has none."""
+    folder = TESTS / bridge_id
+    sources = sorted(folder.rglob("*.java")) if folder.is_dir() else []
+    if not sources:
+        return None
+    test_java = work / "src" / "test" / "java" / pkg_rel
+    convert_sweep.rmtree(work / "src" / "test" / "java")
+    for f in sources:
+        target = test_java / f.relative_to(folder)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f.read_text(encoding="utf-8").replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
+    build = work / "build.gradle"
+    text = build.read_text(encoding="utf-8")
+    if "bench/bridge_check.py: the bridge's runtime tests" not in text:
+        # ModDevGradle gives the game to the main source set only; Loom gives it to the tests too.
+        extra = "" if to_fabric else "\nneoForge {\n    addModdingDependenciesTo(sourceSets.test)\n}\n"
+        build.write_text(text + TEST_BUILD + extra, encoding="utf-8")
+    code, result, seconds = convert_sweep.mmt(["test", "--root", str(work), "--json"], 3600)
+    out = {"ok": code == 0, "files": len(sources), "seconds": round(seconds, 1), "details": str(result.get("details", ""))[:300]}
+    if code != 0:
+        # Gradle's console names each failed test and its exception; the log is the run's (mmt test --json gives its path).
+        log = Path(str(result.get("log", "")))
+        text = log.read_text(encoding="utf-8", errors="replace") if log.is_file() else str(result)
+        out["failed"] = [line.strip() for line in text.splitlines() if " FAILED" in line or re.match(r"\s+(?:Caused by: )?[\w.$]+(?:Exception|Error) at ", line)][:60]
     return out
 
 
@@ -137,9 +181,14 @@ def main():
            "files": len(files), "mixins": len(mixins), "seconds": round(seconds, 1), "work": str(work), "errors": errors[:200]}
     if code != 0 and not errors:
         out["result"] = {k: v for k, v in result.items() if k in ("error", "details", "log")} or str(result)[-3000:]
+    if code == 0:
+        tests = run_tests(work, pkg_dir.relative_to(java), pkg, modid, args.bridge, to_fabric)
+        if tests is not None:
+            out["tests"] = tests
+            out["ok"] = tests["ok"]
     convert_sweep.mmt(["game-stop", "--root", str(work), "--json"], 300)
     print(json.dumps(out, indent=1))
-    return 0 if code == 0 else 1
+    return 0 if out["ok"] else 1
 
 
 if __name__ == "__main__":

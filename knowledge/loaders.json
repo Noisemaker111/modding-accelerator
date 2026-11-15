@@ -5216,6 +5216,12 @@
      "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getLevel",
      "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getMeta",
      "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#attended",
+     "fabric-api|net.fabricmc.fabric.impl.command.client.ClientCommandInternals#executeCommand",
+     "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#sendUnattendedCommand",
+     "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#sendCommand",
+     "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#restrictedSuggestionsProvider",
+     "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#isValidCommand",
+     "minecraft|net.minecraft.client.gui.screens.ConfirmScreen",
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents#TAGS_LOADED",
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents$TagsLoaded#onTagsLoaded",
      "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED",
@@ -5326,6 +5332,7 @@
      "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Unloading#onModConfigUnloading"
     ],
     "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.ClientCommandHandler#runCommand",
      "fml|net.neoforged.fml.ModList#getMods",
      "fml|net.neoforged.fml.ModList#getModContainerById",
      "fml|net.neoforged.fml.ModList#isLoaded",
@@ -5604,6 +5611,26 @@
    "replacesMods": [
     "team_reborn_energy",
     "forgeconfigapiport"
+   ],
+   "mixins": [
+    {
+     "mixin": "ClientPacketListenerCommands",
+     "client": true,
+     "for": [
+      "fabric.api.client.command.v2.ClientCommandRegistrationCallback",
+      "fabric.api.client.command.v2.ClientCommands",
+      "fabric.api.client.command.v2.FabricClientCommandSource"
+     ]
+    },
+    {
+     "mixin": "UnattendedCommandMixin",
+     "client": true,
+     "for": [
+      "fabric.api.client.command.v2.ClientCommandRegistrationCallback",
+      "fabric.api.client.command.v2.ClientCommands",
+      "fabric.api.client.command.v2.FabricClientCommandSource"
+     ]
+    }
    ]
   }
  ]
