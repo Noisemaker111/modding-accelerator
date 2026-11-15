@@ -137,6 +137,13 @@ final class PackCheck {
         started = System.nanoTime();
         scan = PackMods.scan(pack.mods(), loader.metadata(pack.minecraft()));
         pack = pack.withMods(sides(pack.mods(), scan));
+        if (!options.get("focus", "").isEmpty()) {
+            List<String> ids = Arrays.stream(options.get("focus", "").split(",")).map(String::strip).filter(id -> !id.isEmpty()).toList();
+            List<Mod> kept = focus(pack.mods(), scan, ids);
+            result.put("focus", Json.map("ids", ids, "jars", kept.size(), "of", pack.mods().size(), "kept", kept.stream().map(Mod::file).toList()));
+            pack = pack.withMods(kept);
+            scan = PackMods.scan(pack.mods(), loader.metadata(pack.minecraft()));
+        }
         // The loader's server, installed once: the Java build it runs on, and the game classes a server has.
         Path install = loader.install(context, pack.minecraft(), pack.loaderVersion());
         Runtimes.Jdk suited = PackLoaders.javaFor(context, install);
@@ -273,6 +280,37 @@ final class PackCheck {
         text.append("Repairs:\n");
         for (var fix : PackRepairs.all(harness)) text.append("  ").append(fix.get("id")).append(" (").append(fix.get("loader")).append(' ').append(fix.get("minecraft")).append(")\n");
         return Json.map("ok", true, "inputs", inputs, "loaders", loaders, "checks", checks, "repairs", repairs, "details", text.toString());
+    }
+
+    /**
+     * --focus ID,ID: a minimal repro. Only the jars providing these mod ids, the jars their required dependencies come
+     * from (through theirs) and the loader plugins reach the server; the rest of the pack is left out, so one fault
+     * shows in a fraction of the whole pack's start. A dependency no jar provides stays unmet, as in the whole pack.
+     */
+    static List<Mod> focus(List<Mod> mods, PackMods.Scan scan, List<String> ids) {
+        Set<String> jars = new LinkedHashSet<>(scan.plugins);
+        List<String> unknown = new ArrayList<>();
+        for (String id : ids) {
+            List<PackMods.Provider> providers = scan.providers.getOrDefault(id, List.of());
+            if (providers.isEmpty()) unknown.add(id);
+            for (PackMods.Provider p : providers) jars.add(top(p.jar()));
+        }
+        if (!unknown.isEmpty()) throw new IllegalArgumentException(
+            "--focus names mod ids no jar of the pack provides: " + unknown + ". Ids in the pack: modaccel pack-check --pack PACK --json lists them per jar (modFiles)."
+        );
+        for (boolean grew = true; grew;) {
+            grew = false;
+            for (var d : scan.dependencies) {
+                if (!d.kind().equals("required") || !jars.contains(top(d.owner()))) continue;
+                List<PackMods.Provider> providers = scan.providers.getOrDefault(d.id(), List.of());
+                if (providers.isEmpty() || providers.stream().anyMatch(p -> jars.contains(top(p.jar())))) continue;
+                jars.add(top(providers.get(0).jar()));
+                grew = true;
+            }
+        }
+        List<Mod> kept = new ArrayList<>();
+        for (Mod mod : mods) if (jars.contains(mod.file())) kept.add(mod);
+        return kept;
     }
 
     /** A jar whose own metadata says it is client-only (Fabric's "environment") is that, whatever the pack's lists say. */
@@ -1447,6 +1485,12 @@ final class PackCheck {
             result.put("applied", List.of());
             result.put("tried", applied);
             result.put("details", "The repaired pack did not pass where the shipped one failed, or failed somewhere new, so nothing of yours was changed. See recheckFindings.");
+            return result;
+        }
+        if (!options.get("focus", "").isEmpty()) {
+            result.put("applied", List.of());
+            result.put("tried", applied);
+            result.put("details", "Proven on the focused mods only (--focus), so nothing of yours was changed: run without --focus to change the pack.");
             return result;
         }
         if (pack.instance()) {
