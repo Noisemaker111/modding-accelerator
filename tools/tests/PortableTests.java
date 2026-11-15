@@ -1005,6 +1005,69 @@ public final class PortableTests {
             Convert.neoforgeModId("2fast").equals("mod_2fast"),
             "a Fabric mod id with a hyphen becomes one NeoForge accepts"
         );
+        List<String> unconverted = new ArrayList<>();
+        List<String> transformers = Convert.widenerToTransformer(
+            "classTweaker v1 official\n# comment\naccessible class net/minecraft/A$B\nextendable class net/minecraft/C\n" +
+            "accessible method net/minecraft/D run (I)V\nextendable method net/minecraft/D run (I)V\n" +
+            "accessible field net/minecraft/E size I\nmutable field net/minecraft/E size I\n" +
+            "transitive-accessible method net/minecraft/F <init> ()V\ninject-interface net/minecraft/G demo/Extra\n",
+            true,
+            unconverted
+        );
+        check(
+            transformers.equals(
+                List.of(
+                    "public net.minecraft.A$B",
+                    "public-f net.minecraft.C",
+                    "public-f net.minecraft.D run(I)V",
+                    "public-f net.minecraft.E size",
+                    "public net.minecraft.F <init>()V"
+                )
+            ) &&
+            unconverted.equals(List.of("inject-interface net/minecraft/G demo/Extra")),
+            "a Fabric access widener becomes NeoForge access transformer lines, entries for one target merged: " +
+            transformers +
+            " " +
+            unconverted
+        );
+        List<String> yarnLeft = new ArrayList<>();
+        check(
+            Convert.widenerToTransformer("accessWidener v2 named\naccessible class net/minecraft/a\n", false, yarnLeft).isEmpty() &&
+            yarnLeft.size() == 1,
+            "an access widener in yarn's names is named, not converted"
+        );
+        List<String> widenerLeft = new ArrayList<>();
+        String widener = Convert.transformerToWidener(
+            "# opens\npublic net.minecraft.A$B\npublic-f net.minecraft.C\nprotected-f net.minecraft.D run(I)V\npublic net.minecraft.E size\npublic net.minecraft.H *()\n",
+            true,
+            widenerLeft
+        );
+        check(
+            widener.equals(
+                "accessWidener v2 official\naccessible class net/minecraft/A$B\nextendable class net/minecraft/C\n" +
+                "accessible method net/minecraft/D run (I)V\nextendable method net/minecraft/D run (I)V\n"
+            ) &&
+            widenerLeft.size() == 2 &&
+            widenerLeft.get(0).startsWith("public net.minecraft.E size") &&
+            widenerLeft.get(1).equals("public net.minecraft.H *()") &&
+            Convert.transformerToWidener("public net.minecraft.A\n", false, new ArrayList<>()).startsWith("accessWidener v2 named\n"),
+            "NeoForge access transformer lines become a Fabric access widener; a field (no type) and a wildcard are named:\n" +
+            widener +
+            widenerLeft
+        );
+        List<String> removed = new ArrayList<>();
+        String script = Convert.dropLoomTypes(
+            "import net.fabricmc.loom.task.prod.ClientProductionRunTask\nimport java.util.List\n\nplugins {\n\tid 'java'\n}\n\n" +
+            "// a ClientProductionRunTask comment stays\ntasks.register('prod', ClientProductionRunTask) {\n\tjvmArgs.add('-Xmx2G')\n}\n\nversion = '1'\n",
+            removed
+        );
+        check(
+            script.equals(
+                "import java.util.List\n\nplugins {\n\tid 'java'\n}\n\n// a ClientProductionRunTask comment stays\n\nversion = '1'\n"
+            ) &&
+            removed.size() == 2,
+            "a build script's Loom imports and the statements that use their types are removed:\n" + script
+        );
 
         LoaderRules.Provider models = LoaderRules.datagenProvider(
             "package d;\n\nimport net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;\nimport net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;\n\npublic class Models extends FabricModelProvider {\n\tpublic Models(FabricPackOutput output) {\n\t\tsuper(output);\n\t}\n\n\t@Override\n\tpublic void generateBlockStateModels(BlockModelGenerators blocks) {\n\t}\n\n\t@Override\n\tpublic void generateItemModels(ItemModelGenerators items) {\n\t}\n}\n",

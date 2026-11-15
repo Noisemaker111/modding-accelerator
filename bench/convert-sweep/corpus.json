@@ -1,0 +1,489 @@
+{
+  "about": "The convert sweep corpus: open-source mods written for one loader, with public Gradle source, pinned by commit. python bench/convert_sweep.py run converts each to the other loader (and back when that compiles) and records every gap by the loader concept it lacks. features is what each mod was chosen to exercise. No rule is ever taken from these mods code: they are only test inputs.",
+  "mods": [
+    {
+      "id": "fabric-example",
+      "name": "Fabric Example Mod",
+      "repo": "https://github.com/FabricMC/fabric-example-mod",
+      "branch": "26.3",
+      "commit": "7cc83aa9cb1f145c4d717bce3413e67a6e5f4678",
+      "loader": "fabric",
+      "features": [
+        "mixins",
+        "baseline"
+      ]
+    },
+    {
+      "id": "appleskin-fabric",
+      "name": "AppleSkin",
+      "repo": "https://github.com/squeek502/AppleSkin",
+      "branch": "26.3-fabric",
+      "commit": "66fcdb8b12820c9b1cf3147abfdcf5530559f62b",
+      "loader": "fabric",
+      "features": [
+        "HUD layers",
+        "networking payloads",
+        "tooltips"
+      ]
+    },
+    {
+      "id": "modmenu",
+      "name": "Mod Menu",
+      "repo": "https://github.com/TerraformersMC/ModMenu",
+      "branch": "26.3",
+      "commit": "d7c4c95aea7d1e010ff4d257bbda3b737f251684",
+      "loader": "fabric",
+      "features": [
+        "config screens",
+        "screens",
+        "access wideners",
+        "keybinds"
+      ]
+    },
+    {
+      "id": "krypton",
+      "name": "Krypton",
+      "repo": "https://github.com/astei/krypton",
+      "branch": "master",
+      "commit": "bc08466ff900d97b27bfabcde92005b4774717e8",
+      "loader": "fabric",
+      "features": [
+        "networking internals",
+        "mixins",
+        "access wideners"
+      ]
+    },
+    {
+      "id": "carpet",
+      "name": "Carpet",
+      "repo": "https://github.com/gnembon/fabric-carpet",
+      "branch": "26.1",
+      "commit": "9c1bec181eebae1cd8fbab3e1872bb6cd8139071",
+      "loader": "fabric",
+      "features": [
+        "commands",
+        "client commands",
+        "networking payloads",
+        "renderers",
+        "access wideners"
+      ]
+    },
+    {
+      "id": "universal-graves",
+      "name": "Universal Graves",
+      "repo": "https://github.com/Patbox/UniversalGraves",
+      "branch": "main",
+      "commit": "7f7508e019b1dd845b54ff56e0cd140e150ddd93",
+      "loader": "fabric",
+      "features": [
+        "block entities",
+        "commands",
+        "config",
+        "third-party APIs"
+      ]
+    },
+    {
+      "id": "fabric-waystones",
+      "name": "Fabric Waystones",
+      "repo": "https://github.com/LordDeatHunter/FabricWaystones",
+      "branch": "master",
+      "commit": "8a35a5d8329a75361222971bce60db043a5bdfa4",
+      "loader": "fabric",
+      "features": [
+        "block entities",
+        "networking payloads",
+        "screens",
+        "datagen",
+        "config"
+      ]
+    },
+    {
+      "id": "clientcommands",
+      "name": "clientcommands",
+      "repo": "https://github.com/Earthcomputer/clientcommands",
+      "branch": "fabric",
+      "commit": "47419ac773ce86b1670f014ba4a0899a90eef1d9",
+      "loader": "fabric",
+      "features": [
+        "client commands",
+        "renderers",
+        "keybinds",
+        "access wideners"
+      ]
+    },
+    {
+      "id": "seedmapper",
+      "name": "SeedMapper",
+      "repo": "https://github.com/xpple/SeedMapper",
+      "branch": "master",
+      "commit": "3adf2e8be090c23c10aa3e09d7d9fb7bb682071e",
+      "loader": "fabric",
+      "features": [
+        "client commands",
+        "screens",
+        "keybinds",
+        "config library"
+      ]
+    },
+    {
+      "id": "libgui",
+      "name": "LibGui",
+      "repo": "https://github.com/CottonMC/LibGui",
+      "branch": "master",
+      "commit": "6757789e0c1eec3c2e05a46fb1ac98ae1e294622",
+      "loader": "fabric",
+      "features": [
+        "screens",
+        "networking payloads",
+        "menus"
+      ]
+    },
+    {
+      "id": "traverse",
+      "name": "Traverse",
+      "repo": "https://github.com/TerraformersMC/Traverse",
+      "branch": "26.2",
+      "commit": "4a3df623616d996e2f0b9d2bfa79d680c7702344",
+      "loader": "fabric",
+      "features": [
+        "worldgen",
+        "datagen",
+        "blocks"
+      ]
+    },
+    {
+      "id": "jade-fabric",
+      "name": "Jade",
+      "repo": "https://github.com/Snownee/Jade",
+      "branch": "26.3-fabric",
+      "commit": "7c57c36d4fd01ee8e0236329d485824b61f75865",
+      "loader": "fabric",
+      "features": [
+        "HUD layers",
+        "networking payloads",
+        "config",
+        "keybinds"
+      ]
+    },
+    {
+      "id": "theoneprobe-fabric",
+      "name": "The One Probe",
+      "repo": "https://github.com/McJty/TheOneProbe",
+      "branch": "26.3_fabric",
+      "commit": "376638401db5deaf6f30b58404b184a127ca555b",
+      "loader": "fabric",
+      "features": [
+        "HUD layers",
+        "networking payloads",
+        "config",
+        "keybinds"
+      ]
+    },
+    {
+      "id": "bobby",
+      "name": "Bobby",
+      "repo": "https://github.com/Johni0702/bobby",
+      "branch": "master",
+      "commit": "241f973106ee4e5552a5950d0a12433c07921c93",
+      "loader": "fabric",
+      "features": [
+        "config library",
+        "client commands",
+        "chunk storage",
+        "kotlin build script"
+      ]
+    },
+    {
+      "id": "trinkets",
+      "name": "Trinkets",
+      "repo": "https://github.com/emilyploszaj/trinkets",
+      "branch": "main",
+      "commit": "b6e6044b586496037587f20e3507e7e53512fd3f",
+      "loader": "fabric",
+      "features": [
+        "data attachments",
+        "networking payloads",
+        "renderers",
+        "yarn names"
+      ]
+    },
+    {
+      "id": "enhancedblockentities",
+      "name": "Enhanced Block Entities",
+      "repo": "https://github.com/FoundationGames/enhancedblockentities",
+      "branch": "1.21.4",
+      "commit": "b0b202a18a1acbddfc038e5403bde973bece7c98",
+      "loader": "fabric",
+      "features": [
+        "renderers",
+        "block entities",
+        "resource reload",
+        "yarn names"
+      ]
+    },
+    {
+      "id": "satin",
+      "name": "Satin",
+      "repo": "https://github.com/Ladysnake/Satin",
+      "branch": "1.21",
+      "commit": "660ab57174647cfbc6575d1c90081dc96a4784c5",
+      "loader": "fabric",
+      "features": [
+        "renderers",
+        "shaders",
+        "yarn names"
+      ]
+    },
+    {
+      "id": "mdk-mdg-26.3",
+      "name": "NeoForge MDK (ModDevGradle) 26.3",
+      "repo": "https://github.com/NeoForgeMDKs/MDK-26.3-ModDevGradle",
+      "branch": "main",
+      "commit": "3ed230cf177d44b4be4a69034d4a3259fd9c2b49",
+      "loader": "neoforge",
+      "features": [
+        "baseline",
+        "config",
+        "registration",
+        "templates metadata"
+      ]
+    },
+    {
+      "id": "mdk-ng-26.3",
+      "name": "NeoForge MDK (NeoGradle) 26.3",
+      "repo": "https://github.com/NeoForgeMDKs/MDK-26.3-NeoGradle",
+      "branch": "main",
+      "commit": "9e29e479caa0874e7a7238b9221c0e6a161cca6d",
+      "loader": "neoforge",
+      "features": [
+        "baseline",
+        "NeoGradle build"
+      ]
+    },
+    {
+      "id": "mdk-mdg-1.21.1",
+      "name": "NeoForge MDK (ModDevGradle) 1.21.1",
+      "repo": "https://github.com/NeoForgeMDKs/MDK-1.21.1-ModDevGradle",
+      "branch": "main",
+      "commit": "e93d7f09d4eec12c76d1d7be9bf4eaad0246e9e0",
+      "loader": "neoforge",
+      "features": [
+        "baseline",
+        "config",
+        "registration",
+        "templates metadata"
+      ]
+    },
+    {
+      "id": "appleskin-neoforge",
+      "name": "AppleSkin",
+      "repo": "https://github.com/squeek502/AppleSkin",
+      "branch": "26.3-neoforge",
+      "commit": "8872c5d34d7c632535d6a97416ca7b72a1821eef",
+      "loader": "neoforge",
+      "features": [
+        "HUD layers",
+        "networking payloads",
+        "tooltips"
+      ]
+    },
+    {
+      "id": "jade-neoforge",
+      "name": "Jade",
+      "repo": "https://github.com/Snownee/Jade",
+      "branch": "26.3-neoforge",
+      "commit": "ba39dec66ab046c20ac9a8a695a7712734338f27",
+      "loader": "neoforge",
+      "features": [
+        "HUD layers",
+        "networking payloads",
+        "config",
+        "keybinds"
+      ]
+    },
+    {
+      "id": "theoneprobe-neoforge",
+      "name": "The One Probe",
+      "repo": "https://github.com/McJty/TheOneProbe",
+      "branch": "26.3_neo",
+      "commit": "92bccb8732e5ad3daeed739084defd0b81f5dae4",
+      "loader": "neoforge",
+      "features": [
+        "HUD layers",
+        "networking payloads",
+        "config",
+        "keybinds"
+      ]
+    },
+    {
+      "id": "justdirethings",
+      "name": "Just Dire Things",
+      "repo": "https://github.com/Direwolf20-MC/JustDireThings",
+      "branch": "main",
+      "commit": "596d7800b2f05662cbb7b8d199555ea1d79c03e5",
+      "loader": "neoforge",
+      "features": [
+        "block entities",
+        "networking payloads",
+        "data attachments",
+        "renderers",
+        "keybinds",
+        "datagen"
+      ]
+    },
+    {
+      "id": "buildinggadgets2",
+      "name": "Building Gadgets 2",
+      "repo": "https://github.com/Direwolf20-MC/BuildingGadgets2",
+      "branch": "main",
+      "commit": "529c2962ffe0f5d2ef20125ccab9ad2426bc7a56",
+      "loader": "neoforge",
+      "features": [
+        "networking payloads",
+        "renderers",
+        "keybinds",
+        "data components"
+      ]
+    },
+    {
+      "id": "framedblocks",
+      "name": "FramedBlocks",
+      "repo": "https://github.com/XFactHD/FramedBlocks",
+      "branch": "26.1",
+      "commit": "d64ddf2c6b43fdf83c3e489eb6254299926622aa",
+      "loader": "neoforge",
+      "features": [
+        "block entities",
+        "renderers",
+        "models",
+        "datagen",
+        "access transformers"
+      ]
+    },
+    {
+      "id": "prettypipes",
+      "name": "PrettyPipes",
+      "repo": "https://github.com/Ellpeck/PrettyPipes",
+      "branch": "main",
+      "commit": "29e81d66a09eeb5c37c4d195dc21e19cfcae11ff",
+      "loader": "neoforge",
+      "features": [
+        "block entities",
+        "menus",
+        "networking payloads",
+        "capabilities"
+      ]
+    },
+    {
+      "id": "curios",
+      "name": "Curios",
+      "repo": "https://github.com/TheIllusiveC4/Curios",
+      "branch": "26.x",
+      "commit": "3e643c802d510addb367f2bf56b56ceb8685ad1b",
+      "loader": "neoforge",
+      "features": [
+        "data attachments",
+        "networking payloads",
+        "renderers",
+        "templates metadata"
+      ]
+    },
+    {
+      "id": "twilightforest",
+      "name": "The Twilight Forest",
+      "repo": "https://github.com/TeamTwilight/twilightforest",
+      "branch": "latest",
+      "commit": "81850f666daa2a8bce5c900d65e1b8502122eef8",
+      "loader": "neoforge",
+      "features": [
+        "worldgen",
+        "entities",
+        "renderers",
+        "datagen",
+        "access transformers"
+      ]
+    },
+    {
+      "id": "morered",
+      "name": "More Red",
+      "repo": "https://github.com/Commoble/morered",
+      "branch": "main",
+      "commit": "0faabeaf33bc13dbe9518c8dc6e566649aa84e6e",
+      "loader": "neoforge",
+      "features": [
+        "block entities",
+        "networking payloads",
+        "renderers"
+      ]
+    },
+    {
+      "id": "zombie",
+      "name": "ZombieApocalypseAddon",
+      "repo": "https://github.com/Riqqqque/ZombieApocalypseAddon",
+      "branch": "main",
+      "commit": "f58499ee023618393e37f0232ae0e170bd28c745",
+      "loader": "neoforge",
+      "features": [
+        "entities",
+        "AI goals",
+        "config"
+      ]
+    },
+    {
+      "id": "farmersdelight",
+      "name": "Farmer's Delight",
+      "repo": "https://github.com/vectorwing/FarmersDelight",
+      "branch": "1.21",
+      "commit": "dd8b9b0bfec916a2da88a6d64e3a37f4a02c3259",
+      "loader": "neoforge",
+      "features": [
+        "block entities",
+        "worldgen",
+        "datagen",
+        "loot modifiers"
+      ]
+    },
+    {
+      "id": "naturesaura",
+      "name": "Nature's Aura",
+      "repo": "https://github.com/Ellpeck/NaturesAura",
+      "branch": "main",
+      "commit": "b140e3fe24c526100251b40da64dd201d3429b77",
+      "loader": "neoforge",
+      "features": [
+        "block entities",
+        "data attachments",
+        "renderers",
+        "particles"
+      ]
+    },
+    {
+      "id": "ironchest",
+      "name": "Iron Chests",
+      "repo": "https://github.com/progwml6/ironchest",
+      "branch": "1.21.9-neoforge",
+      "commit": "bed1ebb01b69bd1fcc8c80d0c408f354c77290b0",
+      "loader": "neoforge",
+      "features": [
+        "block entities",
+        "renderers",
+        "menus",
+        "templates metadata"
+      ]
+    },
+    {
+      "id": "laserio",
+      "name": "LaserIO",
+      "repo": "https://github.com/Direwolf20-MC/LaserIO",
+      "branch": "main",
+      "commit": "4d278a6351a434d343fbf70d942baeeaf2607536",
+      "loader": "neoforge",
+      "features": [
+        "block entities",
+        "networking payloads",
+        "renderers",
+        "menus"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1549 @@
+{
+  "about": "modaccel convert on the pinned corpus in bench/convert-sweep/corpus.json, by python bench/convert_sweep.py. gaps ranks each missing loader concept by how many mods it affects (blocking: refusals). history keeps each labelled sweep's pass rates.",
+  "corpus": 35,
+  "latest": {
+    "label": "baseline",
+    "date": "2026-11-14",
+    "runs": 35,
+    "not refused": 12,
+    "compiled": 1,
+    "compiled with nothing left": 1,
+    "loaded in the game": 1,
+    "registers what the original does": 1,
+    "converted back and compiled": 1,
+    "outcomes": {
+      "refused": 23,
+      "converted, does not compile": 11,
+      "loads, registers what the original does": 1
+    }
+  },
+  "history": [
+    {
+      "label": "dry-baseline",
+      "date": "2026-11-14",
+      "runs": 35,
+      "not refused": 12,
+      "compiled": 0,
+      "compiled with nothing left": 0,
+      "loaded in the game": 0,
+      "registers what the original does": 0,
+      "converted back and compiled": 0,
+      "outcomes": {
+        "refused": 23,
+        "converted (not compiled)": 12
+      }
+    },
+    {
+      "label": "baseline",
+      "date": "2026-11-14",
+      "runs": 35,
+      "not refused": 12,
+      "compiled": 1,
+      "compiled with nothing left": 1,
+      "loaded in the game": 1,
+      "registers what the original does": 1,
+      "converted back and compiled": 1,
+      "outcomes": {
+        "refused": 23,
+        "converted, does not compile": 11,
+        "loads, registers what the original does": 1
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "concept": "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)",
+      "mods": [
+        "clientcommands",
+        "enhancedblockentities",
+        "jade-fabric",
+        "jade-neoforge",
+        "krypton",
+        "modmenu",
+        "satin",
+        "seedmapper",
+        "theoneprobe-fabric",
+        "trinkets"
+      ],
+      "items": 107,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: net.fabricmc.fabric.api.event.Event",
+        "clientcommands: net.fabricmc.fabric.api.event.EventFactory",
+        "clientcommands: net.fabricmc.fabric.api.event.Event",
+        "clientcommands: net.fabricmc.fabric.api.event.EventFactory"
+      ],
+      "rank": 1
+    },
+    {
+      "concept": "third-party mod dependency with no build for the target loader",
+      "mods": [
+        "clientcommands",
+        "enhancedblockentities",
+        "jade-fabric",
+        "jade-neoforge",
+        "krypton",
+        "seedmapper",
+        "theoneprobe-fabric",
+        "traverse",
+        "trinkets"
+      ],
+      "items": 34,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: dependency include clientImplementation(\"dev.xpple:clientarguments:${project.clientarguments_version}\")",
+        "clientcommands: dependency include implementation(\"dev.xpple:betterconfig-fabric:${project.betterconfig_version}\")",
+        "clientcommands: dependency include clientImplementation(\"dev.xpple:simplewaypoints:${project.simplewaypoints_version}\")",
+        "clientcommands: import net.fabricmc.loom.task.prod.ClientProductionRunTask"
+      ],
+      "rank": 2
+    },
+    {
+      "concept": "access wideners / access transformers",
+      "mods": [
+        "clientcommands",
+        "enhancedblockentities",
+        "jade-fabric",
+        "krypton",
+        "satin",
+        "seedmapper",
+        "theoneprobe-fabric",
+        "traverse",
+        "trinkets"
+      ],
+      "items": 19,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: accessWidener clientcommands.aw",
+        "clientcommands: accessWidenerPath = file('src/main/resources/clientcommands.aw')",
+        "enhancedblockentities: accessWidener enhancedblockentities.accesswidener",
+        "enhancedblockentities: accessWidenerPath = file(\"src/main/resources/enhancedblockentities.accesswidener\")"
+      ],
+      "rank": 3
+    },
+    {
+      "concept": "other loader API",
+      "mods": [
+        "clientcommands",
+        "jade-fabric",
+        "jade-neoforge",
+        "satin",
+        "theoneprobe-fabric",
+        "traverse",
+        "trinkets"
+      ],
+      "items": 46,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext",
+        "clientcommands: net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext",
+        "clientcommands: net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest",
+        "clientcommands: net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext"
+      ],
+      "rank": 4
+    },
+    {
+      "concept": "networking payloads",
+      "mods": [
+        "clientcommands",
+        "jade-fabric",
+        "jade-neoforge",
+        "theoneprobe-fabric",
+        "trinkets"
+      ],
+      "items": 34,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry",
+        "clientcommands: net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking",
+        "clientcommands: net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry",
+        "clientcommands: net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking"
+      ],
+      "rank": 5
+    },
+    {
+      "concept": "build settings with no counterpart",
+      "mods": [
+        "clientcommands",
+        "jade-neoforge",
+        "satin",
+        "seedmapper",
+        "trinkets"
+      ],
+      "items": 10,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nGroovy DSL script compilation problem\n  Could not compile bu",
+        "jade-neoforge: neoForge run client: systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id",
+        "jade-neoforge: neoForge run server: systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id",
+        "jade-neoforge: neoForge run gameTestServer: type = \"gameTestServer\""
+      ],
+      "rank": 6
+    },
+    {
+      "concept": "NeoForge -> Fabric before Minecraft 26.1 (Loom with Mojang names)",
+      "mods": [
+        "farmersdelight",
+        "laserio",
+        "naturesaura",
+        "zombie"
+      ],
+      "items": 4,
+      "blocking": 4,
+      "examples": [
+        "farmersdelight: NeoForge to Fabric is converted for Minecraft 26.1 and later, where both loaders use Mojang's names; 1.21.1 would need Fabric mappings.",
+        "laserio: NeoForge to Fabric is converted for Minecraft 26.1 and later, where both loaders use Mojang's names; 1.21.1 would need Fabric mappings.",
+        "naturesaura: NeoForge to Fabric is converted for Minecraft 26.1 and later, where both loaders use Mojang's names; 1.21.1 would need Fabric mappings.",
+        "zombie: NeoForge to Fabric is converted for Minecraft 26.1 and later, where both loaders use Mojang's names; 1.21.1 would need Fabric mappings."
+      ],
+      "rank": 7
+    },
+    {
+      "concept": "no release of the target loader for this Minecraft version",
+      "mods": [
+        "carpet",
+        "fabric-waystones",
+        "libgui",
+        "universal-graves"
+      ],
+      "items": 4,
+      "blocking": 4,
+      "examples": [
+        "carpet: NeoForge has published no release for Minecraft 26.1 (no net.neoforged:neoforge 26.1.0.x on maven.neoforged.net).",
+        "fabric-waystones: NeoForge has published no release for Minecraft 26.1 (no net.neoforged:neoforge 26.1.0.x on maven.neoforged.net).",
+        "libgui: NeoForge has published no release for Minecraft 26.3-rc-2 (no net.neoforged:neoforge 26.3-rc-2.0.x on maven.neoforged.net).",
+        "universal-graves: NeoForge has published no release for Minecraft 26.3-rc-1 (no net.neoforged:neoforge 26.3-rc-1.0.x on maven.neoforged.net)."
+      ],
+      "rank": 8
+    },
+    {
+      "concept": "refused: No stable net",
+      "mods": [
+        "buildinggadgets2",
+        "framedblocks",
+        "justdirethings",
+        "twilightforest"
+      ],
+      "items": 4,
+      "blocking": 4,
+      "examples": [
+        "buildinggadgets2: No stable net.fabricmc:fabric-loom release in https://maven.fabricmc.net runs on this project's Gradle 9.1.0.",
+        "framedblocks: No stable net.fabricmc:fabric-loom release in https://maven.fabricmc.net runs on this project's Gradle 9.2.1.",
+        "justdirethings: No stable net.fabricmc:fabric-loom release in https://maven.fabricmc.net runs on this project's Gradle 9.4.1.",
+        "twilightforest: No stable net.fabricmc:fabric-loom release in https://maven.fabricmc.net runs on this project's Gradle 9.2.0."
+      ],
+      "rank": 9
+    },
+    {
+      "concept": "shape: neoforge.mods.toml under src/main/templates (MDK layout)",
+      "mods": [
+        "curios",
+        "ironchest",
+        "mdk-mdg-1.21.1",
+        "mdk-mdg-26.3"
+      ],
+      "items": 4,
+      "blocking": 4,
+      "examples": [
+        "curios: convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\",
+        "ironchest: convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\",
+        "mdk-mdg-1.21.1: convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\",
+        "mdk-mdg-26.3: convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\"
+      ],
+      "rank": 10
+    },
+    {
+      "concept": "client commands",
+      "mods": [
+        "clientcommands",
+        "jade-fabric",
+        "jade-neoforge",
+        "seedmapper"
+      ],
+      "items": 210,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback",
+        "clientcommands: net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource",
+        "clientcommands: net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource",
+        "clientcommands: net.fabricmc.fabric.api.client.command.v2.ClientCommands."
+      ],
+      "rank": 11
+    },
+    {
+      "concept": "renderers (block entity, entity, world, item, colors, render layers, models)",
+      "mods": [
+        "clientcommands",
+        "enhancedblockentities",
+        "jade-neoforge",
+        "seedmapper"
+      ],
+      "items": 42,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext",
+        "clientcommands: net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext",
+        "clientcommands: net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext",
+        "clientcommands: net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext"
+      ],
+      "rank": 12
+    },
+    {
+      "concept": "lifecycle, tick and reload events",
+      "mods": [
+        "enhancedblockentities",
+        "jade-fabric",
+        "jade-neoforge",
+        "trinkets"
+      ],
+      "items": 14,
+      "blocking": 0,
+      "examples": [
+        "enhancedblockentities: net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents",
+        "enhancedblockentities: net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents",
+        "jade-fabric: net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents",
+        "jade-fabric: net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents"
+      ],
+      "rank": 13
+    },
+    {
+      "concept": "player, entity and block events",
+      "mods": [
+        "clientcommands",
+        "jade-fabric",
+        "jade-neoforge",
+        "trinkets"
+      ],
+      "items": 7,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents",
+        "jade-fabric: ClientPlayConnectionEvents.DISCONNECT",
+        "jade-fabric: net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents",
+        "jade-neoforge: net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent"
+      ],
+      "rank": 14
+    },
+    {
+      "concept": "HUD layers",
+      "mods": [
+        "jade-fabric",
+        "jade-neoforge",
+        "seedmapper",
+        "theoneprobe-fabric"
+      ],
+      "items": 5,
+      "blocking": 0,
+      "examples": [
+        "jade-fabric: net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry",
+        "jade-neoforge: net.neoforged.neoforge.client.event.RenderGuiEvent",
+        "seedmapper: net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry",
+        "theoneprobe-fabric: net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements"
+      ],
+      "rank": 15
+    },
+    {
+      "concept": "menus and screens (extended menus, screen events)",
+      "mods": [
+        "clientcommands",
+        "jade-fabric",
+        "jade-neoforge",
+        "modmenu"
+      ],
+      "items": 5,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: net.fabricmc.fabric.api.client.screen.v1.ScreenEvents",
+        "jade-fabric: net.fabricmc.fabric.api.client.screen.v1.ScreenEvents",
+        "jade-neoforge: net.neoforged.neoforge.client.event.ScreenEvent",
+        "modmenu: net.fabricmc.fabric.api.client.screen.v1.Screens"
+      ],
+      "rank": 16
+    },
+    {
+      "concept": "build: NeoGradle (net.neoforged.gradle.userdev)",
+      "mods": [
+        "mdk-ng-26.3",
+        "prettypipes",
+        "theoneprobe-neoforge"
+      ],
+      "items": 3,
+      "blocking": 3,
+      "examples": [
+        "mdk-ng-26.3: build.gradle does not apply ModDevGradle (id 'net.neoforged.moddev') in its plugins block.",
+        "prettypipes: build.gradle does not apply ModDevGradle (id 'net.neoforged.moddev') in its plugins block.",
+        "theoneprobe-neoforge: build.gradle does not apply ModDevGradle (id 'net.neoforged.moddev') in its plugins block."
+      ],
+      "rank": 17
+    },
+    {
+      "concept": "capabilities and transfer (items, fluids, energy)",
+      "mods": [
+        "jade-fabric",
+        "jade-neoforge",
+        "theoneprobe-fabric"
+      ],
+      "items": 37,
+      "blocking": 0,
+      "examples": [
+        "jade-fabric: net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRenderHandler",
+        "jade-fabric: net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering",
+        "jade-fabric: net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant",
+        "jade-fabric: net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering"
+      ],
+      "rank": 18
+    },
+    {
+      "concept": "convention tags (c: / Tags)",
+      "mods": [
+        "jade-fabric",
+        "jade-neoforge",
+        "traverse"
+      ],
+      "items": 21,
+      "blocking": 0,
+      "examples": [
+        "jade-fabric: net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags",
+        "jade-neoforge: net.neoforged.neoforge.common.Tags",
+        "traverse: net.fabricmc.fabric.api.tag.convention.v2.ConventionalBiomeTags",
+        "traverse: net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags"
+      ],
+      "rank": 19
+    },
+    {
+      "concept": "entrypoints another mod reads",
+      "mods": [
+        "jade-fabric",
+        "traverse",
+        "trinkets"
+      ],
+      "items": 11,
+      "blocking": 0,
+      "examples": [
+        "jade-fabric: entrypoint jade: snownee.jade.addon.core.CorePlugin",
+        "jade-fabric: entrypoint jade: snownee.jade.addon.vanilla.VanillaPlugin",
+        "jade-fabric: entrypoint jade: snownee.jade.addon.universal.UniversalPlugin",
+        "jade-fabric: entrypoint jade: snownee.jade.addon.access.AccessibilityPlugin"
+      ],
+      "rank": 20
+    },
+    {
+      "concept": "keybinds and input",
+      "mods": [
+        "jade-fabric",
+        "jade-neoforge",
+        "theoneprobe-fabric"
+      ],
+      "items": 6,
+      "blocking": 0,
+      "examples": [
+        "jade-fabric: net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper",
+        "jade-neoforge: net.neoforged.neoforge.client.event.InputEvent",
+        "jade-neoforge: net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent",
+        "jade-neoforge: net.neoforged.neoforge.client.settings.KeyConflictContext"
+      ],
+      "rank": 21
+    },
+    {
+      "concept": "shape: source sets outside src/main (custom layout)",
+      "mods": [
+        "appleskin-fabric",
+        "appleskin-neoforge"
+      ],
+      "items": 2,
+      "blocking": 2,
+      "examples": [
+        "appleskin-fabric: convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\",
+        "appleskin-neoforge: convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\"
+      ],
+      "rank": 22
+    },
+    {
+      "concept": "config (ModConfigSpec, config screens, config libraries)",
+      "mods": [
+        "jade-neoforge",
+        "modmenu"
+      ],
+      "items": 159,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: net.neoforged.neoforge.client.gui.IConfigScreenFactory",
+        "modmenu: Mod Menu API",
+        "modmenu: com.terraformersmc.modmenu.ModMenu",
+        "modmenu: com.terraformersmc.modmenu.gui.ModsScreen"
+      ],
+      "rank": 23
+    },
+    {
+      "concept": "shape: Kotlin build script (build.gradle.kts)",
+      "mods": [
+        "bobby"
+      ],
+      "items": 1,
+      "blocking": 1,
+      "examples": [
+        "bobby: convert rewrites a Groovy build.gradle; this project has build.gradle.kts."
+      ],
+      "rank": 24
+    },
+    {
+      "concept": "shape: Minecraft version not in gradle.properties",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 1,
+      "examples": [
+        "morered: convert reads the Minecraft version from minecraft_version in gradle.properties; there is none."
+      ],
+      "rank": 25
+    },
+    {
+      "concept": "Fabric yarn names (needs yarn -> Mojang names)",
+      "mods": [
+        "enhancedblockentities"
+      ],
+      "items": 63,
+      "blocking": 0,
+      "examples": [
+        "enhancedblockentities: package net.minecraft.block does not exist",
+        "enhancedblockentities: package net.minecraft.client.render.model does not exist",
+        "enhancedblockentities: package net.minecraft.client.render.model does not exist",
+        "enhancedblockentities: package net.minecraft.client.render.model.json does not exist"
+      ],
+      "rank": 26
+    },
+    {
+      "concept": "datagen (data providers)",
+      "mods": [
+        "traverse"
+      ],
+      "items": 46,
+      "blocking": 0,
+      "examples": [
+        "traverse: data provider TraverseBiomeTagsProvider.java",
+        "traverse: data provider TraverseBlockTagsProvider.java",
+        "traverse: data provider TraverseDynamicRegistryProvider.java",
+        "traverse: data provider TraverseEntityTypeTagsProvider.java"
+      ],
+      "rank": 27
+    },
+    {
+      "concept": "unclassified: method builder(TagKey<Biome>)",
+      "mods": [
+        "traverse"
+      ],
+      "items": 23,
+      "blocking": 0,
+      "examples": [
+        "traverse: method builder(TagKey<Biome>)",
+        "traverse: method builder(TagKey<Biome>)",
+        "traverse: method builder(TagKey<Biome>)",
+        "traverse: method builder(TagKey<Biome>)"
+      ],
+      "rank": 28
+    },
+    {
+      "concept": "game rules, data maps and block property registries",
+      "mods": [
+        "traverse"
+      ],
+      "items": 12,
+      "blocking": 0,
+      "examples": [
+        "traverse: net.fabricmc.fabric.api.registry.StrippableBlockRegistry",
+        "traverse: net.fabricmc.fabric.api.object.builder.v1.block.type.BlockSetTypeBuilder",
+        "traverse: net.fabricmc.fabric.api.object.builder.v1.block.type.WoodTypeBuilder",
+        "traverse: net.fabricmc.fabric.api.registry.FuelValueEvents"
+      ],
+      "rank": 29
+    },
+    {
+      "concept": "unclassified: variable registryKey",
+      "mods": [
+        "traverse"
+      ],
+      "items": 7,
+      "blocking": 0,
+      "examples": [
+        "traverse: variable registryKey",
+        "traverse: variable registryKey",
+        "traverse: variable registryKey",
+        "traverse: variable registryKey"
+      ],
+      "rank": 30
+    },
+    {
+      "concept": "unclassified: class FabricPackOutput",
+      "mods": [
+        "traverse"
+      ],
+      "items": 4,
+      "blocking": 0,
+      "examples": [
+        "traverse: class FabricPackOutput",
+        "traverse: class FabricPackOutput",
+        "traverse: class FabricPackOutput",
+        "traverse: class FabricPackOutput"
+      ],
+      "rank": 31
+    },
+    {
+      "concept": "unclassified: method does not override or implement a method from a supertype",
+      "mods": [
+        "traverse"
+      ],
+      "items": 4,
+      "blocking": 0,
+      "examples": [
+        "traverse: method does not override or implement a method from a supertype",
+        "traverse: method does not override or implement a method from a supertype",
+        "traverse: method does not override or implement a method from a supertype",
+        "traverse: method does not override or implement a method from a supertype"
+      ],
+      "rank": 32
+    },
+    {
+      "concept": "Fabric interface injection on game classes",
+      "mods": [
+        "traverse"
+      ],
+      "items": 3,
+      "blocking": 0,
+      "examples": [
+        "traverse: method addValidBlock(Block)",
+        "traverse: method addValidBlock(S)",
+        "traverse: method addValidBlock(S)"
+      ],
+      "rank": 33
+    },
+    {
+      "concept": "creative tabs and item groups",
+      "mods": [
+        "traverse"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "traverse: method getEnabledFeatures()",
+        "traverse: method insertAfter in class BuildCreativeModeTabContentsEvent cannot be applied to given types;"
+      ],
+      "rank": 34
+    },
+    {
+      "concept": "data attachments",
+      "mods": [
+        "theoneprobe-fabric"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "theoneprobe-fabric: net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry",
+        "theoneprobe-fabric: net.fabricmc.fabric.api.attachment.v1.AttachmentType"
+      ],
+      "rank": 35
+    },
+    {
+      "concept": "fluids (FluidType, fluid stacks)",
+      "mods": [
+        "jade-neoforge"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: net.neoforged.neoforge.fluids.FluidStack",
+        "jade-neoforge: net.neoforged.neoforge.fluids.FluidType"
+      ],
+      "rank": 36
+    },
+    {
+      "concept": "items and item events (settings, tooltips, enchantments, components)",
+      "mods": [
+        "jade-neoforge"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: net.neoforged.neoforge.common.ItemAbility",
+        "jade-neoforge: net.neoforged.neoforge.common.ItemAbilities"
+      ],
+      "rank": 37
+    },
+    {
+      "concept": "unclassified: class Entries",
+      "mods": [
+        "traverse"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "traverse: class Entries",
+        "traverse: class Entries"
+      ],
+      "rank": 38
+    },
+    {
+      "concept": "unclassified: class FabricTagsProvider",
+      "mods": [
+        "traverse"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "traverse: class FabricTagsProvider",
+        "traverse: class FabricTagsProvider"
+      ],
+      "rank": 39
+    },
+    {
+      "concept": "build evaluation failed",
+      "mods": [
+        "jade-neoforge"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nExecution failed for task ':modaccelProjectMetadata' (regist"
+      ],
+      "rank": 40
+    },
+    {
+      "concept": "commands (server, argument types)",
+      "mods": [
+        "jade-neoforge"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: net.neoforged.neoforge.event.RegisterCommandsEvent"
+      ],
+      "rank": 41
+    },
+    {
+      "concept": "loot (tables, modifiers)",
+      "mods": [
+        "jade-neoforge"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: net.neoforged.neoforge.common.loot.CanItemPerformAbility"
+      ],
+      "rank": 42
+    },
+    {
+      "concept": "registration (DeferredRegister, registry builders)",
+      "mods": [
+        "jade-neoforge"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: net.neoforged.neoforge.registries.RegisterEvent"
+      ],
+      "rank": 43
+    },
+    {
+      "concept": "unclassified left: @Mod class CommonProxy",
+      "mods": [
+        "jade-neoforge"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: @Mod class CommonProxy"
+      ],
+      "rank": 44
+    },
+    {
+      "concept": "unclassified: class CompostableRegistry",
+      "mods": [
+        "traverse"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "traverse: class CompostableRegistry"
+      ],
+      "rank": 45
+    },
+    {
+      "concept": "unclassified: incompatible types: ItemLike cannot be converted to ItemStack",
+      "mods": [
+        "traverse"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "traverse: incompatible types: ItemLike cannot be converted to ItemStack"
+      ],
+      "rank": 46
+    },
+    {
+      "concept": "unclassified: package FabricTagsProvider does not exist",
+      "mods": [
+        "traverse"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "traverse: package FabricTagsProvider does not exist"
+      ],
+      "rank": 47
+    },
+    {
+      "concept": "unclassified: package FuelValueEvents does not exist",
+      "mods": [
+        "traverse"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "traverse: package FuelValueEvents does not exist"
+      ],
+      "rank": 48
+    },
+    {
+      "concept": "unclassified: package ModelModifier.OnLoad does not exist",
+      "mods": [
+        "enhancedblockentities"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "enhancedblockentities: package ModelModifier.OnLoad does not exist"
+      ],
+      "rank": 49
+    }
+  ],
+  "runs": [
+    {
+      "id": "appleskin-fabric",
+      "name": "AppleSkin",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "66fcdb8b12820c9b1cf3147abfdcf5530559f62b",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 7.1,
+      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d2797744-06fcd7bd9daf6c93\\.runs\\convert-sweep\\work\\appleskin-fabric-to-neoforge. It converts one-module Fabric and NeoForge mods.",
+      "concepts": {
+        "shape: source sets outside src/main (custom layout)": 1
+      }
+    },
+    {
+      "id": "appleskin-neoforge",
+      "name": "AppleSkin",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "8872c5d34d7c632535d6a97416ca7b72a1821eef",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 1.6,
+      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d2797744-06fcd7bd9daf6c93\\.runs\\convert-sweep\\work\\appleskin-neoforge-to-fabric. It converts one-module Fabric and NeoForge mods.",
+      "concepts": {
+        "shape: source sets outside src/main (custom layout)": 1
+      }
+    },
+    {
+      "id": "bobby",
+      "name": "Bobby",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "241f973106ee4e5552a5950d0a12433c07921c93",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 1.7,
+      "refusal": "convert rewrites a Groovy build.gradle; this project has build.gradle.kts.",
+      "concepts": {
+        "shape: Kotlin build script (build.gradle.kts)": 1
+      }
+    },
+    {
+      "id": "buildinggadgets2",
+      "name": "Building Gadgets 2",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "529c2962ffe0f5d2ef20125ccab9ad2426bc7a56",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 5.6,
+      "refusal": "No stable net.fabricmc:fabric-loom release in https://maven.fabricmc.net runs on this project's Gradle 9.1.0.",
+      "concepts": {
+        "refused: No stable net": 1
+      }
+    },
+    {
+      "id": "carpet",
+      "name": "Carpet",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "9c1bec181eebae1cd8fbab3e1872bb6cd8139071",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 4.8,
+      "refusal": "NeoForge has published no release for Minecraft 26.1 (no net.neoforged:neoforge 26.1.0.x on maven.neoforged.net).",
+      "concepts": {
+        "no release of the target loader for this Minecraft version": 1
+      }
+    },
+    {
+      "id": "clientcommands",
+      "name": "clientcommands",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "47419ac773ce86b1670f014ba4a0899a90eef1d9",
+      "minecraft": "26.3",
+      "yarn": false,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 109.1,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "client-join",
+        "client-tick-start",
+        "config-dir",
+        "creative-tab-builder",
+        "development-environment",
+        "entrypoint-ClientModInitializer",
+        "entrypoint-ModInitializer",
+        "mod-loaded",
+        "player-join",
+        "player-leave",
+        "server-starting",
+        "server-stopped",
+        "server-tick-end"
+      ],
+      "concepts": {
+        "access wideners / access transformers": 2,
+        "third-party mod dependency with no build for the target loader": 6,
+        "networking payloads": 10,
+        "other loader API": 24,
+        "client commands": 158,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 14,
+        "menus and screens (extended menus, screen events)": 1,
+        "renderers (block entity, entity, world, item, colors, render layers, models)": 10,
+        "player, entity and block events": 1,
+        "build settings with no counterpart": 1
+      }
+    },
+    {
+      "id": "curios",
+      "name": "Curios",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "3e643c802d510addb367f2bf56b56ceb8685ad1b",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 1.6,
+      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d2797744-06fcd7bd9daf6c93\\.runs\\convert-sweep\\work\\curios-to-fabric. It converts one-module Fabric and NeoForge mods.",
+      "concepts": {
+        "shape: neoforge.mods.toml under src/main/templates (MDK layout)": 1
+      }
+    },
+    {
+      "id": "enhancedblockentities",
+      "name": "Enhanced Block Entities",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "b0b202a18a1acbddfc038e5403bde973bece7c98",
+      "minecraft": "1.21.4",
+      "yarn": true,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 264.5,
+      "compileErrors": 76,
+      "capped": false,
+      "rulesApplied": [
+        "config-dir",
+        "entrypoint-ClientModInitializer",
+        "game-dir",
+        "modmenu-config-screen"
+      ],
+      "concepts": {
+        "access wideners / access transformers": 2,
+        "third-party mod dependency with no build for the target loader": 1,
+        "renderers (block entity, entity, world, item, colors, render layers, models)": 26,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 7,
+        "lifecycle, tick and reload events": 2,
+        "Fabric yarn names (needs yarn -> Mojang names)": 63,
+        "unclassified: package ModelModifier.OnLoad does not exist": 1
+      }
+    },
+    {
+      "id": "fabric-example",
+      "name": "Fabric Example Mod",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "7cc83aa9cb1f145c4d717bce3413e67a6e5f4678",
+      "minecraft": "26.3",
+      "yarn": false,
+      "outcome": "loads, registers what the original does",
+      "convertSeconds": 104.8,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "entrypoint-ClientModInitializer",
+        "entrypoint-ModInitializer"
+      ],
+      "concepts": {},
+      "behaviour": {
+        "check": "registry entries in the mod's namespace, converted vs original",
+        "equal": true,
+        "entries": 0,
+        "missing": {},
+        "extra": {}
+      },
+      "back": {
+        "exit": 0,
+        "seconds": 43.0,
+        "compiled": true,
+        "left": 0,
+        "javaFilesSame": 2,
+        "javaFilesDiffer": 2
+      },
+      "game": {
+        "loaded": true,
+        "loadSeconds": 39.0
+      }
+    },
+    {
+      "id": "fabric-waystones",
+      "name": "Fabric Waystones",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "8a35a5d8329a75361222971bce60db043a5bdfa4",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 3.9,
+      "refusal": "NeoForge has published no release for Minecraft 26.1 (no net.neoforged:neoforge 26.1.0.x on maven.neoforged.net).",
+      "concepts": {
+        "no release of the target loader for this Minecraft version": 1
+      }
+    },
+    {
+      "id": "farmersdelight",
+      "name": "Farmer's Delight",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "dd8b9b0bfec916a2da88a6d64e3a37f4a02c3259",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 3.5,
+      "refusal": "NeoForge to Fabric is converted for Minecraft 26.1 and later, where both loaders use Mojang's names; 1.21.1 would need Fabric mappings.",
+      "concepts": {
+        "NeoForge -> Fabric before Minecraft 26.1 (Loom with Mojang names)": 1
+      }
+    },
+    {
+      "id": "framedblocks",
+      "name": "FramedBlocks",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "d64ddf2c6b43fdf83c3e489eb6254299926622aa",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 9.5,
+      "refusal": "No stable net.fabricmc:fabric-loom release in https://maven.fabricmc.net runs on this project's Gradle 9.2.1.",
+      "concepts": {
+        "refused: No stable net": 1
+      }
+    },
+    {
+      "id": "ironchest",
+      "name": "Iron Chests",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "bed1ebb01b69bd1fcc8c80d0c408f354c77290b0",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 1.9,
+      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d2797744-06fcd7bd9daf6c93\\.runs\\convert-sweep\\work\\ironchest-to-fabric. It converts one-module Fabric and NeoForge mods.",
+      "concepts": {
+        "shape: neoforge.mods.toml under src/main/templates (MDK layout)": 1
+      }
+    },
+    {
+      "id": "jade-fabric",
+      "name": "Jade",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "7c57c36d4fd01ee8e0236329d485824b61f75865",
+      "minecraft": "26.3",
+      "yarn": false,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 71.1,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "client-join",
+        "client-tick-end",
+        "commands",
+        "config-dir",
+        "development-environment",
+        "entrypoint-ClientModInitializer",
+        "entrypoint-ModInitializer",
+        "environment-type",
+        "mod-loaded",
+        "modmenu-config-screen",
+        "physical-side",
+        "screen-after-init",
+        "server-started"
+      ],
+      "concepts": {
+        "player, entity and block events": 2,
+        "entrypoints another mod reads": 6,
+        "access wideners / access transformers": 2,
+        "other loader API": 1,
+        "client commands": 3,
+        "lifecycle, tick and reload events": 4,
+        "keybinds and input": 1,
+        "networking payloads": 6,
+        "HUD layers": 1,
+        "menus and screens (extended menus, screen events)": 1,
+        "capabilities and transfer (items, fluids, energy)": 16,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 12,
+        "convention tags (c: / Tags)": 1,
+        "third-party mod dependency with no build for the target loader": 1
+      }
+    },
+    {
+      "id": "jade-neoforge",
+      "name": "Jade",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "ba39dec66ab046c20ac9a8a695a7712734338f27",
+      "minecraft": "26.3",
+      "yarn": false,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 59.4,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "config-dir",
+        "development-environment",
+        "environment-type"
+      ],
+      "concepts": {
+        "unclassified left: @Mod class CommonProxy": 1,
+        "build settings with no counterpart": 6,
+        "third-party mod dependency with no build for the target loader": 2,
+        "items and item events (settings, tooltips, enchantments, components)": 2,
+        "loot (tables, modifiers)": 1,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 17,
+        "other loader API": 9,
+        "lifecycle, tick and reload events": 4,
+        "player, entity and block events": 3,
+        "keybinds and input": 4,
+        "client commands": 1,
+        "HUD layers": 1,
+        "renderers (block entity, entity, world, item, colors, render layers, models)": 1,
+        "menus and screens (extended menus, screen events)": 1,
+        "config (ModConfigSpec, config screens, config libraries)": 1,
+        "capabilities and transfer (items, fluids, energy)": 10,
+        "convention tags (c: / Tags)": 1,
+        "commands (server, argument types)": 1,
+        "fluids (FluidType, fluid stacks)": 2,
+        "networking payloads": 1,
+        "registration (DeferredRegister, registry builders)": 1,
+        "build evaluation failed": 1
+      }
+    },
+    {
+      "id": "justdirethings",
+      "name": "Just Dire Things",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "596d7800b2f05662cbb7b8d199555ea1d79c03e5",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 8.0,
+      "refusal": "No stable net.fabricmc:fabric-loom release in https://maven.fabricmc.net runs on this project's Gradle 9.4.1.",
+      "concepts": {
+        "refused: No stable net": 1
+      }
+    },
+    {
+      "id": "krypton",
+      "name": "Krypton",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "bc08466ff900d97b27bfabcde92005b4774717e8",
+      "minecraft": "26.3",
+      "yarn": false,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 26.5,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "entrypoint-ClientModInitializer",
+        "entrypoint-DedicatedServerModInitializer",
+        "entrypoint-ModInitializer",
+        "physical-side"
+      ],
+      "concepts": {
+        "access wideners / access transformers": 2,
+        "third-party mod dependency with no build for the target loader": 2,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 2
+      }
+    },
+    {
+      "id": "laserio",
+      "name": "LaserIO",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "4d278a6351a434d343fbf70d942baeeaf2607536",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 2.7,
+      "refusal": "NeoForge to Fabric is converted for Minecraft 26.1 and later, where both loaders use Mojang's names; 1.21.1 would need Fabric mappings.",
+      "concepts": {
+        "NeoForge -> Fabric before Minecraft 26.1 (Loom with Mojang names)": 1
+      }
+    },
+    {
+      "id": "libgui",
+      "name": "LibGui",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "6757789e0c1eec3c2e05a46fb1ac98ae1e294622",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 4.7,
+      "refusal": "NeoForge has published no release for Minecraft 26.3-rc-2 (no net.neoforged:neoforge 26.3-rc-2.0.x on maven.neoforged.net).",
+      "concepts": {
+        "no release of the target loader for this Minecraft version": 1
+      }
+    },
+    {
+      "id": "mdk-mdg-1.21.1",
+      "name": "NeoForge MDK (ModDevGradle) 1.21.1",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "e93d7f09d4eec12c76d1d7be9bf4eaad0246e9e0",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 3.4,
+      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d2797744-06fcd7bd9daf6c93\\.runs\\convert-sweep\\work\\mdk-mdg-1.21.1-to-fabric. It converts one-module Fabric and NeoForge mods.",
+      "concepts": {
+        "shape: neoforge.mods.toml under src/main/templates (MDK layout)": 1
+      }
+    },
+    {
+      "id": "mdk-mdg-26.3",
+      "name": "NeoForge MDK (ModDevGradle) 26.3",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "3ed230cf177d44b4be4a69034d4a3259fd9c2b49",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 1.8,
+      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d2797744-06fcd7bd9daf6c93\\.runs\\convert-sweep\\work\\mdk-mdg-26.3-to-fabric. It converts one-module Fabric and NeoForge mods.",
+      "concepts": {
+        "shape: neoforge.mods.toml under src/main/templates (MDK layout)": 1
+      }
+    },
+    {
+      "id": "mdk-ng-26.3",
+      "name": "NeoForge MDK (NeoGradle) 26.3",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "9e29e479caa0874e7a7238b9221c0e6a161cca6d",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 2.1,
+      "refusal": "build.gradle does not apply ModDevGradle (id 'net.neoforged.moddev') in its plugins block.",
+      "concepts": {
+        "build: NeoGradle (net.neoforged.gradle.userdev)": 1
+      }
+    },
+    {
+      "id": "modmenu",
+      "name": "Mod Menu",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "d7c4c95aea7d1e010ff4d257bbda3b737f251684",
+      "minecraft": "26.3",
+      "yarn": false,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 45.0,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "client-tick-end",
+        "config-dir",
+        "development-environment",
+        "entrypoint-ClientModInitializer",
+        "game-dir",
+        "key-mapping",
+        "mod-loaded",
+        "modmenu-config-screen",
+        "screen-after-init"
+      ],
+      "concepts": {
+        "config (ModConfigSpec, config screens, config libraries)": 158,
+        "menus and screens (extended menus, screen events)": 2,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 22
+      }
+    },
+    {
+      "id": "morered",
+      "name": "More Red",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "0faabeaf33bc13dbe9518c8dc6e566649aa84e6e",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 2.1,
+      "refusal": "convert reads the Minecraft version from minecraft_version in gradle.properties; there is none.",
+      "concepts": {
+        "shape: Minecraft version not in gradle.properties": 1
+      }
+    },
+    {
+      "id": "naturesaura",
+      "name": "Nature's Aura",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "b140e3fe24c526100251b40da64dd201d3429b77",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 3.2,
+      "refusal": "NeoForge to Fabric is converted for Minecraft 26.1 and later, where both loaders use Mojang's names; 1.21.1 would need Fabric mappings.",
+      "concepts": {
+        "NeoForge -> Fabric before Minecraft 26.1 (Loom with Mojang names)": 1
+      }
+    },
+    {
+      "id": "prettypipes",
+      "name": "PrettyPipes",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "29e81d66a09eeb5c37c4d195dc21e19cfcae11ff",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 1.8,
+      "refusal": "build.gradle does not apply ModDevGradle (id 'net.neoforged.moddev') in its plugins block.",
+      "concepts": {
+        "build: NeoGradle (net.neoforged.gradle.userdev)": 1
+      }
+    },
+    {
+      "id": "satin",
+      "name": "Satin",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "660ab57174647cfbc6575d1c90081dc96a4784c5",
+      "minecraft": "1.21.1",
+      "yarn": true,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 75.1,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "entrypoint-ClientModInitializer",
+        "mod-loaded"
+      ],
+      "concepts": {
+        "access wideners / access transformers": 1,
+        "build settings with no counterpart": 1,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 19,
+        "other loader API": 2
+      }
+    },
+    {
+      "id": "seedmapper",
+      "name": "SeedMapper",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "3adf2e8be090c23c10aa3e09d7d9fb7bb682071e",
+      "minecraft": "26.3",
+      "yarn": false,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 50.6,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "client-tick-end",
+        "config-dir",
+        "development-environment",
+        "entrypoint-ClientModInitializer",
+        "key-mapping"
+      ],
+      "concepts": {
+        "access wideners / access transformers": 2,
+        "third-party mod dependency with no build for the target loader": 6,
+        "client commands": 48,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 3,
+        "renderers (block entity, entity, world, item, colors, render layers, models)": 5,
+        "HUD layers": 1,
+        "build settings with no counterpart": 1
+      }
+    },
+    {
+      "id": "theoneprobe-fabric",
+      "name": "The One Probe",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "376638401db5deaf6f30b58404b184a127ca555b",
+      "minecraft": "26.3",
+      "yarn": false,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 67.9,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "client-tick-end",
+        "commands",
+        "creative-tab-builder",
+        "entrypoint-ClientModInitializer",
+        "entrypoint-ModInitializer",
+        "player-join"
+      ],
+      "concepts": {
+        "access wideners / access transformers": 2,
+        "third-party mod dependency with no build for the target loader": 3,
+        "other loader API": 6,
+        "networking payloads": 9,
+        "capabilities and transfer (items, fluids, energy)": 11,
+        "HUD layers": 2,
+        "keybinds and input": 1,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 2,
+        "data attachments": 2
+      }
+    },
+    {
+      "id": "theoneprobe-neoforge",
+      "name": "The One Probe",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "92bccb8732e5ad3daeed739084defd0b81f5dae4",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 5.2,
+      "refusal": "build.gradle does not apply ModDevGradle (id 'net.neoforged.moddev') in its plugins block.",
+      "concepts": {
+        "build: NeoGradle (net.neoforged.gradle.userdev)": 1
+      }
+    },
+    {
+      "id": "traverse",
+      "name": "Traverse",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "4a3df623616d996e2f0b9d2bfa79d680c7702344",
+      "minecraft": "26.2",
+      "yarn": false,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 237.8,
+      "compileErrors": 99,
+      "capped": false,
+      "rulesApplied": [
+        "config-dir",
+        "creative-tab-builder",
+        "creative-tab-output",
+        "datagen-blockLoot",
+        "datagen-entrypoint",
+        "datagen-model",
+        "datagen-recipe",
+        "entrypoint-ClientModInitializer",
+        "entrypoint-ModInitializer",
+        "flammable-block",
+        "mod-loaded"
+      ],
+      "concepts": {
+        "datagen (data providers)": 46,
+        "entrypoints another mod reads": 2,
+        "access wideners / access transformers": 4,
+        "third-party mod dependency with no build for the target loader": 6,
+        "convention tags (c: / Tags)": 19,
+        "game rules, data maps and block property registries": 12,
+        "other loader API": 2,
+        "unclassified: class FabricTagsProvider": 2,
+        "unclassified: class FabricPackOutput": 4,
+        "unclassified: class Entries": 2,
+        "unclassified: package FabricTagsProvider does not exist": 1,
+        "Fabric interface injection on game classes": 3,
+        "creative tabs and item groups": 2,
+        "unclassified: incompatible types: ItemLike cannot be converted to ItemStack": 1,
+        "unclassified: class CompostableRegistry": 1,
+        "unclassified: package FuelValueEvents does not exist": 1,
+        "unclassified: method does not override or implement a method from a supertype": 4,
+        "unclassified: method builder(TagKey<Biome>)": 23,
+        "unclassified: variable registryKey": 7
+      }
+    },
+    {
+      "id": "trinkets",
+      "name": "Trinkets",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "b6e6044b586496037587f20e3507e7e53512fd3f",
+      "minecraft": "1.21.5",
+      "yarn": true,
+      "outcome": "converted, does not compile",
+      "convertSeconds": 20.0,
+      "compileErrors": 0,
+      "capped": false,
+      "rulesApplied": [
+        "commands",
+        "entrypoint-ClientModInitializer",
+        "entrypoint-ModInitializer",
+        "environment-type",
+        "physical-side"
+      ],
+      "concepts": {
+        "entrypoints another mod reads": 3,
+        "access wideners / access transformers": 2,
+        "build settings with no counterpart": 1,
+        "third-party mod dependency with no build for the target loader": 7,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 9,
+        "networking payloads": 8,
+        "other loader API": 2,
+        "lifecycle, tick and reload events": 4,
+        "player, entity and block events": 1
+      }
+    },
+    {
+      "id": "twilightforest",
+      "name": "The Twilight Forest",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "81850f666daa2a8bce5c900d65e1b8502122eef8",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 8.7,
+      "refusal": "No stable net.fabricmc:fabric-loom release in https://maven.fabricmc.net runs on this project's Gradle 9.2.0.",
+      "concepts": {
+        "refused: No stable net": 1
+      }
+    },
+    {
+      "id": "universal-graves",
+      "name": "Universal Graves",
+      "from": "fabric",
+      "to": "neoforge",
+      "commit": "7f7508e019b1dd845b54ff56e0cd140e150ddd93",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 4.0,
+      "refusal": "NeoForge has published no release for Minecraft 26.3-rc-1 (no net.neoforged:neoforge 26.3-rc-1.0.x on maven.neoforged.net).",
+      "concepts": {
+        "no release of the target loader for this Minecraft version": 1
+      }
+    },
+    {
+      "id": "zombie",
+      "name": "ZombieApocalypseAddon",
+      "from": "neoforge",
+      "to": "fabric",
+      "commit": "f58499ee023618393e37f0232ae0e170bd28c745",
+      "yarn": false,
+      "outcome": "refused",
+      "convertSeconds": 2.5,
+      "refusal": "NeoForge to Fabric is converted for Minecraft 26.1 and later, where both loaders use Mojang's names; 1.21.1 would need Fabric mappings.",
+      "concepts": {
+        "NeoForge -> Fabric before Minecraft 26.1 (Loom with Mojang names)": 1
+      }
+    }
+  ]
+}

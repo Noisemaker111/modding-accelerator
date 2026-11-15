@@ -1,0 +1,397 @@
+{
+  "about": "The pack-check sweep corpus: public modpacks pinned by exact file (Modrinth version and SHA-512, or CurseForge project and file id with its length and the SHA-256 recorded on first download). python bench/pack_sweep.py run downloads each into .runs/pack-sweep and runs modaccel pack-check on it.",
+  "packs": [
+    {
+      "id": "create_plus-forge-1.19.2",
+      "name": "Create+",
+      "format": "mrpack",
+      "loader": "forge",
+      "minecraft": "1.19.2",
+      "declared": {
+        "minecraft": "1.19.2",
+        "forge": "43.5.1"
+      },
+      "files": 257,
+      "version": "5.2.1b",
+      "page": "https://modrinth.com/modpack/create_plus/version/OirSzesD",
+      "url": "https://cdn.modrinth.com/data/t1tOiUHZ/versions/OirSzesD/Create%2B%205.2.1b.mrpack",
+      "sha512": "7126bf4f65065894441012ae4938b182ab5b9d6aee9e5729cc959186bbe415a9b53b01e1354518f76a871923f429d9776c3901895af9c5482e38f354bbf6e3b5",
+      "bytes": 27209112
+    },
+    {
+      "id": "create_plus-neoforge-1.21.1",
+      "name": "Create+",
+      "format": "mrpack",
+      "loader": "neoforge",
+      "minecraft": "1.21.1",
+      "declared": {
+        "minecraft": "1.21.1",
+        "neoforge": "21.1.233"
+      },
+      "files": 155,
+      "version": "6.0.0-alpha-f",
+      "page": "https://modrinth.com/modpack/create_plus/version/BSg2ZS8u",
+      "url": "https://cdn.modrinth.com/data/t1tOiUHZ/versions/BSg2ZS8u/Create%2B%206.0.0%20Alpha%20f.mrpack",
+      "sha512": "65be996d12959bfa20fab2fb5a3510b71daaf7f564711bae3b8579bb92af2d763eef67dd2064ad2be6edfa33cc4eab289258475b13c385a99e9631e43650bd4b",
+      "bytes": 3540285
+    },
+    {
+      "id": "zombie-invade-100-days-forge-1.20.1",
+      "name": "Zombie Invade 100 Days",
+      "format": "mrpack",
+      "loader": "forge",
+      "minecraft": "1.20.1",
+      "declared": {
+        "forge": "47.4.10",
+        "minecraft": "1.20.1"
+      },
+      "files": 129,
+      "version": "2.3-Fix",
+      "page": "https://modrinth.com/modpack/zombie-invade-100-days/version/M8j2mfGj",
+      "url": "https://cdn.modrinth.com/data/l9m9tuPN/versions/M8j2mfGj/Zombie%20Invade%20100%20Days%202.3.mrpack",
+      "sha512": "08009b835fb731fde69cded2df4e6d75f270e8814315c4fb4471518b64940751c297b7d0180cb9c5d91cf6aaf6f6fbeafdcf0b9dd2bf56b7405b02c66d744f0c",
+      "bytes": 29975184
+    },
+    {
+      "id": "optimized-fps-forge-1.18.2",
+      "name": "Optimized fps 1.18.2",
+      "format": "mrpack",
+      "loader": "forge",
+      "minecraft": "1.18.2",
+      "declared": {
+        "minecraft": "1.18.2",
+        "forge": "40.2.21"
+      },
+      "files": 19,
+      "version": "2.0.5",
+      "page": "https://modrinth.com/modpack/optimized-fps/version/i5kcUArm",
+      "url": "https://cdn.modrinth.com/data/aOOJ2mte/versions/i5kcUArm/Optimized%20fps%201.18.2%202.0.5.mrpack",
+      "sha512": "c9e5b9982c46799db49cadfdc6d5d2f03df2da2af88fde6d51a3b3c7b9947559730971cebab2ec23d116723b7a6e47521541cc12a10690dcb1f2251209d19713",
+      "bytes": 412038
+    },
+    {
+      "id": "optimized-fps-neoforge-1.20.4",
+      "name": "1.20.4",
+      "format": "mrpack",
+      "loader": "neoforge",
+      "minecraft": "1.20.4",
+      "declared": {
+        "minecraft": "1.20.4",
+        "neoforge": "20.4.232"
+      },
+      "files": 13,
+      "version": "2.6.0",
+      "page": "https://modrinth.com/modpack/optimized-fps/version/vpXGcXop",
+      "url": "https://cdn.modrinth.com/data/aOOJ2mte/versions/vpXGcXop/Optimized%20fps%201.20.4%20Alpha%205%202.6.0.mrpack",
+      "sha512": "f5c57094a5e23d4b5d6d785c7199868b56c639dac270817a129e27f916be9dd194b3be3c00d85f27087f05675db7c6b97257c764da7ec2237334ec9a366a7561",
+      "bytes": 14715
+    },
+    {
+      "id": "rapid_optimization-neoforge-1.21.4",
+      "name": "[1.21.4-NeoForge]Rapid Optimization",
+      "format": "mrpack",
+      "loader": "neoforge",
+      "minecraft": "1.21.4",
+      "declared": {
+        "minecraft": "1.21.4",
+        "neoforge": "21.4.156"
+      },
+      "files": 21,
+      "version": "21.4Neo.2.0.0",
+      "page": "https://modrinth.com/modpack/rapid_optimization/version/1TDyHHds",
+      "url": "https://cdn.modrinth.com/data/1q7QX7Ne/versions/1TDyHHds/%5B1.21.4-NeoForge%5DRapid%20Optimization%2021.4Neo.2.0.0.mrpack",
+      "sha512": "84b4ef6a9df8573dd558449c81f9f27ba07806a11adf8e669a823fb7c46dfeff27166f3b65825f4e2ad03764f67febff8c54fe9e134a16a5ffe70dddde682576",
+      "bytes": 25218
+    },
+    {
+      "id": "rapid_optimization-neoforge-26.1.2",
+      "name": "Rapid Optimization",
+      "format": "mrpack",
+      "loader": "neoforge",
+      "minecraft": "26.1.2",
+      "declared": {
+        "minecraft": "26.1.2",
+        "neoforge": "26.1.2.122"
+      },
+      "files": 23,
+      "version": "26.1.2Neo.1.5.1",
+      "page": "https://modrinth.com/modpack/rapid_optimization/version/o8u2fpqi",
+      "url": "https://cdn.modrinth.com/data/1q7QX7Ne/versions/o8u2fpqi/Rapid%20Optimization%2026.1.2Neo.1.5.1.mrpack",
+      "sha512": "679068a4f32111cd6aa2952a427c8dff4dbee05532b2bdaf734f54ba3983c94b5a53eaa776d320c89a8edeafe42b233d8097dd6384f4a030935b28e3b3709e3d",
+      "bytes": 31574
+    },
+    {
+      "id": "rapid_optimization-neoforge-26.3",
+      "name": "Rapid Optimization",
+      "format": "mrpack",
+      "loader": "neoforge",
+      "minecraft": "26.3",
+      "declared": {
+        "minecraft": "26.3",
+        "neoforge": "26.3.0.100"
+      },
+      "files": 22,
+      "version": "26.3Neo.1.0.0",
+      "page": "https://modrinth.com/modpack/rapid_optimization/version/psJRhWmd",
+      "url": "https://cdn.modrinth.com/data/1q7QX7Ne/versions/psJRhWmd/Rapid%20Optimization%2026.3Neo.1.0.0.mrpack",
+      "sha512": "d4f2cfc53ec8c99ed8a6f241a0fa433a3aee5e0c86088049d17765594ec842afe080c292e42120e41d535b8a0fcbdb92e593d474fb3380a9c408429926908e3b",
+      "bytes": 36683
+    },
+    {
+      "id": "vanilla-perfected-fabric-26.3",
+      "name": "Vanilla Perfected 26.3",
+      "format": "mrpack",
+      "loader": "fabric",
+      "minecraft": "26.3",
+      "declared": {
+        "fabric-loader": "0.19.5",
+        "minecraft": "26.3"
+      },
+      "files": 108,
+      "version": "1.0.0+26.3",
+      "page": "https://modrinth.com/modpack/vanilla-perfected/version/IFYAmjXO",
+      "url": "https://cdn.modrinth.com/data/1ocGzRHv/versions/IFYAmjXO/Vanilla%20Perfected%201.0.0%2B26.3.mrpack",
+      "sha512": "0c75b9c58bf876ca4d4e012494ef00c511bc61cfc490a3f032fa75004db1a87c74fa82d734db8b452df53fa1977f4aa82e773263db3894b98d8820d723643190",
+      "bytes": 27137701
+    },
+    {
+      "id": "skyblock-enhanced-fabric-1.21.5",
+      "name": "SkyBlock Enhanced Modern Edition",
+      "format": "mrpack",
+      "loader": "fabric",
+      "minecraft": "1.21.5",
+      "declared": {
+        "minecraft": "1.21.5",
+        "fabric-loader": "0.18.3"
+      },
+      "files": 71,
+      "version": "2.3.9",
+      "page": "https://modrinth.com/modpack/skyblock-enhanced/version/NKqnMzWP",
+      "url": "https://cdn.modrinth.com/data/e0oMrxjp/versions/NKqnMzWP/SkyBlock%20Enhanced%20Modern%20Edition-2.3.9.mrpack",
+      "sha512": "221b23d5ee2e9b42603a0a1053a8e31402336e2b115b931f3811193a10dfd3d3d3de9c917ed8489355d6e40e7fc783f287e15f8160593c6b1296d8b79ef13104",
+      "bytes": 2566519
+    },
+    {
+      "id": "fabulously-optimized-fabric-1.16.5",
+      "name": "Fabulously Optimized",
+      "format": "mrpack",
+      "loader": "fabric",
+      "minecraft": "1.16.5",
+      "declared": {
+        "minecraft": "1.16.5",
+        "fabric-loader": "0.13.3"
+      },
+      "files": 41,
+      "version": "1.12.3",
+      "page": "https://modrinth.com/modpack/fabulously-optimized/version/kKonWfiD",
+      "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/1.12.3/Fabulously%20Optimized-1.12.3.mrpack",
+      "sha512": "00570e2c3ac99fa1cfdbebd21c4365e494d3d24142111e5228095d070c19b84693fb1bafe9b3e1c194a167366afb56d36a660e02e8bb352b611c214ca64c3b89",
+      "bytes": 26884
+    },
+    {
+      "id": "additive-fabric-1.19.2",
+      "name": "Additive",
+      "format": "mrpack",
+      "loader": "fabric",
+      "minecraft": "1.19.2",
+      "declared": {
+        "fabric-loader": "0.18.5",
+        "minecraft": "1.19.2"
+      },
+      "files": 54,
+      "version": "26.1+mc1.19.2.fabric",
+      "page": "https://modrinth.com/modpack/additive/version/lZh6jC7K",
+      "url": "https://cdn.modrinth.com/data/paoFU4Vl/versions/lZh6jC7K/Additive-26.1%2Bmc1.19.2.fabric.mrpack",
+      "sha512": "1dd970dedcf09f50472c4e1337214d30d960dcdbbe830f35c5212ac3b323b3014027af89fc4aa95ca39aa4f645f4ca54bfcdd2b26f0ab53ab4fb72f295c3fe29",
+      "bytes": 12994
+    },
+    {
+      "id": "sodiumplus-quilt-1.20.1",
+      "name": "Sodium Plus 2.2.11",
+      "format": "mrpack",
+      "loader": "quilt",
+      "minecraft": "1.20.1",
+      "declared": {
+        "minecraft": "1.20.1",
+        "quilt-loader": "0.24.0"
+      },
+      "files": 97,
+      "version": "2.2.11",
+      "page": "https://modrinth.com/modpack/sodiumplus/version/NyjUlhNy",
+      "url": "https://cdn.modrinth.com/data/ch7UHY2J/versions/NyjUlhNy/Sodium%20Plus%202.2.11.mrpack",
+      "sha512": "6d53c69cd7abdea6c95f12d01ac373f1460fbfb938da41bed7dc791e411c7e86c8c1b407bb424ad83018076bc1b9e28907dc216792b68e12d643f561945e1d9f",
+      "bytes": 1048045
+    },
+    {
+      "id": "ukupvp-quilt-1.19.2",
+      "name": "ukus-pvp-modpack",
+      "format": "mrpack",
+      "loader": "quilt",
+      "minecraft": "1.19.2",
+      "declared": {
+        "minecraft": "1.19.2",
+        "quilt-loader": "0.17.10"
+      },
+      "files": 53,
+      "version": "1.0.2+mc1.19.2",
+      "page": "https://modrinth.com/modpack/ukupvp/version/vDsESbWF",
+      "url": "https://cdn.modrinth.com/data/JR0bkFKa/versions/vDsESbWF/ukus-pvp-modpack-1.0.2%2Bmc1.19.2.mrpack",
+      "sha512": "b0985e8adfaef7424956bc47252dd7b2d756b6f893f6525f90c9742edb30cfb9aa2f22b9901f3407735e21afd2ff8d0adcc876f1a51dedfb7033b7dc255195cb",
+      "bytes": 1406472
+    },
+    {
+      "id": "ukupvp-quilt-1.18.2",
+      "name": "ukus-pvp-modpack",
+      "format": "mrpack",
+      "loader": "quilt",
+      "minecraft": "1.18.2",
+      "declared": {
+        "minecraft": "1.18.2",
+        "quilt-loader": "0.17.4"
+      },
+      "files": 36,
+      "version": "0.0.4+mc1.18.2",
+      "page": "https://modrinth.com/modpack/ukupvp/version/XPES4xAD",
+      "url": "https://cdn.modrinth.com/data/JR0bkFKa/versions/XPES4xAD/ukus-pvp-modpack-0.0.4%2Bmc1.18.2.mrpack",
+      "sha512": "23f62b7e6f429ba8274e8c04b1cf9c46ed1673361699211b720fabb8f3ba8f3bbbb198cbb97a494d5b7883923fbd1902df71ddd633387d727a3f359f00e7332d",
+      "bytes": 3998945
+    },
+    {
+      "id": "optimized-fps-forge-1.16.5",
+      "name": "1.16.5",
+      "format": "mrpack",
+      "loader": "forge",
+      "minecraft": "1.16.5",
+      "declared": {
+        "forge": "36.2.42",
+        "minecraft": "1.16.5"
+      },
+      "files": 16,
+      "version": "1.9.5",
+      "page": "https://modrinth.com/modpack/optimized-fps/version/oLguZZ0N",
+      "url": "https://cdn.modrinth.com/data/aOOJ2mte/versions/oLguZZ0N/Optimized%20fps%201.16.5%201.9.5.mrpack",
+      "sha512": "229226f6421d9e71b272830652fd018cdde8091bc9f76d6eb155291b9f188e14bedceaaa078532d26ca72209790df50e05eeeec6966386e588dfd3e737c1314f",
+      "bytes": 689189
+    },
+    {
+      "id": "create-above-and-beyond-forge-1.16.5",
+      "name": "Above and Beyond v1.3",
+      "format": "curseforge-export",
+      "loader": "forge",
+      "minecraft": "1.16.5",
+      "curseforge": {
+        "project": 542763,
+        "file": 3567550
+      },
+      "page": "https://www.curseforge.com/projects/542763",
+      "url": "https://www.curseforge.com/api/v1/mods/542763/files/3567550/download",
+      "bytes": 3007450,
+      "sha256": "edb33f17807639fbbd661a3e5a8e453461744e35f0ca89a88a14360a1f0b7cec"
+    },
+    {
+      "id": "enigmatica6-forge-1.16.5",
+      "name": "Enigmatica 6 1.12.0",
+      "format": "curseforge-export",
+      "loader": "forge",
+      "minecraft": "1.16.5",
+      "curseforge": {
+        "project": 389471,
+        "file": 6881844
+      },
+      "page": "https://www.curseforge.com/projects/389471",
+      "url": "https://www.curseforge.com/api/v1/mods/389471/files/6881844/download",
+      "bytes": 20929454,
+      "sha256": "d5ea012549ed9e61f76c72fe84c185ab75f807674df2a21cf547dc8865ab7d17"
+    },
+    {
+      "id": "atm7-forge-1.18.2",
+      "name": "ATM7-1.0.4.zip",
+      "format": "curseforge-export",
+      "loader": "forge",
+      "minecraft": "1.18.2",
+      "curseforge": {
+        "project": 426926,
+        "file": 5199593
+      },
+      "page": "https://www.curseforge.com/projects/426926",
+      "url": "https://www.curseforge.com/api/v1/mods/426926/files/5199593/download",
+      "bytes": 17586644,
+      "sha256": "b2fabd8ff508f4c2f216b0c5a562ba22bb5fce237fcd3fcc76a5b0ca1fab6b81"
+    },
+    {
+      "id": "create-astral-fabric-1.18.2",
+      "name": "Create Astral v2.1.5b",
+      "format": "curseforge-export",
+      "loader": "fabric",
+      "minecraft": "1.18.2",
+      "curseforge": {
+        "project": 681792,
+        "file": 8718266
+      },
+      "page": "https://www.curseforge.com/projects/681792",
+      "url": "https://www.curseforge.com/api/v1/mods/681792/files/8718266/download",
+      "bytes": 33764115,
+      "sha256": "1e08738fc3a388c8bfbdadb703f0f6577c5b69185fffb63bad2875e812abdc16"
+    },
+    {
+      "id": "atm9-forge-1.20.1",
+      "name": "All the Mods 9-1.1.1",
+      "format": "curseforge-export",
+      "loader": "forge",
+      "minecraft": "1.20.1",
+      "curseforge": {
+        "project": 715572,
+        "file": 7097953
+      },
+      "page": "https://www.curseforge.com/projects/715572",
+      "url": "https://www.curseforge.com/api/v1/mods/715572/files/7097953/download",
+      "bytes": 51433990,
+      "sha256": "5d7f7b4a3775a3902274311b5d3949367e7da3baaba97a0bf55312d966302a6d"
+    },
+    {
+      "id": "prominence-2-fabric-1.20.1",
+      "name": "Prominence\u2122 II Hasturian Era  v4.1.8",
+      "format": "curseforge-export",
+      "loader": "fabric",
+      "minecraft": "1.20.1",
+      "curseforge": {
+        "project": 466901,
+        "file": 9563730
+      },
+      "page": "https://www.curseforge.com/projects/466901",
+      "url": "https://www.curseforge.com/api/v1/mods/466901/files/9563730/download",
+      "bytes": 433808075,
+      "sha256": "a5d2f0160add95efea885acc076b8e4c4e4308bf654a46dcfb1c6b7a9b6330ca"
+    },
+    {
+      "id": "atm10-neoforge-1.21.1",
+      "name": "All the Mods 10-8.6",
+      "format": "curseforge-export",
+      "loader": "neoforge",
+      "minecraft": "1.21.1",
+      "curseforge": {
+        "project": 925200,
+        "file": 9620701
+      },
+      "page": "https://www.curseforge.com/projects/925200",
+      "url": "https://www.curseforge.com/api/v1/mods/925200/files/9620701/download",
+      "bytes": 205884168,
+      "sha256": "752d966cbf3b0f73e76bff21eb79723a7fca71671ceca308f537d6dc41501c1d"
+    },
+    {
+      "id": "fabulously-optimized-cf-fabric-26.3",
+      "name": "15.0.0-beta.4 for 26.3",
+      "format": "curseforge-export",
+      "loader": "fabric",
+      "minecraft": "26.3",
+      "curseforge": {
+        "project": 396246,
+        "file": 9614232
+      },
+      "page": "https://www.curseforge.com/projects/396246",
+      "url": "https://www.curseforge.com/api/v1/mods/396246/files/9614232/download",
+      "bytes": 167620,
+      "sha256": "9ba6b84bb35394e04aa73289e2ffcd2ffd5b09e2fe12da77f1839ddd4f4035b8"
+    }
+  ]
+}
