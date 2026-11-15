@@ -57,6 +57,15 @@ code, result = diff("--baseline", files("world-baseline-0", "world-baseline-1"),
 check(code == 1 and not result["passed"], f"a candidate that loses the lookups' tickets fails: {result.get('failures')}")
 check(any(s.startswith("ticketsDuringRun") or s.endswith("tickets") for s in result["differingSections"]), f"and the gate says it was the tickets: {result['differingSections']}")
 
+# A launch whose world ticked before it froze starts from another state: the gate decides nothing and says why.
+late = ROOT / ".runs" / "fingerprint-test"
+late.mkdir(parents=True, exist_ok=True)
+record = json.loads((FIX / "world-candidate-same-0.json").read_text(encoding="utf-8"))
+record["checkpoints"][0]["levels"]["minecraft:overworld"]["gameTime"] += 11
+(late / "late-freeze.json").write_text(json.dumps(record), encoding="utf-8")
+code, result = diff("--baseline", files("world-baseline-0", "world-baseline-1"), "--candidate", str(late / "late-freeze.json") + "," + files("world-candidate-same-1"))
+check(code == 1 and any("did not start from the same state" in f for f in result["failures"]), f"a late freeze fails the gate: {result.get('failures')}")
+
 # A port: across versions only what the mod owns counts, after the game's renames; saved-data formats do not.
 code, result = diff(FIX / "content-1.21.1.json", FIX / "content-1.21.4-same.json")
 check(code == 0 and result["same"] and result["normalisation"].startswith("across versions"), f"a port with only format changes keeps the mod's behaviour: {result.get('sections')}")

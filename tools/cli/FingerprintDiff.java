@@ -187,6 +187,22 @@ final class FingerprintDiff {
         Set<String> unstable = new TreeSet<>();
         for (int i = 1; i < base.size(); i++) unstable.addAll(differing(base.get(0), base.get(i)));
         List<Object> failures = new ArrayList<>();
+        // Every launch must start from the saved world: the same game time at the first checkpoint. A world that ran
+        // before it froze started from another state, and nothing after it can be compared.
+        Map<String, Set<String>> starts = new TreeMap<>();
+        List<Map<String, String>> launches = new ArrayList<>(base);
+        launches.addAll(cand);
+        for (Map<String, String> launch : launches) {
+            for (var leaf : launch.entrySet()) {
+                if (leaf.getKey().matches("checkpoints/0/levels/[^/]+/gameTime")) starts.computeIfAbsent(leaf.getKey(), k -> new TreeSet<>()).add(leaf.getValue());
+            }
+        }
+        for (var start : starts.entrySet()) {
+            if (start.getValue().size() > 1) {
+                failures.add("the launches did not start from the same state (" + start.getKey() + " was " + start.getValue()
+                    + "): the world ran before it froze, so nothing after it decides the candidate");
+            }
+        }
         Map<String, Object> examples = new LinkedHashMap<>();
         Map<String, Integer> sections = new TreeMap<>();
         Set<String> compared = new TreeSet<>();

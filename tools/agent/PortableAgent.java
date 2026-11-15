@@ -190,8 +190,9 @@ public final class PortableAgent {
             if (world.isEmpty() || world.equals(".") || world.equals("..") || world.indexOf('/') >= 0 || world.indexOf('\\') >= 0 || world.indexOf('\0') >= 0)
                 throw new IllegalArgumentException("World must be one existing save name");
             Object flows = call(client, "createWorldOpenFlows", "createIntegratedServerLoader");
-            invoke(flows, new String[]{"openWorld", "start"}, world, (Runnable)() -> {});
+            // Before openWorld: it holds this thread until the built-in server has started, and by then it has ticked.
             if (Boolean.TRUE.equals(request.get("freeze"))) freezeAtLoad();
+            invoke(flows, new String[]{"openWorld", "start"}, world, (Runnable)() -> {});
             done.complete(Json.map("ok", true, "requestedWorld", world));
         } else if (command.equals("connect")) {
             String address = Json.text(request, "address", "127.0.0.1:25565");
@@ -521,7 +522,9 @@ public final class PortableAgent {
                         invoke(running, new String[]{"execute"}, (Runnable) () -> {
                             try {
                                 invoke(call(running, "tickRateManager", "getTickManager"), new String[]{"setFrozen"}, true);
-                                System.setProperty("modaccel.frozen", "at load");
+                                String time = "";
+                                try { time = ", game time " + call(call(running, "overworld", "getOverworld"), "getGameTime", "getTime"); } catch (Exception noLevelYet) { }
+                                System.setProperty("modaccel.frozen", "at load" + time);
                             } catch (Exception none) { System.setProperty("modaccel.frozen", "no tick freeze in this game: " + cause(none)); }
                         });
                         return;
