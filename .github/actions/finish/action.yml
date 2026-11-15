@@ -10,6 +10,9 @@ inputs:
   hit:
     description: the setup action's cache-hit; main saves only when its key missed
     default: 'false'
+  status:
+    description: the job's status (job.status); a composite action's own failure() cannot see the job's steps
+    required: true
   name:
     description: artifact name stem
     required: true
@@ -23,7 +26,7 @@ runs:
         path: ${{ runner.temp }}/timings.json
         if-no-files-found: ignore
     - name: Outcome receipts on failure
-      if: failure()
+      if: inputs.status != 'success'
       uses: actions/upload-artifact@v4
       with:
         name: outcomes-${{ inputs.name }}

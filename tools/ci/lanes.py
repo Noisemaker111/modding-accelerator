@@ -137,12 +137,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("plan")
     parser.add_argument("--shard", default="1/1")
-    parser.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
+    parser.add_argument("--jobs", type=int, help="checks at once; default the cores, half of them for server (a Paper server and its "
+                        "bot keep two cores busy, and at four servers on four cores scenario steps miss their 5 s windows)")
     parser.add_argument("--seed", type=int, default=random.SystemRandom().randrange(1 << 30))
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--timings", help="write each check's seconds here as JSON")
     args = parser.parse_args()
     index, count = (int(x) for x in args.shard.split("/"))
+    cores = os.cpu_count() or 2
+    if args.jobs is None:
+        args.jobs = max(1, cores // 2) if args.plan == "server" else cores
     temp = Path(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir()) / "lanes"
     temp.mkdir(parents=True, exist_ok=True)
     measured = json.loads(DURATIONS.read_text(encoding="utf-8")).get(system(), {}) if DURATIONS.exists() else {}
