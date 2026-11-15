@@ -52595,6 +52595,119 @@
    "wallSeconds": 329.4909219,
    "finished": "2026-11-15T22:37:16.263775400Z",
    "seconds": 326.14404295
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T22-52-35.806248900Z-bd6fc0fa",
+   "kind": "perf-optimize",
+   "session": "diorama-round4",
+   "started": "2026-11-15T22:52:35.807475600Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ":1.21.1"
+   },
+   "phases": {
+    "setup": 1.2240699,
+    "build": 34.42728865,
+    "launch": 54.17886985,
+    "warmup": 0.0,
+    "measure": 0.0,
+    "gates": 0.0,
+    "other": 8.04630905
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 1.2240699
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 34.4216112,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 54.1478328,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 34.4329661,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 54.20990689999999,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.257727,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 6.5073733,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.0077596
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.1559993
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "pair 0 before launch",
+      "at": "2026-11-15T22:52:38.737508300Z",
+      "systemCpu": 0.0960714965094347,
+      "javaProcesses": 10
+     }
+    ],
+    "meanSystemCpu": 0.0960714965094347,
+    "maxSystemCpu": 0.0960714965094347,
+    "jit": "full",
+    "framesPerSecond": 60
+   },
+   "candidate": {
+    "label": "ring-masks-2",
+    "diffSha256": "e62da40123e716a03323df35d2b2ffe424d9781223e3e56c3cb7af3ae47e88fd",
+    "changedFiles": [
+     "src/main/java/dev/diorama/bake/ChunkBakeData.java",
+     "src/main/java/dev/diorama/bake/GpuMesher.java",
+     "src/main/java/dev/diorama/bake/VoxelReader.java"
+    ]
+   },
+   "gates": [],
+   "speedup": null,
+   "verdict": "error",
+   "rejection": "error: java.io.IOException: The fingerprint gate could not read the mod's Minecraft version from .\\.runs\\diorama-opt\\ring-masks-2\\baseline",
+   "metric": {
+    "threadCpu": "^diorama-baker"
+   },
+   "source": ".\\.runs\\diorama-opt\\ring-masks-2",
+   "arms": "parallel",
+   "wallSeconds": 101.481425,
+   "finished": "2026-11-15T22:54:17.339035900Z",
+   "seconds": 97.87653745
   }
  ]
 }
