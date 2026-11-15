@@ -63,6 +63,11 @@ final class ModaccelPackGame {
         return true;
     }
 
+    /** Keeps a chunk loaded; pack-check then waits for it to load. */
+    static void forceChunk(ServerLevel level, int x, int z) {
+        level.setChunkForced(x, z, true);
+    }
+
     static void moveTo(ServerPlayer player, double x, double y, double z, float yaw, float pitch) {
         player.snapTo(x, y, z, yaw, pitch);
     }

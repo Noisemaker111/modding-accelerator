@@ -126,7 +126,7 @@ public final class ModaccelPackProbe {
                     long budget = System.nanoTime() + 40_000_000L;
                     do {
                         long chunk = toForce.poll();
-                        level.setChunkForced(net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk), true);
+                        ModaccelPackGame.forceChunk(level, net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk));
                     } while (!toForce.isEmpty() && System.nanoTime() < budget);
                     if (System.nanoTime() - lastProgress > 30_000_000_000L) {
                         lastProgress = System.nanoTime();

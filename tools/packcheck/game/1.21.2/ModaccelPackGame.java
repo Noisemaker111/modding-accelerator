@@ -63,6 +63,16 @@ final class ModaccelPackGame {
         return true;
     }
 
+    /**
+     * Keeps a chunk loaded through the chunk system's own ticket, which loads it and its neighbours off the server
+     * thread. Level.setChunkForced loads it at once on the server thread first, before its neighbours exist, and a mod
+     * that reads a neighbour while the chunk finishes (Immersive Engineering's fluid hook) then loads chunk after chunk
+     * there: All the Mods 10's watchdog stopped that after 300 s.
+     */
+    static void forceChunk(ServerLevel level, int x, int z) {
+        level.getChunkSource().updateChunkForced(new net.minecraft.world.level.ChunkPos(x, z), true);
+    }
+
     static void moveTo(ServerPlayer player, double x, double y, double z, float yaw, float pitch) {
         player.moveTo(x, y, z, yaw, pitch);
     }
