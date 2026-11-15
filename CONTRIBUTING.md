@@ -7,9 +7,9 @@ changing, it will be changed with you. The project is still finding its place, s
 
 Check, in this order, and only then ask:
 
-1. **The code.** `README.md` (what it does), `SCOPE.md` (what works where), `AGENTS.md` (how to work here).
-2. **[`DECISIONS.md`](DECISIONS.md).** The few things the maker has fixed. Everything not written there is your call.
-3. **[Issues](https://github.com/Noisemaker111/modding-accelerator/issues) and
+1. **The code.** `README.md` (what it does and the rules it follows), `SCOPE.md` (what works where), `AGENTS.md` (how
+   to work here). Anything the maker has fixed is written there or in the code. Anything not written is your call.
+2. **[Issues](https://github.com/Noisemaker111/modding-accelerator/issues) and
    [pull requests](https://github.com/Noisemaker111/modding-accelerator/pulls)**, open and closed. Someone may already
    have the plan, the answer, or the same change in flight. Plans live there, not in docs.
 
@@ -19,9 +19,9 @@ Check, in this order, and only then ask:
   implementation. If a choice is yours, make it, say why in the PR, and move on.
 - **If you're unsure what the maker would pick, ask a close-to-frontier model for its opinion.** That is very close to
   how the maker decides, and it is faster than waiting for an answer. Put the question and the answer in the PR.
-- **If the maker is specific about an implementation, it is written in `DECISIONS.md`.** A preference that isn't
-  written there isn't a rule. When you settle a question others will hit again, add it there (one short entry).
-- Disagree with something in `DECISIONS.md` or `AGENTS.md`? Open an issue with your reason; don't work around it.
+- **If the maker is specific about an implementation, it is written down** in `README.md`, `SCOPE.md`, `AGENTS.md`
+  or the code. A preference that isn't written there isn't a rule.
+- Disagree with something written there? Open an issue with your reason; don't work around it.
 
 ## What is allowed in the repo
 
@@ -48,6 +48,6 @@ Do whatever the licences and terms of service allow, and nothing past them.
 
 ## What to bring to the maker
 
-Almost nothing. Bring only what you can't settle from the code, `DECISIONS.md`, issues and PRs: legal or terms doubt,
+Almost nothing. Bring only what you can't settle from the code, docs, issues and PRs: legal or terms doubt,
 anything that needs an account, secret or money, anything that publishes outside this repo, or two decisions that
 conflict. Open an issue (preferred), or message [@noisemakerjon on X](https://x.com/noisemakerjon).

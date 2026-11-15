@@ -2,7 +2,7 @@ blank_issues_enabled: false
 contact_links:
   - name: Contributing
     url: https://github.com/Noisemaker111/modding-accelerator/blob/main/CONTRIBUTING.md
-    about: Check the code, DECISIONS.md, issues and PRs first; most changes can go straight to a pull request.
+    about: Check the code, docs, issues and PRs first; most changes can go straight to a pull request.
   - name: What mmt supports today
     url: https://github.com/Noisemaker111/modding-accelerator#readme
     about: The support table, before asking whether a version or loader works.
