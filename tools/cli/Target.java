@@ -72,10 +72,17 @@ final class Target {
 
     static Setup plan(Build build, Map<String, Object> model, String to, List<Dependencies.Selection> selections)
         throws Exception {
-        if (Json.array(model.get("projects")).size() != 1) throw new IOException(
+        List<Object> projects = Json.array(model.get("projects"));
+        // A multi-module mod on one loader (Cardinal Components' modules, owo-lib and its sentinel) keeps its versions in
+        // the shared gradle.properties, so the root project's setup retargets every module.
+        Set<Set<String>> loaderSets = new HashSet<>();
+        for (Object p : projects) loaderSets.add(Support.loaders(Json.object(p)));
+        Object root = projects.stream().filter(p -> ":".equals(Json.object(p).get("path"))).findFirst().orElse(null);
+        boolean oneLoader = loaderSets.size() == 1 && loaderSets.iterator().next().size() == 1 && root != null;
+        if (projects.size() != 1 && !oneLoader) throw new IOException(
             "Automatic target setup needs one selected project; choose --project."
         );
-        var project = Json.object(Json.array(model.get("projects")).get(0));
+        var project = Json.object(projects.size() == 1 ? projects.get(0) : root);
         Set<String> loaders = Support.loaders(project);
         if (!loaders.equals(Set.of("fabric")) && !loaders.equals(Set.of("neoforge"))) throw new IOException(
             "Automatic target dependency setup requires one Fabric or NeoForge project; found " +
@@ -142,7 +149,11 @@ final class Target {
             if (versions.isEmpty()) throw new IOException(
                 "No published Yarn mappings for " + to + "; mapping namespace changes need a guided migration."
             );
-            setup.replacements.put(key, Json.text(Json.object(versions.get(0)), "version", ""));
+            String yarn = Json.text(Json.object(versions.get(0)), "version", "");
+            // A build that joins the game version to a build number (Cardinal Components: ${minecraft_version}+build.${yarn_mappings},
+            // yarn_mappings=1) keeps only the number in the property.
+            if (String.valueOf(pins.get(key)).matches("\\d+") && yarn.matches(".*\\+build\\.\\d+")) yarn = yarn.substring(yarn.lastIndexOf('.') + 1);
+            setup.replacements.put(key, yarn);
         }
         if (pins.containsKey("loader_version")) {
             var versions = Json.array(Json.parse(fetch(build, "https://meta.fabricmc.net/v2/versions/loader/" + to)));
