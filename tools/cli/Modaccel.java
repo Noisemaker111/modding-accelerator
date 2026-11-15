@@ -254,7 +254,31 @@ public final class Modaccel {
         "help"
     );
 
+    /**
+     * Output that goes to a file or pipe (the desktop app, an agent's log, a redirect) is written in UTF-8, as those
+     * readers decode it. Java otherwise writes redirected output in the platform charset: on Windows (windows-1252)
+     * perf-optimize's "95% 9.94–11.33" and "baseline → candidate" reached a log as a replacement character and "?".
+     * A terminal keeps the charset Java chose for it.
+     */
+    public static void utf8WhenRedirected() {
+        if (terminal()) return;
+        System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 8192), true, java.nio.charset.StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err), 8192), true, java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /** Whether standard output is a terminal: System.console() is null when redirected before Java 22, and says so after. */
+    static boolean terminal() {
+        Console console = System.console();
+        if (console == null) return false;
+        try {
+            return (Boolean) Console.class.getMethod("isTerminal").invoke(console);
+        } catch (ReflectiveOperationException beforeJava22) {
+            return true;
+        }
+    }
+
     public static void main(String[] args) {
+        utf8WhenRedirected();
         int exit = 2;
         Options options = null;
         Report report = null;

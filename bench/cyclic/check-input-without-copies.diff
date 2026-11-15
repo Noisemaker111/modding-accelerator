@@ -1,0 +1,75 @@
+diff --git a/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java b/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
+index a1b52ae1a..8051172fe 100644
+--- a/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
++++ b/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
+@@ -208,32 +208,50 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+     return test.isEmpty(); //empty means all of it was allowed to go in
+   }
+ 
+-  // This could be done better, but it works so ¯\_(ツ)_/¯
++  // Answers what the list version did, without copying any stack: input stack i (in slot order) takes, in grid
++  // order, every grid stack still unclaimed whose item equals its own item, its count dropping by one per grid
++  // stack it takes; once its count reaches zero its item is air, so it then takes empty grid slots instead (and an
++  // empty input slot takes every unclaimed empty grid slot). The grid stacks it took are claimed after it is done,
++  // and so is every other unclaimed empty grid slot if it took one: the list version copied every empty stack to
++  // the one ItemStack.EMPTY, and removeAll compares by identity. True when every grid stack is claimed.
+   private boolean checkInput(IItemHandler inv) {
+-
+-    List<ItemStack> inputStacks = new ArrayList<ItemStack>();
+-    List<ItemStack> gridStacks = new ArrayList<ItemStack>();
+-    for (int i = 0; i < inv.getSlots(); i++) {
+-      inputStacks.add(inv.getStackInSlot(i).copy());
++    final int gridSlots = this.gridCap.getSlots();
++    net.minecraft.world.item.Item[] gridItems = new net.minecraft.world.item.Item[gridSlots];
++    boolean[] claimed = new boolean[gridSlots];
++    int unclaimed = gridSlots;
++    for (int j = 0; j < gridSlots; j++) {
++      gridItems[j] = this.gridCap.getStackInSlot(j).getItem();
+     }
+-    for (int i = 0; i < this.gridCap.getSlots(); i++) {
+-      gridStacks.add(this.gridCap.getStackInSlot(i).copy());
+-    }
+-    for (ItemStack stack : inputStacks) {
+-      List<ItemStack> lolbit = new ArrayList<ItemStack>();
+-      boolean match = false;
+-      for (ItemStack grid : gridStacks) {
+-        if (stack.getItem() == grid.getItem()) {
+-          match = true;
+-          lolbit.add(grid);
+-          stack.shrink(1);
++    for (int i = 0; i < inv.getSlots(); i++) {
++      ItemStack stack = inv.getStackInSlot(i);
++      net.minecraft.world.item.Item item = stack.getItem();
++      int count = stack.isEmpty() ? 0 : stack.getCount();
++      int took = 0;
++      for (int j = 0; j < gridSlots; j++) {
++        if (claimed[j]) {
++          continue;
++        }
++        net.minecraft.world.item.Item current = count > 0 ? item : net.minecraft.world.item.Items.AIR;
++        if (current == gridItems[j]) {
++          took |= 1 << j;
++          count--;
++        }
++      }
++      boolean tookEmpty = false;
++      for (int j = 0; j < gridSlots; j++) {
++        if ((took & (1 << j)) != 0 && gridItems[j] == net.minecraft.world.item.Items.AIR) {
++          tookEmpty = true;
+         }
+       }
+-      if (match) {
+-        gridStacks.removeAll(lolbit);
++      for (int j = 0; j < gridSlots; j++) {
++        boolean removed = (took & (1 << j)) != 0 || (tookEmpty && gridItems[j] == net.minecraft.world.item.Items.AIR);
++        if (removed && !claimed[j]) {
++          claimed[j] = true;
++          unclaimed--;
++        }
+       }
+     }
+-    return gridStacks.isEmpty();
++    return unclaimed == 0;
+   }
+ 
+   private boolean doCraft(RecipeHolder<CraftingRecipe> lastValidRecipe) {
