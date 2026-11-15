@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Runs modaccel pack-check on a pinned corpus of public modpacks and ranks what it gets wrong or cannot do.
 
-    python bench/pack_sweep.py run [--only ID,ID] [--jobs 1] [--fix] [--label NAME] [--modaccel CHECKOUT]
+    python bench/pack_sweep.py run [--only ID,ID] [--jobs 1] [--fix] [--label NAME] [--modaccel CHECKOUT] [--record]
     python bench/pack_sweep.py table [--label NAME]
 
 bench/pack-sweep/corpus.json pins each pack: a Modrinth .mrpack by version and SHA-512, or a CurseForge export by
@@ -250,6 +250,7 @@ def main():
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
     run.add_argument("--modaccel", default="")
+    run.add_argument("--record", action="store_true", help="write coverage/sweeps/pack.json after a partial (--only) run too")
     t = sub.add_parser("table")
     t.add_argument("--label", default="latest")
     args = parser.parse_args()
@@ -277,9 +278,18 @@ def main():
                 print(f"{p['id']}: {r['outcome']} {r['gaps']}", flush=True)
             except Exception as e:
                 print(f"{p['id']}: runner error {e!r}", flush=True)
-    ranked, rates = write(load_records(), args.label)
+    if records_coverage(args):
+        ranked, rates = write(load_records(), args.label)
+    else:
+        ranked, rates = summarize(load_records(), args.label)
+        print(f"Partial run (--only): {OUT.relative_to(ROOT)} is left as it is; pass --record to write it.")
     print(table(ranked, rates))
     return 0
+
+
+def records_coverage(args):
+    """Whether a run writes the tracked coverage file: a run of the whole corpus, or one asked to with --record."""
+    return not args.only or args.record
 
 
 if __name__ == "__main__":

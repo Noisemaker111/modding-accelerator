@@ -157,9 +157,19 @@ public final class ModaccelPackProbe {
         }
     }
 
+    /**
+     * Where Forge and NeoForge keep the running server: NeoForge's ServerLifecycleHooks, Forge's from 1.17, and Forge's
+     * for 1.16 and before (net.minecraftforge.fml.server, as forge-1.16.5-36.2.42-universal.jar has it).
+     */
+    static final List<String> SERVER_HOOKS = Arrays.asList(
+        "net.neoforged.neoforge.server.ServerLifecycleHooks",
+        "net.minecraftforge.server.ServerLifecycleHooks",
+        "net.minecraftforge.fml.server.ServerLifecycleHooks"
+    );
+
     /** The running server, from whichever loader is present: Forge and NeoForge keep it in ServerLifecycleHooks, Fabric and Quilt in FabricLoader. */
     static MinecraftServer findServer() {
-        for (String hooks : Arrays.asList("net.neoforged.neoforge.server.ServerLifecycleHooks", "net.minecraftforge.server.ServerLifecycleHooks")) {
+        for (String hooks : SERVER_HOOKS) {
             Object server = call(hooks, "getCurrentServer");
             if (server instanceof MinecraftServer) return (MinecraftServer) server;
         }

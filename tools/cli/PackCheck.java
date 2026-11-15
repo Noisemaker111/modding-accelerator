@@ -732,6 +732,9 @@ final class PackCheck {
          * Runs until the probe is done or the server fails; a server whose main thread died is stopped, since leftover threads keep its JVM alive.
          * Only a start that made the world (keepWorld) is let save it; a start that only read it is stopped as soon as the probe is done.
          */
+        /** How long a started server may run with no word from the probe before pack-check stops waiting. */
+        static final int PROBE_SILENT_SECONDS = 180;
+
         String runServer(List<String> command, Path log, Path out, boolean keepWorld) throws Exception {
             Files.createDirectories(log.getParent());
             Process process = new ProcessBuilder(command).directory(instance.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
@@ -739,9 +742,19 @@ final class PackCheck {
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(Integer.parseInt(options.get("timeout", "1200")));
             String ended = "exited";
             List<String> failed = loader.failed();
+            long started = 0;
             try {
                 while (process.isAlive()) {
                     String text = Files.readString(log, StandardCharsets.ISO_8859_1);
+                    // The server logged Done but the probe never said it began: waiting out the whole timeout shows nothing more.
+                    if (!text.contains("MODACCEL-PROBE-STARTED") && PackChecks.startedLine(text) != null) {
+                        if (started == 0) started = System.nanoTime();
+                        else if (System.nanoTime() - started > TimeUnit.SECONDS.toNanos(PROBE_SILENT_SECONDS)) {
+                            ended = "probe silent " + PROBE_SILENT_SECONDS + " s after the server finished starting";
+                            stop(process);
+                            break;
+                        }
+                    }
                     String failure = text.contains("MODACCEL-PROBE-DONE")
                         ? null
                         : failed.stream()

@@ -954,7 +954,7 @@ public final class PortableTests {
 
     /**
      * convert: every rule in knowledge/loaders.json against its own before/after test, both ways; then a small Fabric
-     * mod moved to NeoForge and back with --dry-run (the release lookups come from a seeded cache, so no network),
+     * mod moved to NeoForge and back with --no-compile (the release lookups come from a seeded cache, so no network),
      * and both conversions undone byte for byte.
      */
     static void convertChecks(Path home, Path scratch) throws Exception {
@@ -1006,6 +1006,30 @@ public final class PortableTests {
             Convert.neoforgeModId("pointless-piglins").equals("pointless_piglins") && Convert.neoforgeModId("demo").equals("demo") &&
             Convert.neoforgeModId("2fast").equals("mod_2fast"),
             "a Fabric mod id with a hyphen becomes one NeoForge accepts"
+        );
+        // Found by an independent check: modaccel package copied whatever desktop app build was in app/target/release.
+        Path app = scratch.resolve("stale-app/app");
+        Files.createDirectories(app.resolve("src"));
+        Files.createDirectories(app.resolve("target/release"));
+        Path exe = app.resolve("target/release/" + Installation.DESKTOP_WINDOWS), source = app.resolve("src/main.rs");
+        Files.writeString(exe, "MZ");
+        Files.writeString(source, "fn main() {}\n");
+        Files.writeString(app.resolve("target/release/build.log"), "later output\n");
+        Files.setLastModifiedTime(exe, java.nio.file.attribute.FileTime.fromMillis(1_000_000_000_000L));
+        Files.setLastModifiedTime(source, java.nio.file.attribute.FileTime.fromMillis(1_000_000_500_000L));
+        Path stale = Installation.newerSource(app, exe);
+        Files.setLastModifiedTime(exe, java.nio.file.attribute.FileTime.fromMillis(1_000_001_000_000L));
+        check(
+            source.equals(stale) && Installation.newerSource(app, exe) == null,
+            "a desktop app build older than the app's sources is found stale, and its own build output does not count: " + stale
+        );
+        // Found by an independent check on Krypton: NeoForge 26.1+ logs an ERROR for every @OnlyIn class (OnlyInWarningsHandler).
+        String sided = "import net.fabricmc.api.EnvType;\nimport net.fabricmc.api.Environment;\n\n@Environment(EnvType.CLIENT)\nclass A {\n\t// @Environment(EnvType.SERVER)\n\t@Environment(EnvType.CLIENT) void draw() {}\n}\n";
+        String unsided = Convert.withoutSideOnly(sided);
+        check(
+            unsided.equals("import net.fabricmc.api.EnvType;\n\nclass A {\n\t// @Environment(EnvType.SERVER)\n\tvoid draw() {}\n}\n") &&
+            Convert.ONLY_IN_ERROR.equals("26.1"),
+            "converted to NeoForge 26.1 or later, Fabric's @Environment marks go instead of becoming @OnlyIn:\n" + unsided
         );
         // Found by the convert sweep on MoreRed (26.1.2): its gradle.properties names only neo_version.
         check(
@@ -1274,9 +1298,32 @@ public final class PortableTests {
         Map<String, byte[]> original = new LinkedHashMap<>();
         for (String name : files.keySet()) original.put(name, Files.readAllBytes(root.resolve(name)));
 
+        // Found by an independent check: --dry-run wrote the conversion, its state and a receipt into the mod folder, and
+        // exited 1 when items were left. It converts a copy elsewhere and changes nothing in the project.
+        Map<String, String> beforePreview = new TreeMap<>();
+        try (var walk = Files.walk(root)) {
+            for (Path p : walk.filter(Files::isRegularFile).toList()) beforePreview.put(root.relativize(p).toString(), Fingerprints.bytes(Files.readAllBytes(p)));
+        }
+        Map<String, Object> preview = new Convert(new Build(project, home, "", new Modaccel.Report(root, "convert"))).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+        );
+        Map<String, String> afterPreview = new TreeMap<>();
+        try (var walk = Files.walk(root)) {
+            for (Path p : walk.filter(Files::isRegularFile).toList()) afterPreview.put(root.relativize(p).toString(), Fingerprints.bytes(Files.readAllBytes(p)));
+        }
+        Path previewCopy = Path.of(String.valueOf(preview.get("preview")));
+        check(
+            afterPreview.equals(beforePreview) &&
+            Boolean.TRUE.equals(preview.get("ok")) &&
+            Boolean.TRUE.equals(preview.get("dryRun")) &&
+            !previewCopy.startsWith(root) &&
+            Files.isRegularFile(previewCopy.resolve("src/main/resources/META-INF/neoforge.mods.toml")),
+            "convert --dry-run converts a copy outside the project and leaves every file in it as it was: " + preview.get("details")
+        );
+
         Build build = new Build(project, home, "", new Modaccel.Report(root, "convert"));
         Map<String, Object> toNeo = new Convert(build).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--no-compile" })
         );
         String demo = Files.readString(root.resolve("src/main/java/demo/Demo.java")), client = Files.readString(
             root.resolve("src/main/java/demo/DemoClient.java")
@@ -1335,7 +1382,7 @@ public final class PortableTests {
             "fabric.mod.json becomes neoforge.mods.toml:\n" + toml
         );
         Map<String, Object> back = new Convert(new Build(project, home, "", new Modaccel.Report(root, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--no-compile" })
         );
         boolean javaSame = true;
         for (String name : files.keySet()) if (
@@ -1407,7 +1454,7 @@ public final class PortableTests {
             Files.writeString(cache, answer.getValue());
         }
         new Convert(new Build(quitProject, home, "", new Modaccel.Report(quit, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--no-compile" })
         );
         String quitGradle = Files.readString(quit.resolve("build.gradle"));
         check(
@@ -1450,7 +1497,7 @@ public final class PortableTests {
             Files.writeString(cache, answer.getValue());
         }
         Map<String, Object> bridged = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--no-compile" })
         );
         String bridgedEntry = Files.readString(neo.resolve("src/main/java/demo/Demo.java"));
         String fabricJson = Files.readString(neo.resolve("src/main/resources/fabric.mod.json"));
@@ -1465,9 +1512,19 @@ public final class PortableTests {
             bridgedEntry +
             bridged.get("details")
         );
+        // Found by an independent check on EndNetwork: the bridge, which both sides use, went into a client package.
+        check(
+            "net.x.core.loaderbridge".equals(Convert.bridgePackage(List.of(
+                "package net.x.client;\n@Mod(value = X.ID, dist = Dist.CLIENT)\nclass XClient {}\n",
+                "package net.x.core;\n@Mod(X.ID)\nclass X {}\n"
+            ))) &&
+            "net.x.loaderbridge".equals(Convert.bridgePackage(List.of("package net.x.client;\n@Mod(value = X.ID, dist = Dist.CLIENT)\nclass XClient {}\n"))) &&
+            Convert.bridgePackage(List.of("package net.x;\nclass X {}\n")) == null,
+            "the NeoForge bridge goes beside the common @Mod class, never in a client package"
+        );
         // Found by the convert sweep: the NeoForge MDK converted to Fabric did not convert back. The way back takes the bridge out.
         Map<String, Object> unbridged = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--no-compile" })
         );
         String backEntry = Files.readString(neo.resolve("src/main/java/demo/Demo.java"));
         String neoOriginal = Json.text(bridgeTest, "neoforge", "");
@@ -1482,6 +1539,15 @@ public final class PortableTests {
             "a mod that went to Fabric through the NeoForge bridge comes back as a NeoForge @Mod class, without the bridge:\n" +
             backEntry +
             unbridged.get("details")
+        );
+        // Found by an independent check on EndNetwork: undo left the bridge's emptied folder behind.
+        Port.undo(neoProject, String.valueOf(unbridged.get("undoConvert")), Convert.FOLDER);
+        Port.undo(neoProject, String.valueOf(bridged.get("undoConvert")), Convert.FOLDER);
+        check(
+            !Files.exists(neo.resolve("src/main/java/demo/loaderbridge")) &&
+            !Files.exists(neo.resolve("src/main/resources/fabric.mod.json")) &&
+            Files.readString(neo.resolve("src/main/java/demo/Demo.java")).equals(Json.text(bridgeTest, "neoforge", "")),
+            "undoing both conversions restores the NeoForge mod and leaves no folder the bridge emptied"
         );
     }
 

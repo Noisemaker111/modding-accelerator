@@ -227,8 +227,12 @@ final class Convert {
         this.project = build.project;
     }
 
+    /** True in the copy a dry run converts. */
+    boolean previewing;
+
     Map<String, Object> run(Modaccel.Options options) throws Exception {
         if (options.values.containsKey("undo")) return Port.undo(project, options.get("undo", ""), FOLDER);
+        if (options.has("dry-run") && !previewing) return preview(options);
         String to = options.get("to", "").toLowerCase(Locale.ROOT);
         String from = loader(project.root);
         if (from == null) throw new IOException(
@@ -298,12 +302,58 @@ final class Convert {
             "transaction",
             transaction.toString()
         );
-        if (options.has("dry-run")) {
+        if (options.has("dry-run") || options.has("no-compile")) {
             result.put("compiled", null);
-            result.put("ok", left.isEmpty());
+            // A preview succeeds when it ran; what it could not convert is in left.
+            result.put("ok", previewing || left.isEmpty());
         } else compile(result);
         result.put("details", text(result));
         return result;
+    }
+
+    /**
+     * convert --dry-run: the conversion runs on a copy of the project outside it (with the project's cached release
+     * lookups), without compiling, and reports what it would change and leave. The project's own folder is not written.
+     */
+    Map<String, Object> preview(Modaccel.Options options) throws Exception {
+        Path copy = Files.createTempDirectory("modaccel-convert-preview-");
+        copyProject(project.root, copy);
+        ProjectModel model = new ProjectModel(copy);
+        Convert convert = new Convert(new Build(model, build.harness, "", new Modaccel.Report(copy, "convert")));
+        convert.previewing = true;
+        Map<String, Object> result = convert.run(options);
+        result.put("dryRun", true);
+        result.put("preview", copy.toString());
+        result.remove("undoConvert");
+        result.remove("transaction");
+        result.put(
+            "details",
+            String.valueOf(result.get("details")) +
+            "\nDry run: nothing in " + project.root + " was changed; the converted copy is in " + copy + "."
+        );
+        return result;
+    }
+
+    /** The project's sources and build, without Git, Gradle's and modaccel's own state (but with its cached release lookups). */
+    static void copyProject(Path from, Path to) throws IOException {
+        Set<String> skip = Set.of(".git", ".gradle", "build", ".runs", ".modaccel", "run", "out", "bin");
+        try (var walk = Files.walk(from)) {
+            for (Path p : walk.toList()) {
+                Path rel = from.relativize(p);
+                if (rel.getNameCount() > 0 && skip.contains(rel.getName(0).toString())) continue;
+                Path target = to.resolve(rel.toString());
+                if (Files.isDirectory(p)) Files.createDirectories(target);
+                else Files.copy(p, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        Path metadata = from.resolve(".modaccel/portable/metadata");
+        if (Files.isDirectory(metadata)) try (var walk = Files.walk(metadata)) {
+            for (Path p : walk.filter(Files::isRegularFile).toList()) {
+                Path target = to.resolve(".modaccel/portable/metadata").resolve(metadata.relativize(p).toString());
+                Files.createDirectories(target.getParent());
+                Files.copy(p, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
     }
 
     /**
@@ -529,6 +579,7 @@ final class Convert {
             "its resources and registry ids keep the " + fabricId + " namespace, and neoforge.mods.toml keeps the Fabric id for the way back."
         );
         Set<String> unbridged = unbridge();
+        if (Versions.compare(minecraft, ONLY_IN_ERROR) >= 0) dropSideOnly();
         rewriteSources("fabric", "neoforge");
         Map<String, Object> entrypoints = new LinkedHashMap<>();
         if (meta.get("entrypoints") instanceof Map<?, ?>) for (var e : Json.object(meta.get("entrypoints")).entrySet()) {
@@ -1436,6 +1487,44 @@ final class Convert {
         return first.matches("(?s)(?:loom|fabricApi)\\s*\\.\\s*\\w.*") || first.matches("(?s)\\w+\\s+(?:loom|fabricApi)\\.\\w.*");
     }
 
+    /**
+     * From NeoForge for Minecraft 26.1 (26.1.1.15-beta, the first with net.neoforged.neoforge.common.OnlyInWarningsHandler)
+     * a mod class marked @OnlyIn logs an ERROR on every launch: NeoForge no longer strips by side, and client code is kept
+     * apart by where it is called from. Fabric's @Environment therefore has no counterpart there and goes.
+     */
+    static final String ONLY_IN_ERROR = "26.1";
+
+    static final Pattern SIDE_ONLY = Pattern.compile(
+        "(?m)^[ \\t]*@(?:net\\.fabricmc\\.api\\.)?Environment\\(\\s*(?:net\\.fabricmc\\.api\\.)?EnvType\\.\\w+\\s*\\)[ \\t]*\\n|" +
+        "@(?:net\\.fabricmc\\.api\\.)?Environment\\(\\s*(?:net\\.fabricmc\\.api\\.)?EnvType\\.\\w+\\s*\\)\\s*"
+    );
+
+    /** A source without Fabric's @Environment(EnvType.X) marks (in code, not comments) and their import. */
+    static String withoutSideOnly(String text) {
+        boolean[] code = LoaderRules.code(text);
+        Matcher m = SIDE_ONLY.matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) m.appendReplacement(out, code[m.start() + m.group().indexOf('@')] ? "" : Matcher.quoteReplacement(m.group()));
+        m.appendTail(out);
+        return LoaderRules.dropImport(out.toString(), "net.fabricmc.api.Environment");
+    }
+
+    /** Fabric's @Environment(EnvType.X) marks removed (NeoForge 26.1 and later), with their import. */
+    void dropSideOnly() throws Exception {
+        int dropped = 0;
+        for (String file : javaFiles()) {
+            String text = read(file), out = withoutSideOnly(text);
+            if (out.equals(text)) continue;
+            write(file, out);
+            dropped += SIDE_ONLY.matcher(text).results().count();
+            applied.computeIfAbsent("side-only-dropped", k -> new ArrayList<>()).add(file);
+        }
+        if (dropped > 0) notes.add(
+            "@Environment: NeoForge for Minecraft " + ONLY_IN_ERROR + " and later logs an error for @OnlyIn on mod classes, " +
+            "so the " + dropped + " side mark(s) are removed rather than written as @OnlyIn; client code stays apart by where it is called from."
+        );
+    }
+
     /** NightConfig as NeoForge 21.1.250's published module metadata requires it (com.electronwill.night-config core and toml). */
     static final String NIGHT_CONFIG = "3.8.3";
 
@@ -1960,6 +2049,29 @@ final class Convert {
     final List<Subscriber> subscribers = new ArrayList<>();
     Map<String, Object> bridge;
 
+    /**
+     * Where the bridge goes: it holds registration and the event bus, which both sides use, so beside the common @Mod
+     * class (one with no dist), else in the package every @Mod class shares; null when there is no @Mod class.
+     */
+    static String bridgePackage(List<String> sources) {
+        List<String> common = new ArrayList<>(), all = new ArrayList<>();
+        Pattern pkg = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;");
+        for (String text : sources) {
+            Matcher annotation = Pattern.compile("@Mod\\(([^)]*)\\)").matcher(text);
+            Matcher p = pkg.matcher(text);
+            if (!annotation.find() || !p.find()) continue;
+            all.add(p.group(1));
+            if (!annotation.group(1).contains("dist")) common.add(p.group(1));
+        }
+        if (!common.isEmpty()) return common.stream().min(Comparator.comparingInt(String::length)).orElseThrow() + ".loaderbridge";
+        if (all.isEmpty()) return null;
+        String shared = all.get(0);
+        for (String other : all) while (!(other.equals(shared) || other.startsWith(shared + ".")) && shared.contains(".")) shared = shared.substring(0, shared.lastIndexOf('.'));
+        // Only client @Mod classes: the bridge still serves both sides, so not in their client package.
+        if (shared.endsWith(".client")) shared = shared.substring(0, shared.length() - ".client".length());
+        return shared + ".loaderbridge";
+    }
+
     /** The bridge's version layer for a game older than the bridge's own files, or null (knowledge/loaders.json bridges[].layers). */
     Map<String, Object> bridgeLayer;
 
@@ -2000,10 +2112,16 @@ final class Convert {
             bridgeLayer = layer;
         }
         if (bridge == null) return;
+        bridgePackage = bridgePackage(javaFiles().stream().map(f -> {
+            try {
+                return read(f);
+            } catch (IOException e) {
+                return "";
+            }
+        }).toList());
         for (String file : javaFiles()) {
             String text = read(file);
             Matcher mod = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
-            if (bridgePackage == null && text.contains("@Mod(") && mod.find()) bridgePackage = mod.group(1) + ".loaderbridge";
             Matcher s = Pattern.compile(
                 "@EventBusSubscriber\\b(\\s*\\([^)]*\\))?\\s*(?:@[\\w.]+(?:\\([^)]*\\))?\\s*)*(?:(?:public|protected|private|static|final|abstract)\\s+)*(?:class|interface|enum|record)\\s+(\\w+)"
             ).matcher(text);

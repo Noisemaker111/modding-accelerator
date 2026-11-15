@@ -437,6 +437,14 @@ final class PackChecks {
      */
     static List<Map<String, Object>> suspects(String log, List<String> reports, PackMods.Scan scan, PackLoaders.Loader loader) {
         Map<String, Map<String, Object>> found = new LinkedHashMap<>();
+        // A server that logged Done finished its start: the start-up lines before it (mixin configs, mods loading) blame nobody.
+        // Only what failed after it, or a crash report, can name a mod.
+        String done = startedLine(log);
+        if (done != null) {
+            String after = log.substring(log.indexOf(done) + done.length());
+            if (reports.isEmpty() && !FAILED_AFTER_START.matcher(after).find()) return List.of();
+            log = after;
+        }
         String all = plain(log + "\n" + String.join("\n", reports));
         for (Pattern named : loader.modNamed()) {
             Matcher m = named.matcher(all);
@@ -575,7 +583,20 @@ final class PackChecks {
     }
 
     /** What stopped a start: the loader's or game's own words, and their causes. */
+    /** The dedicated server's "Done (12.3s)! For help" line: it finished starting. Null when the log has none. */
+    static String startedLine(String log) {
+        Matcher m = STARTED.matcher(log);
+        return m.find() ? m.group() : null;
+    }
+
+    static final Pattern STARTED = Pattern.compile("(?m)^.*\\bDone \\(\\d+(?:[.,]\\d+)?s\\)! For help.*$");
+    static final Pattern FAILED_AFTER_START = Pattern.compile("Caused by:|Exception in thread|/FATAL\\]|Crash report saved|This crash report has been saved");
+
     static String failure(String log, List<String> failed) {
+        String done = startedLine(log);
+        if (done != null && !FAILED_AFTER_START.matcher(log.substring(log.indexOf(done) + done.length())).find()) return (
+            "The server finished starting (" + plain(done).strip() + ") but modaccel's probe never reported back: a fault of the probe, not of a mod in the pack."
+        );
         List<String> lines = plain(log).lines().toList(), out = new ArrayList<>();
         for (String line : lines) if (
             failed.stream().anyMatch(line::contains) || line.startsWith("Caused by:") || line.contains("Exception message:") || line.contains("/FATAL]")

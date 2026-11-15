@@ -513,6 +513,26 @@ public final class PackCheckTest {
             "a crash report's suspected mod and a module frame name mods: " + neoSuspects
         );
         expect(PackChecks.names(neoSuspects).equals("flywheel (create.jar!flywheel.jar), create (create.jar)"), "suspects read as a list of mods and jars");
+        // Found by an independent rerun of Optimized FPS (Forge 1.16.5): the probe never found the server, and pack-check blamed
+        // ModernFix by quoting a successful start-up log. A server that logged Done blames nobody for what came before it.
+        String startedLog = String.join(
+            "\n",
+            "[main/INFO] [mixin/]: Mixing mixins.iris.json:MixinLevelRenderer",
+            "[Server thread/INFO] [minecraft/DedicatedServer]: Done (12.345s)! For help, type \"help\""
+        );
+        var startedSuspects = PackChecks.suspects(startedLog, List.of(), scan, fabric);
+        String startedFailure = PackChecks.failure(startedLog, fabric.failed());
+        expect(
+            startedSuspects.isEmpty() && startedFailure.contains("finished starting") && startedFailure.contains("not of a mod"),
+            "a log with a finished start names no mod, and says the probe never reported: " + startedSuspects + " " + startedFailure
+        );
+        var crashedAfter = PackChecks.suspects(startedLog + "\n" + mixinLog, List.of(), scan, fabric);
+        expect(crashedAfter.size() == 1 && crashedAfter.get(0).get("mod").equals("iris"), "a failure after the start still names its mod: " + crashedAfter);
+        String probe = Files.readString(harness.resolve("tools/packcheck/ModaccelPackProbe.java"));
+        expect(
+            probe.contains("\"net.minecraftforge.fml.server.ServerLifecycleHooks\"") && probe.contains("for (String hooks : SERVER_HOOKS)"),
+            "the probe looks for the server where Forge 1.16 keeps it (net.minecraftforge.fml.server.ServerLifecycleHooks)"
+        );
 
         // Simple Voice Chat's fixed UDP port, taken by the other lane's server: that start runs again alone.
         String lost = String.join(

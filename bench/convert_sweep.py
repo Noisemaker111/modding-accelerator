@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Runs modaccel convert on a pinned corpus of real mods and ranks what it is missing.
 
-    python bench/convert_sweep.py run [--only ID,ID] [--jobs 2] [--dry-run] [--no-game] [--no-back] [--label NAME]
+    python bench/convert_sweep.py run [--only ID,ID] [--jobs 2] [--no-compile] [--no-game] [--no-back] [--label NAME] [--record]
     python bench/convert_sweep.py table [--label NAME]     rank the recorded runs again and print the gap table
 
 bench/convert-sweep/corpus.json pins each mod (repository and commit). For each one the runner:
@@ -11,14 +11,17 @@ bench/convert-sweep/corpus.json pins each mod (repository and commit). For each 
      (with its symbol and location from the compile log) by the loader concept it lacks, using
      bench/convert-sweep/concepts.json;
   4. when the converted mod compiles: starts it in a hidden client (modaccel ui-check), reads every
-     registry entry in the mod's namespace (modaccel eval), stops the game, and does the same for the
-     untouched original, so the behaviour check is "the converted mod registers what the original does";
+     registry entry in the mod's namespace and the mixins Mixin applied from the mod's own mixin packages
+     (modaccel eval), stops the game, and does the same for the untouched original. The behaviour check is
+     "the converted mod registers what the original does" when the original registers anything, else "the
+     same mixins apply to the same game classes"; a mod with neither is "loads, no registry entries to
+     compare", never a pass;
   5. when it compiles, converts it back and compiles again (the other direction), and compares each Java
      file with the original.
 
 Per-run records go to .runs/convert-sweep/runs/ID-to-LOADER.json. The ranked gap table and the pass rates
-go to coverage/sweeps/convert.json; --label keeps each sweep's pass rates in its history, so a batch of
-rules shows its before and after. Launches follow ~/.modaccel/preferences.json (hidden and muted).
+go to coverage/sweeps/convert.json after a run of the whole corpus (or with --record); --label keeps each
+sweep's pass rates in its history, so a batch of rules shows its before and after. Launches follow ~/.modaccel/preferences.json (hidden and muted).
 After each mod, modaccel game-stop ends its games and Gradle daemons. The runner never calls a network model: convert's rules are plain data.
 """
 import argparse
@@ -53,6 +56,32 @@ for (var registry : net.minecraft.core.registries.BuiltInRegistries.REGISTRY) {
     if (!ids.isEmpty()) { java.util.Collections.sort(ids); out.put(String.valueOf(registry.key()), ids); }
 }
 return out.toString();
+"""
+
+# For a mod that registers nothing: which of its mixins Mixin applied to which game classes. Every target of the mixin
+# configs whose package is the mod's is loaded (not initialised); a merged method carries @MixinMerged naming its mixin,
+# and an accessor or interface mixin is an interface the target now implements.
+MIXIN_SNIPPET = """
+java.util.Set<String> out = new java.util.TreeSet<>();
+ClassLoader loader = Thread.currentThread().getContextClassLoader();
+for (var config : org.spongepowered.asm.mixin.Mixins.getConfigs()) {
+    String pkg = config.getConfig().getMixinPackage();
+    if (pkg == null || !(PACKAGES)) continue;
+    for (String target : config.getConfig().getTargets()) {
+        String name = target.replace('/', '.');
+        try {
+            Class<?> c = Class.forName(name, false, loader);
+            for (var m : c.getDeclaredMethods()) {
+                var merged = m.getAnnotation(org.spongepowered.asm.mixin.transformer.meta.MixinMerged.class);
+                if (merged != null && merged.mixin().startsWith(pkg)) out.add(merged.mixin().substring(pkg.length()) + " > " + name);
+            }
+            for (var i : c.getInterfaces()) if (i.getName().startsWith(pkg)) out.add(i.getName().substring(pkg.length()) + " > " + name);
+        } catch (Throwable t) {
+            out.add("not loaded: " + name);
+        }
+    }
+}
+return String.join("\\n", out);
 """
 
 
@@ -238,8 +267,23 @@ def mod_namespace(work, loader):
 
 # ---- one run -----------------------------------------------------------------------------------------
 
-def game_registries(work, namespace):
-    """Starts the project in a hidden client, reads its registry entries, stops the game."""
+def evaluate(work, name, code_text):
+    """Runs a snippet in the project's running game; (value, error)."""
+    snippet = WORK / f"{Path(work).name}-{name}.java"
+    snippet.write_text(code_text, encoding="utf-8")
+    code, ev, _ = modaccel(["eval", "--root", str(work), "--file", str(snippet), "--json"], TIMEOUT["eval"])
+    if code != 0:
+        return None, str(ev.get("error") or ev)[-1000:]
+    return (ev.get("value") if isinstance(ev, dict) else None), None
+
+
+def mixin_snippet(packages):
+    test = " || ".join(f'pkg.startsWith("{p}")' for p in packages) or "false"
+    return MIXIN_SNIPPET.replace("PACKAGES", test)
+
+
+def game_registries(work, namespace, packages=()):
+    """Starts the project in a hidden client, reads its registry entries and its applied mixins, stops the game."""
     record = {}
     code, ui, seconds = modaccel(["ui-check", "--root", str(work), "--json"], TIMEOUT["ui-check"])
     record["loaded"] = code == 0
@@ -247,15 +291,40 @@ def game_registries(work, namespace):
     if code != 0:
         record["loadError"] = str(ui.get("error") or ui.get("details") or ui)[-1500:]
     else:
-        snippet = WORK / "registry-snippet.java"
-        snippet.write_text(REGISTRY_SNIPPET.replace("NAMESPACE", namespace or ""), encoding="utf-8")
-        code, ev, _ = modaccel(["eval", "--root", str(work), "--file", str(snippet), "--json"], TIMEOUT["eval"])
-        value = ev.get("value") if isinstance(ev, dict) else None
-        record["registries"] = value if code == 0 else None
-        if code != 0:
-            record["evalError"] = str(ev.get("error") or ev)[-1000:]
+        record["registries"], error = evaluate(work, "registries", REGISTRY_SNIPPET.replace("NAMESPACE", namespace or ""))
+        if error:
+            record["evalError"] = error
+        record["mixins"], error = evaluate(work, "mixins", mixin_snippet(packages))
+        if error:
+            record["mixinError"] = error
     modaccel(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
     return record
+
+
+def behaviour(converted, original):
+    """
+    The behaviour check of one conversion from both games' records. Registry entries in the mod's namespace are compared
+    when the original registers any; a mod that registers nothing is compared by the mixins Mixin applied (the same mixins
+    on the same game classes). Nothing to compare on either side is no pass: equal is None.
+    """
+    a, b = parse_registries(converted.get("registries")), parse_registries(original.get("registries"))
+    if a is None or b is None:
+        return {"check": "registry entries", "equal": None, "why": "a registry read failed"}
+    if sum(len(v) for v in b.values()):
+        missing = {k: sorted(set(v) - set(a.get(k, []))) for k, v in b.items() if set(v) - set(a.get(k, []))}
+        extra = {k: sorted(set(v) - set(b.get(k, []))) for k, v in a.items() if set(v) - set(b.get(k, []))}
+        return {"check": "registry entries in the mod's namespace, converted vs original", "signal": "registries",
+                "equal": not missing and not extra, "entries": sum(len(v) for v in b.values()), "missing": missing, "extra": extra}
+    if sum(len(v) for v in a.values()):
+        return {"check": "registry entries in the mod's namespace, converted vs original", "signal": "registries",
+                "equal": False, "entries": 0, "missing": {}, "extra": a}
+    mine, theirs = converted.get("mixins"), original.get("mixins")
+    if isinstance(mine, str) and isinstance(theirs, str) and theirs.strip():
+        x, y = set(mine.split("\n")) - {""}, set(theirs.split("\n")) - {""}
+        return {"check": "mixins applied to game classes, converted vs original (the mod registers nothing)", "signal": "mixins",
+                "equal": x == y, "mixins": len(y), "missing": sorted(y - x), "extra": sorted(x - y)}
+    return {"check": "registry entries", "equal": None, "signal": None,
+            "why": "the mod registers nothing in either game and no applied mixins were read, so there is nothing to compare"}
 
 
 def parse_registries(text):
@@ -297,7 +366,7 @@ def run_mod(mod, args, concepts, started):
     props = (work / "gradle.properties").read_text(encoding="utf-8", errors="replace") if (work / "gradle.properties").is_file() else ""
     yarn = bool(re.search(r"(?m)^\s*yarn_(?:mappings|version)\s*=", props)) and mod["loader"] == "fabric"
     record["yarn"] = yarn
-    convert_args = ["convert", "--root", str(work), "--to", to, "--json"] + (["--dry-run"] if args.dry_run else [])
+    convert_args = ["convert", "--root", str(work), "--to", to, "--json"] + (["--no-compile"] if args.no_compile else [])
     code, result, seconds = modaccel(convert_args, TIMEOUT["convert"])
     record["convertSeconds"] = round(seconds, 1)
     record["exit"] = code
@@ -345,21 +414,13 @@ def run_mod(mod, args, concepts, started):
         if result.get("compiled") and not args.no_game:
             namespace = mod_namespace(work, to) or mod_namespace(src, mod["loader"])
             record["namespace"] = namespace
-            record["game"] = game_registries(work, namespace)
+            packages = own_packages(src)
+            record["game"] = game_registries(work, namespace, packages)
             if record["game"].get("loaded"):
                 original = fresh_copy(src, f"{mod['id']}-original")
                 started.append(original)
-                record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]))
-                a = parse_registries(record["game"].get("registries"))
-                b = parse_registries(record["originalGame"].get("registries"))
-                if a is not None and b is not None:
-                    missing = {k: sorted(set(v) - set(a.get(k, []))) for k, v in b.items() if set(v) - set(a.get(k, []))}
-                    extra = {k: sorted(set(v) - set(b.get(k, []))) for k, v in a.items() if set(v) - set(b.get(k, []))}
-                    record["behaviour"] = {"check": "registry entries in the mod's namespace, converted vs original",
-                                           "equal": not missing and not extra, "entries": sum(len(v) for v in b.values()),
-                                           "missing": missing, "extra": extra}
-                else:
-                    record["behaviour"] = {"check": "registry entries", "equal": None, "why": "a registry read failed"}
+                record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages)
+                record["behaviour"] = behaviour(record["game"], record["originalGame"])
             else:
                 hit("game load failed after a clean compile", {"kind": "game", "text": record["game"].get("loadError", "")[:1500]})
         if result.get("compiled") and not args.no_back:
@@ -404,18 +465,33 @@ def outcome(r):
         return "compiles"
     if not r["game"].get("loaded"):
         return "compiles, fails in the game"
-    if (r.get("behaviour") or {}).get("equal"):
+    b = r.get("behaviour") or {}
+    if b.get("equal") and b.get("signal", "registries") == "registries":
         return "loads, registers what the original does"
+    if b.get("equal") and b.get("signal") == "mixins":
+        return "loads, applies the same mixins as the original"
+    if b.get("equal") is None and b.get("why", "").startswith("the mod registers nothing"):
+        return "loads, no registry entries to compare"
     return "loads in the game"
+
+
+def rederive(r):
+    """A record's behaviour check and outcome again from the games it read (older records counted zero against zero)."""
+    if (r.get("game") or {}).get("loaded") and r.get("originalGame"):
+        r["behaviour"] = behaviour(r["game"], r["originalGame"])
+    r["outcome"] = outcome(r)
+    return r
 
 
 # ---- ranking ------------------------------------------------------------------------------------------
 
 LADDER = ["refused", "converted, does not compile", "compiles, items left", "compiles", "compiles, fails in the game",
-          "loads in the game", "loads, registers what the original does"]
+          "loads in the game", "loads, no registry entries to compare", "loads, applies the same mixins as the original",
+          "loads, registers what the original does"]
 
 
 def summarize(records, label):
+    records = [rederive(r) for r in records]
     gaps = {}
     for r in records:
         for concept, count in r.get("concepts", {}).items():
@@ -440,7 +516,10 @@ def summarize(records, label):
         "compiled": sum(bool(r.get("compiled")) for r in records),
         "compiled with nothing left": sum(bool(r.get("compiled")) and not r.get("concepts") for r in records),
         "loaded in the game": sum(bool((r.get("game") or {}).get("loaded")) for r in records),
-        "registers what the original does": sum(bool((r.get("behaviour") or {}).get("equal")) for r in records),
+        "registers what the original does": sum(
+            bool((r.get("behaviour") or {}).get("equal")) and (r.get("behaviour") or {}).get("signal", "registries") == "registries" for r in records),
+        "same behaviour as the original (registries, or mixins when it registers nothing)": sum(bool((r.get("behaviour") or {}).get("equal")) for r in records),
+        "loaded with nothing to compare": sum((r.get("behaviour") or {}).get("signal", "") is None for r in records),
         "converted back and compiled": sum(bool((r.get("back") or {}).get("compiled")) for r in records),
         "outcomes": counts,
     }
@@ -452,7 +531,7 @@ def compact(r):
             "refusal", "rulesApplied", "concepts", "behaviour", "back"]
     out = {k: r[k] for k in keep if k in r}
     if "game" in r:
-        out["game"] = {k: v for k, v in r["game"].items() if k != "registries"}
+        out["game"] = {k: v for k, v in r["game"].items() if k not in ("registries", "mixins")}
     return out
 
 
@@ -474,7 +553,9 @@ def write(records, label):
 def table(ranked, rates, limit=30):
     lines = [f"Convert sweep ({rates['label']}): {rates['runs']} runs; not refused {rates['not refused']}, compiled {rates['compiled']}, "
              f"nothing left {rates['compiled with nothing left']}, loaded {rates['loaded in the game']}, "
-             f"registers what the original does {rates['registers what the original does']}, back and compiled {rates['converted back and compiled']}",
+             f"registers what the original does {rates['registers what the original does']}, "
+             f"same mixins or entries {rates['same behaviour as the original (registries, or mixins when it registers nothing)']}, "
+             f"nothing to compare {rates['loaded with nothing to compare']}, back and compiled {rates['converted back and compiled']}",
              "", "| # | Missing concept | Mods | Blocking | Items | Example |", "|---|---|---|---|---|---|"]
     for g in ranked[:limit]:
         example = (g["examples"][0] if g["examples"] else "").replace("|", "/")
@@ -493,12 +574,13 @@ def main():
     run = sub.add_parser("run")
     run.add_argument("--only", default="")
     run.add_argument("--jobs", type=int, default=2, help="at most this many builds or games at once (default 2)")
-    run.add_argument("--dry-run", action="store_true", help="convert without compiling")
+    run.add_argument("--no-compile", action="store_true", help="convert without compiling")
     run.add_argument("--no-game", action="store_true")
     run.add_argument("--no-back", action="store_true")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
     run.add_argument("--modaccel", default="", help="run another modaccel checkout (e.g. the baseline) instead of this one")
+    run.add_argument("--record", action="store_true", help="write coverage/sweeps/convert.json after a partial (--only) run too")
     t = sub.add_parser("table")
     t.add_argument("--label", default="latest")
     args = parser.parse_args()
@@ -526,9 +608,19 @@ def main():
                 print(f"{m['id']}: {r['outcome']} {json.dumps(r.get('concepts', {}))[:300]}", flush=True)
             except Exception as e:
                 print(f"{m['id']}: runner error {e!r}", flush=True)
-    ranked, rates = write(load_records(), args.label)
+    records = load_records()
+    if records_coverage(args):
+        ranked, rates = write(records, args.label)
+    else:
+        ranked, rates = summarize(records, args.label)
+        print(f"Partial run (--only): {OUT.relative_to(ROOT)} is left as it is; pass --record to write it.")
     print(table(ranked, rates))
     return 0
+
+
+def records_coverage(args):
+    """Whether a run writes the tracked coverage file: a run of the whole corpus, or one asked to with --record."""
+    return not args.only or args.record
 
 
 if __name__ == "__main__":

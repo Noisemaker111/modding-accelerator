@@ -327,10 +327,24 @@ final class Installation {
      * The desktop app (app/, built with cargo build --release) goes into the ZIP once it is built: the Windows exe,
      * and an ELF binary as the Linux one. Without a build the package is the command line alone.
      */
-    static List<String> desktopApps(Path harness, Map<String, byte[]> contents) throws IOException {
+    static List<String> desktopApps(Path harness, Map<String, byte[]> contents) throws Exception {
         List<String> added = new ArrayList<>();
-        Path release = harness.resolve("app/target/release");
+        Path app = harness.resolve("app"), release = app.resolve("target/release");
         Path exe = release.resolve(DESKTOP_WINDOWS);
+        // A built app older than its sources is not the app: rebuild it with cargo, or refuse to package it.
+        for (Path binary : List.of(exe, release.resolve("modaccel-desktop"))) {
+            if (!Files.isRegularFile(binary) || newerSource(app, binary) == null) continue;
+            Path cargo = onPath("cargo");
+            if (cargo != null) {
+                Process build = new ProcessBuilder(cargo.toString(), "build", "--release").directory(app.toFile()).inheritIO().start();
+                if (build.waitFor() != 0) throw new IOException("cargo build --release failed in " + app + "; the desktop app was not packaged.");
+            }
+            Path newer = newerSource(app, binary);
+            if (newer != null) throw new IOException(
+                binary + " is older than " + newer + ", so it is not the app in this checkout. Run cargo build --release in " + app +
+                " (cargo was " + (cargo == null ? "not found" : "run, and did not rebuild it") + ") or delete the stale build, then package again."
+            );
+        }
         if (Files.isRegularFile(exe)) {
             contents.put(DESKTOP_WINDOWS, Files.readAllBytes(exe));
             added.add(DESKTOP_WINDOWS);
@@ -343,6 +357,36 @@ final class Installation {
             added.add(DESKTOP_LINUX);
         }
         return added;
+    }
+
+    /** A file of the app's sources (anything in app/ but its build output and hidden folders) changed after a built binary; null when none. */
+    static Path newerSource(Path app, Path binary) throws IOException {
+        if (!Files.isDirectory(app)) return null;
+        var built = Files.getLastModifiedTime(binary);
+        try (var walk = Files.walk(app)) {
+            for (Path p : walk.filter(Files::isRegularFile).toList()) {
+                Path rel = app.relativize(p);
+                String first = rel.getName(0).toString();
+                if (first.equals("target") || first.startsWith(".")) continue;
+                if (Files.getLastModifiedTime(p).compareTo(built) > 0) return p;
+            }
+        }
+        return null;
+    }
+
+    /** An executable on PATH (with Windows' extensions), or null. */
+    static Path onPath(String name) {
+        for (String dir : System.getenv().getOrDefault("PATH", "").split(java.io.File.pathSeparator)) {
+            for (String ext : List.of("", ".exe", ".cmd", ".bat")) {
+                try {
+                    Path candidate = Path.of(dir).resolve(name + ext);
+                    if (!dir.isBlank() && Files.isRegularFile(candidate)) return candidate;
+                } catch (java.nio.file.InvalidPathException unusable) {
+                    break;
+                }
+            }
+        }
+        return null;
     }
 
     private static int u16(byte[] bytes, int offset) {
