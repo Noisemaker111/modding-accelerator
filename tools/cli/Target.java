@@ -132,6 +132,7 @@ final class Target {
             applyReplacements(setup, build, pins);
             neoGradleFollows(setup, build, to);
             modDevFollows(setup, build, to);
+            neoFormFollows(setup, build, to);
             toolchain(setup, build, to);
             runTypeRename(setup, build, to);
             parchmentFollows(setup, build, to);
@@ -156,6 +157,7 @@ final class Target {
         // A multi-loader build keeps NeoForge's version beside Fabric's: the sibling project must follow the same game.
         neoForgeSibling(setup, build, pins, to);
         forgeSibling(setup, build, pins, to);
+        neoFormFollows(setup, build, to);
         Dependencies.resolve(setup);
         applyReplacements(setup, build, pins);
         loomFollows(setup, build, to);
@@ -506,6 +508,34 @@ final class Target {
             if (newest == null || Versions.compare(v.substring(to.length() + 1), newest.substring(to.length() + 1)) > 0) newest = v;
         }
         return newest;
+    }
+
+    /**
+     * A vanilla-only module (an Architectury or MultiLoader common built on ModDevGradle's neoForm) names a NeoForm release:
+     * its full version, or a timestamp the build joins to the Minecraft version (JEI: ${minecraftVersion}-${neoformTimestamp}).
+     * It moves to NeoForm's newest release for the target game on maven.neoforged.net; the old one does not exist for it.
+     */
+    static void neoFormFollows(Setup setup, Build build, String to) throws Exception {
+        Path properties = build.project.root.resolve("gradle.properties");
+        if (!Files.isRegularFile(properties)) return;
+        String text = setup.text(properties);
+        Matcher pin = Pattern.compile(
+            "(?m)^([ \\t]*(neoform_version|neoFormVersion|neoform_timestamp|neoformTimestamp|neoFormTimestamp)[ \\t]*=[ \\t]*)(\\S+)[ \\t]*$"
+        ).matcher(text);
+        if (!pin.find()) return;
+        String newest = null;
+        Matcher version = Pattern.compile("<version>(" + Pattern.quote(to) + "-(\\d{8}\\.\\d{6}))</version>").matcher(
+            fetch(build, "https://maven.neoforged.net/releases/net/neoforged/neoform/maven-metadata.xml")
+        );
+        while (version.find()) if (newest == null || version.group(2).compareTo(newest.substring(newest.indexOf('-') + 1)) > 0) newest = version.group(1);
+        if (newest == null) {
+            setup.unchecked.add(Json.map("artifact", "net.neoforged:neoform", "version", to, "reason", "NeoForm publishes no release for Minecraft " + to));
+            return;
+        }
+        String value = pin.group(2).toLowerCase(Locale.ROOT).contains("timestamp") ? newest.substring(newest.indexOf('-') + 1) : newest;
+        if (value.equals(pin.group(3))) return;
+        setup.replace(properties, pin.group(0), pin.group(1) + value);
+        setup.applied.add(Json.map("artifact", "net.neoforged:neoform", "from", pin.group(3), "to", newest, "evidence", "NeoForm's newest release for " + to + " on maven.neoforged.net"));
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */
