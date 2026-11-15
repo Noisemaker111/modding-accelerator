@@ -132,6 +132,8 @@ final class Dependencies {
                 continue;
             }
             Selection selection = select(setup.selections, group, name, old);
+            // A library released per game version (in its name or its version) is looked up by that before anything else.
+            if (selection == null && gameVersioned(setup, group, name, old, binary, Json.text(dep, "configuration", ""))) continue;
             try {
                 if (selection != null && selection.disable()) disable(setup, group, name, old, binary, selection);
                 else if (selection != null) choose(setup, group, name, old, binary, selection);
@@ -244,6 +246,16 @@ final class Dependencies {
                 return true;
             }
             if (owners.size() != 1) return false;
+            // A name written out in the build script (bookshelf-fabric-1.21.1) is renamed where it is written.
+            Object buildFile = setup.project.get("buildFile");
+            if (buildFile != null && Files.isRegularFile(Path.of(buildFile.toString()))) {
+                Path script = Path.of(buildFile.toString());
+                String text = setup.text(script);
+                if (text.contains(name)) {
+                    setup.originals.putIfAbsent(script, text);
+                    setup.texts.put(script, text.replace(name, renamed));
+                }
+            }
             setup.replacements.put(owners.iterator().next(), chosen);
             setup.pins.putIfAbsent(owners.iterator().next(), old);
             setup.applied.add(
