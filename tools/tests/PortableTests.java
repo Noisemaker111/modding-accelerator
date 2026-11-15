@@ -1458,6 +1458,24 @@ public final class PortableTests {
             bridgedEntry +
             bridged.get("details")
         );
+        // Found by the convert sweep: the NeoForge MDK converted to Fabric did not convert back. The way back takes the bridge out.
+        Map<String, Object> unbridged = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert"))).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+        );
+        String backEntry = Files.readString(neo.resolve("src/main/java/demo/Demo.java"));
+        String neoOriginal = Json.text(bridgeTest, "neoforge", "");
+        check(
+            backEntry.contains("@Mod(Demo.MODID)\npublic class Demo {") &&
+            backEntry.contains("\tpublic Demo(IEventBus modEventBus, ModContainer modContainer) {\n\t\tmodEventBus.addListener(this::commonSetup);\n\t\tBLOCKS.register(modEventBus);\n\t\tNeoForge.EVENT_BUS.register(this);\n\t\tmodContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);\n\t}\n") &&
+            !backEntry.contains("loaderbridge") &&
+            !backEntry.contains("fabricmc") &&
+            neoOriginal.lines().filter(l -> l.startsWith("import ")).allMatch(backEntry::contains) &&
+            !Files.exists(neo.resolve("src/main/java/demo/loaderbridge")) &&
+            Files.isRegularFile(neo.resolve("src/main/resources/META-INF/neoforge.mods.toml")),
+            "a mod that went to Fabric through the NeoForge bridge comes back as a NeoForge @Mod class, without the bridge:\n" +
+            backEntry +
+            unbridged.get("details")
+        );
     }
 
     public static void main(String[] args) throws Exception {

@@ -2099,7 +2099,13 @@ final class Convert {
             try (var list = Files.list(layer)) {
                 for (Path template : list.filter(p -> p.toString().endsWith(".java")).toList()) files.put(template.getFileName().toString(), template);
             }
-            notes.add("NeoForge bridge: the layer for Minecraft " + Json.text(bridgeLayer, "minecraft", "") + " (" + Json.text(bridgeLayer, "folder", "") + ") replaces the files whose game or Fabric API names differ there.");
+            notes.add(
+                "NeoForge bridge: the layer for Minecraft " +
+                Json.text(bridgeLayer, "minecraft", "") +
+                " (" +
+                Json.text(bridgeLayer, "folder", "") +
+                ") replaces the files whose game or Fabric API names differ there."
+            );
         }
         for (var template : files.entrySet()) write(
             bridgeFolder() + "/" + template.getKey(),
