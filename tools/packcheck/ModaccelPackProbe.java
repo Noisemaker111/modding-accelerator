@@ -47,6 +47,8 @@ import net.minecraft.world.phys.Vec3;
 @net.neoforged.fml.common.Mod("modaccel_pack_probe")
 public final class ModaccelPackProbe {
     static final int COLUMNS = 64, SPACING = 3;
+    /** Block.setBlock flags, the same numbers in every version (1.16 does not name them): update neighbours and clients, clients only, no shape updates. */
+    static final int UPDATE_ALL = 3, UPDATE_CLIENTS = 2, UPDATE_KNOWN_SHAPE = 16;
     static Work running;
 
     public ModaccelPackProbe() { start(); }
@@ -71,7 +73,7 @@ public final class ModaccelPackProbe {
         void watch() {
             try {
                 long since = System.nanoTime();
-                while ((server = findServer()) == null || !server.isReady() || server.getTickCount() < 1) {
+                while ((server = findServer()) == null || !ModaccelPackGame.ready(server) || server.getTickCount() < 1) {
                     if (server != null && !server.isRunning() && server.getTickCount() > 0) return;
                     Thread.sleep(250);
                     if (System.nanoTime() - since > TimeUnit.MINUTES.toNanos(60)) return;
@@ -141,9 +143,9 @@ public final class ModaccelPackProbe {
             finished = true;
             result.addProperty("ok", ok);
             try {
-                Path out = Path.of(System.getProperty("modaccel.probe.out", "modaccel-probe.json"));
+                Path out = Paths.get(System.getProperty("modaccel.probe.out", "modaccel-probe.json"));
                 Files.createDirectories(out.toAbsolutePath().getParent());
-                Files.writeString(out, new GsonBuilder().setPrettyPrinting().create().toJson(result), StandardCharsets.UTF_8);
+                Files.write(out, new GsonBuilder().setPrettyPrinting().create().toJson(result).getBytes(StandardCharsets.UTF_8));
                 System.out.println("MODACCEL-PROBE-DONE " + out.toAbsolutePath());
             } catch (IOException unwritable) { unwritable.printStackTrace(); }
             // A normal stop: the world is saved, so the next start can read it back. In singleplayer, halting the built-in
@@ -157,26 +159,27 @@ public final class ModaccelPackProbe {
 
     /** The running server, from whichever loader is present: Forge and NeoForge keep it in ServerLifecycleHooks, Fabric and Quilt in FabricLoader. */
     static MinecraftServer findServer() {
-        for (String hooks : List.of("net.neoforged.neoforge.server.ServerLifecycleHooks", "net.minecraftforge.server.ServerLifecycleHooks")) {
+        for (String hooks : Arrays.asList("net.neoforged.neoforge.server.ServerLifecycleHooks", "net.minecraftforge.server.ServerLifecycleHooks")) {
             Object server = call(hooks, "getCurrentServer");
-            if (server instanceof MinecraftServer found) return found;
+            if (server instanceof MinecraftServer) return (MinecraftServer) server;
         }
         Object fabric = call("net.fabricmc.loader.api.FabricLoader", "getInstance");
         if (fabric != null) try {
-            if (invoke(fabric, "getGameInstance") instanceof MinecraftServer found) return found;
+            Object game = invoke(fabric, "getGameInstance");
+            if (game instanceof MinecraftServer) return (MinecraftServer) game;
         } catch (ReflectiveOperationException | RuntimeException notYet) { /* the game instance is set once the server is built */ }
         return null;
     }
 
     /** A no-argument method called through the public type that declares it: loaders hide their implementation classes. */
     static Object invoke(Object target, String name) throws ReflectiveOperationException {
-        Deque<Class<?>> types = new ArrayDeque<>(List.of(target.getClass()));
+        Deque<Class<?>> types = new ArrayDeque<>(Collections.singletonList(target.getClass()));
         while (!types.isEmpty()) {
             Class<?> type = types.poll();
             if (java.lang.reflect.Modifier.isPublic(type.getModifiers())) try { return type.getMethod(name).invoke(target); }
             catch (NoSuchMethodException | IllegalAccessException notHere) { /* a supertype */ }
             if (type.getSuperclass() != null) types.add(type.getSuperclass());
-            types.addAll(List.of(type.getInterfaces()));
+            types.addAll(Arrays.asList(type.getInterfaces()));
         }
         throw new NoSuchMethodException(target.getClass().getName() + "." + name);
     }
@@ -204,10 +207,14 @@ public final class ModaccelPackProbe {
             } catch (ClassNotFoundException | LinkageError absent) { /* next */ }
         }
         // No loader fake player (a Fabric pack without Fabric API): a plain player that is never added to the world.
-        var profile = new com.mojang.authlib.GameProfile(UUID.fromString("41c82c87-7afb-4024-ba57-13d2c99cae77"), "[modaccel]");
-        for (var constructor : ServerPlayer.class.getConstructors()) {
+        com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(UUID.fromString("41c82c87-7afb-4024-ba57-13d2c99cae77"), "[modaccel]");
+        for (java.lang.reflect.Constructor<?> constructor : ServerPlayer.class.getConstructors()) {
             Class<?>[] types = constructor.getParameterTypes();
             if (types.length == 3) return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile);
+            // Before 1.17 the player takes its game mode handler, which takes the level.
+            if (types.length == 4 && types[3].getSimpleName().equals("ServerPlayerGameMode")) for (java.lang.reflect.Constructor<?> mode : types[3].getConstructors())
+                if (mode.getParameterCount() == 1 && mode.getParameterTypes()[0].isInstance(level))
+                    return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile, mode.newInstance(level));
             if (types.length == 4) for (Method made : types[3].getMethods())
                 if (java.lang.reflect.Modifier.isStatic(made.getModifiers()) && made.getParameterCount() == 0 && made.getReturnType() == types[3])
                     return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile, made.invoke(null));
@@ -223,7 +230,7 @@ public final class ModaccelPackProbe {
 
     static Set<String> only() {
         Set<String> only = new HashSet<>();
-        for (String id : System.getProperty("modaccel.probe.only", "").split(",")) if (!id.isBlank()) only.add(id.strip());
+        for (String id : System.getProperty("modaccel.probe.only", "").split(",")) if (!id.trim().isEmpty()) only.add(id.trim());
         return only;
     }
     static boolean chosen(Item item, Set<String> only) {
@@ -246,12 +253,10 @@ public final class ModaccelPackProbe {
         static final String[] SURFACES = { "minecraft:stone", "minecraft:grass_block", "minecraft:farmland", "minecraft:sand", "wall", "ceiling", "water" };
         Placement(ServerLevel level, JsonObject result) throws ReflectiveOperationException { this.level = level; this.result = result; player = fakePlayer(level); origin = origin(level); }
         static Block ground(String surface) {
-            return switch (surface) {
-                case "minecraft:grass_block" -> Blocks.GRASS_BLOCK;
-                case "minecraft:farmland" -> Blocks.FARMLAND;
-                case "minecraft:sand", "water" -> Blocks.SAND;
-                default -> Blocks.STONE;
-            };
+            if (surface.equals("minecraft:grass_block")) return Blocks.GRASS_BLOCK;
+            if (surface.equals("minecraft:farmland")) return Blocks.FARMLAND;
+            if (surface.equals("minecraft:sand") || surface.equals("water")) return Blocks.SAND;
+            return Blocks.STONE;
         }
         void place(Item item) {
             if (!chosen(item, only)) return;
@@ -273,26 +278,21 @@ public final class ModaccelPackProbe {
                     BlockPos clicked = support, target = support.above(); Direction face = Direction.UP; Vec3 point;
                     float yaw = 180f, pitch = 45f; Vec3 standing = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 2.5);
                     Block base = ground(surface);
-                    switch (surface) {
-                        case "wall" -> {   // the north face of a stone block: torches, ladders, wall signs, vines
-                            target = support.north(); face = Direction.NORTH;
-                            point = new Vec3(support.getX() + 0.5, support.getY() + 0.5, support.getZ());
-                            standing = new Vec3(support.getX() + 0.5, support.getY(), support.getZ() - 1.5); yaw = 0f; pitch = 0f;
-                        }
-                        case "ceiling" -> {   // the underside of a stone block: hanging signs, spore blossoms, weeping vines
-                            clicked = support.above(2); face = Direction.DOWN;
-                            point = new Vec3(support.getX() + 0.5, support.getY() + 2, support.getZ() + 0.5); pitch = -45f;
-                            level.setBlock(clicked, Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
-                        }
-                        case "water" -> {   // sand under still water: seagrass, kelp, coral
-                            point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);
-                            // Glass round the water, or a water plant (a water source itself) floods the neighbouring cells.
-                            for (Direction side : Direction.Plane.HORIZONTAL) if (level.getBlockState(target.relative(side)).isAir()) level.setBlock(target.relative(side), Blocks.GLASS.defaultBlockState(), Block.UPDATE_ALL);
-                            level.setBlock(target, Blocks.WATER.defaultBlockState(), Block.UPDATE_ALL);
-                        }
-                        default -> point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);   // the top of a block
-                    }
-                    level.setBlock(support, base.defaultBlockState(), Block.UPDATE_ALL);
+                    if (surface.equals("wall")) {   // the north face of a stone block: torches, ladders, wall signs, vines
+                        target = support.north(); face = Direction.NORTH;
+                        point = new Vec3(support.getX() + 0.5, support.getY() + 0.5, support.getZ());
+                        standing = new Vec3(support.getX() + 0.5, support.getY(), support.getZ() - 1.5); yaw = 0f; pitch = 0f;
+                    } else if (surface.equals("ceiling")) {   // the underside of a stone block: hanging signs, spore blossoms, weeping vines
+                        clicked = support.above(2); face = Direction.DOWN;
+                        point = new Vec3(support.getX() + 0.5, support.getY() + 2, support.getZ() + 0.5); pitch = -45f;
+                        level.setBlock(clicked, Blocks.STONE.defaultBlockState(), UPDATE_ALL);
+                    } else if (surface.equals("water")) {   // sand under still water: seagrass, kelp, coral
+                        point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);
+                        // Glass round the water, or a water plant (a water source itself) floods the neighbouring cells.
+                        for (Direction side : Direction.Plane.HORIZONTAL) if (level.getBlockState(target.relative(side)).isAir()) level.setBlock(target.relative(side), Blocks.GLASS.defaultBlockState(), UPDATE_ALL);
+                        level.setBlock(target, Blocks.WATER.defaultBlockState(), UPDATE_ALL);
+                    } else point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);   // the top of a block
+                    level.setBlock(support, base.defaultBlockState(), UPDATE_ALL);
                     BlockState before = level.getBlockState(target);
                     ItemStack stack = new ItemStack(item);
                     player.setItemInHand(InteractionHand.MAIN_HAND, stack);
@@ -345,7 +345,9 @@ public final class ModaccelPackProbe {
 
     static void verify(MinecraftServer server, JsonObject result) throws IOException {
         ServerLevel level = server.overworld();
-        JsonObject before = JsonParser.parseString(Files.readString(Path.of(System.getProperty("modaccel.probe.placed")), StandardCharsets.UTF_8)).getAsJsonObject();
+        // new JsonParser().parse: the Gson of 1.16 has no static parseString.
+        @SuppressWarnings("deprecation")
+        JsonObject before = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(System.getProperty("modaccel.probe.placed"))), StandardCharsets.UTF_8)).getAsJsonObject();
         JsonArray changed = new JsonArray();
         int read = 0, kept = 0;
         for (JsonElement element : before.getAsJsonArray("placed")) {
@@ -372,9 +374,9 @@ public final class ModaccelPackProbe {
         // The cell: the support, the two blocks above it (target and ceiling), the wall target to its north, and the four
         // blocks round the target (the water attempt's glass). A cell is reused after an item that did not place, and
         // anything left there would give the next item a wall to hang on or take the room a bed needs.
-        for (int dy = 0; dy <= 2; dy++) level.setBlock(support.above(dy), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
-        level.setBlock(support.north(), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
-        for (Direction side : Direction.Plane.HORIZONTAL) level.setBlock(support.above().relative(side), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        for (int dy = 0; dy <= 2; dy++) level.setBlock(support.above(dy), Blocks.AIR.defaultBlockState(), UPDATE_CLIENTS | UPDATE_KNOWN_SHAPE);
+        level.setBlock(support.north(), Blocks.AIR.defaultBlockState(), UPDATE_CLIENTS | UPDATE_KNOWN_SHAPE);
+        for (Direction side : Direction.Plane.HORIZONTAL) level.setBlock(support.above().relative(side), Blocks.AIR.defaultBlockState(), UPDATE_CLIENTS | UPDATE_KNOWN_SHAPE);
     }
 
     /** Every loaded mod and its version, from whichever loader is present. */
@@ -382,7 +384,7 @@ public final class ModaccelPackProbe {
         JsonArray mods = new JsonArray();
         ClassLoader loader = ModaccelPackProbe.class.getClassLoader();
         try {
-            for (String list : List.of("net.neoforged.fml.ModList", "net.minecraftforge.fml.ModList")) {
+            for (String list : Arrays.asList("net.neoforged.fml.ModList", "net.minecraftforge.fml.ModList")) {
                 Class<?> type;
                 try { type = Class.forName(list, true, loader); } catch (ClassNotFoundException | LinkageError absent) { continue; }
                 Object all = type.getMethod("get").invoke(null);

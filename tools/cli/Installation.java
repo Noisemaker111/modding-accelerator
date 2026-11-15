@@ -37,6 +37,7 @@ final class Installation {
         "tools/packcheck/neoforge.mods.toml",
         "tools/packcheck/fabric.mod.json",
         "tools/packcheck/pack.mcmeta",
+        "tools/packcheck/game/1.16/ModaccelPackGame.java",
         "tools/packcheck/game/1.18/ModaccelPackGame.java",
         "tools/packcheck/game/1.19.3/ModaccelPackGame.java",
         "tools/packcheck/game/1.21.2/ModaccelPackGame.java",

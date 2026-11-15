@@ -40,6 +40,11 @@ final class ModaccelPackGame {
         return String.valueOf(Registry.BLOCK.getKey(block));
     }
 
+    /** The server finished starting. */
+    static boolean ready(MinecraftServer server) {
+        return server.isReady();
+    }
+
     static BlockPos spawn(ServerLevel level) {
         return level.getSharedSpawnPos();
     }

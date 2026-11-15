@@ -527,22 +527,21 @@ final class PackLoaders {
         Files.createDirectories(stubs);
         Files.createDirectories(classes);
         String release = String.valueOf(game.java);
+        // Java 8's javac (games before 1.17) has no --release; it targets its own release with -source and -target.
+        List<String> javaTarget = release.equals("8") ? List.of("-source", "8", "-target", "8") : List.of("--release", release);
         List<String> stubSources = new ArrayList<>();
         for (String source : PROBE) if (source.contains("/stubs/")) stubSources.add(context.harness().resolve(source).toString());
-        List<String> compileStubs = new ArrayList<>(List.of(javac(context), "-nowarn", "-proc:none", "--release", release, "-d", stubs.toString()));
+        List<String> compileStubs = new ArrayList<>(List.of(javac(context), "-nowarn", "-proc:none"));
+        compileStubs.addAll(javaTarget);
+        compileStubs.addAll(List.of("-d", stubs.toString()));
         compileStubs.addAll(stubSources);
         step(context, "probe-stubs", compileStubs, dir);
         List<String> classpath = new ArrayList<>(List.of(game.mojang.toString(), stubs.toString()));
         for (Path lib : game.libraries) classpath.add(lib.toString());
-        step(
-            context,
-            "probe-compile",
+        List<String> compileProbe = new ArrayList<>(List.of(javac(context), "-nowarn", "-proc:none"));
+        compileProbe.addAll(javaTarget);
+        compileProbe.addAll(
             List.of(
-                javac(context),
-                "-nowarn",
-                "-proc:none",
-                "--release",
-                release,
                 "-encoding",
                 "UTF-8",
                 "-cp",
@@ -552,9 +551,9 @@ final class PackLoaders {
                 context.harness().resolve("tools/packcheck/ModaccelPackProbe.java").toString(),
                 context.harness().resolve("tools/packcheck/ModaccelPackProbeFabric.java").toString(),
                 layer.toString()
-            ),
-            dir
+            )
         );
+        step(context, "probe-compile", compileProbe, dir);
         // Only the metadata this loader reads goes in, so no loader sees a file meant for another and warns about it.
         // Quilt reads fabric.mod.json too, so a loader is served by the first of its files the probe has.
         int given = 0;

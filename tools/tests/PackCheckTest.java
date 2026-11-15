@@ -556,13 +556,15 @@ public final class PackCheckTest {
             "a Fabric or Quilt range with build metadata accepts the same version with any build metadata"
         );
         Map<String, String> layers = new LinkedHashMap<>();
-        for (String v : List.of("1.18.2", "1.19.2", "1.19.3", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.10", "1.21.11", "26.1.2", "26.3")) layers.put(
+        for (String v : List.of("1.16.5", "1.17.1", "1.18.2", "1.19.2", "1.19.3", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.10", "1.21.11", "26.1.2", "26.3")) layers.put(
             v,
             PackLoaders.gameLayer(harness, v).getParent().getFileName().toString()
         );
         expect(
             layers.equals(
                 Map.ofEntries(
+                    Map.entry("1.16.5", "1.16"),
+                    Map.entry("1.17.1", "1.16"),
                     Map.entry("1.18.2", "1.18"),
                     Map.entry("1.19.2", "1.18"),
                     Map.entry("1.19.3", "1.19.3"),
@@ -580,7 +582,7 @@ public final class PackCheckTest {
         );
         boolean refused = false;
         try {
-            PackLoaders.gameLayer(harness, "1.17.1");
+            PackLoaders.gameLayer(harness, "1.15.2");
         } catch (IOException none) {
             refused = none.getMessage().contains("no game layer");
         }
