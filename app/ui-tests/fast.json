@@ -1,0 +1,6 @@
+{"events": [
+  {"t": 1.0, "type": "tap", "key": "nav-checks"},
+  {"t": 3.0, "type": "tap", "key": "node-fast"},
+  {"t": 10.0, "type": "tap", "key": "run-fast"},
+  {"t": 180.0, "type": "mark", "name": "end"}
+]}
