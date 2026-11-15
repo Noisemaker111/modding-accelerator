@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a heavy job on GitHub's runners instead of this PC, wait for it, and download what it made.
+"""Run a full sweep (every pack, the whole port corpus, wide A/B timing) on GitHub's runners, wait, and download it.
 
     python tools/cloud-run.py packs [--ref BRANCH] [-f packs=atm10-neoforge-1.21.1] [-f focus=MODID] [-f fix=true]
     python tools/cloud-run.py ports [-f cases=jade-neoforge-1.21.1-1.21.6]

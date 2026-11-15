@@ -10,7 +10,7 @@ JDK 17+ and Python 3.12+; no install step. Windows: `modaccel.cmd` and `python` 
 ```sh
 ./modaccel help                    # every command
 python3 bench/run_tests.py         # every offline check, as CI runs them (--list, --only NAME)
-tools/cloud-run packs|ports|perf   # heavy jobs on GitHub's runners (below)
+tools/cloud-run packs|ports|perf   # full sweeps on GitHub's runners (below)
 ```
 
 Use modaccel for builds and game launches, never raw Gradle or `--no-daemon`.
@@ -19,12 +19,13 @@ Use modaccel for builds and game launches, never raw Gradle or `--no-daemon`.
 
 - **One feature = one branch = one PR.** Commit after each passing step; push to the same PR. Use
   `.github/pull_request_template.md`. Merge (`gh pr merge --squash`) only when every check is green; CI is the gate,
-  and a PR's claims ("tests pass", numbers) must be ones CI or a linked cloud run shows.
-- **Never run heavy jobs on this PC.** Pack sweeps, the port board, perf/Diorama A/B timing and benchmarks run in the
-  cloud: push, then `tools/cloud-run packs [-f packs=ID] [-f focus=MODID] [-f fix=true]`, `tools/cloud-run ports
-  [-f cases=ID]` or `tools/cloud-run perf [-f patch=FILE]`; it waits with a hard timeout and downloads to
-  `.runs/cloud/`. Locally: `python3 bench/port_board.py --changed` (only cases your rules cross), `pack-check --focus
-  MODID` (one mod and its dependencies), one game at a time.
+  and a PR's claims ("tests pass", numbers) must be ones CI, a linked cloud run or the local in-game run's receipt shows.
+- **Prove every change in-game locally before merge, at the smallest real scope:** `pack-check --focus MODID`, one
+  mod plus its dependencies, a headless server when the metric is server-side, `python3 bench/port_board.py
+  --changed`. Shut it down afterwards (`game-stop`). Local timing comparisons interleave A/B runs. "Not tested
+  in-game" or "saved for the cloud" is never an acceptable PR result.
+- **Only full sweeps go to the cloud** (all packs, the whole port corpus, wide A/B timing): push, then
+  `tools/cloud-run packs|ports|perf [-f KEY=VALUE]`; it waits with a hard timeout and downloads to `.runs/cloud/`.
 - **Tests: follow `~/.claude/skills/minimal-tests`.** A test proves something users depend on, fails on a wrong
   answer (vary inputs; change cached inputs mid-run), and runs against the packaged jar. Delete tests that can't
   fail. Budgets (enforced by `bench/test_budgets.py`): PR job under 3 min, no test file over 800 lines, this file

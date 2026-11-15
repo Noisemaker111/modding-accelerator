@@ -15,6 +15,6 @@ registry, not the core (`tools/cli/PackCheck.java`); `modaccel pack-check --list
 The probe (`tools/packcheck/ModaccelPackProbe.java`) is loader-neutral, written in Mojang names, and reaches the
 loader only by reflection; keep loader code out of it and its game layers.
 
-Offline: `python bench/run_tests.py --only self-test`. A real pack: `tools/cloud-run packs -f packs=ID [-f focus=MODID]
-[-f fix=true]` (a repair is proven when the repaired server makes a world, reopens it and has no problem the shipped
-one lacks); locally only `pack-check --focus MODID`, which starts one mod and its required mods.
+Offline: `python bench/run_tests.py --only self-test`. In game, locally, before merge: `pack-check --pack PACK --focus
+MODID [--fix]` starts one mod and its required mods on the real server (a repair is proven when the repaired server
+makes a world, reopens it and has no problem the shipped one lacks). Every pack at once: `tools/cloud-run packs`.

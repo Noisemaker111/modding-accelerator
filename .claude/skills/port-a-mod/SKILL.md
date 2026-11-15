@@ -12,7 +12,7 @@ statuses: `stop` (errors left), `build`, `load`, `behaviour` (a game check that 
    new code needed → a guide in `knowledge/structural.json`; build setup → `tools/cli/Target.java`; a porter bug →
    `tools/cli` with a self-test case.
 3. Check locally with `python bench/port_board.py --changed` (only the cases your rules cross; it fails on any error
-   a case's last run did not have). The whole board runs in the cloud: `tools/cloud-run ports`.
+   a case's last run did not have). Only the whole corpus runs in the cloud: `tools/cloud-run ports`.
 4. Repeat until it builds; then load it hidden (`ui-check`, `world-check`) and prove its main feature with an `eval`
    check like `tools/tests/AppleSkinHudCheck.java`, broken once on purpose.
 5. Record: `python bench/record.py port RECEIPT --mod NAME` (`load`/`behaviour` need `--status` and `--detail`).

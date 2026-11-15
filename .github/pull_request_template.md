@@ -1,7 +1,7 @@
 **What works now that didn't:** one sentence. Before: what the user saw. After: what they see now.
 
-**Proof:** CI on this PR, plus the cloud run link (`tools/cloud-run`) for any game, pack, port-board or timing claim.
-Claims CI or a linked run doesn't show don't go here.
+**Proof:** CI on this PR, plus the in-game run that proved it locally (command and receipt), and the cloud run link
+for a full sweep. "Not tested in-game" or "saved for the cloud" is not a result.
 
 **Not covered:** what this doesn't handle or wasn't checked.
 

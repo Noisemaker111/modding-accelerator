@@ -9,9 +9,11 @@ minutes; delete it when the cause is gone.
   game jars under `~/.gradle/caches/fabric-loom/`, modaccel's JDKs, servers and packages under `~/.modaccel/`.
 
 ## The PC freezes during a check
-- Cause: game clients, pack servers, port boards or A/B timing run locally, often several agents at once.
-- Fix: run them in the cloud (`tools/cloud-run`, AGENTS.md). Locally: one game at a time, `port_board.py --changed`,
-  `pack-check --focus MODID`.
+- Cause: orphaned and duplicate game launches. Games started through Gradle `:runClient` were parented by the Gradle
+  daemon and outlived the command that started them (two ran for 13 hours), and new checks launched more beside them.
+- Fix: modaccel now starts games and servers as its own children and ends them when the start fails, is interrupted
+  or is killed (`Run.Owned`); a hidden game left with no requests quits after 15 minutes. `game-stop` when done.
+  There is no cap on local games; full sweeps (all packs, the whole port corpus) go to `tools/cloud-run`.
 
 ## A hidden game keeps running after the command that started it
 - Cause: by design `ui-check`/`world-check` leave the game up for `reload` and `eval`. A failed, interrupted or

@@ -5,7 +5,7 @@ description: Take an unfamiliar Minecraft mod's source to a measured, gated, acc
 
 Done means: one accepted `perf-optimize` run (cold and warm 95% intervals above 1, every gate passing) kept in
 `coverage/perf-runs.json`, and a `knowledge/perf-patterns.json` entry when the change generalises. You write the
-change; modaccel only profiles, measures and gates. Reference: PERFORMANCE.md. Timing runs go to the cloud.
+change; modaccel only profiles, measures and gates. Reference: PERFORMANCE.md.
 
 1. Clone the mod into `.runs/<mod>` at a pinned commit; `modaccel compile --root R`. Pick a mod whose cost is in
    server ticks or worker threads (a hidden client draws ~8 fps). Make the run a player's: drop optional
@@ -23,7 +23,8 @@ change; modaccel only profiles, measures and gates. Reference: PERFORMANCE.md. T
    behaviour). Run the exact gate in two launches (same text), then prove it fails on a deliberately wrong
    `sabotage-*.diff`. `perf-optimize --check-only --experiment E --root R --patch P` checks it all offline.
 6. Write one idea per candidate diff (`git -C R diff > .runs/<mod>-cands/NAME.diff`).
-7. Measure in the cloud: push, `tools/cloud-run perf -f repo=URL -f commit=SHA -f experiment=E -f patch=P`.
-   Never `perf-optimize` locally except `--check-only`.
+7. Measure locally: `perf-optimize --root R --experiment E --patch P --dry-run --out .runs/<mod>-opt/NAME` (it
+   interleaves baseline and candidate runs), then `game-stop`. A wide A/B sweep goes to
+   `tools/cloud-run perf -f repo=URL -f commit=SHA -f experiment=E -f patch=P`.
 8. Keep every decided run: `python bench/record.py perf record.json`. Copy the accepted experiment, snippets and diff
    into `bench/<mod>/` with a README. Add the pattern (symptom, change, gain, gate, `provenIn`, `test.fires`/`quiet`).

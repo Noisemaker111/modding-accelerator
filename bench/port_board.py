@@ -15,7 +15,7 @@ biggest first: that is the next rule to write.
 
 Change a rule in knowledge/fixes.json or the porter, run the board, and read the difference. It exits 1 when
 a port got worse than what is recorded, has an error its last run did not (listed below the table), or could
-not run. Locally run only --changed; the whole board runs in the cloud (tools/cloud-run ports). Ports run one at a time, because NeoForge mods share
+not run. Locally, before merge, run --changed; the whole corpus runs in the cloud (tools/cloud-run ports). Ports run one at a time, because NeoForge mods share
 one decompiled game per version and the second finds the first one's setup. A port only reaches "builds";
 whether it loads and behaves in the game is a game check (see the port-a-mod skill).
 """
