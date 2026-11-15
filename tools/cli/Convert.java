@@ -162,6 +162,10 @@ final class Convert {
         saveInProgress();
         if (from.equals("fabric")) toNeoForge(minecraft);
         else toFabric(minecraft);
+        if (!neutralDependencies.isEmpty()) notes.add(
+            "Dependencies kept as they are, since they name no loader (libraries, or a mod's loader-neutral API): " +
+            String.join(", ", neutralDependencies)
+        );
         Port.finishTransaction(project, transaction, before, removed);
         Map<String, Object> result = Json.map(
             "from",
@@ -1445,12 +1449,10 @@ final class Convert {
                     "\\b(mod(?:Implementation|Api|CompileOnly|CompileOnlyApi|RuntimeOnly|LocalRuntime)|client(?:Implementation|Api|CompileOnly|RuntimeOnly)|include|localRuntime)(?=\\s*[(\"'\\w])"
                 ).matcher(raw);
                 if (!line.startsWith("//") && mod.find()) {
-                    leave(
-                        "build.gradle",
-                        0,
-                        "dependency " + line,
-                        "another mod or library on the Fabric classpath: it needs its NeoForge build, which convert cannot choose"
-                    );
+                    raw = dependencyLine(raw, "fabric", "neoforge", repositories(gradle), false);
+                    mod = Pattern.compile(
+                        "\\b(mod(?:Implementation|Api|CompileOnly|CompileOnlyApi|RuntimeOnly|LocalRuntime)|client(?:Implementation|Api|CompileOnly|RuntimeOnly)|include|localRuntime)(?=\\s*[(\"'\\w])"
+                    ).matcher(raw);
                     StringBuilder renamed = new StringBuilder();
                     mod.reset();
                     while (mod.find()) mod.appendReplacement(
@@ -2190,6 +2192,114 @@ final class Convert {
         return out;
     }
 
+    // ---- dependencies ------------------------------------------------------------------------------------
+
+    static final Pattern COORDINATE = Pattern.compile("([\"'])([\\w.\\-${}]+):([\\w.\\-${}]+):([^\"':]+)((?::[^\"']*)?)\\1");
+    static final Map<String, String[]> LOADER_WORDS = Map.of(
+        "fabric",
+        new String[] { "fabric", "Fabric", "FABRIC" },
+        "neoforge",
+        new String[] { "neoforge", "NeoForge", "NEOFORGE" }
+    );
+
+    /** The Maven repositories a build script declares, then Maven Central. */
+    static List<String> repositories(String gradle) {
+        List<String> out = new ArrayList<>();
+        Matcher m = Pattern.compile("\\burl\\s*=?\\s*\\(?\\s*(?:uri\\s*\\(\\s*)?[\"'](https?://[^\"'$]+?)/?[\"']").matcher(gradle);
+        while (m.find()) if (!out.contains(m.group(1))) out.add(m.group(1));
+        out.add("https://repo.maven.apache.org/maven2");
+        return out;
+    }
+
+    /** An artifact name with the loader's word, as a whole part between - _ or ., changed to the other loader's; null when it has none. */
+    static String swapLoaderWord(String artifact, String from, String to) {
+        String[] a = LOADER_WORDS.get(from), b = LOADER_WORDS.get(to);
+        for (int i = 0; i < a.length; i++) {
+            Matcher m = Pattern.compile("(?<=^|[-_.])" + a[i] + "(?=$|[-_.])").matcher(artifact);
+            if (m.find()) return artifact.substring(0, m.start()) + b[i] + artifact.substring(m.end());
+        }
+        return null;
+    }
+
+    /** Whether an artifact names no loader at all (a library, or a mod's loader-neutral API). */
+    static boolean loaderNeutral(String artifact) {
+        return !Pattern.compile("(?i)(?:^|[-_.])(?:fabric|neoforge|forge|quilt)(?:$|[-_.])").matcher(artifact).find();
+    }
+
+    String resolveProperties(String text) throws IOException {
+        Map<String, String> props = properties(read("gradle.properties"));
+        Matcher m = Pattern.compile("\\$\\{?(?:project\\.)?(\\w+)}?").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) m.appendReplacement(out, Matcher.quoteReplacement(props.getOrDefault(m.group(1), m.group())));
+        m.appendTail(out);
+        return out.toString();
+    }
+
+    /**
+     * A dependency line moved to the other loader's build of the same project: the coordinate's artifact with its loader
+     * word changed (jei-26.1.2-neoforge to jei-26.1.2-fabric), only when one of the build's own repositories publishes that
+     * artifact at that version. Null when none does; the line is then named, never guessed.
+     */
+    String otherLoaderDependency(String line, String from, String to, List<String> repos) throws IOException {
+        Matcher c = COORDINATE.matcher(line);
+        if (!c.find()) return null;
+        String artifact = c.group(3), swapped = swapLoaderWord(artifact, from, to);
+        if (swapped == null) return null;
+        String group = resolveProperties(c.group(2)), name = resolveProperties(swapped), version = resolveProperties(c.group(4));
+        if (group.contains("$") || name.contains("$")) return null;
+        for (String repo : repos) {
+            try {
+                List<String> versions = metadataVersions(
+                    Target.fetch(build, repo + "/" + group.replace('.', '/') + "/" + name + "/maven-metadata.xml")
+                );
+                if (version.contains("$") ? versions.isEmpty() : !versions.contains(version)) continue;
+                return line.substring(0, c.start(3)) + swapped + line.substring(c.end(3));
+            } catch (Exception notThere) {
+                // The next repository.
+            }
+        }
+        return null;
+    }
+
+    /**
+     * One dependency line of the source loader's build, for the target build: a loader-specific artifact moves to the
+     * other loader's build of the same project when a repository publishes it; a loader-neutral library stays and is
+     * not named; anything else is named with the reason.
+     */
+    String dependencyLine(String raw, String from, String to, List<String> repos, boolean remapMods) throws IOException {
+        String line = raw.strip();
+        Matcher c = COORDINATE.matcher(line);
+        if (!c.find()) return raw;
+        if (c.group(2).startsWith("curse.maven") || c.group(2).startsWith("maven.modrinth")) {
+            leave("build.gradle", 0, "dependency " + line, "a file of one loader's build on CurseForge or Modrinth: the other loader's file has another id, which convert cannot choose");
+            return raw;
+        }
+        if (loaderNeutral(c.group(3))) {
+            neutralDependencies.add(c.group(2) + ":" + c.group(3));
+            return raw;
+        }
+        String moved = otherLoaderDependency(raw, from, to, repos);
+        if (moved == null) {
+            leave("build.gradle", 0, "dependency " + line, "a " + from + " build of another mod: no " + to + " build of it at this version in the build's repositories");
+            return raw;
+        }
+        if (remapMods) moved = remapConfiguration(moved);
+        Matcher now = COORDINATE.matcher(moved);
+        String coordinate = now.find() ? now.group(2) + ":" + now.group(3) : moved.strip();
+        applied.computeIfAbsent("dependency-other-loader-build", k -> new ArrayList<>()).add("build.gradle: " + coordinate);
+        return moved;
+    }
+
+    /** Loom's remapping configurations for a mod dependency (before 26.1): implementation becomes modImplementation and so on. */
+    static String remapConfiguration(String line) {
+        Matcher m = Pattern.compile("\\b(implementation|compileOnly|runtimeOnly|localRuntime|api)(?=\\s*[(\"'])").matcher(line);
+        if (!m.find()) return line;
+        String config = m.group(1);
+        return line.substring(0, m.start()) + "mod" + Character.toUpperCase(config.charAt(0)) + config.substring(1) + line.substring(m.end());
+    }
+
+    final Set<String> neutralDependencies = new TreeSet<>();
+
     /** Removes each top-level statement of a build script (balanced brackets; comments are kept) that matches. */
     static String dropStatements(String gradle, java.util.function.Predicate<String> drop, List<String> removed) {
         boolean[] code = LoaderRules.code(gradle);
@@ -2382,6 +2492,7 @@ final class Convert {
                     unit +
                     "localRuntime \"com.terraformersmc:modmenu:${project.modmenu_version}\"\n"
                     : "");
+        List<String> mavens = repositories(gradle);
         if (deps != null) {
             StringBuilder body = new StringBuilder();
             for (String raw : gradle.substring(deps[2] + 1, deps[3] - 1).lines().toList()) {
@@ -2391,12 +2502,7 @@ final class Convert {
                 // NeoGradle names NeoForge itself as a dependency; the Loom lines above replace it.
                 if (line.matches("\\w+\\s*\\(?\\s*[\"']net\\.neoforged:neoforge:.*")) continue;
                 boolean comment = line.startsWith("//") || line.startsWith("/*") || line.startsWith("*");
-                if (!line.isEmpty() && !comment) leave(
-                    "build.gradle",
-                    0,
-                    "dependency " + line,
-                    "another mod or library on the NeoForge classpath: it needs its Fabric build, which convert cannot choose"
-                );
+                if (!line.isEmpty() && !comment) raw = dependencyLine(raw, "neoforge", "fabric", mavens, remap);
                 body.append(raw).append('\n');
             }
             gradle =

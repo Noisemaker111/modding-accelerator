@@ -1063,6 +1063,19 @@ public final class PortableTests {
             cleaned.equals("import net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n"),
             "an import of the old loader that no code uses is dropped, not reported:\n" + cleaned
         );
+        check(
+            "jei-26.1.2-fabric".equals(Convert.swapLoaderWord("jei-26.1.2-neoforge", "neoforge", "fabric")) &&
+            "Ponder-Fabric-26.1".equals(Convert.swapLoaderWord("Ponder-NeoForge-26.1", "neoforge", "fabric")) &&
+            "curios-neoforge".equals(Convert.swapLoaderWord("curios-fabric", "fabric", "neoforge")) &&
+            Convert.swapLoaderWord("fabricator", "fabric", "neoforge") == null &&
+            Convert.loaderNeutral("jei-26.1.2-common-api") &&
+            !Convert.loaderNeutral("betterconfig-fabric") &&
+            Convert.remapConfiguration("\tcompileOnly \"a:b-fabric:1\"").equals("\tmodCompileOnly \"a:b-fabric:1\"") &&
+            Convert.repositories("repositories {\n\tmaven { url = 'https://maven.blamejared.com/' }\n\tmaven { url \"https://maven.example.org/releases\" }\n}\n").equals(
+                List.of("https://maven.blamejared.com", "https://maven.example.org/releases", "https://repo.maven.apache.org/maven2")
+            ),
+            "a dependency's loader word changes only as a whole part of its artifact name; loader-neutral artifacts are told apart"
+        );
         List<String> removed = new ArrayList<>();
         String script = Convert.dropLoomTypes(
             "import net.fabricmc.loom.task.prod.ClientProductionRunTask\nimport java.util.List\n\nplugins {\n\tid 'java'\n}\n\n" +
