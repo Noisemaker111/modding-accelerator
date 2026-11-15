@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "name": "zombie-siege",
+  "gameDirectory": "runs/client",
+  "world": "siege",
+  "worldSource": "../../.runs/zombie-siege/siege",
+  "files": {
+    "runs/client/config/zombieapocalypseaddon-common.toml": "siege.toml",
+    "runs/client/options.txt": "client-options.txt"
+  },
+  "setup": [
+    {
+      "file": "siege-setup.java",
+      "thread": "control"
+    }
+  ],
+  "measure": {
+    "seconds": 20,
+    "warmup": 10,
+    "probes": "probes-handler.json",
+    "metric": {
+      "probe": "onEntityTick",
+      "statistic": "inclusiveMsPerTick"
+    }
+  },
+  "gates": [
+    {
+      "name": "siege-behaviour",
+      "file": "gate-siege.java",
+      "compare": "expect",
+      "expect": "true"
+    },
+    {
+      "name": "decisions",
+      "file": "gate-decisions.java",
+      "thread": "control",
+      "compare": "exact"
+    },
+    {
+      "name": "frame",
+      "frame": true,
+      "file": "gate-frame.java",
+      "thread": "control",
+      "maxDifferentPixels": 0
+    }
+  ]
+}

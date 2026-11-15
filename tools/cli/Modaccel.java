@@ -93,7 +93,10 @@ public final class Modaccel {
             "once",
             "list",
             "prepare",
-            "no-hooks"
+            "no-hooks",
+            "no-heap",
+            "allow-hidden",
+            "keep"
         );
         static final Set<String> VALUES = Set.of(
             "command",
@@ -142,7 +145,8 @@ public final class Modaccel {
             "loader",
             "memory",
             "attach", "instance", "launch", "duration", "warmup", "out", "scenario",
-            "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block"
+            "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
+            "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -204,7 +208,7 @@ public final class Modaccel {
     }
 
     static final Set<String> COMMANDS = Set.of(
-        "perf", "perf-report", "perf-diff", "perf-template",
+        "perf", "perf-report", "perf-diff", "perf-template", "perf-optimize",
         "support",
         "discover",
         "doctor",
@@ -263,7 +267,7 @@ public final class Modaccel {
                 return;
             }
             Path home = Installation.home();
-            if (Set.of("perf", "perf-report", "perf-diff", "perf-template").contains(options.command)) {
+            if (Set.of("perf", "perf-report", "perf-diff", "perf-template", "perf-optimize").contains(options.command)) {
                 report = new Report(Path.of(options.get("root", ".")).toAbsolutePath(), options.command);
                 Map<String, Object> result = Performance.run(home, options, report);
                 exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
@@ -760,11 +764,19 @@ public final class Modaccel {
             case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
                 "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root can launch a visible client.\n" +
                 "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
+                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden profiles a hidden, throttled source session (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
                 "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
                 "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
-            case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene [--block MOD:BLOCK] [--out FOLDER]\nGeneration does not edit a world. Running the generated scenario requires a disposable local server with RCON. Transport uses vanilla hoppers; block-scene requires a connected client.";
+            case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
+                "mod-content reads the mod's lang files for its own blocks and entities. Generation does not edit a world. perf --root SOURCE --scenario FILE runs it in the source client's own world; other games need a disposable local server with RCON.";
             case "perf-diff" -> "Compare observed captures: modaccel perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
+            case "perf-optimize" -> "Accept or reject one candidate change with measured speedup: modaccel perf-optimize --root SOURCE --experiment EXPERIMENT.json --patch CANDIDATE.diff [--runs 5] [--out FOLDER] [--dry-run] [--keep]\n" +
+                "The candidate is a git diff you or your own agent wrote from the perf report; modaccel never writes code. Baseline (HEAD) and candidate (HEAD + diff)\n" +
+                "are separate git worktrees, launched alternately in fresh games. Each launch runs the experiment's setup snippets, a cold capture and a warm capture of\n" +
+                "the chosen metric (a timing probe or a report value), then its gates: eval snippets compared exactly, against an expected value or within a tolerance,\n" +
+                "and 1280x720 framebuffer captures compared pixel by pixel. Every gate must also agree baseline-to-baseline. Accepted only when all gates pass and the\n" +
+                "95% bootstrap interval of the speedup is above 1 for cold and warm; an accepted diff is then applied to SOURCE (not with --dry-run). See PERFORMANCE.md.";
             case "perf-report" -> "Render an existing capture/JFR locally: modaccel perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
             case "self-test" -> "Test modaccel itself, with no game and no network: modaccel self-test [--only SUITE,SUITE] [--json]\n" +
             "Suites: " +
@@ -895,7 +907,8 @@ public final class Modaccel {
             "  server-check           plugin on a real Paper server with a bot player and a scenario\n" +
             "  pack-check             a modpack on its real Forge/NeoForge/Fabric/Quilt server: crashes, conflicts, worlds that will not reopen\n" +
             "  preferences            show or change your game window and sound choices\n" +
-            "  perf, perf-report      record and inspect local game performance\n" +
+            "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
+            "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
             "  package, self-test     build or test modaccel itself\n" +
             "Run modaccel help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
             "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";

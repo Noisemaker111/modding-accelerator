@@ -12,6 +12,8 @@ public final class PerfTest {
     }
     public static void main(String[] args) throws Exception {
         adviceEvidence();
+        optimizerGates();
+        modTemplates();
         check(Run.running(ProcessHandle.current()), "current process is running");
         check(Run.exitedProcStat("123 (name with ) spaces) Z 1 2 3"), "unreaped Linux exits are not running games");
         check(!Run.exitedProcStat("123 (java) S 1 2 3"), "sleeping Linux process remains live");
@@ -25,8 +27,11 @@ public final class PerfTest {
             package net.minecraft.client;
             public class Minecraft {
                 static volatile long sink;
+                static final com.example.mod.ModBlock BLOCK = new com.example.mod.ModBlock();
                 public void runTick(boolean render) throws Exception {
                     if (outer() != 7L) throw new AssertionError("return value changed");
+                    net.neoforged.bus.EventBus.post(new net.neoforged.neoforge.event.TickEvent());
+                    BLOCK.tick();
                     long end = System.nanoTime() + 8_000_000;
                     while (System.nanoTime() < end) sink++;
                     Thread.sleep(2);
@@ -65,12 +70,29 @@ public final class PerfTest {
                 }
             }
             """);
+        List<Path> sources = new ArrayList<>(List.of(source, server));
+        sources.add(fixture(scratch, "net/minecraft/world/level/block/Block.java", "package net.minecraft.world.level.block; public class Block { public void tick() { } }"));
+        sources.add(fixture(scratch, "net/neoforged/neoforge/event/TickEvent.java", "package net.neoforged.neoforge.event; public class TickEvent { }"));
+        sources.add(fixture(scratch, "net/neoforged/bus/EventBus.java", "package net.neoforged.bus; public class EventBus { "
+            + "public static void post(net.neoforged.neoforge.event.TickEvent event) { com.example.mod.Handler.onTick(event); } }"));
+        sources.add(fixture(scratch, "com/example/mod/Handler.java", "package com.example.mod; public class Handler { static volatile long sink; "
+            + "public static void onTick(net.neoforged.neoforge.event.TickEvent event) { long end = System.nanoTime() + 6_000_000; while (System.nanoTime() < end) sink += String.valueOf(sink).hashCode(); } }"));
+        sources.add(fixture(scratch, "com/example/mod/ModBlock.java", "package com.example.mod; public class ModBlock extends net.minecraft.world.level.block.Block { "
+            + "static volatile long sink; final long[] state = new long[4096]; "
+            + "public void tick() { long end = System.nanoTime() + 6_000_000; while (System.nanoTime() < end) sink += Long.toHexString(sink + state.length).length(); } }"));
         Path jdk = Runtimes.ensureAtLeast(home, 17).home();
-        Run.Result compilation = Run.command(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
-            "--release", "17", "-d", scratch.toString(), source.toString(), server.toString()), home, Map.of(), scratch.resolve("compile.log"), 30);
+        List<String> javac = new ArrayList<>(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
+            "--release", "17", "-d", scratch.toString()));
+        for (Path file : sources) javac.add(file.toString());
+        Run.Result compilation = Run.command(javac, home, Map.of(), scratch.resolve("compile.log"), 30);
         check(compilation.exit() == 0, "fixture compilation: " + Run.tail(compilation.log()));
+        // The mod's classes load from their own folder with fabric.mod.json, as a mod jar or dev output would.
+        Path mod = scratch.resolve("mod-classes");
+        Files.createDirectories(mod.resolve("com/example"));
+        Files.move(scratch.resolve("com/example/mod"), mod.resolve("com/example/mod"));
+        Files.writeString(mod.resolve("fabric.mod.json"), "{\"schemaVersion\":1,\"id\":\"examplemod\",\"name\":\"Example Mod\",\"version\":\"1\"}");
         Process process = new ProcessBuilder(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString(),
-            "-cp", scratch.toString(), "net.minecraft.client.Minecraft").redirectErrorStream(true).redirectOutput(scratch.resolve("fixture.log").toFile()).start();
+            "-cp", scratch + File.pathSeparator + mod, "net.minecraft.client.Minecraft").redirectErrorStream(true).redirectOutput(scratch.resolve("fixture.log").toFile()).start();
         try {
             Thread.sleep(500);
             String pid = Long.toString(process.pid());
@@ -102,6 +124,7 @@ public final class PerfTest {
             check(!Files.readString(first.resolve("report.html")).contains("__DATA__"), "report has embedded data");
             check(Files.isRegularFile(first.resolve("stacks.speedscope.json")), "sampled stack export exists");
             functionTiming(report, first);
+            attribution(report, first);
             Path second = scratch.resolve("no-hooks");
             Files.createDirectories(second);
             Performance.capture(pid, agent, Performance.request(second, 1, 0, true), second, 1, 0, false);
@@ -140,6 +163,93 @@ public final class PerfTest {
         rconProtocol();
         System.out.println(checks + " performance checks passed (synthetic JVM fixture; no Minecraft claims)");
     }
+    static Path fixture(Path scratch, String name, String text) throws IOException {
+        Path file = scratch.resolve(name);
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, text);
+        return file;
+    }
+
+    static void attribution(Map<String, Object> report, Path directory) throws Exception {
+        Map<String, Object> attribution = Json.object(report.get("attribution"));
+        Map<String, Object> mod = Json.array(attribution.get("mods")).stream().map(Json::object)
+            .filter(m -> m.get("id").equals("examplemod")).findFirst().orElseThrow(() -> new AssertionError("fixture mod identified from its fabric.mod.json"));
+        check(mod.get("name").toString().contains("Example Mod"), "mod display name comes from its metadata");
+        check(((Number) mod.get("samples")).longValue() > 0, "samples inside the mod are charged to it");
+        List<Map<String, Object>> features = Json.array(mod.get("features")).stream().map(Json::object).toList();
+        check(features.stream().anyMatch(f -> "event handler".equals(f.get("kind")) && f.get("name").toString().contains("TickEvent → Handler.onTick")),
+            "a method called by an event bus is an event handler feature, named with its event: " + features);
+        check(features.stream().anyMatch(f -> "block".equals(f.get("kind")) && f.get("name").toString().contains("ModBlock")),
+            "a block subclass is a block feature, from its class chain: " + features);
+        check(Json.array(attribution.get("mods")).stream().map(Json::object).noneMatch(m -> m.get("name").toString().contains("Minecraft")),
+            "game and JVM code is never a mod");
+        check(((Number) mod.get("heapShallowBytes")).longValue() > 0 && Json.array(mod.get("heapClasses")).stream()
+            .anyMatch(c -> Json.object(c).get("name").equals("com.example.mod.ModBlock")), "live instances of the mod's own classes are measured after the capture");
+        check(Json.array(attribution.get("threads")).size() > 0, "per-thread CPU load is reported");
+        List<Object> suggested = Json.array(Json.read(directory.resolve("probes.suggested.json")).get("probes"));
+        check(suggested.stream().map(Json::object).anyMatch(p -> p.get("class").equals("com.example.mod.Handler") && p.get("descriptor").toString().startsWith("(")),
+            "timing probes are suggested for sampled mod methods with exact descriptors");
+        check(Files.readString(directory.resolve("report.html")).contains("Where the cost is"), "report ranks cost by mod and feature");
+        Map<String, Object> outer = Json.array(attribution.get("unattributed")).stream().map(Json::object)
+            .filter(r -> r.get("label").equals("outer")).findFirst().orElseThrow(() -> new AssertionError("timed game method listed as unattributed exact cost"));
+        check(Boolean.TRUE.equals(outer.get("complete")) && ((Number) outer.get("calls")).longValue() > 0,
+            "exact rows come from complete agent totals, not the capped per-call history");
+    }
+
+    static void modTemplates() throws Exception {
+        Path root = Files.createTempDirectory("perf-mod-");
+        fixture(root, "src/main/resources/assets/demo/lang/en_us.json",
+            "{\"block.demo.lamp\":\"Lamp\",\"entity.demo.ghoul\":\"Ghoul\",\"item.demo.dust\":\"Dust\",\"block.minecraft.stone\":\"x\",\"block.demo.lamp.desc\":\"y\"}");
+        Map<String, List<String>> content = PerfTemplates.content(root);
+        check(content.get("block").equals(List.of("demo:lamp")) && content.get("entity").equals(List.of("demo:ghoul")),
+            "mod content comes from the mod's own lang keys, not items, vanilla ids or longer keys: " + content);
+        Map<String, Object> made = PerfTemplates.run(new Modaccel.Options(new String[]{"perf-template", "--family", "mod-content", "--root", root.toString(),
+            "--counts", "3,16", "--out", root.resolve("out").toString()}));
+        Map<String, Object> scenario = Json.read(Path.of(made.get("scenario").toString()));
+        List<Object> cases = PerfScenario.validate(scenario);
+        check(cases.size() == 3, "one block scene and two crowd sizes");
+        Map<String, Object> crowd = cases.stream().map(Json::object).filter(c -> c.get("id").equals("demo-ghoul-16")).findFirst().orElseThrow();
+        long summons = Json.array(crowd.get("setup")).stream().map(Json::object).filter(s -> s.get("command").toString().startsWith("summon demo:ghoul")).count();
+        check(summons == 16, "a crowd summons exactly its count");
+        check(Json.array(crowd.get("cleanup")).stream().map(Json::object).anyMatch(s -> s.get("command").toString().contains("tag=modaccel_perf")),
+            "crowd cleanup removes only the tagged entities");
+    }
+
+    static void optimizerGates() throws Exception {
+        Map<String, Object> speed = PerfOptimize.speedup(List.of(2.0, 2.0, 2.0, 2.0), 1);
+        check(Math.abs(((Number) speed.get("geometricMean")).doubleValue() - 2) < 1e-9 && ((Number) speed.get("low")).doubleValue() > 1.99,
+            "identical paired ratios give that speedup with no spread");
+        Map<String, Object> mixed = PerfOptimize.speedup(List.of(0.8, 1.3, 0.9, 1.2), 1);
+        check(((Number) mixed.get("low")).doubleValue() < 1 && ((Number) mixed.get("high")).doubleValue() > 1, "noisy ratios give an interval spanning 1");
+        Map<Integer, Map<String, Map<String, Object>>> pairs = new TreeMap<>();
+        String[][] values = {{"a1", "a1", "7"}, {"a1", "a1", "7"}, {"a1", "a2", "7"}};
+        for (int run = 0; run < 2; run++) {
+            pairs.put(run, new HashMap<>());
+            for (String arm : List.of("baseline", "candidate")) {
+                Map<String, Object> gates = Json.map("same", "digest", "drift", run == 0 ? "x" : "y", "count", arm.equals("baseline") ? "[10, 20]" : "[10.5, 20]", "flag", "true");
+                pairs.get(run).put(arm, Json.map("gates", gates));
+            }
+        }
+        check(Boolean.TRUE.equals(PerfOptimize.gate(Json.map("name", "same", "compare", "exact"), pairs).get("passed")), "equal deterministic outputs pass");
+        Map<String, Object> drift = PerfOptimize.gate(Json.map("name", "drift", "compare", "exact"), pairs);
+        check(Boolean.FALSE.equals(drift.get("passed")) && Boolean.FALSE.equals(drift.get("baselineStable")),
+            "an output that changes between baseline launches cannot certify equivalence");
+        check(Boolean.TRUE.equals(PerfOptimize.gate(Json.map("name", "count", "compare", "tolerance", "tolerance", 0.1), pairs).get("passed")), "within tolerance passes");
+        check(Boolean.FALSE.equals(PerfOptimize.gate(Json.map("name", "count", "compare", "tolerance", "tolerance", 0.01), pairs).get("passed")), "outside tolerance fails");
+        check(Boolean.TRUE.equals(PerfOptimize.gate(Json.map("name", "flag", "compare", "expect", "expect", "true"), pairs).get("passed")), "behaviour assertion passes");
+        Path dir = Files.createTempDirectory("perf-frames-");
+        java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(1280, 720, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        javax.imageio.ImageIO.write(image, "png", dir.resolve("a.png").toFile());
+        image.setRGB(5, 5, 0x010000);
+        javax.imageio.ImageIO.write(image, "png", dir.resolve("b.png").toFile());
+        Map<String, Object> diff = PerfOptimize.pixels(dir.resolve("a.png"), dir.resolve("b.png"));
+        check(((Number) diff.get("differentPixels")).longValue() == 1 && ((Number) diff.get("maxChannelDelta")).intValue() == 1, "one changed channel value is a visible difference");
+        boolean refused = false;
+        try { PerfOptimize.validate(Json.map("schema", 1, "measure", Json.map("metric", Json.map("probe", "x")), "gates", List.of())); }
+        catch (IllegalArgumentException expected) { refused = true; }
+        check(refused, "an optimization with no equivalence gate is refused");
+    }
+
     static void functionTiming(Map<String, Object> report, Path directory) throws Exception {
         Map<String, Object> timing = Json.object(report.get("functionTiming"));
         List<Object> rows = Json.array(timing.get("methods"));

@@ -16,30 +16,44 @@ final class PerfReport {
     final List<String> warnings = new ArrayList<>();
     final Properties classes;
     final PerfFunctions functions = new PerfFunctions();
+    final PerfAttribution attribution;
     Instant start, end;
+    boolean hidden;
     final Map<String, Long> allocationSites = new HashMap<>(), allocationClasses = new HashMap<>();
     final Map<String, Double> lockSites = new HashMap<>();
     final Map<String, Long> probeCalls = new TreeMap<>();
+    final Map<String, double[]> timingTotals = new TreeMap<>();
     long executionSamples, truncated;
     long readBytes, writeBytes, socketRead, socketWrite, allocationWeight;
     double gcPauseMs, blockedMs;
     Long firstCpu, lastCpu;
     Double firstCpuTime, lastCpuTime;
 
-    PerfReport(Properties classes) { this.classes = classes; }
+    PerfReport(Properties classes, PerfAttribution attribution) {
+        this.classes = classes;
+        this.attribution = attribution;
+    }
 
     static Map<String, Object> write(Path input, Path output) throws Exception {
         Path recording = Files.isDirectory(input) ? input.resolve("capture.jfr") : input;
         if (!Files.isRegularFile(recording)) throw new IOException("No recording at " + recording);
         Path directory = recording.toAbsolutePath().getParent();
-        PerfReport report = new PerfReport(Performance.properties(directory.resolve("classes.properties")));
+        Properties classes = Performance.properties(directory.resolve("classes.properties"));
+        Properties request = Performance.properties(directory.resolve("request.properties"));
+        String rootText = request.getProperty("attributionRoot", "");
+        Path root = rootText.isBlank() ? null : Path.of(rootText).toAbsolutePath().normalize();
+        List<String> own = Arrays.stream(request.getProperty("modPackages", "").split(",")).map(String::strip).filter(v -> !v.isEmpty()).toList();
+        PerfReport report = new PerfReport(classes, new PerfAttribution(classes,
+            Performance.properties(directory.resolve("features.properties")), root, own));
         try (RecordingFile stream = new RecordingFile(recording)) {
             while (stream.hasMoreEvents()) report.accept(stream.readEvent());
         }
         if (report.start == null) throw new IOException("Recording contains no events");
+        report.attribution.heap(directory.resolve("heap-histogram.txt"));
         Files.createDirectories(output);
         Properties status = Performance.properties(directory.resolve("status.properties"));
         Properties environment = Performance.properties(directory.resolve("environment.properties"));
+        report.hidden = Boolean.parseBoolean(environment.getProperty("modaccel.background", "false"));
         Map<String, Object> result = report.finish(status);
         result.put("environment", new TreeMap<>(environment));
         result.put("recording", recording.toAbsolutePath().toString());
@@ -47,6 +61,7 @@ final class PerfReport {
         Path inventory = directory.resolve("inventory.json");
         if (Files.isRegularFile(inventory)) result.put("inventory", Json.read(inventory));
         Json.save(output.resolve("report.json"), result);
+        Json.save(output.resolve("probes.suggested.json"), PerfAttribution.suggestions(Json.object(result.get("attribution"))));
         Json.save(output.resolve("stacks.speedscope.json"), report.speedscope());
         report.functions.trace(output, report.start);
         String data = Json.write(result).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029");
@@ -75,6 +90,8 @@ final class PerfReport {
         Map<String, Object> point = timeline.computeIfAbsent(bucket, key -> Json.map("epochSecond", key));
         switch (name) {
             case "modaccel.MethodTiming" -> functions.accept(event);
+            case "modaccel.TimingTotals" -> timingTotals.put(event.getString("label"),
+                new double[]{event.getLong("calls"), event.getLong("inclusiveNanos") / 1e6, event.getLong("selfNanos") / 1e6});
             case "modaccel.ProbeCalls" -> probeCalls.merge(event.getString("label"), event.getLong("calls"), Long::sum);
             case "modaccel.Pulse" -> {
                 String kind = event.getString("kind");
@@ -105,6 +122,7 @@ final class PerfReport {
                 RecordedClass type = event.getClass("objectClass");
                 allocationClasses.merge(type == null ? "unknown" : type.getName(), weight, Long::sum);
                 allocationSites.merge(site(event), weight, Long::sum);
+                attribution.allocation(event, weight);
             }
             case "jdk.GCHeapSummary" -> add("heap_at_gc_boundary_bytes", event.getLong("heapUsed"));
             case "jdk.GCPhasePause" -> {
@@ -118,11 +136,13 @@ final class PerfReport {
                 add("monitor_blocked_ms", blocked);
                 blockedMs += blocked;
                 lockSites.merge(site(event), blocked, Double::sum);
+                attribution.blocked(event, blocked);
             }
-            case "jdk.FileRead" -> readBytes += Math.max(0, event.getLong("bytesRead"));
-            case "jdk.FileWrite" -> writeBytes += Math.max(0, event.getLong("bytesWritten"));
-            case "jdk.SocketRead" -> socketRead += Math.max(0, event.getLong("bytesRead"));
-            case "jdk.SocketWrite" -> socketWrite += Math.max(0, event.getLong("bytesWritten"));
+            case "jdk.FileRead" -> attribution.io(event, bytes(event, "bytesRead", 0));
+            case "jdk.FileWrite" -> attribution.io(event, bytes(event, "bytesWritten", 1));
+            case "jdk.SocketRead" -> attribution.io(event, bytes(event, "bytesRead", 2));
+            case "jdk.SocketWrite" -> attribution.io(event, bytes(event, "bytesWritten", 3));
+            case "jdk.ThreadCPULoad" -> attribution.threadCpu(event);
             case "jdk.CPULoad" -> {
                 double cpu = (event.getFloat("jvmUser") + event.getFloat("jvmSystem")) * 100;
                 add("jvm_cpu_percent_of_machine", cpu);
@@ -132,10 +152,34 @@ final class PerfReport {
         }
     }
 
+    long bytes(RecordedEvent event, String field, int kind) {
+        long bytes = Math.max(0, event.getLong(field));
+        switch (kind) {
+            case 0 -> readBytes += bytes;
+            case 1 -> writeBytes += bytes;
+            case 2 -> socketRead += bytes;
+            default -> socketWrite += bytes;
+        }
+        return bytes;
+    }
+
+    /** Stack frames that name a method; JFR can record frames without one, which carry nothing to attribute. */
+    static List<RecordedFrame> frames(RecordedStackTrace trace) {
+        if (trace == null) return List.of();
+        List<RecordedFrame> frames = trace.getFrames();
+        for (RecordedFrame frame : frames) {
+            if (frame.getMethod() == null || frame.getMethod().getType() == null) {
+                return frames.stream().filter(f -> f.getMethod() != null && f.getMethod().getType() != null).toList();
+            }
+        }
+        return frames;
+    }
+
     static String site(RecordedEvent event) {
         RecordedStackTrace trace = event.getStackTrace();
-        if (trace == null || trace.getFrames().isEmpty()) return "No stack recorded";
-        RecordedMethod method = trace.getFrames().get(0).getMethod();
+        List<RecordedFrame> frames = frames(trace);
+        if (frames.isEmpty()) return "No stack recorded";
+        RecordedMethod method = frames.get(0).getMethod();
         return method.getType().getName() + "." + method.getName() + method.getDescriptor();
     }
 
@@ -147,16 +191,18 @@ final class PerfReport {
 
     void sample(RecordedEvent event) {
         RecordedStackTrace trace = event.getStackTrace();
-        if (trace == null || trace.getFrames().isEmpty()) return;
+        List<RecordedFrame> frames = frames(trace);
+        if (frames.isEmpty()) return;
         executionSamples++;
-        List<RecordedFrame> frames = trace.getFrames();
         RecordedMethod top = frames.get(0).getMethod();
         String className = top.getType().getName();
         String method = className + "." + top.getName() + top.getDescriptor();
         methods.merge(method, 1L, Long::sum);
         owners.merge(owner(className), 1L, Long::sum);
         RecordedThread thread = event.getThread("sampledThread");
-        threads.merge(thread == null ? "unknown" : thread.getJavaName(), 1L, Long::sum);
+        String threadName = thread == null ? "unknown" : thread.getJavaName();
+        threads.merge(threadName, 1L, Long::sum);
+        attribution.sample(frames, threadName);
         if (stacks.size() < 200_000) {
             List<Integer> sample = new ArrayList<>();
             for (int i = frames.size() - 1; i >= 0; i--) {
@@ -223,7 +269,8 @@ final class PerfReport {
         if (firstCpu != null && lastCpuTime > firstCpuTime && lastCpu >= firstCpu) {
             result.put("averageCpuCoresUsed", (lastCpu - firstCpu) / 1e9 / (lastCpuTime - firstCpuTime));
         }
-        List<String> unavailable = new ArrayList<>(List.of("GPU time / VRAM", "RSS", "per-mod retained heap", "useful throughput", "mixin-origin attribution"));
+        List<String> unavailable = new ArrayList<>(List.of("GPU time / VRAM", "RSS", "per-mod retained heap (shallow live bytes of each mod's own classes are reported instead)",
+            "useful throughput", "mixin overwrites and unnamed mixin handlers"));
         if (!metrics.containsKey("frame_ms")) unavailable.add("FPS / frame pacing: no recognized active frame hook");
         if (!metrics.containsKey("tick_ms")) unavailable.add("server tick time: no recognized active server tick hook");
         if (executionSamples == 0) unavailable.add("sampled execution hotspots");
@@ -231,9 +278,14 @@ final class PerfReport {
         if (!status.isEmpty() && !status.getProperty("state", "").equals("complete")) warnings.add("The capture did not report normal completion; this is partial evidence.");
         warnings.add("Observation of this session, including menus/loading/pauses. Not a controlled benchmark or a causal mod ranking.");
         warnings.add("Frame intervals measure CPU-side frame completion pacing, not GPU duration or displayed-frame presentation.");
+        if (hidden) {
+            warnings.add("This client was hidden and throttled by Mod Accel (--allow-hidden): FPS and frame intervals are not representative. "
+                + "Server ticks and timed methods still run normally.");
+        }
         warnings.add("1% low FPS = 1000 / mean duration of the slowest ceil(1% of captured frame intervals).");
-        warnings.add("Execution samples are statistical hotspots, not exact CPU milliseconds; origins identify loaded code, not the cause of work.");
-        warnings.add("Mixins can execute inside Minecraft methods; shared-library and game samples must not be charged to an arbitrary mod.");
+        warnings.add("Execution samples are statistical hotspots, not exact CPU milliseconds. Per-mod costs charge each stack to its innermost mod frame; "
+            + "a mod that only calls game code still owns that work, and the mod that triggered it (for example through a shared event) may differ.");
+        warnings.add("Mixin handlers are charged to a mod only when their merged method name names it; overwrites and unnamed handlers remain game code.");
         warnings.add("JFR allocation weights are estimates; I/O and lock events may be thresholded and are observed lower bounds, not complete totals.");
         warnings.add("Explicit probes count method entries (including failed/simulated operations), not delivered items. Their overhead can be substantial.");
         warnings.add("Instrumentation overhead is not calibrated. Compare with --no-hooks and external baseline measurements before performance claims.");
@@ -257,6 +309,7 @@ final class PerfReport {
                 }
             }
         }
+        result.put("attribution", attribution.finish(result, status, functions.calls, timingTotals, status.getProperty("timingProbes", ""), seconds));
         PerfAdvice.enrich(result);
         return result;
     }
@@ -340,6 +393,15 @@ background:#80e4b3}
 <div class="cards" id="cards">
 </div>
 <p class="muted">Observation only. Menus, loading and pauses remain in the capture. Missing metrics are not zero.</p>
+<h2>Where the cost is, by mod and feature</h2>
+<p id="cost-basis" class="muted"></p>
+<p class="muted">Sampled columns are estimates (≈); exact rows come from timing probes. Expand a mod for its features and methods.
+<a href="probes.suggested.json">Timing probes for the top methods</a> make those exact on the next capture.</p>
+<div class="scroll"><table id="cost"><thead><tr><th>Mod</th><th>Share of samples ≈</th><th>Server ms/tick ≈ (95%)</th>
+<th>Render ms/frame ≈ (95%)</th><th>Allocation/s ≈</th><th>Live heap (own classes)</th><th>Lock wait ms</th><th>I/O bytes</th></tr></thead><tbody></tbody></table></div>
+<div id="cost-detail"></div>
+<h3>Threads</h3>
+<div class="scroll"><table id="threads"><thead><tr><th>Thread</th><th>Mean CPU % of machine (OS, exact)</th><th>Execution samples</th></tr></thead><tbody></tbody></table></div>
 <h2>What to investigate and how to verify a fix</h2>
 <p id="advice-policy" class="muted"></p>
 <div id="advice"></div>
@@ -431,7 +493,7 @@ they can be thresholded or missing. The table below shows the slowest 200 comple
 </details>
 <script>const d=__DATA__;
 
-const el=id=>document.getElementById(id),fmt=v=>typeof v==='number'?v.toLocaleString(undefined,{maximumFractionDigits:2}):'Unavailable';
+const el=id=>document.getElementById(id),fmt=v=>typeof v==='number'?v.toLocaleString(undefined,{maximumFractionDigits:2}):'Unavailable',ms=v=>typeof v==='number'?v.toFixed(6):'Unavailable';
 
 el('meta').textContent=d.started+' · '+fmt(d.seconds)+' seconds · '+fmt(d.executionSamples)+' execution samples';
 
@@ -448,6 +510,27 @@ function row(body,values){const tr=document.createElement('tr');
 for(const v of values){const td=document.createElement('td');
 td.textContent=v;
 tr.append(td)}body.append(tr)}
+const at=d.attribution||{mods:[],threads:[],basis:{}},bytes=v=>typeof v!=='number'?'Unavailable':v>1048576?fmt(v/1048576)+' MiB':v>1024?fmt(v/1024)+' KiB':fmt(v)+' B';
+el('cost-basis').textContent=Object.values(at.basis||{}).join(' ');
+const range=(m,k)=>typeof m[k+'Ms']==='number'?fmt(m[k+'Ms'])+' ('+fmt(m[k+'MsLow'])+'–'+fmt(m[k+'MsHigh'])+')':'Unavailable';
+for(const m of at.mods)row(el('cost').tBodies[0],[m.name+(m.yourMod?' ★':''),fmt(m.percentOfSamples)+'% ('+m.samples+')',range(m,'perTick'),range(m,'perFrame'),
+bytes(m.allocationBytesPerSecond),m.heapShallowBytes===undefined?'Unavailable':bytes(m.heapShallowBytes),fmt(m.blockedMs),bytes(m.ioBytes)]);
+for(const m of at.mods){const box=document.createElement('details');if(m.yourMod)box.open=true;const s=document.createElement('summary');
+s.textContent=m.name+' · features and methods';box.append(s);const t=document.createElement('table');
+t.innerHTML='<thead><tr><th>Feature</th><th>Share ≈</th><th>Server ms/tick ≈</th><th>Render ms/frame ≈</th>'+
+'<th>Allocation/s ≈</th><th>Top methods</th></tr></thead><tbody></tbody>';
+for(const f of m.features)row(t.tBodies[0],[f.name,fmt(f.percentOfSamples)+'%',range(f,'perTick'),range(f,'perFrame'),bytes(f.allocationBytesPerSecond),
+f.methods.slice(0,3).map(x=>x.name+' ('+x.samples+')').join(' · ')]);
+const w=document.createElement('div');w.className='scroll';w.append(t);box.append(w);
+if(m.exact.length){const e=document.createElement('table');
+e.innerHTML='<thead><tr><th>Timed method (exact)</th><th>Calls</th><th>Calls/tick</th><th>ms/tick</th>'+
+'<th>Mean ms/call</th><th>Total ms</th></tr></thead><tbody></tbody>';
+for(const x of m.exact)row(e.tBodies[0],[x.label,x.calls,fmt(x.callsPerTick),fmt(x.inclusiveMsPerTick),ms(x.meanInclusiveMs),fmt(x.inclusiveTotalMs)]);
+const v=document.createElement('div');v.className='scroll';v.append(e);box.append(v)}
+if(m.heapClasses){const p=document.createElement('p');p.className='muted';
+p.textContent='Largest live own classes: '+m.heapClasses.slice(0,5).map(x=>x.name+' '+bytes(x.bytes)).join(' · ');box.append(p)}
+el('cost-detail').append(box)}
+for(const t of at.threads)row(el('threads').tBodies[0],[t.thread,fmt(t.meanCpuPercentOfMachine),t.samples]);
 el('advice-policy').textContent=d.recommendationPolicy;
 for(const f of d.recommendations||[]){const box=document.createElement('details');
 const title=document.createElement('summary');title.textContent=f.title+' · '+f.status;box.append(title);
@@ -459,7 +542,7 @@ const catalog=d.metricCatalog||[];
 el('metric-count').textContent=catalog.filter(m=>m.availability==='recorded').length+' of '+catalog.length+' metrics available in this capture.';
 for(const m of catalog)row(el('catalog').tBodies[0],[m.name,fmt(m.value),m.unit,m.basis+(m.availability==='unavailable'?' · No usable measurement':'')]);
 for(const [name,s] of Object.entries(d.metrics))row(el('metrics').tBodies[0],[name,s.n,fmt(s.mean),fmt(s.p95),fmt(s.p99),fmt(s.max)]);
-const ft=d.functionTiming||{},ms=v=>typeof v==='number'?v.toFixed(6):'Unavailable';
+const ft=d.functionTiming||{};
 el('function-basis').textContent=(ft.basis||'')+' '+(ft.selfMeaning||'');
 el('function-accounting').textContent=(ft.accounting||'')+' '+(ft.precision||'');
 el('function-coverage').textContent=(ft.partial?'PARTIAL: ':'')+(ft.retainedCalls||0)+' completed calls retained; '+(ft.agentDroppedCalls||0)+
