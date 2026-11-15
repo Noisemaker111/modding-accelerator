@@ -107,8 +107,9 @@ args = sys.argv[1:]
 if "--undo" in args: sys.exit(0)
 root = pathlib.Path(args[args.index("--root") + 1])
 (root / "Mod.java").write_text("class Mod { /* ported */ }\\n"); (root / "left-over.txt").write_text("x")
-n = int((pathlib.Path(__file__).parent / "errors.txt").read_text())
-err = lambda k: {"file": "Mod.java", "line": k, "message": "cannot find symbol", "symbol": "blit", "changedIn": [{"hop": "1.21.5 -> 1.21.6"}]}
+count, _, symbol = (pathlib.Path(__file__).parent / "errors.txt").read_text().partition(":")
+n = int(count)
+err = lambda k: {"file": "Mod.java", "line": k, "message": "cannot find symbol", "symbol": symbol or "blit", "changedIn": [{"hop": "1.21.5 -> 1.21.6"}]}
 print("Picked up noise")
 print(json.dumps({"command": "port", "seconds": 1, "receipt": str(root / "result.json"),
                   "stages": [{"name": "route", "waypoints": [args[args.index("--from") + 1], args[args.index("--to") + 1]]}],
@@ -139,6 +140,11 @@ print(json.dumps({"command": "port", "seconds": 1, "receipt": str(root / "result
     check((tmp / "cache" / "known" / "Mod.java").read_text(encoding="utf-8") != "class Mod {}\n", "the port really edited the clone")
     code, text = board(recorded_errors + 2)
     check(code == 1 and "**worse**" in text and f"| {recorded_errors} errors | {recorded_errors + 2} errors |" in text, f"more errors than recorded is worse, exits 1, and shows the last run:\n{text}")
+    code, text = board(f"{recorded_errors - 2}:render", "--only", "known")
+    check(code == 1 and "**worse**" in text and "- Mod.java: render" in text,
+          f"fewer errors, but one the last run did not have, is worse and names the new error:\n{text}")
+    code, text = board(f"{recorded_errors - 2}:render", "--only", "known")
+    check(code == 0 and "**worse**" not in text, f"the same errors as the last run, below the record, are not worse:\n{text}")
     code, text = board(0)
     check(code == 0 and "| builds | better |" in text, f"a port that now builds is better:\n{text}")
     code, text = board(0, "--only", "nope")
@@ -163,6 +169,18 @@ print(json.dumps({"command": "port", "seconds": 1, "receipt": str(root / "result
     # each run starts from the pinned source: the last port's edits and stray files are gone before the next
     work = port_board.checkout({"id": "known", "repo": str(mod), "commit": commit}, tmp / "cache", [sys.executable, str(stub)])
     check((work / "Mod.java").read_text(encoding="utf-8") == "class Mod {}\n" and not (work / "left-over.txt").exists(), "a case is put back to its pinned commit before it runs")
+
+# ---- choosing the cases a changed rule can affect
+crossing = lambda jump, frm, to: port_board.crosses(jump, {"from": frm, "to": to})
+check(crossing("1.21.5 -> 1.21.6 (yarn)", "1.20.1", "1.21.6") and crossing("1.21.5 -> 1.21.6 (yarn)", "1.21.5", "1.21.6"), "a port up through an update crosses it")
+check(not crossing("1.21.5 -> 1.21.6 (yarn)", "1.21.1", "1.21.4") and not crossing("1.21.6 -> 26.3", "1.21.5", "1.21.6"), "a port that stops before an update does not")
+check(crossing("1.21.6 -> 1.21.5 (mojmap)", "1.21.6", "1.21.5") and not crossing("1.21.5 -> 1.21.6 (yarn)", "1.21.6", "1.21.5"), "a backport crosses the update downward only")
+real = json.loads((port_board.CASES).read_text(encoding="utf-8"))["cases"]
+rules = json.loads((port_board.ROOT / "knowledge/fixes.json").read_text(encoding="utf-8"))["rules"]
+some_rule = next(r for r in rules if r["jump"].startswith("1.21.6 -> 26.3") and "loader" not in r)
+picked = {c["id"] for c in port_board.touched_by(real, [some_rule["id"]])}
+check(picked and all(c["to"] == "26.3" for c in real if c["id"] in picked) and all(c["to"] != "26.3" for c in real if c["id"] not in picked),
+      f"a 1.21.6 -> 26.3 rule picks the ports to 26.3 and nothing else: {sorted(picked)}")
 
 # ---- bench/rule_test.py: wording an error from a rule's match, and writing a test without moving the file
 import rule_test  # noqa: E402
