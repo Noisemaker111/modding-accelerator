@@ -1080,7 +1080,10 @@ final class PackCheck {
                     "failure",
                     PackChecks.failure(text + "\n" + String.join("\n", reports), loader.failed()),
                     "suspects",
-                    PackChecks.suspects(text, reports, scan, loader, game::clientOnly)
+                    // A start pack-check stopped as stuck: the thread dump says what held the server; the start-up lines before it do not.
+                    ended.startsWith("stuck") || ended.startsWith("probe silent")
+                        ? stuckSuspects(text, reports)
+                        : PackChecks.suspects(text, reports, scan, loader, game::clientOnly)
                 );
             }
         }
@@ -1186,6 +1189,16 @@ final class PackCheck {
             } catch (Exception unavailable) {
                 /* no dump: the log still says where it stopped */
             }
+        }
+
+        /** The mods a stuck start's thread dump names, else what its log and reports name. */
+        List<Map<String, Object>> stuckSuspects(String text, List<String> reports) {
+            List<String> dumps = reports.stream().filter(r -> r.contains("pack-check: the server stopped making progress")).toList();
+            if (!dumps.isEmpty()) {
+                var named = PackChecks.suspects("", dumps, scan, loader, game::clientOnly);
+                if (!named.isEmpty()) return named;
+            }
+            return PackChecks.suspects(text, reports, scan, loader, game::clientOnly);
         }
 
         void stop(Process process) throws InterruptedException {

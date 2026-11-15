@@ -353,7 +353,7 @@ final class PackChecks {
         if (probe.get("hiddenBlockItems") instanceof Number hidden && hidden.intValue() > 0) c.add(
             "not-checked",
             "note",
-            hidden + " block item(s) are in no creative tab (blocks a mod places itself, such as portals, or debug blocks), so no player places them by hand and they were not placed; --only ITEM places one anyway.",
+            hidden + " block item(s) are in no creative tab (blocks a mod places itself, such as portals) or are a developer's debug block, so no player places them by hand and they were not placed; --only ITEM places one anyway.",
             "hiddenBlockItems",
             hidden
         );

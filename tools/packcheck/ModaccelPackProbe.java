@@ -286,6 +286,9 @@ public final class ModaccelPackProbe {
             if (!chosen(item, only)) return;
             // An item in no creative tab is not one a player places (unless asked for by --only): left alone, and counted.
             if (only.isEmpty() && !ModaccelPackGame.listed(item)) { hidden++; return; }
+            // A developer's debug block (Applied Energistics 2's debug chunk loader loads chunks while its own chunk loads, which
+            // hangs the next start) is a tool for the mod's author, not pack content.
+            if (only.isEmpty() && ModaccelPackGame.itemId(item).split(":", 2)[1].matches("(.*_)?debug(_.*)?")) { hidden++; return; }
             BlockItem blockItem = (BlockItem) item;
             String id = ModaccelPackGame.itemId(item);
             tried++;
