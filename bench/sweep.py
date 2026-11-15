@@ -328,7 +328,8 @@ def error_class(e, rec):
     if NOT_FOUND.search(msg) and symbol:
         where = imported(lines, symbol) if lines else None
         if where and third_party(where, own):
-            return "dependency-unavailable", where
+            # The library resolved (its package is there) but this name is not: its own API changed.
+            return "semantic-api-change", "lib " + where
     if SIGNATURE.search(msg):
         return ("signature-change" if not (" renamed " in first or " moved " in first) else "missing-mapping"), api
     if NOT_FOUND.search(msg):

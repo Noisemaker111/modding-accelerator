@@ -222,9 +222,118 @@ final class Target {
         Dependencies.resolve(setup);
         applyReplacements(setup, build, pins);
         loomFollows(setup, build, to);
+        unobfuscatedFabric(setup, build, to);
+        toolchain(setup, build, to);
         parchmentFollows(setup, build, to);
         manifest(setup);
         return setup;
+    }
+
+    /**
+     * A Fabric build moving onto the unobfuscated game (26.1 and later) stops remapping: Minecraft ships with Mojang's names,
+     * so Loom's plugin is net.fabricmc.fabric-loom (fabric-loom and fabric-loom-remap remap), the mappings line goes, the
+     * remapping configurations become the plain ones (modImplementation -> implementation, ...), remapJar becomes jar, and
+     * Java rises to the game's. Written to the build files that apply Loom; a backport onto an obfuscated game is not
+     * changed here.
+     */
+    static void unobfuscatedFabric(Setup setup, Build build, String to) throws Exception {
+        String from = null;
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+            setup.pins.get(key) != null
+        ) from = setup.pins.get(key);
+        if (from == null || Versions.compare(to, "26.1") < 0 || Versions.compare(from, "26.1") >= 0) return;
+        Set<Path> files = new LinkedHashSet<>();
+        Object own = setup.project.get("buildFile");
+        if (own != null) files.add(Path.of(own.toString()));
+        for (String name : List.of("build.gradle", "build.gradle.kts")) files.add(build.project.root.resolve(name));
+        // An access widener names the namespace its entries are in; on the unobfuscated game that is "official".
+        for (Object set : Json.array(setup.project.get("sourceSets"))) for (String resources : ProjectModel.strings(
+            Json.object(set).get("resources")
+        )) {
+            Path dir = Path.of(resources);
+            if (!Files.isDirectory(dir)) continue;
+            List<Path> wideners;
+            try (var walk = Files.walk(dir, 4)) {
+                wideners = walk.filter(p -> p.toString().endsWith(".accesswidener") || p.toString().endsWith(".classtweaker")).toList();
+            }
+            for (Path widener : wideners) {
+                String before = setup.text(widener), text = before.replaceFirst(
+                    "^(\\s*(?:accessWidener|classTweaker)\\s+v\\d+\\s+)named\\b",
+                    "$1official"
+                );
+                if (text.equals(before)) continue;
+                setup.originals.putIfAbsent(widener, before);
+                setup.texts.put(widener, text);
+                setup.applied.add(Json.map("file", widener.toString(), "change", "access widener namespace named -> official for " + to));
+            }
+        }
+        for (Path file : files) {
+            if (!Files.isRegularFile(file)) continue;
+            String before = setup.text(file), text = unobfuscatedLoom(before, javaFor(to));
+            if (text.equals(before)) continue;
+            setup.originals.putIfAbsent(file, before);
+            setup.texts.put(file, text);
+            setup.applied.add(
+                Json.map(
+                    "file",
+                    file.toString(),
+                    "change",
+                    "Loom without remapping for " + to + ": plugin net.fabricmc.fabric-loom, no mappings, plain configurations, jar for remapJar, Java " + javaFor(to),
+                    "evidence",
+                    "Minecraft " + to + " ships unobfuscated, with Mojang's names"
+                )
+            );
+        }
+    }
+
+    /** One build script rewritten for Loom on an unobfuscated game; unchanged when it does not apply Loom. */
+    static String unobfuscatedLoom(String text, int java) {
+        if (!Pattern.compile("[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)[\"']").matcher(text).find()) return text;
+        text = text.replaceAll("([\"'])(?:fabric-loom|net\\.fabricmc\\.fabric-loom-remap)([\"'])", "$1net.fabricmc.fabric-loom$2");
+        text = removeStatements(text, Pattern.compile("(?m)^[ \\t]*mappings\\b"));
+        Map<String, String> configurations = new LinkedHashMap<>();
+        configurations.put("modImplementation", "implementation");
+        configurations.put("modApi", "api");
+        configurations.put("modCompileOnlyApi", "compileOnlyApi");
+        configurations.put("modCompileOnly", "compileOnly");
+        configurations.put("modRuntimeOnly", "runtimeOnly");
+        configurations.put("modLocalRuntime", "localRuntime");
+        configurations.put("remapSourcesJar", "sourcesJar");
+        configurations.put("remapJar", "jar");
+        for (var c : configurations.entrySet()) text = text.replaceAll("(?<![\\w$])" + c.getKey() + "(?![\\w$])", c.getValue());
+        text = text.replaceAll("JavaVersion\\.VERSION_(?:1_8|1[0-9]|2[0-4])\\b", "JavaVersion.VERSION_" + java);
+        text = text.replaceAll("JavaLanguageVersion\\.of\\((?:[89]|1[0-9]|2[0-4])\\)", "JavaLanguageVersion.of(" + java + ")");
+        text = text.replaceAll("(options\\.release(?:\\.set\\(|\\s*=\\s*))(?:[89]|1[0-9]|2[0-4])\\b", "$1" + java);
+        return text;
+    }
+
+    /** Removes each whole statement that starts where the pattern matches, through its balanced brackets. */
+    static String removeStatements(String text, Pattern start) {
+        StringBuilder out = new StringBuilder();
+        int at = 0;
+        Matcher m = start.matcher(text);
+        while (m.find(at)) {
+            int end = m.end(), depth = 0;
+            boolean string = false;
+            char quote = 0;
+            for (; end < text.length(); end++) {
+                char c = text.charAt(end);
+                if (string) {
+                    if (c == '\\') end++;
+                    else if (c == quote) string = false;
+                    continue;
+                }
+                if (c == '"' || c == '\'') {
+                    string = true;
+                    quote = c;
+                } else if (c == '(' || c == '{' || c == '[') depth++;
+                else if (c == ')' || c == '}' || c == ']') depth--;
+                else if (c == '\n' && depth <= 0) break;
+            }
+            out.append(text, at, m.start());
+            at = Math.min(text.length(), end + 1);
+        }
+        return out.append(text.substring(at)).toString();
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */
@@ -934,7 +1043,7 @@ final class Target {
         }
         Path properties = build.project.root.resolve("gradle.properties");
         if (Files.isRegularFile(properties)) {
-            for (String key : List.of("java_version", "java_toolchain_version")) {
+            for (String key : List.of("java_version", "java_toolchain_version", "java_target", "javaVersion", "java_release", "target_java_version")) {
                 Matcher pin = Pattern.compile("(?m)^([ \\t]*" + key + "[ \\t]*=[ \\t]*)(\\d+)[ \\t]*$").matcher(
                     setup.text(properties)
                 );

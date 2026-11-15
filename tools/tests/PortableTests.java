@@ -1230,6 +1230,29 @@ public final class PortableTests {
             Files.createDirectories(Path.of(args[1])),
             "run-"
         );
+        // A Fabric build moving onto 26.x stops remapping: the plugin, the mappings statement (a layered one spans lines),
+        // the remapping configurations, remapJar and the Java level all change; a build without Loom is left alone.
+        String obfuscated =
+            "plugins {\n    id 'fabric-loom' version '1.10-SNAPSHOT'\n}\n" +
+            "dependencies {\n    minecraft \"com.mojang:minecraft:${minecraft_version}\"\n" +
+            "    mappings loom.layered() {\n        officialMojangMappings()\n        parchment(\"org.parchmentmc.data:parchment-1.21:2024.07.28@zip\")\n    }\n" +
+            "    modImplementation \"net.fabricmc:fabric-loader:${loader_version}\"\n    include modApi(\"teamreborn:energy:4.1.0\")\n" +
+            "    modCompileOnly \"curse.maven:jei-238222:1\"\n}\n" +
+            "tasks.remapJar { archiveClassifier = 'x' }\njava { sourceCompatibility = JavaVersion.VERSION_21 }\n" +
+            "tasks.withType(JavaCompile).configureEach { it.options.release = 21 }\n";
+        String unobfuscated = Target.unobfuscatedLoom(obfuscated, 25);
+        check(
+            unobfuscated.equals(
+                "plugins {\n    id 'net.fabricmc.fabric-loom' version '1.10-SNAPSHOT'\n}\n" +
+                "dependencies {\n    minecraft \"com.mojang:minecraft:${minecraft_version}\"\n" +
+                "    implementation \"net.fabricmc:fabric-loader:${loader_version}\"\n    include api(\"teamreborn:energy:4.1.0\")\n" +
+                "    compileOnly \"curse.maven:jei-238222:1\"\n}\n" +
+                "tasks.jar { archiveClassifier = 'x' }\njava { sourceCompatibility = JavaVersion.VERSION_25 }\n" +
+                "tasks.withType(JavaCompile).configureEach { it.options.release = 25 }\n"
+            ),
+            "a Loom build rewritten for the unobfuscated game: " + unobfuscated
+        );
+        check(Target.unobfuscatedLoom("plugins { id 'java' }\nmappings x\n", 25).equals("plugins { id 'java' }\nmappings x\n"), "a build without Loom is left alone");
         // Old Loom states its minimum Gradle only as a constant of its bootstrap class: class constants are read from the
         // class file itself (an int and a String constant of the JDK's own classes), and a major line becomes its newest release.
         try (var integer = Object.class.getResourceAsStream("/java/lang/Integer.class"); var jar = Object.class.getResourceAsStream("/java/util/jar/JarFile.class")) {
