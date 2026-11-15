@@ -162,6 +162,7 @@ To build it, install Rust and run `cargo build --release` in `app/`; `mmt packag
 ## More
 
 - [`SCOPE.md`](SCOPE.md): what works on each platform.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): how to help, and how much freedom you have. [`DECISIONS.md`](DECISIONS.md): what is fixed.
 - [`AGENTS.md`](AGENTS.md): how to work in this repo. [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md): setup traps.
 - [`bench/README.md`](bench/README.md): recording receipts and comparing measurements.
 - Plans, status and findings live in [issues](https://github.com/Noisemaker111/modding-accelerator/issues) and

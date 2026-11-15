@@ -17,6 +17,8 @@ Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
 
 ## Rules
 
+- **Before contributing or asking, read `CONTRIBUTING.md` and `DECISIONS.md`,** then check the code, issues and PRs.
+  Unwritten choices are yours; other people's licensed work is derived at run time, never committed.
 - **One feature = one branch = one PR.** Commit after each passing step; push to the same PR. Use
   `.github/pull_request_template.md`. Merge (`gh pr merge --squash`) only when every check is green; CI is the gate,
   and a PR's claims ("tests pass", numbers) must be ones CI, a linked cloud run or the local in-game run's receipt shows.
