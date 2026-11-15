@@ -195,7 +195,8 @@
       "evidence": [],
       "action": {
         "type": "fetch-dependency",
-        "how": "The version the dependant's own Modrinth release names (found by the dependant jar's SHA-1), else the oldest Modrinth release for the pack's game version and loader that every dependant accepts; checked against Modrinth's SHA-512 and its own metadata."
+        "how": "The version the dependant's own Modrinth release names (found by the dependant jar's SHA-1), else the oldest Modrinth release for the pack's game version and loader that every dependant accepts; checked against Modrinth's SHA-512 and its own metadata. When no source serves it in a version that fits, the mods that need it and that no other mod needs are left out of the pack with a note (an optional mod a player cannot install anyway); a library other mods depend on through them is not, and nothing changes.",
+        "otherwise": "leave-out-dependants"
       },
       "why": "The dependant's author names the exact library release it was built against; failing that, the oldest release in range is closest to what the pack was made with.",
       "test": {

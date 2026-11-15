@@ -396,6 +396,21 @@ final class PackRepairs {
                         boolean replace = Boolean.TRUE.equals(target.get("replace"));
                         if (!replace && added.providers.containsKey(id)) continue;
                         var found = fetchDependency(check, facts, target);
+                        if (found == null && !replace && "leave-out-dependants".equals(action.get("otherwise"))) {
+                            // No source serves the library: a mod that needs it cannot run. One nothing else in the pack needs is
+                            // optional to the pack, so it is left out with a note; one other mods need is not, and nothing changes.
+                            List<String> optional = new ArrayList<>(), needed = new ArrayList<>();
+                            for (Object o : Json.array(target.get("owners"))) (requiredByOthers(facts.scan(), String.valueOf(o)) ? needed : optional).add(String.valueOf(o));
+                            if (needed.isEmpty() && !optional.isEmpty()) {
+                                for (String jar : optional) if (!remove.contains(jar)) remove.add(jar);
+                                notes.add(
+                                    fix.get("id") + ": no source serves " + id + " in a version for Minecraft " + facts.pack().minecraft() + " on " + facts.pack().loader() +
+                                    " that its dependants accept (checked: the dependants' own Modrinth releases, Modrinth's releases for this game version, CurseForge's files); " +
+                                    optional + ", which need it and which no other mod needs, are left out of the pack"
+                                );
+                                continue;
+                            }
+                        }
                         if (found == null) {
                             notes.add(fix.get("id") + ": no verified file of " + id + " in the range its dependants ask for was found, so nothing was changed for it");
                             continue;
@@ -417,6 +432,17 @@ final class PackRepairs {
             }
         }
         return new Change(add, remove, sources, serverOnly, dropped, notes);
+    }
+
+    /** Whether another jar in the pack requires an id this jar provides (or a jar bundled in it provides). */
+    static boolean requiredByOthers(PackMods.Scan scan, String jar) {
+        Set<String> own = new HashSet<>();
+        for (var entry : scan.providers.entrySet()) for (var p : entry.getValue()) if (PackCheck.top(p.jar()).equals(jar)) own.add(entry.getKey());
+        for (var d : scan.dependencies) if (d.kind().equals("required") && own.contains(d.id()) && !PackCheck.top(d.owner()).equals(jar)) {
+            boolean elsewhere = scan.providers.getOrDefault(d.id(), List.of()).stream().anyMatch(p -> !PackCheck.top(p.jar()).equals(jar));
+            if (!elsewhere) return true;
+        }
+        return false;
     }
 
     /** The ids an added jar provides, so a later repair does not fetch them again. */
