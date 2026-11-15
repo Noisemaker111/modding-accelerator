@@ -2292,6 +2292,9 @@
      "to": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.core.Direction;\nimport net.minecraft.world.level.Level;\nimport demo.loaderbridge.capabilities.Capabilities;\nimport demo.loaderbridge.transfer.ResourceHandler;\nimport demo.loaderbridge.transfer.item.ItemResource;\nimport demo.loaderbridge.transfer.transaction.Transaction;\n\npublic final class Hopper {\n\tpublic static int push(Level level, BlockPos pos, ItemResource item) {\n\t\tResourceHandler<ItemResource> handler = level.getCapability(Capabilities.Item.BLOCK, pos, Direction.UP);\n\t\tif (handler == null) return 0;\n\t\ttry (Transaction transaction = Transaction.openRoot()) {\n\t\t\tint inserted = handler.insert(item, 1, transaction);\n\t\t\ttransaction.commit();\n\t\t\treturn inserted;\n\t\t}\n\t}\n}\n",
      "mixins": [
       "LevelCapabilitiesMixin"
+     ],
+     "injects": [
+      "net/minecraft/world/level/Level"
      ]
     },
     {
@@ -2300,6 +2303,9 @@
      "to": "package demo;\n\nimport static demo.loaderbridge.fluids.FluidType.BUCKET_VOLUME;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.material.Fluids;\nimport demo.loaderbridge.capabilities.Capabilities;\nimport demo.loaderbridge.fluids.FluidStack;\nimport demo.loaderbridge.transfer.ResourceHandler;\nimport demo.loaderbridge.transfer.fluid.FluidResource;\nimport demo.loaderbridge.transfer.fluid.FluidStacksResourceHandler;\n\npublic final class Tank {\n\tpublic static final FluidStacksResourceHandler TANK = new FluidStacksResourceHandler(1, 4 * BUCKET_VOLUME);\n\n\tpublic static FluidStack first(Level level, BlockPos pos) {\n\t\tResourceHandler<FluidResource> handler = level.getCapability(Capabilities.Fluid.BLOCK, pos, null);\n\t\tif (handler == null || handler.size() == 0) return new FluidStack(Fluids.WATER, 0);\n\t\treturn handler.getResource(0).toStack(handler.getAmountAsInt(0));\n\t}\n}\n",
      "mixins": [
       "LevelCapabilitiesMixin"
+     ],
+     "injects": [
+      "net/minecraft/world/level/Level"
      ]
     },
     {
