@@ -51,7 +51,7 @@ final class Build {
         return true;
     }
 
-    static final long DAEMON_IDLE_MS = 30 * 60 * 1000;
+    static final long DAEMON_IDLE_MS = 10 * 60 * 1000;
 
     /** True when the user's Gradle home, the build, or GRADLE_OPTS already sets the daemon idle timeout. */
     boolean userSetsIdleTimeout() throws IOException {
@@ -310,7 +310,7 @@ final class Build {
         command.add("-Dfabric.loom.ci=true");
         command.add("-Dmodaccel.runId=" + report.id);
         // Daemons of modaccel's own, so game-stop can stop them without touching the user's or another
-        // agent's (gradle --stop would end them all), and one left running leaves after half an hour idle.
+        // agent's (gradle --stop would end them all), and one left running leaves after ten minutes idle.
         command.add("-Dorg.gradle.daemon.registry.base=" + daemons());
         // A command-line value would override one the user set, so only fill in a default.
         if (!userSetsIdleTimeout()) command.add("-Dorg.gradle.daemon.idletimeout=" + DAEMON_IDLE_MS);
