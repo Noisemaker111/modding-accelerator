@@ -345,6 +345,12 @@ public final class PackCheckTest {
 
     // ------------------------------------------------------------------ Fabric and Quilt metadata
     static void fabricAndQuilt(Path harness, Path scratch) throws Exception {
+        // Astral Vinery 1.2.0: a line break inside its description string; Fabric reads it, so pack-check must too.
+        var raw = Json.object(PackMods.lenient("{\"id\": \"astralvinery\", \"description\": \"one\nand \\\"two\\\"\tthree\", \"depends\": {\"vinery\": \"1.1.4\"}}"));
+        expect(
+            "astralvinery".equals(raw.get("id")) && Json.object(raw.get("depends")).get("vinery").equals("1.1.4") && String.valueOf(raw.get("description")).contains("one\nand \"two\""),
+            "a raw line break inside a fabric.mod.json string is read the way Fabric reads it: " + raw
+        );
         Path mods = Files.createDirectories(scratch.resolve("fabric/mods"));
         Path inner = jar(scratch.resolve("inner.jar"), Map.of("fabric.mod.json", "{\"id\":\"cloth-config\",\"version\":\"15.0.140\"}"));
         jar(
