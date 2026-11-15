@@ -906,6 +906,7 @@ final class Convert {
         if (b.get("replaces") instanceof Map<?, ?> replaces) for (var e : Json.object(replaces).entrySet()) fabricBridgeReplaces.put(e.getKey(), String.valueOf(e.getValue()));
         fabricBridgeReplacedMods.addAll(LoaderRules.strings(b.get("replacesMods")));
         String folder = "src/main/java/" + pkg.replace('.', '/');
+        bridgeUsers = sourcesOutside(folder);
         for (var template : templates.entrySet()) write(
             folder + "/" + template.getKey(),
             fillBridge(Files.readString(template.getValue(), StandardCharsets.UTF_8), pkg)
@@ -2839,6 +2840,7 @@ final class Convert {
                 ") replaces the files whose game or Fabric API names differ there."
             );
         }
+        bridgeUsers = sourcesOutside(bridgeFolder());
         for (var template : files.entrySet()) write(
             bridgeFolder() + "/" + template.getKey(),
             fillBridge(Files.readString(template.getValue(), StandardCharsets.UTF_8), bridgePackage)
@@ -2940,10 +2942,37 @@ final class Convert {
         return out;
     }
 
-    /** A bridge template with the mod's own names written in. */
+    /** The mod's own sources (outside the bridge), which decide the bridge's "// bridge: when NAME" lines. */
+    String bridgeUsers = "";
+
+    /** A bridge template with the mod's own names written in, and only the lines for what the mod uses. */
     String fillBridge(String template, String pkg) {
         // Line ends as the bridge's files are written (a Windows checkout may give the templates CRLF).
-        return template.replace("\r\n", "\n").replace("${package}", pkg).replace("${modid}", modid == null ? "" : modid);
+        String text = template.replace("\r\n", "\n").replace("${package}", pkg).replace("${modid}", modid == null ? "" : modid);
+        return whenUsed(text, bridgeUsers);
+    }
+
+    /**
+     * A bridge line ending in "// bridge: when NAME" is kept (without the marker) only when the mod's own code names the
+     * bridge class NAME: what the bridge registers for a feature (an attachment type, a listener) is then registered only
+     * for mods that use the feature, as the other loader registers nothing for it.
+     */
+    static String whenUsed(String text, String users) {
+        Matcher m = Pattern.compile("(?m)^(.*?)[ \\t]*//[ \\t]*bridge: when (\\w+)[ \\t]*\\n").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            boolean used = Pattern.compile("\\b" + Pattern.quote(m.group(2)) + "\\b").matcher(users).find();
+            m.appendReplacement(out, Matcher.quoteReplacement(used ? m.group(1) + "\n" : ""));
+        }
+        m.appendTail(out);
+        return out.toString();
+    }
+
+    /** The mod's own sources, outside a bridge folder. */
+    String sourcesOutside(String folder) throws IOException {
+        StringBuilder all = new StringBuilder();
+        for (String file : javaFiles()) if (!file.startsWith(folder + "/")) all.append(read(file)).append('\n');
+        return all.toString();
     }
 
     /**

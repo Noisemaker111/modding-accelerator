@@ -18,11 +18,11 @@ final class GameEvents {
     private GameEvents() {}
 
     static void hook() {
-        IEntityExtension.register();
+        IEntityExtension.register(); // bridge: when IEntityExtension
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> Bus.INSTANCE.post(new PlayerEvent.PlayerLoggedInEvent(handler.player)));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> Bus.INSTANCE.post(new PlayerEvent.PlayerLoggedOutEvent(handler.player)));
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> Bus.INSTANCE.post(new PlayerEvent.PlayerRespawnEvent(newPlayer, alive)));
-        ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> IEntityExtension.copyPersisted(oldPlayer, newPlayer));
+        ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> IEntityExtension.copyPersisted(oldPlayer, newPlayer)); // bridge: when IEntityExtension
         ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> Bus.INSTANCE.post(new PlayerEvent.Clone(newPlayer, oldPlayer, !alive)));
         ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> Bus.INSTANCE.post(new PlayerEvent.PlayerChangedDimensionEvent(player, origin.dimension(), destination.dimension())));
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> !Bus.INSTANCE.post(new LivingDeathEvent(entity, source)).canceled);

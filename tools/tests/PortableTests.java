@@ -1098,6 +1098,14 @@ public final class PortableTests {
             " " +
             unconverted
         );
+        // Found in the game (the NeoForge MDK on Fabric registered an attachment type NeoForge's build does not): a bridge
+        // line marked "// bridge: when NAME" is kept only when the mod's own code names NAME.
+        String marked = "\tA.register(); // bridge: when IEntityExtension\n\tB.hook();\n";
+        check(
+            Convert.whenUsed(marked, "class X {}").equals("\tB.hook();\n") &&
+            Convert.whenUsed(marked, "IEntityExtension.getPersistentData(e)").equals("\tA.register();\n\tB.hook();\n"),
+            "a bridge's feature lines are kept only for mods that use the feature: " + Convert.whenUsed(marked, "class X {}")
+        );
         // Found by the convert sweep (Zombie Apocalypse back from Fabric): the NeoForge exclusion the way to Fabric adds for
         // kept dependencies would exclude NeoForge, and the game's classes, from the ModDevGradle build.
         String excluded = "dependencies {\n}\n" + Convert.NEOFORGE_EXCLUSION + "\texclude group: 'net.neoforged', module: 'neoforge'\n}\n";
