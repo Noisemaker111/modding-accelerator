@@ -134,6 +134,7 @@ final class Target {
             modDevFollows(setup, build, to);
             neoFormFollows(setup, build, to);
             toolchain(setup, build, to);
+            gradleForJava25(setup, build, to);
             runTypeRename(setup, build, to);
             parchmentFollows(setup, build, to);
             unitTestsInFml(setup, build, to, resolved);
@@ -163,6 +164,7 @@ final class Target {
         loomFollows(setup, build, to);
         unobfuscatedFabric(setup, build, to);
         toolchain(setup, build, to);
+        gradleForJava25(setup, build, to);
         parchmentFollows(setup, build, to);
         manifest(setup);
         return setup;
@@ -568,6 +570,31 @@ final class Target {
             if (minecraft.find() && !minecraft.group(1).matches("minecraft_version|minecraftVersion|mc_version")) setProperty(setup, properties, minecraft.group(1), to);
             setup.applied.add(Json.map("change", "Parchment " + key + " -> " + release + " for " + to, "evidence", "Parchment " + release + " is its newest release for " + to));
         }
+    }
+
+    /**
+     * The unobfuscated game's build tools run on Java 25 (Loom for 26.x refuses a Gradle on 21: Carry On's Fabric project),
+     * and Gradle runs on Java 25 from 9.1. A wrapper older than that rises to 9.4.1, which NeoGradle 7.1, ModDevGradle 2
+     * and Loom 1.14+ all run on. A wrapper already on 9.1 or newer stays.
+     */
+    static void gradleForJava25(Setup setup, Build build, String to) throws Exception {
+        if (Versions.compare(to, "26.1") < 0) return;
+        Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
+        if (!Files.isRegularFile(wrapper)) return;
+        String text = setup.text(wrapper);
+        Matcher url = Pattern.compile("(distributionUrl=[^\\r\\n]*?gradle-)([0-9][0-9.]*(?:-rc-?\\d+)?)(-(?:bin|all)\\.zip)").matcher(text);
+        if (!url.find() || Versions.compare(url.group(2), "9.1") >= 0) return;
+        String gradle = "9.4.1";
+        setup.replace(wrapper, url.group(0), url.group(1) + gradle + url.group(3));
+        Matcher sum = Pattern.compile("(?m)^distributionSha256Sum=\\S+").matcher(setup.text(wrapper));
+        if (sum.find()) setup.replace(
+            wrapper,
+            sum.group(0),
+            "distributionSha256Sum=" + fetch(build, "https://services.gradle.org/distributions/gradle-" + gradle + url.group(3) + ".sha256").trim()
+        );
+        setup.applied.add(
+            Json.map("file", wrapper.toString(), "change", "Gradle " + url.group(2) + " -> " + gradle + " for " + to, "evidence", "Minecraft " + to + " builds on Java 25, which Gradle runs on from 9.1")
+        );
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */
