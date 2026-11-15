@@ -1,0 +1,13 @@
+diff --git a/src/main/java/dev/diorama/bake/GpuMesher.java b/src/main/java/dev/diorama/bake/GpuMesher.java
+index 00839a70..b5f6051e 100644
+--- a/src/main/java/dev/diorama/bake/GpuMesher.java
++++ b/src/main/java/dev/diorama/bake/GpuMesher.java
+@@ -1319,7 +1319,7 @@ public final class GpuMesher {
+ 						while (k >= loI && openFrom[k] <= y) {
+ 							k--;
+ 						}
+-						setBits(here, k + 1, i);
++						setBits(here, Math.min(k + 2, i), i);
+ 						reachedLo = Math.min(reachedLo, k + 1);
+ 						reachedHi = Math.max(reachedHi, i);
+ 						any = true;

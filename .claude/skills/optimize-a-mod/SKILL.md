@@ -284,6 +284,19 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
 - **The cold window is the JIT's first minute.** Diorama's cold pairs swung 0.56–1.20× on exact CPU
   time with the share of interpreted frames; a change that runs hot code less often can compile it
   later and look slower cold. Count interpreted top frames per capture before reading a cold verdict.
+- **A mod's own fallbacks can decide a window.** Diorama traces every tile on the CPU until its GPU
+  self-check has compared four, and turns GPU baking off for the launch when the check's GPU bakes are
+  slow, which other games on the card cause. Three of four baseline launches of one round-4 run traced
+  through their cold window and built 4–64 GPU meshes against the candidate's 246–359; the cold pairs
+  read up to 4.24×. Read each launch's scopes before a verdict, and put whatever brings the mod to its
+  steady path (a warm-up, waiting for a self-check) before the window in every launch
+  (`bench/diorama/play/jit-warm.java`).
+- **Frame costs need the frame rate a player has.** A hidden client draws about 7.5 frames a second
+  once idle; `"frames": 60` in the experiment holds both arms at 60, so per-frame scopes (a minimap,
+  a map screen) and frame timing mean what they do in a player's game.
+- **A table of precomputed steps can lose to computing them.** Diorama's spawn-spot rays re-read
+  per-row step arrays instead of their floating-point steps and picks took 2.5× as long; not reading
+  the air those steps cross (`open-air-picks.patch`) was the whole gain. Time the replacement first.
 - **Sampled line numbers inside a hot loop mislead.** Diorama's pick loop charged 38% of its samples to
   the floating-point step; sharing the steps through a boxed `HashMap` made picks 1.7× slower. Time a
   replacement for the hot line directly before writing a candidate around it.

@@ -1,0 +1,44 @@
+diff --git a/src/main/java/dev/diorama/bake/GpuMesher.java b/src/main/java/dev/diorama/bake/GpuMesher.java
+index 00839a70..1bfc4434 100644
+--- a/src/main/java/dev/diorama/bake/GpuMesher.java
++++ b/src/main/java/dev/diorama/bake/GpuMesher.java
+@@ -1940,7 +1940,7 @@ public final class GpuMesher {
+ 						if (from >= 0 && from <= to && to <= run.length - ChunkBakeData.CasterChunk.FACES) {
+ 							int firstFace = run.offset + ChunkBakeData.CasterChunk.FACES;
+ 							highest = casters(mesh, looks, ints, firstFace + from, firstFace + to, x, z, top, bottom, reader.minY(), highest);
+-							if (Slabs.valid(run)) {
++							if (true) {
+ 								continue;
+ 							}
+ 						}
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index 891694d2..90f2878e 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -376,7 +376,7 @@ public final class VoxelReader {
+ 		if (known != null && known.downTo() <= bottom && (known.west() == null || known.west() == this.blocksToken(cx - 1, cz))
+ 			&& (known.south() == null || known.south() == this.blocksToken(cx, cz + 1))) {
+ 			// Copied forward when its array is about to leave the ring's window, if it is still whole.
+-			Slabs.Run renewed = Slabs.renew(known.run());
++			Slabs.Run renewed = known.run();
+ 			if (renewed == known.run()) {
+ 				return known;
+ 			}
+@@ -476,7 +476,7 @@ public final class VoxelReader {
+ 			// This job's own copy, if the ring still held it whole.
+ 			open = new int[256];
+ 			System.arraycopy(kept.ints(), kept.offset, open, 0, 256);
+-			Slabs.Run renewed = Slabs.valid(kept) ? Slabs.renew(kept) : null;
++			Slabs.Run renewed = kept;
+ 			if (renewed != null) {
+ 				if (renewed != kept) {
+ 					chunk.shared.openFrom = renewed;
+@@ -696,7 +696,7 @@ public final class VoxelReader {
+ 					// This job's own copy, if the ring still held it whole.
+ 					long[] solid = unpackMask(run, 0);
+ 					long[] partial = run.length > 128 ? unpackMask(run, 128) : NOTHING_SOLID;
+-					Slabs.Run renewed = Slabs.valid(run) ? Slabs.renew(run) : null;
++					Slabs.Run renewed = run;
+ 					if (renewed != null) {
+ 						if (renewed != run) {
+ 							this.shared.masks.compareAndSet(index, run, renewed);
