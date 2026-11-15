@@ -6374,6 +6374,109 @@
         "after": "package me.jellysquid.mods.lithium.api.inventory;\n\npublic interface LithiumInventory {\n\tdefault void generate(LootableContainerBlockEntity lootable) {\n\t\tlootable.generateLoot(null);\n\t}\n}\n",
         "from": "written for this rule (the shape of Lithium 1.20.1's LithiumInventory)"
       }
+    },
+    {
+      "id": "draw-context-render-parameter",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "method does not override or implement a method from a supertype|MatrixStack cannot be converted to DrawContext",
+      "apply": {
+        "find": "(\\b(?:render|renderButton|renderWidget|renderBackground|renderTooltip|drawBackground|drawForeground|renderLabels)\\s*\\(\\s*)(?:final\\s+)?MatrixStack(\\s+\\w+)",
+        "replace": "$1DrawContext$2",
+        "ensureImports": [
+          "net.minecraft.client.gui.DrawContext"
+        ]
+      },
+      "scope": "log",
+      "when": "\\bMatrixStack\\b",
+      "note": "1.20 replaced the MatrixStack parameter of screen and widget render methods with a DrawContext; the parameter keeps its name, so the drawing rules below can move calls onto it.",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:40: error: method does not override or implement a method from a supertype\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\t@Override\n\tpublic void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {\n\t\tsuper.render(matrices, mouseX, mouseY, delta);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.client.gui.DrawContext;\n\nclass CompassScreen extends Screen {\n\t@Override\n\tpublic void render(DrawContext matrices, int mouseX, int mouseY, float delta) {\n\t\tsuper.render(matrices, mouseX, mouseY, delta);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "draw-context-fill",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "no suitable method found for fill\\(DrawContext,",
+      "apply": {
+        "find": "(?<![\\w.])(?:DrawableHelper\\.)?fill\\(\\s*(\\w+)\\s*,\\s*",
+        "replace": "$1.fill("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20: DrawableHelper.fill(matrices, x1, y1, x2, y2, color) is DrawContext.fill(x1, y1, x2, y2, color).",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:4: error: no suitable method found for fill(DrawContext,int,int,int,int,int)\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid back(DrawContext matrices) { fill(matrices, 0, 0, width, height, 0x80000000); }\n}\n",
+        "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid back(DrawContext matrices) { matrices.fill(0, 0, width, height, 0x80000000); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "draw-context-draw-text",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "no suitable method found for draw\\(DrawContext,",
+      "apply": {
+        "find": "([\\w.]+(?:\\(\\))?)\\.draw\\(\\s*(\\w+)\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "$2.drawText($1,$3, (int) ($4), (int) ($5),$6, false)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20: TextRenderer.draw(matrices, text, x, y, color) is DrawContext.drawText(textRenderer, text, x, y, color, false); the new method takes int positions and says whether to draw a shadow.",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:4: error: no suitable method found for draw(DrawContext,String,int,int,int)\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { textRenderer.draw(matrices, title, width / 2f - 20, 12, 0xFFFFFF); }\n}\n",
+        "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { matrices.drawText(textRenderer, title, (int) ( width / 2f - 20), (int) ( 12), 0xFFFFFF, false); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "draw-context-draw-text-shadow",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "no suitable method found for drawWithShadow\\(DrawContext,|symbol:\\s+method drawWithShadow\\(DrawContext,",
+      "apply": {
+        "find": "([\\w.]+(?:\\(\\))?)\\.drawWithShadow\\(\\s*(\\w+)\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "$2.drawTextWithShadow($1,$3, (int) ($4), (int) ($5),$6)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20: TextRenderer.drawWithShadow(matrices, text, x, y, color) is DrawContext.drawTextWithShadow(textRenderer, text, x, y, color) with int positions.",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:4: error: cannot find symbol\n  symbol:   method drawWithShadow(DrawContext,Text,float,int,int)\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { client.textRenderer.drawWithShadow(matrices, name, x + 2.5f, y, color); }\n}\n",
+        "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { matrices.drawTextWithShadow(client.textRenderer, name, (int) ( x + 2.5f), (int) ( y), color); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "draw-context-centered-text",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "drawCenteredTextWithShadow",
+      "apply": {
+        "find": "(?<![\\w.])(?:DrawableHelper\\.)?drawCenteredTextWithShadow\\(\\s*(\\w+)\\s*,\\s*",
+        "replace": "$1.drawCenteredTextWithShadow("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20: the inherited DrawableHelper.drawCenteredTextWithShadow(matrices, textRenderer, text, x, y, color) is DrawContext.drawCenteredTextWithShadow(textRenderer, text, x, y, color).",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:4: error: method drawCenteredTextWithShadow in class Screen cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { drawCenteredTextWithShadow(matrices, textRenderer, title, width / 2, 10, 0xFFFFFF); }\n}\n",
+        "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { matrices.drawCenteredTextWithShadow(textRenderer, title, width / 2, 10, 0xFFFFFF); }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }
