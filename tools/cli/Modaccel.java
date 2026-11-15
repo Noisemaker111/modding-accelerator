@@ -151,6 +151,7 @@ public final class Modaccel {
             "background",
             "quiet",
             "pack",
+            "focus",
             "minecraft",
             "loader",
             "memory",
@@ -973,7 +974,7 @@ public final class Modaccel {
             "and items made by a recipe without a translation or model are warnings.\n" +
             "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar. That is the build path for\n" +
             "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
-            case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n" +
+            case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--focus MODID,MODID] [--fix] [--json]\n" +
             "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
             "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +
             "version the loader's newest stable one is used. modaccel pack-check --list shows the inputs, loaders, checks and repairs it knows.\n" +
@@ -989,6 +990,8 @@ public final class Modaccel {
             "save. A start that fails names the mod its log, crash report, mixin configs or stack point at.\n" +
             "--fix runs the repaired pack's server beside the shipped one and compares them check by check; only when the repaired one passes\n" +
             "is your pack changed: an instance folder in place (undo with --undo), an export or .mrpack as a fixed copy.\n" +
+            "--focus MODID,MODID is a minimal repro: only the jars providing those ids and their required dependencies (from the jars'\n" +
+            "metadata) and loader plugins start, so one fault is proven in minutes, not a whole pack's start; --fix then never changes your pack.\n" +
             "--memory 6G sets the server's heap. A start is judged by its log: --timeout SECONDS (default 600) stops one whose log stops growing,\n" +
             "and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that never finishes. How to add a loader, input, check or\n" +
             "repair: tools/packcheck/CONTRIBUTING.md.";
