@@ -47,6 +47,8 @@ saves/
 world/
 screenshots/
 options.txt
+# ...except the client options an experiment copies into each launch (bench/**/experiment.json "files").
+!bench/**/options.txt
 server.properties
 usercache.json
 
