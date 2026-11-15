@@ -1325,6 +1325,11 @@ public final class PortableTests {
                 .equals("java.sourceCompatibility = JavaVersion.VERSION_17\njava.targetCompatibility = JavaVersion.VERSION_17\njava { withSourcesJar() }\n"),
             "Gradle 9: project-level compatibility settings move to the java extension"
         );
+        check(
+            Target.removedDsl("archivesBaseName = project.archives_base_name\njar { from(\"LICENSE\") { rename { \"${it}_${archivesBaseName}\" } } }\n", true, true)
+                .equals("base.archivesName = project.archives_base_name\njar { from(\"LICENSE\") { rename { \"${it}_${project.base.archivesName.get()}\" } } }\n"),
+            "Gradle 9: archivesBaseName is the base extension's archivesName"
+        );
         // Architectury Loom is Loom: its version is read like Fabric Loom's, so a port can raise it (BetterF3 1.5-SNAPSHOT).
         check(
             "1.5-SNAPSHOT".equals(ProjectModel.loomVersion(new Properties(), List.of("plugins {\n    id \"dev.architectury.loom\" version \"1.5-SNAPSHOT\" apply false\n}\n"))),

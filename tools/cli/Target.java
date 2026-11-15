@@ -630,7 +630,12 @@ final class Target {
      * (AppleSkin 1.20.1 -> 1.21.1 moves to Gradle 9 with Loom 1.18 and stopped on them).
      */
     static String removedDsl(String text, boolean gradle8, boolean gradle9) {
-        if (gradle9) text = text.replaceAll("(?m)^(sourceCompatibility|targetCompatibility)([ \\t]*=)", "java.$1$2");
+        if (gradle9) {
+            text = text.replaceAll("(?m)^(sourceCompatibility|targetCompatibility)([ \\t]*=)", "java.$1$2");
+            // Gradle 9 removed the project-level archivesBaseName; the base extension owns it.
+            text = text.replaceAll("(?m)^([ \\t]*)archivesBaseName([ \\t]*=)", "$1base.archivesName$2");
+            text = text.replaceAll("(?<![\\w.$])(?:project\\.)?archivesBaseName(?![\\w(])", "project.base.archivesName.get()");
+        }
         if (gradle8) text = text.replaceAll("(?m)^([ \\t]*)classifier(\\s*=\\s*|\\s+)([\"'])", "$1archiveClassifier = $3");
         return text.replaceAll("(?m)^[ \\t]*shareCaches\\(\\)[ \\t]*\\r?\\n", "");
     }

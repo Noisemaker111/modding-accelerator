@@ -72,13 +72,13 @@ final class Run {
 
     static String tail(Path log) throws IOException {
         if (!Files.exists(log)) return "";
-        List<String> lines = Files.readAllLines(log, StandardCharsets.UTF_8);
+        List<String> lines = new String(Files.readAllBytes(log), StandardCharsets.UTF_8).lines().toList();
         return String.join("\n", lines.subList(Math.max(0, lines.size() - 24), lines.size()));
     }
 
     static String failure(Path log) throws IOException {
         if (!Files.exists(log)) return "";
-        List<String> causes = Files.readAllLines(log, StandardCharsets.UTF_8)
+        List<String> causes = new String(Files.readAllBytes(log), StandardCharsets.UTF_8).lines().toList()
             .stream()
             .filter(
                 line ->

@@ -211,7 +211,7 @@ final class Build {
     static boolean selectionFailed(Path log) throws IOException {
         return (
             Files.exists(log) &&
-            SELECTION_FAILURE.matcher(Files.readString(log, java.nio.charset.StandardCharsets.UTF_8)).find()
+            SELECTION_FAILURE.matcher(new String(Files.readAllBytes(log), java.nio.charset.StandardCharsets.UTF_8)).find()
         );
     }
 

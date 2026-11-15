@@ -1073,7 +1073,7 @@ final class Port {
                 Path repair = transaction.resolve("repair-request.json");
                 List<Map<String, Object>> guides = compiled
                     ? List.of()
-                    : repairGuides(build.harness, from, to, Files.readString(log, StandardCharsets.UTF_8));
+                    : repairGuides(build.harness, from, to, logText(log));
                 Json.save(
                     repair,
                     Json.map(
@@ -1296,7 +1296,7 @@ final class Port {
     /** What the mixin audit actually looked at, from its summary line: never "checked" when nothing was. */
     static String auditSummary(Path log) throws IOException {
         String summary = "";
-        if (log != null && Files.exists(log)) for (String line : Files.readAllLines(log, StandardCharsets.UTF_8)) if (
+        if (log != null && Files.exists(log)) for (String line : logText(log).lines().toList()) if (
             line.startsWith("# ")
         ) summary = line.substring(2).strip();
         if (summary.isEmpty()) return "the mixin audit passed without a summary";
