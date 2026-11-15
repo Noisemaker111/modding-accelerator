@@ -9,7 +9,7 @@ name: Portable command
 # server); main, the merge queue (merge_group, once the repository has one) and workflow_dispatch run every plan.
 # Caches are written only by main and only read by pull requests, so a pull request starts from main's downloads.
 # No retries and no schedule: every input is pinned, so a failure is a bug to find, and a rerun of unchanged code
-# repeats the last answer. A newer push cancels an older pull request run; main runs are never cancelled.
+# repeats the last answer.
 on:
   push:
     branches: [main]
@@ -18,9 +18,12 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# main: one full-suite run at a time plus one pending; a merge landing while one runs waits, and the pending run
+# tests every merge queued behind it (GitHub keeps only the newest pending run, which contains the older ones).
+# Every other ref: a newer push cancels the run in progress.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && 'full-suite' || format('{0}-{1}', github.workflow, github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ !(github.ref == 'refs/heads/main' && github.event_name == 'push') }}
 jobs:
   reach:
     name: what the change reaches
