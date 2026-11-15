@@ -22,7 +22,10 @@
   },
   "gates": [
     {"name": "moving", "file": "count.java", "thread": "control", "compare": "expect", "expect": "true"},
-    {"name": "transfers", "file": "trace.java", "thread": "control", "compare": "exact"}
+    {"name": "transfers", "file": "trace.java", "thread": "control", "compare": "exact"},
+    {"name": "components", "file": "components.java", "thread": "control", "compare": "exact"},
+    {"name": "chunks", "file": "chunks.java", "thread": "control", "compare": "exact"},
+    {"name": "borders", "file": "borders.java", "thread": "control", "compare": "exact"}
   ],
   "jit": "full"
 }
