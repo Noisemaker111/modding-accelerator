@@ -238,8 +238,12 @@ final class Convert {
         return run(options, true);
     }
 
+    /** Whether this conversion is compiled afterwards (not for self-test, --no-compile or --dry-run). */
+    boolean compiling;
+
     /** compile false writes the conversion without compiling it (self-test, which has no network). */
     Map<String, Object> run(Modaccel.Options options, boolean compile) throws Exception {
+        compiling = compile && !options.has("no-compile") && !options.has("dry-run");
         if (options.values.containsKey("undo")) return Port.undo(project, options.get("undo", ""), FOLDER);
         String to = options.get("to", "").toLowerCase(Locale.ROOT);
         String from = loader(project.root);
@@ -714,6 +718,7 @@ final class Convert {
                 applied.computeIfAbsent("access-widener", k -> new ArrayList<>()).add(path);
             }
         }
+        fabricApiWideners(minecraft);
         if (!accessTransformers.isEmpty()) {
             // NeoForge applies a mod's access transformers when its mods.toml names the file (modsToml adds that).
             String existing = read(AT_FILE);
@@ -845,6 +850,7 @@ final class Convert {
         if (!used) return;
         fabricBridgePackage = pkg;
         if (b.get("replaces") instanceof Map<?, ?> replaces) for (var e : Json.object(replaces).entrySet()) fabricBridgeReplaces.put(e.getKey(), String.valueOf(e.getValue()));
+        fabricBridgeReplacedMods.addAll(LoaderRules.strings(b.get("replacesMods")));
         String folder = "src/main/java/" + pkg.replace('.', '/');
         for (var template : templates.entrySet()) write(
             folder + "/" + template.getKey(),
@@ -922,6 +928,9 @@ final class Convert {
     /** Fabric-only libraries the Fabric bridge mirrors, by group:artifact, when the code uses the bridge (bridges[].replaces). */
     final Map<String, String> fabricBridgeReplaces = new LinkedHashMap<>();
 
+    /** The mod ids of those libraries (bridges[].replacesMods), which the converted mod no longer depends on. */
+    final Set<String> fabricBridgeReplacedMods = new HashSet<>();
+
     /** The library a dependency line names when the Fabric bridge mirrors its API, else null. */
     String bridgeReplaces(String line) {
         if (fabricBridgePackage == null) return null;
@@ -968,6 +977,68 @@ final class Convert {
             for (Path config : list.filter(p -> p.getFileName().toString().endsWith(".fabricbridge.mixins.json")).toList()) delete(relative(config));
         }
         notes.add("Fabric bridge: " + pkg + " is removed; the code names Fabric API's own classes again.");
+    }
+
+    /**
+     * Fabric API widens game members for every mod (its fabric-transitive-access-wideners-v1 module), so Fabric code
+     * calls them as if public. On NeoForge the mod's access transformer opens the ones its sources name: an entry is kept
+     * when the code names both its member and its owner's simple name. Read from the Fabric API release the build names,
+     * from Minecraft 26.1 (Fabric API's wideners are in Mojang's names there).
+     */
+    void fabricApiWideners(String minecraft) {
+        // A conversion that is not compiled (self-test, --no-compile) makes no lookups for it.
+        if (!compiling || Versions.compare(minecraft, Route.FIRST_UNOBFUSCATED) < 0) return;
+        Map<String, String> props = properties(readQuiet("gradle.properties"));
+        String api = props.getOrDefault("fabric_api_version", props.getOrDefault("fabric_version", ""));
+        if (api.isEmpty() || api.contains("$")) return;
+        try {
+            String base = "https://maven.fabricmc.net/net/fabricmc/fabric-api/";
+            String pom = Target.fetch(build, base + "fabric-api/" + api + "/fabric-api-" + api + ".pom");
+            Matcher module = Pattern.compile("<artifactId>fabric-transitive-access-wideners-v1</artifactId>\\s*<version>([^<]+)</version>").matcher(pom);
+            if (!module.find()) return;
+            String v = module.group(1);
+            Path jar = Target.download(build, base + "fabric-transitive-access-wideners-v1/" + v + "/fabric-transitive-access-wideners-v1-" + v + ".jar");
+            String widener = null;
+            try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+                for (var e : java.util.Collections.list(zip.entries())) if (e.getName().matches("[^/]+\\.(classtweaker|accesswidener)")) try (var in = zip.getInputStream(e)) {
+                    widener = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+                }
+            }
+            if (widener == null) return;
+            Set<String> names = new HashSet<>();
+            for (String file : javaFiles()) for (Matcher w = Pattern.compile("\\b[A-Za-z_]\\w*\\b").matcher(read(file)); w.find(); ) names.add(w.group());
+            String kept = transitiveEntries(widener, names);
+            List<String> lines = widenerToTransformer(kept, true, new ArrayList<>());
+            int added = 0;
+            for (String line : lines) if (!accessTransformers.contains(line)) {
+                accessTransformers.add(line);
+                added++;
+            }
+            if (added > 0) {
+                notes.add("Access transformer: " + added + " line(s) for the game members Fabric API " + api + " widens for every mod (fabric-transitive-access-wideners-v1) that the code names.");
+                applied.computeIfAbsent("fabric-api-wideners", k -> new ArrayList<>()).add(AT_FILE);
+            }
+        } catch (Exception offline) {
+            notes.add("Fabric API's own access wideners could not be read (" + offline.getMessage() + "); members it widens are not opened on NeoForge.");
+        }
+    }
+
+    /** The lines of an access widener whose member (or class) the code names: both the member and its owner's simple name. */
+    static String transitiveEntries(String widener, Set<String> names) {
+        StringBuilder out = new StringBuilder();
+        for (String raw : widener.lines().toList()) {
+            String line = raw.replaceAll("#.*$", "").strip();
+            String[] t = line.split("\\s+");
+            if (t.length >= 3 && (t[0].equals("accessWidener") || t[0].equals("classTweaker"))) {
+                out.append(line).append('\n');
+                continue;
+            }
+            if (t.length < 3) continue;
+            String owner = t[2].substring(Math.max(t[2].lastIndexOf('/'), t[2].lastIndexOf('$')) + 1);
+            boolean member = t[1].equals("class") || (t.length >= 4 && (names.contains(t[3]) || t[3].equals("<init>")));
+            if (member && names.contains(owner)) out.append(line).append('\n');
+        }
+        return out.toString();
     }
 
     /** Fabric entrypoints other than main, client, server, modmenu and fabric-datagen, by key: kept in modproperties. */
@@ -1454,6 +1525,11 @@ final class Convert {
                 String id = dep.getKey();
                 if (FABRIC_ONLY.contains(id)) continue;
                 if (id.equals("another-mod")) continue;
+                // A Fabric-only library the Fabric bridge carries in this mod (bridges[].replacesMods) is no dependency there.
+                if (fabricBridgePackage != null && fabricBridgeReplacedMods.contains(id)) {
+                    notes.add("Dependency " + id + " is removed; the Fabric bridge carries the API the code uses from it.");
+                    continue;
+                }
                 String range = mavenRange(dep.getValue());
                 if (id.equals("minecraft")) {
                     minecraftDone = true;

@@ -3477,7 +3477,11 @@
    "replaces": {
     "teamreborn:energy": "Team Reborn Energy's EnergyStorage, as NeoForge's Capabilities.Energy.BLOCK",
     "fuzs.forgeconfigapiport:forgeconfigapiport-fabric": "Forge Config API Port's Fabric API: ConfigRegistry and ModConfigEvents, which port NeoForge's own config system to Fabric"
-   }
+   },
+   "replacesMods": [
+    "team_reborn_energy",
+    "forgeconfigapiport"
+   ]
   }
  ]
 }

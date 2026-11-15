@@ -1101,6 +1101,18 @@ public final class PortableTests {
             " " +
             unconverted
         );
+        // Found by the convert sweep (Jade): Fabric API widens ItemDisplay.getItemStack for every Fabric mod; on NeoForge the
+        // mod's transformer opens the entries its code names (member and owner), and no others.
+        String transitive = Convert.transitiveEntries(
+            "classTweaker v1 official\ntransitive-accessible method net/minecraft/world/entity/Display$ItemDisplay getItemStack ()Lnet/minecraft/world/item/ItemStack;\n" +
+            "transitive-accessible method net/minecraft/world/entity/Display$ItemDisplay setItemStack (Lnet/minecraft/world/item/ItemStack;)V\n" +
+            "transitive-accessible method net/minecraft/world/level/Other getItemStack ()V\n",
+            Set.of("ItemDisplay", "getItemStack")
+        );
+        check(
+            transitive.equals("classTweaker v1 official\ntransitive-accessible method net/minecraft/world/entity/Display$ItemDisplay getItemStack ()Lnet/minecraft/world/item/ItemStack;\n"),
+            "Fabric API's transitive access wideners are kept for the members the code names on owners it names: " + transitive
+        );
         List<String> yarnLeft = new ArrayList<>();
         check(
             Convert.widenerToTransformer("accessWidener v2 named\naccessible class net/minecraft/a\n", false, yarnLeft).isEmpty() &&
