@@ -1005,6 +1005,119 @@ public final class PortableTests {
             Convert.neoforgeModId("2fast").equals("mod_2fast"),
             "a Fabric mod id with a hyphen becomes one NeoForge accepts"
         );
+        List<String> unconverted = new ArrayList<>();
+        List<String> transformers = Convert.widenerToTransformer(
+            "classTweaker v1 official\n# comment\naccessible class net/minecraft/A$B\nextendable class net/minecraft/C\n" +
+            "accessible method net/minecraft/D run (I)V\nextendable method net/minecraft/D run (I)V\n" +
+            "accessible field net/minecraft/E size I\nmutable field net/minecraft/E size I\n" +
+            "transitive-accessible method net/minecraft/F <init> ()V\ninject-interface net/minecraft/G demo/Extra\n",
+            true,
+            unconverted
+        );
+        check(
+            transformers.equals(
+                List.of(
+                    "public net.minecraft.A$B",
+                    "public-f net.minecraft.C",
+                    "public-f net.minecraft.D run(I)V",
+                    "public-f net.minecraft.E size",
+                    "public net.minecraft.F <init>()V"
+                )
+            ) &&
+            unconverted.equals(List.of("inject-interface net/minecraft/G demo/Extra")),
+            "a Fabric access widener becomes NeoForge access transformer lines, entries for one target merged: " +
+            transformers +
+            " " +
+            unconverted
+        );
+        List<String> yarnLeft = new ArrayList<>();
+        check(
+            Convert.widenerToTransformer("accessWidener v2 named\naccessible class net/minecraft/a\n", false, yarnLeft).isEmpty() &&
+            yarnLeft.size() == 1,
+            "an access widener in yarn's names is named, not converted"
+        );
+        List<String> widenerLeft = new ArrayList<>();
+        String widener = Convert.transformerToWidener(
+            "# opens\npublic net.minecraft.A$B\npublic-f net.minecraft.C\nprotected-f net.minecraft.D run(I)V\npublic net.minecraft.E size\npublic net.minecraft.H *()\n",
+            true,
+            widenerLeft
+        );
+        check(
+            widener.equals(
+                "accessWidener v2 official\naccessible class net/minecraft/A$B\nextendable class net/minecraft/C\n" +
+                "accessible method net/minecraft/D run (I)V\nextendable method net/minecraft/D run (I)V\n"
+            ) &&
+            widenerLeft.size() == 2 &&
+            widenerLeft.get(0).startsWith("public net.minecraft.E size") &&
+            widenerLeft.get(1).equals("public net.minecraft.H *()") &&
+            Convert.transformerToWidener("public net.minecraft.A\n", false, new ArrayList<>()).startsWith("accessWidener v2 named\n"),
+            "NeoForge access transformer lines become a Fabric access widener; a field (no type) and a wildcard are named:\n" +
+            widener +
+            widenerLeft
+        );
+        Map<String, String> fieldTypes = Convert.mappingFieldTypes(
+            "# {\"fileName\":\"client.txt\"}\nnet.minecraft.client.renderer.block.ModelBlockRenderer -> fxx:\n" +
+            "    net.minecraft.client.color.block.BlockColors blockColors -> b\n    int[][] grid -> c\n" +
+            "    15:20:void <init>(net.minecraft.client.color.block.BlockColors) -> <init>\n"
+        );
+        List<String> typedLeft = new ArrayList<>();
+        String typed = Convert.transformerToWidener(
+            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\n",
+            false,
+            typedLeft,
+            (owner, field) -> fieldTypes.get(owner + " " + field)
+        );
+        check(
+            fieldTypes.get("net/minecraft/client/renderer/block/ModelBlockRenderer grid").equals("[[I") &&
+            fieldTypes.size() == 2 &&
+            typed.equals(
+                "accessWidener v2 named\naccessible field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n" +
+                "mutable field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n"
+            ) &&
+            typedLeft.size() == 1,
+            "an access transformer field line becomes an access widener field with its type from Mojang's mappings:\n" + typed + typedLeft
+        );
+        String cleaned = Convert.dropUnusedImports(
+            "import net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n",
+            List.of("net.fabricmc.")
+        );
+        check(
+            cleaned.equals("import net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n"),
+            "an import of the old loader that no code uses is dropped, not reported:\n" + cleaned
+        );
+        check(
+            "jei-26.1.2-fabric".equals(Convert.swapLoaderWord("jei-26.1.2-neoforge", "neoforge", "fabric")) &&
+            "Ponder-Fabric-26.1".equals(Convert.swapLoaderWord("Ponder-NeoForge-26.1", "neoforge", "fabric")) &&
+            "curios-neoforge".equals(Convert.swapLoaderWord("curios-fabric", "fabric", "neoforge")) &&
+            Convert.swapLoaderWord("fabricator", "fabric", "neoforge") == null &&
+            Convert.loaderNeutral("jei-26.1.2-common-api") &&
+            !Convert.loaderNeutral("betterconfig-fabric") &&
+            Convert.remapConfiguration("\tcompileOnly \"a:b-fabric:1\"").equals("\tmodCompileOnly \"a:b-fabric:1\"") &&
+            Convert.repositories("repositories {\n\tmaven { url = 'https://maven.blamejared.com/' }\n\tmaven { url \"https://maven.example.org/releases\" }\n}\n").equals(
+                List.of("https://maven.blamejared.com", "https://maven.example.org/releases", "https://repo.maven.apache.org/maven2")
+            ),
+            "a dependency's loader word changes only as a whole part of its artifact name; loader-neutral artifacts are told apart"
+        );
+        check(
+            Convert.dropCalls(
+                "CreativeModeTab.builder()\n\t.title(t)\n\t.withTabsBefore(CreativeModeTabs.COMBAT)\n\t.icon(() -> f(\".withTabsAfter(\"))\n\t.build()",
+                List.of("withTabsBefore", "withTabsAfter")
+            ).equals("CreativeModeTab.builder()\n\t.title(t)\n\t.icon(() -> f(\".withTabsAfter(\"))\n\t.build()"),
+            "NeoForge's tab order calls leave a builder chain whole, and a string that names one is kept"
+        );
+        List<String> removed = new ArrayList<>();
+        String script = Convert.dropLoomTypes(
+            "import net.fabricmc.loom.task.prod.ClientProductionRunTask\nimport java.util.List\n\nplugins {\n\tid 'java'\n}\n\n" +
+            "// a ClientProductionRunTask comment stays\ntasks.register('prod', ClientProductionRunTask) {\n\tjvmArgs.add('-Xmx2G')\n}\n\nversion = '1'\n",
+            removed
+        );
+        check(
+            script.equals(
+                "import java.util.List\n\nplugins {\n\tid 'java'\n}\n\n// a ClientProductionRunTask comment stays\n\nversion = '1'\n"
+            ) &&
+            removed.size() == 2,
+            "a build script's Loom imports and the statements that use their types are removed:\n" + script
+        );
 
         LoaderRules.Provider models = LoaderRules.datagenProvider(
             "package d;\n\nimport net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;\nimport net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;\n\npublic class Models extends FabricModelProvider {\n\tpublic Models(FabricPackOutput output) {\n\t\tsuper(output);\n\t}\n\n\t@Override\n\tpublic void generateBlockStateModels(BlockModelGenerators blocks) {\n\t}\n\n\t@Override\n\tpublic void generateItemModels(ItemModelGenerators items) {\n\t}\n}\n",
@@ -1221,6 +1334,105 @@ public final class PortableTests {
         check(
             restored && !Files.exists(root.resolve("src/main/resources/META-INF/neoforge.mods.toml")),
             "undoing both conversions restores every file byte for byte and removes the files they made"
+        );
+
+        // Found by an independent check on FastQuit (contariaa/FastQuit 8efed17): dependencies with an exclude block are whole
+        // statements. Mod Menu goes with its block, and Cloth Config moves to its NeoForge build, which its repository has.
+        Path quit = scratch.resolve("convert-exclude-mod");
+        Map<String, String> quitFiles = new LinkedHashMap<>();
+        quitFiles.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+        quitFiles.put("settings.gradle", "rootProject.name = 'quit'\n");
+        quitFiles.put("gradle.properties", "minecraft_version=26.3\nloader_version=0.19.5\nfabric_api_version=0.161.0+26.3\nmodmenu_version=21.0.0\ncloth_config_version=26.3.1\n");
+        quitFiles.put(
+            "build.gradle",
+            "plugins {\n\tid 'net.fabricmc.fabric-loom' version '1.18.2'\n}\n\nrepositories {\n\tmaven { url \"https://maven.shedaniel.me/\" }\n}\n\ndependencies {\n" +
+            "\tminecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n\timplementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n" +
+            "\timplementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n\n\t// ModMenu\n" +
+            "\timplementation(\"com.terraformersmc:modmenu:${project.modmenu_version}\"){\n\t\texclude(group: \"eu.pb4\")\n\t}\n\n\t// Cloth Config\n" +
+            "\timplementation(\"me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}\") {\n\t\texclude(group: \"net.fabricmc.fabric-api\")\n\t}\n}\n"
+        );
+        quitFiles.put(
+            "src/main/resources/fabric.mod.json",
+            "{\n\t\"schemaVersion\": 1,\n\t\"id\": \"quit\",\n\t\"version\": \"1.0.0\",\n\t\"entrypoints\": {\n\t\t\"main\": [\"quit.Quit\"]\n\t},\n\t\"depends\": {\n\t\t\"minecraft\": \"~26.3\"\n\t}\n}\n"
+        );
+        quitFiles.put(
+            "src/main/java/quit/Quit.java",
+            "package quit;\n\nimport net.fabricmc.api.ModInitializer;\n\npublic class Quit implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t}\n}\n"
+        );
+        for (var file : quitFiles.entrySet()) {
+            Path path = quit.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel quitProject = new ProjectModel(quit);
+        Map<String, String> quitAnswers = new LinkedHashMap<>(answers);
+        quitAnswers.put(
+            "https://maven.shedaniel.me/me/shedaniel/cloth/cloth-config-neoforge/maven-metadata.xml",
+            "<metadata><versioning><versions><version>26.3.1</version></versions></versioning></metadata>"
+        );
+        for (var answer : quitAnswers.entrySet()) {
+            Path cache = quitProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        new Convert(new Build(quitProject, home, "", new Modaccel.Report(quit, "convert"))).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+        );
+        String quitGradle = Files.readString(quit.resolve("build.gradle"));
+        check(
+            quitGradle.chars().filter(c -> c == '{').count() == quitGradle.chars().filter(c -> c == '}').count() &&
+            !quitGradle.contains("modmenu") &&
+            !quitGradle.contains("eu.pb4") &&
+            quitGradle.contains("\timplementation(\"me.shedaniel.cloth:cloth-config-neoforge:${project.cloth_config_version}\") {\n\t\texclude(group: \"net.fabricmc.fabric-api\")\n\t}\n") &&
+            !quitGradle.contains("cloth-config-fabric"),
+            "a dependency with an exclude block is removed or moved whole; Cloth Config moves to its NeoForge build:\n" + quitGradle
+        );
+
+        // A mod written for NeoForge first goes to Fabric through the NeoForge bridge (knowledge/loaders.json "bridges").
+        Map<String, Object> bridgeRule = null;
+        for (Object b : LoaderRules.list(rules.get("bridges"))) if ("neoforge-on-fabric".equals(Json.object(b).get("id"))) bridgeRule = Json.object(b);
+        check(bridgeRule != null, "knowledge/loaders.json has the NeoForge bridge");
+        Map<String, Object> bridgeTest = Json.object(bridgeRule.get("test"));
+        Path neo = scratch.resolve("convert-neoforge-mod");
+        Map<String, String> neoFiles = new LinkedHashMap<>();
+        neoFiles.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+        neoFiles.put("settings.gradle", "rootProject.name = 'demo'\n");
+        neoFiles.put("gradle.properties", "minecraft_version=26.3\nneo_version=26.3.0.103\nmod_id=demo\n");
+        neoFiles.put(
+            "build.gradle",
+            "plugins {\n\tid 'net.neoforged.moddev' version '2.0.148'\n}\n\nneoForge {\n\tversion = project.neo_version\n\truns {\n\t\tclient {\n\t\t\tclient()\n\t\t}\n\t}\n\tmods {\n\t\t\"demo\" {\n\t\t\tsourceSet(sourceSets.main)\n\t\t}\n\t}\n}\n\ndependencies {\n}\n"
+        );
+        neoFiles.put(
+            "src/main/resources/META-INF/neoforge.mods.toml",
+            "modLoader=\"javafml\"\nloaderVersion=\"[1,)\"\nlicense=\"MIT\"\n\n[[mods]]\nmodId=\"${mod_id}\"\nversion=\"1.0.0\"\ndisplayName=\"Demo\"\n"
+        );
+        neoFiles.put("src/main/java/demo/Demo.java", Json.text(bridgeTest, "neoforge", ""));
+        for (var file : neoFiles.entrySet()) {
+            Path path = neo.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel neoProject = new ProjectModel(neo);
+        for (var answer : answers.entrySet()) {
+            Path cache = neoProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        Map<String, Object> bridged = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert"))).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
+        );
+        String bridgedEntry = Files.readString(neo.resolve("src/main/java/demo/Demo.java"));
+        String fabricJson = Files.readString(neo.resolve("src/main/resources/fabric.mod.json"));
+        check(
+            bridgedEntry.equals(Json.text(bridgeTest, "fabric", "")) &&
+            Files.readString(neo.resolve("src/main/java/demo/loaderbridge/DeferredRegister.java")).startsWith("package demo.loaderbridge;") &&
+            Files.isRegularFile(neo.resolve("src/main/java/demo/loaderbridge/ClientEntrypoint.java")) &&
+            fabricJson.contains("\"demo.Demo\"") &&
+            fabricJson.contains("\"demo.loaderbridge.ClientEntrypoint\"") &&
+            Json.array(bridged.get("left")).isEmpty(),
+            "a NeoForge @Mod class becomes a Fabric entrypoint through the NeoForge bridge, its listeners typed and its imports on the bridge:\n" +
+            bridgedEntry +
+            bridged.get("details")
         );
     }
 

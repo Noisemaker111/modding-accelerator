@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "67236c4d5181af59f49e2551b5a751cd39b3ed1c7e9e03c5406be4fad413eb34",
+ "rules_sha256": "9521492889da2dd83565e406ea231ca005a93f6495df1cdce5ea17cf2faf8086",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -321,6 +321,16 @@
    },
    {
     "symbol": "distmarker|net.neoforged.api.distmarker.Dist#DEDICATED_SERVER",
+    "found": true
+   }
+  ],
+  "side-only": [
+   {
+    "symbol": "fabric-loader|net.fabricmc.api.Environment#value",
+    "found": true
+   },
+   {
+    "symbol": "distmarker|net.neoforged.api.distmarker.OnlyIn#value",
     "found": true
    }
   ],
@@ -729,6 +739,268 @@
    },
    {
     "symbol": "fml|net.neoforged.fml.ModContainer#registerExtensionPoint",
+    "found": true
+   }
+  ],
+  "neoforge-on-fabric": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STOPPED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#END_SERVER_TICK",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_CLIENT_TICK",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback#EVENT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents#MODIFY_OUTPUT_ALL",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTabOutput#insertAfter",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getConfigDir",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.core.Holder$Reference#isBound",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.core.Registry#register",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$Properties#setId",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.Item$Properties#useBlockDescriptionPrefix",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#clientboundPlay",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#serverboundPlay",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#registerGlobalReceiver",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#send",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#tracking",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#registerGlobalReceiver",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#send",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister#createBlocks",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister#createItems",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister#getEntries",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister$Blocks#registerSimpleBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister$Blocks#registerBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister$Items#registerSimpleBlockItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister$Items#registerSimpleItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister$Items#registerItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredHolder#getId",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredBlock#toStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredItem#toStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$Builder#defineInRange",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$Builder#defineListAllowEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$Builder#defineEnum",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$Builder#push",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$BooleanValue#getAsBoolean",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$IntValue#getAsInt",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.NeoForge#EVENT_BUS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent#getTabKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.RegisterCommandsEvent#getDispatcher",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.server.ServerLifecycleEvent#getServer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.ServerTickEvent#getServer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientTickEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.IConfigScreenFactory#createScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.ConfigurationScreen",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModContainer#registerConfig",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModContainer#registerExtensionPoint",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.common.EventBusSubscriber#value",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.ModConfig$Type#extension",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.config.ModConfigEvent#getConfig",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.lifecycle.ParallelDispatchEvent#enqueueWork",
+    "found": true
+   },
+   {
+    "symbol": "bus|net.neoforged.bus.api.IEventBus#addListener",
+    "found": true
+   },
+   {
+    "symbol": "bus|net.neoforged.bus.api.IEventBus#register",
+    "found": true
+   },
+   {
+    "symbol": "bus|net.neoforged.bus.api.SubscribeEvent#priority",
+    "found": true
+   },
+   {
+    "symbol": "bus|net.neoforged.bus.api.ICancellableEvent#setCanceled",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent#registrar",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playToClient",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playToServer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playBidirectional",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.handling.IPayloadContext#player",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.handling.IPayloadContext#enqueueWork",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.PacketDistributor#sendToPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.PacketDistributor#sendToPlayersTrackingEntityAndSelf",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.network.ClientPacketDistributor#sendToServer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent#register",
     "found": true
    }
   ]

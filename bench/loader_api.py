@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RULES = ROOT / "knowledge" / "loaders.json"
 OUT = ROOT / "coverage" / "loader"
 CACHE = ROOT / ".runs" / "loader-api"
-KINDS = ("entrypoints", "expressions", "types", "events", "statements", "integrations")
+KINDS = ("entrypoints", "expressions", "types", "events", "statements", "integrations", "bridges")
 MANIFEST = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 
 

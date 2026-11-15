@@ -1,0 +1,535 @@
+#!/usr/bin/env python3
+"""Runs modaccel convert on a pinned corpus of real mods and ranks what it is missing.
+
+    python bench/convert_sweep.py run [--only ID,ID] [--jobs 2] [--dry-run] [--no-game] [--no-back] [--label NAME]
+    python bench/convert_sweep.py table [--label NAME]     rank the recorded runs again and print the gap table
+
+bench/convert-sweep/corpus.json pins each mod (repository and commit). For each one the runner:
+  1. clones the pinned commit once into .runs/convert-sweep/src/ID and copies it to a fresh work folder;
+  2. runs modaccel convert --to the other loader --json (the compile included unless --dry-run);
+  3. classifies every refusal, every item convert names as not converted, and every compiler error
+     (with its symbol and location from the compile log) by the loader concept it lacks, using
+     bench/convert-sweep/concepts.json;
+  4. when the converted mod compiles: starts it in a hidden client (modaccel ui-check), reads every
+     registry entry in the mod's namespace (modaccel eval), stops the game, and does the same for the
+     untouched original, so the behaviour check is "the converted mod registers what the original does";
+  5. when it compiles, converts it back and compiles again (the other direction), and compares each Java
+     file with the original.
+
+Per-run records go to .runs/convert-sweep/runs/ID-to-LOADER.json. The ranked gap table and the pass rates
+go to coverage/sweeps/convert.json; --label keeps each sweep's pass rates in its history, so a batch of
+rules shows its before and after. Launches follow ~/.modaccel/preferences.json (hidden and muted).
+After each mod, modaccel game-stop ends its games and Gradle daemons. The runner never calls a network model: convert's rules are plain data.
+"""
+import argparse
+import concurrent.futures
+import datetime
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+CORPUS = ROOT / "bench" / "convert-sweep" / "corpus.json"
+CONCEPTS = ROOT / "bench" / "convert-sweep" / "concepts.json"
+OUT = ROOT / "coverage" / "sweeps" / "convert.json"
+WORK = ROOT / ".runs" / "convert-sweep"
+WINDOWS = os.name == "nt"
+MODACCEL = [str(ROOT / ("modaccel.cmd" if WINDOWS else "modaccel"))]
+OTHER = {"fabric": "neoforge", "neoforge": "fabric"}
+TIMEOUT = {"convert": 3600, "ui-check": 1500, "eval": 300, "game-stop": 300}
+
+# Reads every registry entry in one namespace; works on 1.20.2 to 26.x (ResourceLocation or Identifier).
+REGISTRY_SNIPPET = """
+java.util.Map<String, java.util.List<String>> out = new java.util.TreeMap<>();
+for (var registry : net.minecraft.core.registries.BuiltInRegistries.REGISTRY) {
+    java.util.List<String> ids = new java.util.ArrayList<>();
+    for (var key : registry.keySet()) if (key.getNamespace().equals("NAMESPACE")) ids.add(key.getPath());
+    if (!ids.isEmpty()) { java.util.Collections.sort(ids); out.put(String.valueOf(registry.key()), ids); }
+}
+return out.toString();
+"""
+
+
+def extended(path):
+    """Windows paths past 260 characters need the extended-length prefix (deep generated resources, convert backups)."""
+    path = os.path.abspath(path)
+    prefix = "\\\\?\\"
+    return prefix + path if WINDOWS and not path.startswith(prefix) else path
+
+
+def rmtree(path):
+    def unlock(func, p, _):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+            func(p)
+        except FileNotFoundError:
+            pass
+    if Path(path).exists():
+        shutil.rmtree(extended(path), onerror=unlock)
+
+
+def git(args, cwd=None, timeout=1800):
+    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, timeout=timeout)
+
+
+def pristine(mod):
+    """The pinned commit, cloned once (no history beyond it)."""
+    src = WORK / "src" / mod["id"]
+    marker = src / ".modaccel-sweep-commit"
+    if marker.is_file() and marker.read_text().strip() == mod["commit"]:
+        return src
+    rmtree(src)
+    src.mkdir(parents=True)
+    for args in (["init", "-q"], ["config", "core.longpaths", "true"], ["remote", "add", "origin", mod["repo"]],
+                 ["fetch", "-q", "--depth", "1", "origin", mod["commit"]], ["checkout", "-q", "FETCH_HEAD"]):
+        r = git(args, cwd=src)
+        if r.returncode:
+            raise RuntimeError(f"git {' '.join(args)}: {r.stderr.strip()}")
+    marker.write_text(mod["commit"])
+    return src
+
+
+def fresh_copy(src, name):
+    dest = WORK / "work" / name
+    try:
+        rmtree(dest)
+    except OSError:
+        # A Gradle daemon or a game from an earlier run can still hold files there: use a new folder.
+        dest = WORK / "work" / f"{name}-{int(time.time())}"
+    shutil.copytree(extended(src), extended(dest), ignore=shutil.ignore_patterns(".git", ".gradle", "build", ".modaccel-sweep-commit"))
+    return dest
+
+
+def modaccel(args, timeout):
+    """Runs modaccel and returns (exit code, the JSON object it printed last, seconds)."""
+    started = time.monotonic()
+    try:
+        r = subprocess.run(MODACCEL + args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
+        out, code = r.stdout, r.returncode
+    except subprocess.TimeoutExpired as e:
+        out = e.stdout.decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
+        return 124, {"error": f"timed out after {timeout} s"}, time.monotonic() - started
+    value = None
+    for start in [m.start() for m in re.finditer(r"(?m)^\{", out)][::-1]:
+        try:
+            value = json.loads(out[start:])
+            break
+        except json.JSONDecodeError:
+            continue
+    if value is None:
+        value = {"error": (out.strip() or r.stderr.strip())[-2000:]}
+    elif isinstance(value.get("result"), dict):
+        value = value["result"]  # the receipt envelope modaccel prints with --json
+    return code, value, time.monotonic() - started
+
+
+# ---- classification ----------------------------------------------------------------------------------
+
+def load_concepts():
+    return [(c["concept"], [re.compile(p) for p in c["match"]]) for c in json.loads(CONCEPTS.read_text(encoding="utf-8"))["concepts"]]
+
+
+def classify(text, concepts):
+    for name, patterns in concepts:
+        if any(p.search(text) for p in patterns):
+            return name
+    return None
+
+
+ERROR = re.compile(r"(?m)^(?:\S.*?)?([^\s:]+\.java):(\d+): error: (.+)$")
+
+
+def compile_errors(log_text):
+    """Every javac error in a Gradle log with the symbol, location and source line javac prints after it."""
+    out, seen = [], set()
+    matches = list(ERROR.finditer(log_text))
+    for i, m in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else min(len(log_text), m.end() + 1500)
+        tail = log_text[m.end():end]
+        symbol = re.search(r"symbol:\s+(.+)", tail)
+        location = re.search(r"location:\s+(.+)", tail)
+        source = tail.strip("\n").split("\n")[0].strip() if tail.strip() else ""
+        key = (m.group(1), m.group(2), m.group(3))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"file": m.group(1).replace("\\", "/"), "line": int(m.group(2)), "message": m.group(3).strip(),
+                    "symbol": symbol.group(1).strip() if symbol else "", "location": location.group(1).strip() if location else "",
+                    "source": source[:300]})
+    return out
+
+
+def error_concept(error, from_loader, yarn, concepts, own_packages):
+    text = " ".join([error["message"], error["symbol"], error["location"], error["source"]])
+    concept = classify(text, concepts)
+    if concept:
+        return concept
+    loc, sym = error["location"], error["symbol"]
+    game = re.search(r"\bnet\.minecraft\.|\bcom\.mojang\.", loc) or re.search(r"of type (?!.*\b(?:" + "|".join(map(re.escape, own_packages or ["\0"])) + r"))", loc)
+    if yarn and (re.search(r"net\.minecraft|com\.mojang", text) or error["message"].startswith(("cannot find symbol", "package net.minecraft"))):
+        return classify("yarn-names", concepts)
+    if error["message"].startswith("cannot find symbol") and sym.startswith("method") and game:
+        return classify("extension-method" if from_loader == "neoforge" else "injected-interface", concepts)
+    if error["message"].startswith(("method does not override", "cannot find symbol", "incompatible types", "no suitable method",
+                                    "method ", "constructor ", "cannot infer", "is not abstract")):
+        if from_loader == "neoforge" and re.search(r"net\.minecraft|com\.mojang", loc + " " + sym):
+            return classify("extension-method", concepts)
+        if from_loader == "fabric" and re.search(r"net\.minecraft|com\.mojang", loc + " " + sym):
+            return classify("injected-interface", concepts)
+    return "unclassified: " + (sym or error["message"])[:80]
+
+
+def refusal_concept(message, work, concepts):
+    if "found neither" in message:
+        if any((work / "src/main/templates/META-INF/neoforge.mods.toml").is_file() for _ in [0]):
+            return classify("templates/META-INF/neoforge.mods.toml", concepts)
+        if (work / "settings.gradle").is_file() or (work / "settings.gradle.kts").is_file():
+            settings = ""
+            for name in ("settings.gradle", "settings.gradle.kts"):
+                if (work / name).is_file():
+                    settings += (work / name).read_text(encoding="utf-8", errors="replace")
+            if re.search(r"\binclude\b", settings):
+                return classify("multi-module", concepts)
+        gradle = (work / "build.gradle").read_text(encoding="utf-8", errors="replace") if (work / "build.gradle").is_file() else ""
+        if re.search(r"srcDirs?\b", gradle) and not (work / "src/main").is_dir():
+            return classify("custom-source-sets", concepts)
+        return "shape: no loader metadata found"
+    return classify(message, concepts) or ("refused: " + message.split(".")[0][:120])
+
+
+def own_packages(work):
+    pkgs = set()
+    java = work / "src" / "main" / "java"
+    if java.is_dir():
+        for d in java.iterdir():
+            if d.is_dir():
+                for sub in d.iterdir():
+                    if sub.is_dir():
+                        pkgs.add(f"{d.name}.{sub.name}")
+    return sorted(pkgs)
+
+
+def mod_namespace(work, loader):
+    if loader == "fabric":
+        f = work / "src/main/resources/fabric.mod.json"
+        if f.is_file():
+            try:
+                return json.loads(f.read_text(encoding="utf-8")).get("id")
+            except json.JSONDecodeError:
+                pass
+    for f in (work / "src/main/resources/META-INF/neoforge.mods.toml", work / "src/main/templates/META-INF/neoforge.mods.toml"):
+        if f.is_file():
+            m = re.search(r'(?m)^\s*modId\s*=\s*"([^"]+)"', f.read_text(encoding="utf-8", errors="replace"))
+            if m:
+                value = m.group(1)
+                if value.startswith("${"):
+                    props = (work / "gradle.properties").read_text(encoding="utf-8", errors="replace") if (work / "gradle.properties").is_file() else ""
+                    p = re.search(r"(?m)^\s*" + re.escape(value[2:-1]) + r"\s*=\s*(\S+)", props)
+                    value = p.group(1) if p else value
+                return value
+    return None
+
+
+# ---- one run -----------------------------------------------------------------------------------------
+
+def game_registries(work, namespace):
+    """Starts the project in a hidden client, reads its registry entries, stops the game."""
+    record = {}
+    code, ui, seconds = modaccel(["ui-check", "--root", str(work), "--json"], TIMEOUT["ui-check"])
+    record["loaded"] = code == 0
+    record["loadSeconds"] = round(seconds, 1)
+    if code != 0:
+        record["loadError"] = str(ui.get("error") or ui.get("details") or ui)[-1500:]
+    else:
+        snippet = WORK / "registry-snippet.java"
+        snippet.write_text(REGISTRY_SNIPPET.replace("NAMESPACE", namespace or ""), encoding="utf-8")
+        code, ev, _ = modaccel(["eval", "--root", str(work), "--file", str(snippet), "--json"], TIMEOUT["eval"])
+        value = ev.get("value") if isinstance(ev, dict) else None
+        record["registries"] = value if code == 0 else None
+        if code != 0:
+            record["evalError"] = str(ev.get("error") or ev)[-1000:]
+    modaccel(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
+    return record
+
+
+def parse_registries(text):
+    """{'ResourceKey[minecraft:root / minecraft:item]': [ids]} from the snippet's toString."""
+    if not isinstance(text, str):
+        return None
+    out = {}
+    for m in re.finditer(r"(ResourceKey\[[^\]]*\])=\[([^\]]*)\]", text):
+        out[m.group(1)] = [s.strip() for s in m.group(2).split(",") if s.strip()]
+    return out
+
+
+def stop(work):
+    """Ends the game and the Gradle daemons modaccel started for one checkout, so nothing waits out its idle timeout."""
+    if work is not None and Path(work).is_dir():
+        modaccel(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
+
+
+def run_one(mod, args, concepts):
+    started = []
+    try:
+        return run_mod(mod, args, concepts, started)
+    finally:
+        for work in started:
+            stop(work)
+
+
+def run_mod(mod, args, concepts, started):
+    to = OTHER[mod["loader"]]
+    record = {"id": mod["id"], "name": mod["name"], "label": args.label, "from": mod["loader"], "to": to, "commit": mod["commit"],
+              "features": mod["features"], "started": datetime.datetime.now().isoformat(timespec="seconds")}
+    try:
+        src = pristine(mod)
+    except Exception as e:
+        record.update(stage="clone", error=str(e), concepts={"clone failed": 1})
+        return record
+    work = fresh_copy(src, f"{mod['id']}-to-{to}")
+    started.append(work)
+    props = (work / "gradle.properties").read_text(encoding="utf-8", errors="replace") if (work / "gradle.properties").is_file() else ""
+    yarn = bool(re.search(r"(?m)^\s*yarn_(?:mappings|version)\s*=", props)) and mod["loader"] == "fabric"
+    record["yarn"] = yarn
+    convert_args = ["convert", "--root", str(work), "--to", to, "--json"] + (["--dry-run"] if args.dry_run else [])
+    code, result, seconds = modaccel(convert_args, TIMEOUT["convert"])
+    record["convertSeconds"] = round(seconds, 1)
+    record["exit"] = code
+    concepts_hit, items = {}, []
+
+    def hit(concept, item):
+        concepts_hit[concept] = concepts_hit.get(concept, 0) + 1
+        item["concept"] = concept
+        items.append(item)
+
+    if "error" in result and "from" not in result:
+        record["stage"] = "refused"
+        record["refusal"] = str(result["error"])[:1500]
+        hit(refusal_concept(record["refusal"], work, concepts), {"kind": "refusal", "text": record["refusal"][:300]})
+        if yarn:
+            hit(classify("yarn-names", concepts), {"kind": "names", "text": "the source uses Fabric's yarn names"})
+    else:
+        record["stage"] = "converted"
+        record["minecraft"] = result.get("minecraft")
+        record["rulesApplied"] = sorted((result.get("rulesApplied") or {}).keys())
+        record["notes"] = result.get("notes", [])
+        for left in result.get("left", []):
+            text = f"{left.get('what', '')} {left.get('why', '')}"
+            hit(classify(text, concepts) or "unclassified left: " + str(left.get("what"))[:80],
+                {"kind": "left", "file": left.get("file"), "line": left.get("line"), "what": left.get("what"), "why": left.get("why")})
+        record["compiled"] = result.get("compiled")
+        errors = []
+        log = result.get("compileLog")
+        if result.get("compiled") is False:
+            if result.get("compileError"):
+                hit(classify(result["compileError"], concepts) or "build evaluation failed",
+                    {"kind": "build", "text": str(result["compileError"])[:1500]})
+            elif log and Path(log).is_file():
+                errors = compile_errors(Path(log).read_text(encoding="utf-8", errors="replace"))
+                pkgs = own_packages(work)
+                for e in errors:
+                    hit(error_concept(e, mod["loader"], yarn, concepts, pkgs), {"kind": "compile", **e})
+                if not errors:
+                    text = Path(log).read_text(encoding="utf-8", errors="replace")
+                    what = re.search(r"(?m)^\* What went wrong:\n(.+(?:\n.+){0,6})", text)
+                    detail = what.group(1) if what else text[-1500:]
+                    hit(classify(detail, concepts) or "build failed before javac", {"kind": "build", "text": detail[:1500]})
+        record["compileErrors"] = len(errors)
+        record["capped"] = len(errors) >= 100
+        if result.get("compiled") and not args.no_game:
+            namespace = mod_namespace(work, to) or mod_namespace(src, mod["loader"])
+            record["namespace"] = namespace
+            record["game"] = game_registries(work, namespace)
+            if record["game"].get("loaded"):
+                original = fresh_copy(src, f"{mod['id']}-original")
+                started.append(original)
+                record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]))
+                a = parse_registries(record["game"].get("registries"))
+                b = parse_registries(record["originalGame"].get("registries"))
+                if a is not None and b is not None:
+                    missing = {k: sorted(set(v) - set(a.get(k, []))) for k, v in b.items() if set(v) - set(a.get(k, []))}
+                    extra = {k: sorted(set(v) - set(b.get(k, []))) for k, v in a.items() if set(v) - set(b.get(k, []))}
+                    record["behaviour"] = {"check": "registry entries in the mod's namespace, converted vs original",
+                                           "equal": not missing and not extra, "entries": sum(len(v) for v in b.values()),
+                                           "missing": missing, "extra": extra}
+                else:
+                    record["behaviour"] = {"check": "registry entries", "equal": None, "why": "a registry read failed"}
+            else:
+                hit("game load failed after a clean compile", {"kind": "game", "text": record["game"].get("loadError", "")[:1500]})
+        if result.get("compiled") and not args.no_back:
+            code2, back, seconds2 = modaccel(["convert", "--root", str(work), "--to", mod["loader"], "--json"], TIMEOUT["convert"])
+            entry = {"exit": code2, "seconds": round(seconds2, 1)}
+            if "error" in back and "from" not in back:
+                entry["refusal"] = str(back["error"])[:600]
+                entry["concept"] = refusal_concept(entry["refusal"], work, concepts)
+            else:
+                entry["compiled"] = back.get("compiled")
+                entry["left"] = len(back.get("left", []))
+                same = differ = 0
+                for f in src.rglob("*.java"):
+                    if ".git" in f.parts:
+                        continue
+                    g = work / f.relative_to(src)
+                    if g.is_file() and g.read_bytes().replace(b"\r\n", b"\n") == f.read_bytes().replace(b"\r\n", b"\n"):
+                        same += 1
+                    else:
+                        differ += 1
+                entry["javaFilesSame"], entry["javaFilesDiffer"] = same, differ
+            record["back"] = entry
+    record["concepts"] = concepts_hit
+    record["items"] = items
+    record["outcome"] = outcome(record)
+    runs = WORK / "runs"
+    runs.mkdir(parents=True, exist_ok=True)
+    (runs / f"{mod['id']}-to-{to}.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
+    return record
+
+
+def outcome(r):
+    if r.get("stage") in ("clone", "refused"):
+        return r["stage"]
+    if not r.get("compiled"):
+        return "converted, does not compile" if r.get("compiled") is False else "converted (not compiled)"
+    if r.get("concepts"):
+        if "game" in r and not r["game"].get("loaded"):
+            return "compiles, fails in the game"
+        return "compiles, items left"
+    if "game" not in r:
+        return "compiles"
+    if not r["game"].get("loaded"):
+        return "compiles, fails in the game"
+    if (r.get("behaviour") or {}).get("equal"):
+        return "loads, registers what the original does"
+    return "loads in the game"
+
+
+# ---- ranking ------------------------------------------------------------------------------------------
+
+LADDER = ["refused", "converted, does not compile", "compiles, items left", "compiles", "compiles, fails in the game",
+          "loads in the game", "loads, registers what the original does"]
+
+
+def summarize(records, label):
+    gaps = {}
+    for r in records:
+        for concept, count in r.get("concepts", {}).items():
+            g = gaps.setdefault(concept, {"concept": concept, "mods": [], "items": 0, "blocking": 0, "examples": []})
+            g["mods"].append(r["id"])
+            g["items"] += count
+            if r.get("stage") == "refused":
+                g["blocking"] += 1
+            for item in r.get("items", []):
+                if item.get("concept") == concept and len(g["examples"]) < 4:
+                    g["examples"].append(f"{r['id']}: " + str(item.get("what") or item.get("symbol") or item.get("message") or item.get("text"))[:160])
+    ranked = sorted(gaps.values(), key=lambda g: (-len(g["mods"]), -g["blocking"], -g["items"], g["concept"]))
+    for i, g in enumerate(ranked, 1):
+        g["rank"] = i
+    counts = {}
+    for r in records:
+        counts[r["outcome"]] = counts.get(r["outcome"], 0) + 1
+    n = len(records)
+    rates = {
+        "label": label, "date": datetime.date.today().isoformat(), "runs": n,
+        "not refused": sum(r.get("stage") == "converted" for r in records),
+        "compiled": sum(bool(r.get("compiled")) for r in records),
+        "compiled with nothing left": sum(bool(r.get("compiled")) and not r.get("concepts") for r in records),
+        "loaded in the game": sum(bool((r.get("game") or {}).get("loaded")) for r in records),
+        "registers what the original does": sum(bool((r.get("behaviour") or {}).get("equal")) for r in records),
+        "converted back and compiled": sum(bool((r.get("back") or {}).get("compiled")) for r in records),
+        "outcomes": counts,
+    }
+    return ranked, rates
+
+
+def compact(r):
+    keep = ["id", "name", "from", "to", "commit", "minecraft", "yarn", "outcome", "convertSeconds", "compileErrors", "capped",
+            "refusal", "rulesApplied", "concepts", "behaviour", "back"]
+    out = {k: r[k] for k in keep if k in r}
+    if "game" in r:
+        out["game"] = {k: v for k, v in r["game"].items() if k != "registries"}
+    return out
+
+
+def write(records, label):
+    ranked, rates = summarize(records, label)
+    previous = json.loads(OUT.read_text(encoding="utf-8")) if OUT.is_file() else {}
+    history = [h for h in previous.get("history", []) if h.get("label") != label] + [rates]
+    data = {
+        "about": "modaccel convert on the pinned corpus in bench/convert-sweep/corpus.json, by python bench/convert_sweep.py. "
+                 "gaps ranks each missing loader concept by how many mods it affects (blocking: refusals). history keeps each labelled sweep's pass rates.",
+        "corpus": len(json.loads(CORPUS.read_text(encoding="utf-8"))["mods"]),
+        "latest": rates, "history": history, "gaps": ranked, "runs": [compact(r) for r in sorted(records, key=lambda r: r["id"])],
+    }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return ranked, rates
+
+
+def table(ranked, rates, limit=30):
+    lines = [f"Convert sweep ({rates['label']}): {rates['runs']} runs; not refused {rates['not refused']}, compiled {rates['compiled']}, "
+             f"nothing left {rates['compiled with nothing left']}, loaded {rates['loaded in the game']}, "
+             f"registers what the original does {rates['registers what the original does']}, back and compiled {rates['converted back and compiled']}",
+             "", "| # | Missing concept | Mods | Blocking | Items | Example |", "|---|---|---|---|---|---|"]
+    for g in ranked[:limit]:
+        example = (g["examples"][0] if g["examples"] else "").replace("|", "/")
+        lines.append(f"| {g['rank']} | {g['concept']} | {len(g['mods'])} | {g['blocking']} | {g['items']} | {example[:110]} |")
+    return "\n".join(lines)
+
+
+def load_records():
+    runs = WORK / "runs"
+    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(runs.glob("*.json"))] if runs.is_dir() else []
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest="command", required=True)
+    run = sub.add_parser("run")
+    run.add_argument("--only", default="")
+    run.add_argument("--jobs", type=int, default=2, help="at most this many builds or games at once (default 2)")
+    run.add_argument("--dry-run", action="store_true", help="convert without compiling")
+    run.add_argument("--no-game", action="store_true")
+    run.add_argument("--no-back", action="store_true")
+    run.add_argument("--label", default="latest")
+    run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
+    run.add_argument("--modaccel", default="", help="run another modaccel checkout (e.g. the baseline) instead of this one")
+    t = sub.add_parser("table")
+    t.add_argument("--label", default="latest")
+    args = parser.parse_args()
+    if args.command == "table":
+        ranked, rates = write(load_records(), args.label)
+        print(table(ranked, rates))
+        return 0
+    if args.modaccel:
+        MODACCEL[0] = str(Path(args.modaccel).resolve() / ("modaccel.cmd" if WINDOWS else "modaccel"))
+    mods = json.loads(CORPUS.read_text(encoding="utf-8"))["mods"]
+    if args.only:
+        wanted = set(args.only.split(","))
+        mods = [m for m in mods if m["id"] in wanted]
+    if args.resume:
+        done = {r["id"] for r in load_records() if r.get("label") == args.label}
+        mods = [m for m in mods if m["id"] not in done]
+    concepts = load_concepts()
+    WORK.mkdir(parents=True, exist_ok=True)
+    with concurrent.futures.ThreadPoolExecutor(max(1, min(2, args.jobs))) as pool:
+        futures = {pool.submit(run_one, m, args, concepts): m for m in mods}
+        for f in concurrent.futures.as_completed(futures):
+            m = futures[f]
+            try:
+                r = f.result()
+                print(f"{m['id']}: {r['outcome']} {json.dumps(r.get('concepts', {}))[:300]}", flush=True)
+            except Exception as e:
+                print(f"{m['id']}: runner error {e!r}", flush=True)
+    ranked, rates = write(load_records(), args.label)
+    print(table(ranked, rates))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
