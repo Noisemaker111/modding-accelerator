@@ -38,6 +38,7 @@ def plan(name, temp):
         launcher = ["cmd", "/c", str(ROOT / "modaccel.cmd")] if WINDOWS else ["./modaccel"]
         checks += [
             Check("source launcher", launcher + ["doctor", "--json"], needs=["package"]),
+            Check("launcher checks experiments", [sys.executable, "tools/ci/launcher_experiments.py"], needs=["package"], lock="checkout"),
             Check("standalone self-test", java("-jar", JAR, "self-test", "--root", ".", "--json"), needs=["package"]),
             Check("portable zip acceptance", java("tools/tests/PackageAcceptanceTest.java", "build/distributions/modaccel-portable.zip",
                   "build/distributions/modaccel-portable.zip.sha256", tempfile.mkdtemp(dir=temp, prefix="zip-")), needs=["package"]),

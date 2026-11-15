@@ -14,6 +14,7 @@ public final class PerfTest {
         adviceEvidence();
         optimizerGates();
         optimizerStopping();
+        optimizerVerdict();
         experimentCheck();
         modTemplates();
         check(Run.running(ProcessHandle.current()), "current process is running");
@@ -488,6 +489,41 @@ public final class PerfTest {
         check(refused, "an optimization with no equivalence gate is refused");
     }
 
+    /**
+     * The verdict a verifier checked by hand in four rounds: a deliberately wrong candidate is rejected even when it is
+     * much faster and most gates agree. Pipez's stale cache (bench/pipez/sabotage-stale-cache.diff) passed moving and
+     * transfers and was caught only by rewire; a slower correct candidate is not accepted either.
+     */
+    static void optimizerVerdict() throws Exception {
+        Map<String, Object> experiment = Json.map("measure", Json.map(), "gates", List.of(Json.map("name", "moving", "compare", "exact"),
+            Json.map("name", "transfers", "compare", "exact"), Json.map("name", "rewire", "compare", "exact")));
+        List<Object> stale = new ArrayList<>();
+        for (int run = 0; run < 3; run++) stale.addAll(arms(run, 2.0, 1.0, "rewire-ok", run == 2 ? "rewire-stale" : "rewire-ok"));
+        Map<String, Object> result = new LinkedHashMap<>();
+        PerfOptimize.evaluate(experiment, result, stale);
+        List<Object> failed = Json.array(result.get("gates")).stream().filter(g -> Boolean.FALSE.equals(Json.object(g).get("passed")))
+            .map(g -> Json.object(g).get("name")).toList();
+        check(Boolean.TRUE.equals(result.get("faster")) && Boolean.FALSE.equals(result.get("accepted")) && failed.equals(List.of("rewire")),
+            "a twice-as-fast candidate that differs in one gate on one run is rejected by that gate alone: " + failed);
+        List<Object> slower = new ArrayList<>();
+        for (int run = 0; run < 3; run++) slower.addAll(arms(run, 1.0, 1.0 + 0.01 * run, "rewire-ok", "rewire-ok"));
+        Map<String, Object> same = new LinkedHashMap<>();
+        PerfOptimize.evaluate(experiment, same, slower);
+        check(Boolean.TRUE.equals(same.get("gatesPassed")) && Boolean.FALSE.equals(same.get("faster")) && Boolean.FALSE.equals(same.get("accepted")),
+            "an equivalent candidate that is not faster is not accepted");
+    }
+
+    /** One pair whose arms agree on moving and transfers and give these rewire outputs. */
+    static List<Object> arms(int run, double base, double cand, String baseRewire, String candRewire) {
+        List<Object> rows = new ArrayList<>();
+        for (String arm : List.of("baseline", "candidate")) {
+            double value = arm.equals("baseline") ? base : cand;
+            rows.add(Json.map("run", run, "arm", arm, "captures", Json.map("cold", Json.map("value", value), "warm", Json.map("value", value)),
+                "gates", Json.map("moving", "m1", "transfers", "640", "rewire", arm.equals("baseline") ? baseRewire : candRewire)));
+        }
+        return rows;
+    }
+
     /** A measured pair with these cold and warm values per arm, and gate outputs. */
     static List<Object> pair(int run, double base, double cand, String baseGate, String candGate) {
         return List.of(Json.map("run", run, "arm", "baseline", "captures", Json.map("cold", Json.map("value", base), "warm", Json.map("value", base)),
@@ -559,8 +595,9 @@ public final class PerfTest {
             "worktrees are made with long paths allowed, as OUT lengthens every path in them");
         Path cp1252 = Files.createTempFile("perf-child-", ".json");
         Files.write(cp1252, new byte[] {'{', '"', 'a', '"', ':', '"', (byte) 0xb7, '"', '}'});
-        check(PerfOptimize.childOutput(cp1252).contains("�") && PerfOptimize.childJava(Path.of(".")).contains("-Dstdout.encoding=UTF-8"),
-            "a child's answer is read as UTF-8 without failing on a stray byte, and the child is told to write UTF-8");
+        check(PerfOptimize.childOutput(cp1252).contains("�") && PerfOptimize.childJava(Path.of(".")).contains("-Dstdout.encoding=UTF-8")
+            && PerfOptimize.childJava(Path.of(".")).contains("-Dsun.stdout.encoding=UTF-8"),
+            "a child's answer is read as UTF-8 without failing on a stray byte, and the child is told to write UTF-8 (JDK 17 reads only sun.stdout.encoding)");
         Files.delete(cp1252);
         redirectedOutputIsUtf8();
         boolean refused = false;
