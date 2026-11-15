@@ -15,7 +15,7 @@ PLANS = ("core", "server", "stonecutter")
 # Read by no plan. Generated pages (written on main from coverage/), prose, the desktop app (no CI builds it, and the
 # package takes only a built binary), and the other workflows. PERFORMANCE.md is not here: the package carries it.
 NOTHING = [
-    "docs/*", "ROADMAP.md", "README.md", "AGENTS.md", "CLAUDE.md", "SCOPE.md",
+    "docs/*", "ROADMAP.md", "README.md", "AGENTS.md", "CLAUDE.md", "SCOPE.md", "KNOWN_ISSUES.md",
     "app/*", "skills/*.md", ".github/ISSUE_TEMPLATE/*", ".github/pull_request_template.md",
     ".github/workflows/generated.yml", ".github/workflows/release.yml", ".github/workflows/stonecutter-nodes.yml",
     ".git-blame-ignore-revs",

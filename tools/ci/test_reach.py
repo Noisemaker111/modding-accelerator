@@ -7,7 +7,7 @@ from reach import reach, select, PLANS  # noqa: E402
 
 ALL = set(PLANS)
 cases = {
-    "docs/index.html": set(), "README.md": set(), "app/src/main.rs": set(), "skills/modding-accelerator/SKILL.md": set(),
+    "docs/index.html": set(), "README.md": set(), "KNOWN_ISSUES.md": set(), "app/src/main.rs": set(), "skills/modding-accelerator/SKILL.md": set(),
     "PERFORMANCE.md": ALL,  # packaged
     "LICENSE": ALL, "NOTICE": ALL,  # packaged
     "tools/cli/Modaccel.java": ALL, "tools/packcheck/CONTRIBUTING.md": ALL, "knowledge/fixes.json": ALL,

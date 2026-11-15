@@ -47,6 +47,7 @@ An unrelated fix gets its own idea branch and PR; never tack it onto another PR.
 
 ## Gotchas
 
+- Environment traps (Windows PATH, shims, quoting): `KNOWN_ISSUES.md`. Add one when a trap costs you minutes.
 - Builds, MockBukkit and loading prove no behaviour: assert mod state in a real client, or a plugin scenario on real Paper. Rendering needs an inspected 1280x720 game framebuffer. Separate build/start/behaviour timings and cold/warm caches.
 - Keep JBR's `-XX:TieredStopAtLevel=1`: C2 with hot redefinition crashes. Adding fields/methods needs JBR; registry/mixin edits need restart. Multiplayer block entities need both `getUpdatePacket()` and `getUpdateTag()`.
 - Game UI: `MouseButtonInfo`'s left button is 1. Build `ItemStack` after datapack load; `BlockBehaviour.Properties` needs `.setId(...)`.
