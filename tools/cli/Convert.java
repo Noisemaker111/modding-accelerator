@@ -928,6 +928,12 @@ final class Convert {
     /** Fabric-only libraries the Fabric bridge mirrors, by group:artifact, when the code uses the bridge (bridges[].replaces). */
     final Map<String, String> fabricBridgeReplaces = new LinkedHashMap<>();
 
+    /** The marker of a dependency the Fabric bridge stands in for, kept as a comment in the NeoForge build for the way back. */
+    static final String BRIDGED_DEPENDENCY = "// modaccel convert, Fabric bridge stands in for: ";
+
+    /** Those dependency statements, as the marked comments the NeoForge build keeps. */
+    final List<String> bridgedDependencies = new ArrayList<>();
+
     /** The mod ids of those libraries (bridges[].replacesMods), which the converted mod no longer depends on. */
     final Set<String> fabricBridgeReplacedMods = new HashSet<>();
 
@@ -1498,6 +1504,10 @@ final class Convert {
             .append(" = ")
             .append(tomlString(Json.write(custom)))
             .append('\n');
+        // A required Fabric-only library the Fabric bridge stands in for is no NeoForge dependency; the way back restores it.
+        if (fabricBridgePackage != null && meta.get("depends") instanceof Map<?, ?> depends) for (var dep : Json.object(depends).entrySet()) if (
+            fabricBridgeReplacedMods.contains(dep.getKey())
+        ) properties.append(tomlString("fabric.depends." + dep.getKey())).append(" = ").append(tomlString(Json.write(dep.getValue()))).append('\n');
         if (properties.length() > 0) out.append("\n[modproperties.").append(modid).append("]\n").append(properties);
         if ("client".equals(meta.get("environment"))) notes.add(
             "fabric.mod.json said environment client: on NeoForge the mod's only entry class is @Mod(dist = Dist.CLIENT), so a server loads none of its code."
@@ -2138,6 +2148,8 @@ final class Convert {
                 String replaced = bridgeReplaces(line);
                 if (replaced != null) {
                     drop = true;
+                    // Kept as a comment the way back to Fabric turns into the dependency again.
+                    for (String part : raw.strip().split("\n")) bridgedDependencies.add(unit + BRIDGED_DEPENDENCY + part.strip() + "\n");
                     notes.add("Build: removed `" + line + "`; the Fabric bridge mirrors its API (" + replaced + ") on NeoForge's.");
                     applied.computeIfAbsent("fabric-bridge-dependency", k -> new ArrayList<>()).add("build.gradle: " + replaced);
                 }
@@ -2163,6 +2175,7 @@ final class Convert {
             }
             String inner = String.join("", kept);
             if (!inner.endsWith("\n")) inner += "\n";
+            inner += String.join("", bridgedDependencies);
             gradle =
                 gradle.substring(0, deps[2] + 1) + "\n" + inner.replaceAll("^\\n+", "") + gradle.substring(deps[3] - 1);
         }
@@ -3128,6 +3141,7 @@ final class Convert {
         out.put("environment", main || (client && server) ? "*" : client ? "client" : server ? "server" : "*");
         // Entrypoints and custom values the way to NeoForge kept in modproperties (fabric.entrypoints.KEY, fabric.custom).
         Map<String, Object> custom = null;
+        Map<String, Object> bridgedBack = new LinkedHashMap<>();
         if (toml.get("[modproperties." + modid + "]") instanceof Map<?, ?> props) for (var e : Json.object(props).entrySet()) {
             String key = e.getKey().replaceAll("^\"|\"$", "");
             String value = String.valueOf(e.getValue());
@@ -3136,6 +3150,7 @@ final class Convert {
                 for (Matcher q = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(value); q.find(); ) names.add(q.group(1));
                 entrypoints.computeIfAbsent(key.substring("fabric.entrypoints.".length()), k -> new ArrayList<>()).addAll(names);
             } else if (key.equals("fabric.custom")) custom = Json.object(Json.parse(value));
+            else if (key.startsWith("fabric.depends.")) bridgedBack.put(key.substring("fabric.depends.".length()), Json.parse(value));
         }
         out.put("entrypoints", entrypoints);
         List<Object> mixins = new ArrayList<>();
@@ -3152,6 +3167,7 @@ final class Convert {
         depends.put("minecraft", "~" + minecraft);
         depends.put("java", ">=" + javaVersion());
         depends.put("fabric-api", "*");
+        depends.putAll(bridgedBack);
         for (Object d : toml.get("[[dependencies." + modid + "]]") instanceof List<?> l ? Json.array(l) : List.of()) {
             Map<String, Object> dep = Json.object(d);
             String id = Json.text(dep, "modId", ""), type = Json.text(
@@ -3466,6 +3482,11 @@ final class Convert {
         // (net.fabricmc.fabric-loom-remap) on Mojang's names (loom.officialMojangMappings()), the names NeoForge mods use.
         boolean remap = Versions.compare(minecraft, Route.FIRST_UNOBFUSCATED) < 0;
         String gradle = read("build.gradle");
+        // Dependencies the Fabric bridge stood in for on NeoForge come back as they were.
+        List<String> restored = new ArrayList<>();
+        Matcher kept = Pattern.compile("(?m)^[ \\t]*" + Pattern.quote(BRIDGED_DEPENDENCY) + "(.*)\\R?").matcher(gradle);
+        while (kept.find()) restored.add(kept.group(1));
+        gradle = kept.reset().replaceAll("");
         Matcher plugin = MDG_PLUGIN.matcher(gradle);
         boolean neoGradle = false;
         if (!plugin.find()) {
@@ -3680,6 +3701,13 @@ final class Convert {
                 body.toString().replaceAll("^\\n+", "") +
                 gradle.substring(deps[3] - 1);
         } else gradle += "\ndependencies {\n" + add + "}\n";
+        if (!restored.isEmpty()) {
+            int[] dependencies = block(gradle, "dependencies");
+            StringBuilder back = new StringBuilder();
+            for (String line : restored) back.append(unit).append(line).append('\n');
+            gradle = gradle.substring(0, dependencies[3] - 1) + back + gradle.substring(dependencies[3] - 1);
+            notes.add("Build: " + restored.size() + " dependency line(s) the Fabric bridge stood in for on NeoForge are back.");
+        }
         // NeoForge's development classpath carries the JSR 305 annotations (javax.annotation.Nullable ...); Loom's does not.
         boolean jsr305 = false;
         for (String file : javaFiles()) if (read(file).contains("import javax.annotation.")) jsr305 = true;
