@@ -68,7 +68,8 @@ On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.ja
 - **The rule book** (`knowledge/fixes.json`) covers what a rename can't. Each rule carries a test `{error, before, after}` and its provenance: `hand` is written from a port's compiler errors against the game's own classes, and `third-party-mods` is the older set mined from other mods. New rules are never taken from other mods' code, and `--learn-from-mods` is off unless asked. `port` makes no AI or network-model calls; its rules are plain data.
 - **Proven with no hand edits and checked in the real game:** AppleSkin 1.20.1 → 1.21.6 and 1.21.5 ↔ 1.21.6 (Fabric), AppleSkin 1.21.6 → 26.3 (NeoForge), Zombie Apocalypse Addon 1.21.1 → 1.21.4, 1.21.6 and 26.3, and Notes 1.21 → 1.21.6. Receipts are in `coverage/ledger.json`.
 - **`explain`** shows each compiler error beside what that class looks like in both versions.
-- **Not yet:** Jade 1.21.1 → 1.21.6 (the 1.21.6 GUI rewrite) still stops with named errors. Forge, Quilt, Paper plugins and versions before 1.14.4 are not ported.
+- **When a game member the mod reached through its access transformer turns private again**, the port writes the entry as the target game has it. **A mod's own subclass of a game class** follows the game's renames too.
+- **Not yet:** Jade 1.21.1 → 1.21.6 stops at 30 named errors, from 98. They are in Jade's own renderer and font mixins, which 1.21.5–1.21.6's render rewrite replaced, and in fog, entity variants and two Jade API types. Forge, Quilt, Paper plugins and versions before 1.14.4 are not ported.
 
 ### 3 · Make modpacks work together
 

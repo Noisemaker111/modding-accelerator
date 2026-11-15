@@ -431,7 +431,7 @@ final class Port {
         saveInProgress();
         Path log;
         boolean compiled = false;
-        int rounds = Integer.parseInt(options.get("rounds", "5"));
+        int rounds = Integer.parseInt(options.get("rounds", "12"));
         List<String> removed = new ArrayList<>();
         if (rounds < 1 || rounds > 20) throw new IllegalArgumentException("--rounds must be 1–20");
         try {
@@ -1570,8 +1570,98 @@ final class Port {
             : Versions.compare(to, changed) < 0;
     }
 
+    /**
+     * A game member the mod reached through its access transformer that the target game moved, renamed or re-typed is
+     * private again: the old entry names a member that is gone. javac names the member and the class it lives in now
+     * ("X(args) has private access in Y", "X is not public in Y"), so the entry is written for the member as the target
+     * game has it, its descriptor read from the target's own class files. NeoForge mods only (accesstransformer.cfg);
+     * an entry already there is not written twice. Returns the lines added.
+     */
+    List<String> repairAccess(Path log) throws Exception {
+        Set<String> loaders = new TreeSet<>();
+        for (Object p : Json.array(model.get("projects"))) loaders.addAll(Support.loaders(Json.object(p)));
+        if (!loaders.contains("neoforge")) return List.of();
+        String errors = Files.readString(log);
+        Matcher denied = Pattern.compile(
+            "(?m)^\\s*" +
+            FILE +
+            ":[0-9]+: error: (\\w+)(?:\\(([^)]*)\\))? (?:has private access in|is not public in) ([\\w.$]+)"
+        ).matcher(errors);
+        Map<String, String[]> wanted = new LinkedHashMap<>();
+        while (denied.find()) wanted.putIfAbsent(
+            denied.group(4) + "." + denied.group(2) + "(" + denied.group(3) + ")",
+            new String[] { denied.group(2), denied.group(3), denied.group(4) }
+        );
+        // An overloaded call names the private candidate in its list: "(m(args) has private access in Y)".
+        Matcher candidate = Pattern.compile("\\((\\w+)\\(([^)]*)\\) has private access in ([\\w.$]+)\\)").matcher(errors);
+        while (candidate.find()) wanted.putIfAbsent(
+            candidate.group(3) + "." + candidate.group(1) + "(" + candidate.group(2) + ")",
+            new String[] { candidate.group(1), candidate.group(2), candidate.group(3) }
+        );
+        if (wanted.isEmpty()) return List.of();
+        Path at = accessTransformer();
+        if (at == null || !Files.isRegularFile(at)) return List.of();
+        Explain.Index index = new Explain.Index(classpath(model));
+        String text = Files.readString(at, StandardCharsets.UTF_8);
+        List<String> lines = new ArrayList<>();
+        for (String[] member : wanted.values()) {
+            String owner = null;
+            for (String found : index.resolve(member[2], List.of())) if (
+                found.startsWith("net/minecraft/") || found.startsWith("com/mojang/")
+            ) {
+                owner = found;
+                break;
+            }
+            if (owner == null) continue;
+            Explain.ClassInfo info = index.info(owner);
+            if (info == null) continue;
+            String entry = null;
+            for (Explain.Member m : info.members()) {
+                if (!m.name().equals(member[0]) || m.method() != (member[1] != null)) continue;
+                if (m.method() && !parameters(m.descriptor()).equals(member[1].replace(" ", ""))) continue;
+                entry = "public " + owner.replace('/', '.') + " " + m.name() + (m.method() ? m.descriptor() : "");
+                break;
+            }
+            if (entry == null || text.contains(entry) || lines.contains(entry)) continue;
+            lines.add(entry);
+        }
+        if (lines.isEmpty()) return lines;
+        track(at);
+        String added =
+            (text.endsWith("\n") ? "" : "\n") +
+            "\n# Written by modaccel port: members the target game made private again, as it has them now\n" +
+            String.join("\n", lines) +
+            "\n";
+        Files.writeString(at, text + added, StandardCharsets.UTF_8);
+        rulesApplied.putIfAbsent("access-transformer-repair", List.of());
+        return lines;
+    }
+
+    /** A descriptor's parameter types written the way javac's messages write them: (ILjava/lang/String;)V -> int,String. */
+    static String parameters(String descriptor) {
+        List<String> types = new ArrayList<>();
+        int[] at = { 1 };
+        while (descriptor.charAt(at[0]) != ')') types.add(Explain.Index.type(descriptor, at));
+        return String.join(",", types);
+    }
+
+    /** The NeoForge access transformer the build applies: NeoGradle's accessTransformers file, or META-INF/accesstransformer.cfg. */
+    Path accessTransformer() throws IOException {
+        for (String script : List.of("build.gradle", "build.gradle.kts")) {
+            Path file = build.project.root.resolve(script);
+            if (!Files.isRegularFile(file)) continue;
+            Matcher configured = Pattern.compile(
+                "accessTransformers?[^\\n]*?file\\s*\\(?\\s*(?:rootProject\\.|project\\.)?file\\(\\s*['\"]([^'\"]+)['\"]"
+            ).matcher(Files.readString(file));
+            if (configured.find()) return build.project.root.resolve(configured.group(1)).normalize();
+        }
+        Path fallback = build.project.root.resolve("src/main/resources/META-INF/accesstransformer.cfg");
+        return Files.isRegularFile(fallback) ? fallback : null;
+    }
+
     void applyRules(Path log) throws Exception {
         removeDeadMixinTargets(log);
+        repairAccess(log);
         String errors = Files.readString(log);
         List<Path> all = ownedJava();
         Set<Path> logged = new HashSet<>();

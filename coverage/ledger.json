@@ -275,6 +275,15 @@
       "status": "behaviour",
       "detail": "Upstream 1bb67d4 ported by modaccel port --fix with nothing written by hand (243 s warm; the game's 26.3 NeoForm setup was cold on the first run, 20.7 min). The route 1.21.1 -> 26.3 crosses 15 updates; its rename map is generated from the game itself by tools/GameDiff.java (Mojang's client jars and mappings for every release, linked release to release by their own bytecode, the game's data-fixer id renames for GameRules, NeoForge's own published classes), with no intermediary. 45 errors left on the first run of 2026-11-14 became 13 new rules and 4 corrected ones (26.1 world clocks for day time, SavedDataType keyed by Identifier with NeoForge's level factories, EntityType.is through its registry holder, entityTags, FancyModLoader 12 config types, EntityReference.of, Entity.getServer through its level, startRiding's third argument, needsSync; entity-snapto limited to reported lines, create/convertTo widened to 26.2's EntityTypes, convertTo given an empty after-conversion hook instead of null). Two port features: Mixin's check runs on FancyModLoader 12's new startup, and the mod's JUnit tests run on junit-fml (26.x's Commands needs the game bootstrapped): all 128 pass. Behaviour asserted on 2026-11-14 by tools/tests/ZombieAiCheck.java in the real 26.3 client (hidden, muted): a summoned zombie got ZombieEatFoodGoal, ZombieMountZombieHorseGoal and ZombieHuntGoal and the scaling tag, and targeted the pig; with EventHandler's goal injection removed on purpose the same check failed.",
       "date": "2026-11-14"
+    },
+    {
+      "mod": "Jade",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "Upstream 1.21-neoforge at 6701b1e ported by modaccel port --fix with nothing written by hand on the game-derived map: 30 compiler errors left (98 recorded before, with more hidden behind javac's 100-error cap). It now gets past its build: NeoGradle's mixin plugin, gone in NeoGradle 7.1, is dropped with its config declared in neoforge.mods.toml. 50 new rules for 1.21.2-1.21.6 cover the 2D GUI pose stack, sprite and tiled blits (blit offset dropped, render function then pipeline first, colour threaded from setColor), the void drawString end x, registry getValue, delta tracker, villager data, NBT keys, armour slots, JSON reload listeners, custom model data, picked and cloned items and more. A port step rewrites stale access-transformer entries for members the target made private again (6 here), and the typed fixer follows the game's unanimous renames on a mod's own subclasses. Left: Jade's raw-vertex DisplayHelper and its Font mixins (1.21.5-1.21.6 render rewrite), fog and darkness (FogRenderer rewrite), entity variants (VariantHolder became data components), tooltips for the next frame, the reload-listener event, and two Jade API types (RegistryAccess where NeoForge gives a HolderLookup.Provider).",
+      "date": "2026-11-14"
     }
   ],
   "loader_pairs": [

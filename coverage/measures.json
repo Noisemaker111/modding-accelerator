@@ -102,7 +102,8 @@
    "machine": "jon-pc",
    "target": {"value": 0, "by": "2027-01-15", "step": "12"},
    "points": [
-    {"date": "2026-10-24", "value": 98, "note": "the 1.21.6 GUI rewrite", "source": "coverage/ledger.json"}
+    {"date": "2026-10-24", "value": 98, "note": "the 1.21.6 GUI rewrite", "source": "coverage/ledger.json"},
+    {"date": "2026-11-14", "value": 30, "note": "game-derived map, 50 new rules, access-transformer repair; left: the 1.21.6 render rewrite in its own renderer and mixins", "source": "coverage/ledger.json"}
    ]
   },
   {

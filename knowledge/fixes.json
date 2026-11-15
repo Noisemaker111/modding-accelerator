@@ -1943,7 +1943,7 @@
       "id": "gui-blit-render-pipeline-official",
       "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
-      "match": "no suitable method found for blit\\(|symbol:\\s+method guiTextured\\b",
+      "match": "no suitable method found for blit(?:Sprite)?\\(|method blitTiledSprite in class GuiGraphics cannot be applied|symbol:\\s+method guiTextured\\b",
       "apply": {
         "find": "\\bRenderType::guiTextured",
         "replace": "RenderPipelines.GUI_TEXTURED",
@@ -4809,6 +4809,1051 @@
         "before": "package com.rique.zombieapocalypse;\n\n        if (zombie.distanceToSqr(targetHorse) <= mountDistanceSqr) {\n            zombie.startRiding(targetHorse, true);\n            zombie.getNavigation().stop();\n",
         "after": "package com.rique.zombieapocalypse;\n\n        if (zombie.distanceToSqr(targetHorse) <= mountDistanceSqr) {\n            zombie.startRiding(targetHorse, true, true);\n            zombie.getNavigation().stop();\n",
         "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieMountZombieHorseGoal.java:91"
+      }
+    },
+    {
+      "id": "gui-pose-push-matrix-official",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method pushPose\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )(?:org\\.joml\\.)?Matrix3x2fStack",
+      "apply": {
+        "find": "\\.pushPose\\(\\)",
+        "replace": ".pushMatrix()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 made GuiGraphics.pose() a 2D JOML Matrix3x2fStack; pushPose() is its pushMatrix(). Also on a local that holds the stack.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "OptionsNav.java:4: error: cannot find symbol\n  symbol: method pushPose()\nlocation: class org.joml.Matrix3x2fStack\n",
+        "before": "package snownee.jade.gui.config;\n\n\t\tint left = getRowLeft() + 2;\n\t\tguiGraphics.pose().pushPose();\n\t\tguiGraphics.pose().translate(0, top, 0);\n",
+        "after": "package snownee.jade.gui.config;\n\n\t\tint left = getRowLeft() + 2;\n\t\tguiGraphics.pose().pushMatrix();\n\t\tguiGraphics.pose().translate(0, top, 0);\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsNav.java:37"
+      }
+    },
+    {
+      "id": "gui-pose-pop-matrix-official",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method popPose\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )(?:org\\.joml\\.)?Matrix3x2fStack",
+      "apply": {
+        "find": "\\.popPose\\(\\)",
+        "replace": ".popMatrix()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 made GuiGraphics.pose() a 2D JOML Matrix3x2fStack; popPose() is its popMatrix(). Also on a local that holds the stack.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "OptionsNav.java:4: error: cannot find symbol\n  symbol: method popPose()\nlocation: class org.joml.Matrix3x2fStack\n",
+        "before": "package snownee.jade.gui.config;\n\n\t\tguiGraphics.fill(left, 0, left + 2, itemHeight - 4, 0xFFFFFFFF);\n\t\tguiGraphics.pose().popPose();\n\t}\n",
+        "after": "package snownee.jade.gui.config;\n\n\t\tguiGraphics.fill(left, 0, left + 2, itemHeight - 4, 0xFFFFFFFF);\n\t\tguiGraphics.pose().popMatrix();\n\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsNav.java:40"
+      }
+    },
+    {
+      "id": "gui-pose-translate-2d-official",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "(?:int|float|double) cannot be converted to Matrix3x2f|possible lossy conversion from double to float",
+      "apply": {
+        "find": "\\b((?:\\w+\\.)*\\w+(?:\\(\\))?)\\.translate\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "$1.translate((float) ($2), (float) ($3))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 made GuiGraphics.pose() a 2D Matrix3x2fStack: translate takes x and y as floats. The z it dropped only ordered layers; 1.21.6 orders GUI layers by strata instead. Any receiver on the reported line, so a local Matrix3x2fStack (see gui-pose-stack-local-2d) is covered too.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "OptionsNav.java:4: error: int cannot be converted to Matrix3x2f\n",
+        "before": "package snownee.jade.gui.config;\n\n\t\tguiGraphics.pose().pushPose();\n\t\tguiGraphics.pose().translate(0, top, 0);\n\t\tguiGraphics.fill(left, 0, left + 2, itemHeight - 4, 0xFFFFFFFF);\n",
+        "after": "package snownee.jade.gui.config;\n\n\t\tguiGraphics.pose().pushPose();\n\t\tguiGraphics.pose().translate((float) (0), (float) ( top));\n\t\tguiGraphics.fill(left, 0, left + 2, itemHeight - 4, 0xFFFFFFFF);\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsNav.java:38"
+      }
+    },
+    {
+      "id": "gui-pose-scale-2d-official",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "(?:int|float|double) cannot be converted to Matrix3x2f",
+      "apply": {
+        "find": "\\b((?:\\w+\\.)*\\w+(?:\\(\\))?)\\.scale\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "$1.scale((float) ($2), (float) ($3))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 made GuiGraphics.pose() a 2D Matrix3x2fStack: scale takes x and y; the z factor has no meaning in 2D. Any receiver on the reported line, so a local Matrix3x2fStack (see gui-pose-stack-local-2d) is covered too.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "CreditButton.java:4: error: int cannot be converted to Matrix3x2f\n",
+        "before": "package snownee.jade.gui;\n\n\t\tfloat scale = 1 + progress.value * 0.2F;\n\t\tguiGraphics.pose().scale(scale, scale, scale);\n\t\tComponent credit = hovered ? hoveredTitle : getMessage();\n",
+        "after": "package snownee.jade.gui;\n\n\t\tfloat scale = 1 + progress.value * 0.2F;\n\t\tguiGraphics.pose().scale((float) (scale), (float) ( scale));\n\t\tComponent credit = hovered ? hoveredTitle : getMessage();\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/CreditButton.java:74"
+      }
+    },
+    {
+      "id": "minecraft-get-timer-delta-tracker",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method getTimer\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )Minecraft\\b",
+      "apply": {
+        "find": "\\.getTimer\\(\\)",
+        "replace": ".getDeltaTracker()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 renamed Minecraft.getTimer() to getDeltaTracker(); the same DeltaTracker.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "DistanceProvider.java:4: error: cannot find symbol\n  symbol: method getTimer()\nlocation: variable x of type Minecraft\n",
+        "before": "package snownee.jade.addon.core;\n\n\tpublic static String distance(Accessor<?> accessor) {\n\t\tfloat partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);\n\t\treturn fmt.format(accessor.getPlayer().getEyePosition(partialTick).distanceTo(accessor.getHitResult().getLocation()));\n",
+        "after": "package snownee.jade.addon.core;\n\n\tpublic static String distance(Accessor<?> accessor) {\n\t\tfloat partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);\n\t\treturn fmt.format(accessor.getPlayer().getEyePosition(partialTick).distanceTo(accessor.getHitResult().getLocation()));\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/core/DistanceProvider.java:57"
+      }
+    },
+    {
+      "id": "event-loop-tell-schedule",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method tell\\(",
+      "apply": {
+        "find": "\\.tell\\(",
+        "replace": ".schedule("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 removed BlockableEventLoop.tell(task); schedule(task) is the same body: queue the task and wake the thread.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "JadeClientCommand.java:4: error: cannot find symbol\n  symbol: method tell(\n",
+        "before": "package snownee.jade.command;\n\n\t\t})).then(literalFactory.apply(\"config\").executes(context -> {\n\t\t\tMinecraft.getInstance().tell(() -> {\n\t\t\t\tJade.CONFIG.invalidate();\n",
+        "after": "package snownee.jade.command;\n\n\t\t})).then(literalFactory.apply(\"config\").executes(context -> {\n\t\t\tMinecraft.getInstance().schedule(() -> {\n\t\t\t\tJade.CONFIG.invalidate();\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/command/JadeClientCommand.java:34"
+      }
+    },
+    {
+      "id": "mth-color-argb",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method color\\(\\w+,\\w+,\\w+\\)\\n\\s*location: class Mth",
+      "apply": {
+        "find": "\\bMth\\.color\\(",
+        "replace": "ARGB.colorFromFloat(0.0F, ",
+        "ensureImports": [
+          "net.minecraft.util.ARGB"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 removed Mth.color(r, g, b), which packed 0-1 floats into RGB with no alpha byte; ARGB.colorFromFloat(0, r, g, b) packs the same bits.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "HomeConfigScreen.java:4: error: cannot find symbol\n  symbol: method color(x,x,x)\nlocation: class Mth\n",
+        "before": "package snownee.jade.gui;\n\n\t\t\tfor (int i = 0; i < 11; i++) {\n\t\t\t\tcolors.add(Mth.color(1 - random.nextFloat() * 0.6F, 1, 1));\n\t\t\t}\n",
+        "after": "package snownee.jade.gui;\nimport net.minecraft.util.ARGB;\n\n\t\t\tfor (int i = 0; i < 11; i++) {\n\t\t\t\tcolors.add(ARGB.colorFromFloat(0.0F, 1 - random.nextFloat() * 0.6F, 1, 1));\n\t\t\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/HomeConfigScreen.java:159"
+      }
+    },
+    {
+      "id": "options-set-key-mapping",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method setKey\\(KeyMapping,Key\\)\\n\\s*location: (?:variable \\w+ of type |class )Options\\b",
+      "apply": {
+        "find": "\\b(\\w+(?:\\.\\w+\\(\\))?)\\.setKey\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\);",
+        "replace": "$2.setKey($3); $1.save();"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 removed Options.setKey(mapping, key), which set the mapping's key and saved the options; the mapping sets its own key and the options are saved.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "OptionsList.java:4: error: cannot find symbol\n  symbol: method setKey(KeyMapping,Key)\nlocation: variable x of type Options\n",
+        "before": "package snownee.jade.gui.config;\n\n\t\t\tif (i == 256) {\n\t\t\t\toptions.setKey(selectedKey, InputConstants.UNKNOWN);\n\t\t\t} else {\n",
+        "after": "package snownee.jade.gui.config;\n\n\t\t\tif (i == 256) {\n\t\t\t\tselectedKey.setKey(InputConstants.UNKNOWN); options.save();\n\t\t\t} else {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsList.java:424"
+      }
+    },
+    {
+      "id": "registry-get-value-official",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "incompatible types: Optional<Reference<\\w+>> cannot be converted to \\w+",
+      "apply": {
+        "find": "\\.get\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)(?!\\s*\\.(?:map|orElse|orElseThrow|isPresent|isEmpty|ifPresent|get)\\b)",
+        "replace": ".getValue($1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 made Registry.get(id) return an Optional holder; getValue(id) returns the value or null, as get did. A get(...) already unwrapped on the same line (.map, .orElse, by registry-get-*-optional) is left alone.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "VanillaPlugin.java:4: error: incompatible types: Optional<Reference<Block>> cannot be converted to Block\n\t\t\t\t\tblock = BuiltInRegistries.BLOCK.get(chestName);\n\t\t\t\t\t                                   ^\n",
+        "before": "package snownee.jade.addon.vanilla;\n\n\t\t\t\tif (trappedName.getPath().startsWith(\"trapped_\")) {\n\t\t\t\t\tblock = BuiltInRegistries.BLOCK.get(chestName);\n\t\t\t\t} else if (trappedName.getPath().endsWith(\"_trapped_chest\")) {\n",
+        "after": "package snownee.jade.addon.vanilla;\n\n\t\t\t\tif (trappedName.getPath().startsWith(\"trapped_\")) {\n\t\t\t\t\tblock = BuiltInRegistries.BLOCK.getValue(chestName);\n\t\t\t\t} else if (trappedName.getPath().endsWith(\"_trapped_chest\")) {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/vanilla/VanillaPlugin.java:87 (the lines either side of it)"
+      }
+    },
+    {
+      "id": "registry-get-value-method-ref",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "inference variable T#?\\d* has incompatible bounds",
+      "apply": {
+        "find": "\\b(\\w*[Rr]egistry\\w*)::get\\b",
+        "replace": "$1::getValue"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 made Registry.get(id) return an Optional holder; a method reference to it becomes getValue, which returns the value or null as get did.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "LootTableMineableCollector.java:4: error: inference variable T# has incompatible bounds\n",
+        "before": "package snownee.jade.addon.harvest;\n\n\t\t} else if (entry instanceof NestedLootTable nestedLootTable) {\n\t\t\tLootTable lootTable = nestedLootTable.contents.map(lootRegistry::get, Function.identity());\n\t\t\treturn doLootTable(lootTable);\n",
+        "after": "package snownee.jade.addon.harvest;\n\n\t\t} else if (entry instanceof NestedLootTable nestedLootTable) {\n\t\t\tLootTable lootTable = nestedLootTable.contents.map(lootRegistry::getValue, Function.identity());\n\t\t\treturn doLootTable(lootTable);\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/harvest/LootTableMineableCollector.java:82"
+      }
+    },
+    {
+      "id": "gui-blit-sprite-render-type-5",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "no suitable method found for blitSprite\\((?:ResourceLocation|TextureAtlasSprite),int,int,int,int\\)",
+      "apply": {
+        "find": "\\.blitSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blitSprite(RenderType::guiTextured, $1, $2, $3, $4, $5)",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderType"
+        ]
+      },
+      "scope": "line",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.2 put the render type function first in GuiGraphics.blitSprite; the sprite drawn at x, y, width, height is unchanged.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "NotUglyEditBox.java:5: error: no suitable method found for blitSprite(ResourceLocation,int,int,int,int)\n",
+        "before": "package snownee.jade.gui.config;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\t\tResourceLocation resourceLocation = EditBox.SPRITES.get(this.isActive(), this.isFocused());\n\t\t\tguiGraphics.blitSprite(resourceLocation, this.getX(), this.getY(), this.getWidth(), this.getHeight());\n\t\t} else {\n",
+        "after": "package snownee.jade.gui.config;\nimport net.minecraft.client.renderer.RenderType;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\t\tResourceLocation resourceLocation = EditBox.SPRITES.get(this.isActive(), this.isFocused());\n\t\t\tguiGraphics.blitSprite(RenderType::guiTextured, resourceLocation,  this.getX(),  this.getY(),  this.getWidth(),  this.getHeight());\n\t\t} else {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/NotUglyEditBox.java:348"
+      }
+    },
+    {
+      "id": "gui-blit-sprite-render-type-offset",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "no suitable method found for blitSprite\\((?:ResourceLocation|TextureAtlasSprite),int,int,int,int,int\\)",
+      "apply": {
+        "find": "\\.blitSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blitSprite(RenderType::guiTextured, $1, $2, $3, $5, $6)",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderType"
+        ]
+      },
+      "scope": "line",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.1's blitSprite(sprite, x, y, blitOffset, width, height) lost the blit offset in 1.21.2 (GUI depth is ordered by draw order, later by strata) and took the render type function first. The fourth argument is dropped, not kept: in the new six-int form that slot would be a colour.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "BoxStyle.java:5: error: no suitable method found for blitSprite(ResourceLocation,int,int,int,int,int)\n",
+        "before": "package snownee.jade.api.ui;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\t\tswitch (guiSpriteScaling) {\n\t\t\t\tcase GuiSpriteScaling.Stretch ignored -> guiGraphics.blitSprite(resourceLocation, i, j, k, l, m);\n\t\t\t\tcase GuiSpriteScaling.Tile tile -> guiGraphics.blitTiledSprite(\n",
+        "after": "package snownee.jade.api.ui;\nimport net.minecraft.client.renderer.RenderType;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\t\tswitch (guiSpriteScaling) {\n\t\t\t\tcase GuiSpriteScaling.Stretch ignored -> guiGraphics.blitSprite(RenderType::guiTextured, resourceLocation,  i,  j,  l,  m);\n\t\t\t\tcase GuiSpriteScaling.Tile tile -> guiGraphics.blitTiledSprite(\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/api/ui/BoxStyle.java:244"
+      }
+    },
+    {
+      "id": "gui-blit-sprite-region-render-type",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "TextureAtlasSprite cannot be converted to (?:RenderPipeline|Function<)",
+      "apply": {
+        "find": "\\.blitSprite\\(\\s*(\\w*[Ss]prite\\w*)\\s*,((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blitSprite(RenderType::guiTextured, $1, $2, $3, $4, $5, $6, $7, $9, $10, -1)",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderType"
+        ]
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.1's blitSprite(sprite, textureWidth, textureHeight, u, v, x, y, blitOffset, width, height), the region of a sprite, became (renderType, sprite, textureWidth, textureHeight, u, v, x, y, width, height, colour) in 1.21.2: the blit offset goes and the colour is opaque white, the untinted draw it was. It runs over the whole file because such calls span lines, on calls whose first argument is a sprite (a mod's own blitSprite helpers take the GuiGraphics first).",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "BoxStyle.java:287: error: TextureAtlasSprite cannot be converted to RenderPipeline\n",
+        "before": "package snownee.jade.api.ui;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\t\tif (l == nineSlice.width() && m == nineSlice.height()) {\n\t\t\t\tguiGraphics.blitSprite(textureAtlasSprite, nineSlice.width(), nineSlice.height(), 0, 0, i, j, k, l, m);\n\t\t\t\treturn;\n",
+        "after": "package snownee.jade.api.ui;\nimport net.minecraft.client.renderer.RenderType;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\t\tif (l == nineSlice.width() && m == nineSlice.height()) {\n\t\t\t\tguiGraphics.blitSprite(RenderType::guiTextured, textureAtlasSprite,  nineSlice.width(),  nineSlice.height(),  0,  0,  i,  j,  l,  m, -1);\n\t\t\t\treturn;\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/api/ui/BoxStyle.java:287"
+      }
+    },
+    {
+      "id": "gui-blit-tiled-sprite-render-type",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "method blitTiledSprite in class GuiGraphics cannot be applied to given types",
+      "apply": {
+        "find": "\\.blitTiledSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blitTiledSprite(RenderType::guiTextured,$1,$2,$3,$5,$6,$7,$8,$9,$10,$11,$12, -1)",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderType"
+        ]
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.1's blitTiledSprite(sprite, x, y, blitOffset, width, height, u, v, spriteWidth, spriteHeight, nineSliceWidth, nineSliceHeight) became (renderType, sprite, x, y, width, height, u, v, spriteWidth, spriteHeight, nineSliceWidth, nineSliceHeight, colour) in 1.21.2 (NeoForge makes it public): the blit offset goes, the colour is opaque white.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "BoxStyle.java:245: error: method blitTiledSprite in class GuiGraphics cannot be applied to given types\n",
+        "before": "package snownee.jade.api.ui;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\t\t\tcase GuiSpriteScaling.Stretch ignored -> guiGraphics.blitSprite(resourceLocation, i, j, k, l, m);\n\t\t\t\tcase GuiSpriteScaling.Tile tile -> guiGraphics.blitTiledSprite(\n\t\t\t\t\t\ttextureAtlasSprite,\n\t\t\t\t\t\ti,\n\t\t\t\t\t\tj,\n\t\t\t\t\t\tk,\n\t\t\t\t\t\tl,\n\t\t\t\t\t\tm,\n\t\t\t\t\t\t0,\n\t\t\t\t\t\t0,\n\t\t\t\t\t\ttile.width(),\n\t\t\t\t\t\ttile.height(),\n\t\t\t\t\t\ttile.width(),\n\t\t\t\t\t\ttile.height());\n\t\t\t\tcase GuiSpriteScaling.NineSlice nineSlice -> blitNineSlicedSprite(\n",
+        "after": "package snownee.jade.api.ui;\nimport net.minecraft.client.renderer.RenderType;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\t\t\tcase GuiSpriteScaling.Stretch ignored -> guiGraphics.blitSprite(resourceLocation, i, j, k, l, m);\n\t\t\t\tcase GuiSpriteScaling.Tile tile -> guiGraphics.blitTiledSprite(RenderType::guiTextured,\n\t\t\t\t\t\ttextureAtlasSprite,\n\t\t\t\t\t\ti,\n\t\t\t\t\t\tj,\n\t\t\t\t\t\tl,\n\t\t\t\t\t\tm,\n\t\t\t\t\t\t0,\n\t\t\t\t\t\t0,\n\t\t\t\t\t\ttile.width(),\n\t\t\t\t\t\ttile.height(),\n\t\t\t\t\t\ttile.width(),\n\t\t\t\t\t\ttile.height(), -1);\n\t\t\t\tcase GuiSpriteScaling.NineSlice nineSlice -> blitNineSlicedSprite(\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/api/ui/BoxStyle.java:245"
+      }
+    },
+    {
+      "id": "gui-blit-render-type-9-lossy",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "possible lossy conversion from float to int",
+      "apply": {
+        "find": "\\.blit\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blit(RenderType::guiTextured, $1,$2,$3,$4,$5,$6,$7,$8,$9)",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderType"
+        ]
+      },
+      "scope": "line",
+      "when": "\\bGuiGraphics\\b",
+      "note": "The same change as gui-blit-render-type-9-official, for a blit(texture, x, y, u, v, width, height, textureWidth, textureHeight) whose float u and v make javac pick a nine-argument overload of 1.21.2 instead of saying no method fits.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "OptionsList.java:5: error: possible lossy conversion from float to int\n",
+        "before": "package snownee.jade.gui.config;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\tResourceLocation resourceLocation2 = this.minecraft.level == null ? Screen.FOOTER_SEPARATOR : Screen.INWORLD_FOOTER_SEPARATOR;\n\t\tguiGraphics.blit(resourceLocation2, 0, this.getBottom(), 0.0F, 0.0F, owner.width, 2, 32, 2);\n\t\tRenderSystem.disableBlend();\n",
+        "after": "package snownee.jade.gui.config;\nimport net.minecraft.client.renderer.RenderType;\n\nimport net.minecraft.client.gui.GuiGraphics;\n\t\tResourceLocation resourceLocation2 = this.minecraft.level == null ? Screen.FOOTER_SEPARATOR : Screen.INWORLD_FOOTER_SEPARATOR;\n\t\tguiGraphics.blit(RenderType::guiTextured, resourceLocation2, 0, this.getBottom(), 0.0F, 0.0F, owner.width, 2, 32, 2);\n\t\tRenderSystem.disableBlend();\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsList.java:162"
+      }
+    },
+    {
+      "id": "gui-graphics-set-color-shader",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method setColor\\((?:int|float|double)(?:,(?:int|float|double)){3}\\)\\n\\s*location: (?:variable \\w+ of type |class )GuiGraphics\\b",
+      "apply": {
+        "find": "\\b\\w+\\.setColor\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "RenderSystem.setShaderColor((float) ($1), (float) ($2), (float) ($3), (float) ($4))",
+        "ensureImports": [
+          "com.mojang.blaze3d.systems.RenderSystem"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 removed GuiGraphics.setColor, which flushed the batch and set RenderSystem's shader colour; the shader colour is set directly (1.21.6 then carries it into each draw, see shader-color-*-official).",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "BoxStyle.java:4: error: cannot find symbol\n  symbol: method setColor(int,int,int,int)\nlocation: variable x of type GuiGraphics\n",
+        "before": "package snownee.jade.api.ui;\n\n\t\t\tRenderSystem.enableBlend();\n\t\t\tguiGraphics.setColor(1, 1, 1, alpha);\n\t\t\tblitSprite(guiGraphics, texture, Math.round(x), Math.round(y), 0, Math.round(w), Math.round(h));\n",
+        "after": "package snownee.jade.api.ui;\nimport com.mojang.blaze3d.systems.RenderSystem;\n\n\t\t\tRenderSystem.enableBlend();\n\t\t\tRenderSystem.setShaderColor((float) (1), (float) ( 1), (float) ( 1), (float) ( alpha));\n\t\t\tblitSprite(guiGraphics, texture, Math.round(x), Math.round(y), 0, Math.round(w), Math.round(h));\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/api/ui/BoxStyle.java:454"
+      }
+    },
+    {
+      "id": "shader-color-draws-sprites-official",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
+      "apply": {
+        "find": "(\\.(?:blitTiledSprite\\(RenderPipelines\\.GUI_TEXTURED,(?:(?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+,){11}|blitSprite\\(RenderPipelines\\.GUI_TEXTURED,(?:(?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+,){9}))\\s*-1\\)",
+        "replace": "$1 guiShaderColor)"
+      },
+      "scope": "log",
+      "when": "int guiShaderColor",
+      "note": "The sprite region and tiled sprite draws that gui-blit-sprite-region-render-type and gui-blit-tiled-sprite-render-type gave an opaque white colour take the class's shader colour instead, like shader-color-draws-official does for the other draws.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "BoxStyle.java:9: error: cannot find symbol\n\t\t\tRenderSystem.setShaderColor((float) (1), (float) (1), (float) (1), (float) (alpha));\n\t\t\t            ^\n  symbol:   method setShaderColor(float,float,float,float)\n  location: class RenderSystem\n",
+        "before": "package mod;\n\nclass BoxStyle {\n\tprivate static int guiShaderColor = 0xFFFFFFFF;\n\n\tstatic void draw(GuiGraphics guiGraphics, TextureAtlasSprite sprite, int i, int j, int l, int m) {\n\t\tguiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, 16, 16, 0, 0, i, j, l, m, -1);\n\t\tguiGraphics.blitTiledSprite(RenderPipelines.GUI_TEXTURED, sprite, i, j, l, m, 0, 0, 8, 8, 16, 16, -1);\n\t}\n}\n",
+        "after": "package mod;\n\nclass BoxStyle {\n\tprivate static int guiShaderColor = 0xFFFFFFFF;\n\n\tstatic void draw(GuiGraphics guiGraphics, TextureAtlasSprite sprite, int i, int j, int l, int m) {\n\t\tguiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, 16, 16, 0, 0, i, j, l, m, guiShaderColor);\n\t\tguiGraphics.blitTiledSprite(RenderPipelines.GUI_TEXTURED, sprite, i, j, l, m, 0, 0, 8, 8, 16, 16, guiShaderColor);\n\t}\n}\n",
+        "from": "written for the rule: Jade's BoxStyle nine-slice draws as gui-blit-sprite-region-render-type and gui-blit-tiled-sprite-render-type leave them, once shader-color-declare-official has added the field"
+      }
+    },
+    {
+      "id": "gui-overlay-fill-pipeline",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method guiOverlay\\(\\)\\n\\s*location: class RenderType",
+      "apply": {
+        "literal": "RenderType.guiOverlay()",
+        "replace": "RenderPipelines.GUI",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderPipelines"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 fills GUI rectangles through a RenderPipeline; RenderType.guiOverlay (a fill drawn over the rest) is the plain GUI pipeline, as the game's own EditBox now draws its cursor.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "NotesTitleField.java:76: error: cannot find symbol\n  symbol: method guiOverlay()\nlocation: class RenderType\n",
+        "before": "package com.chaosthedude.notes.gui;\n\n\t\t\t\tif (flag2) {\n\t\t\t\t\tguiGraphics.fill(RenderType.guiOverlay(), k1, i1 - 1, k1 + 1, i1 + 1 + font.lineHeight, -3092272);\n\t\t\t\t} else {\n",
+        "after": "package com.chaosthedude.notes.gui;\nimport net.minecraft.client.renderer.RenderPipelines;\n\n\t\t\t\tif (flag2) {\n\t\t\t\t\tguiGraphics.fill(RenderPipelines.GUI, k1, i1 - 1, k1 + 1, i1 + 1 + font.lineHeight, -3092272);\n\t\t\t\t} else {\n",
+        "from": "Notes (MattCzyr) neoforge 1.21 at 6cc388c8, src/main/java/com/chaosthedude/notes/gui/NotesTitleField.java:76"
+      }
+    },
+    {
+      "id": "drawstring-end-x-helper",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "incompatible types: void cannot be converted to int",
+      "apply": {
+        "transform": "helper",
+        "name": "modaccel$drawStringEnd",
+        "find": "\\b(\\w+(?:\\.\\w+)*)\\.drawString\\(",
+        "replace": "modaccel\\$drawStringEnd($1, ",
+        "source": "\t/** Written by modaccel port: 1.21.6's GuiGraphics.drawString returns nothing; before, it returned the x where the text ended, one more with its shadow. */\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, String text, int x, int y, int color) {\n\t\treturn modaccel$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, String text, int x, int y, int color, boolean shadow) {\n\t\tif (text == null) return x;\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, FormattedCharSequence text, int x, int y, int color) {\n\t\treturn modaccel$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, FormattedCharSequence text, int x, int y, int color, boolean shadow) {\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, Component text, int x, int y, int color) {\n\t\treturn modaccel$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, Component text, int x, int y, int color, boolean shadow) {\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}",
+        "ensureImports": [
+          "net.minecraft.client.gui.GuiGraphics",
+          "net.minecraft.client.gui.Font",
+          "net.minecraft.util.FormattedCharSequence",
+          "net.minecraft.network.chat.Component"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 made GuiGraphics.drawString return void. It used to return the x where the text ended (Font.drawInBatch: the end of the text, plus one when it has a shadow, which the five-argument form does). The call goes through a helper that draws the same text and gives back the same x, so a text field that keeps drawing after the text (its cursor) still lines up.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "TooltipOverlayHandler.java:4: error: incompatible types: void cannot be converted to int\n",
+        "before": "package squeek.appleskin.client;\n\n\t\t\t\tposeStack.scale(0.75f, 0.75f);\n\t\t\t\tguiGraphics.drawString(font, foodTooltip.hungerBarsText, 2, 2, 0xFFAAAAAA);\n\t\t\t\tposeStack.popMatrix();\n",
+        "after": "package squeek.appleskin.client;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.util.FormattedCharSequence;\nimport net.minecraft.client.gui.Font;\nimport net.minecraft.client.gui.GuiGraphics;\n\n\t\t\t\tposeStack.scale(0.75f, 0.75f);\n\t\t\t\tmodaccel$drawStringEnd(guiGraphics, font, foodTooltip.hungerBarsText, 2, 2, 0xFFAAAAAA);\n\t\t\t\tposeStack.popMatrix();\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/TooltipOverlayHandler.java:180"
+      }
+    },
+    {
+      "id": "loot-table-key-or-else",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method orElse\\(<null>\\)\\n\\s*location: class ResourceKey<",
+      "apply": {
+        "find": "\\.orElse\\(null\\)",
+        "replace": ""
+      },
+      "scope": "line",
+      "when": "",
+      "note": "A loot table owner's getLootTable() returns the ResourceKey itself (null when there is none) where it used to wrap it in an Optional; .orElse(null) gave that same value.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "EntityVariantProvider.java:4: error: cannot find symbol\n  symbol: method orElse(<null>)\nlocation: class ResourceKey<\n",
+        "before": "package snownee.jade.addon.access;\n\n\t\t\t} else if (variant instanceof Holder<?> holder) {\n\t\t\t\tvariantKey = holder.unwrapKey().map(ResourceKey::location).map(ResourceLocation::toShortLanguageKey).orElse(null);\n\t\t\t}\n",
+        "after": "package snownee.jade.addon.access;\n\n\t\t\t} else if (variant instanceof Holder<?> holder) {\n\t\t\t\tvariantKey = holder.unwrapKey().map(ResourceKey::location).map(ResourceLocation::toShortLanguageKey);\n\t\t\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/access/EntityVariantProvider.java:33"
+      }
+    },
+    {
+      "id": "nbt-any-numeric-instanceof",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+variable TAG_ANY_NUMERIC",
+      "apply": {
+        "find": "\\b(\\w+)\\.contains\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),\\s*Tag\\.TAG_ANY_NUMERIC\\)",
+        "replace": "($1.get($2) instanceof net.minecraft.nbt.NumericTag)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 removed CompoundTag.contains(key, type) and Tag.TAG_ANY_NUMERIC; 'has a number under this key' is the tag under it being a NumericTag.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ItemStorageProvider.java:4: error: cannot find symbol\n  symbol: variable TAG_ANY_NUMERIC\n",
+        "before": "package snownee.jade.addon.universal;\n\n\t\t\t\tCompoundTag data = group.extraData;\n\t\t\t\tif (data != null && data.contains(\"Collecting\", Tag.TAG_ANY_NUMERIC)) {\n\t\t\t\t\tfloat progress = data.getFloat(\"Collecting\");\n",
+        "after": "package snownee.jade.addon.universal;\n\n\t\t\t\tCompoundTag data = group.extraData;\n\t\t\t\tif (data != null && (data.get(\"Collecting\") instanceof net.minecraft.nbt.NumericTag)) {\n\t\t\t\t\tfloat progress = data.getFloat(\"Collecting\");\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/universal/ItemStorageProvider.java:143"
+      }
+    },
+    {
+      "id": "armor-stand-armor-slots",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+method getArmorSlots\\(\\)",
+      "apply": {
+        "find": "\\b(\\w+)\\.getArmorSlots\\(\\)",
+        "replace": "java.util.List.of(net.minecraft.world.entity.EquipmentSlot.FEET, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.HEAD).stream().map($1::getItemBySlot).toList()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 removed getArmorSlots(); armour is equipment now. The list holds the same four stacks in the same order, feet to head.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ArmorStandProvider.java:4: error: cannot find symbol\n  symbol: method getArmorSlots()\n",
+        "before": "package snownee.jade.addon.vanilla;\n\n\t\tboolean empty = true;\n\t\tfor (ItemStack stack : entity.getArmorSlots()) {\n\t\t\tif (stack.isEmpty()) {\n",
+        "after": "package snownee.jade.addon.vanilla;\n\n\t\tboolean empty = true;\n\t\tfor (ItemStack stack : java.util.List.of(net.minecraft.world.entity.EquipmentSlot.FEET, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.HEAD).stream().map(entity::getItemBySlot).toList()) {\n\t\t\tif (stack.isEmpty()) {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/vanilla/ArmorStandProvider.java:23"
+      }
+    },
+    {
+      "id": "villager-data-level",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+method getLevel\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )VillagerData\\b",
+      "apply": {
+        "find": "\\.getLevel\\(\\)",
+        "replace": ".level()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made VillagerData a record: getLevel() is level().",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "AttributeCommands.java:4: error: cannot find symbol\n  symbol: method getLevel()\nlocation: variable x of type VillagerData\n",
+        "before": "package com.rique.zombieapocalypse.commands;\n\n        return \"Attribute tuning command status:\\n\"\n                + DifficultyManager.getScalingStatus(source.getLevel()) + \"\\n\"\n                + \"Use /za attributes keys for key groups, or /za attributes keys all for all keys.\";\n",
+        "after": "package com.rique.zombieapocalypse.commands;\n\n        return \"Attribute tuning command status:\\n\"\n                + DifficultyManager.getScalingStatus(source.level()) + \"\\n\"\n                + \"Use /za attributes keys for key groups, or /za attributes keys all for all keys.\";\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/commands/AttributeCommands.java:229"
+      }
+    },
+    {
+      "id": "villager-data-profession",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+method getProfession\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )VillagerData\\b",
+      "apply": {
+        "find": "\\.getProfession\\(\\)",
+        "replace": ".profession().value()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made VillagerData a record whose profession is a registry holder: getProfession() is profession().value(), the same VillagerProfession.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "VillagerProfessionProvider.java:4: error: cannot find symbol\n  symbol: method getProfession()\nlocation: variable x of type VillagerData\n",
+        "before": "package snownee.jade.addon.vanilla;\n\n\t\tint level = data.getLevel();\n\t\tVillagerProfession profession = data.getProfession();\n\t\tMutableComponent component = CommonProxy.getProfessionName(profession);\n",
+        "after": "package snownee.jade.addon.vanilla;\n\n\t\tint level = data.getLevel();\n\t\tVillagerProfession profession = data.profession().value();\n\t\tMutableComponent component = CommonProxy.getProfessionName(profession);\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/vanilla/VillagerProfessionProvider.java:36"
+      }
+    },
+    {
+      "id": "villager-data-type",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+method getType\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )VillagerData\\b",
+      "apply": {
+        "find": "\\.getType\\(\\)",
+        "replace": ".type().value()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made VillagerData a record whose type is a registry holder: getType() is type().value().",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "DifficultyManager.java:4: error: cannot find symbol\n  symbol: method getType()\nlocation: variable x of type VillagerData\n",
+        "before": "package com.rique.zombieapocalypse;\n\n    private static SpawnVariant resolveVariant(Mob zombie) {\n        EntityType<?> type = zombie.getType();\n        if (type == EntityType.HUSK) {\n",
+        "after": "package com.rique.zombieapocalypse;\n\n    private static SpawnVariant resolveVariant(Mob zombie) {\n        EntityType<?> type = zombie.type().value();\n        if (type == EntityType.HUSK) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/DifficultyManager.java:319"
+      }
+    },
+    {
+      "id": "villager-profession-key-differs",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incomparable types: VillagerProfession and ResourceKey<VillagerProfession>",
+      "apply": {
+        "find": "\\b(\\w+)\\s*!=\\s*VillagerProfession\\.([A-Z_]+)\\b",
+        "replace": "!BuiltInRegistries.VILLAGER_PROFESSION.wrapAsHolder($1).is(VillagerProfession.$2)",
+        "ensureImports": [
+          "net.minecraft.core.registries.BuiltInRegistries"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made the VillagerProfession constants ResourceKeys; a profession is compared with one by its registry key (!=).",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "VillagerProfessionProvider.java:4: error: incomparable types: VillagerProfession and ResourceKey<VillagerProfession>\n",
+        "before": "package snownee.jade.addon.vanilla;\n\n\t\tMutableComponent component = CommonProxy.getProfessionName(profession);\n\t\tif (profession != VillagerProfession.NONE && profession != VillagerProfession.NITWIT && level > 0 && level <= 5) {\n\t\t\tcomponent.append(LEVEL_SEPARATOR).append(Component.translatable(\"merchant.level.\" + level));\n",
+        "after": "package snownee.jade.addon.vanilla;\nimport net.minecraft.core.registries.BuiltInRegistries;\n\n\t\tMutableComponent component = CommonProxy.getProfessionName(profession);\n\t\tif (!BuiltInRegistries.VILLAGER_PROFESSION.wrapAsHolder(profession).is(VillagerProfession.NONE) && !BuiltInRegistries.VILLAGER_PROFESSION.wrapAsHolder(profession).is(VillagerProfession.NITWIT) && level > 0 && level <= 5) {\n\t\t\tcomponent.append(LEVEL_SEPARATOR).append(Component.translatable(\"merchant.level.\" + level));\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/vanilla/VillagerProfessionProvider.java:38"
+      }
+    },
+    {
+      "id": "villager-profession-key-equals",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incomparable types: VillagerProfession and ResourceKey<VillagerProfession>",
+      "apply": {
+        "find": "\\b(\\w+)\\s*==\\s*VillagerProfession\\.([A-Z_]+)\\b",
+        "replace": "BuiltInRegistries.VILLAGER_PROFESSION.wrapAsHolder($1).is(VillagerProfession.$2)",
+        "ensureImports": [
+          "net.minecraft.core.registries.BuiltInRegistries"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made the VillagerProfession constants ResourceKeys; a profession is compared with one by its registry key (==).",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "VillagerInfo.java:4: error: incomparable types: VillagerProfession and ResourceKey<VillagerProfession>\n\t\tif (profession == VillagerProfession.NITWIT) {\n\t\t               ^\n",
+        "before": "package mod;\n\n\t\tVillagerProfession profession = data.profession().value();\n\t\tif (profession == VillagerProfession.NITWIT) {\n\t\t\treturn;\n",
+        "after": "package mod;\nimport net.minecraft.core.registries.BuiltInRegistries;\n\n\t\tVillagerProfession profession = data.profession().value();\n\t\tif (BuiltInRegistries.VILLAGER_PROFESSION.wrapAsHolder(profession).is(VillagerProfession.NITWIT)) {\n\t\t\treturn;\n",
+        "from": "written for the rule: the == form of Jade's VillagerProfessionProvider comparison (its != form is villager-profession-key-differs' test)"
+      }
+    },
+    {
+      "id": "pink-petals-flower-bed",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+class PinkPetalsBlock",
+      "apply": {
+        "find": "\\bPinkPetalsBlock\\b",
+        "replace": "FlowerBedBlock"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 renamed PinkPetalsBlock to FlowerBedBlock when wildflowers joined it (Blocks.PINK_PETALS is a FlowerBedBlock).",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "BlockDetailsBodyProvider.java:17: error: cannot find symbol\n  symbol: class PinkPetalsBlock\n",
+        "before": "package snownee.jade.addon.access;\n\nimport net.minecraft.world.level.block.DecoratedPotBlock;\nimport net.minecraft.world.level.block.PinkPetalsBlock;\nimport net.minecraft.world.level.block.RedStoneWireBlock;\n",
+        "after": "package snownee.jade.addon.access;\n\nimport net.minecraft.world.level.block.DecoratedPotBlock;\nimport net.minecraft.world.level.block.FlowerBedBlock;\nimport net.minecraft.world.level.block.RedStoneWireBlock;\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/access/BlockDetailsBodyProvider.java:17"
+      }
+    },
+    {
+      "id": "saddleable-mob-import",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+class Saddleable\\n\\s*location: package net\\.minecraft\\.world\\.entity",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.world\\.entity\\.Saddleable;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 removed the Saddleable interface (a saddle is equipment now); its import goes, see saddleable-mob.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "EntityDetailsProvider.java:7: error: cannot find symbol\n  symbol: class Saddleable\nlocation: package net.minecraft.world.entity\n",
+        "before": "package snownee.jade.addon.access;\n\nimport net.minecraft.world.entity.LivingEntity;\nimport net.minecraft.world.entity.Saddleable;\nimport net.minecraft.world.entity.Shearable;\n",
+        "after": "package snownee.jade.addon.access;\n\nimport net.minecraft.world.entity.LivingEntity;\nimport net.minecraft.world.entity.Shearable;\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/access/EntityDetailsProvider.java:7"
+      }
+    },
+    {
+      "id": "saddleable-mob",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+class Saddleable",
+      "apply": {
+        "find": "\\binstanceof\\s+Saddleable\\b",
+        "replace": "instanceof net.minecraft.world.entity.Mob"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 removed the Saddleable interface: a saddle is equipment, and Mob.isSaddled() answers for any mob, so instanceof Saddleable becomes instanceof Mob.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "EntityDetailsProvider.java:57: error: cannot find symbol\n  symbol: class Saddleable\n",
+        "before": "package snownee.jade.addon.access;\n\n\t\t}\n\t\tif (entity instanceof Saddleable saddleable && saddleable.isSaddled()) {\n\t\t\tAccessibilityPlugin.replaceTitle(tooltip, \"entity.saddled\");\n",
+        "after": "package snownee.jade.addon.access;\n\n\t\t}\n\t\tif (entity instanceof net.minecraft.world.entity.Mob saddleable && saddleable.isSaddled()) {\n\t\t\tAccessibilityPlugin.replaceTitle(tooltip, \"entity.saddled\");\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/access/EntityDetailsProvider.java:57"
+      }
+    },
+    {
+      "id": "gui-pose-stack-local-2d",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "incompatible types: Matrix3x2fStack cannot be converted to PoseStack",
+      "apply": {
+        "find": "\\bPoseStack(\\s+\\w+\\s*=\\s*[\\w.()]*\\.pose\\(\\)\\s*;)",
+        "replace": "org.joml.Matrix3x2fStack$1"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 made GuiGraphics.pose() a 2D Matrix3x2fStack; a local that held it is that type now (its push, pop, translate and scale follow the gui-pose rules).",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "SpecialTextElement.java:4: error: incompatible types: Matrix3x2fStack cannot be converted to PoseStack\n",
+        "before": "package snownee.jade.impl.ui;\n\n\tpublic void render(GuiGraphics guiGraphics, float x, float y, float maxX, float maxY) {\n\t\tPoseStack matrixStack = guiGraphics.pose();\n\t\tmatrixStack.pushPose();\n",
+        "after": "package snownee.jade.impl.ui;\n\n\tpublic void render(GuiGraphics guiGraphics, float x, float y, float maxX, float maxY) {\n\t\torg.joml.Matrix3x2fStack matrixStack = guiGraphics.pose();\n\t\tmatrixStack.pushPose();\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/impl/ui/SpecialTextElement.java:28"
+      }
+    },
+    {
+      "id": "gui-pose-rotate-zp-2d",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method mulPose\\(Quaternionf\\)\\n\\s*location: class (?:org\\.joml\\.)?Matrix3x2fStack",
+      "apply": {
+        "find": "\\.mulPose\\(\\s*Axis\\.ZP\\.rotationDegrees\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)\\s*\\)",
+        "replace": ".rotate((float) Math.toRadians($1))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 made GuiGraphics.pose() a 2D Matrix3x2fStack: a turn about the screen's Z axis (Axis.ZP) is rotate(radians).",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "HomeConfigScreen.java:4: error: cannot find symbol\n  symbol: method mulPose(Quaternionf)\nlocation: class org.joml.Matrix3x2fStack\n",
+        "before": "package snownee.jade.gui;\n\n\t\t\tif (festival == 1) {\n\t\t\t\tguiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(age));\n\t\t\t}\n",
+        "after": "package snownee.jade.gui;\n\n\t\t\tif (festival == 1) {\n\t\t\t\tguiGraphics.pose().rotate((float) Math.toRadians(age));\n\t\t\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/HomeConfigScreen.java:380"
+      }
+    },
+    {
+      "id": "gui-pose-rotate-zn-2d",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method mulPose\\(Quaternionf\\)\\n\\s*location: class (?:org\\.joml\\.)?Matrix3x2fStack",
+      "apply": {
+        "find": "\\.mulPose\\(\\s*Axis\\.ZN\\.rotationDegrees\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)\\s*\\)",
+        "replace": ".rotate(-(float) Math.toRadians($1))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 made GuiGraphics.pose() a 2D Matrix3x2fStack: a turn about the screen's Z axis (Axis.ZN) is rotate(radians), the other way round.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "Spinner.java:4: error: cannot find symbol\n\t\tguiGraphics.pose().mulPose(Axis.ZN.rotationDegrees(age));\n\t\t                  ^\n  symbol:   method mulPose(Quaternionf)\n  location: class Matrix3x2fStack\n",
+        "before": "package mod;\n\n\t\tguiGraphics.pose().pushMatrix();\n\t\tguiGraphics.pose().mulPose(Axis.ZN.rotationDegrees(age));\n\t\tguiGraphics.pose().popMatrix();\n",
+        "after": "package mod;\n\n\t\tguiGraphics.pose().pushMatrix();\n\t\tguiGraphics.pose().rotate(-(float) Math.toRadians(age));\n\t\tguiGraphics.pose().popMatrix();\n",
+        "from": "written for the rule: the Axis.ZN form of Jade's HomeConfigScreen spinner (its Axis.ZP form is gui-pose-rotate-zp-2d's test)"
+      }
+    },
+    {
+      "id": "gui-fill-z-dropped",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "no suitable method found for fill\\(int,int,int,int,int,int\\)",
+      "apply": {
+        "find": "\\.fill\\((?!\\s*(?:RenderType|RenderPipelines))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".fill($1,$2,$3,$4,$6)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6 removed GuiGraphics.fill(x0, y0, x1, y1, z, colour): GUI layers are ordered by draw order and strata, so the z goes and the rectangle and colour stay.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "PreviewOptionsScreen.java:4: error: no suitable method found for fill(int,int,int,int,int,int)\n",
+        "before": "package snownee.jade.gui;\n\n\t\t\tsuper.render(guiGraphics, Integer.MAX_VALUE, Integer.MAX_VALUE, partialTicks);\n\t\t\tguiGraphics.fill(0, 0, width, height, 50, 0x80AAAAAA);\n\t\t\tguiGraphics.pose().pushPose();\n",
+        "after": "package snownee.jade.gui;\n\n\t\t\tsuper.render(guiGraphics, Integer.MAX_VALUE, Integer.MAX_VALUE, partialTicks);\n\t\t\tguiGraphics.fill(0, 0, width, height, 0x80AAAAAA);\n\t\t\tguiGraphics.pose().pushPose();\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/PreviewOptionsScreen.java:187"
+      }
+    },
+    {
+      "id": "profiler-get",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method getProfiler\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )(?:Minecraft|Level|ClientLevel|ServerLevel|MinecraftServer)\\b",
+      "apply": {
+        "find": "\\b(?:\\w+\\.)*(?:\\w+\\(\\)\\.)?getProfiler\\(\\)",
+        "replace": "net.minecraft.util.profiling.Profiler.get()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 removed getProfiler() from the game, levels and the server; the profiler of the current thread is Profiler.get().",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "OverlayRenderer.java:4: error: cannot find symbol\n  symbol: method getProfiler()\nlocation: variable x of type Minecraft\n",
+        "before": "package snownee.jade.overlay;\n\n\n\t\tMinecraft.getInstance().getProfiler().push(\"Jade Overlay\");\n\t\trenderOverlay(root, guiGraphics);\n",
+        "after": "package snownee.jade.overlay;\n\n\n\t\tnet.minecraft.util.profiling.Profiler.get().push(\"Jade Overlay\");\n\t\trenderOverlay(root, guiGraphics);\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/overlay/OverlayRenderer.java:163"
+      }
+    },
+    {
+      "id": "inventory-menu-block-atlas",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+variable BLOCK_ATLAS\\n\\s*location: class InventoryMenu",
+      "apply": {
+        "literal": "InventoryMenu.BLOCK_ATLAS",
+        "replace": "TextureAtlas.LOCATION_BLOCKS",
+        "ensureImports": [
+          "net.minecraft.client.renderer.texture.TextureAtlas"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.4 removed InventoryMenu.BLOCK_ATLAS; the block atlas is TextureAtlas.LOCATION_BLOCKS, the same textures/atlas/blocks.png.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "DisplayHelper.java:278: error: cannot find symbol\n  symbol: variable BLOCK_ATLAS\nlocation: class InventoryMenu\n",
+        "before": "package snownee.jade.overlay;\n\n\t\t}\n\t\tRenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);\n\t\tRenderSystem.setShader(GameRenderer::getPositionTexShader);\n",
+        "after": "package snownee.jade.overlay;\nimport net.minecraft.client.renderer.texture.TextureAtlas;\n\n\t\t}\n\t\tRenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);\n\t\tRenderSystem.setShader(GameRenderer::getPositionTexShader);\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/overlay/DisplayHelper.java:278"
+      }
+    },
+    {
+      "id": "registry-get-holder",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method getHolder\\((?:int|ResourceKey<[^)]*>|ResourceLocation)\\)",
+      "apply": {
+        "find": "\\.getHolder\\(",
+        "replace": ".get("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 renamed Registry.getHolder(id) to get(id), the same Optional holder.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "CommonProxy.java:4: error: cannot find symbol\n  symbol: method getHolder(int)\n",
+        "before": "package snownee.jade.util;\n\n\t\tint id = BuiltInRegistries.FLUID.getId(fluid.getType());\n\t\tOptional<Holder.Reference<Fluid>> holder = BuiltInRegistries.FLUID.getHolder(id);\n\t\tif (holder.isEmpty()) {\n",
+        "after": "package snownee.jade.util;\n\n\t\tint id = BuiltInRegistries.FLUID.getId(fluid.getType());\n\t\tOptional<Holder.Reference<Fluid>> holder = BuiltInRegistries.FLUID.get(id);\n\t\tif (holder.isEmpty()) {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/util/CommonProxy.java:476"
+      }
+    },
+    {
+      "id": "tags-updated-lookup-provider",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "loader": "neoforge",
+      "match": "symbol:\\s+method getRegistryAccess\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )TagsUpdatedEvent\\b",
+      "apply": {
+        "find": "\\.getRegistryAccess\\(\\)",
+        "replace": ".getLookupProvider()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "NeoForge 21.2 gave TagsUpdatedEvent a HolderLookup.Provider, getLookupProvider(), in place of getRegistryAccess().",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "CommonProxy.java:4: error: cannot find symbol\n  symbol: method getRegistryAccess()\nlocation: variable x of type TagsUpdatedEvent\n",
+        "before": "package snownee.jade.util;\n\n\t\tNeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> listener.accept(\n\t\t\t\tevent.getRegistryAccess(),\n\t\t\t\tevent.getUpdateCause() == TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED));\n",
+        "after": "package snownee.jade.util;\n\n\t\tNeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> listener.accept(\n\t\t\t\tevent.getLookupProvider(),\n\t\t\t\tevent.getUpdateCause() == TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED));\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/util/CommonProxy.java:581"
+      }
+    },
+    {
+      "id": "entity-picked-result",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "loader": "neoforge",
+      "match": "symbol:\\s+method getPickedResult\\(\\w*HitResult\\)",
+      "apply": {
+        "find": "\\.getPickedResult\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".getPickResult()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "NeoForge 21.4 removed IEntityExtension.getPickedResult(hit); the game's Entity.getPickResult() is the item a pick gives.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "CommonProxy.java:4: error: cannot find symbol\n  symbol: method getPickedResult(HitResult)\n",
+        "before": "package snownee.jade.util;\n\n\tpublic static ItemStack getEntityPickedResult(Entity entity, Player player, EntityHitResult hitResult) {\n\t\treturn MoreObjects.firstNonNull(entity.getPickedResult(hitResult), ItemStack.EMPTY);\n\t}\n",
+        "after": "package snownee.jade.util;\n\n\tpublic static ItemStack getEntityPickedResult(Entity entity, Player player, EntityHitResult hitResult) {\n\t\treturn MoreObjects.firstNonNull(entity.getPickResult(), ItemStack.EMPTY);\n\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/util/CommonProxy.java:467"
+      }
+    },
+    {
+      "id": "block-clone-item-stack-neoforge",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "loader": "neoforge",
+      "match": "incompatible types: \\w*HitResult cannot be converted to BlockPos",
+      "apply": {
+        "find": "\\.getCloneItemStack\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".getCloneItemStack($3,$2, false,$4)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "NeoForge 21.4 changed IBlockStateExtension.getCloneItemStack(hit, level, pos, player) to (pos, level, includeData, player). The old call gave the plain item (block entity data was added by the client separately), so includeData is false.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "CommonProxy.java:4: error: incompatible types: HitResult cannot be converted to BlockPos\n",
+        "before": "package snownee.jade.util;\n\n\tpublic static ItemStack getBlockPickedResult(BlockState state, Player player, BlockHitResult hitResult) {\n\t\treturn state.getCloneItemStack(hitResult, player.level(), hitResult.getBlockPos(), player);\n\t}\n",
+        "after": "package snownee.jade.util;\n\n\tpublic static ItemStack getBlockPickedResult(BlockState state, Player player, BlockHitResult hitResult) {\n\t\treturn state.getCloneItemStack( hitResult.getBlockPos(), player.level(), false, player);\n\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/util/CommonProxy.java:463"
+      }
+    },
+    {
+      "id": "narrator-say-volume",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "method say in interface Narrator cannot be applied to given types",
+      "apply": {
+        "find": "\\b(\\w+)\\.say\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "$1.say($2,$3, net.minecraft.client.Minecraft.getInstance().options.getSoundSourceVolume(net.minecraft.sounds.SoundSource.VOICE) * net.minecraft.client.Minecraft.getInstance().options.getSoundSourceVolume(net.minecraft.sounds.SoundSource.MASTER))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Mojang's text2speech 1.18 gave Narrator.say a volume; the game's own narrator passes the voice volume times the master volume, so this does too.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "WailaTickHandler.java:4: error: method say in interface Narrator cannot be applied to given types\n",
+        "before": "package snownee.jade.overlay;\n\n\t\t\tnarrator.clear();\n\t\t\tnarrator.say(StringUtil.stripColor(narration), false);\n\t\t});\n",
+        "after": "package snownee.jade.overlay;\n\n\t\t\tnarrator.clear();\n\t\t\tnarrator.say(StringUtil.stripColor(narration), false, net.minecraft.client.Minecraft.getInstance().options.getSoundSourceVolume(net.minecraft.sounds.SoundSource.VOICE) * net.minecraft.client.Minecraft.getInstance().options.getSoundSourceVolume(net.minecraft.sounds.SoundSource.MASTER));\n\t\t});\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/overlay/WailaTickHandler.java:73"
+      }
+    },
+    {
+      "id": "fastutil-get-int-or",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method getIntOr\\(",
+      "apply": {
+        "find": "\\.getIntOr\\(",
+        "replace": ".getOrDefault("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "The game's fastutil has no getIntOr on its int maps; getOrDefault(key, default) gives the same value or the default.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "PriorityStore.java:4: error: cannot find symbol\n\t\treturn priorities.getIntOr(id, 0);\n\t\t                 ^\n  symbol:   method getIntOr(K,int)\n  location: variable priorities of type Object2IntMap<K>\n",
+        "before": "package snownee.jade.impl;\n\n\tpublic int byId(K id) {\n\t\treturn priorities.getIntOr(id, 0);\n\t}\n",
+        "after": "package snownee.jade.impl;\n\n\tpublic int byId(K id) {\n\t\treturn priorities.getOrDefault(id, 0);\n\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/impl/PriorityStore.java:115 (the lines either side of it)"
+      }
+    },
+    {
+      "id": "compound-tag-key-set",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+method getAllKeys\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )(?:@[\\w.]+ )?CompoundTag\\b",
+      "apply": {
+        "find": "\\.getAllKeys\\(\\)",
+        "replace": ".keySet()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 renamed CompoundTag.getAllKeys() to keySet(), the same live set of keys.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "ItemCollector.java:4: error: cannot find symbol\n  symbol: method getAllKeys()\nlocation: variable x of type @x CompoundTag\n",
+        "before": "package snownee.jade.addon.universal;\n\n\t\t\tCompoundTag tag = customData.getUnsafe();\n\t\t\tfor (String key : tag.getAllKeys()) {\n\t\t\t\tif (key.toLowerCase(Locale.ENGLISH).endsWith(\"clear\") && tag.getBoolean(key)) {\n",
+        "after": "package snownee.jade.addon.universal;\n\n\t\t\tCompoundTag tag = customData.getUnsafe();\n\t\t\tfor (String key : tag.keySet()) {\n\t\t\t\tif (key.toLowerCase(Locale.ENGLISH).endsWith(\"clear\") && tag.getBoolean(key)) {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/universal/ItemCollector.java:29"
+      }
+    },
+    {
+      "id": "selection-list-max-position",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+method getMaxPosition\\(\\)",
+      "apply": {
+        "find": "\\b((?:\\w+\\.)*)getMaxPosition\\(\\)",
+        "replace": "($1contentHeight() - 4)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.4 replaced AbstractSelectionList.getMaxPosition() (rows times row height plus header) with contentHeight(), which adds the 4-pixel bottom margin maxScrollAmount() used to add; taking 4 off keeps the old number.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "OptionsList.java:4: error: cannot find symbol\n  symbol: method getMaxPosition()\n",
+        "before": "package snownee.jade.gui.config;\n\n\t\t\tint k = this.getScrollbarPosition();\n\t\t\tint l = (int) ((float) (this.height * this.height) / (float) this.getMaxPosition());\n\t\t\tl = Mth.clamp(l, 32, this.height - 8);\n",
+        "after": "package snownee.jade.gui.config;\n\n\t\t\tint k = this.getScrollbarPosition();\n\t\t\tint l = (int) ((float) (this.height * this.height) / (float) (this.contentHeight() - 4));\n\t\t\tl = Mth.clamp(l, 32, this.height - 8);\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsList.java:202"
+      }
+    },
+    {
+      "id": "json-reload-listener-element",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "is not abstract and does not override abstract method apply\\(Object,ResourceManager,ProfilerFiller\\) in SimplePreparableReloadListener",
+      "apply": {
+        "find": "\\bextends\\s+SimpleJsonResourceReloadListener\\b(?!\\s*<)",
+        "replace": "extends SimpleJsonResourceReloadListener<com.google.gson.JsonElement>"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 made SimpleJsonResourceReloadListener generic over what it decodes each file to; a listener that read raw JSON decodes to JsonElement, so its apply(Map<ResourceLocation, JsonElement>, ...) is unchanged.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "ThemeHelper.java:42: error: is not abstract and does not override abstract method apply(Object,ResourceManager,ProfilerFiller) in SimplePreparableReloadListener\n",
+        "before": "package snownee.jade.impl.theme;\n\n\npublic class ThemeHelper extends SimpleJsonResourceReloadListener implements IThemeHelper {\n\tpublic static final ThemeHelper INSTANCE = new ThemeHelper();\n",
+        "after": "package snownee.jade.impl.theme;\n\n\npublic class ThemeHelper extends SimpleJsonResourceReloadListener<com.google.gson.JsonElement> implements IThemeHelper {\n\tpublic static final ThemeHelper INSTANCE = new ThemeHelper();\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/impl/theme/ThemeHelper.java:42"
+      }
+    },
+    {
+      "id": "json-reload-listener-codec",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "incompatible types: Gson cannot be converted to Codec",
+      "apply": {
+        "find": "\\bsuper\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),\\s*(\\\"[^\\\"]*\\\")\\s*\\)",
+        "replace": "super(net.minecraft.util.ExtraCodecs.JSON, net.minecraft.resources.FileToIdConverter.json($2))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 builds SimpleJsonResourceReloadListener from a codec and a FileToIdConverter instead of a Gson and a folder: ExtraCodecs.JSON keeps each file as the JsonElement the Gson parsed, and FileToIdConverter.json(folder) lists the same *.json files.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "ThemeHelper.java:4: error: incompatible types: Gson cannot be converted to Codec\n",
+        "before": "package snownee.jade.impl.theme;\n\n\tpublic ThemeHelper() {\n\t\tsuper(JsonConfig.GSON, \"jade_themes\");\n\t}\n",
+        "after": "package snownee.jade.impl.theme;\n\n\tpublic ThemeHelper() {\n\t\tsuper(net.minecraft.util.ExtraCodecs.JSON, net.minecraft.resources.FileToIdConverter.json(\"jade_themes\"));\n\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/impl/theme/ThemeHelper.java:53"
+      }
+    },
+    {
+      "id": "resource-location-gson-adapter",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "symbol:\\s+class Serializer\\n\\s*location: class ResourceLocation",
+      "apply": {
+        "literal": "new ResourceLocation.Serializer()",
+        "replace": "new com.google.gson.TypeAdapter<ResourceLocation>() {\n\t\t\t\t@Override\n\t\t\t\tpublic void write(com.google.gson.stream.JsonWriter out, ResourceLocation value) throws java.io.IOException {\n\t\t\t\t\tout.value(value.toString());\n\t\t\t\t}\n\n\t\t\t\t@Override\n\t\t\t\tpublic ResourceLocation read(com.google.gson.stream.JsonReader in) throws java.io.IOException {\n\t\t\t\t\treturn ResourceLocation.parse(in.nextString());\n\t\t\t\t}\n\t\t\t}.nullSafe()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 removed ResourceLocation.Serializer, the Gson adapter that wrote an id as its string and parsed it back; a TypeAdapter does the same both ways.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "JsonConfig.java:28: error: cannot find symbol\n  symbol: class Serializer\nlocation: class ResourceLocation\n",
+        "before": "package snownee.jade.util;\n\n\t\t\t.enableComplexMapKeySerialization()\n\t\t\t.registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())\n\t\t\t.setLenient()\n",
+        "after": "package snownee.jade.util;\n\n\t\t\t.enableComplexMapKeySerialization()\n\t\t\t.registerTypeAdapter(ResourceLocation.class, new com.google.gson.TypeAdapter<ResourceLocation>() {\n\t\t\t\t@Override\n\t\t\t\tpublic void write(com.google.gson.stream.JsonWriter out, ResourceLocation value) throws java.io.IOException {\n\t\t\t\t\tout.value(value.toString());\n\t\t\t\t}\n\n\t\t\t\t@Override\n\t\t\t\tpublic ResourceLocation read(com.google.gson.stream.JsonReader in) throws java.io.IOException {\n\t\t\t\t\treturn ResourceLocation.parse(in.nextString());\n\t\t\t\t}\n\t\t\t}.nullSafe())\n\t\t\t.setLenient()\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/util/JsonConfig.java:28"
+      }
+    },
+    {
+      "id": "custom-model-data-empty",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+variable DEFAULT\\n\\s*location: class CustomModelData",
+      "apply": {
+        "find": "\\bCustomModelData\\.DEFAULT\\b",
+        "replace": "CustomModelData.EMPTY"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.4 turned CustomModelData into lists of floats, flags, strings and colours; the 'none' value is EMPTY.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "CommonProxy.java:261: error: cannot find symbol\n  symbol: variable DEFAULT\nlocation: class CustomModelData\n",
+        "before": "package snownee.jade.util;\n\n\t\tif (isPhysicallyClient()) {\n\t\t\tCustomModelData modelData = stack.getOrDefault(DataComponents.CUSTOM_MODEL_DATA, CustomModelData.DEFAULT);\n\t\t\tif (!CustomModelData.DEFAULT.equals(modelData)) {\n",
+        "after": "package snownee.jade.util;\n\n\t\tif (isPhysicallyClient()) {\n\t\t\tCustomModelData modelData = stack.getOrDefault(DataComponents.CUSTOM_MODEL_DATA, CustomModelData.EMPTY);\n\t\t\tif (!CustomModelData.EMPTY.equals(modelData)) {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/util/CommonProxy.java:261"
+      }
+    },
+    {
+      "id": "custom-model-data-first-float",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+method value\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )CustomModelData\\b",
+      "apply": {
+        "find": "\\b(\\w+)\\.value\\(\\)",
+        "replace": "((int) (float) java.util.Objects.requireNonNullElse($1.getFloat(0), 0.0F))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.4 turned CustomModelData's single int into lists; an old /give with custom_model_data N becomes the first float, so value() reads floats[0] (0 when absent).",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "test": {
+        "error": "DifficultyManager.java:4: error: cannot find symbol\n  symbol: method value()\nlocation: variable x of type CustomModelData\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        value = Math.max(minValue, Math.min(maxValue, value));\n        value = attribute.value().sanitizeValue(value);\n        instance.setBaseValue(value);\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        value = Math.max(minValue, Math.min(maxValue, value));\n        value = ((int) (float) java.util.Objects.requireNonNullElse(attribute.getFloat(0), 0.0F)).sanitizeValue(value);\n        instance.setBaseValue(value);\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/DifficultyManager.java:310"
+      }
+    },
+    {
+      "id": "selection-list-max-scroll",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+method getMaxScroll\\(\\)",
+      "apply": {
+        "find": "\\.getMaxScroll\\(\\)",
+        "replace": ".maxScrollAmount()"
+      },
+      "scope": "line",
+      "when": "\\bextends\\s+\\w*(?:SelectionList|ScrollArea)\\b",
+      "note": "1.21.4 moved the scroll limit of AbstractSelectionList into AbstractScrollArea as maxScrollAmount() (the game-derived map records getMaxScroll -> maxScrollAmount); it is the same number, the content height above the visible height. For calls javac reports without a location the typed fixer cannot place.",
+      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm) and the game-derived route map have the replacement",
+      "test": {
+        "error": "OptionsList.java:5: error: cannot find symbol\n  symbol: method getMaxScroll()\n",
+        "before": "package snownee.jade.gui.config;\n\npublic class OptionsList extends ContainerObjectSelectionList<OptionsList.Entry> {\n\t\t\tl = Mth.clamp(l, 32, this.height - 8);\n\t\t\tint m = (int) this.getScrollAmount() * (this.height - l) / this.getMaxScroll() + this.getY();\n\t\t\tif (m < this.getY()) {\n",
+        "after": "package snownee.jade.gui.config;\n\npublic class OptionsList extends ContainerObjectSelectionList<OptionsList.Entry> {\n\t\t\tl = Mth.clamp(l, 32, this.height - 8);\n\t\t\tint m = (int) this.getScrollAmount() * (this.height - l) / this.maxScrollAmount() + this.getY();\n\t\t\tif (m < this.getY()) {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsList.java:204"
       }
     }
   ]
