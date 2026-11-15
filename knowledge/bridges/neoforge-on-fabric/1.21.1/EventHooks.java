@@ -7,18 +7,20 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.GameRules;
 
 /**
  * NeoForge 21.1's net.neoforged.neoforge.event.EventHooks: the static methods NeoForge's patches call to post its events,
@@ -126,5 +128,31 @@ public final class EventHooks {
     /** Posts LivingConversionEvent.Post once an entity has become another. */
     public static void onLivingConvert(LivingEntity entity, LivingEntity outcome) {
         Bus.INSTANCE.post(new LivingConversionEvent.Post(entity, outcome));
+    }
+
+    // ---- player interaction, block and lifecycle hooks ----
+
+    /** Posts LivingEntityUseItemEvent.Start; the use duration it leaves, or -1 when it was cancelled. */
+    public static int onItemUseStart(LivingEntity entity, ItemStack item, InteractionHand hand, int duration) {
+        LivingEntityUseItemEvent.Start event = new LivingEntityUseItemEvent.Start(entity, item, hand, duration);
+        return Bus.INSTANCE.post(event).isCanceled() ? -1 : event.getDuration();
+    }
+
+    /** Posts LivingEntityUseItemEvent.Tick; the duration left it leaves, or -1 when it was cancelled. */
+    public static int onItemUseTick(LivingEntity entity, ItemStack item, int duration) {
+        LivingEntityUseItemEvent.Tick event = new LivingEntityUseItemEvent.Tick(entity, item, duration);
+        return Bus.INSTANCE.post(event).isCanceled() ? -1 : event.getDuration();
+    }
+
+    /** Posts LivingEntityUseItemEvent.Stop; true when it was cancelled (the item is not released). */
+    public static boolean onUseItemStop(LivingEntity entity, ItemStack item, int duration) {
+        return Bus.INSTANCE.post(new LivingEntityUseItemEvent.Stop(entity, item, duration)).isCanceled();
+    }
+
+    /** Posts LivingEntityUseItemEvent.Finish; the result stack it leaves. */
+    public static ItemStack onItemUseFinish(LivingEntity entity, ItemStack item, int duration, ItemStack result) {
+        LivingEntityUseItemEvent.Finish event = new LivingEntityUseItemEvent.Finish(entity, item, duration, result);
+        Bus.INSTANCE.post(event);
+        return event.getResultStack();
     }
 }
