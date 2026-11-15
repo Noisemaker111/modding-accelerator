@@ -563,6 +563,16 @@ public final class PackCheckTest {
             "note".equals(Json.object(stopped.get(0)).get("severity")),
             "a probe that stopped before placing is a note that placement went unchecked: " + stopped
         );
+        // SodiumPlus (Quilt 1.20.1, the pack sweep): QFAPI accepts Minecraft {"all": [">=1.20-", "<1.20.2-"]}, which 1.20.1 satisfies.
+        List<String> allOf = PackMods.quiltRanges(Map.of("all", List.of(">=1.20-", "<1.20.2-")));
+        PackMods.Dependency qfapi = new PackMods.Dependency("qfapi", "minecraft", allOf, "quilt.mod.json", "required");
+        expect(
+            allOf.equals(List.of(">=1.20- <1.20.2-")) &&
+            PackMods.accepts(qfapi, "1.20.1") &&
+            !PackMods.accepts(qfapi, "1.20.2") &&
+            PackMods.quiltRanges(Map.of("any", List.of("1.20", "1.20.1"))).equals(List.of("1.20", "1.20.1")),
+            "a Quilt range object: all of its constraints, or any of its alternatives: " + allOf
+        );
         // And on Vanilla Perfected 1.0.0+1.21.1 (an independent check): an exact citresewn 1.2.1+1.21, and YACL >=3.5.0+1.21-fabric.
         PackMods.Dependency cit = new PackMods.Dependency("cit-addon", "citresewn", List.of("1.2.1+1.21"), "fabric.mod.json", "depends");
         PackMods.Dependency yacl = new PackMods.Dependency("some-mod", "yet_another_config_lib_v3", List.of(">=3.5.0+1.21-fabric"), "fabric.mod.json", "depends");
