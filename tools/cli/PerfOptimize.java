@@ -556,8 +556,9 @@ final class PerfOptimize {
     Map<String, Object> modaccel(Path tree, String name, List<String> args, int timeout) throws Exception {
         // The child writes its JSON in UTF-8, as it is read below: redirected to a file, Java would use the
         // platform's code page (Cp1252 on Windows), where a pattern's "·" or a non-ASCII path breaks the read.
+        String classes = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
         List<String> command = new ArrayList<>(List.of(ProcessHandle.current().info().command().orElse("java"),
-            "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dmodaccel.home=" + home, "-cp", Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(), "Modaccel"));
+            "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dmodaccel.home=" + home, "-cp", classes, "Modaccel"));
         command.add(args.get(0));
         // perf selects its game by --attach; every other step works on the arm's checkout.
         if (!args.contains("--attach")) {
