@@ -99,10 +99,14 @@ def load_corpus(only=None):
 
 
 # ---- running ------------------------------------------------------------------------------------
+# A cold NeoForge setup of a new game version can pass modaccel's 900 s per-step limit on a busy shared machine.
+ENV = dict(os.environ, MODACCEL_GRADLE_TIMEOUT=os.environ.get("MODACCEL_GRADLE_TIMEOUT", "3600"))
+
+
 def sh(cmd, cwd=None, timeout=None):
     """Run a command; never raises on exit code. A timeout kills the whole tree."""
     p = subprocess.Popen([str(c) for c in cmd], cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         start_new_session=not WINDOWS)
+                         start_new_session=not WINDOWS, env=ENV)
     try:
         out, err = p.communicate(timeout=timeout)
         return p.returncode, out.decode("utf-8", "replace"), err.decode("utf-8", "replace")
