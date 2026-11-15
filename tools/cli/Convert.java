@@ -70,9 +70,6 @@ final class Convert {
                 continue;
             }
             targets.computeIfAbsent(kind + "|" + key, k -> new LinkedHashSet<>()).add(access);
-            // Fabric makes the owner of an accessible member accessible too (a method of a private nested class can
-            // then be called); a transformer line opens only what it names, so the owner gets its own line.
-            if (!kind.equals("class") && access.equals("accessible")) targets.computeIfAbsent("class|" + owner, k -> new LinkedHashSet<>()).add("accessible");
         }
         List<String> out = new ArrayList<>();
         for (var entry : targets.entrySet()) {
@@ -85,6 +82,28 @@ final class Convert {
                 default -> "public" + (a.contains("mutable") ? "-f" : "");
             };
             out.add(modifier + " " + target);
+        }
+        return out;
+    }
+
+    /**
+     * Fabric makes the owner of an accessible member accessible too (a method of a private nested class can then be
+     * called); a transformer line opens only what it names, so each public member line's owner gets its own class line.
+     * An anonymous class (Owner$1) has no declaration a transformer can open, so it gets none.
+     */
+    static List<String> withOwners(List<String> lines) {
+        List<String> out = new ArrayList<>(lines);
+        Set<String> classes = new HashSet<>();
+        for (String line : lines) {
+            String[] t = line.split("\\s+");
+            if (t.length == 2) classes.add(t[1]);
+        }
+        for (String line : lines) {
+            String[] t = line.split("\\s+");
+            if (t.length < 3 || !t[0].startsWith("public")) continue;
+            String owner = t[1];
+            if (owner.substring(owner.lastIndexOf('$') + 1).matches("\\d+") || !classes.add(owner)) continue;
+            out.add("public " + owner);
         }
         return out;
     }
@@ -746,7 +765,7 @@ final class Convert {
                     String[] t = line.split("\\s+");
                     return t.length >= 3 && opened.contains(t[1] + " " + t[2]);
                 });
-                accessTransformers.addAll(lines);
+                accessTransformers.addAll(withOwners(lines));
                 for (String u : unconverted) leave(path, 0, u, "an access widener entry with no access transformer counterpart");
                 delete(path);
                 widenerConverted = true;
@@ -1049,7 +1068,7 @@ final class Convert {
             Set<String> names = new HashSet<>();
             for (String file : javaFiles()) for (Matcher w = Pattern.compile("\\b[A-Za-z_]\\w*\\b").matcher(read(file)); w.find(); ) names.add(w.group());
             String kept = transitiveEntries(widener, names);
-            List<String> lines = widenerToTransformer(kept, true, new ArrayList<>());
+            List<String> lines = withOwners(widenerToTransformer(kept, true, new ArrayList<>()));
             int added = 0;
             for (String line : lines) if (!accessTransformers.contains(line)) {
                 accessTransformers.add(line);
@@ -2604,6 +2623,8 @@ final class Convert {
             int paren = t[2].indexOf('(');
             String member = paren < 0 ? t[2] : t[2].substring(0, paren);
             String owner = t[1].substring(Math.max(t[1].lastIndexOf('.'), t[1].lastIndexOf('$')) + 1);
+            // An anonymous class (HolderSet$1) is never named in code: its number would match any 1 in the source.
+            if (owner.matches("\\d+")) continue;
             boolean named = Pattern.compile("(?<![\\w$])" + Pattern.quote(owner) + "(?![\\w$])").matcher(code).find();
             boolean used;
             if (member.equals("<init>")) used = Pattern.compile("\\bnew\\s+(?:[\\w.]+\\.)?" + Pattern.quote(owner) + "\\s*[(<]").matcher(code).find();

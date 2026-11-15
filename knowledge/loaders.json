@@ -1106,6 +1106,35 @@
     "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { ItemStack a(BlockHitResult hit, BlockState state, Player player) { return IBlockStateExtension.getCloneItemStack(state, hit.getBlockPos(), player.level(), true, player); } }",
     "neoforge": "class A { ItemStack a(BlockHitResult hit, BlockState state, Player player) { return state.getCloneItemStack(hit.getBlockPos(), player.level(), true, player); } }"
    }
+  },
+  {
+   "id": "neoforge-fluid-model-tint",
+   "about": "NeoForge replaces the game's FluidModel tint source with its FluidTintSource (fluidTintSource()); on Fabric the FluidModel keeps the game's BlockTintSource (tintSource()), which the NeoForge bridge's FluidTintSources.of reads as a fluid tint source exactly as NeoForge's deprecated constructor does (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.2"
+   },
+   "fabric": "FluidTintSources.of($model.tintSource())",
+   "neoforge": "$model.fluidTintSource()",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.client.fluid.FluidTintSources"
+    ],
+    "neoforge": [
+     "net.minecraft.client.renderer.block.FluidModel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.client.renderer.block.FluidModel#tintSource"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#of"
+    ]
+   },
+   "test": {
+    "fabric": "import net.minecraft.client.renderer.block.FluidModel;\nimport net.neoforged.neoforge.client.fluid.FluidTintSources;\nclass A { int c(FluidModel model, FluidStack stack) {\n    return FluidTintSources.of(model.tintSource()).colorAsStack(stack);\n} }",
+    "neoforge": "import net.minecraft.client.renderer.block.FluidModel;\nclass A { int c(FluidModel model, FluidStack stack) {\n    return model.fluidTintSource().colorAsStack(stack);\n} }"
+   }
   }
  ],
  "types": [
@@ -2281,7 +2310,9 @@
     "net.neoforged.neoforge.client.gui.widget.ExtendedButton": "ExtendedButton",
     "net.neoforged.neoforgespi.language.IModInfo": "IModInfo",
     "net.neoforged.neoforge.common.extensions.IBlockExtension": "IBlockExtension",
-    "net.neoforged.fml.Logging": "Logging"
+    "net.neoforged.fml.Logging": "Logging",
+    "net.neoforged.neoforge.client.fluid.FluidTintSource": "FluidTintSource",
+    "net.neoforged.neoforge.client.fluid.FluidTintSources": "FluidTintSources"
    },
    "symbols": {
     "neoforge": [
@@ -3201,7 +3232,12 @@
      "neoforge|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
      "fml|net.neoforged.fml.Logging#CORE",
      "fml|net.neoforged.fml.Logging#LOADING",
-     "fml|net.neoforged.fml.Logging#SCAN"
+     "fml|net.neoforged.fml.Logging#SCAN",
+     "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#color",
+     "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#colorAsStack",
+     "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#colorInWorld",
+     "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#of",
+     "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#constant"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -3552,7 +3588,10 @@
      "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getDescription",
      "fabric-loader|net.fabricmc.loader.api.FabricLoader#getModContainer",
      "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#getCloneItemStack",
-     "minecraft|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops"
+     "minecraft|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops",
+     "minecraft|net.minecraft.client.color.block.BlockTintSource#colorInWorld",
+     "minecraft|net.minecraft.client.color.block.BlockTintSource#colorAsTerrainParticle",
+     "minecraft|net.minecraft.client.renderer.block.FluidModel#tintSource"
     ]
    },
    "test": {
@@ -4122,7 +4161,9 @@
       "common/",
       "mixin/LevelCapabilitiesMixin.java",
       "mixin/EntityCapabilitiesMixin.java",
-      "mixin/ItemStackCapabilitiesMixin.java"
+      "mixin/ItemStackCapabilitiesMixin.java",
+      "FluidTintSource.java",
+      "FluidTintSources.java"
      ],
      "mixins": [
       {
@@ -4379,7 +4420,11 @@
        "minecraft-26.2|net.minecraft.world.entity.monster.EnderMan$EndermanLeaveBlockGoal#canPlaceBlock",
        "minecraft-26.2|net.minecraft.world.entity.monster.EnderMan$EndermanLeaveBlockGoal#enderman"
       ]
-     }
+     },
+     "drops": [
+      "FluidTintSource.java",
+      "FluidTintSources.java"
+     ]
     }
    ],
    "tests": [

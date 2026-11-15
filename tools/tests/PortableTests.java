@@ -1088,18 +1088,36 @@ public final class PortableTests {
                     "public net.minecraft.A$B",
                     "public-f net.minecraft.C",
                     "public-f net.minecraft.D run(I)V",
-                    "public net.minecraft.D",
                     "public-f net.minecraft.E size",
-                    "public net.minecraft.E",
-                    "public net.minecraft.F <init>()V",
-                    "public net.minecraft.F"
+                    "public net.minecraft.F <init>()V"
                 )
             ) &&
             unconverted.equals(List.of("inject-interface net/minecraft/G demo/Extra")),
-            "a Fabric access widener becomes NeoForge access transformer lines, entries for one target merged, the owner of an accessible member opened too: " +
+            "a Fabric access widener becomes NeoForge access transformer lines, entries for one target merged: " +
             transformers +
             " " +
             unconverted
+        );
+        // Found by the convert sweep (Jade, then The One Probe back from Fabric): an accessible member's owner is opened as
+        // Fabric opens it, but never an anonymous class (HolderSet$1), which NeoForge's transformer tool cannot open.
+        List<String> owned = Convert.withOwners(List.of(
+            "public net.minecraft.client.gui.GuiGraphicsExtractor$ScissorStack peek()Lnet/minecraft/client/gui/navigation/ScreenRectangle;",
+            "public-f net.minecraft.E size",
+            "public net.minecraft.core.HolderSet$1 contents()Ljava/util/List;",
+            "public net.minecraft.F",
+            "public net.minecraft.F <init>()V"
+        ));
+        check(
+            owned.equals(List.of(
+                "public net.minecraft.client.gui.GuiGraphicsExtractor$ScissorStack peek()Lnet/minecraft/client/gui/navigation/ScreenRectangle;",
+                "public-f net.minecraft.E size",
+                "public net.minecraft.core.HolderSet$1 contents()Ljava/util/List;",
+                "public net.minecraft.F",
+                "public net.minecraft.F <init>()V",
+                "public net.minecraft.client.gui.GuiGraphicsExtractor$ScissorStack",
+                "public net.minecraft.E"
+            )),
+            "an accessible member's owner gets its own transformer line, once, and an anonymous class none: " + owned
         );
         // Found by the convert sweep (Jade): Fabric API widens ItemDisplay.getItemStack for every Fabric mod; on NeoForge the
         // mod's transformer opens the entries its code names (member and owner), and no others.

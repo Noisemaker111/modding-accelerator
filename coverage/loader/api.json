@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "dd9d3da1f8d963423f615a8df4510746a91435132fee4b549ee0ef382f29e56a",
+ "rules_sha256": "65a8900fb5a2f6de67bcd19717bad718c3c23f85f9f8ac8b3e95e180e7acffcd",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -624,6 +624,16 @@
   "neoforge-state-clone-item-stack": [
    {
     "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getCloneItemStack",
+    "found": true
+   }
+  ],
+  "neoforge-fluid-model-tint": [
+   {
+    "symbol": "minecraft|net.minecraft.client.renderer.block.FluidModel#tintSource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#of",
     "found": true
    }
   ],
@@ -2458,6 +2468,18 @@
    },
    {
     "symbol": "minecraft|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.color.block.BlockTintSource#colorInWorld",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.color.block.BlockTintSource#colorAsTerrainParticle",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.renderer.block.FluidModel#tintSource",
     "found": true
    },
    {
@@ -6126,6 +6148,26 @@
    },
    {
     "symbol": "fml|net.neoforged.fml.Logging#SCAN",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#color",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#colorAsStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#colorInWorld",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#constant",
     "found": true
    }
   ],
