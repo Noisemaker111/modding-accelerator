@@ -117,8 +117,8 @@ each block read back. When a start fails, the log, crash report, mixin configs a
 
 `--fix` applies a proven repair and starts the repaired pack beside the original; your pack changes only if the
 repaired one passes where the original failed. The repair rules (`knowledge/pack-fixes.json`) cover files a host no
-longer serves, missing and pinned libraries, server-optional mods that stop a server, and known faults in Biolith,
-Soulslike Weaponry and Ender IO; each names the evidence it came from.
+longer serves, missing and pinned libraries, server-optional mods that stop a server, and known faults in Biolith
+and Soulslike Weaponry; each names the evidence it came from.
 
 Across 24 pinned public packs (1.16.5 to 26.3, 13 to over 400 mods; `coverage/sweeps/pack.json`): 21 start as shipped
 with the world made and reopened, and all 24 pass with repairs.

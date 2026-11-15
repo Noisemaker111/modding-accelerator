@@ -121,7 +121,7 @@ public final class MmtPackProbe {
             // forced chunks, so a big pack whose probe began past those 300 ticks loaded its grid into a level that never called
             // onLoad: Ender IO 8.2.13's capacitor bank, whose caches onLoad makes, then stopped All the Mods 10's reopen. The
             // spawn chunk, already loaded, is forced the saved way, so the level ticks like one a player is in.
-            BlockPos spawn = ModaccelPackGame.spawn(level);
+            BlockPos spawn = MmtPackGame.spawn(level);
             level.setChunkForced(spawn.getX() >> 4, spawn.getZ() >> 4, true);
             BlockPos origin = origin(level);
             area = new HashSet<>();
