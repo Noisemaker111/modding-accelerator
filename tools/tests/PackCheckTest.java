@@ -80,6 +80,28 @@ public final class PackCheckTest {
             PackRepairs.applies(rule, new PackRepairs.Facts(pack, scan, fabric, List.of(), dh)).size() == 1,
             "a server-optional mod nothing requires is left off the server"
         );
+        // A start whose only new lines repeat (Spark's warning each minute) is not making progress; its thread dump names the mod.
+        Set<String> said = new HashSet<>();
+        expect(
+            PackCheck.newLines("[05:23:05] [spark-java-sampler-0-0/WARN]: Timed out waiting for world statistics\n", said) &&
+            !PackCheck.newLines("[05:24:05] [spark-java-sampler-0-4/WARN]: Timed out waiting for world statistics\n", said) &&
+            PackCheck.newLines("[05:24:06] [Server thread/INFO]: Preparing spawn area: 9%\n", said),
+            "a line said again with another time is no progress: " + said
+        );
+        String report = PackCheck.stuckReport(
+            "\"Server thread\" #119 prio=8 waiting on condition\n   java.lang.Thread.State: TIMED_WAITING (parking)\n\tat net.minecraft.class_3215.getChunkBlocking(class_3215.java:2776)\n" +
+            "\tat appeng.debug.ChunkLoaderBlockEntity.method_10996(ChunkLoaderBlockEntity.java:45)\n\n\"spark-java-sampler-0-0\" #50\n\tat me.lucko.spark.Foo.bar(Foo.java:1)\n"
+        );
+        PackMods.Scan stuck = new PackMods.Scan();
+        stuck.providers.put("ae2", new ArrayList<>(List.of(new PackMods.Provider("appliedenergistics2.jar", "11", false, "fabric.mod.json"))));
+        stuck.providers.put("spark", new ArrayList<>(List.of(new PackMods.Provider("spark.jar", "1", false, "fabric.mod.json"))));
+        stuck.packages.put("appeng.debug", "appliedenergistics2.jar");
+        stuck.packages.put("me.lucko.spark", "spark.jar");
+        var named = PackChecks.suspects("", List.of(report), stuck, fabric);
+        expect(
+            report.contains("stuck in \"Server thread\"") && !report.contains("spark") && named.stream().map(s -> s.get("mod")).toList().equals(List.of("ae2")),
+            "a stuck start's thread dump names the mod holding the server thread: " + named + "\n" + report
+        );
         String failing = PackRepairs.failing(
             "[main/ERROR]: Failed to start\n| vinery | 1.1.4 | Vinery |\n - Mod 'AstralVinery' (astralvinery) 1.2.0 requires version 1.1.4 of vinery, which is missing!\n[main/INFO]: Loading 200 mods: vinery"
         );

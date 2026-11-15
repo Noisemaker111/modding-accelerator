@@ -59,6 +59,14 @@ final class ModaccelPackGame {
         return net.minecraft.world.level.ChunkPos.asLong(x, z);
     }
 
+    /**
+     * Whether a player can find the item in a creative tab. An item in none is a block a mod places itself (a portal, a
+     * spectral block) or a debug block (Applied Energistics 2's chunk loader, whose reload loads chunks while chunks load).
+     */
+    static boolean listed(Item item) {
+        return item.getItemCategory() != null;
+    }
+
     static void moveTo(ServerPlayer player, double x, double y, double z, float yaw, float pitch) {
         player.moveTo(x, y, z, yaw, pitch);
     }

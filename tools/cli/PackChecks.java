@@ -350,6 +350,13 @@ final class PackChecks {
                 row
             );
         }
+        if (probe.get("hiddenBlockItems") instanceof Number hidden && hidden.intValue() > 0) c.add(
+            "not-checked",
+            "note",
+            hidden + " block item(s) are in no creative tab (blocks a mod places itself, such as portals, or debug blocks), so no player places them by hand and they were not placed; --only ITEM places one anyway.",
+            "hiddenBlockItems",
+            hidden
+        );
         // Items that need a wall, water, a ceiling or more room never landed: say they went unchecked.
         List<Object> unplaced = Json.array(probe.getOrDefault("unplaced", List.of()));
         if (!unplaced.isEmpty()) {

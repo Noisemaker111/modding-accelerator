@@ -1097,21 +1097,30 @@ final class PackCheck {
             Process process = new ProcessBuilder(command).directory(instance.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
             process.getOutputStream().close();
             // A start is judged by its log, not by the clock: a 400-mod pack legitimately takes many minutes, logging as it
-            // loads, generates and places. It is stuck when its log has not grown for --timeout seconds (default 600; a tick
-            // that hangs longer than max-tick-time, 300 s, gets the watchdog's crash report first, and the probe logs its
-            // progress every 30 s). A ceiling that grows with the pack's size still stops one that logs forever.
+            // loads, generates and places. It is stuck when its log has said nothing new for --timeout seconds (default 600;
+            // a line it already said, such as a profiler's warning each minute, is no progress; a tick that hangs longer than
+            // max-tick-time, 300 s, gets the watchdog's crash report first, and the probe logs its progress every 30 s). A
+            // ceiling that grows with the pack's size still stops one that keeps saying new things forever.
             long quiet = TimeUnit.SECONDS.toNanos(Integer.parseInt(options.get("timeout", "600")));
             long ceiling = System.nanoTime() + TimeUnit.SECONDS.toNanos(ceilingSeconds(pack.mods().size()));
-            long lastGrowth = System.nanoTime(), size = -1;
+            long lastGrowth = System.nanoTime(), size = 0;
+            Set<String> said = new HashSet<>();
             String ended = "exited";
             List<String> failed = loader.failed();
             long started = 0;
             try {
                 while (process.isAlive()) {
                     long now = Files.size(log);
-                    if (now != size) {
+                    if (now > size) {
+                        String added;
+                        try (var in = new RandomAccessFile(log.toFile(), "r")) {
+                            in.seek(size);
+                            byte[] bytes = new byte[(int) Math.min(now - size, 8 << 20)];
+                            in.readFully(bytes);
+                            added = new String(bytes, StandardCharsets.ISO_8859_1);
+                        }
                         size = now;
-                        lastGrowth = System.nanoTime();
+                        if (newLines(added, said)) lastGrowth = System.nanoTime();
                     }
                     String text = Files.readString(log, StandardCharsets.ISO_8859_1);
                     // The server logged Done but the probe never said it began: waiting out the whole timeout shows nothing more.
@@ -1139,7 +1148,8 @@ final class PackCheck {
                         break;
                     }
                     if (System.nanoTime() - lastGrowth > quiet) {
-                        ended = "stuck: its log did not grow for " + quiet / 1_000_000_000L + " s";
+                        ended = "stuck: its log said nothing new for " + quiet / 1_000_000_000L + " s";
+                        threadDump(process);
                         stop(process);
                         break;
                     }
@@ -1154,6 +1164,27 @@ final class PackCheck {
                 if (process.isAlive()) stop(process);
             }
             return ended;
+        }
+
+        /**
+         * The game's own threads when a start stopped making progress, as a crash report in the instance's crash-reports
+         * folder (where pack-check reads the reports a failed start leaves), so the mod whose code holds the server thread
+         * is named. From jcmd in the server's own Java; nothing when that has none.
+         */
+        void threadDump(Process process) {
+            try {
+                Path jcmd = context.java().home().resolve("bin").resolve(System.getProperty("os.name").startsWith("Windows") ? "jcmd.exe" : "jcmd");
+                if (!Files.isRegularFile(jcmd)) return;
+                Process dump = new ProcessBuilder(jcmd.toString(), String.valueOf(process.pid()), "Thread.print").redirectErrorStream(true).start();
+                dump.getOutputStream().close();
+                String text = new String(dump.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                dump.waitFor(30, TimeUnit.SECONDS);
+                Path report = instance.resolve("crash-reports").resolve("modaccel-stuck-" + System.currentTimeMillis() + ".txt");
+                Files.createDirectories(report.getParent());
+                Files.writeString(report, stuckReport(text));
+            } catch (Exception unavailable) {
+                /* no dump: the log still says where it stopped */
+            }
         }
 
         void stop(Process process) throws InterruptedException {
@@ -1243,6 +1274,32 @@ final class PackCheck {
     /** The longest one start may take however busy its log: 30 minutes, and 8 s more per mod past 100 (ATM-sized packs get about an hour). */
     static long ceilingSeconds(int mods) {
         return 1800 + 8L * Math.max(0, mods - 100);
+    }
+
+    /** Whether a piece of log says a line it has not said before, timestamps aside. */
+    static boolean newLines(String added, Set<String> said) {
+        boolean fresh = false;
+        for (String line : added.split("\\R")) {
+            String body = line.replaceFirst("^\\[[0-9:. ]+\\] \\[[^\\]]*\\]:? ?", "").strip();
+            if (!body.isEmpty() && said.add(body)) fresh = true;
+        }
+        return fresh;
+    }
+
+    /**
+     * A thread dump as a crash report: the server thread's stack (and main's, for a start that hung before the server
+     * thread began) under a cause line, so the triage that reads crash reports finds the mod whose code it is in.
+     */
+    static String stuckReport(String dump) {
+        StringBuilder out = new StringBuilder("---- Minecraft Crash Report ----\nDescription: pack-check: the server stopped making progress (a thread dump)\n\n");
+        for (String block : dump.split("\\R\\R")) {
+            String first = block.strip().lines().findFirst().orElse("");
+            if (!first.startsWith("\"Server thread\"") && !first.startsWith("\"main\"")) continue;
+            out.append("java.lang.IllegalStateException: stuck in ").append(first, 0, first.indexOf('"', 1) + 1).append('\n');
+            block.lines().filter(l -> l.strip().startsWith("at ")).forEach(l -> out.append('\t').append(l.strip()).append('\n'));
+            out.append('\n');
+        }
+        return out.toString();
     }
 
     /** A port another process held, in the start's own log: Java's bind failure. */

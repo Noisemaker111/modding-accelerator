@@ -271,7 +271,7 @@ public final class ModaccelPackProbe {
     static final class Placement {
         final ServerLevel level; final JsonObject result; final ServerPlayer player; final Set<String> only = only(); final BlockPos origin;
         final JsonArray different = new JsonArray(), unplaced = new JsonArray(), failed = new JsonArray(), placed = new JsonArray(), unsendable = new JsonArray();
-        int tried, same, cell;
+        int tried, same, cell, hidden;
         // Surfaces tried in order until the block lands: the top of stone (most blocks), grass (plants), farmland
         // (crops) and sand (cacti), then a wall face, a ceiling, and sand under water.
         static final String[] SURFACES = { "minecraft:stone", "minecraft:grass_block", "minecraft:farmland", "minecraft:sand", "wall", "ceiling", "water" };
@@ -284,6 +284,8 @@ public final class ModaccelPackProbe {
         }
         void place(Item item) {
             if (!chosen(item, only)) return;
+            // An item in no creative tab is not one a player places (unless asked for by --only): left alone, and counted.
+            if (only.isEmpty() && !ModaccelPackGame.listed(item)) { hidden++; return; }
             BlockItem blockItem = (BlockItem) item;
             String id = ModaccelPackGame.itemId(item);
             tried++;
@@ -377,6 +379,7 @@ public final class ModaccelPackProbe {
             }
             result.add("changedWhileRunning", changedWhileRunning);
             result.addProperty("blockItems", tried);
+            result.addProperty("hiddenBlockItems", hidden);
             result.addProperty("landedAsExpected", same);
             result.add("different", different);
             result.add("unplaced", unplaced);

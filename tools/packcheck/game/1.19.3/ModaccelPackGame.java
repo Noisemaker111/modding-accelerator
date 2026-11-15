@@ -57,6 +57,11 @@ final class ModaccelPackGame {
         return net.minecraft.world.level.ChunkPos.asLong(x, z);
     }
 
+    /** From 1.19.3 creative tabs list their items when built, not on the item; every block item is placed. */
+    static boolean listed(Item item) {
+        return true;
+    }
+
     static void moveTo(ServerPlayer player, double x, double y, double z, float yaw, float pitch) {
         player.moveTo(x, y, z, yaw, pitch);
     }
