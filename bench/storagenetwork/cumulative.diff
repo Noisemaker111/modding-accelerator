@@ -190,7 +190,7 @@ index 42a8060a..e3ddf484 100644
        return;
      }
 diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
-index 34722770..3f9adc14 100644
+index 34722770..56d90aa0 100644
 --- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
 +++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
 @@ -47,6 +47,8 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
@@ -211,24 +211,27 @@ index 34722770..3f9adc14 100644
      if (itemHandler == null) {
        return Collections.emptyList();
      }
-@@ -179,6 +181,16 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+@@ -179,6 +181,19 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
      }
    }
  
-+  /** The vanilla barrels or chests this cable inserts into, when they are plain (PlainInventories); else null. */
++  /**
++   * The vanilla barrel or single chest this cable inserts into, when it is plain (PlainInventories) and known without
++   * reading any chunk; else null. The unmodified mod reads the target only when an export moves something, so a check
++   * made before every export must not read it (a read renews the chunk's ticket and can keep it loaded).
++   */
 +  public List<net.minecraft.world.level.block.entity.BlockEntity> plainTarget() {
 +    if (inventoryFace == null || connectable == null || connectable.getPos() == null) {
 +      return null;
 +    }
 +    DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
-+    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
-+    return PlainInventories.of(itemHandler, inventoryPos.resolveLevel(), inventoryPos.getBlockPos());
++    return PlainInventories.ofSingle(targetHandler.peek(inventoryPos, inventoryFace.getOpposite()));
 +  }
 +
    @Override
    public EnumStorageDirection ioDirection() {
      return direction;
-@@ -201,7 +213,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+@@ -201,7 +216,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
      }
      DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
      // Test whether the connected block has the IItemHandler capability
@@ -237,7 +240,7 @@ index 34722770..3f9adc14 100644
      if (itemHandler == null) {
        return stack;
      }
-@@ -214,7 +226,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+@@ -214,7 +229,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
      }
      DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
      // Test whether the connected block has the IItemHandler capability
@@ -246,7 +249,7 @@ index 34722770..3f9adc14 100644
      if (itemHandler == null) {
        return Collections.emptyList();
      }
-@@ -248,7 +260,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+@@ -248,7 +263,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
        return null;
      }
      DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
@@ -255,7 +258,7 @@ index 34722770..3f9adc14 100644
    }
  
    @Override
-@@ -351,7 +363,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+@@ -351,7 +366,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
          // STOCK upgrade means
          try {
            DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
@@ -264,7 +267,7 @@ index 34722770..3f9adc14 100644
            // request with false to see how many even exist in there.
            int stillNeeds = UtilInventory.containsAtLeastHowManyNeeded(targetInventory, matcher.getStack(),
                matcher.getStack().getCount());
-@@ -394,7 +406,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+@@ -394,7 +409,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
          if (this.isStockMode()) {
            int filterSize = this.getFilters().getStackCount(stackCurrent);
            DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
@@ -316,10 +319,10 @@ index 909a4335..cf5f8ec7 100644
      }
 diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java
 new file mode 100644
-index 00000000..0889ee62
+index 00000000..42617beb
 --- /dev/null
 +++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,69 @@
 +package com.lothrazar.storagenetwork.api.capabilities;
 +
 +import java.util.List;
@@ -373,35 +376,60 @@ index 00000000..0889ee62
 +    return List.of(here, other);
 +  }
 +
++  /** The barrel or single chest handler reads and writes, when it is plain; else null (a double chest included). */
++  public static List<BlockEntity> ofSingle(IItemHandler handler) {
++    if (handler == null || handler.getClass() != InvWrapper.class) {
++      return null;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory != null && (inventory.getClass() == BarrelBlockEntity.class || inventory.getClass() == ChestBlockEntity.class)) {
++      return plain((BlockEntity) inventory) ? List.of((BlockEntity) inventory) : null;
++    }
++    return null;
++  }
++
 +  private static boolean plain(BlockEntity entity) {
 +    return ((net.minecraft.world.RandomizableContainer) entity).getLootTable() == null;
 +  }
 +}
 diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
 new file mode 100644
-index 00000000..85c7dfb7
+index 00000000..2c043662
 --- /dev/null
 +++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,120 @@
 +package com.lothrazar.storagenetwork.api.capabilities;
 +
 +import com.lothrazar.storagenetwork.api.DimPos;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.core.Direction;
++import net.minecraft.core.SectionPos;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.CompoundContainer;
++import net.minecraft.world.Container;
 +import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.ChestBlock;
++import net.minecraft.world.level.block.entity.BarrelBlockEntity;
++import net.minecraft.world.level.block.entity.ChestBlockEntity;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.block.state.properties.ChestType;
 +import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 +import net.neoforged.neoforge.capabilities.Capabilities;
 +import net.neoforged.neoforge.items.IItemHandler;
++import net.neoforged.neoforge.items.wrapper.InvWrapper;
 +
 +/**
 + * The item handler a cable reads and writes, from a NeoForge capability cache of its target.
 + *
-+ * get(inventoryPos, side) returns what inventoryPos.getItemHandler(side) returns. NeoForge invalidates the cache when a
-+ * block entity is placed or removed there, when its chunk loads or unloads, and whenever a provider's answer changes
-+ * otherwise (its contract for providers; vanilla chests invalidate when they join or leave a double chest, and the
-+ * composter's handler forwards to its current state). The cache is used only while the target is loaded, as a fresh
-+ * lookup would load the chunk.
++ * get(inventoryPos, side) returns what inventoryPos.getItemHandler(side) returns, and makes the chunk accesses that
++ * lookup makes. NeoForge invalidates the cache when a block entity is placed or removed there, when its chunk loads or
++ * unloads, and whenever a provider's answer changes otherwise (its contract for providers; vanilla chests invalidate
++ * when they join or leave a double chest). A lookup also reads chunks through ServerChunkCache.getChunk(x, z, FULL,
++ * true), which renews a one-tick "unknown" ticket on each: the target's chunk, and for a double chest the chunk of its
++ * other half. Those tickets keep chunks loaded, so a cached answer makes the same calls. Only the answers of NeoForge's
++ * vanilla barrel and chest providers are cached, because their chunk accesses are known; any other target is looked up
++ * every time, as the unmodified mod does. The cache is used only while the target is loaded, as a fresh lookup would
++ * load the chunk.
 + */
 +public final class TargetItemHandler {
 +
@@ -409,6 +437,10 @@ index 00000000..85c7dfb7
 +  private ServerLevel level;
 +  private BlockPos pos;
 +  private Direction side;
++  // False after a lookup found a target whose chunk accesses are not known: then look up until it is a barrel or chest.
++  private boolean replayable = true;
++  // True while the cache holds an answer NeoForge has not invalidated since get() last read it.
++  private boolean known;
 +
 +  public IItemHandler get(DimPos inventoryPos, Direction side) {
 +    Level resolved = inventoryPos.resolveLevel();
@@ -417,25 +449,89 @@ index 00000000..85c7dfb7
 +      return inventoryPos.getItemHandler(side);
 +    }
 +    if (cache == null || level != serverLevel || this.side != side || !blockPos.equals(pos)) {
-+      cache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, serverLevel, blockPos, side);
++      cache = newCache(serverLevel, blockPos, side);
 +      level = serverLevel;
 +      pos = blockPos;
 +      this.side = side;
++      replayable = true;
++    }
++    if (!replayable) {
++      IItemHandler fresh = inventoryPos.getItemHandler(side);
++      if (vanilla(fresh)) {
++        // Start from a new cache, so its first answer is a lookup made now.
++        cache = newCache(serverLevel, blockPos, side);
++        replayable = true;
++      }
++      return fresh;
++    }
++    // A lookup reads the target's chunk first (Level.getBlockState).
++    touchChunk(serverLevel, blockPos);
++    // A valid cache answers what a lookup would; an invalidated one makes the lookup now.
++    IItemHandler handler = cache.getCapability();
++    known = true;
++    if (!vanilla(handler)) {
++      // Only an invalidated cache can answer something else, and that answer came from a lookup just made.
++      replayable = false;
++      return handler;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory.getClass() != BarrelBlockEntity.class) {
++      // ChestBlock.getContainer reads the neighbour its type points at unless the chest is single.
++      BlockState state = serverLevel.getBlockState(blockPos);
++      if (state.getBlock() instanceof ChestBlock && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
++        touchChunk(serverLevel, blockPos.relative(ChestBlock.getConnectedDirection(state)));
++      }
++    }
++    return handler;
++  }
++
++  /**
++   * What get(inventoryPos, side) would return, without any chunk access, when the cache already knows it: the target
++   * is a vanilla barrel or chest that get() read and NeoForge has not invalidated since. Else null.
++   */
++  public IItemHandler peek(DimPos inventoryPos, Direction side) {
++    if (!known || !replayable || cache == null || this.side != side || inventoryPos.resolveLevel() != level || !pos.equals(inventoryPos.getBlockPos())) {
++      return null;
 +    }
 +    return cache.getCapability();
 +  }
++
++  private BlockCapabilityCache<IItemHandler, Direction> newCache(ServerLevel level, BlockPos pos, Direction side) {
++    known = false;
++    return BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, level, pos, side, () -> true, () -> known = false);
++  }
++
++  /** NeoForge's answer for a vanilla barrel, chest or double chest. */
++  private static boolean vanilla(IItemHandler handler) {
++    if (handler == null || handler.getClass() != InvWrapper.class) {
++      return false;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory == null) {
++      return false;
++    }
++    Class<?> type = inventory.getClass();
++    return type == BarrelBlockEntity.class || type == ChestBlockEntity.class || type == CompoundContainer.class;
++  }
++
++  private static void touchChunk(ServerLevel level, BlockPos pos) {
++    level.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
++  }
 +}
 diff --git a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
-index 9107b0c3..8f47ff07 100644
+index 9107b0c3..d1434f5a 100644
 --- a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
 +++ b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
-@@ -55,6 +55,170 @@ public class NetworkModuleDefault implements NetworkModule {
+@@ -55,6 +55,209 @@ public class NetworkModuleDefault implements NetworkModule {
    NetworkCache ch = new NetworkCache();
    private Set<DimPos> connectables = new HashSet<>();
    private boolean shouldRefresh = true;
 +  // NeoForge capability caches for this network's nodes, by node position. NeoForge invalidates them when a
 +  // block entity is placed or removed and when a chunk loads or unloads; the mod's node capabilities are
-+  // fields of their block entity, so a cached answer is the one a fresh lookup would give.
++  // fields of their block entity, so a cached answer is the one a fresh lookup would give. A fresh lookup also
++  // reads the node's chunk through ServerChunkCache.getChunk(x, z, FULL, true), which renews a one-tick "unknown"
++  // ticket on it: that is what keeps every chunk of a network loaded while its master ticks. A cached answer
++  // makes the same getChunk call first (touchChunk), so the same chunks stay loaded.
 +  private final Map<DimPos, NodeCaches> nodeCaches = new HashMap<>();
 +  private Set<DimPos> nodeCachesFor;
 +
@@ -486,7 +582,17 @@ index 9107b0c3..8f47ff07 100644
 +  }
 +
 +  /**
-+   * What pos.getCapability(capability, null) returns, answered from a capability cache when pos is a loaded node of this network.
++   * The chunk access a capability lookup at pos makes first (Level.getBlockState): getChunk(x, z, FULL, load), which
++   * renews the chunk's "unknown" ticket unless the chunk is among the chunk source's last four. Every later access of
++   * the lookup is to the same chunk, so it changes nothing.
++   */
++  private static void touchChunk(net.minecraft.server.level.ServerLevel level, BlockPos pos) {
++    level.getChunk(net.minecraft.core.SectionPos.blockToSectionCoord(pos.getX()), net.minecraft.core.SectionPos.blockToSectionCoord(pos.getZ()));
++  }
++
++  /**
++   * What pos.getCapability(capability, null) returns, answered from a capability cache when pos is a loaded node of this
++   * network, after the chunk access the lookup would make.
 +   */
 +  public <T> T nodeCapability(DimPos pos, net.neoforged.neoforge.capabilities.BlockCapability<T, Direction> capability) {
 +    net.minecraft.world.level.Level level = pos.resolveLevel();
@@ -508,6 +614,7 @@ index 9107b0c3..8f47ff07 100644
 +      node = new NodeCaches(serverLevel, blockPos, () -> nodesInvalidated = true);
 +      nodeCaches.put(pos, node);
 +    }
++    touchChunk(serverLevel, blockPos);
 +    return node.get(capability);
 +  }
 +
@@ -523,7 +630,10 @@ index 9107b0c3..8f47ff07 100644
 +  public record PlannedNode(ConnectableNode node, DimPos pos, com.lothrazar.storagenetwork.api.capabilities.CapabilityProcessing processing,
 +      com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExport io) {}
 +
-+  private record TickPlan(Set<DimPos> madeFor, List<DimPos> positions, List<PlannedNode> nodes) {}
++  /** A chunk the plan's lookups would read, in a level. */
++  private record PlannedChunk(net.minecraft.server.level.ServerLevel level, int x, int z) {}
++
++  private record TickPlan(Set<DimPos> madeFor, List<DimPos> positions, List<PlannedNode> nodes, List<PlannedChunk> chunks) {}
 +
 +  /**
 +   * The nodes getConnectables() would return now, in its iteration order, each with what a lookup of its capabilities
@@ -531,6 +641,12 @@ index 9107b0c3..8f47ff07 100644
 +   * connectables set is the one it was made for, every position stays loaded and no node capability cache was
 +   * invalidated: then the same nodes are found, in the same order (a HashSet of the same objects added in the same order),
 +   * with the same capabilities, which are fields of their block entities.
++   *
++   * The lookups it replaces (getConnectables() and each node's processing and import/export lookups) read every node's
++   * chunk with getChunk(x, z, FULL, true), renewing its one-tick "unknown" ticket. A plan in use makes that call once
++   * for every chunk holding a node, before the master reads any node, so the same chunks are renewed in the same tick
++   * (the order of the calls already differs between launches of the unmodified mod: getConnectables() returns a HashSet
++   * of nodes, which have identity hashes).
 +   */
 +  public List<PlannedNode> plannedNodes() {
 +    if (plan != null && (plan.madeFor() != connectables || nodesInvalidated)) {
@@ -546,8 +662,17 @@ index 9107b0c3..8f47ff07 100644
 +    }
 +    if (plan == null) {
 +      plan = makePlan();
++      return plan == null ? null : plan.nodes();
 +    }
-+    return plan == null ? null : plan.nodes();
++    for (PlannedChunk chunk : plan.chunks()) {
++      chunk.level().getChunk(chunk.x(), chunk.z());
++    }
++    if (nodesInvalidated) {
++      // Nothing the calls above do invalidates a cache (every chunk was loaded), but if one did, look up again.
++      plan = null;
++      return null;
++    }
++    return plan.nodes();
 +  }
 +
 +  private TickPlan makePlan() {
@@ -577,7 +702,14 @@ index 9107b0c3..8f47ff07 100644
 +    if (uncached != before || nodesInvalidated || madeFor != connectables) {
 +      return null;
 +    }
-+    return new TickPlan(madeFor, positions, planned);
++    Set<PlannedChunk> chunks = new java.util.LinkedHashSet<>();
++    for (DimPos pos : positions) {
++      if (!(pos.resolveLevel() instanceof net.minecraft.server.level.ServerLevel serverLevel) || pos.getBlockPos() == null) {
++        return null;
++      }
++      chunks.add(new PlannedChunk(serverLevel, net.minecraft.core.SectionPos.blockToSectionCoord(pos.getBlockPos().getX()), net.minecraft.core.SectionPos.blockToSectionCoord(pos.getBlockPos().getZ())));
++    }
++    return new TickPlan(madeFor, positions, planned, List.copyOf(chunks));
 +  }
 +
 +  /** What nodeCapability(node.getPos(), PROCESSING) returns now. */
@@ -600,7 +732,7 @@ index 9107b0c3..8f47ff07 100644
  
    /**
     * gets list of validated connected nodes, ignoring content or subtype
-@@ -70,7 +234,7 @@ public class NetworkModuleDefault implements NetworkModule {
+@@ -70,7 +273,7 @@ public class NetworkModuleDefault implements NetworkModule {
        if (!pos.isLoaded()) {
          continue;
        }
@@ -609,7 +741,7 @@ index 9107b0c3..8f47ff07 100644
        if (cap == null) {
          LOGGER.debug("Somehow stored a dimpos that is not connectable... Skipping " + pos);
          continue;
-@@ -370,8 +534,31 @@ public class NetworkModuleDefault implements NetworkModule {
+@@ -370,8 +573,31 @@ public class NetworkModuleDefault implements NetworkModule {
      if (batch == null) {
        return;
      }
@@ -642,7 +774,7 @@ index 9107b0c3..8f47ff07 100644
        storage.addToStackProviderBatch(availableItems);
      }
      for (Item item : batch.keySet()) {
-@@ -384,6 +571,49 @@ public class NetworkModuleDefault implements NetworkModule {
+@@ -384,6 +610,49 @@ public class NetworkModuleDefault implements NetworkModule {
      }
    }
  
@@ -692,7 +824,7 @@ index 9107b0c3..8f47ff07 100644
    /**
     * TODO: move or refactor?
     */
-@@ -506,11 +736,11 @@ public class NetworkModuleDefault implements NetworkModule {
+@@ -506,11 +775,11 @@ public class NetworkModuleDefault implements NetworkModule {
        if (!dimpos.isLoaded()) {
          continue;
        }

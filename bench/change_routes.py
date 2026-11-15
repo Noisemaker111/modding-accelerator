@@ -374,4 +374,7 @@ def runs_said(best):
 
 
 if __name__ == "__main__":
+    for stream in (sys.stdout, sys.stderr):  # UTF-8 whatever the console or PYTHONIOENCODING says
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     main()

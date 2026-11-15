@@ -23,6 +23,7 @@ python bench/diorama/play/prepare_world.py --root .runs/diorama
   flight over the whole path so every chunk is generated and saved. Every region file the
   experiment's `files` copies gets its chunk nearest the origin generated too (`r.-1.1` is never
   reached by the flight), and the copied save is checked for each of them.
+  `bench/diorama/test_prepare_world.py` (in the offline gate) checks that it names every region the experiment copies.
 - Each launch starts with Diorama's map folder deleted (`reset`) and the production JIT
   (`"jit": "full"`) and turns server saving off (`save-off.java`). Right before the cold capture
   `fly.java` flies east for 30 s, right before the warm capture south for 30 s, at 16 blocks/s

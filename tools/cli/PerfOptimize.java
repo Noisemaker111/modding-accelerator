@@ -501,7 +501,10 @@ final class PerfOptimize {
         for (Object mod : Json.array(attribution.get("mods"))) rows.addAll(Json.array(Json.object(mod).get("exact")));
         for (Object item : rows) {
             Map<String, Object> row = Json.object(item);
-            if (row.get("label").equals(label) && row.get(statistic) instanceof Number number) return number.doubleValue();
+            if (!row.get("label").equals(label)) continue;
+            if (row.get(statistic) instanceof Number number) return number.doubleValue();
+            // A per-thread statistic (serverInclusiveMsPerTick) is absent when no call ran on that thread.
+            if (row.get("threads") instanceof List<?> && statistic.matches("(server|render|other)[A-Z][A-Za-z]*")) return 0;
         }
         throw new IllegalStateException("Timing probe " + label + " has no " + statistic + " in " + report.get("recording") + "; was the method called during the capture?");
     }

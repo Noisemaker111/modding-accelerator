@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "storagenetwork-borders",
+  "gameDirectory": "run",
+  "world": "ssn-base",
+  "worldSource": "../../.runs/storagenetwork-world/ssn-base",
+  "files": {
+    "run/options.txt": "options.txt"
+  },
+  "measure": {
+    "seconds": 10,
+    "warmup": 2,
+    "probes": "probes.json",
+    "metric": {
+      "probe": "masterTick",
+      "statistic": "inclusiveMsPerTick"
+    }
+  },
+  "gates": [
+    {
+      "name": "borders",
+      "file": "borders.java",
+      "thread": "control",
+      "compare": "exact"
+    }
+  ],
+  "jit": "full"
+}

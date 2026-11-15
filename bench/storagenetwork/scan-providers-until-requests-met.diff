@@ -70,21 +70,24 @@ index 6d958bf9..e3ddf484 100644
    public void addToStackProviderBatch(Batch<StackProvider> availableItems) {
      // If this storage is configured to only export from the network, do not
 diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
-index 1ecd33d8..3f9adc14 100644
+index 1ecd33d8..56d90aa0 100644
 --- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
 +++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
-@@ -181,6 +181,16 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+@@ -181,6 +181,19 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
      }
    }
  
-+  /** The vanilla barrels or chests this cable inserts into, when they are plain (PlainInventories); else null. */
++  /**
++   * The vanilla barrel or single chest this cable inserts into, when it is plain (PlainInventories) and known without
++   * reading any chunk; else null. The unmodified mod reads the target only when an export moves something, so a check
++   * made before every export must not read it (a read renews the chunk's ticket and can keep it loaded).
++   */
 +  public List<net.minecraft.world.level.block.entity.BlockEntity> plainTarget() {
 +    if (inventoryFace == null || connectable == null || connectable.getPos() == null) {
 +      return null;
 +    }
 +    DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
-+    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
-+    return PlainInventories.of(itemHandler, inventoryPos.resolveLevel(), inventoryPos.getBlockPos());
++    return PlainInventories.ofSingle(targetHandler.peek(inventoryPos, inventoryFace.getOpposite()));
 +  }
 +
    @Override
@@ -92,10 +95,10 @@ index 1ecd33d8..3f9adc14 100644
      return direction;
 diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java
 new file mode 100644
-index 00000000..0889ee62
+index 00000000..42617beb
 --- /dev/null
 +++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,69 @@
 +package com.lothrazar.storagenetwork.api.capabilities;
 +
 +import java.util.List;
@@ -149,15 +152,89 @@ index 00000000..0889ee62
 +    return List.of(here, other);
 +  }
 +
++  /** The barrel or single chest handler reads and writes, when it is plain; else null (a double chest included). */
++  public static List<BlockEntity> ofSingle(IItemHandler handler) {
++    if (handler == null || handler.getClass() != InvWrapper.class) {
++      return null;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory != null && (inventory.getClass() == BarrelBlockEntity.class || inventory.getClass() == ChestBlockEntity.class)) {
++      return plain((BlockEntity) inventory) ? List.of((BlockEntity) inventory) : null;
++    }
++    return null;
++  }
++
 +  private static boolean plain(BlockEntity entity) {
 +    return ((net.minecraft.world.RandomizableContainer) entity).getLootTable() == null;
 +  }
 +}
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
+index c7b5e4ab..2c043662 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
+@@ -39,6 +39,8 @@ public final class TargetItemHandler {
+   private Direction side;
+   // False after a lookup found a target whose chunk accesses are not known: then look up until it is a barrel or chest.
+   private boolean replayable = true;
++  // True while the cache holds an answer NeoForge has not invalidated since get() last read it.
++  private boolean known;
+ 
+   public IItemHandler get(DimPos inventoryPos, Direction side) {
+     Level resolved = inventoryPos.resolveLevel();
+@@ -47,7 +49,7 @@ public final class TargetItemHandler {
+       return inventoryPos.getItemHandler(side);
+     }
+     if (cache == null || level != serverLevel || this.side != side || !blockPos.equals(pos)) {
+-      cache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, serverLevel, blockPos, side);
++      cache = newCache(serverLevel, blockPos, side);
+       level = serverLevel;
+       pos = blockPos;
+       this.side = side;
+@@ -57,7 +59,7 @@ public final class TargetItemHandler {
+       IItemHandler fresh = inventoryPos.getItemHandler(side);
+       if (vanilla(fresh)) {
+         // Start from a new cache, so its first answer is a lookup made now.
+-        cache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, serverLevel, blockPos, side);
++        cache = newCache(serverLevel, blockPos, side);
+         replayable = true;
+       }
+       return fresh;
+@@ -66,6 +68,7 @@ public final class TargetItemHandler {
+     touchChunk(serverLevel, blockPos);
+     // A valid cache answers what a lookup would; an invalidated one makes the lookup now.
+     IItemHandler handler = cache.getCapability();
++    known = true;
+     if (!vanilla(handler)) {
+       // Only an invalidated cache can answer something else, and that answer came from a lookup just made.
+       replayable = false;
+@@ -82,6 +85,22 @@ public final class TargetItemHandler {
+     return handler;
+   }
+ 
++  /**
++   * What get(inventoryPos, side) would return, without any chunk access, when the cache already knows it: the target
++   * is a vanilla barrel or chest that get() read and NeoForge has not invalidated since. Else null.
++   */
++  public IItemHandler peek(DimPos inventoryPos, Direction side) {
++    if (!known || !replayable || cache == null || this.side != side || inventoryPos.resolveLevel() != level || !pos.equals(inventoryPos.getBlockPos())) {
++      return null;
++    }
++    return cache.getCapability();
++  }
++
++  private BlockCapabilityCache<IItemHandler, Direction> newCache(ServerLevel level, BlockPos pos, Direction side) {
++    known = false;
++    return BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, level, pos, side, () -> true, () -> known = false);
++  }
++
+   /** NeoForge's answer for a vanilla barrel, chest or double chest. */
+   private static boolean vanilla(IItemHandler handler) {
+     if (handler == null || handler.getClass() != InvWrapper.class) {
 diff --git a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
-index a480067f..8f47ff07 100644
+index 22cd4153..d1434f5a 100644
 --- a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
 +++ b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
-@@ -534,8 +534,31 @@ public class NetworkModuleDefault implements NetworkModule {
+@@ -573,8 +573,31 @@ public class NetworkModuleDefault implements NetworkModule {
      if (batch == null) {
        return;
      }
@@ -190,7 +267,7 @@ index a480067f..8f47ff07 100644
        storage.addToStackProviderBatch(availableItems);
      }
      for (Item item : batch.keySet()) {
-@@ -548,6 +571,49 @@ public class NetworkModuleDefault implements NetworkModule {
+@@ -587,6 +610,49 @@ public class NetworkModuleDefault implements NetworkModule {
      }
    }
  

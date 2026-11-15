@@ -5,9 +5,11 @@ A complete `perf-optimize` experiment for [Simple Storage Network](https://githu
 server-side cost of a storage network in a base that keeps moving items, and decides each candidate diff against frozen
 and live equivalence gates.
 
-The clone gets one local commit before anything is measured, so launches load only the mod and its library:
-`build.gradle`'s optional `localRuntime` test mods (JEI, Curios, Patchouli, AE2, Refined Storage, GuideME) are commented
-out. The mod's code is unchanged; both arms of every run share that commit.
+The clone gets local commits before anything is measured, so launches load only the mod and its library and log as a
+player's game does: `build.gradle`'s optional `localRuntime` test mods (JEI, Curios, Patchouli, AE2, Refined Storage,
+GuideME) are commented out, and the client run's console `logLevel` is `org.slf4j.event.Level.INFO` instead of DEBUG (a
+player's console is at INFO; `debug.log` still gets every DEBUG line). The mod's code is unchanged; both arms of every
+run share those commits.
 
 ## The base
 
@@ -27,11 +29,13 @@ Windows uses `modaccel.cmd`. From the Mod Accel checkout:
 ```sh
 git clone --branch trunk/1.21.1 https://github.com/Lothrazar/Storage-Network .runs/storagenetwork
 git -C .runs/storagenetwork checkout 3deabb24f282260cda30bc0d95b22a38cfd5a2ff
-# Comment out every localRuntime line of build.gradle and commit that in the clone.
+# Comment out every localRuntime line of build.gradle, set the client run's logLevel to org.slf4j.event.Level.INFO,
+# and commit that in the clone (give the clone a local git user.name and user.email first).
 
 # Once: make the world (superflat, fixed seed, peaceful) and the base, then keep the save.
 ./modaccel ui-check --root .runs/storagenetwork --jit full
 ./modaccel eval --root .runs/storagenetwork --file bench/storagenetwork/create-world.java
+./modaccel eval --root .runs/storagenetwork --until "mc.player != null"   # wait until the new world has loaded
 ./modaccel eval --root .runs/storagenetwork --file bench/storagenetwork/scene.java --thread control
 ./modaccel eval --root .runs/storagenetwork --code "mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().saveEverything(true, true, true)).join()" --thread control
 ./modaccel game-stop --root .runs/storagenetwork
@@ -65,15 +69,51 @@ resolution, storage sorting, comparator, refresh and inserts.
   its import move the same 64 items in the same tick, so the base looks still between ticks: the rotation is what shows
   imports and exports both working.
 
+- `components` (exact): `components.java` (from the independent verification) puts items with components in storages
+  and filters (named, enchanted and damaged items, a shulker box item full of cobblestone, nbt-matching filters), with a
+  shulker box block as one storage (the general export path) in one network and only barrels (the fast path) in the
+  other, and ticks both by hand at fixed game times. Stacks are hashed through their codec: a component's `toString` can
+  hold identity hashes.
+- `chunks` (exact): `chunks.java` (from the independent verification) builds a live network whose cable spine runs from
+  the master's chunk 500 to chunk 514, forces only the master's chunk, and reports whether chunks 503 and 514 stay loaded,
+  the cobblestone the network shows, and what an export can still pull; then cuts the spine, lets the far chunks unload,
+  and loads them again. The unmodified mod keeps every chunk holding a node loaded while the master ticks: each tick
+  its capability lookups read those chunks through `getChunk(x, z, FULL, true)`, which renews a one-tick "unknown"
+  ticket on each.
+- `borders` (exact): `borders.java` puts two things the network reads into chunks no node is in, with only the master's
+  chunk forced: the other half of a double chest storage (the unmodified mod reads it on every tick an export runs, so
+  that chunk is loaded about 3 ticks in 7: `some` of 60 polls), and an export's target barrel asking for an item the
+  network lacks (read only when items move: `none`). Phase A has a furnace storage (the general export path), phase B
+  only vanilla barrels and chests (the fast path).
+
 `sabotage-first-request-only.diff` breaks only the fast export path: it stops serving an item once its first request
 is met, so a second export cable asking for the same item starves. `moving` still passes; `transfers` failed in both
 pairs while the baseline launches agreed (kept run `2026-11-15T10-47-03.001285100Z-41421918`).
+`sabotage-no-chest-neighbour.diff` is the corrected cumulative change without the double chest's other-half read:
+`borders` failed in both pairs (phase A `chestHalf756=none` instead of `some`) while the baselines agreed
+(`experiment-borders.json`, kept run `2026-11-15T15-24-58.311191500Z-6fc6f49c`).
 
 ## Result
 
 Five changes were accepted one after another, each against the clone with the ones before it, then all five together
 against the unmodified mod. Every run had both arms of each pair started together, the full JIT, hidden and muted
-launches, and the machine at 77–96% CPU from other work (`machine.load` in each record).
+launches, and the machine busy with other work (77–96% CPU for the per-change runs, 38–89% for the corrected
+cumulative run; `machine.load` in each record).
+
+**Correction.** As first accepted, three of the five changes skipped a side effect players can see. The unmodified
+master's per-tick capability lookups read the chunk of every node through `ServerChunkCache.getChunk(x, z, FULL,
+true)`, which renews a one-tick "unknown" ticket on it, so the whole network stays loaded while the master ticks.
+Answered from NeoForge capability caches, `tick-only-acting-nodes` made no such reads, and with only the master's chunk
+loaded the far chunks unloaded: the network showed 512 cobblestone instead of 640 and an export moved 640 instead of
+768 (the `chunks` gate, found by an independent verification). Two latent cases had the same cause:
+`cache-target-item-handlers` skipped the read of a double chest's other half (the `borders` gate, phase A), and
+`scan-providers-until-requests-met` read every export's target before each export, where the unmodified mod reads it
+only when items move (`borders`, phase B: `exportTarget755s=some` instead of `none`, checked in one launch). The diffs in
+this folder are the corrected ones: a cached answer first makes the chunk read the lookup made (once per node chunk per
+tick for the master's node plan; before each cached node or target answer; for a double chest also the other half's
+chunk), only vanilla barrel and chest answers are cached (their reads are known; other targets are looked up every
+time, as before), and the export check reads no chunk. The per-change rows below were measured before the
+correction; only the cumulative row was measured again.
 
 | change (diff in this folder) | what it does | cold | warm |
 |---|---|---|---|
@@ -82,12 +122,16 @@ launches, and the machine at 77–96% CPU from other work (`machine.load` in eac
 | `tick-only-acting-nodes` | the master keeps its node list, in the same order, with each node's import/export/processing capability from NeoForge capability caches, until the node set is replaced or a cache is invalidated | 1.46x (1.29–1.70) | 1.42x (1.32–1.58) |
 | `cache-target-item-handlers` | each cable keeps a capability cache of its target inventory's item handler | 1.08x (1.05–1.10) | 1.12x (1.07–1.17) |
 | `scan-providers-until-requests-met` | an export decides each provider slot as it reaches it and stops when every request is met, when all inventories are plain vanilla barrels and chests | 1.34x (1.20–1.52) | 1.36x (1.32–1.40) |
-| **all five (`cumulative.diff`) vs the unmodified mod** | | **5.12x (4.97–5.23)** | **5.95x (5.79–6.08)** |
+| **all five, corrected (`cumulative.diff`) vs the unmodified mod** | | **4.60x (4.22–4.98)** | **4.74x (3.94–5.74)** |
+| all five as first accepted (superseded: lets chunks unload) | | 5.12x (4.97–5.23) | 5.95x (5.79–6.08) |
 
-The cumulative run (`2026-11-15T12-01-21.384063400Z-18bda471`) measured the master's tick at 2.06 → 0.40 ms per server
-tick cold and 2.16 → 0.36 warm; the mod's sampled CPU fell 6.0x, the export batch 12–13x and per-tick node resolution
-30x. The first three accepted runs used the mod's dev console logging (DEBUG); the rest, and the cumulative run, log
-to the console at INFO as a player's game does (`debug.log` still gets every DEBUG line).
+The corrected cumulative run (`2026-11-15T15-24-24.789018800Z-fa04b24c`, 3 pairs, every gate passed: `moving`,
+`transfers`, `components`, `chunks`, `borders`) measured the master's tick at 2.54 → 0.56 ms per server tick cold and
+3.18 → 0.68 warm on a busier machine than the first cumulative run (2.06 → 0.40 and 2.16 → 0.36); the mod's sampled
+CPU fell 3.8–5.3x, the export batch 10–12x and per-tick node resolution 26–31x. The verifier's four runs of the first
+cumulative diff on this machine measured cold 4.01–5.07x and warm 4.63–5.76x; the corrected 4.60x and 4.74x lie inside
+that spread, so the chunk reads cost at most a part of the speedup smaller than these runs resolve. The first three accepted runs used the mod's dev console logging (DEBUG); the rest, and both cumulative runs,
+log to the console at INFO as a player's game does (`debug.log` still gets every DEBUG line).
 
 Rejected, all kept in `coverage/perf-runs.json`: `export-scan-requested-items-only` (only the requested items' providers;
 0.98x cold after `filter-check-without-matchers` made the scan cheap; its first run crashed on the charset bug and its

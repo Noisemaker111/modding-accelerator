@@ -28529,6 +28529,1039 @@
   },
   {
    "schema": 1,
+   "id": "2026-11-15T15-24-24.789018800Z-fa04b24c",
+   "kind": "perf-optimize",
+   "session": "storagenetwork-optimize",
+   "started": "2026-11-15T15:24:24.789018800Z",
+   "mod": {
+    "id": "storagenetwork",
+    "version": "1.13.2",
+    "loader": "neoforge",
+    "project": ""
+   },
+   "phases": {
+    "setup": 3.3669437999999996,
+    "build": 17.02918285,
+    "launch": 196.18624785,
+    "warmup": 60.0,
+    "measure": 235.59168724999998,
+    "gates": 265.3205383,
+    "other": 10.7985132
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 1.0028189
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 16.4510595,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 86.7770825,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 16.6985191,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 86.7466675,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.0850313,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.973151,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 42.9465904,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 43.1621877,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 40.0766339,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 42.0391813,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 6.6198003,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 6.7387747,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 4.5092968,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 5.786973,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-components",
+     "seconds": 5.3229709,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-components",
+     "seconds": 3.9580308,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-chunks",
+     "seconds": 52.1927024,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-chunks",
+     "seconds": 51.8474737,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-borders",
+     "seconds": 23.0457461,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-borders",
+     "seconds": 22.476542,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.7803257,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.6008081,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2416198,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 54.675566499999995,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.82893,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2628387,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 57.137861699999995,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.4563941,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 37.3711141,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 39.0674858,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 39.148171,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 37.6280047,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 5.3689211,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 5.7211749,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 4.0128286,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 4.3086758,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-components",
+     "seconds": 3.5053549,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-components",
+     "seconds": 3.5873232,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-chunks",
+     "seconds": 50.583853,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-chunks",
+     "seconds": 50.6014703,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-borders",
+     "seconds": 21.8585116,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.6149895,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-borders",
+     "seconds": 21.5162964,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.2650302,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2006412,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 52.9104327,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.7042002,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2036874,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 54.124884800000004,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.6805432,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 36.9304717,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 37.3042153,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 38.4402864,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 37.0690322,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 5.9786877,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 7.7003484,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 5.3711763,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 4.6826525,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-components",
+     "seconds": 3.4194262,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-components",
+     "seconds": 4.0645209,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-chunks",
+     "seconds": 51.6462321,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-chunks",
+     "seconds": 50.6731279,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-borders",
+     "seconds": 21.7895952,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-borders",
+     "seconds": 21.7525889,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.692526,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.4418511,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.6542565
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.4464914
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "pair 0 before launch",
+      "at": "2026-11-15T15:24:27.793848300Z",
+      "systemCpu": 0.5278705503834459,
+      "javaProcesses": 15
+     },
+     {
+      "when": "pair 1 before launch",
+      "at": "2026-11-15T15:29:31.926077Z",
+      "systemCpu": 0.8886018085566402,
+      "javaProcesses": 17
+     },
+     {
+      "when": "pair 2 before launch",
+      "at": "2026-11-15T15:33:35.722984500Z",
+      "systemCpu": 0.3821306533475497,
+      "javaProcesses": 13
+     }
+    ],
+    "meanSystemCpu": 0.5995343374292119,
+    "maxSystemCpu": 0.8886018085566402,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "cumulative-chunk-tickets",
+    "diffSha256": "726dd6447809979b2f58157cb42a53f5b7b9abfe8e6568727f3c368fddc94f22",
+    "changedFiles": [
+     "src/main/java/com/lothrazar/storagenetwork/api/DimPos.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java",
+     "src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java",
+     "src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "moving",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "transfers",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "components",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "chunks",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "borders",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 4.602124538982401,
+     "low": 4.217907681458988,
+     "high": 4.97968117398373,
+     "pairs": 3,
+     "baselineMean": 2.5408229444444443,
+     "candidateMean": 0.5551943888888888
+    },
+    "warm": {
+     "geometricMean": 4.738049355760491,
+     "low": 3.9360473187226708,
+     "high": 5.741314366055039,
+     "pairs": 3,
+     "baselineMean": 3.175828513633834,
+     "candidateMean": 0.6803183318543168
+    },
+    "scopes": {
+     "ssnCpu": {
+      "cold": {
+       "geometricMean": 3.7867770272874584,
+       "low": 3.157978957874524,
+       "high": 4.705916359945021,
+       "pairs": 3,
+       "baselineMean": 26.110545229647936,
+       "candidateMean": 6.888640780136055
+      },
+      "warm": {
+       "geometricMean": 5.270005342598429,
+       "low": 4.619550665793241,
+       "high": 6.266709985878746,
+       "pairs": 3,
+       "baselineMean": 29.776364151730945,
+       "candidateMean": 5.662641017121888
+      }
+     },
+     "exportBatchMs": {
+      "cold": {
+       "geometricMean": 10.417696072517574,
+       "low": 9.247660297345993,
+       "high": 11.255032184452435,
+       "pairs": 3,
+       "baselineMean": 1.345247611111111,
+       "candidateMean": 0.1304715
+      },
+      "warm": {
+       "geometricMean": 12.106033160540452,
+       "low": 10.21502356651337,
+       "high": 13.199820231323116,
+       "pairs": 3,
+       "baselineMean": 1.7257200355221665,
+       "candidateMean": 0.14185515354039566
+      }
+     },
+     "connectablesMs": {
+      "cold": {
+       "geometricMean": 31.232143175246495,
+       "low": 26.276232531839835,
+       "high": 37.0855320509095,
+       "pairs": 3,
+       "baselineMean": 0.4086441666666667,
+       "candidateMean": 0.013017166666666668
+      },
+      "warm": {
+       "geometricMean": 25.737879178781235,
+       "low": 24.33490340188169,
+       "high": 27.44758581398662,
+       "pairs": 3,
+       "baselineMean": 0.5366110641810424,
+       "candidateMean": 0.021044165095211686
+      }
+     },
+     "sortedStorageMs": {
+      "cold": {
+       "geometricMean": 1.421805077563521,
+       "low": 1.3508518825119333,
+       "high": 1.4631799861371395,
+       "pairs": 3,
+       "baselineMean": 0.21549816666666666,
+       "candidateMean": 0.15220694444444446
+      },
+      "warm": {
+       "geometricMean": 1.4264274253815674,
+       "low": 1.39007348544223,
+       "high": 1.460975214531109,
+       "pairs": 3,
+       "baselineMean": 0.2225426791875348,
+       "candidateMean": 0.15619045516731375
+      }
+     },
+     "comparatorMs": {
+      "cold": {
+       "geometricMean": 1.582462630861327,
+       "low": 1.4875706779282531,
+       "high": 1.6323649953676806,
+       "pairs": 3,
+       "baselineMean": 0.17859444444444442,
+       "candidateMean": 0.11341116666666667
+      },
+      "warm": {
+       "geometricMean": 1.2555560296410597,
+       "low": 0.7126912363330783,
+       "high": 1.7317696098345021,
+       "pairs": 3,
+       "baselineMean": 0.18377429465776296,
+       "candidateMean": 0.15798153568127196
+      }
+     },
+     "refreshMs": {
+      "cold": {
+       "geometricMean": 2.2287491774431016,
+       "low": 2.055530237355272,
+       "high": 2.4570550231431687,
+       "pairs": 3,
+       "baselineMean": 0.11851400000000001,
+       "candidateMean": 0.05313972222222222
+      },
+      "warm": {
+       "geometricMean": 1.0953006683004902,
+       "low": 0.5812175308040196,
+       "high": 2.0529866581988823,
+       "pairs": 3,
+       "baselineMean": 0.1287363105175292,
+       "candidateMean": 0.132693354963949
+      }
+     },
+     "insertMs": {
+      "cold": {
+       "geometricMean": 1.9499536902672434,
+       "low": 1.5888848034507927,
+       "high": 2.629806435175563,
+       "pairs": 3,
+       "baselineMean": 0.05020027777777778,
+       "candidateMean": 0.025355166666666668
+      },
+      "warm": {
+       "geometricMean": 1.6333787898542946,
+       "low": 0.6350740830701966,
+       "high": 3.0118947578326103,
+       "pairs": 3,
+       "baselineMean": 0.05291205972917826,
+       "candidateMean": 0.0372691970789425
+      }
+     }
+    }
+   },
+   "verdict": "accepted",
+   "rejection": null,
+   "metric": {
+    "probe": "masterTick",
+    "statistic": "inclusiveMsPerTick"
+   },
+   "source": ".\\.runs\\storagenetwork-opt\\cumulative-chunk-tickets",
+   "arms": "parallel",
+   "stopped": {
+    "afterPairs": 3,
+    "decided": "faster",
+    "intervals": {
+     "cold": {
+      "geometricMean": 4.602124538982401,
+      "low": 2.8549139208385017,
+      "high": 7.418630074171708,
+      "pairs": 3
+     },
+     "warm": {
+      "geometricMean": 4.738049355760491,
+      "low": 1.6056362676324114,
+      "high": 13.981442839930807,
+      "pairs": 3
+     }
+    },
+    "reason": "cold and warm 99% t intervals both lie above 1 after 3 pairs"
+   },
+   "wallSeconds": 795.6857145,
+   "finished": "2026-11-15T15:37:40.536016100Z",
+   "seconds": 788.2931132499999
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T15-24-58.311191500Z-6fc6f49c",
+   "kind": "perf-optimize",
+   "session": "storagenetwork-optimize",
+   "started": "2026-11-15T15:24:58.311191500Z",
+   "mod": {
+    "id": "storagenetwork",
+    "version": "1.13.2",
+    "loader": "neoforge",
+    "project": ""
+   },
+   "phases": {
+    "setup": 4.13821075,
+    "build": 23.47239835,
+    "launch": 143.04298620000003,
+    "warmup": 4.0,
+    "measure": 72.31755159999999,
+    "gates": 52.7946086,
+    "other": 12.527064300000001
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 2.752689
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 24.8103495,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 82.4986408,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.9366896,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 21.0567821,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 89.91905410000001,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.5129034,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 19.1096586,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 18.6492216,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 2.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 17.9235381,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 2.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 17.6394715,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-borders",
+     "seconds": 29.0084145,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-borders",
+     "seconds": 27.6597889,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 6.1581147,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 8.1209151,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.7132358,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 55.6299935,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.696857,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.3644293,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 58.038284000000004,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.6245935,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 17.3282349,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 17.2451974,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 2.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 17.3188895,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 2.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 19.4208916,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-borders",
+     "seconds": 24.6230174,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 3.0066849,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-borders",
+     "seconds": 24.2979964,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.7936109,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.2260594
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.2613421
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "pair 0 before launch",
+      "at": "2026-11-15T15:25:04.891331700Z",
+      "systemCpu": 0.6543932559609926,
+      "javaProcesses": 24
+     },
+     {
+      "when": "pair 1 before launch",
+      "at": "2026-11-15T15:28:10.766367500Z",
+      "systemCpu": 1.0,
+      "javaProcesses": 24
+     }
+    ],
+    "meanSystemCpu": 0.8271966279804963,
+    "maxSystemCpu": 1.0,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "sabotage-no-chest-neighbour",
+    "diffSha256": "034a48204f8dcd653f1c8e050a21a7aad095efaf5c6ac352be92b3377cfd4171",
+    "changedFiles": [
+     "src/main/java/com/lothrazar/storagenetwork/api/DimPos.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java",
+     "src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java",
+     "src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java",
+     "src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "borders",
+     "compare": "exact",
+     "passed": false,
+     "failures": [
+      "candidate run 0 differs from baseline",
+      "candidate run 1 differs from baseline"
+     ]
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 3.8306622351065607,
+     "low": 3.589529348306034,
+     "high": 4.08799364362253,
+     "pairs": 2,
+     "baselineMean": 2.80092275,
+     "candidateMean": 0.73438175
+    },
+    "warm": {
+     "geometricMean": 4.357012644919516,
+     "low": 4.170281081672461,
+     "high": 4.552105437548909,
+     "pairs": 2,
+     "baselineMean": 2.79705475,
+     "candidateMean": 0.6447367500000001
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "gate borders failed: [candidate run 0 differs from baseline, candidate run 1 differs from baseline]; stopped after 2 pair(s)",
+   "metric": {
+    "probe": "masterTick",
+    "statistic": "inclusiveMsPerTick"
+   },
+   "source": ".\\.runs\\storagenetwork-opt\\sabotage-no-chest-neighbour",
+   "arms": "parallel",
+   "stopped": {
+    "afterPairs": 2,
+    "decided": "rejected",
+    "reason": "gate borders failed after 2 pair(s), and a failed gate cannot pass again: [candidate run 0 differs from baseline, candidate run 1 differs from baseline]"
+   },
+   "wallSeconds": 320.7412665,
+   "finished": "2026-11-15T15:30:19.252663800Z",
+   "seconds": 312.2928198
+  },
+  {
+   "schema": 1,
    "id": "2026-11-15T14-02-49.911683800Z-ad1a4e8f",
    "kind": "perf-optimize",
    "session": "diorama-round3",

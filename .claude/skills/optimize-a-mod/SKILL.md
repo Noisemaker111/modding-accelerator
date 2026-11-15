@@ -36,7 +36,9 @@ The second session, Pipez (`bench/pipez`, session `pipez-optimize`), took 35 min
 60 min of wall clock from clone to accepted change, a discarded first mod (Jade) included.
 
 The third, Simple Storage Network (`bench/storagenetwork`, session `storagenetwork-optimize`), stacked five accepted
-changes into cold 5.12x and warm 5.95x against the unmodified mod (one cumulative run, 3 pairs). It took 14 runs and
+changes into cold 5.12x and warm 5.95x against the unmodified mod (one cumulative run, 3 pairs); an independent
+check then found the caches let chunks unload (lesson below), and the corrected changes measured cold 4.60x
+(4.22–4.98) and warm 4.74x (3.94–5.74) with every gate passing. It took 14 runs and
 173 min of run time; launching games was a third of it. The first accepted change came 36 min after the clone.
 It lost the most time to a candidate run that died on a tool bug (fixed: children write UTF-8), a gate edited
 during a run (fixed: runs read a snapshot of the experiment), a run aborted by hand that left no record (fixed:
@@ -73,25 +75,62 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    set the run's `logLevel` to INFO. A mod's dev run often logs DEBUG to the console, where one line cost 15 µs; a
    player's game writes DEBUG only to the buffered `debug.log` (0.7 µs), so the dev console inflates fixed costs.
    A fresh clone has no git identity: set a local `user.name` and `user.email` in it before that commit.
+   When the build is not a plain one (`modaccel support --root R` names its kind):
+   - **ModDevGradle** (`net.neoforged.moddev`): runs live in `neoForge { runs { client { ... } } }`; set
+     `logLevel = org.slf4j.event.Level.INFO` there. Optional test mods are `localRuntime` or `runtimeOnly` lines.
+   - **A remote build script** (`apply from: 'https://.../mod.gradle'`, as Easy Villagers does) cannot be edited where
+     it lives: download it into the clone (`gradle/mod.gradle`), apply the local copy, and change runs and
+     dependencies there, in the same local commit. That also pins the script, so both arms build the same thing.
+   - **Required dependencies** (`implementation`, `jarJar`, a library mod the code calls) stay: drop only optional
+     runtime-only mods. If a required one will not resolve, `compile` says which; pick another mod rather than
+     stubbing it, because a stub changes what you measure.
 2. **Make a world once and reuse it.** Start the client with `ui-check --root R --jit full`, create a fixed-seed
-   superflat world with an eval snippet (`bench/pipez/create-world.java`), build the scene a player would have
-   (`bench/pipez/scene.java`: a base whose pipes keep moving items), then save (`saveEverything`), `game-stop`, and copy
+   superflat world with an eval snippet (`bench/pipez/create-world.java`), and **wait until the world has loaded**
+   before the next snippet: `modaccel eval --root R --until "mc.player != null"` (a snippet run while the world is
+   still loading finds no player and no server level). Then build the scene a player would have
+   (`bench/pipez/scene.java`: a base whose pipes keep moving items), save (`saveEverything`), `game-stop`, and copy
    the save to `.runs/<mod>-world/`. Every launch of every run copies that save; nothing is generated per launch.
    The workload must keep running for as long as the world does (a loop, not a one-off burst), so cold and warm
    captures see the same work.
 3. **Profile.** Load the save first (`modaccel world-check --root R --world NAME --jit full` leaves the game in it),
-   then `modaccel perf --root R --duration 30 --warmup 5 --allow-hidden --session <mod>-optimize`. Open
-   `report.html`: **Where the cost is, by mod and feature**. Read your mod's row (★): ms per tick and per frame with
-   95% ranges, its features (block entity, mixin, event handler) and their top methods, self and inclusive.
-   Too few samples (under ~50 for the mod) means the scene is too small: scale it until the mod's cost is real.
+   wait for it (`modaccel eval --root R --until "mc.player != null"`), then
+   `modaccel perf --root R --duration 30 --warmup 5 --session <mod>-optimize` (`--root` profiles the hidden client
+   modaccel started; `--allow-hidden` is only for `--attach` and `--instance`). Open `report.html`: **Where the cost
+   is, by mod and feature**. Read your mod's row (★): ms per tick and per frame with 95% ranges, its features (block
+   entity, mixin, event handler) and their top methods, self and inclusive. An agent reads the same from
+   `report.json` (below).
+   **Scale the scene until the cost is real:** at least ~50 samples for the mod in a 30 s capture and about 0.5 ms
+   of every server tick (Pipez 1 ms, Storage Network 3.2 ms with 256 barrels). Each time you change the scene, save
+   again, `game-stop`, and copy the save over `.runs/<mod>-world/` again: launches copy that folder, so a stale copy
+   measures the old scene. Scale to what a large player base has (hundreds of machines), and double it once; if the
+   mod still costs under ~0.5 ms a tick, its cost is not in ticks: drop it and pick another mod (Easy Villagers'
+   iron farms: 1,024 of them cost 0.9 ms a tick, 66 samples, half of them its client-side copy on the Render thread).
+   **Reading `report.json`.** `attribution.mods[]` has one row per mod; yours has `yourMod: true`. `samples` counts
+   sampled stacks with the mod anywhere on them (`selfSamples`: the mod's own frame on top); `perTickMs` with
+   `perTickMsLow`/`perTickMsHigh` is its share of a server tick (95% range), `perFrameMs` the same per frame,
+   `sampledCpuMsPerSecond` its CPU. `threads[]` (`name`, `samples`) says where it ran: a block entity on both
+   `Server thread` and `Render thread` also ticks on the client. `features[]` (`name`, `kind`, `samples`, `threads`,
+   `perTickMs`, `methods[]` with `name` and `samples`) splits the mod by block entity, entity, mixin or event handler;
+   `methods` and `inclusiveMethods` rank its methods by self and inclusive samples. `exact[]` holds timing-probe rows
+   from a `--probes` capture: `label`, `calls`, `callsPerTick`, `inclusiveMsPerTick`, `meanInclusiveMs`, and per thread
+   `serverCallsPerTick`, `serverInclusiveMsPerTick`, `renderInclusiveMsPerTick` and so on. `patterns` lists matched
+   `knowledge/perf-patterns.json` entries; `metrics.tick_ms` the tick times (`n` ticks). `probes.suggested.json`
+   next to it lists timing probes for the top methods.
 4. **Match known patterns.** The report's **Known patterns** section lists `knowledge/perf-patterns.json` entries whose
    symptom matches the capture. Read each `change` and `gate`; a match is the first candidate to write.
-5. **Write the experiment.** `modaccel perf-template --family experiment --from CAPTURE --root R --out bench/<mod>`
-   writes `experiment.json` (metric, scopes, the full JIT), `probes.json` from the capture's suggestions, `options.txt`,
-   and two gate snippets to fill in. The metric is a timing probe's `inclusiveMsPerTick` when the server thread
-   carries the cost (exact, and not diluted by a few samples), else the mod's sampled CPU on its threads. Drop probes on
-   tiny methods called thousands of times a tick: probe overhead then distorts what you measure. Point `world` and
-   `worldSource` at the save from step 2.
+5. **Write the experiment.** First capture once more with the suggested probes, for call counts:
+   `modaccel perf --root R --duration 30 --warmup 5 --probes CAPTURE/probes.suggested.json --out .runs/<mod>-probed`.
+   Then `modaccel perf-template --family experiment --from .runs/<mod>-probed --root R` writes, into
+   `.runs/<modid>-experiment` (drafts stay in `.runs/`; copy them into `bench/<mod>/` only once a change is accepted),
+   `experiment.json` (metric, scopes, the full JIT), `probes.json`, `options.txt`, and three gate snippets to fill in
+   (`behaviour.java`, `digest.java`, `chunks.java`). A method the capture timed at more than `--max-calls-per-tick`
+   (256) calls a tick gets no probe: at about a microsecond a call, a probe on a tiny method called 2,000 times a tick
+   (Easy Villagers' `getAge`) measures itself. Time its caller instead. Without call counts the template warns.
+   The metric names its thread. When the server thread carries the cost it is a timing probe's
+   `serverInclusiveMsPerTick` (exact, not diluted by a few samples, and only server-thread calls: a block entity that
+   also ticks on the client runs the same method on the Render thread, and counting both mixes the client's copy into
+   a server metric). Otherwise it is the mod's sampled CPU on its client threads. The template warns about features
+   that run on both. Point `world` and `worldSource` at the save from step 2.
 6. **Make the gates exact.** Gates prove the candidate changes nothing a player sees:
    - an `exact` gate runs the changed code on **frozen inputs** and returns a hash of everything it produced: build a
      copy of the scene far from the player (a chunk that never ticks), tick the block entities by hand in a fixed
@@ -109,7 +148,27 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
      (`bench/storagenetwork/count.java` rotates the buffers' contents and requires each to hold its own item 2 s later);
    - **every cache candidate needs a gate that changes the cached source mid-run**, after the candidate has filled the
      cache, and a stale candidate that fills it once and never again must fail that gate while the others pass (Pipez:
-     `trace-rewire.java` adds a pipe and a barrel at round 5; `sabotage-stale-cache.diff` fails only that gate).
+     `trace-rewire.java` adds a pipe and a barrel at round 5; `sabotage-stale-cache.diff` fails only that gate);
+   - **side effects are behaviour too: chunk loading and tickets.** A lookup through `Level.getBlockState`,
+     `getBlockEntity` or a capability reads its chunk with `getChunk(x, z, FULL, true)`, which renews a one-tick
+     "unknown" ticket, so code that looks things up every tick keeps those chunks loaded. Any candidate that caches a
+     lookup or skips one needs the `chunks.java` gate the template writes (set `AREA` and `KEEP`): it forces one
+     chunk, releases the rest, and compares which chunks stay loaded and with which tickets. Make the scene reach
+     beyond 2 chunks of the forced one, and put a neighbour the code reads into a chunk with nothing else in it
+     (Storage Network: `chunks.java`, `borders.java`; see the lesson below);
+   - **random draws.** Code that draws from `level.random` or an entity's random gives different results in every
+     launch. In a frozen exact gate, reseed before each call you tick by hand, from the round and the position
+     (`level.getRandom().setSeed(round * 31 + pos.asLong())`; an entity's `getRandom()` likewise), so a draw in one
+     call cannot shift another's. A candidate that changes how many draws happen (skips a roll whose result was not
+     used, or rolls once instead of per item) changes the stream every later draw sees, so the exact gate fails it
+     even when each result has the same odds. That is a real change for a shared source like `level.random`: keep
+     the draws. Only a source the mod owns alone can be argued equivalent, with an `expect` gate on a live statistic;
+   - **long cycles.** Behaviour slower than a launch (a farm that yields every 6,000 ticks, growth, cooldowns) is
+     gated by ticking a frozen copy by hand much faster than real time: in one server task, call the block entity's
+     ticker (`state.getTicker(level, type).tick(level, pos, state, be)`) thousands of times, setting the game time it
+     reads before each call (`((ServerLevelData) level.getLevelData()).setGameTime(t)`, as
+     `bench/storagenetwork/trace.java` does) and restoring it after. Hash state every N calls. A live check of the
+     same can use `/tick sprint TICKS` (1.20.3+) in an `expect` gate.
    Run the exact gate in two separate launches and compare: it must return the same text. Then **break it once on
    purpose**: a candidate that changes behaviour slightly (Pipez: nearest-first sorted the other way) must fail the
    exact gate. `perf-optimize` stops at the second pair (an `expect` gate at the first), so this costs two pairs.
@@ -138,8 +197,12 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    candidate near 1.0x runs all `--runs` pairs, so when its lines show it will not decide (or a later candidate makes
    it moot), create `OUT/stop`: the run ends after the pair in progress and is decided and recorded like any other.
    A run reads a copy of the experiment's files taken when it started, so editing gates while it runs is safe.
+   Editing modaccel itself is not: every launch compiles the tool and its profiler agent from the checkout, so run
+   `perf-optimize` from a frozen worktree (`git worktree add --detach .runs/tool HEAD`, then pass absolute paths)
+   while you change `tools/`.
 9. **Record.** Keep every decided run, accepted or not: `python bench/record.py perf .runs/<mod>-opt/NAME/record.json`.
-   Put the experiment, snippets, probes and accepted diff in `bench/<mod>/` with a README saying how to rerun it.
+   Once a change is accepted, copy the experiment, snippets, probes and accepted diff from `.runs/` into `bench/<mod>/`
+   with a README saying how to rerun it (wait for the world with `eval --until "mc.player != null"` in its steps).
    `python bench/perf_sessions.py --session <mod>-optimize` gives the session's time by phase; compare it with
    `diorama-10x`.
 10. **Add the pattern.** For an accepted change that would apply to other mods, add an entry to
@@ -148,6 +211,17 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
     kept run's id, and `test.fires` / `test.quiet` attribution rows. `modaccel self-test --only perf` checks it.
 
 ## Lessons the records show
+- **An optimization must keep side effects: chunk loading and tickets.** Storage Network's accepted cumulative change
+  answered its master's per-tick capability lookups from NeoForge capability caches. The unmodified lookups read each
+  node's chunk through `getChunk(x, z, FULL, true)`, renewing a one-tick ticket, so the master kept its whole network
+  loaded; the cached build let far chunks unload. With only the master's chunk loaded, players saw 512 cobblestone
+  instead of 640 and an export moved 640 instead of 768. Every gate passed, because every frozen trace was force-loaded.
+  The repair keeps the caches and makes the chunk reads the lookups made: once per node chunk per tick for the
+  master's plan, before each cached node or inventory answer, and for a cached double chest the other half's chunk
+  too. Only vanilla barrel and chest answers are cached, because only their chunk reads are known. A check that runs
+  before every export must not read a chunk that the unmodified mod reads only when items move. Gate it with
+  `chunks.java` (template) and a neighbour in a chunk no node is in (`bench/storagenetwork/borders.java`);
+  `sabotage-no-chest-neighbour.diff`, the repair without the double chest's other half, fails only that gate.
 - **C1 versus the full JIT.** Hidden test clients compile with C1 alone unless the experiment says `"jit": "full"`.
   Diorama's air-over-ground candidate measured faster under C1 and was 0.77x with the full JIT; integer rows were
   0.95x. Never accept or reject from a C1 capture.

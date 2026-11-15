@@ -51,6 +51,16 @@ public final class PerfAgent {
         long generation;
         int overflow;
         final Deque<Span> spans = new ArrayDeque<>();
+        // This thread's totals for each label, kept in totals as label@server, label@render or label@other.
+        final Map<String, java.util.concurrent.atomic.LongAdder[]> threadSums = new java.util.HashMap<>();
+        final String thread = threadKind(Thread.currentThread().getName());
+    }
+
+    /** The game thread a timed call ran on, for per-thread totals: a block entity can tick on the server and the client. */
+    static String threadKind(String name) {
+        if (name.equals("Server thread")) return "server";
+        if (name.equals("Render thread")) return "render";
+        return "other";
     }
 
     private static final class Span {
@@ -243,6 +253,7 @@ public final class PerfAgent {
         if (stack.generation != generation) {
             stack.spans.clear();
             stack.overflow = 0;
+            stack.threadSums.clear();
             stack.generation = generation;
         }
         int dot = kind.indexOf('.');
@@ -289,6 +300,12 @@ public final class PerfAgent {
         sum[0].increment();
         sum[1].add(elapsed);
         sum[2].add(span.event.selfNanos);
+        java.util.concurrent.atomic.LongAdder[] onThread = stack.threadSums.computeIfAbsent(label, k -> totals.computeIfAbsent(k + "@" + stack.thread,
+            key -> new java.util.concurrent.atomic.LongAdder[]{
+                new java.util.concurrent.atomic.LongAdder(), new java.util.concurrent.atomic.LongAdder(), new java.util.concurrent.atomic.LongAdder()}));
+        onThread[0].increment();
+        onThread[1].add(elapsed);
+        onThread[2].add(span.event.selfNanos);
         if (completed.incrementAndGet() <= TIMING_LIMIT) span.event.commit();
     }
 
