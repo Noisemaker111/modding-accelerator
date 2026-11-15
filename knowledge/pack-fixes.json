@@ -306,7 +306,9 @@
       "check": "server-start",
       "symptom": "The server does not start: a mod's own start-up code fails on a dedicated server, though the mod is one a server does not need.",
       "cause": "A mod made for the client (its Modrinth page or the pack says a server may go without it) runs client set-up when a server starts and fails there.",
-      "evidence": [],
+      "evidence": [
+        "pack-check --fix on Sodium Plus 2.2.11 (Modrinth .mrpack, Quilt 0.24.0, 94 files), 2026-11-15: the shipped pack's server stops at start-up with \"Could not execute entrypoint stage 'server' due to errors, provided by 'distanthorizons'\" (a NullPointerException in Distant Horizons 2.0.1-a's config GUI hooks); Modrinth says Distant Horizons is server-optional. With it left off the server, the repaired pack makes a new world, places 868 block items, opens the world again and reads all 853 placed blocks back; the fixed .mrpack (Distant Horizons env.server \"unsupported\") passes pack-check on its own"
+      ],
       "action": {
         "type": "leave-out-of-server",
         "how": "The server leaves the jar out; players keep it. A fixed .mrpack marks its file env.server \"unsupported\" (or moves a jar it carries to client-overrides)."
