@@ -80,6 +80,19 @@ def server_units():
     return sorted(set(units))
 
 
+def one_clone(checks):
+    """A shard's server-check units run in one process: they share its clone and the plugin's build (about 20 s each
+    when every unit cloned and built on its own, run 43748965441), and its servers start one after another, so no
+    two of them compete for the runner's cores."""
+    units = [c for c in checks if c.name.startswith("server-check ")]
+    if len(units) < 2:
+        return checks
+    names = ",".join(c.name.removeprefix("server-check ") for c in units)
+    merged = Check("server-check " + names, java("tools/tests/ServerCheckFixtures.java", ".", JAR, names), needs=["package"])
+    merged.estimate = sum(getattr(c, "estimate", 0) for c in units)
+    return [c for c in checks if c not in units] + [merged]
+
+
 def system():
     return "windows" if WINDOWS else "macos" if sys.platform == "darwin" else "linux"
 
@@ -153,6 +166,8 @@ def main():
     measured = json.loads(DURATIONS.read_text(encoding="utf-8")).get(system(), {}) if DURATIONS.exists() else {}
     checks = [c for c in plan(args.plan, temp) if c.only in (None, system())]
     checks = shard(checks, index - 1, count, measured)
+    if args.plan == "server":
+        checks = one_clone(checks)
     if args.list:
         for c in checks:
             print(f"{estimate(c, measured):6.0f}s  {c.name}")
