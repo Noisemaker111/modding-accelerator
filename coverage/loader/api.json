@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "6e616431d317455eabababb92f2d4ed8ea88b696260200b7118955506d780370",
+ "rules_sha256": "dd9d3da1f8d963423f615a8df4510746a91435132fee4b549ee0ef382f29e56a",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -8296,6 +8296,16 @@
    },
    {
     "symbol": "fml-21.1|net.neoforged.fml.Logging#CORE",
+    "found": true
+   }
+  ],
+  "neoforge-on-fabric@26.1": [
+   {
+    "symbol": "minecraft-26.2|net.minecraft.world.entity.monster.EnderMan$EndermanLeaveBlockGoal#canPlaceBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-26.2|net.minecraft.world.entity.monster.EnderMan$EndermanLeaveBlockGoal#enderman",
     "found": true
    }
   ],

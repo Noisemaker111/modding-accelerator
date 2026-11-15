@@ -2110,7 +2110,7 @@
    "about": "For mods written for NeoForge first. NeoForge's registration (DeferredRegister and its holders), event bus (IEventBus, @SubscribeEvent, @EventBusSubscriber, NeoForge.EVENT_BUS), mod container, config (ModConfigSpec, read and written as the same TOML file), play payloads (PayloadRegistrar, PacketDistributor, IPayloadContext) the commonest lifecycle events, and the game events Fabric API has a callback for at the same moment (player log in and out, respawn, clone and dimension change; living death and incoming damage; entity join, level load, unload and tick; datapack sync; item tooltips; key mappings), written for this project on Fabric's API in knowledge/bridges/neoforge-on-fabric and copied into the converted mod beside its first @Mod class. Each class mirrors the NeoForge class named in classes (the members its symbols list), and each event is posted from the Fabric callback that fires at the same moment. @Mod constructors become Fabric entrypoints that receive their IEventBus and ModContainer from the bridge; registration runs at the end of the main entrypoint in the game's registry order, as NeoForge's RegisterEvent does. Capabilities and transfer (Minecraft 26.1 and later; the 1.21.1 layer drops them): NeoForge's capabilities are Fabric API lookups of the same name, so a converted mod's handlers are visible to Fabric mods and theirs to it. Capabilities.Item.BLOCK and ITEM are Fabric's ItemStorage.SIDED and ITEM, Fluid.BLOCK and ITEM are FluidStorage.SIDED and ITEM: a ResourceHandler is a SlottedStorage (one slot per index) and a Storage is a ResourceHandler, the same object again when it comes back; registerBlock/registerBlockEntity/registerEntity/registerItem register lookup providers (asked in registration order, the first non-null winning) and level/entity/stack.getCapability is the lookup's find, through interfaces the bridge's mixins add to Level, Entity and ItemStack (Loom interface injection for the compile). RegisterCapabilitiesEvent is posted after registration. Amounts: items are ints on NeoForge and longs on Fabric (larger Fabric amounts read as Integer.MAX_VALUE); fluids convert at 81 droplets per millibucket, a handler seen from Fabric moves whole millibuckets only (below 81 droplets moves nothing) and a Fabric storage seen from NeoForge reads amounts divided by 81 rounded down (below 81 droplets is not visible) and moves whole millibuckets, retrying a part-millibucket move in a nested transaction. Transactions: NeoForge's Transaction is a Fabric transaction (openRoot = openOuter, open = openNested, depth = nestingDepth, ROOT_CLOSING = OUTER_CLOSING; both nest, both abort on close), and SnapshotJournal keeps NeoForge's snapshot order on Fabric's close callbacks, so the two loaders' handlers share transactions exactly. Energy: Fabric API has none; Energy.BLOCK, ENTITY and ITEM are lookups the bridge creates (neoforge:energy_handler, carrying a Fabric Storage of Unit), seen by mods converted from NeoForge only; so are the entity item and fluid capabilities. Sides: a null direction is the same no-side context on both. Not mirrored: capability proxying, BlockCapabilityCache's invalidation listener (Fabric's cache revalidates itself), invalidateCapabilities (a no-op), ItemAccess.oneByOne, FluidStack and FluidResource templates; FluidType is the fluid itself with its Fabric attributes. The legacy IItemHandler, ItemStackHandler, SlotItemHandler, IEnergyStorage and their helpers (still in NeoForge 26.1) are mirrored as plain classes; IItemHandler.of and IEnergyStorage.of wrap a transfer handler.",
    "from": "neoforge",
    "to": "fabric",
-   "minecraft": "26.1",
+   "minecraft": "26.3",
    "folder": "knowledge/bridges/neoforge-on-fabric",
    "classes": {
     "net.neoforged.bus.api.Event": "Event",
@@ -4367,6 +4367,19 @@
        ]
       }
      ]
+    },
+    {
+     "minecraft": "26.1",
+     "below": "26.3",
+     "folder": "knowledge/bridges/neoforge-on-fabric/26.1",
+     "about": "Minecraft 26.1 and 26.2: the files whose game names differ from 26.3's (26.3 renamed EnderMan to Enderman). Checked against Mojang's 26.2 client.",
+     "symbols": {
+      "neoforge": [],
+      "fabric": [
+       "minecraft-26.2|net.minecraft.world.entity.monster.EnderMan$EndermanLeaveBlockGoal#canPlaceBlock",
+       "minecraft-26.2|net.minecraft.world.entity.monster.EnderMan$EndermanLeaveBlockGoal#enderman"
+      ]
+     }
     }
    ],
    "tests": [
