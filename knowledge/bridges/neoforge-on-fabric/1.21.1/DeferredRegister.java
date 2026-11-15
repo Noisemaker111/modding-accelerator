@@ -132,7 +132,7 @@ public class DeferredRegister<T> {
         }
     }
 
-    /** Every handed-over register, in the game's own registry order, then any registry the game does not list. */
+    /** Every handed-over register, in the game's own registry order, each registry followed by its RegisterEvent, then any registry the game does not list. */
     static void registerPending() {
         List<DeferredRegister<?>> left = new ArrayList<>(PENDING);
         for (Registry<?> registry : BuiltInRegistries.REGISTRY) {
@@ -140,6 +140,7 @@ public class DeferredRegister<T> {
                 register.registerAll();
                 left.remove(register);
             }
+            RegisterEvent.post(registry);
         }
         for (DeferredRegister<?> register : left) register.registerAll();
         PENDING.clear();

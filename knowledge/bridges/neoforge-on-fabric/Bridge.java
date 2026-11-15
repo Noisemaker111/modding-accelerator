@@ -1,11 +1,16 @@
 package ${package};
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ObjectShare;
 
 /**
  * What a NeoForge @Mod class's constructor received, and NeoForge's start-up order, for the Fabric entrypoint modaccel
@@ -42,6 +47,7 @@ public final class Bridge {
         hook();
         Bus.INSTANCE.post(new RegisterPayloadHandlersEvent());
         Bus.INSTANCE.post(new FMLCommonSetupEvent(container(modid)));
+        lifecycle(modid);
     }
 
     static synchronized void hook() {
@@ -58,5 +64,44 @@ public final class Bridge {
         ServerTickEvents.END_SERVER_TICK.register(server -> Bus.INSTANCE.post(new ServerTickEvent.Post(server)));
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> Bus.INSTANCE.post(new RegisterCommandsEvent(dispatcher, selection, context)));
         CreativeModeTabEvents.MODIFY_OUTPUT_ALL.register((tab, output) -> Bus.INSTANCE.post(new BuildCreativeModeTabContentsEvent(tab, output)));
+    }
+
+    // ---- player interaction, block and lifecycle hooks ----
+
+    private static final String LOAD_STAGES = "modaccel:neoforge_bridge_load_stages";
+    private static final String LOAD_DONE = "modaccel:neoforge_bridge_load_done";
+    static boolean loadHooked;
+
+    /**
+     * Queues a mod's InterModEnqueueEvent, InterModProcessEvent and FMLLoadCompleteEvent, which loadComplete posts once
+     * every mod's entrypoints ran: on a client when it has started (Fabric's ClientLifecycleEvents.CLIENT_STARTED), on a
+     * dedicated server as it starts (GameEvents, before ServerAboutToStartEvent).
+     */
+    static synchronized void lifecycle(String modid) {
+        ModContainer container = container(modid);
+        Runnable enqueue = () -> Bus.INSTANCE.post(new InterModEnqueueEvent(container));
+        Runnable process = () -> Bus.INSTANCE.post(new InterModProcessEvent(container));
+        Runnable complete = () -> Bus.INSTANCE.post(new FMLLoadCompleteEvent(container));
+        loadStages().add(new Runnable[] { enqueue, process, complete });
+        if (loadHooked) return;
+        loadHooked = true;
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) ClientAccess.onStarted(Bridge::loadComplete);
+    }
+
+    /** The queued lifecycle events of every converted mod (each has its own copy of the bridge), in Fabric Loader's ObjectShare. */
+    @SuppressWarnings("unchecked")
+    static List<Runnable[]> loadStages() {
+        ObjectShare share = FabricLoader.getInstance().getObjectShare();
+        share.putIfAbsent(LOAD_STAGES, new CopyOnWriteArrayList<Runnable[]>());
+        return (List<Runnable[]>) share.get(LOAD_STAGES);
+    }
+
+    /** Every converted mod's InterModEnqueueEvent, then every one's InterModProcessEvent, then FMLLoadCompleteEvent, once. */
+    static void loadComplete() {
+        if (FabricLoader.getInstance().getObjectShare().putIfAbsent(LOAD_DONE, Boolean.TRUE) != null) return;
+        List<Runnable[]> stages = loadStages();
+        for (int stage = 0; stage < 3; stage++) {
+            for (Runnable[] mod : stages) mod[stage].run();
+        }
     }
 }
