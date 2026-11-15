@@ -38,7 +38,7 @@ final class PerfOptimize {
         patch = Path.of(options.get("patch", "")).toAbsolutePath();
         if (!Files.isRegularFile(experimentFile)) throw new IllegalArgumentException("--experiment FILE is required");
         if (!Files.isRegularFile(patch)) throw new IllegalArgumentException("--patch FILE (the candidate change, a git diff) is required");
-        experiment = Json.read(experimentFile);
+        experiment = withFingerprint(Json.read(experimentFile), options.get("only", ""));
         validate(experiment);
         runs = Performance.integer(options, "runs", 5, 2, 50);
         // A sequential test: from --min-runs pairs on, stop once the intervals decide (PerfStopping).
@@ -76,7 +76,7 @@ final class PerfOptimize {
             if (!Files.isRegularFile(experimentFile)) throw new IllegalArgumentException("--experiment FILE is required");
             Path patch = options.values.containsKey("patch") ? Path.of(options.get("patch", "")).toAbsolutePath() : null;
             Path root = Path.of(options.get("root", ".")).toAbsolutePath().normalize();
-            Map<String, Object> checked = PerfCheck.check(experimentFile, Json.read(experimentFile), root, patch, Preferences.read(Preferences.file()));
+            Map<String, Object> checked = PerfCheck.check(experimentFile, withFingerprint(Json.read(experimentFile), options.get("only", "")), root, patch, Preferences.read(Preferences.file()));
             checked.put("details", PerfCheck.text(checked));
             return checked;
         }
@@ -139,12 +139,46 @@ final class PerfOptimize {
             String name = Json.text(gate, "name", "");
             if (name.isBlank() || !names.add(name)) throw new IllegalArgumentException("Gate names must be nonempty and unique");
             boolean frame = Boolean.TRUE.equals(gate.get("frame"));
-            if (!frame && Json.text(gate, "file", "").isBlank()) throw new IllegalArgumentException("Gate " + name + " needs file (an eval snippet) or frame: true");
             String compare = Json.text(gate, "compare", frame ? "pixels" : "exact");
-            if (!Set.of("exact", "expect", "tolerance", "pixels").contains(compare)) throw new IllegalArgumentException("Gate " + name + ": compare is exact, expect, tolerance or pixels");
+            if (compare.equals("fingerprint")) {
+                if (Json.text(experiment, "world", "").isBlank()) throw new IllegalArgumentException("Gate " + name + ": the fingerprint gate needs the experiment's world");
+                continue;
+            }
+            if (!frame && Json.text(gate, "file", "").isBlank()) throw new IllegalArgumentException("Gate " + name + " needs file (an eval snippet) or frame: true");
+            if (!Set.of("exact", "expect", "tolerance", "pixels").contains(compare)) {
+                throw new IllegalArgumentException("Gate " + name + ": compare is exact, expect, tolerance, pixels or fingerprint");
+            }
             if (compare.equals("expect") && !gate.containsKey("expect")) throw new IllegalArgumentException("Gate " + name + " needs expect");
             if (compare.equals("tolerance") && !(gate.get("tolerance") instanceof Number)) throw new IllegalArgumentException("Gate " + name + " needs a numeric relative tolerance");
         }
+    }
+
+    /**
+     * The built-in gate: every experiment with a world gets the behaviour fingerprint (FINGERPRINT.md) unless it sets
+     * "fingerprint": false; "fingerprint": {"ticks": N, "every": N, "radius": N} tunes it. Each launch opens the world
+     * frozen, runs the same seeded ticks with checkpoints, and records the area's whole state; the gate leaves out what
+     * two baseline launches disagree on and requires everything else to match. --only NAME,NAME keeps those gates alone.
+     */
+    static Map<String, Object> withFingerprint(Map<String, Object> experiment, String only) {
+        Object setting = experiment.get("fingerprint");
+        List<Object> gates = new ArrayList<>(Json.array(experiment.getOrDefault("gates", List.of())));
+        boolean present = gates.stream().anyMatch(g -> "fingerprint".equals(Json.object(g).get("compare")));
+        if (!Boolean.FALSE.equals(setting) && !Json.text(experiment, "world", "").isBlank() && !present) {
+            Map<String, Object> gate = Json.map("name", "fingerprint", "compare", "fingerprint");
+            if (setting instanceof Map<?, ?> tuned) gate.putAll(Json.object(tuned));
+            gates.add(gate);
+        }
+        if (!only.isBlank()) {
+            Set<String> kept = new HashSet<>(Arrays.asList(only.split(",")));
+            gates.removeIf(g -> !kept.contains(Json.text(Json.object(g), "name", "")));
+        }
+        Map<String, Object> out = new LinkedHashMap<>(experiment);
+        out.put("gates", gates);
+        return out;
+    }
+
+    static boolean fingerprinted(Map<String, Object> experiment) {
+        return Json.array(experiment.getOrDefault("gates", List.of())).stream().anyMatch(g -> "fingerprint".equals(Json.object(g).get("compare")));
     }
 
     Map<String, Object> execute() throws Exception {
@@ -337,6 +371,8 @@ final class PerfOptimize {
         // Two arms sampling at once read each other's interval (the second reads 0): a pair together samples once.
         if (!parallel) record.sampleLoad(arm + " run " + run + " before launch");
         List<String> launch = new ArrayList<>(world.isBlank() ? List.of("ui-check") : List.of("world-check", "--world", world));
+        // The fingerprint gate needs the world as saved: frozen from its first tick until the fingerprint has run.
+        if (fingerprinted(experiment)) launch.add("--freeze");
         // "jit": "full" measures with the JIT players have, not the C1 a hidden test client starts with.
         if ("full".equals(experiment.get("jit"))) launch.addAll(List.of("--jit", "full"));
         long started = System.nanoTime();
@@ -344,7 +380,15 @@ final class PerfOptimize {
         row.put("launchSeconds", (System.nanoTime() - started) / 1e9);
         record.modFromLaunch(launched);
         if (!Boolean.TRUE.equals(launched.get("ok"))) throw new IOException(arm + " run " + run + " did not start: " + launched.get("error"));
+        Map<String, Object> gates = new LinkedHashMap<>();
         try {
+            for (Object item : Json.array(experiment.get("gates"))) {
+                Map<String, Object> gate = Json.object(item);
+                if (!"fingerprint".equals(gate.get("compare"))) continue;
+                long fingerprintStart = System.nanoTime();
+                gates.put(gate.get("name").toString(), fingerprint(arm, tree, dir, gate).toString());
+                record.step("gates", arm + "-fingerprint", (System.nanoTime() - fingerprintStart) / 1e9);
+            }
             for (Object step : Json.array(experiment.getOrDefault("setup", List.of()))) {
                 Map<String, Object> setup = Json.object(step);
                 Map<String, Object> answer = eval(tree, arm + "-setup", file(experimentDir, Json.text(setup, "file", "")), Json.text(setup, "thread", "game"));
@@ -404,10 +448,10 @@ final class PerfOptimize {
                     "report", capture.resolve("report.json").toString()));
             }
             row.put("captures", captures);
-            Map<String, Object> gates = new LinkedHashMap<>();
             for (Object item : Json.array(experiment.get("gates"))) {
                 Map<String, Object> gate = Json.object(item);
                 String name = gate.get("name").toString();
+                if ("fingerprint".equals(gate.get("compare"))) continue;
                 if (Boolean.TRUE.equals(gate.get("frame"))) {
                     if (gate.containsKey("file")) eval(tree, arm + "-frame-setup", file(experimentDir, gate.get("file").toString()), Json.text(gate, "thread", "game"));
                     Map<String, Object> shot = mmt(tree, arm + "-frame", List.of("ui-check"), 600);
@@ -427,6 +471,32 @@ final class PerfOptimize {
         }
         row.put("seconds", (System.nanoTime() - started) / 1e9);
         return row;
+    }
+
+    /**
+     * The built-in gate's record for one launch: the probe, compiled inside this arm's game, runs the frozen world for
+     * the gate's ticks from seeded random sources, writes the area's state at each checkpoint, and lets the world run on.
+     */
+    Path fingerprint(String arm, Path tree, Path dir, Map<String, Object> gate) throws Exception {
+        String minecraft = Fingerprint.minecraftHint(new ProjectModel(tree).discover());
+        if (minecraft.isBlank()) throw new IOException("The fingerprint gate could not read the mod's Minecraft version from " + tree);
+        Path out = dir.resolve("fingerprint.json");
+        Map<String, Object> args = Json.map(
+            "out", out.toString(),
+            "ticks", gate.getOrDefault("ticks", 200),
+            "every", gate.getOrDefault("every", 50),
+            "radius", gate.getOrDefault("radius", 8),
+            "seed", gate.getOrDefault("seed", Fingerprint.SEED),
+            "unfreeze", true
+        );
+        Fingerprint.Runner runner = (command, args2, timeout) -> {
+            List<String> argv = new ArrayList<>(List.of(command));
+            argv.addAll(args2);
+            return mmt(tree, arm + "-fingerprint", argv, timeout);
+        };
+        Map<String, Object> written = Fingerprint.inGame(runner, home, minecraft, Fingerprint.probeClasses(home, tree, minecraft), "world", args, dir);
+        if (written.get("error") != null) throw new IOException(arm + " fingerprint: " + written.get("error"));
+        return out;
     }
 
     static double metric(Map<String, Object> report, Map<String, Object> metric) {
@@ -643,6 +713,13 @@ final class PerfOptimize {
         }
         Map<String, Object> verdict = Json.map("name", name, "compare", compare);
         List<Object> failures = new ArrayList<>();
+        if (compare.equals("fingerprint")) {
+            Map<String, Object> decided = FingerprintDiff.gate(base.stream().map(Path::of).toList(), cand.stream().map(Path::of).toList());
+            verdict.putAll(decided);
+            verdict.put("name", name);
+            verdict.put("compare", compare);
+            return verdict;
+        }
         switch (compare) {
             case "expect" -> {
                 String expected = String.valueOf(gate.get("expect"));

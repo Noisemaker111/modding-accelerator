@@ -48,10 +48,39 @@ final class PackRepairs {
         "unavailable-file",
         PackRepairs::unavailableFiles,
         "start-failure",
-        PackRepairs::startFailure
+        PackRepairs::startFailure,
+        "bundled-in-use",
+        PackRepairs::bundledInUse
     );
 
-    static final Set<String> ACTIONS = Set.of("add-jar", "remove-mod", "replace-mod", "fetch-dependency", "substitute-file", "leave-out-of-server");
+    static final Set<String> ACTIONS = Set.of(
+        "add-jar", "remove-mod", "replace-mod", "fetch-dependency", "substitute-file", "leave-out-of-server", "add-newer-bundled"
+    );
+
+    /**
+     * A failed start whose log matches "failure", in a pack where the loader takes a library from inside another mod's
+     * jar (no copy of its own is as new): each such library is a hit. Its newer release on its own replaces the bundled
+     * copy, since the loader takes the highest version.
+     */
+    static List<Hit> bundledInUse(Map<String, Object> spec, Facts facts) {
+        if (facts.startLog() == null || !Pattern.compile(Json.text(spec, "failure", ".")).matcher(facts.startLog()).find()) return List.of();
+        List<Hit> hits = new ArrayList<>();
+        for (String id : facts.scan().providers.keySet()) {
+            PackMods.Provider used = facts.scan().used(id);
+            if (used == null || !used.bundled()) continue;
+            hits.add(new Hit(id + " " + used.version() + " (inside " + used.jar() + ") is the copy the loader uses", Json.map("id", id, "version", used.version(), "jar", used.jar())));
+        }
+        return hits;
+    }
+
+    /** A newer release of the hit's mod from Modrinth (PackResolve) than the copy the pack has. */
+    static Path release(PackCheck check, Facts facts, Map<String, Object> target) throws Exception {
+        String id = Json.text(target, "id", ""), version = Json.text(target, "version", "");
+        List<String> metadata = facts.loader().metadata(facts.pack().minecraft());
+        List<Path> jars = facts.pack().mods().stream().map(PackCheck.Mod::jar).toList();
+        return PackResolve.release(check, id, metadata, facts.pack().loader(), facts.pack().minecraft(), jars,
+            found -> Versions.compare(found, version) > 0);
+    }
 
     /**
      * What the chosen repairs change. add: jars put in the mods folder (verified downloads); remove: the pack's jars taken
@@ -344,9 +373,14 @@ final class PackRepairs {
      */
     static String failing(String log) {
         List<String> lines = new ArrayList<>();
+        int frames = 0;
         for (String line : log.split("\\R")) {
             String plain = line.replaceAll("[\u00a7\ufffd].", "");
-            if (FAILING.matcher(plain).find() && !plain.contains("|") && lines.size() < 400) lines.add(plain.strip());
+            boolean failing = FAILING.matcher(plain).find() && !plain.contains("|");
+            // The first frames under an exception say whose code threw it.
+            boolean frame = !failing && frames > 0 && plain.strip().startsWith("at ");
+            if ((failing || frame) && lines.size() < 400) lines.add(plain.strip());
+            frames = failing && plain.contains("Exception") ? 8 : frame ? frames - 1 : 0;
         }
         return String.join("\n", new LinkedHashSet<>(lines));
     }
@@ -430,6 +464,16 @@ final class PackRepairs {
                         String jar = Json.text(target, "jar", "");
                         if (!jar.isEmpty() && !serverOnly.contains(jar)) serverOnly.add(jar);
                         notes.add(fix.get("id") + ": " + jar + " is left out of the server; players keep it");
+                    }
+                    case "add-newer-bundled" -> {
+                        Path jar = release(check, facts, target);
+                        if (jar == null) {
+                            notes.add(fix.get("id") + ": Modrinth has no newer release of " + target.get("id") + " for this game version and loader, so nothing changed for it");
+                            continue;
+                        }
+                        add.add(jar);
+                        sources.put(jar.getFileName().toString(), Json.map("type", type, "mod", target.get("id"), "from", "Modrinth, by the project of the pack's own jar"));
+                        notes.add(fix.get("id") + ": added " + jar.getFileName());
                     }
                     default -> throw new IllegalStateException(type);
                 }
@@ -701,7 +745,11 @@ final class PackRepairs {
             if (type.equals("leave-out-of-server")) for (Hit hit : applies(fix, facts)) gone.add(String.valueOf(hit.target().get("jar")));
             if (type.equals("substitute-file")) stillGone.clear();
             after.removeIf(m -> gone.contains(m.file()));
-            if (type.equals("add-jar") || type.equals("replace-mod") || type.equals("fetch-dependency") || type.equals("substitute-file")) {
+            // A general repair names no mod and no file: its jar is found when it runs, and its test describes it.
+            if (fix.get("loader") instanceof String any && any.equals("*") && (fix.containsKey("mod") || fixed.containsKey("url") || fixed.containsKey("file"))) {
+                throw new AssertionError(id + " is general: it may not name a mod or a file");
+            }
+            if (Set.of("add-jar", "replace-mod", "fetch-dependency", "substitute-file", "add-newer-bundled").contains(type)) {
                 var added = Json.object(test.get("added"));
                 if (added.isEmpty()) throw new AssertionError(id + ": its test does not describe the jar it adds");
                 added.putIfAbsent("file", Json.text(action, "file", "added.jar"));
@@ -721,6 +769,8 @@ final class PackRepairs {
         Path jar = mods.resolve(Json.text(spec, "file", "test.jar"));
         try (var out = new ZipOutputStream(Files.newOutputStream(jar))) {
             write(out, format, metadata(Json.array(spec.get("mods")), Json.array(spec.getOrDefault("bundles", List.of())), format));
+            // Class files by name only, so a crash's stack frame can be traced to this jar.
+            for (Object c : Json.array(spec.getOrDefault("classes", List.of()))) write(out, c.toString(), "");
             int n = 0;
             for (Object b : Json.array(spec.getOrDefault("bundles", List.of()))) {
                 var bundle = Json.object(b);

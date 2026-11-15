@@ -519,6 +519,8 @@ final class Port {
         learnFromMods = options.has("learn-from-mods");
         Map<String, Object> refusal = Route.blocked(build.harness, from, to);
         if (refusal != null) return refusal;
+        // --check fingerprint: what the mod does on its own version, recorded before any file changes (FINGERPRINT.md).
+        if ("fingerprint".equals(options.get("check", "")) && !options.has("dry-run")) behaviourBefore = behaviour(from, "fingerprint-before");
         // --direct keeps the one-jump map (A -> B joined in one diff); an explicit --map is used as given.
         route = options.has("direct") || options.values.containsKey("map") ? null : Route.plan(build.harness, from, to);
         Set<String> actual = versions(model);
@@ -1037,7 +1039,7 @@ final class Port {
             // A port is done when the mod works in the real game: --check runs the mod's own game check on the result.
             boolean checkFailed = false;
             if (passed && options.values.containsKey("check")) {
-                Map<String, Object> check = gameCheck(options.get("check", ""));
+                Map<String, Object> check = behaviourBefore != null ? behaviourCheck(to) : gameCheck(options.get("check", ""));
                 boolean works = Boolean.TRUE.equals(check.get("ok"));
                 checkFailed = !works;
                 result.put("gameCheck", check);
@@ -1156,7 +1158,7 @@ final class Port {
     }
 
     /**
-     * What a port reached, never more: a source that did not compile is "compile-failed" (Farmer's Delight's failed
+     * What a port reached, never more: a source that did not compile is "compile-failed" (a NeoForge mod's failed
      * 1.21.4 builds were once reported as compile-and-mixin-applied), mixins Mixin did not apply are
      * "compiled-mixins-failed", and only a packaged build is "build-and-mixin-applied".
      */
@@ -1680,6 +1682,37 @@ final class Port {
      * The mod's own game check, run on the ported project: a command (a mmt eval/ui-check script, or a test program)
      * started in the project with MMT_PORTED_ROOT set to it. Its exit code is the verdict.
      */
+    /** The fingerprint taken before the port (--check fingerprint), or null. */
+    Path behaviourBefore;
+
+    /** The mod's behaviour fingerprint on one game version, in its own development client (Fingerprint.record). */
+    Path behaviour(String minecraft, String name) throws Exception {
+        Path out = build.report.directory.resolve(name + ".json");
+        Set<String> namespaces = Fingerprint.modIds(build.project.root);
+        Map<String, Object> args = Json.map("ticks", 100, "every", 20, "seed", Fingerprint.SEED, "namespaces", new ArrayList<>(namespaces));
+        Fingerprint.record(build.harness, build.project.root, "", minecraft, namespaces, args, build.report, out, name);
+        return out;
+    }
+
+    /**
+     * The port's behaviour check: the fingerprint after the port against the one before, across the two versions only
+     * what the mod owns is compared, after the game's own renames (knowledge/fingerprint-normalise.json).
+     */
+    Map<String, Object> behaviourCheck(String to) throws Exception {
+        long start = System.nanoTime();
+        Path after = behaviour(to, "fingerprint-after");
+        Map<String, Object> a = Json.read(behaviourBefore), b = Json.read(after);
+        Set<String> namespaces = new TreeSet<>();
+        for (Object ns : Json.array(Json.object(a.get("target")).get("namespaces"))) namespaces.add(ns.toString());
+        FingerprintDiff.Normaliser normaliser = Json.text(Json.object(a.get("target")), "minecraft", "").equals(to)
+            ? new FingerprintDiff.Normaliser("exact", Set.of())
+            : FingerprintDiff.Normaliser.across(Json.read(build.harness.resolve("knowledge/fingerprint-normalise.json")), namespaces, Json.object(a.get("target")).get("minecraft") + " -> " + to);
+        Map<String, Object> diff = FingerprintDiff.compare(a, b, normaliser);
+        boolean same = Boolean.TRUE.equals(diff.get("same")) && ((Number) diff.get("compared")).intValue() > 0;
+        return Json.map("ok", same, "command", "fingerprint " + behaviourBefore + " -> " + after, "before", behaviourBefore.toString(), "after", after.toString(),
+            "seconds", (System.nanoTime() - start) / 1e9, "diff", diff, "tail", FingerprintDiff.text(diff));
+    }
+
     Map<String, Object> gameCheck(String command) throws Exception {
         long start = System.nanoTime();
         List<String> shell = Runtimes.WINDOWS ? List.of("cmd.exe", "/d", "/s", "/c", command) : List.of("sh", "-c", command);

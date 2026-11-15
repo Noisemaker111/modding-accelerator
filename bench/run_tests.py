@@ -27,7 +27,8 @@ SEP = ";" if WINDOWS else ":"
 PYTHON = ["bench/test_measures.py", "bench/test_record.py", "bench/test_ledger_rule.py", "bench/test_java_lines.py",
           "bench/test_loader_api.py", "bench/test_sweeps.py", "bench/test_session_cost.py", "bench/test_perf_sessions.py",
           "bench/test_performance.py", "bench/test_perf_verdicts.py", "bench/test_cloud_run.py", "bench/test_budgets.py",
-          "bench/diorama/test_budget.py", "bench/diorama/test_prepare_comparison.py", "bench/diorama/test_prepare_world.py"]
+          "bench/diorama/test_budget.py", "bench/diorama/test_prepare_comparison.py", "bench/diorama/test_prepare_world.py",
+          "bench/test_scoreboard.py"]
 
 
 def java(*args):
@@ -65,6 +66,7 @@ CHECKS = {
     "package": (False, None, [java("tools/cli/Bootstrap.java", ".", "package", "--json")]),
     "self-test": (True, None, [(java("-jar", JAR, "self-test", "--root", "."), {} if WINDOWS else {"LC_ALL": "C"})]),
     "checkout-data": (True, None, checkout_data),
+    "fingerprint": (True, None, [[sys.executable, "bench/test_fingerprint.py", JAR]]),
     "port-preflight": (False, None, port_preflight),
     "zip": (True, None, [java("tools/tests/PackageAcceptanceTest.java", ZIP, ZIP + ".sha256", tempfile.gettempdir())]),
     "fast": (True, None, [java("-jar", JAR, "fast", "--root", FIXTURE, "--json")]),

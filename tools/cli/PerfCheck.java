@@ -86,7 +86,7 @@ final class PerfCheck {
         }
         if (!"full".equals(experiment.get("jit"))) {
             warnings.add("jit is not \"full\": hidden test clients compile with C1 alone, which weighs code differently from a player's game."
-                + " Diorama's air-over-ground candidate looked faster under C1 and was 0.77x with the full JIT");
+                + " A measured candidate looked faster under C1 and was 0.77x with the full JIT (knowledge/perf-patterns.json)");
         }
         Object seconds = measure.getOrDefault("seconds", 20);
         if (seconds instanceof Number number && number.doubleValue() < 15) {

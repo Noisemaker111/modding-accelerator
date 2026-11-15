@@ -251,6 +251,39 @@ final class PackCheck {
      * The failing lines of the first start in a lane's result that did not open (its log's failure and dependency lines,
      * and the failure pack-check read from its crash report), or null when every start opened.
      */
+    /**
+     * What --fingerprint found, as findings. A recording that failed (the start wrote no record, the probe reported an
+     * error, the reload did not read the world back) is a problem: the check asked for a fingerprint and has none. A
+     * recorded world that changed across its save and reload is a note, with the leaves that changed: that is what the
+     * fingerprint is for, and it is the mods' behaviour, not a failure to record it.
+     */
+    static List<Object> fingerprintFindings(Map<String, Object> answer) throws IOException {
+        List<Object> out = new ArrayList<>();
+        String failed = null;
+        Map<String, Object> record = null;
+        if (answer == null) failed = "no fingerprint was recorded";
+        else {
+            Object file = answer.get("out");
+            if (file != null && Files.isRegularFile(Path.of(file.toString()))) record = Json.read(Path.of(file.toString()));
+            if (!Boolean.TRUE.equals(answer.get("ok"))) failed = String.valueOf(answer.getOrDefault("error", answer.getOrDefault("reloadError", "the recording failed")));
+            else if (record == null) failed = "the fingerprint record is missing" + (file == null ? "" : ": " + file);
+            else if (record.containsKey("error")) failed = "the probe reported: " + record.get("error");
+            else if (record.containsKey("reloadError")) failed = "the saved world was not read back: " + record.get("reloadError");
+        }
+        if (failed != null) {
+            out.add(Json.map("kind", "fingerprint", "severity", "problem", "summary", "The behaviour fingerprint could not be recorded: " + failed,
+                "evidence", answer == null ? Map.of() : answer));
+            return out;
+        }
+        Map<String, Object> trip = Json.object(record.getOrDefault("roundTrip", Map.of()));
+        if (Boolean.FALSE.equals(trip.get("same"))) {
+            out.add(Json.map("kind", "fingerprint-round-trip", "severity", "note", "summary",
+                trip.get("differences") + " leaves of the fingerprint world changed across its save and reload (" + answer.get("out") + ", roundTrip)",
+                "evidence", trip.getOrDefault("changed", Map.of())));
+        }
+        return out;
+    }
+
     static String failedStart(Map<String, Object> game) throws IOException {
         for (String stage : List.of("newWorld", "reopen")) {
             if (!(game.get(stage) instanceof Map<?, ?> start) || Boolean.TRUE.equals(start.get("opened"))) continue;
@@ -1008,6 +1041,16 @@ final class PackCheck {
                 checks.start = second;
                 stage("reopen", checks);
             }
+            if (options.has("fingerprint")) {
+                Map<String, Object> recorded;
+                try {
+                    recorded = Boolean.TRUE.equals(first.get("opened")) ? fingerprint() : Json.map("ok", false, "error", "the pack's server did not start, so no fingerprint was recorded");
+                } catch (Exception failed) {
+                    recorded = Json.map("ok", false, "error", String.valueOf(failed));
+                }
+                game.put("fingerprint", recorded);
+                found.addAll(fingerprintFindings(recorded));
+            }
             if (!userWorld.isEmpty()) {
                 Path save = Path.of(userWorld).toAbsolutePath().normalize();
                 if (!Files.isRegularFile(save.resolve("level.dat"))) throw new IllegalArgumentException("--world needs a save folder with level.dat; got " + save);
@@ -1023,6 +1066,48 @@ final class PackCheck {
             }
             result = game;
             return game;
+        }
+
+        /**
+         * --fingerprint: the behaviour fingerprint with the same probe, on this server. A third start makes a new world
+         * frozen from its first tick (MmtFingerprint.content: every block item and entity of the pack's mods, or of
+         * --namespaces), a fourth opens it again (reload); the record is written to --out or the receipt.
+         */
+        Map<String, Object> fingerprint() throws Exception {
+            Path dir = report.directory.resolve(lane + "fingerprint");
+            Files.createDirectories(dir);
+            long seed = Long.parseLong(options.get("seed", String.valueOf(Fingerprint.SEED)));
+            // The same world every time, as fingerprint --root has it: the flat world the vanilla server of this version makes
+            // with the seed (fixed time and weather, no mob spawning), copied in before the server opens it. Without it the
+            // server would generate a new random world for each record.
+            deleteTree(instance.resolve("fingerprint-world"));
+            copyTree(Fingerprint.template(harness, pack.minecraft(), seed, report), instance.resolve("fingerprint-world"));
+            Set<String> namespaces = new TreeSet<>();
+            if (options.values.containsKey("namespaces")) namespaces.addAll(Arrays.asList(options.get("namespaces", "").split(",")));
+            namespaces.removeIf(String::isBlank);
+            Map<String, Object> args = Json.map("out", dir.resolve("content.json").toString(), "ticks", Integer.parseInt(options.get("ticks", "100")),
+                "every", Integer.parseInt(options.get("every", "20")), "seed", seed, "namespaces", new ArrayList<>(namespaces));
+            Map<String, Object> made = start("fingerprint", "fingerprint-world", Map.of("mmt.fingerprint.args", Json.write(args).replace("\"", "'")));
+            if (!Boolean.TRUE.equals(made.get("opened")) || !Files.isRegularFile(dir.resolve("content.json"))) {
+                return Json.map("ok", false, "error", "The fingerprint start wrote no record", "start", made);
+            }
+            Map<String, Object> content = Json.read(dir.resolve("content.json"));
+            Map<String, Object> reloadArgs = Json.map("out", dir.resolve("reload.json").toString(), "area", content.get("area"));
+            Map<String, Object> again = start("fingerprint-reload", "fingerprint-world", Map.of("mmt.fingerprint.args", Json.write(reloadArgs).replace("\"", "'")));
+            Map<String, Object> reload = Files.isRegularFile(dir.resolve("reload.json")) ? Json.read(dir.resolve("reload.json")) : Json.map("error", "The reload start wrote no record");
+            List<Object> logs = new ArrayList<>();
+            for (Map<String, Object> run : List.of(made, again)) if (run.get("log") != null) logs.add(Fingerprint.logFile(Path.of(run.get("log").toString()), run == made ? "content" : "reload"));
+            Map<String, Object> fingerprint = Fingerprint.assemble(content, reload, logs);
+            Set<String> ids = new TreeSet<>(namespaces);
+            if (ids.isEmpty()) for (var entry : scan.providers.entrySet()) for (var p : entry.getValue()) if (!p.bundled()) ids.add(entry.getKey());
+            fingerprint.put("target", Json.map("minecraft", pack.minecraft(), "loaders", List.of(loader.id()), "namespaces", new ArrayList<>(ids),
+                "environment", "dedicated server", "pack", pack.input().toString()));
+            Path out = options.values.containsKey("out") ? Path.of(options.get("out", "")).toAbsolutePath() : dir.resolve("fingerprint.json");
+            Json.save(out, fingerprint);
+            Map<String, Object> answer = Json.map("ok", !fingerprint.containsKey("error") && !fingerprint.containsKey("reloadError"), "out", out.toString(),
+                "hash", FingerprintDiff.hash(fingerprint));
+            for (String key : List.of("error", "reloadError")) if (fingerprint.containsKey(key)) answer.put(key, fingerprint.get(key));
+            return answer;
         }
 
         /** Runs a stage's checks; a finding of the kind a matched repair is proven against carries that repair. */
@@ -1064,7 +1149,7 @@ final class PackCheck {
                 long start = System.nanoTime(), wall = System.currentTimeMillis();
                 String ended;
                 try {
-                    ended = runServer(command, log, out, mode.equals("place"));
+                    ended = runServer(command, log, out, mode.equals("place") || mode.equals("fingerprint"));
                 } finally {
                     lock.unlock();
                 }

@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "about": "One headline per goal, each defined by the behaviour fingerprint (FINGERPRINT.md); rebuilt by python bench/scoreboard.py from coverage/sweeps.",
+  "built": "2026-11-15",
+  "goals": {
+    "port": {
+      "name": "ports whose behaviour fingerprint matches across the jump",
+      "value": 0,
+      "of": 10,
+      "runner": "python bench/port_board.py --fingerprint",
+      "source": "coverage/sweeps/port.json",
+      "date": null,
+      "note": "not yet run with behaviour fingerprints"
+    },
+    "convert": {
+      "name": "conversions with the same behaviour fingerprint as the original",
+      "value": 0,
+      "of": 35,
+      "runner": "python bench/convert_sweep.py run",
+      "source": "coverage/sweeps/convert.json",
+      "date": "2026-11-15",
+      "note": "not yet run with behaviour fingerprints"
+    },
+    "pack": {
+      "name": "packs whose fingerprint world opens again unchanged",
+      "value": 0,
+      "of": 24,
+      "runner": "python bench/pack_sweep.py run",
+      "source": "coverage/sweeps/pack.json",
+      "date": "2026-11-15",
+      "note": "not yet run with behaviour fingerprints"
+    },
+    "perf": {
+      "name": "perf diffs the generic fingerprint gate decides as the hand gates did",
+      "value": 4,
+      "of": 6,
+      "runner": "python bench/perf_sweep.py run",
+      "source": "coverage/sweeps/perf.json",
+      "date": "2026-11-15",
+      "ran": 5
+    }
+  }
+}

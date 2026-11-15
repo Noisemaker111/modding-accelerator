@@ -137,10 +137,17 @@ public final class PackMetadataTests extends PackCheckFixtures {
             scan.packages.get("com.terraformersmc.traverse").equals("traverse.jar"),
             "a class package is traced to its jar: " + scan.packages
         );
-        var faults = PackRepairs.match(harness, pack, scan, check.findings);
+        // The general repair for a failed reopen: nothing matches before the game; the reopen's failure matches it.
+        String reopenFailed = "Failed to load datapacks, can't proceed with server load\nOverworld settings missing";
         expect(
-            faults.size() == 1 && "biolith-saved-climate-list".equals(faults.get(0).get("id")) && text(check, "known-fault").contains("1.0.1-alpha.1"),
-            "the bundled Biolith alpha matches the proven repair: " + faults
+            PackRepairs.match(harness, pack, scan, new ArrayList<>()).stream().noneMatch(f -> "bundled-library-out-of-date".equals(f.get("id"))),
+            "a repair for a failed start does not match before the game"
+        );
+        List<Object> found = new ArrayList<>();
+        var faults = PackRepairs.match(harness, new PackRepairs.Facts(pack, scan, forge, List.of(), reopenFailed), found, List.of());
+        expect(
+            faults.stream().anyMatch(f -> "bundled-library-out-of-date".equals(f.get("id"))) && Json.write(found).contains("biolith 1.0.1-alpha.1"),
+            "the bundled Biolith alpha matches the general repair for a library in use from inside another jar: " + faults
         );
 
         // Forge picks the highest version: a newer standalone Biolith replaces the bundled one, so the fault is gone.
@@ -149,11 +156,16 @@ public final class PackMetadataTests extends PackCheckFixtures {
         PackCheck.Pack fixedPack = fixed.read(scratch.resolve("instance"));
         PackMods.Scan fixedScan = statics(fixed, fixedPack, forge);
         expect(
-            PackRepairs.match(harness, fixedPack, fixedScan, fixed.findings).isEmpty() && !text(fixed, "duplicate-mod").contains("biolith"),
+            PackRepairs.match(harness, new PackRepairs.Facts(fixedPack, fixedScan, forge, List.of(), reopenFailed), new ArrayList<>(), List.of()).stream()
+                .noneMatch(f -> Json.write(f.get("hits")).contains("biolith")) && !text(fixed, "duplicate-mod").contains("biolith"),
             "Biolith beta in mods/ clears the fault, and a bundled copy beside a standalone jar is not a duplicate: " + fixed.findings
         );
         PackCheck.Pack newer = new PackCheck.Pack("p", "", "1.21.1", "forge", "52", pack.mods(), pack.layers(), pack.input(), true, "x");
-        expect(PackRepairs.match(harness, newer, scan, new ArrayList<>()).isEmpty(), "the repair is not offered for another game version");
+        expect(
+            PackRepairs.match(harness, new PackRepairs.Facts(newer, scan, forge, List.of(), reopenFailed), new ArrayList<>(), List.of()).stream()
+                .anyMatch(f -> "bundled-library-out-of-date".equals(f.get("id"))),
+            "a general repair names a kind of fault, not a mod or version: it is offered on another game version too"
+        );
     }
 
     // ------------------------------------------------------------------ the shapes a pack arrives in

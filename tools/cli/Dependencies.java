@@ -245,7 +245,7 @@ final class Dependencies {
             Set<String> owners = propertyKeys(setup.build.project, old);
             if (chosen == null) {
                 // A compile-only integration written out by name keeps its old coordinate, as any compile-only one does
-                // (Jade and AppleSkin compile against JEI's API): the build decides whether it still compiles.
+                // (mods compile against JEI's API): the build decides whether it still compiles.
                 // Only a name the build makes from the Minecraft property (jei-${minecraft_version}-...) must change with it; a
                 // name written out, or one that only arrives with another dependency, keeps its old coordinate.
                 String head = name.substring(0, named.start());
@@ -381,7 +381,7 @@ final class Dependencies {
 
     /**
      * The Loom a chosen Fabric library's jar was built with, for Target.loomFollows: a library looked up by its game version
-     * (not through Modrinth) says it too (AppleSkin 1.20.1 -> 1.21.1 kept a Loom older than its JEI's 1.18.2). The jar is
+     * (not through Modrinth) says it too (a Fabric port 1.20.1 -> 1.21.1 kept a Loom older than its JEI's 1.18.2). The jar is
      * read from the first project repository that has it; a jar that cannot be read records nothing.
      */
     static void recordLoom(Target.Setup setup, String group, String name, String version) {

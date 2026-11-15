@@ -621,7 +621,7 @@ final class Game {
             );
             Map<String, Object> before = request(current, Json.map("command", "status"));
             if (Boolean.TRUE.equals(before.get("inWorld"))) verifyWorld(before, saves);
-            else actions.add(request(current, Json.map("command", "open-world", "world", world)));
+            else actions.add(request(current, Json.map("command", "open-world", "world", world, "freeze", options.has("freeze"))));
         }
         if (command.equals("mp-check")) {
             String server = options.get("server", "127.0.0.1:25565");
@@ -1270,8 +1270,8 @@ final class Game {
     }
 
     /**
-     * A recorded launch can only be replayed if it says where the classes are. NeoGradle 7.0 (Jade)
-     * and ForgeGradle 6 (MineColonies) supply the classpath and program arguments at exec time, so
+     * A recorded launch can only be replayed if it says where the classes are. NeoGradle 7.0
+     * and ForgeGradle 6 supply the classpath and program arguments at exec time, so
      * the recipe holds only JVM flags and the main class, and replaying it failed with
      * "Could not find or load main class cpw.mods.bootstraplauncher.BootstrapLauncher". Such a
      * recipe is left to Gradle, which prepares and launches the client again.
@@ -1288,10 +1288,10 @@ final class Game {
 
     /**
      * Waits for the client's first frame. The game fails to start when its log stops moving for 180 s, or after 20
-     * minutes in all: a healthy hidden start on a busy PC took about 8 minutes (2026-11-08, AppleSkin on 1.21.6 beside
+     * minutes in all: a healthy hidden start on a busy PC took about 8 minutes (2026-11-08, a Fabric 1.21.6 mod beside
      * NeoForge decompiles) and failed a 180 s total budget, while a hung game stops writing. The clock starts when the game itself starts:
      * when Gradle launches it, Gradle first compiles and prepares the run, which on a big mod
-     * (MineColonies: about 4 minutes of javac) used to use up the whole budget before the game
+     * (2,000 source files: about 4 minutes of javac) used to use up the whole budget before the game
      * existed. Gradle's own phase gets a separate, much larger budget; its exit still fails at once.
      * A Fabric loader that rejects the mods leaves an error window open instead of exiting, so
      * that line fails the start at once instead of after the whole timeout.

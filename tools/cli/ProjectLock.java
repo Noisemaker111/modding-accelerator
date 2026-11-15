@@ -12,8 +12,20 @@ import java.util.*;
  */
 final class ProjectLock implements AutoCloseable {
 
+    /**
+     * Set for a child a lock holder runs as one of its own steps (port --check fingerprint starts the game through
+     * mmt commands): the lock file's path. The child does not wait for the lock its parent holds for it.
+     */
+    static final String HELD = "MMT_HOLDS_LOCK";
+    private static volatile String heldHere;
+
     private final FileChannel channel;
     private final FileLock lock;
+
+    /** The lock file this process holds, if any, for the children it runs. */
+    static String heldHere() {
+        return heldHere;
+    }
 
     private ProjectLock(FileChannel channel, FileLock lock) {
         this.channel = channel;
@@ -24,6 +36,8 @@ final class ProjectLock implements AutoCloseable {
         Path state = project.state();
         Files.createDirectories(state);
         Path file = state.resolve("command.lock"), info = state.resolve("command.json");
+        String path = file.toAbsolutePath().normalize().toString();
+        if (path.equals(System.getenv(HELD))) return new ProjectLock(null, null);
         FileChannel channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         FileLock lock;
         try {
@@ -63,11 +77,14 @@ final class ProjectLock implements AutoCloseable {
                 LocalTime.now().truncatedTo(ChronoUnit.SECONDS).toString()
             )
         );
+        heldHere = path;
         return new ProjectLock(channel, lock);
     }
 
     @Override
     public void close() throws IOException {
+        if (lock == null) return;
+        heldHere = null;
         try {
             lock.release();
         } finally {

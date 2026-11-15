@@ -211,7 +211,7 @@ public final class PortableAgent {
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
                     "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
                     "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume(),
-                    "backgroundApplied", System.getProperty("mmt.background.applied", ""), "backgroundError", System.getProperty("mmt.background.error", "")));
+                    "backgroundApplied", System.getProperty("mmt.background.applied", ""), "backgroundError", System.getProperty("mmt.background.error", ""), "frozen", System.getProperty("mmt.frozen", "")));
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
@@ -222,6 +222,8 @@ public final class PortableAgent {
             if (world.isEmpty() || world.equals(".") || world.equals("..") || world.indexOf('/') >= 0 || world.indexOf('\\') >= 0 || world.indexOf('\0') >= 0)
                 throw new IllegalArgumentException("World must be one existing save name");
             Object flows = call(client, "createWorldOpenFlows", "createIntegratedServerLoader");
+            // Before openWorld: it holds this thread until the built-in server has started, and by then it has ticked.
+            if (Boolean.TRUE.equals(request.get("freeze"))) freezeAtLoad();
             invoke(flows, new String[]{"openWorld", "start"}, world, (Runnable)() -> {});
             done.complete(Json.map("ok", true, "requestedWorld", world));
         } else if (command.equals("connect")) {
@@ -534,6 +536,38 @@ public final class PortableAgent {
             catch (IllegalArgumentException mismatch) { }
         }
         throw new NoSuchMethodException(type.getName() + " " + Arrays.toString(names) + "/" + arguments.length);
+    }
+    /**
+     * world-check --freeze: the built-in server gets the game's tick freeze (Minecraft 1.20.3 and later) as a task queued
+     * the moment it exists, which it runs while it loads its spawn area, before its first tick. Chunks still load; blocks,
+     * entities, block entities and scheduled ticks stand still until something steps or unfreezes the game.
+     */
+    private static void freezeAtLoad() {
+        Thread watcher = new Thread(() -> {
+            long deadline = System.nanoTime() + 300_000_000_000L;
+            try {
+                while (System.nanoTime() < deadline) {
+                    Object server = null;
+                    try { server = call(client, "getSingleplayerServer", "getServer"); } catch (Exception notYet) { }
+                    if (server != null) {
+                        final Object running = server;
+                        invoke(running, new String[]{"execute"}, (Runnable) () -> {
+                            try {
+                                invoke(call(running, "tickRateManager", "getTickManager"), new String[]{"setFrozen"}, true);
+                                String time = "";
+                                try { time = ", game time " + call(call(running, "overworld", "getOverworld"), "getGameTime", "getTime"); } catch (Exception noLevelYet) { }
+                                System.setProperty("mmt.frozen", "at load" + time);
+                            } catch (Exception none) { System.setProperty("mmt.frozen", "no tick freeze in this game: " + cause(none)); }
+                        });
+                        return;
+                    }
+                    Thread.sleep(2);
+                }
+                System.setProperty("mmt.frozen", "the world's server never started");
+            } catch (Exception failure) { System.setProperty("mmt.frozen", "failed: " + cause(failure)); }
+        }, "mmt-freeze");
+        watcher.setDaemon(true);
+        watcher.start();
     }
     private static String cause(Throwable error) { while (error.getCause() != null) error = error.getCause(); return error.toString(); }
 }
