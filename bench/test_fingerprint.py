@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FIX = ROOT / "bench" / "fingerprint-fixtures"
 # The packaged jar when given (bench/run_tests.py passes it), as users get it; else this checkout's launcher.
-MMT = ["java", "-jar", sys.argv[1]] if len(sys.argv) > 1 else [str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))]
+MMT = ["java", "-jar", str((ROOT / sys.argv[1]).resolve())] if len(sys.argv) > 1 else [str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))]
 checks = 0
 
 
@@ -24,9 +24,10 @@ def check(ok, label):
     checks += 1
 
 
-def diff(*args):
+def diff(*args, cwd=None):
     """mmt fingerprint-diff with --json: (exit code, its result)."""
-    r = subprocess.run(MMT + ["fingerprint-diff", *map(str, args), "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
+    r = subprocess.run(MMT + ["fingerprint-diff", *map(str, args), "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                       timeout=600, cwd=cwd)
     line = next((l for l in reversed(r.stdout.splitlines()) if l.startswith("{")), None)
     if line is None:
         raise AssertionError(f"fingerprint-diff printed no result: {r.stdout[-800:]} {r.stderr[-800:]}")
@@ -117,5 +118,16 @@ copy = spaced / "a record.json"
 copy.write_text((FIX / "content-1.21.1.json").read_text(encoding="utf-8"), encoding="utf-8")
 code, result = diff(copy, FIX / "content-1.21.1.json")
 check(code == 0 and result["same"], "a fingerprint in a folder with spaces is read")
+
+# --out as a bare file name, from another folder: both the two-record diff and the gate on recorded launches write it there.
+for name in ("diff.json", "gate.json"):
+    (spaced / name).unlink(missing_ok=True)
+code, result = diff(copy, FIX / "content-1.21.4-lost-block.json", "--out", "diff.json", cwd=spaced)
+written = json.loads((spaced / "diff.json").read_text(encoding="utf-8")) if (spaced / "diff.json").is_file() else {}
+check(code == 1 and written.get("same") is False, f"a relative --out of a diff is written where it was run: {result.get('error')}")
+code, result = diff("--baseline", files("world-baseline-0", "world-baseline-1"), "--candidate", files("world-candidate-lost-tickets-0", "world-candidate-lost-tickets-1"),
+                    "--out", "gate.json", cwd=spaced)
+written = json.loads((spaced / "gate.json").read_text(encoding="utf-8")) if (spaced / "gate.json").is_file() else {}
+check(code == 1 and written.get("passed") is False, f"a relative --out of the gate is written where it was run: {result.get('error')}")
 
 print(f"{checks} fingerprint checks passed")

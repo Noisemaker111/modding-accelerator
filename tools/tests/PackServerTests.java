@@ -17,10 +17,11 @@ public final class PackServerTests extends PackCheckFixtures {
         try {
             serverMods(harness, scratch);
             loaders(harness, scratch);
+            fingerprintVerdict(scratch);
             System.out.println(
                 count +
                 " pack server checks passed: which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones, a --focus set)," +
-                " a library jar's bundled mods, four loader adapters"
+                " a library jar's bundled mods, four loader adapters, --fingerprint's verdict (a failed recording fails; a reload change is a note)"
             );
         } finally {
             System.setProperty("user.home", home);
@@ -28,6 +29,36 @@ public final class PackServerTests extends PackCheckFixtures {
                 for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ --fingerprint's verdict
+    /** A fingerprint pack-check could not record fails the check; a recorded world that changed on reload is only noted. */
+    static void fingerprintVerdict(Path scratch) throws Exception {
+        Path clean = scratch.resolve("clean.json"), changed = scratch.resolve("changed.json"), probeError = scratch.resolve("probe-error.json");
+        Path reloadError = scratch.resolve("reload-error.json");
+        Json.save(clean, Json.map("checkpoints", List.of(), "roundTrip", Json.map("same", true, "differences", 0)));
+        Json.save(changed, Json.map("roundTrip", Json.map("same", false, "differences", 15, "changed", Json.map("levels/x/blockEntities/1,2,3", "{}"))));
+        Json.save(probeError, Json.map("error", "The world did not advance"));
+        Json.save(reloadError, Json.map("roundTrip", Json.map("same", true), "reloadError", "The saved area did not load again in 300 s"));
+        Map<String, Map<String, Object>> problems = new LinkedHashMap<>();
+        problems.put("a start that wrote no record", Json.map("ok", false, "error", "The fingerprint start wrote no record"));
+        problems.put("a record that is missing", Json.map("ok", true, "out", scratch.resolve("absent.json").toString()));
+        problems.put("a probe error in the record", Json.map("ok", true, "out", probeError.toString()));
+        problems.put("a reload that did not read the world back", Json.map("ok", true, "out", reloadError.toString()));
+        problems.put("no answer at all", null);
+        for (var entry : problems.entrySet()) {
+            List<Object> found = PackCheck.fingerprintFindings(entry.getValue());
+            expect(
+                found.size() == 1 && "problem".equals(Json.object(found.get(0)).get("severity")) && "fingerprint".equals(Json.object(found.get(0)).get("kind")),
+                entry.getKey() + " fails pack-check: " + found
+            );
+        }
+        List<Object> noted = PackCheck.fingerprintFindings(Json.map("ok", true, "out", changed.toString()));
+        expect(
+            noted.size() == 1 && "note".equals(Json.object(noted.get(0)).get("severity")) && "fingerprint-round-trip".equals(Json.object(noted.get(0)).get("kind")),
+            "a recorded world that changed across its reload is a note, not a failure to record: " + noted
+        );
+        expect(PackCheck.fingerprintFindings(Json.map("ok", true, "out", clean.toString())).isEmpty(), "a clean recording adds nothing: " + clean);
     }
 
     // ------------------------------------------------------------------ which jars a server gets

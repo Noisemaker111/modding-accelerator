@@ -37,7 +37,7 @@ final class FingerprintDiff {
             verdict.put("details", (Boolean.TRUE.equals(verdict.get("passed")) ? "Gate passed: " : "Gate failed: " + verdict.get("failures") + "; ")
                 + verdict.get("compared") + " leaves compared, " + verdict.get("unstable") + " left out because the baselines disagree on them "
                 + verdict.get("unstableSections") + (verdict.get("differingSections") instanceof Map<?, ?> d && !d.isEmpty() ? "; differing: " + d : ""));
-            if (options.values.containsKey("out")) Json.save(Path.of(options.get("out", "")), verdict);
+            if (options.values.containsKey("out")) Json.save(outFile(options), verdict);
             return verdict;
         }
         Map<String, Object> left = Json.read(Path.of(a)), right = Json.read(Path.of(b));
@@ -46,8 +46,13 @@ final class FingerprintDiff {
         diff.put("a", Path.of(a).toAbsolutePath().toString());
         diff.put("b", Path.of(b).toAbsolutePath().toString());
         diff.put("details", text(diff));
-        if (options.values.containsKey("out")) Json.save(Path.of(options.get("out", "")), diff);
+        if (options.values.containsKey("out")) Json.save(outFile(options), diff);
         return diff;
+    }
+
+    /** --out as an absolute path: a bare file name has no parent folder to create. */
+    static Path outFile(Mmt.Options options) {
+        return Path.of(options.get("out", "")).toAbsolutePath().normalize();
     }
 
     static Map<String, Object> compare(Map<String, Object> left, Map<String, Object> right, Normaliser normaliser) {
