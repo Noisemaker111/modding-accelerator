@@ -246,9 +246,14 @@ final class Dependencies {
             if (chosen == null) {
                 // A compile-only integration written out by name keeps its old coordinate, as any compile-only one does
                 // (Jade and AppleSkin compile against JEI's API): the build decides whether it still compiles.
-                Object script = setup.project.get("buildFile");
-                boolean literal = script != null && Files.isRegularFile(Path.of(script.toString())) && setup.text(Path.of(script.toString())).contains(name);
-                if (compileOnly(configuration) && literal) return false;
+                // Only a name the build makes from the Minecraft property (jei-${minecraft_version}-...) must change with it; a
+                // name written out, or one that only arrives with another dependency, keeps its old coordinate.
+                String head = name.substring(0, named.start());
+                boolean interpolated = false;
+                for (Path input : setup.build.project.inputs()) if (
+                    input.getFileName().toString().contains(".gradle") && setup.text(input).contains(head + "$")
+                ) interpolated = true;
+                if (!interpolated) return false;
                 setup.blockers.add(
                     blocker(group, name, old, binary, "its artifact name carries the Minecraft version, and " + renamed + " publishes no release in the project's repositories", configuration, setup.to)
                 );

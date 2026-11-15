@@ -631,7 +631,9 @@ final class Target {
         Matcher gradle = Pattern.compile("gradle-([0-9]+)\\.").matcher(Files.isRegularFile(wrapper) ? setup.text(wrapper) : "");
         boolean gradle8 = gradle.find() && Integer.parseInt(gradle.group(1)) >= 8;
         for (Path script : build.project.inputs()) {
-            if (!script.getFileName().toString().matches("build\\.gradle(\\.kts)?")) continue;
+            // build.gradle and the scripts it applies (ModMenu's gradle/*.gradle via apply from:), not settings.
+            String file = script.getFileName().toString();
+            if (!file.matches(".*\\.gradle(\\.kts)?") || file.startsWith("settings.") || file.startsWith("gradle.init")) continue;
             String before = setup.text(script), text = removedDsl(before, gradle8);
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(script, before);
