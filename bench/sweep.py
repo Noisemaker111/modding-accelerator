@@ -692,21 +692,33 @@ def main(argv=None):
                 if not queue:
                     return
                 m, jumps = queue.pop(0)
-            base = baseline(m, args.tag, args.timeout, jobs)
-            for to, kind in jumps:   # one mod's jumps share its clone, so they run in turn
-                try:
-                    rec = port_run(m, to, kind, args.tag, args.timeout, not args.no_game, jobs, base)
-                except Exception as e:
-                    print(f"sweep error on {m['id']} -> {to}: {e!r}", file=sys.stderr, flush=True)
-                    continue
-                with lock:
-                    done[0] += 1
-                    state = "builds" if rec["build"] else (f"{rec['errorsAfter']} errors" if rec.get("errorsAfter") is not None else f"stopped: {(rec.get('blocker') or {}).get('class')}")
-                    if rec.get("load"):
-                        state += ", loads" if rec["load"]["ok"] else ", does not load"
-                    if rec.get("behaviour"):
-                        state += ", behaviour ok" if rec["behaviour"]["ok"] else ", behaviour fails"
-                    print(f"[{done[0]}/{total}] {m['id']} {m['from']} -> {to}: {state} ({rec['seconds'].get('port', 0):.0f} s)", file=sys.stderr, flush=True)
+            try:
+                run_mod(m, jumps)
+            finally:
+                # Done with this mod: its Gradle daemons and any game exit now, not after an idle timeout.
+                stop(m)
+
+    def stop(m):
+        work = WORK / "clones" / m["id"]
+        if (work / ".modaccel").is_dir():
+            sh(MODACCEL + ["game-stop", "--root", work, "--json"], timeout=600)
+
+    def run_mod(m, jumps):
+        base = baseline(m, args.tag, args.timeout, jobs)
+        for to, kind in jumps:   # one mod's jumps share its clone, so they run in turn
+            try:
+                rec = port_run(m, to, kind, args.tag, args.timeout, not args.no_game, jobs, base)
+            except Exception as e:
+                print(f"sweep error on {m['id']} -> {to}: {e!r}", file=sys.stderr, flush=True)
+                continue
+            with lock:
+                done[0] += 1
+                state = "builds" if rec["build"] else (f"{rec['errorsAfter']} errors" if rec.get("errorsAfter") is not None else f"stopped: {(rec.get('blocker') or {}).get('class')}")
+                if rec.get("load"):
+                    state += ", loads" if rec["load"]["ok"] else ", does not load"
+                if rec.get("behaviour"):
+                    state += ", behaviour ok" if rec["behaviour"]["ok"] else ", behaviour fails"
+                print(f"[{done[0]}/{total}] {m['id']} {m['from']} -> {to}: {state} ({rec['seconds'].get('port', 0):.0f} s)", file=sys.stderr, flush=True)
 
     threads = [threading.Thread(target=worker) for _ in range(max(1, min(2, args.jobs)))]
     for t in threads:
