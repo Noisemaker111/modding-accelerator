@@ -278,6 +278,7 @@ final class Dependencies {
             setup.applied.add(
                 Json.map("artifact", group + ":" + renamed, "from", old, "to", chosen, "configuration", configuration, "evidence", "the newest " + renamed + " release in the project's repositories")
             );
+            recordLoom(setup, group, renamed, chosen);
             return true;
         }
         Matcher at = Pattern.compile("(?<![0-9.])" + Pattern.quote(from) + "(?![0-9])(?!\\.[0-9])").matcher(old);
@@ -366,7 +367,29 @@ final class Dependencies {
                 "the library's own release for Minecraft " + setup.to + ", read from its repository's maven-metadata.xml"
             )
         );
+        recordLoom(setup, group, name, chosen);
         return true;
+    }
+
+    /**
+     * The Loom a chosen Fabric library's jar was built with, for Target.loomFollows: a library looked up by its game version
+     * (not through Modrinth) says it too (AppleSkin 1.20.1 -> 1.21.1 kept a Loom older than its JEI's 1.18.2). The jar is
+     * read from the first project repository that has it; a jar that cannot be read records nothing.
+     */
+    static void recordLoom(Target.Setup setup, String group, String name, String version) {
+        if (!Support.loaders(setup.project).contains("fabric")) return;
+        for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
+            if (!repository.startsWith("https://")) continue;
+            try {
+                Path jar = Target.download(
+                    setup.build,
+                    repository.replaceFirst("/$", "") + "/" + group.replace('.', '/') + "/" + name + "/" + version + "/" + name + "-" + version + ".jar"
+                );
+                String built = builtWithLoom(jar);
+                if (!built.isEmpty()) setup.loomBuilt.put(group + ":" + name + " " + version, built);
+                return;
+            } catch (Exception notThere) {}
+        }
     }
 
     /** The newest published version shaped like old with the target game in place of the source game; stable before pre-releases. */
@@ -435,6 +458,7 @@ final class Dependencies {
                         "its fabric.mod.json accepts Minecraft " + setup.to + " (" + accepts + "), the newest such release in " + repository
                     )
                 );
+                recordLoom(setup, group, name, version);
                 return true;
             }
         }
