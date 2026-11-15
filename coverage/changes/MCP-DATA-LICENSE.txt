@@ -1,0 +1,22 @@
+The step files in this folder whose "names" is "mcp" (the pairs touching a release before
+1.14.4) are derived from MCP mapping data: the SRG tables and name CSVs published on
+Forge's Maven as de.oceanlabs.mcp:mcp, de.oceanlabs.mcp:mcp_config and
+de.oceanlabs.mcp:mcp_stable. Each such file names its exact source artifacts in its
+"source" field. The mapping files themselves are downloaded at generation time and are
+never committed or shipped; what is committed is the derived difference between two
+releases. Only the identifier and name columns of the CSVs are read, never the javadoc.
+
+The MCP mapping data is used and redistributed in this derived form under this licence
+(as published with the MCP mappings archive, https://github.com/ModCoderPack/MCPMappingsArchive):
+
+Copyright (c) 2018 Forge Development LLC
+
+This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software or data.
+
+Permission is granted to anyone to use this software and data for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
+
+1. The origin of this software and data must not be misrepresented; you must not claim that you wrote the original software or data. If you use this software or data in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+
+2. Altered versions must be plainly marked as such, and must not be misrepresented as being the original.
+
+3. This notice may not be removed or altered from any distribution.

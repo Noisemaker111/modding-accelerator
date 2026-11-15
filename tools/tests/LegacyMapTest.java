@@ -41,6 +41,14 @@ public final class LegacyMapTest {
                 "joined.srg and joined.tsrg spellings parse to the same rows");
         check("getProviderName".equals(VersionMap.Srg.csv(METHODS).get("func_72827_u")),
                 "a comma inside the javadoc column cannot shift a name");
+        check("func_72966_v".equals(a.methods.get("ahb.B()V")) && "field_72982_D".equals(a.fields.get("ahb.A")),
+                "SRG rows fill the same lookup maps a tiny file fills");
+        VersionMap.Proguard pg = VersionMap.Srg.proguardOf(a, VersionMap.Srg.csv(FIELDS, METHODS));
+        check("net/minecraft/world/World".equals(pg.classes.get("ahb"))
+                        && "calculateInitialSkylight".equals(pg.methods.get("ahb.B()V"))
+                        && "villageCollectionObj".equals(pg.fields.get("ahb.A"))
+                        && "func_94530_a".equals(pg.methods.get("aaf.a(Ladd;Laay;)Z")),
+                "the Proguard layout of the same data names a jar's members from their obfuscated names");
 
         VersionMap.Table t = table("1.7.10", SRG, METHODS, FIELDS);
         check("net/minecraft/world/World".equals(t.classes.get("net/minecraft/world/World")),

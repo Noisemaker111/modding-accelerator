@@ -18,6 +18,13 @@ import java.util.zip.*;
  * touches an unobfuscated release has no shared id: classes and members are matched by name, and
  * a rename or move there is a best guess ("by-name"), labelled as such in the data.
  *
+ * A pair touching a release before 1.14.4 (the legacy hubs, named with --pair) is read through
+ * Forge's SRG data instead: SRG member ids stay the same across versions, so members are linked,
+ * not guessed ("srg"), and the readable names are MCP's. SRG has no class ids, so classes link
+ * only by an unchanged name and a class rename there reads as a removal plus an addition.
+ * 1.14.4 has SRG data too, so 1.12.2 -> 1.14.4 is one SRG step; its Mojang-named side is the
+ * neighbouring 1.14.4 -> 1.15 step.
+ *
  * Single file plus tools/VersionMap.java (mapping parsers and the cached downloader), JDK 25:
  *   java tools/ChangeIndex.java [--out coverage/changes] [--cache .mmt/change-index]
  *                               [--first 1.14.4] [--last 26.3] [--pair A B]...
@@ -68,43 +75,66 @@ public final class ChangeIndex {
 			for (int i = 0; i + 1 < range.size(); i++) { pairs.add(new String[] { range.get(i), range.get(i + 1) }); }
 		}
 		for (String[] p : pairs) {
-			Snap sa = held.computeIfAbsent(p[0], v -> load(releases, v));
-			Snap sb = held.computeIfAbsent(p[1], v -> load(releases, v));
+			boolean srg = legacyPair(ids, p);
+			Snap sa = held.computeIfAbsent(p[0] + (srg ? "|srg" : ""), v -> load(releases, p[0], srg));
+			Snap sb = held.computeIfAbsent(p[1] + (srg ? "|srg" : ""), v -> load(releases, p[1], srg));
 			Diff d = Diff.of(sa, sb);
 			Path file = out.resolve(p[0] + "__" + p[1] + ".json");
 			Files.writeString(file, d.json(), StandardCharsets.UTF_8);
 			System.out.printf("%-8s -> %-8s %-7s classes +%d -%d ~%d  methods +%d -%d ~%d sig %d  fields +%d -%d ~%d  breaks %.1f%%  %,d bytes%n",
-					p[0], p[1], d.exact ? "exact" : "by-name", d.c("classesAdded"), d.c("classesRemoved"), d.c("classesRenamed"),
+					p[0], p[1], d.linked, d.c("classesAdded"), d.c("classesRemoved"), d.c("classesRenamed"),
 					d.c("methodsAdded"), d.c("methodsRemoved"), d.c("methodsRenamed"), d.c("methodsChanged"), d.c("fieldsAdded"),
 					d.c("fieldsRemoved"), d.c("fieldsRenamed"), 100.0 * d.breakingShare(), Files.size(file));
-			held.keySet().retainAll(Set.of(p[1]));
-			held.computeIfAbsent(p[1], v -> sb);
+			held.keySet().retainAll(Set.of(p[1] + (srg ? "|srg" : "")));
+			held.put(p[1] + (srg ? "|srg" : ""), sb);
 		}
-		if (pairs.size() == range.size() - 1 && pairs.get(0)[0].equals(first)) {
-			// versions.json: every release, the ones indexed with their size, the older ones blocked.
-			Map<String, int[]> sizes = SIZES;
-			StringBuilder sb = new StringBuilder("{\n  \"source\": ").append(q(MANIFEST)).append(",\n  \"versions\": [\n");
-			for (int i = 0; i < releases.size(); i++) {
-				Release r = releases.get(i);
-				sb.append("    { \"id\": ").append(q(r.id())).append(", \"released\": ").append(q(r.time().substring(0, 10)));
-				int[] s = sizes.get(r.id());
-				if (s != null) {
-					sb.append(", \"status\": \"indexed\", \"names\": ").append(q(s[3] == 1 ? "official (Mojang mappings)" : "official (unobfuscated jar)"))
-							.append(", \"classes\": ").append(s[0]).append(", \"methods\": ").append(s[1]).append(", \"fields\": ").append(s[2]);
-				} else if (i < a) {
-					sb.append(", \"status\": \"blocked\", \"reason\": \"Mojang published no official mappings before 1.14.4; this release would need MCP or other legacy community mappings, which the index does not use.\"");
-				} else {
-					sb.append(", \"status\": \"not indexed\"");
-				}
-				sb.append(i + 1 < releases.size() ? " },\n" : " }\n");
-			}
-			sb.append("  ]\n}\n");
-			Files.writeString(out.resolve("versions.json"), sb.toString(), StandardCharsets.UTF_8);
-		}
+		boolean fullRun = pairs.size() == range.size() - 1 && pairs.get(0)[0].equals(first);
+		if (fullRun || Files.isRegularFile(out.resolve("versions.json"))) { writeVersions(out, releases, a); }
 		System.out.printf("done in %.0fs%n", (System.nanoTime() - t0) / 1e9);
 	}
 
-	static final Map<String, int[]> SIZES = new ConcurrentHashMap<>(); // id -> classes, methods, fields, obfuscated
+	/**
+	 * versions.json: every release, the indexed ones with their size and where their names came
+	 * from, the rest blocked or not indexed. A row a previous run indexed is kept verbatim when this
+	 * run did not load that release, so a hub indexed by a --pair run is never un-indexed by a later
+	 * full run (and a --pair run records the hubs it just indexed).
+	 */
+	static void writeVersions(Path out, List<Release> releases, int firstIndexed) throws Exception {
+		Path file = out.resolve("versions.json");
+		Map<String, String> prior = new HashMap<>();
+		if (Files.isRegularFile(file)) {
+			for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+				String t = line.trim();
+				if (t.startsWith("{ \"id\": \"")) { prior.put(t.substring(9, t.indexOf('"', 9)), t.endsWith(",") ? t.substring(0, t.length() - 1) : t); }
+			}
+		}
+		StringBuilder sb = new StringBuilder("{\n  \"source\": ").append(q(MANIFEST)).append(",\n  \"versions\": [\n");
+		for (int i = 0; i < releases.size(); i++) {
+			Release r = releases.get(i);
+			int[] s = SIZES.get(r.id());
+			String head = "{ \"id\": " + q(r.id()) + ", \"released\": " + q(r.time().substring(0, 10));
+			String row;
+			// An SRG-lane load of a release already indexed in Mojang's names (1.14.4, read through
+			// SRG only for the seam step) must not overwrite that row: Mojang names stay primary there.
+			if (s != null && s[3] == 2 && prior.getOrDefault(r.id(), "").contains("\"status\": \"indexed\"") && !prior.get(r.id()).contains("mcp (SRG")) {
+				row = prior.get(r.id());
+			} else if (s != null) {
+				String names = s[3] == 2 ? "mcp (SRG ids, MCP names)" : s[3] == 1 ? "official (Mojang mappings)" : "official (unobfuscated jar)";
+				row = head + ", \"status\": \"indexed\", \"names\": " + q(names) + ", \"classes\": " + s[0] + ", \"methods\": " + s[1] + ", \"fields\": " + s[2] + " }";
+			} else if (prior.getOrDefault(r.id(), "").contains("\"status\": \"indexed\"")) {
+				row = prior.get(r.id());
+			} else if (i < firstIndexed) {
+				row = head + ", \"status\": \"blocked\", \"reason\": \"No indexed step touches this release. Before 1.14.4 the index measures the hubs 1.7.10, 1.8.9, 1.10.2 and 1.12.2 in MCP names through Forge SRG ids; this release is not one of them.\" }";
+			} else {
+				row = head + ", \"status\": \"not indexed\" }";
+			}
+			sb.append("    ").append(row).append(i + 1 < releases.size() ? ",\n" : "\n");
+		}
+		sb.append("  ]\n}\n");
+		Files.writeString(file, sb.toString(), StandardCharsets.UTF_8);
+	}
+
+	static final Map<String, int[]> SIZES = new ConcurrentHashMap<>(); // id -> classes, methods, fields, lane (0 unobfuscated, 1 mappings, 2 srg)
 
 	// ------------------------------------------------------------------ releases and downloads
 
@@ -122,6 +152,12 @@ public final class ChangeIndex {
 			list.sort(Comparator.comparing(Release::time));
 			return list;
 		}
+	}
+
+	/** A pair touching a release before 1.14.4 is read through SRG on both sides; 1.14.4 has SRG data too. */
+	static boolean legacyPair(List<String> ids, String[] p) {
+		int seam = ids.indexOf("1.14.4");
+		return ids.indexOf(p[0]) < seam || ids.indexOf(p[1]) < seam;
 	}
 
 	static Release find(List<Release> releases, String id) {
@@ -183,11 +219,13 @@ public final class ChangeIndex {
 	static final class Snap {
 		final String version;
 		final boolean obfuscated;
+		final boolean srg;
+		final String source; // the SRG artifacts the names came from; null on the Mojang-names lane
 		final Map<String, Cls> classes = new LinkedHashMap<>();
-		Snap(String version, boolean obfuscated) { this.version = version; this.obfuscated = obfuscated; }
+		Snap(String version, boolean obfuscated, boolean srg, String source) { this.version = version; this.obfuscated = obfuscated; this.srg = srg; this.source = source; }
 	}
 
-	static Snap load(List<Release> releases, String id) {
+	static Snap load(List<Release> releases, String id, boolean srgLane) {
 		try {
 			Release r = find(releases, id);
 			String vj = VersionMap.fetchText(r.url(), "version-" + id + ".json");
@@ -195,12 +233,18 @@ public final class ChangeIndex {
 			String[] m = download(vj, "client_mappings");
 			VersionMap.Proguard pg = null;
 			VersionMap.Tiny it = null;
-			if (m != null) {
+			String source = null;
+			if (srgLane) {
+				VersionMap.Table.McpNames mn = VersionMap.Table.mcpNames(id, null);
+				pg = mn.names();
+				it = mn.keys();
+				source = mn.source();
+			} else if (m != null) {
 				pg = VersionMap.Proguard.parse(Files.readString(verified(m, "client-" + id + ".txt"), StandardCharsets.UTF_8));
 				Path inter = VersionMap.fetch("https://maven.fabricmc.net/net/fabricmc/intermediary/" + id + "/intermediary-" + id + "-v2.jar", "intermediary-" + id + "-v2.jar");
 				it = VersionMap.Tiny.parse(VersionMap.zipEntry(inter, "mappings/mappings.tiny"));
 			}
-			Snap s = new Snap(id, pg != null);
+			Snap s = new Snap(id, pg != null, srgLane, source);
 			int methods = 0, fields = 0;
 			try (ZipFile z = new ZipFile(jar.toFile())) {
 				for (Enumeration<? extends ZipEntry> e = z.entries(); e.hasMoreElements();) {
@@ -226,7 +270,7 @@ public final class ChangeIndex {
 							desc = VersionMap.Tiny.remapDesc(md, pg.classes);
 							String inter = it.methods.get(obf + "." + mn + md);
 							cmp = VersionMap.Tiny.remapDesc(md, it.classes);
-							mkey = inter != null && inter.startsWith("method_") ? inter : name + cmp;
+							mkey = inter != null && VersionMap.Table.stableId(inter) ? inter : name + cmp;
 						} else {
 							cmp = md;
 							mkey = mn + md;
@@ -244,7 +288,7 @@ public final class ChangeIndex {
 							desc = VersionMap.Tiny.remapDesc(fd, pg.classes);
 							String inter = it.fields.get(obf + "." + fn);
 							cmp = VersionMap.Tiny.remapDesc(fd, it.classes);
-							fkey = inter != null && inter.startsWith("field_") ? inter : name;
+							fkey = inter != null && VersionMap.Table.stableId(inter) ? inter : name;
 						} else {
 							cmp = fd;
 							fkey = fn;
@@ -255,7 +299,7 @@ public final class ChangeIndex {
 					s.classes.put(key, c);
 				}
 			}
-			SIZES.put(id, new int[] { s.classes.size(), methods, fields, s.obfuscated ? 1 : 0 });
+			SIZES.put(id, new int[] { s.classes.size(), methods, fields, s.srg ? 2 : s.obfuscated ? 1 : 0 });
 			System.out.printf("  read %s: %,d classes, %,d methods, %,d fields (not private)%n", id, s.classes.size(), methods, fields);
 			return s;
 		} catch (Exception e) {
@@ -335,6 +379,7 @@ public final class ChangeIndex {
 	static final class Diff {
 		String from, to;
 		boolean exact;
+		String linked, names, source;
 		final List<String> classesAdded = new ArrayList<>(), classesRemoved = new ArrayList<>();
 		final List<String[]> classesRenamed = new ArrayList<>();
 		final Map<String, OwnerChanges> owners = new TreeMap<>();
@@ -351,6 +396,9 @@ public final class ChangeIndex {
 			Diff d = new Diff();
 			d.from = a.version; d.to = b.version;
 			d.exact = a.obfuscated && b.obfuscated;
+			d.linked = a.srg && b.srg ? "srg" : d.exact ? "exact" : "by-name";
+			d.names = a.srg ? "mcp" : "official";
+			if (a.source != null) { d.source = a.source + "; " + b.source; }
 			for (String k : List.of("classesAdded", "classesRemoved", "classesRenamed", "methodsAdded", "methodsRemoved", "methodsRenamed",
 					"methodsChanged", "fieldsAdded", "fieldsRemoved", "fieldsRenamed", "fieldsChanged")) { d.counts.put(k, 0); }
 			// Re-key both sides by name when one side has no intermediary.
@@ -538,8 +586,9 @@ public final class ChangeIndex {
 		String json() {
 			StringBuilder sb = new StringBuilder("{\n");
 			sb.append("  \"from\": ").append(q(from)).append(", \"to\": ").append(q(to)).append(",\n");
-			sb.append("  \"names\": \"official\",\n");
-			sb.append("  \"linked\": ").append(q(exact ? "exact" : "by-name")).append(",\n");
+			sb.append("  \"names\": ").append(q(names)).append(",\n");
+			sb.append("  \"linked\": ").append(q(linked)).append(",\n");
+			if (source != null) { sb.append("  \"source\": ").append(q(source)).append(",\n"); }
 			sb.append("  \"oldSize\": ").append(oldSize).append(", \"broken\": ").append(broken)
 					.append(", \"breakingShare\": ").append(String.format(Locale.ROOT, "%.4f", breakingShare())).append(",\n");
 			sb.append("  \"counts\": {");

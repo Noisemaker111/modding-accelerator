@@ -22,3 +22,10 @@ with or endorsed by Mojang or Microsoft.
 The performance agent bundles ASM 9.9 (OW2), licensed under BSD-3-Clause.
 See tools/perf/lib/ASM-LICENSE.txt. SHA-256 of the unmodified Maven artifact:
 03d99a74ad1ee5c71334ef67437f4ef4fe3488caa7c96d8645abc73c8e2017d4
+
+The change index's name lists for releases before 1.14.4 (coverage/changes/) are
+derived from MCP mapping data (Forge's SRG tables and name CSVs), downloaded from
+Forge's Maven when the index is generated. That data is Copyright (c) 2018 Forge
+Development LLC and is used here in derived form under its licence; see
+coverage/changes/MCP-DATA-LICENSE.txt. The mapping files themselves are not
+committed or shipped, and each derived file names the artifacts it came from.

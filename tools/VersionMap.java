@@ -397,6 +397,20 @@ public final class VersionMap {
          * published for the release.
          */
         static Table loadMcp(String version, String channel) throws Exception {
+            McpNames mn = mcpNames(version, channel);
+            Table t = fromSrg(version, mn.keys(), mn.csv());
+            t.mappings = mn.source();
+            return t;
+        }
+
+        /**
+         * One release's SRG data in the shapes its readers use: keys (obfuscated to SRG id), names
+         * (obfuscated to MCP name, in Proguard's layout), the name CSVs, and the artifacts it all
+         * came from.
+         */
+        record McpNames(Tiny keys, Proguard names, Map<String, String> csv, String source) {}
+
+        static McpNames mcpNames(String version, String channel) throws Exception {
             String srgMeta = fetchText(FORGE_MAVEN + "de/oceanlabs/mcp/mcp/maven-metadata.xml", "mcp-meta.xml");
             Tiny rows;
             String srgFrom;
@@ -431,9 +445,8 @@ public final class VersionMap {
                 FORGE_MAVEN + "de/oceanlabs/mcp/" + group + "/" + artifact + "/" + group + "-" + artifact + ".zip",
                 group + "-" + artifact + ".zip"
             );
-            Table t = fromSrg(version, rows, Srg.csv(zipEntry(nz, "fields.csv"), zipEntry(nz, "methods.csv")));
-            t.mappings = srgFrom + ", " + group + " " + artifact;
-            return t;
+            Map<String, String> csv = Srg.csv(zipEntry(nz, "fields.csv"), zipEntry(nz, "methods.csv"));
+            return new McpNames(rows, Srg.proguardOf(rows, csv), csv, srgFrom + ", " + group + " " + artifact);
         }
 
         /** The published MCP name artifact for a release: an explicit channel wins, else the last stable set. */
@@ -509,6 +522,16 @@ public final class VersionMap {
         final Map<String, String> fieldsNoDesc = fields;
         final List<Row> memberRows = new ArrayList<>();
 
+        /** One member in both shapes its readers use: the lookup maps and the row list. */
+        void add(boolean method, String obfOwner, String obfName, String obfDesc, String interName) {
+            if (method) {
+                methods.put(obfOwner + "." + obfName + obfDesc, interName);
+            } else {
+                fields.put(obfOwner + "." + obfName, interName);
+            }
+            memberRows.add(new Row(method, obfOwner, obfName, obfDesc, interName));
+        }
+
         static Tiny parse(String text) {
             Tiny t = new Tiny();
             String owner0 = null;
@@ -521,12 +544,7 @@ public final class VersionMap {
                     String[] p = line.split("\t", -1);
                     boolean method = p[1].equals("m");
                     String desc = p[2], n0 = p[3], n1 = p.length > 4 && !p[4].isEmpty() ? p[4] : n0;
-                    if (method) {
-                        t.methods.put(owner0 + "." + n0 + desc, n1);
-                    } else {
-                        t.fields.put(owner0 + "." + n0, n1);
-                    }
-                    t.memberRows.add(new Row(method, owner0, n0, desc, n1));
+                    t.add(method, owner0, n0, desc, n1);
                 }
             }
             return t;
@@ -664,29 +682,19 @@ public final class VersionMap {
                     case "FD:" -> {
                         if (p.length == 3) {
                             int s = p[1].lastIndexOf('/');
-                            t.memberRows.add(
-                                new Tiny.Row(
-                                    false,
-                                    p[1].substring(0, s),
-                                    p[1].substring(s + 1),
-                                    "",
-                                    p[2].substring(p[2].lastIndexOf('/') + 1)
-                                )
+                            t.add(
+                                false,
+                                p[1].substring(0, s),
+                                p[1].substring(s + 1),
+                                "",
+                                p[2].substring(p[2].lastIndexOf('/') + 1)
                             );
                         }
                     }
                     case "MD:" -> {
                         if (p.length == 5) {
                             int s = p[1].lastIndexOf('/');
-                            t.memberRows.add(
-                                new Tiny.Row(
-                                    true,
-                                    p[1].substring(0, s),
-                                    p[1].substring(s + 1),
-                                    p[2],
-                                    p[3].substring(p[3].lastIndexOf('/') + 1)
-                                )
-                            );
+                            t.add(true, p[1].substring(0, s), p[1].substring(s + 1), p[2], p[3].substring(p[3].lastIndexOf('/') + 1));
                         }
                     }
                     default -> {} // PK: package rows name nothing a class row does not
@@ -708,9 +716,9 @@ public final class VersionMap {
                     }
                     String[] p = line.trim().split(" ");
                     if (p.length == 3 && p[1].startsWith("(")) {
-                        t.memberRows.add(new Tiny.Row(true, owner, p[0], p[1], p[2]));
+                        t.add(true, owner, p[0], p[1], p[2]);
                     } else if (p.length >= 2) {
-                        t.memberRows.add(new Tiny.Row(false, owner, p[0], p.length == 3 ? p[1] : "", p[p.length - 1]));
+                        t.add(false, owner, p[0], p.length == 3 ? p[1] : "", p[p.length - 1]);
                     }
                 } else {
                     String[] p = line.trim().split(" ");
@@ -721,6 +729,21 @@ public final class VersionMap {
                 }
             }
             return t;
+        }
+
+        /** The same data in Proguard's layout (obfuscated to readable), for readers that walk a jar. */
+        static Proguard proguardOf(Tiny rows, Map<String, String> csv) {
+            Proguard pg = new Proguard();
+            pg.classes.putAll(rows.classes);
+            for (Tiny.Row r : rows.memberRows) {
+                String named = csv.getOrDefault(r.interName(), r.interName());
+                if (r.method()) {
+                    pg.methods.put(r.obfOwner() + "." + r.obfName() + r.obfDesc(), named);
+                } else {
+                    pg.fields.put(r.obfOwner() + "." + r.obfName(), named);
+                }
+            }
+            return pg;
         }
 
         /** Searge id to MCP name from the first two columns only; the quoted javadoc column is never read. */
