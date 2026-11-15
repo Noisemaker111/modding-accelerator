@@ -916,7 +916,7 @@ public final class Modaccel {
             "Reports what the mod registered (items, blocks, recipes, loot tables, tags ...), each item as a real stack (stack size, durability, food),\n" +
             "and every warning and error the game logged. Exit 1 when the game logged an error, an item cannot be made, or nothing of the mod loaded.\n" +
             "The game's code stays loaded: the next data-check reads the data again (a changed recipe or loot table costs a few CPU-seconds);\n" +
-            "changed classes or fabric.mod.json load it again. --once does not keep it; game-stop ends it.\n" +
+            "changed classes or fabric.mod.json load it again. --once does not keep it; game-stop ends it, and it ends itself after 15 minutes unused.\n" +
             "Fabric on Minecraft 26.x; other versions and loaders are reported as unchecked with the reason.";
             case "plugin-check" -> "Load and enable a Paper/Bukkit plugin on MockBukkit, a fake Paper server, without a real server: modaccel plugin-check --root SOURCE [--project :module] [--task :shadowJar] [--plugins FOLDER] --json\n" +
             "The plugin's own jar task builds the jar (shadowJar, reobfJar or jar; --task picks another). MockBukkit for the plugin's Paper API line\n" +
