@@ -67,19 +67,44 @@ final class Server implements AutoCloseable {
         log = build.report.log("server");
         Files.createDirectories(log.getParent());
         Path recipe = build.project.state().resolve("server-launch.json");
-        List<String> command = build.command(
-            List.of(
-                "-Dmodaccel.recompile=true",
-                "-Dmodaccel.captureTask=" + task,
-                "-Dmodaccel.launchFile=" + recipe,
-                task
-            )
+        List<String> gradle = List.of(
+            "-Dmodaccel.recompile=true",
+            "-Dmodaccel.captureTask=" + task,
+            "-Dmodaccel.launchFile=" + recipe,
+            task
         );
-        process = new ProcessBuilder(command)
-            .directory(build.project.root.toFile())
-            .redirectErrorStream(true)
-            .redirectOutput(log.toFile())
-            .start();
+        // As for the client: a server Gradle launches is the daemon's child and outlives this command, so Gradle
+        // prepares and records it and this command starts it, unless this task's recipe cannot be replayed.
+        boolean gradleOnly =
+            Files.exists(recipe) &&
+            task.equals(Json.read(recipe).get("task")) &&
+            !Game.replayable(Json.read(recipe));
+        if (!gradleOnly) {
+            Files.deleteIfExists(recipe);
+            List<String> prepare = new ArrayList<>(gradle);
+            prepare.add(prepare.size() - 1, "-Dmodaccel.recordOnly=true");
+            Run.Result prepared = build.gradle(prepare, "prepare-server");
+            if (prepared.exit() != 0 || !Files.exists(recipe)) throw new IOException(
+                "Could not prepare the dedicated server.\n" + Run.failure(prepared.log())
+            );
+            gradleOnly = !Game.replayable(Json.read(recipe));
+        }
+        ProcessBuilder builder;
+        if (gradleOnly) {
+            builder = new ProcessBuilder(build.command(gradle)).directory(build.project.root.toFile());
+        } else {
+            Map<String, Object> launch = Json.read(recipe);
+            List<String> command = new ArrayList<>();
+            command.add(launch.get("executable").toString());
+            command.addAll(ProjectModel.strings(launch.get("arguments")));
+            builder = new ProcessBuilder(Game.savedCommand(command, build.report.directory.resolve("server-classpath.args")))
+                .directory(Path.of(launch.get("directory").toString()).toFile());
+            Json.object(launch.get("environment")).forEach((key, value) -> {
+                if (value != null) builder.environment().put(key, value.toString());
+            });
+        }
+        process = builder.redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        owned = new Run.Owned(process.toHandle(), null);
         try (WatchService watch = FileSystems.getDefault().newWatchService()) {
             log.getParent().register(watch, StandardWatchEventKinds.ENTRY_MODIFY);
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(180);
@@ -102,8 +127,9 @@ final class Server implements AutoCloseable {
             close();
             throw failure;
         }
-        // process is the Gradle launcher; the game server is the JVM listening on the port.
+        // The game server is the JVM listening on the port: process itself, or one the Gradle daemon started.
         serverPid = listeningPid(port);
+        if (serverPid != null) ProcessHandle.of(serverPid).ifPresent(owned::add);
         build.report.stages.add(
             Json.map(
                 "name",
@@ -127,8 +153,18 @@ final class Server implements AutoCloseable {
     }
 
     Long serverPid;
+    /** Ends the server with this command: mp-check owns it for its whole run. */
+    final Run.Owned owned;
 
     public void close() {
+        try {
+            stop();
+        } finally {
+            owned.close();
+        }
+    }
+
+    private void stop() {
         if (!process.isAlive()) {
             // It died before modaccel stopped it: say how, next to the result.
             build.report.stages.add(
@@ -150,9 +186,8 @@ final class Server implements AutoCloseable {
             process.getOutputStream().write("stop\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
             process.getOutputStream().flush();
             process.onExit().get(20, TimeUnit.SECONDS);
-        } catch (Exception error) {
-            process.descendants().forEach(ProcessHandle::destroy);
-            process.destroy();
+        } catch (Exception notStopped) {
+            // close() ends it.
         }
     }
 

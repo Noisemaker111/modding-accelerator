@@ -68,7 +68,7 @@ To build it from source, install Rust and run `cargo build --release` in `app/` 
 
 - **Logic:** `fast` runs your JUnit tests without the game.
 - **Data, no game:** `data-check` reads what the game loads for your mod (items, recipes, load errors) from the game's own code, with no game launched. `mixin-check` applies every mixin, with no game window.
-- **The real game:** `ui-check`, `world-check` and `mp-check` (a dedicated server plus a client) run your mod in a hidden client. `eval` runs code inside the running game and `reload` swaps edited code into it.
+- **The real game:** `ui-check`, `world-check` and `mp-check` (a dedicated server plus a client) run your mod in a hidden client. `eval` runs code inside the running game and `reload` swaps edited code into it. The game stays running for them until `game-stop`; a hidden game nobody has used for 15 minutes quits on its own.
 - **Plugins:** `server-check` starts a real Paper server, any version from 1.8, and a test player follows your scenario. `plugin-check` is a faster check on a fake server.
 - **Not yet:** game checks are proven on Windows and partly on Linux, not on macOS. `data-check` covers Fabric 26.x. The test player can't join modded servers.
 

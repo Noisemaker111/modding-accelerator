@@ -198,24 +198,19 @@ final class Performance {
         Path log = receipt.directory.resolve("perf-launch.log");
         Files.createDirectories(log.getParent());
         Process process = new ProcessBuilder(command).directory(directory.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
-        boolean succeeded = false;
-        try {
+        // A launch that fails, times out or is interrupted before readyText ends the game it started.
+        try (Run.Owned owned = new Run.Owned(process.toHandle(), null)) {
             long deadline = System.nanoTime() + timeout * 1_000_000_000L;
             while (System.nanoTime() < deadline) {
                 if (!process.isAlive()) throw new IOException("Game launch exited: " + Run.tail(log));
                 if (Files.exists(log) && Run.tail(log).contains(ready)) {
-                    succeeded = true;
                     Json.save(receipt.directory.resolve("launched-process.json"), Json.map("pid", process.pid(), "log", log.toString()));
+                    owned.handOff();
                     return Long.toString(process.pid());
                 }
                 Thread.sleep(500);
             }
             throw new IOException("Game did not print readyText within " + timeout + " seconds: " + log);
-        } finally {
-            if (!succeeded) {
-                process.destroy();
-                if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
-            }
         }
     }
 
