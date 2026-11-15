@@ -27,6 +27,21 @@ final class LoaderRules {
 
     final Map<String, Object> rules;
     final String from, to, modid;
+    /** The game version the code is for: a rule that names its Minecraft range applies only inside it; null applies every rule. */
+    String minecraft;
+
+    LoaderRules(Map<String, Object> rules, String from, String to, String modid, String minecraft) {
+        this(rules, from, to, modid);
+        this.minecraft = minecraft;
+    }
+
+    /** Whether a rule is written for this game version: its optional minecraft {from, below} range. */
+    static boolean applies(Map<String, Object> rule, String minecraft) {
+        if (minecraft == null || !(rule.get("minecraft") instanceof Map<?, ?> range)) return true;
+        Object from = range.get("from"), below = range.get("below");
+        if (from != null && Versions.compare(minecraft, String.valueOf(from)) < 0) return false;
+        return below == null || Versions.compare(minecraft, String.valueOf(below)) < 0;
+    }
 
     LoaderRules(Map<String, Object> rules, String from, String to, String modid) {
         if (
@@ -47,10 +62,11 @@ final class LoaderRules {
     /** Applies every rule kind to one file, in the order types, expressions, statements, events. */
     Result apply(String text) {
         Result result = new Result(text);
-        for (Object rule : list(rules.get("types"))) type(result, Json.object(rule));
-        for (Object rule : list(rules.get("expressions"))) expression(result, Json.object(rule));
-        for (Object rule : list(rules.get("statements"))) statement(result, Json.object(rule));
+        for (Object rule : list(rules.get("types"))) if (applies(Json.object(rule), minecraft)) type(result, Json.object(rule));
+        for (Object rule : list(rules.get("expressions"))) if (applies(Json.object(rule), minecraft)) expression(result, Json.object(rule));
+        for (Object rule : list(rules.get("statements"))) if (applies(Json.object(rule), minecraft)) statement(result, Json.object(rule));
         for (Object rule : list(rules.get("events"))) {
+            if (!applies(Json.object(rule), minecraft)) continue;
             if (from.equals("fabric")) eventToNeoForge(result, Json.object(rule));
             else eventToFabric(result, Json.object(rule));
         }

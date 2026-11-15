@@ -253,10 +253,19 @@ final class Convert {
             );
         }
         rules = Json.read(build.harness.resolve("knowledge/loaders.json"));
-        String minecraft = properties(read("gradle.properties")).getOrDefault("minecraft_version", "");
-        if (minecraft.isEmpty()) throw new IOException(
-            "convert reads the Minecraft version from minecraft_version in gradle.properties; there is none."
+        Map<String, String> gradleProperties = properties(read("gradle.properties"));
+        String minecraft = gradleProperties.getOrDefault("minecraft_version", "");
+        // A NeoForge build that names only its NeoForge release: NeoForge numbers each release by its Minecraft version.
+        if (minecraft.isEmpty() && from.equals("neoforge")) minecraft = minecraftOfNeoForge(
+            gradleProperties.getOrDefault("neo_version", gradleProperties.getOrDefault("neoforge_version", ""))
         );
+        if (minecraft.isEmpty()) throw new IOException(
+            "convert reads the Minecraft version from minecraft_version in gradle.properties (or, for NeoForge, neo_version); there is none."
+        );
+        if (from.equals("neoforge") && !gradleProperties.containsKey("minecraft_version")) notes.add(
+            "Minecraft " + minecraft + ", read from the NeoForge release in gradle.properties (NeoForge numbers its releases by the Minecraft version)."
+        );
+        gameVersion = minecraft;
         transaction = project.state().resolve(FOLDER).resolve(Instant.now().toString().replace(':', '-'));
         Files.createDirectories(transaction.resolve("before"));
         saveInProgress();
@@ -296,6 +305,26 @@ final class Convert {
         result.put("details", text(result));
         return result;
     }
+
+    /**
+     * The Minecraft version a NeoForge release is for, from NeoForge's own numbering: 21.1.x is 1.21.1 and 20.4.x is
+     * 1.20.4 (21.0.x is 1.21); from 26.1, the first three parts are the Minecraft version (26.1.2.48 is 26.1.2, 26.1.0.x
+     * is 26.1). Empty when the text is no NeoForge release.
+     */
+    static String minecraftOfNeoForge(String neo) {
+        Matcher m = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)(?:\\.(\\d+))?").matcher(neo.strip());
+        if (!m.find()) return "";
+        int major = Integer.parseInt(m.group(1));
+        if (major >= 26) {
+            if (m.group(4) == null) return "";
+            return major + "." + m.group(2) + (m.group(3).equals("0") ? "" : "." + m.group(3));
+        }
+        if (major < 20) return "";
+        return "1." + major + (m.group(2).equals("0") ? "" : "." + m.group(2));
+    }
+
+    /** The Minecraft version being converted, for the rules written for a range of versions. */
+    String gameVersion;
 
     /** The project's loader by its metadata file; null when it has neither. */
     static String loader(Path root) {
@@ -441,7 +470,7 @@ final class Convert {
     void rewriteSources(String from, String to) throws Exception {
         for (String file : javaFiles()) {
             String text = read(file);
-            LoaderRules.Result result = new LoaderRules(rules, from, to, modid).apply(text);
+            LoaderRules.Result result = new LoaderRules(rules, from, to, modid, gameVersion).apply(text);
             for (String id : result.applied) applied.computeIfAbsent(id, k -> new ArrayList<>()).add(file);
             for (LoaderRules.Left l : result.left) leave(file, l.line(), l.what(), l.why());
             accessTransformers.addAll(result.accessTransformers);
@@ -499,10 +528,18 @@ final class Convert {
             "NeoForge mod ids allow only a-z, 0-9 and _, so " + fabricId + " is " + modid + " on NeoForge; " +
             "its resources and registry ids keep the " + fabricId + " namespace, and neoforge.mods.toml keeps the Fabric id for the way back."
         );
+        Set<String> unbridged = unbridge();
         rewriteSources("fabric", "neoforge");
-        Map<String, Object> entrypoints = meta.get("entrypoints") instanceof Map<?, ?>
-            ? Json.object(meta.get("entrypoints"))
-            : Map.of();
+        Map<String, Object> entrypoints = new LinkedHashMap<>();
+        if (meta.get("entrypoints") instanceof Map<?, ?>) for (var e : Json.object(meta.get("entrypoints")).entrySet()) {
+            // Entrypoints the NeoForge bridge made of @Mod classes are @Mod classes again (unbridge).
+            List<Object> kept = new ArrayList<>();
+            for (Object item : Json.array(e.getValue())) {
+                String name = item instanceof String str ? str : item instanceof Map<?, ?> ? Json.text(Json.object(item), "value", "") : "";
+                if (!unbridged.contains(name)) kept.add(item);
+            }
+            if (!kept.isEmpty()) entrypoints.put(e.getKey(), kept);
+        }
         String datagen = datagenToNeoForge(entrypoints, minecraft);
         String menu = null;
         for (var entry : entrypoints.entrySet()) {
@@ -1274,6 +1311,12 @@ final class Convert {
         return null;
     }
 
+    /** The next top-level block of that name starting at or after from, or null. */
+    static int[] nextBlock(String text, String name, int from) {
+        int[] found = block(text.substring(from), name, "(?m)^");
+        return found == null ? null : new int[] { found[0] + from, found[1] + from, found[2] + from, found[3] + from };
+    }
+
     /** The named blocks directly inside a block body: runs { client { ... } } gives client. */
     static Map<String, String> children(String body) {
         Map<String, String> out = new LinkedHashMap<>();
@@ -1345,6 +1388,15 @@ final class Convert {
         "(?m)^([ \\t]*)id\\s*\\(?\\s*['\"](?:net\\.fabricmc\\.)?fabric-loom(?:-remap)?['\"]\\s*\\)?(?:\\s*version\\s*\\(?\\s*['\"][^'\"]*['\"]\\s*\\)?)?[ \\t]*$"
     );
 
+    /** A top-level build statement that configures Loom through its extensions: loom.runs { }, delete loom.runs.x.runDirectory. */
+    static boolean loomStatement(String statement) {
+        String first = statement.strip();
+        return first.matches("(?s)(?:loom|fabricApi)\\s*\\.\\s*\\w.*") || first.matches("(?s)\\w+\\s+(?:loom|fabricApi)\\.\\w.*");
+    }
+
+    /** The oldest Gradle ModDevGradle applies on: its own check refuses anything older. */
+    static final String MODDEV_GRADLE_MIN = "8.8";
+
     void buildToNeoForge(String minecraft) throws Exception {
         String gradle = dropLoomTypes(read("build.gradle"));
         Matcher plugin = LOOM_PLUGIN.matcher(gradle);
@@ -1353,6 +1405,10 @@ final class Convert {
         );
         String neo = latestNeoForge(minecraft);
         String mdg = stablePlugin("https://maven.neoforged.net/releases", "net.neoforged", "moddev-gradle");
+        // ModDevGradle refuses to apply below Gradle 8.8 ("To use the NeoForge plugin, please use at least Gradle 8.8"),
+        // which some of its releases do not state in their published metadata.
+        String wrapper = project.wrapperVersion();
+        if (wrapper != null && Versions.compare(wrapper, MODDEV_GRADLE_MIN) < 0) upgradeWrapper(MODDEV_GRADLE_MIN, "ModDevGradle " + mdg);
         gradle =
             gradle.substring(0, plugin.start()) +
             plugin.group(1) +
@@ -1384,7 +1440,17 @@ final class Convert {
             .append(unit)
             .append(unit)
             .append("}\n");
+        // Loom configuration written as top-level statements (loom.runs { }, loom.runs.configureEach { }, delete
+        // loom.runs.x.runDirectory, fabricApi.configureTests { }): Loom's own extensions, gone with the plugin.
+        gradle = dropStatements(gradle, Convert::loomStatement, "Fabric Loom's own configuration, which ModDevGradle has no counterpart for");
+        // A build can configure Loom in more than one loom block; every one is read below, the first in place.
         int[] loom = block(gradle, "loom");
+        for (int[] more = loom == null ? null : nextBlock(gradle, "loom", loom[1]); more != null; more = nextBlock(gradle, "loom", loom[1])) {
+            String extra = gradle.substring(more[2] + 1, more[3] - 1);
+            gradle = gradle.substring(0, more[0]) + gradle.substring(more[1]);
+            gradle = gradle.substring(0, loom[3] - 1) + extra + gradle.substring(loom[3] - 1);
+            loom = block(gradle, "loom");
+        }
         int insertAt;
         if (loom != null) {
             String body = gradle.substring(loom[2] + 1, loom[3] - 1);
@@ -1864,6 +1930,25 @@ final class Convert {
     final List<Subscriber> subscribers = new ArrayList<>();
     Map<String, Object> bridge;
 
+    /** The bridge's version layer for a game older than the bridge's own files, or null (knowledge/loaders.json bridges[].layers). */
+    Map<String, Object> bridgeLayer;
+
+    /**
+     * The newest layer written for a game version at or below this one, when the version is older than the bridge's own
+     * files: its files replace the bridge's files of the same name, since the game's and Fabric API's names differ there.
+     */
+    static Map<String, Object> bridgeLayer(Map<String, Object> bridge, String minecraft) {
+        if (Versions.compare(minecraft, Json.text(bridge, "minecraft", "99")) >= 0) return null;
+        Map<String, Object> best = null;
+        for (Object item : LoaderRules.list(bridge.get("layers"))) {
+            var layer = Json.object(item);
+            String from = Json.text(layer, "minecraft", "99");
+            if (Versions.compare(minecraft, from) < 0) continue;
+            if (best == null || Versions.compare(from, Json.text(best, "minecraft", "")) > 0) best = layer;
+        }
+        return best;
+    }
+
     String bridgeFolder() {
         return "src/main/java/" + bridgePackage.replace('.', '/');
     }
@@ -1877,8 +1962,10 @@ final class Convert {
         for (Object item : LoaderRules.list(rules.get("bridges"))) {
             var b = Json.object(item);
             if (!"neoforge".equals(b.get("from")) || !"fabric".equals(b.get("to"))) continue;
-            if (Versions.compare(minecraft, Json.text(b, "minecraft", "99")) < 0) continue;
+            Map<String, Object> layer = bridgeLayer(b, minecraft);
+            if (Versions.compare(minecraft, Json.text(b, "minecraft", "99")) < 0 && layer == null) continue;
             bridge = b;
+            bridgeLayer = layer;
         }
         if (bridge == null) return;
         for (String file : javaFiles()) {
@@ -2003,12 +2090,21 @@ final class Convert {
                 applied.computeIfAbsent("neoforge-bridge", k -> new ArrayList<>()).add(file);
             }
         }
+        Map<String, Path> files = new TreeMap<>();
         try (var list = Files.list(templates)) {
-            for (Path template : list.filter(p -> p.toString().endsWith(".java")).sorted().toList()) write(
-                bridgeFolder() + "/" + template.getFileName(),
-                Files.readString(template, StandardCharsets.UTF_8).replace("${package}", bridgePackage)
-            );
+            for (Path template : list.filter(p -> p.toString().endsWith(".java")).toList()) files.put(template.getFileName().toString(), template);
         }
+        if (bridgeLayer != null) {
+            Path layer = build.harness.resolve(Json.text(bridgeLayer, "folder", ""));
+            try (var list = Files.list(layer)) {
+                for (Path template : list.filter(p -> p.toString().endsWith(".java")).toList()) files.put(template.getFileName().toString(), template);
+            }
+            notes.add("NeoForge bridge: the layer for Minecraft " + Json.text(bridgeLayer, "minecraft", "") + " (" + Json.text(bridgeLayer, "folder", "") + ") replaces the files whose game or Fabric API names differ there.");
+        }
+        for (var template : files.entrySet()) write(
+            bridgeFolder() + "/" + template.getKey(),
+            Files.readString(template.getValue(), StandardCharsets.UTF_8).replace("${package}", bridgePackage)
+        );
         notes.add(
             "NeoForge bridge: " +
             bridgePackage +
@@ -2124,6 +2220,128 @@ final class Convert {
             "net.neoforged.bus.api.EventPriority"
         )) out = LoaderRules.dropImport(out, name);
         return out;
+    }
+
+    // ---- back through the NeoForge bridge ---------------------------------------------------------------------
+
+    static final Pattern BRIDGED_ENTRY = Pattern.compile(
+        "(?m)^([ \\t]*)/\\*\\* NeoForge's constructor of this @Mod class, run as Fabric's entrypoint \\(modaccel convert, NeoForge bridge\\)\\. \\*/\\n[ \\t]*@Override\\n[ \\t]*public void (onInitialize|onInitializeClient|onInitializeServer)\\(\\) \\{"
+    );
+
+    static final Pattern BRIDGED_LOCAL = Pattern.compile(
+        "^\\s*(IEventBus|ModContainer|Dist) (\\w+) = (?:Bridge\\.bus\\(\\)|Bridge\\.container\\(.*\\)|Dist\\.\\w+);\\s*$"
+    );
+
+    static final Pattern BRIDGED_END = Pattern.compile("^\\s*(?:Bridge\\.common|ClientBridge\\.client)\\((.+)\\);\\s*$");
+
+    /** An event class convert wrote into addListener for the bridge, before a method reference or typed lambda. */
+    static final Pattern WRITTEN_EVENT_CLASS = Pattern.compile(
+        "\\.addListener\\(\\s*((?:EventPriority\\.\\w+\\s*,\\s*)?(?:(?:true|false)\\s*,\\s*)?)[A-Z][\\w.]*\\.class,\\s*(?=(?:this|[A-Z]\\w*(?:\\.[A-Z]\\w*)*)::\\w+\\s*\\)|\\(\\s*(?:final\\s+)?[A-Z][\\w.]*(?:<[^>]*>)?\\s+\\w+\\s*\\)\\s*->)"
+    );
+
+    /**
+     * A mod convert moved to Fabric through the NeoForge bridge, going back to NeoForge: every entrypoint the bridge made
+     * of a @Mod class is that @Mod class again (its constructor takes back the IEventBus, ModContainer and Dist the bridge
+     * supplied, without the bridge's own calls), imports of the bridge's classes name NeoForge's again, the event class
+     * written into addListener goes, and the bridge's files and the client entrypoint it added are removed. Returns the
+     * entrypoint classes that became @Mod classes, which the Fabric entrypoints then leave alone.
+     */
+    Set<String> unbridge() throws Exception {
+        Set<String> done = new HashSet<>();
+        String pkg = null;
+        for (String file : javaFiles()) if (
+            file.endsWith("/Bridge.java") && read(file).contains("What a NeoForge @Mod class's constructor received")
+        ) {
+            Matcher m = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(read(file));
+            if (m.find()) pkg = m.group(1);
+        }
+        if (pkg == null) return done;
+        Map<String, String> back = new HashMap<>();
+        for (Object item : LoaderRules.list(rules.get("bridges"))) {
+            var b = Json.object(item);
+            if (!"neoforge".equals(b.get("from"))) continue;
+            for (var c : Json.object(b.get("classes")).entrySet()) back.put(String.valueOf(c.getValue()), c.getKey());
+        }
+        String folder = "src/main/java/" + pkg.replace('.', '/') + "/";
+        for (String file : javaFiles()) {
+            if (file.startsWith(folder)) continue;
+            String text = read(file), out = text;
+            Matcher entry = BRIDGED_ENTRY.matcher(out);
+            if (entry.find()) {
+                String converted = unbridgeEntry(file, out, entry);
+                if (converted != null) {
+                    out = converted;
+                    done.add(file.replaceFirst("^src/\\w+/java/", "").replaceAll("\\.java$", "").replace('/', '.'));
+                }
+            }
+            for (var c : back.entrySet()) out = out.replaceAll(
+                "(?m)^import\\s+" + Pattern.quote(pkg + "." + c.getKey()) + "\\s*;",
+                Matcher.quoteReplacement("import " + c.getValue() + ";")
+            );
+            out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
+            out = WRITTEN_EVENT_CLASS.matcher(out).replaceAll(".addListener($1");
+            if (!out.equals(text)) {
+                write(file, out);
+                applied.computeIfAbsent("neoforge-bridge-back", k -> new ArrayList<>()).add(file);
+            }
+        }
+        for (String file : javaFiles()) if (file.startsWith(folder)) delete(file);
+        done.add(pkg + ".ClientEntrypoint");
+        notes.add("NeoForge bridge: " + pkg + " is removed; the @Mod classes it ran as Fabric entrypoints are @Mod classes again.");
+        return done;
+    }
+
+    /** One entrypoint the bridge made, back as NeoForge's @Mod class constructor; null (and named) when it is not as the bridge wrote it. */
+    String unbridgeEntry(String file, String text, Matcher entry) {
+        String simple = file.substring(file.lastIndexOf('/') + 1).replace(".java", "");
+        boolean[] code = LoaderRules.code(text);
+        int open = entry.end() - 1;
+        int end = LoaderRules.close(text, code, open);
+        if (end < 0) return null;
+        String indent = entry.group(1), method = entry.group(2);
+        List<String> params = new ArrayList<>(), body = new ArrayList<>();
+        String id = null;
+        for (String line : text.substring(open + 1, end - 1).split("\n", -1)) {
+            Matcher local = BRIDGED_LOCAL.matcher(line), last = BRIDGED_END.matcher(line);
+            if (body.stream().allMatch(String::isBlank) && local.matches()) params.add(local.group(1) + " " + local.group(2));
+            else if (last.matches()) id = last.group(1);
+            else if (!line.matches("^\\s*Bridge\\.subscribe\\([\\w.]+\\.class\\);\\s*$")) body.add(line);
+        }
+        if (id == null) {
+            leave(file, LoaderRules.line(text, entry.start()), "entrypoint " + simple, "the NeoForge bridge's entrypoint no longer ends as the bridge wrote it");
+            return null;
+        }
+        String inner = String.join("\n", body).replaceAll("^(?:[ \\t]*\\n)+", "").replaceAll("\\s+$", "");
+        String ctor = params.isEmpty() && inner.isEmpty()
+            ? ""
+            : indent + "public " + simple + "(" + String.join(", ", params) + ") {\n" + (inner.isEmpty() ? "" : inner + "\n") + indent + "}";
+        String out = text.substring(0, entry.start()) + ctor + text.substring(end);
+        String side = method.equals("onInitializeClient") ? "CLIENT" : method.equals("onInitializeServer") ? "DEDICATED_SERVER" : null;
+        String api = side == null ? "ModInitializer" : side.equals("CLIENT") ? "ClientModInitializer" : "DedicatedServerModInitializer";
+        Matcher c = CLASS.matcher(out);
+        while (c.find()) if (c.group(3).equals(simple)) {
+            String heritage = c.group(4)
+                .replaceAll("\\bimplements\\s+" + api + "\\s*$", "")
+                .replaceAll("\\bimplements\\s+" + api + "\\s*,\\s*", "implements ")
+                .replaceAll(",\\s*" + api + "\\b", "");
+            String annotation = side == null ? "@Mod(" + id + ")" : "@Mod(value = " + id + ", dist = Dist." + side + ")";
+            out =
+                out.substring(0, c.start()) +
+                c.group(1) +
+                annotation +
+                "\n" +
+                c.group(1) +
+                c.group(2) +
+                "class " +
+                simple +
+                (heritage.isBlank() ? " " : " " + heritage.strip() + " ") +
+                "{" +
+                out.substring(c.end());
+            break;
+        }
+        out = LoaderRules.dropImport(out, "net.fabricmc.api." + api);
+        out = LoaderRules.addImport(out, "net.neoforged.fml.common.Mod");
+        return side == null ? out : LoaderRules.addImport(out, "net.neoforged.api.distmarker.Dist");
     }
 
     /** The class implements the Fabric entrypoint interface again, with @Override on its entry method. */
@@ -2723,6 +2941,8 @@ final class Convert {
         props.put("fabric_api_version", api);
         // Loom asks Mojang for the game by its version id: 26.2, not the 26.2.0 a NeoForge build may write.
         if (minecraft.matches("\\d+\\.\\d+\\.0")) props.put("minecraft_version", minecraft.replaceFirst("\\.0$", ""));
+        // Loom's build names the game by minecraft_version; a NeoForge build that had only its NeoForge release gets it.
+        else if (!properties(read("gradle.properties")).containsKey("minecraft_version")) props.put("minecraft_version", minecraft);
         if (menu) {
             // The newest stable Mod Menu that Modrinth, where Mod Menu publishes, lists for this Minecraft version on Fabric.
             String modmenu = null;

@@ -970,8 +970,10 @@ public final class PortableTests {
                 "back",
                 fabric
             );
-            String forward = new LoaderRules(rules, "fabric", "neoforge", "demo").apply(fabric).text;
-            String reverse = new LoaderRules(rules, "neoforge", "fabric", "demo").apply(neo).text;
+            // A rule written for a Minecraft range is tested at the version its test names (the newest release otherwise).
+            String game = Json.text(test, "minecraft", "26.3");
+            String forward = new LoaderRules(rules, "fabric", "neoforge", "demo", game).apply(fabric).text;
+            String reverse = new LoaderRules(rules, "neoforge", "fabric", "demo", game).apply(neo).text;
             if (!forward.equals(neo)) throw new AssertionError(
                 "rule " + rule.get("id") + " to NeoForge gave:\n" + forward
             );
@@ -1004,6 +1006,28 @@ public final class PortableTests {
             Convert.neoforgeModId("pointless-piglins").equals("pointless_piglins") && Convert.neoforgeModId("demo").equals("demo") &&
             Convert.neoforgeModId("2fast").equals("mod_2fast"),
             "a Fabric mod id with a hyphen becomes one NeoForge accepts"
+        );
+        // Found by the convert sweep on MoreRed (26.1.2): its gradle.properties names only neo_version.
+        check(
+            Convert.minecraftOfNeoForge("26.1.2.48-beta").equals("26.1.2") &&
+            Convert.minecraftOfNeoForge("26.1.0.3").equals("26.1") &&
+            Convert.minecraftOfNeoForge("21.1.250").equals("1.21.1") &&
+            Convert.minecraftOfNeoForge("21.0.167").equals("1.21") &&
+            Convert.minecraftOfNeoForge("20.4.232").equals("1.20.4") &&
+            Convert.minecraftOfNeoForge("${neo}").isEmpty(),
+            "the Minecraft version is read from a NeoForge release number, before and after 26.1"
+        );
+        // Found by the convert sweep on Client Commands and SeedMapper: Loom configured in two loom blocks and in
+        // top-level loom. statements; all of it goes with the plugin.
+        String loomTwice = "loom {\n\taccessWidenerPath = file('a')\n}\n\nloom.runs.configureEach {\n\tvmArg '-Dx'\n}\ndelete loom.runs.client.runDirectory\n\nloom {\n\tmixin { useLegacyMixinAp = false }\n}\n";
+        int[] firstLoom = Convert.block(loomTwice, "loom");
+        int[] secondLoom = Convert.nextBlock(loomTwice, "loom", firstLoom[1]);
+        List<String> loomDropped = new ArrayList<>();
+        String loomLeft = Convert.dropStatements(loomTwice, Convert::loomStatement, loomDropped);
+        check(
+            secondLoom != null && loomTwice.substring(secondLoom[0]).startsWith("loom {\n\tmixin") &&
+            loomDropped.size() == 2 && !loomLeft.contains("loom.") && loomLeft.contains("mixin {"),
+            "every loom block is found, and top-level loom. statements are dropped: " + loomDropped
         );
         List<String> unconverted = new ArrayList<>();
         List<String> transformers = Convert.widenerToTransformer(
@@ -1332,8 +1356,8 @@ public final class PortableTests {
             !Arrays.equals(file.getValue(), Files.readAllBytes(root.resolve(file.getKey())))
         ) restored = false;
         check(
-            restored && !Files.exists(root.resolve("src/main/resources/META-INF/neoforge.mods.toml")),
-            "undoing both conversions restores every file byte for byte and removes the files they made"
+            restored && !Files.exists(root.resolve("src/main/resources/META-INF")),
+            "undoing both conversions restores every file byte for byte and removes the files they made, and the folders those emptied"
         );
 
         // Found by an independent check on FastQuit (contariaa/FastQuit 8efed17): dependencies with an exclude block are whole
