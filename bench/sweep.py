@@ -345,7 +345,9 @@ def error_class(e, rec):
 def gradle_class(text):
     """The class of a failure Gradle reported without a compiler error."""
     t = text or ""
-    if re.search(r"Could not resolve|Could not find [\w.-]+:[\w.-]+|not found in any of the following|dependency-blockers|"
+    if re.search(r"No such file or folder: .*\.modaccel|modaccel failed|Internal error", t):
+        return "tool-crash"
+    if re.search(r"Some of your mods are incompatible|Could not resolve|Could not find [\w.-]+:[\w.-]+|not found in any of the following|dependency-blockers|"
                  r"Could not GET|Could not HEAD|No matching variant|Received status code 40[134]", t):
         return "dependency-unavailable"
     if re.search(r"accesstransformer|access transformer|AccessTransformer|accessWidener|access widener", t):

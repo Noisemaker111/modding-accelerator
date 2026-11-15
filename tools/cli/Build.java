@@ -349,6 +349,16 @@ final class Build {
             String why = Run.gradleFailure(result.log());
             throw new IOException(discoveryHeadline(why) + "\n" + why + "\nLog: " + result.log());
         }
+        if (planning && !Files.isRegularFile(model)) {
+            // Some older Gradle builds (ModMenu 1.16.5 on Gradle 6.9.1) never show the init script the planning flag, so it
+            // writes the full model; that is a superset of the planning model, so it serves as one.
+            java.util.regex.Matcher written = java.util.regex.Pattern.compile("(?m)^MODACCEL_MODEL (.+?)\s*$").matcher(
+                Files.readString(result.log())
+            );
+            Path full = null;
+            while (written.find()) full = Path.of(written.group(1));
+            if (full != null && Files.isRegularFile(full)) Files.copy(full, model, StandardCopyOption.REPLACE_EXISTING);
+        }
         Map<String, Object> value = Json.read(model);
         Json.save(stamp, Json.map("key", key));
         return value;
