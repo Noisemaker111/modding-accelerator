@@ -70,6 +70,7 @@ final class PackChecks {
         new Check("loader-verdict", "new-world", "what the metadata predicted, confirmed or refuted by the loader on the real server", PackChecks::verdict),
         new Check("dimension-save", "new-world", "a dimension that saves in a form the next start rejects", PackChecks::dimensions),
         new Check("placed-other-block", "new-world", "a block item that places another block", PackChecks::placements),
+        new Check("block-entity-unsendable", "new-world", "a placed block whose block entity cannot be sent to players, which stops the server", PackChecks::unsendable),
         new Check("world-reopen", "reopen", "a world that opens once and not again; the log names the mod", PackChecks::reopen),
         new Check("changed-by-save", "reopen", "a placed block that is different after saving and reopening", PackChecks::changedBySave),
         new Check("user-world", "user-world", "your own save (a copy) does not open, or saves badly", PackChecks::userWorld)
@@ -388,6 +389,30 @@ final class PackChecks {
         );
     }
 
+    /**
+     * Blocks whose block entity threw when the server wrote it for players, right after a player-style placement: on a
+     * real server the next tick does that and stops the whole server. The probe took each out again to check the rest.
+     * A warning, since such blocks are usually ones a mod places itself with its data (a portal, a spectral block), so a
+     * player reaches them only with creative or commands; the mod and the error are named for its author.
+     */
+    static void unsendable(Context c) {
+        if (!c.opened()) return;
+        for (Object u : Json.array(c.probe().getOrDefault("unsendable", List.of()))) {
+            var row = Json.object(u);
+            String error = Json.text(row, "error", "");
+            c.add(
+                "block-entity-unsendable",
+                "warning",
+                "Placing " + Json.text(row, "item", "") + " by hand stops the server: its block entity (" + Json.text(row, "landed", "") +
+                ") cannot be written for players (" + error.lines().findFirst().orElse("") + "). The mod normally places it itself with its data, so only creative or commands reach it; pack-check took it out to check the rest.",
+                "evidence",
+                error.lines().limit(8).toList(),
+                "item",
+                Json.text(row, "item", "")
+            );
+        }
+    }
+
     static void reopen(Context c) {
         if (c.opened()) return;
         List<Map<String, Object>> suspects = Json.array(c.start.getOrDefault("suspects", List.of())).stream().map(Json::object).toList();
@@ -405,6 +430,20 @@ final class PackChecks {
 
     static void changedBySave(Context c) {
         if (!c.opened()) return;
+        // A block that still had a scheduled tick when the world saved changed by the game's rules when that tick ran.
+        List<Object> settled = Json.array(c.probe().getOrDefault("settled", List.of()));
+        if (!settled.isEmpty()) {
+            List<String> shown = new ArrayList<>();
+            for (Object change : settled) shown.add(Json.text(Json.object(change), "before", "") + " -> " + Json.text(Json.object(change), "after", ""));
+            c.add(
+                "settled-after-save",
+                "note",
+                settled.size() + " placed block(s) were waiting for a scheduled tick when the world saved and changed when it ran after the reload, by the game's own rules (coral out of water dries, a cactus beside a block breaks), not because of the save: " +
+                examples(shown),
+                "evidence",
+                settled
+            );
+        }
         for (Object change : Json.array(c.probe().getOrDefault("changed", List.of()))) c.add(
             "changed-by-save",
             "problem",

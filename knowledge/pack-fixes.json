@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "about": "Repairs pack-check applies for a cause proven in a real run. Each entry names the loader and game versions it is for, a match (read from the jars before the game runs: mod-below, mod-range, mods-together, dependency-unmet, dependency-missing), the check that shows the fault in the game, an action (add-jar, remove-mod, replace-mod) whose downloads are checked against their SHA-512, the evidence, and a test: jars that must match before the action and must not after it (run by self-test). A finding with no entry here is reported with its evidence and left alone.",
+  "about": "Repairs pack-check applies for a cause proven in a real run. A fixed repair names its loader and game versions, a match read from the jars before the game runs (mod-below, mod-range, mods-together, dependency-unmet, dependency-missing), the check that shows the fault in the game, an action (add-jar, remove-mod, replace-mod) whose download is checked against its SHA-512, the evidence, and a test. A rule (loader and minecraft \"*\") names a kind of fault instead: a file the pack's host no longer serves (unavailable-file), a library no jar provides or one pinned to another version (dependency-missing and dependency-unmet with mod \"*\"), a server-optional mod that stops the server (start-failure); \"when\": \"start-failed\" reads it from a failed start's log. Its action (substitute-file, fetch-dependency, leave-out-of-server) finds the file at run time from a source that publishes a size or hash and checks the jar's own metadata. Every entry's test (jars, and unavailable files or a log where the match reads them) must match before the action and not after it (run by self-test). A finding with no entry here is reported with its evidence and left alone.",
   "fixes": [
     {
       "id": "biolith-saved-climate-list",
@@ -123,6 +123,212 @@
           ]
         },
         "from": "JoJo's Bizarre Modpack 1.0.0 (Modrinth, Forge 47.4.3)"
+      }
+    },
+    {
+      "id": "unavailable-curseforge-file",
+      "loader": "*",
+      "minecraft": [
+        "*"
+      ],
+      "match": {
+        "type": "unavailable-file"
+      },
+      "check": "unavailable-file",
+      "symptom": "A player cannot install the pack as published: a mod file its manifest lists is no longer served by CurseForge.",
+      "cause": "CurseForge removes files (an author deletes a version, a project is archived); an export keeps naming the old file id, and CurseForge publishes no hash, so the same bytes cannot be found anywhere else.",
+      "evidence": [],
+      "action": {
+        "type": "substitute-file",
+        "how": "The same CurseForge project's file for the pack's game version and loader, the nearest newer one first: checked against the size CurseForge publishes, its own metadata (a mod for this loader and game version, inside every range the pack's mods require its ids in), and against Modrinth's SHA-1 where Modrinth has it. A project with no such file is left out of the fixed pack with a note; the pack was checked without it."
+      },
+      "why": "The project is the same mod; its next file for the same game version and loader is the smallest change a pack author would make, and the repaired pack's server proves it before the user's pack changes.",
+      "test": {
+        "loader": "forge",
+        "minecraft": "1.20.1",
+        "jars": [
+          {
+            "file": "L_Enders_Cataclysm-3.16.jar",
+            "mods": [
+              {
+                "id": "cataclysm",
+                "version": "3.16",
+                "depends": {
+                  "lionfishapi": "[2.4,)"
+                }
+              }
+            ]
+          }
+        ],
+        "unavailable": [
+          {
+            "project": 1001614,
+            "file": 5922047
+          }
+        ],
+        "added": {
+          "file": "lionfishapi-2.7.jar",
+          "mods": [
+            {
+              "id": "lionfishapi",
+              "version": "2.7"
+            }
+          ]
+        },
+        "from": "All the Mods 9 1.1.1 (CurseForge, Forge 47.4.0): LionfishAPI file 5922047 is gone; CurseForge still serves 2.7 for Forge 1.20.1"
+      }
+    },
+    {
+      "id": "missing-library",
+      "loader": "*",
+      "minecraft": [
+        "*"
+      ],
+      "when": "start-failed",
+      "match": {
+        "type": "dependency-missing",
+        "mod": "*"
+      },
+      "check": "server-start",
+      "symptom": "The game does not start: the loader stops because a mod requires a library no jar in the pack provides.",
+      "cause": "The library's file is no longer served by the pack's host, or the pack never listed it.",
+      "evidence": [],
+      "action": {
+        "type": "fetch-dependency",
+        "how": "The version the dependant's own Modrinth release names (found by the dependant jar's SHA-1), else the oldest Modrinth release for the pack's game version and loader that every dependant accepts; checked against Modrinth's SHA-512 and its own metadata."
+      },
+      "why": "The dependant's author names the exact library release it was built against; failing that, the oldest release in range is closest to what the pack was made with.",
+      "test": {
+        "loader": "fabric",
+        "minecraft": "1.18.2",
+        "jars": [
+          {
+            "file": "astralvinery-1.2.0.jar",
+            "mods": [
+              {
+                "id": "astralvinery",
+                "version": "1.2.0",
+                "depends": {
+                  "vinery": "1.1.4"
+                }
+              }
+            ]
+          }
+        ],
+        "log": "[main/ERROR]: Incompatible mods found!\n - Mod 'AstralVinery' (astralvinery) 1.2.0 requires version 1.1.4 of vinery, which is missing!",
+        "added": {
+          "file": "vinery-1.1.4.jar",
+          "mods": [
+            {
+              "id": "vinery",
+              "version": "1.1.4"
+            }
+          ]
+        },
+        "from": "Create Astral 2.1.5b (CurseForge, Fabric 1.18.2): Vinery's file 4332470 is gone; Astral Vinery's Modrinth release names Vinery 1.1.4"
+      }
+    },
+    {
+      "id": "pinned-library-version",
+      "loader": "*",
+      "minecraft": [
+        "*"
+      ],
+      "when": "start-failed",
+      "match": {
+        "type": "dependency-unmet",
+        "mod": "*"
+      },
+      "check": "server-start",
+      "symptom": "The game does not start: the loader stops because a mod requires a library in a version other than the one the pack has.",
+      "cause": "A mod pins a library (often to one exact version) and the pack took the library's newest release.",
+      "evidence": [],
+      "action": {
+        "type": "fetch-dependency",
+        "replace": true,
+        "how": "The library in a version every dependant in the pack accepts: the one the dependant's own Modrinth release names, else the oldest such Modrinth release for the pack's game version and loader; checked against Modrinth's SHA-512 and its own metadata. It replaces the pack's copy."
+      },
+      "why": "Pinning the library keeps every mod of the pack; updating the dependant would change its content.",
+      "test": {
+        "loader": "forge",
+        "minecraft": "1.20.1",
+        "jars": [
+          {
+            "file": "soulslike-weaponry-1.2.4-1.20.1-forge.jar",
+            "mods": [
+              {
+                "id": "soulsweapons",
+                "version": "1.2.4-1.20.1-forge",
+                "depends": {
+                  "projectile_damage": "[3.2.2+1.20.1]"
+                }
+              }
+            ]
+          },
+          {
+            "file": "projectile_damage-forge-3.2.3+1.20.1.jar",
+            "mods": [
+              {
+                "id": "projectile_damage",
+                "version": "3.2.3+1.20.1"
+              }
+            ]
+          }
+        ],
+        "log": "Missing or unsupported mandatory dependencies:\n\tMod ID: 'projectile_damage', Requested by: 'soulsweapons', Expected range: '[3.2.2+1.20.1]', Actual version: '3.2.3+1.20.1'",
+        "added": {
+          "file": "projectile_damage-forge-3.2.2+1.20.1.jar",
+          "mods": [
+            {
+              "id": "projectile_damage",
+              "version": "3.2.2+1.20.1"
+            }
+          ]
+        },
+        "from": "JoJo's Bizarre Modpack 1.0.0 (Modrinth, Forge 47.4.3), the case soulsweapons-pinned-projectile-damage proved"
+      }
+    },
+    {
+      "id": "server-optional-mod-stops-server",
+      "loader": "*",
+      "minecraft": [
+        "*"
+      ],
+      "when": "start-failed",
+      "match": {
+        "type": "start-failure",
+        "side": "server-optional",
+        "patterns": [
+          "Could not execute entrypoint stage '(?:server|main)' due to errors, provided by '([a-z0-9_\\-]+)'",
+          "\\(([a-z0-9_\\-]+)\\) has failed to load correctly"
+        ]
+      },
+      "check": "server-start",
+      "symptom": "The server does not start: a mod's own start-up code fails on a dedicated server, though the mod is one a server does not need.",
+      "cause": "A mod made for the client (its Modrinth page or the pack says a server may go without it) runs client set-up when a server starts and fails there.",
+      "evidence": [],
+      "action": {
+        "type": "leave-out-of-server",
+        "how": "The server leaves the jar out; players keep it. A fixed .mrpack marks its file env.server \"unsupported\" (or moves a jar it carries to client-overrides)."
+      },
+      "why": "The mod's own author says a server does not need it, so leaving it off the server changes nothing a player sees.",
+      "test": {
+        "loader": "quilt",
+        "minecraft": "1.20.1",
+        "jars": [
+          {
+            "file": "DistantHorizons-2.0.1-a-1.20.1.jar",
+            "serverSide": "optional",
+            "mods": [
+              {
+                "id": "distanthorizons",
+                "version": "2.0.1-a"
+              }
+            ]
+          }
+        ],
+        "log": "[main/ERROR]: Failed to start the minecraft server\njava.lang.RuntimeException: Could not execute entrypoint stage 'server' due to errors, provided by 'distanthorizons'!",
+        "from": "Sodium Plus (Modrinth, Quilt 1.20.1): Distant Horizons 2.0.1-a's server entrypoint stops the server"
       }
     }
   ]
