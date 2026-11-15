@@ -27,12 +27,12 @@ for t in bench/test_*.py bench/diorama/test_*.py tools/ci/test_*.py; do python3 
 CI runs `tools/ci/lanes.py` plans on all three systems; reproduce one with `python3 tools/ci/lanes.py core` (or `server`, `stonecutter`, `--seed N`).
 Never retry a failing check or widen its timeout: find why it failed.
 
-Commit and push your branch. Use `.github/pull_request_template.md`; land on `main`:
+## Branches and PRs
 
-```sh
-gh pr create --base main --fill
-gh pr merge --squash
-```
+One idea = one branch (`feat/<idea>`) = one PR. Commit to the idea's branch as you go.
+Open the PR as a draft (`gh pr create --draft --base main`) to get CI; mark it ready and merge (`gh pr merge --squash`) only when the idea is done and CI is green.
+Parallel threads on one idea branch off the idea branch and merge back into it, not into `main`.
+An unrelated fix gets its own idea branch and PR; never tack it onto another PR. PR text: `.github/pull_request_template.md`.
 
 ## Start here
 
