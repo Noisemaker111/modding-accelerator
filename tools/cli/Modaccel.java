@@ -213,6 +213,7 @@ public final class Modaccel {
         "fast",
         "test",
         "port",
+        "convert",
         "explain",
         "dependencies",
         "mixin-check",
@@ -357,7 +358,8 @@ public final class Modaccel {
                     : options.get("project", "");
                 Build build = new Build(project, home, selected, report);
                 Map<String, Object> model = Set.of("game-status", "game-stop", "eval").contains(options.command) ||
-                    (options.command.equals("port") && options.values.containsKey("undo"))
+                    (options.command.equals("port") && options.values.containsKey("undo")) ||
+                    options.command.equals("convert")
                     ? Json.map()
                     : build.model(options.has("refresh"), options.command.equals("port"));
                 switch (options.command) {
@@ -383,6 +385,10 @@ public final class Modaccel {
                     case "port" -> {
                         result = new Port(build, model).run(options);
                         if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model));
+                        exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                    }
+                    case "convert" -> {
+                        result = new Convert(build).run(options);
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
                     case "explain" -> {
@@ -774,6 +780,16 @@ public final class Modaccel {
             "  modaccel port --root SOURCE --undo TRANSACTION\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
+            case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run] [--json]\n" +
+            "  modaccel convert --root SOURCE --undo [ID]   restore every file the conversion changed, byte for byte\n" +
+            "Fabric to NeoForge (any version with a NeoForge release) and NeoForge to Fabric (Minecraft 26.1 and later, where both use Mojang's names).\n" +
+            "It rewrites the build (Loom <-> ModDevGradle, the newest loader releases for that Minecraft version), the metadata (fabric.mod.json <->\n" +
+            "META-INF/neoforge.mods.toml), the entrypoints (ModInitializer <-> @Mod classes that run it in NeoForge's first registry event), and the\n" +
+            "code with the rules in knowledge/loaders.json: loader calls, events, key mappings, Mod Menu's config screen. Every rule names classes checked\n" +
+            "against the loaders' own published jars (python bench/loader_api.py verify) and has a before/after test. There is no AI step.\n" +
+            "Anything with no rule is listed with its file and line and left as it was, never dropped. Then the converted build is compiled\n" +
+            "(--dry-run skips that); exit 0 means it compiled and nothing was left. A compile is not proof: check the mod in the game with ui-check or\n" +
+            "world-check and --assert. Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
             case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
             "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n" +
@@ -865,6 +881,7 @@ public final class Modaccel {
             "  fast, test             logic tests, no game    mixin-check        Mixin applies the mixins, no game\n" +
             "  data-check             what the game loads for the mod (items, recipes, errors), no game\n" +
             "  port                   move to another version explain            explain compiler errors\n" +
+            "  convert                move to another loader (Fabric <-> NeoForge), with undo\n" +
             "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n" +
             "  eval, reload           talk to the running game          game-status, game-stop\n" +
             "  plugin-check           Paper/Bukkit plugin on a fake Paper server (MockBukkit), no real server\n" +
@@ -873,7 +890,7 @@ public final class Modaccel {
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      record and inspect local game performance\n" +
             "  package, self-test     build or test modaccel itself\n" +
-            "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
+            "Run modaccel help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
             "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";
         };
     }

@@ -1,0 +1,598 @@
+{
+ "about": "Loader-change rules for modaccel convert, written for this project. Each rule says how one Fabric API use is written on NeoForge, and back. Nothing here was read from other people's mods: every class and member a rule names is checked against the loaders' own published jars by python bench/loader_api.py verify, which records where it found each one in coverage/loader/api.json. A rule's test is its before/after source; modaccel self-test runs every test both ways. Placeholders: $name matches one balanced Java expression; $event is the event object the listener receives; $modbus is the mod's own event bus.",
+ "published": {
+  "fabric-loader": {
+   "maven": "https://maven.fabricmc.net",
+   "coordinate": "net.fabricmc:fabric-loader:0.19.5",
+   "docs": "https://docs.fabricmc.net/develop/"
+  },
+  "fabric-api": {
+   "maven": "https://maven.fabricmc.net",
+   "coordinate": "net.fabricmc.fabric-api:fabric-api:0.161.0+26.3",
+   "docs": "https://docs.fabricmc.net/develop/"
+  },
+  "neoforge": {
+   "maven": "https://maven.neoforged.net/releases",
+   "coordinate": "net.neoforged:neoforge:26.3.0.103:universal",
+   "docs": "https://docs.neoforged.net/docs/concepts/events"
+  },
+  "fml": {
+   "maven": "https://maven.neoforged.net/releases",
+   "coordinate": "net.neoforged.fancymodloader:loader:12.0.12",
+   "docs": "https://docs.neoforged.net/docs/gettingstarted/modfiles"
+  },
+  "bus": {
+   "maven": "https://maven.neoforged.net/releases",
+   "coordinate": "net.neoforged:bus:8.0.5",
+   "docs": "https://docs.neoforged.net/docs/concepts/events"
+  }
+ },
+ "buses": {
+  "game": {
+   "neoforge": "NeoForge.EVENT_BUS",
+   "imports": [
+    "net.neoforged.neoforge.common.NeoForge"
+   ]
+  },
+  "mod": {
+   "neoforge": "ModList.get().getModContainerById($modid).orElseThrow().getEventBus()",
+   "imports": [
+    "net.neoforged.fml.ModList"
+   ]
+  }
+ },
+ "expressions": [
+  {
+   "id": "config-dir",
+   "fabric": "FabricLoader.getInstance().getConfigDir()",
+   "neoforge": "FMLPaths.CONFIGDIR.get()",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.loader.api.FabricLoader"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.loading.FMLPaths"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getInstance",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getConfigDir"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.loading.FMLPaths#CONFIGDIR",
+     "fml|net.neoforged.fml.loading.FMLPaths#get"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.loader.api.FabricLoader;\nclass A { void a() { Path dir = FabricLoader.getInstance().getConfigDir().resolve(\"x.json\"); } }",
+    "neoforge": "import net.neoforged.fml.loading.FMLPaths;\nclass A { void a() { Path dir = FMLPaths.CONFIGDIR.get().resolve(\"x.json\"); } }"
+   }
+  },
+  {
+   "id": "game-dir",
+   "fabric": "FabricLoader.getInstance().getGameDir()",
+   "neoforge": "FMLPaths.GAMEDIR.get()",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.loader.api.FabricLoader"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.loading.FMLPaths"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getGameDir"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.loading.FMLPaths#GAMEDIR"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.loader.api.FabricLoader;\nclass A { void a() { Path dir = FabricLoader.getInstance().getGameDir(); } }",
+    "neoforge": "import net.neoforged.fml.loading.FMLPaths;\nclass A { void a() { Path dir = FMLPaths.GAMEDIR.get(); } }"
+   }
+  },
+  {
+   "id": "mod-loaded",
+   "fabric": "FabricLoader.getInstance().isModLoaded($id)",
+   "neoforge": "ModList.get().isLoaded($id)",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.loader.api.FabricLoader"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.ModList"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.ModList#get",
+     "fml|net.neoforged.fml.ModList#isLoaded"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.loader.api.FabricLoader;\nclass A { void a() { if (FabricLoader.getInstance().isModLoaded(\"sodium\")) run(); } }",
+    "neoforge": "import net.neoforged.fml.ModList;\nclass A { void a() { if (ModList.get().isLoaded(\"sodium\")) run(); } }"
+   }
+  },
+  {
+   "id": "development-environment",
+   "fabric": "FabricLoader.getInstance().isDevelopmentEnvironment()",
+   "neoforge": "!FMLEnvironment.isProduction()",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.loader.api.FabricLoader"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.loading.FMLEnvironment"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.loading.FMLEnvironment#isProduction"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.loader.api.FabricLoader;\nclass A { void a() { boolean dev = FabricLoader.getInstance().isDevelopmentEnvironment(); } }",
+    "neoforge": "import net.neoforged.fml.loading.FMLEnvironment;\nclass A { void a() { boolean dev = !FMLEnvironment.isProduction(); } }"
+   }
+  },
+  {
+   "id": "environment-type",
+   "fabric": "FabricLoader.getInstance().getEnvironmentType()",
+   "neoforge": "FMLEnvironment.getDist()",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.loader.api.FabricLoader"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.loading.FMLEnvironment"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEnvironmentType"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.loading.FMLEnvironment#getDist"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.loader.api.FabricLoader;\nclass A { void a() { var side = FabricLoader.getInstance().getEnvironmentType(); } }",
+    "neoforge": "import net.neoforged.fml.loading.FMLEnvironment;\nclass A { void a() { var side = FMLEnvironment.getDist(); } }"
+   }
+  }
+ ],
+ "types": [
+  {
+   "id": "physical-side",
+   "fabric": "net.fabricmc.api.EnvType",
+   "neoforge": "net.neoforged.api.distmarker.Dist",
+   "members": {
+    "CLIENT": "CLIENT",
+    "SERVER": "DEDICATED_SERVER"
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.api.EnvType#CLIENT",
+     "fabric-loader|net.fabricmc.api.EnvType#SERVER"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.api.distmarker.Dist#CLIENT",
+     "fml|net.neoforged.api.distmarker.Dist#DEDICATED_SERVER"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.api.EnvType;\nclass A { boolean server(EnvType side) { return side == EnvType.SERVER; } }",
+    "neoforge": "import net.neoforged.api.distmarker.Dist;\nclass A { boolean server(Dist side) { return side == Dist.DEDICATED_SERVER; } }"
+   }
+  }
+ ],
+ "events": [
+  {
+   "id": "client-tick-end",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_CLIENT_TICK",
+    "params": [
+     "client"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.client.event.ClientTickEvent.Post",
+    "bus": "game",
+    "args": [
+     "Minecraft.getInstance()"
+    ],
+    "imports": [
+     "net.minecraft.client.Minecraft"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_CLIENT_TICK"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.event.ClientTickEvent$Post",
+     "neoforge|net.neoforged.neoforge.common.NeoForge#EVENT_BUS"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\nclass A { void init() { ClientTickEvents.END_CLIENT_TICK.register(client -> tick(client)); } }",
+    "neoforge": "import net.minecraft.client.Minecraft;\nimport net.neoforged.neoforge.client.event.ClientTickEvent;\nimport net.neoforged.neoforge.common.NeoForge;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> {\n    var client = Minecraft.getInstance();\n    tick(client);\n}); } }"
+   }
+  },
+  {
+   "id": "client-tick-start",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#START_CLIENT_TICK",
+    "params": [
+     "client"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.client.event.ClientTickEvent.Pre",
+    "bus": "game",
+    "args": [
+     "Minecraft.getInstance()"
+    ],
+    "imports": [
+     "net.minecraft.client.Minecraft"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#START_CLIENT_TICK"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.event.ClientTickEvent$Pre"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\nclass A { void init() { ClientTickEvents.START_CLIENT_TICK.register(this::before); } }",
+    "neoforge": "import net.minecraft.client.Minecraft;\nimport net.neoforged.neoforge.client.event.ClientTickEvent;\nimport net.neoforged.neoforge.common.NeoForge;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, event -> {\n    var client = Minecraft.getInstance();\n    this.before(client);\n}); } }",
+    "back": "import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\nclass A { void init() { ClientTickEvents.START_CLIENT_TICK.register(client -> this.before(client)); } }"
+   }
+  },
+  {
+   "id": "server-tick-end",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#END_SERVER_TICK",
+    "params": [
+     "server"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.tick.ServerTickEvent.Post",
+    "bus": "game",
+    "args": [
+     "$event.getServer()"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#END_SERVER_TICK"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.tick.ServerTickEvent$Post",
+     "neoforge|net.neoforged.neoforge.event.tick.ServerTickEvent#getServer"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;\nclass A { void init() { ServerTickEvents.END_SERVER_TICK.register(server -> {\n    count++;\n    save(server);\n}); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.ServerTickEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, event -> {\n    var server = event.getServer();\n    count++;\n    save(server);\n}); } }"
+   }
+  },
+  {
+   "id": "server-tick-start",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#START_SERVER_TICK",
+    "params": [
+     "server"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.tick.ServerTickEvent.Pre",
+    "bus": "game",
+    "args": [
+     "$event.getServer()"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#START_SERVER_TICK"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.tick.ServerTickEvent$Pre"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;\nclass A { void init() { ServerTickEvents.START_SERVER_TICK.register(Ticker::run); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.ServerTickEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ServerTickEvent.Pre.class, event -> {\n    var server = event.getServer();\n    Ticker.run(server);\n}); } }",
+    "back": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;\nclass A { void init() { ServerTickEvents.START_SERVER_TICK.register(server -> Ticker.run(server)); } }"
+   }
+  },
+  {
+   "id": "server-starting",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
+    "params": [
+     "server"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.server.ServerStartingEvent",
+    "bus": "game",
+    "args": [
+     "$event.getServer()"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.server.ServerStartingEvent",
+     "neoforge|net.neoforged.neoforge.event.server.ServerLifecycleEvent#getServer"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;\nclass A { void init() { ServerLifecycleEvents.SERVER_STARTING.register(server -> open(server)); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.server.ServerStartingEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ServerStartingEvent.class, event -> {\n    var server = event.getServer();\n    open(server);\n}); } }"
+   }
+  },
+  {
+   "id": "server-started",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTED",
+    "params": [
+     "server"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.server.ServerStartedEvent",
+    "bus": "game",
+    "args": [
+     "$event.getServer()"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTED"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.server.ServerStartedEvent"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;\nclass A { void init() { ServerLifecycleEvents.SERVER_STARTED.register(server -> open(server)); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.server.ServerStartedEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ServerStartedEvent.class, event -> {\n    var server = event.getServer();\n    open(server);\n}); } }"
+   }
+  },
+  {
+   "id": "server-stopping",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STOPPING",
+    "params": [
+     "server"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.server.ServerStoppingEvent",
+    "bus": "game",
+    "args": [
+     "$event.getServer()"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STOPPING"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.server.ServerStoppingEvent"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;\nclass A { void init() { ServerLifecycleEvents.SERVER_STOPPING.register(server -> close(server)); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.server.ServerStoppingEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ServerStoppingEvent.class, event -> {\n    var server = event.getServer();\n    close(server);\n}); } }"
+   }
+  },
+  {
+   "id": "server-stopped",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STOPPED",
+    "params": [
+     "server"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.server.ServerStoppedEvent",
+    "bus": "game",
+    "args": [
+     "$event.getServer()"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STOPPED"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.server.ServerStoppedEvent"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;\nclass A { void init() { ServerLifecycleEvents.SERVER_STOPPED.register(server -> close(server)); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.server.ServerStoppedEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> {\n    var server = event.getServer();\n    close(server);\n}); } }"
+   }
+  },
+  {
+   "id": "commands",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback#EVENT",
+    "params": [
+     "dispatcher",
+     "context",
+     "selection"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.RegisterCommandsEvent",
+    "bus": "game",
+    "args": [
+     "$event.getDispatcher()",
+     "$event.getBuildContext()",
+     "$event.getCommandSelection()"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback#EVENT"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.RegisterCommandsEvent#getDispatcher",
+     "neoforge|net.neoforged.neoforge.event.RegisterCommandsEvent#getBuildContext",
+     "neoforge|net.neoforged.neoforge.event.RegisterCommandsEvent#getCommandSelection"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;\nclass A { void init() { CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> Cmd.register(dispatcher)); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.RegisterCommandsEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, event -> {\n    var dispatcher = event.getDispatcher();\n    Cmd.register(dispatcher);\n}); } }",
+    "back": "import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;\nclass A { void init() { CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> Cmd.register(dispatcher)); } }"
+   }
+  },
+  {
+   "id": "creative-tab-output",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents#modifyOutputEvent($tab)",
+    "params": [
+     "output"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent",
+    "bus": "mod",
+    "args": [
+     "$event"
+    ],
+    "filter": "$event.getTabKey().equals($tab)"
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents#modifyOutputEvent"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent#getTabKey",
+     "fml|net.neoforged.fml.ModContainer#getEventBus",
+     "fml|net.neoforged.fml.ModList#getModContainerById"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;\nclass A { void init() { CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(output -> {\n    output.accept(GEM);\n}); } }",
+    "neoforge": "import net.neoforged.fml.ModList;\nimport net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;\nclass A { void init() { ModList.get().getModContainerById(\"demo\").orElseThrow().getEventBus().addListener(BuildCreativeModeTabContentsEvent.class, event -> {\n    if (!event.getTabKey().equals(CreativeModeTabs.INGREDIENTS)) return;\n    var output = event;\n    output.accept(GEM);\n}); } }",
+    "back": "import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;\nclass A { void init() { CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(output -> output.accept(GEM)); } }"
+   }
+  },
+  {
+   "id": "loot-table-modify",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.loot.v3.LootTableEvents#MODIFY",
+    "params": [
+     "key",
+     "tableBuilder",
+     "source",
+     "registries"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.LootTableLoadEvent",
+    "bus": "game",
+    "args": [
+     "$event.getKey()",
+     null,
+     null,
+     "$event.getRegistries()"
+    ],
+    "rewrite": [
+     {
+      "param": 1,
+      "fabric": "$self.withPool($pool)",
+      "neoforge": "$event.getTable().addPool($pool.build())"
+     }
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.loot.v3.LootTableEvents#MODIFY"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.LootTableLoadEvent#getKey",
+     "neoforge|net.neoforged.neoforge.event.LootTableLoadEvent#getTable",
+     "neoforge|net.neoforged.neoforge.event.LootTableLoadEvent#getRegistries"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.loot.v3.LootTableEvents;\nclass A { void init() { LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {\n    if (key == CHEST) tableBuilder.withPool(pool());\n}); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.LootTableLoadEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LootTableLoadEvent.class, event -> {\n    var key = event.getKey();\n    if (key == CHEST) event.getTable().addPool(pool().build());\n}); } }"
+   }
+  }
+ ],
+ "statements": [
+  {
+   "id": "key-mapping",
+   "fabric": "$target = KeyMappingHelper.registerKeyMapping($key);",
+   "neoforge": "$target = $key;\n$modbus.addListener(RegisterKeyMappingsEvent.class, event -> event.register($target.name));",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.ModList",
+     "net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent#register"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nclass A { static KeyMapping toggle; void init() {\n    toggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(\"key.demo\", 0, CATEGORY));\n} }",
+    "neoforge": "import net.neoforged.fml.ModList;\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\nclass A { static KeyMapping toggle; void init() {\n    toggle = new KeyMapping(\"key.demo\", 0, CATEGORY);\n    ModList.get().getModContainerById(\"demo\").orElseThrow().getEventBus().addListener(RegisterKeyMappingsEvent.class, event -> event.register(toggle));\n} }"
+   }
+  }
+ ],
+ "integrations": [
+  {
+   "id": "modmenu-config-screen",
+   "about": "Mod Menu (com.terraformersmc:modmenu) has no NeoForge build; NeoForge's own mod list opens a mod's config screen through IConfigScreenFactory. The ModMenuApi class keeps its factory as a Function<Screen, Screen>, and the client entry registers it.",
+   "fabric": {
+    "entrypoint": "modmenu",
+    "api": "com.terraformersmc.modmenu.api.ModMenuApi",
+    "factory": "com.terraformersmc.modmenu.api.ConfigScreenFactory"
+   },
+   "neoforge": {
+    "extension": "net.neoforged.neoforge.client.gui.IConfigScreenFactory"
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.gui.IConfigScreenFactory#createScreen",
+     "fml|net.neoforged.fml.ModContainer#registerExtensionPoint"
+    ]
+   },
+   "test": {
+    "fabric": "import com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\npublic class Menu implements ModMenuApi {\n\t@Override\n\tpublic ConfigScreenFactory<?> getModConfigScreenFactory() {\n\t\treturn Settings::new;\n\t}\n}",
+    "neoforge": "public class Menu {\n\tpublic java.util.function.Function<net.minecraft.client.gui.screens.Screen, net.minecraft.client.gui.screens.Screen> getModConfigScreenFactory() {\n\t\treturn Settings::new;\n\t}\n}"
+   }
+  }
+ ]
+}
