@@ -7,6 +7,11 @@
         claims about the game, so they need --status and a --detail that says what was checked and how.
         --measure also records the errors left as a point on that measure.
 
+    python bench/record.py perf RECORD [RECORD ...] [--dry-run]
+        A run record (record.json from modaccel perf, perf-optimize or a comparison script) is kept in
+        coverage/perf-runs.json. Records are checked first; one with problems is refused. An id already
+        kept is skipped. knowledge/perf-patterns.json cites accepted runs from here as its proof.
+
     python bench/record.py step ID start|done|next|later [--result TEXT] [--target DATE]
         A roadmap step changes status in coverage/roadmap.json. start sets it to doing, done sets its done
         date. A new --target keeps the old date in the step's "moved" list.
@@ -22,9 +27,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import measures as M  # noqa: E402
+import perf_sessions as P  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER = ROOT / "coverage" / "ledger.json"
+PERF_RUNS = ROOT / "coverage" / "perf-runs.json"
 STATUSES = ("stop", "build", "load", "behaviour")
 
 
@@ -135,6 +142,42 @@ def add_point(measure, value, source, date=None, note=None, dry=False):
     return p
 
 
+# ---- a performance run record -----------------------------------------------------------------
+def portable(value, root=ROOT, home=Path.home()):
+    """The record with this checkout's paths relative to it and the home folder as ~, so a kept run names no local user."""
+    if isinstance(value, dict):
+        return {k: portable(v, root, home) for k, v in value.items()}
+    if isinstance(value, list):
+        return [portable(v, root, home) for v in value]
+    if isinstance(value, str):
+        for base, short in ((str(root), "."), (str(home), "~")):
+            for spelled in {base, base.replace("\\", "/"), base.replace("/", "\\")}:
+                value = value.replace(spelled, short)
+    return value
+
+
+def add_perf(paths, ledger_path=PERF_RUNS, dry=False):
+    """Keeps run records in the perf ledger. Returns (added, skipped); raises ValueError on a malformed record."""
+    ledger = load_json(ledger_path) if Path(ledger_path).is_file() else {"note": "", "runs": []}
+    have = {r.get("id") for r in ledger["runs"]}
+    added, skipped = [], []
+    for path in paths:
+        for record in P.read(path):
+            problems = P.validate(record)
+            if problems:
+                raise ValueError(f"{path}: {'; '.join(problems)}")
+            if record["id"] in have:
+                skipped.append(record["id"])
+                continue
+            have.add(record["id"])
+            added.append(portable(record))
+    if not dry and added:
+        ledger["runs"].extend(added)
+        ledger["runs"].sort(key=lambda r: r.get("started", ""))
+        Path(ledger_path).write_text(json.dumps(ledger, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    return added, skipped
+
+
 # ---- a roadmap step -----------------------------------------------------------------------------
 def set_step(roadmap, sid, action, result=None, target=None, date=None):
     """Move a step to its next status in place and return it. Raises ValueError on a move that would be a false claim."""
@@ -182,6 +225,9 @@ def main(argv=None):
     p.add_argument("--measure", help="also record the errors left as a point on this measure")
     p.add_argument("--date", default=None)
     p.add_argument("--dry-run", action="store_true", help="print the row, write nothing")
+    f = sub.add_parser("perf", help="a perf run record is kept in coverage/perf-runs.json")
+    f.add_argument("records", nargs="+")
+    f.add_argument("--dry-run", action="store_true", help="check and print, write nothing")
     s = sub.add_parser("step", help="a roadmap step changes status")
     s.add_argument("id")
     s.add_argument("action", choices=("start", "done", "next", "later"))
@@ -193,6 +239,13 @@ def main(argv=None):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
     try:
+        if args.cmd == "perf":
+            added, skipped = add_perf(args.records, dry=args.dry_run)
+            for r in added:
+                print(("Would keep " if args.dry_run else "Kept ") + f"{r['id']}: {r['kind']} {((r.get('candidate') or {}).get('label') or '')} {r['verdict']}")
+            for i in skipped:
+                print(f"Already kept: {i}")
+            return 0
         if args.cmd == "port":
             row, point = add_port(args.receipt, args.mod, args.loader, args.status, args.detail, args.date, args.frm, args.to, args.measure, dry=args.dry_run)
             print(("Would add" if args.dry_run else "Added") + " to coverage/ledger.json:")

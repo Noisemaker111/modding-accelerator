@@ -394,6 +394,40 @@ games with `game-stop --root OUT/baseline` (and `candidate`) and run
 experiment includes two cold builds. [`bench/zombie-siege`](bench/zombie-siege/README.md)
 is a complete experiment for a real NeoForge mod.
 
+More experiment fields, for a mod whose cost is spread over threads:
+
+- `"metric": {"mod": "diorama"}` is the mod's whole sampled CPU (`sampledCpuMsPerSecond`
+  of its attribution row), every thread included. Add `"threads": "^(mymod-worker|Render thread)"`
+  to count only the mod's threads whose names match: a mod's background job that takes up
+  whatever time the rest leaves it (a catch-up import, a prefetcher) would otherwise hide a saving.
+- `measure.before` runs snippets right before each capture (`{"cold": [...], "warm": [...]}`,
+  each step `{"file", "thread", "expect"}`), so a workload starts with its own window rather than
+  at a fixed time that drifts with how long the previous capture's report took.
+- `measure.scopes` lists more values to report per capture, each with its own speedup and
+  interval: a timing probe (`{"name", "probe", "statistic"}`), or a method's inclusive
+  sampled CPU (`{"name", "mod", "method": "TileSpots.pick"}`; a pair where either arm registered nothing is left out). Sampled CPU stays put when
+  other load on the machine stretches wall time; inclusive wall time does not. Scopes do not
+  decide acceptance.
+- `"reset": ["run/mymod-cache"]` deletes those paths in each arm before every launch, for
+  state a mod keeps beside the save that would otherwise carry from one launch to the next.
+- `"jit": "full"` launches with the JIT players have. A hidden test client otherwise runs
+  C1 alone, which starts cheaply but weighs code differently from a player's game.
+
+Every `perf` capture and every `perf-optimize` decision writes `record.json`: the mod, its
+version and loader, wall time per phase (setup, build, launch, warmup, measure, gates),
+machine load, the candidate's label and diff hash, each gate, the speedups with intervals,
+the verdict and why a change was rejected. A copy goes to `.runs/perf-records/`.
+`--label` and `--session` name the candidate and group runs. Keep a run with
+`python bench/record.py perf RECORD` (it lands in `coverage/perf-runs.json`) and summarise
+time per phase, verdicts and the slowest steps with `python bench/perf_sessions.py`.
+
+Accepted changes become entries in `knowledge/perf-patterns.json`: a symptom written as a
+condition over a capture's attribution (a share of a mod's samples in methods, features or
+threads matching a regex), the change, its measured gain, the gate that proved it and the
+run that did. A `perf` report lists the patterns its hotspots match under **Known patterns**.
+`self-test` checks every entry: it must cite an accepted kept run, and its own `test` rows
+must fire and stay quiet.
+
 ## Files and troubleshooting
 
 Reports stay local. Raw JFR/class-origin files can contain machine paths, launch

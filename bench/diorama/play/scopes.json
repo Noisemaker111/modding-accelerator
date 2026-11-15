@@ -1,0 +1,109 @@
+{
+ "probes": [
+  {
+   "class": "dev.diorama.render.MapLevel",
+   "method": "bake",
+   "descriptor": "(Ldev/diorama/bake/TileKey;Ldev/diorama/bake/BlockLooks;Ljava/util/BitSet;)V",
+   "label": "bakeScheduled",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.bake.GpuMesher",
+   "method": "build",
+   "descriptor": "(Ldev/diorama/bake/TileKey;Ldev/diorama/bake/ChunkSource;Ldev/diorama/bake/BlockLooks;ZLdev/diorama/bake/Overlays;[I)Ldev/diorama/bake/GpuMesher$Mesh;",
+   "label": "gpuMesh",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.bake.TileSpots",
+   "method": "pick",
+   "descriptor": "(Ldev/diorama/bake/TileImage;Ldev/diorama/bake/ChunkSource;Ldev/diorama/bake/BlockLooks;Z[I)[I",
+   "label": "spots",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.bake.TileBaker",
+   "method": "gpuImage",
+   "descriptor": "(Ldev/diorama/bake/TileKey;[I[I[B[B[B)Ldev/diorama/bake/TileImage;",
+   "label": "gpuImage",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.bake.TileBaker",
+   "method": "bake",
+   "descriptor": "(Ldev/diorama/bake/TileKey;Ldev/diorama/bake/ChunkSource;Ldev/diorama/bake/Looks;Ljava/util/BitSet;Z[I[B[ILdev/diorama/bake/Overlays;)Ldev/diorama/bake/TileImage;",
+   "label": "traceBake",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.bake.BiomeTints",
+   "method": "blend",
+   "descriptor": "(Ldev/diorama/data/ChunkSnapshot;)Ldev/diorama/data/ChunkSnapshot$Tints;",
+   "label": "tintBlend",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.bake.Mipmaps",
+   "method": "build",
+   "descriptor": "([II)[[I",
+   "label": "mipmapBuild",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.render.MapTile",
+   "method": "upload",
+   "descriptor": "(Ldev/diorama/bake/TileImage;)V",
+   "label": "tileUpload",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.render.MapLevel",
+   "method": "update",
+   "descriptor": "()V",
+   "label": "levelUpdate",
+   "mode": "timing"
+  },
+  {
+   "class": "dev.diorama.MinimapHud",
+   "method": "render",
+   "descriptor": "(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V",
+   "label": "hudRender",
+   "mode": "timing"
+  },
+  {
+   "class": "dev.diorama.render.Radar",
+   "method": "collect",
+   "descriptor": "(Ldev/diorama/render/MapViewport$View;FZ)Ljava/util/List;",
+   "label": "radarCollect",
+   "mode": "timing"
+  },
+  {
+   "class": "dev.diorama.waypoint.WaypointOverlay",
+   "method": "layout",
+   "descriptor": "(Ldev/diorama/render/MapViewport$View;Ljava/util/List;Z)Ljava/util/List;",
+   "label": "waypointLayout",
+   "mode": "timing"
+  },
+  {
+   "class": "dev.diorama.MapSession",
+   "method": "tickSession",
+   "descriptor": "(Lnet/minecraft/client/Minecraft;)V",
+   "label": "sessionTick",
+   "mode": "timing"
+  },
+  {
+   "class": "dev.diorama.data.TileStore",
+   "method": "write",
+   "descriptor": "(Ldev/diorama/bake/TileKey;)V",
+   "label": "tileWrite",
+   "mode": "count"
+  },
+  {
+   "class": "dev.diorama.render.SavedChunkImport",
+   "method": "draw",
+   "descriptor": "(JLdev/diorama/bake/BlockLooks;Ljava/nio/file/Path;Ldev/diorama/render/SavedChunkImport$Progress;)V",
+   "label": "importDraw",
+   "mode": "count"
+  }
+ ]
+}

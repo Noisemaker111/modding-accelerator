@@ -63,6 +63,8 @@ final class PerfReport {
         result.put("sha256", Performance.sha256(recording));
         Path inventory = directory.resolve("inventory.json");
         if (Files.isRegularFile(inventory)) result.put("inventory", Json.read(inventory));
+        List<Object> patterns = PerfPatterns.match(PerfPatterns.load(Installation.home()), Json.object(result.getOrDefault("attribution", Map.of())));
+        result.put("patterns", patterns);
         Json.save(output.resolve("report.json"), result);
         Json.save(output.resolve("probes.suggested.json"), PerfAttribution.suggestions(Json.object(result.get("attribution"))));
         Json.save(output.resolve("stacks.speedscope.json"), report.speedscope());
@@ -71,7 +73,8 @@ final class PerfReport {
         Files.writeString(output.resolve("report.html"), HTML.replace("__DATA__", data));
         return Json.map("ok", true, "html", output.resolve("report.html").toString(),
             "report", output.resolve("report.json").toString(), "recording", recording.toString(),
-            "details", "Open " + output.resolve("report.html") + " in your browser. Raw JFR and sampled stacks are retained locally.");
+            "patterns", patterns,
+            "details", "Open " + output.resolve("report.html") + " in your browser. Raw JFR and sampled stacks are retained locally." + PerfPatterns.text(patterns));
     }
 
     void add(String name, double value) {
@@ -416,6 +419,9 @@ background:#80e4b3}
 <h2>What to investigate and how to verify a fix</h2>
 <p id="advice-policy" class="muted"></p>
 <div id="advice"></div>
+<h2>Known patterns these hotspots match</h2>
+<p class="muted">Optimizations that perf-optimize accepted on another mod with the same symptom (knowledge/perf-patterns.json): a place to start, not a proven fix here.</p>
+<div class="scroll"><table id="patterns"><thead><tr><th>Mod</th><th>Pattern</th><th>Change</th><th>Proven in</th><th>Matched share</th></tr></thead><tbody></tbody></table></div>
 <h2>Metric checklist</h2>
 <p id="metric-count" class="muted"></p>
 <div class="scroll"><table id="catalog">
@@ -549,6 +555,8 @@ for(const [label,text] of [['Interpretation',f.interpretation],['Try',f.suggeste
 const p=document.createElement('p');p.textContent=label+': '+text;box.append(p)}
 const evidence=document.createElement('pre');evidence.style.whiteSpace='pre-wrap';evidence.style.overflowWrap='anywhere';
 evidence.textContent=JSON.stringify(f.evidence,null,2);box.append(evidence);el('advice').append(box)}
+for(const p of d.patterns||[])row(el('patterns').tBodies[0],[p.mod,p.pattern,p.change,p.provenIn,(p.evidence||[]).map(e=>fmt(100*e.share)+'% '+e.in).join(', ')]);
+if(!(d.patterns||[]).length)row(el('patterns').tBodies[0],['None','','','','']);
 const catalog=d.metricCatalog||[];
 el('metric-count').textContent=catalog.filter(m=>m.availability==='recorded').length+' of '+catalog.length+' metrics available in this capture.';
 for(const m of catalog)row(el('catalog').tBodies[0],[m.name,fmt(m.value),m.unit,m.basis+(m.availability==='unavailable'?' · No usable measurement':'')]);

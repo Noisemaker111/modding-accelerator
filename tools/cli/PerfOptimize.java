@@ -23,6 +23,7 @@ final class PerfOptimize {
     final Modaccel.Options options;
     final int runs;
     final List<Object> log = new ArrayList<>();
+    final PerfRecord record;
 
     PerfOptimize(Path home, Modaccel.Options options) throws Exception {
         this.home = home;
@@ -37,6 +38,12 @@ final class PerfOptimize {
         runs = Performance.integer(options, "runs", 5, 2, 50);
         out = Performance.output(options);
         if (Files.exists(out.resolve("optimize.json"))) throw new IOException("Output already holds an optimization run: " + out);
+        record = new PerfRecord("perf-optimize", options);
+        String label = options.get("label", patch.getFileName().toString().replaceFirst("\\.(diff|patch)$", ""));
+        record.record.put("candidate", Json.map("label", label, "diffSha256", Performance.sha256(patch), "changedFiles", List.of()));
+        record.record.put("metric", Json.object(experiment.get("measure")).get("metric"));
+        Json.object(record.record.get("machine")).put("jit", "full".equals(experiment.get("jit")) ? "full" : "C1 only (hidden test client)");
+        record.record.put("source", out.toString());
     }
 
     static Map<String, Object> run(Path home, Modaccel.Options options) throws Exception {
@@ -49,8 +56,22 @@ final class PerfOptimize {
         }
         Map<String, Object> measure = Json.object(experiment.get("measure"));
         Map<String, Object> metric = Json.object(measure.get("metric"));
-        if (!metric.containsKey("probe") && !metric.containsKey("report")) {
-            throw new IllegalArgumentException("measure.metric needs probe (a timing label) or report (a report.json path such as metrics.tick_ms.mean)");
+        if (!metric.containsKey("probe") && !metric.containsKey("report") && !metric.containsKey("mod")) {
+            throw new IllegalArgumentException("measure.metric needs probe (a timing label), mod (a mod id's attribution row) or report (a report.json path such as metrics.tick_ms.mean)");
+        }
+        Set<String> scopeNames = new HashSet<>();
+        for (Object item : Json.array(measure.getOrDefault("scopes", List.of()))) {
+            Map<String, Object> scope = Json.object(item);
+            if (Json.text(scope, "name", "").isBlank() || !scopeNames.add(scope.get("name").toString())) throw new IllegalArgumentException("measure.scopes need unique names");
+            if (!scope.containsKey("probe") && !scope.containsKey("report") && !scope.containsKey("mod")) {
+                throw new IllegalArgumentException("Scope " + scope.get("name") + " needs probe, mod or report");
+            }
+        }
+        for (Object item : Json.array(experiment.getOrDefault("reset", List.of()))) {
+            String path = item.toString().replace('\\', '/');
+            if (path.isBlank() || path.startsWith("/") || path.matches("^[A-Za-z]:.*") || Arrays.asList(path.split("/")).contains("..")) {
+                throw new IllegalArgumentException("reset paths are relative to the mod checkout, without ..: " + item);
+            }
         }
         List<Object> gates = Json.array(experiment.get("gates"));
         if (gates.isEmpty()) throw new IllegalArgumentException("An optimization needs at least one equivalence gate");
@@ -75,6 +96,7 @@ final class PerfOptimize {
         Map<String, Object> result = Json.map("schema", 1, "kind", "optimization", "experiment", experimentFile.toString(),
             "experimentSha256", Performance.sha256(experimentFile), "patch", patch.toString(), "patchSha256", Performance.sha256(patch),
             "root", root.toString(), "commit", commit, "runs", runs, "started", Instant.now().toString(), "steps", log);
+        long setupStart = System.nanoTime();
         try {
             for (String arm : ARMS) {
                 Path tree = out.resolve(arm);
@@ -92,6 +114,8 @@ final class PerfOptimize {
                 }
             }
             result.put("changedFiles", Arrays.stream(git(arms.get("candidate"), "diff", "--name-only").split("\n")).filter(s -> !s.isBlank()).toList());
+            Json.object(record.record.get("candidate")).put("changedFiles", result.get("changedFiles"));
+            record.step("setup", "worktrees", (System.nanoTime() - setupStart) / 1e9);
             if (Boolean.TRUE.equals(experiment.get("tests"))) {
                 Map<String, Object> tests = new LinkedHashMap<>();
                 for (String arm : ARMS) tests.put(arm, modaccel(arms.get(arm), arm + "-tests", List.of("fast"), 3600).get("ok"));
@@ -131,6 +155,7 @@ final class PerfOptimize {
             result.put("applied", true);
         }
         result.put("finished", Instant.now().toString());
+        finishRecord(result, accepted);
         Json.save(out.resolve("optimize.json"), result);
         Files.writeString(out.resolve("optimize.html"), html(result));
         result.put("ok", accepted);
@@ -150,10 +175,17 @@ final class PerfOptimize {
             deleteTree(saves);
             copyTree(experimentDir.resolve(Json.text(experiment, "worldSource", "")), saves);
         }
+        // State the mod keeps beside the save (map caches, per-machine records) would otherwise carry
+        // from one launch of an arm into the next and change what it does.
+        for (Object item : Json.array(experiment.getOrDefault("reset", List.of()))) deleteTree(tree.resolve(item.toString()).normalize());
+        record.sampleLoad(arm + " run " + run + " before launch");
         List<String> launch = new ArrayList<>(world.isBlank() ? List.of("ui-check") : List.of("world-check", "--world", world));
+        // "jit": "full" measures with the JIT players have, not the C1 a hidden test client starts with.
+        if ("full".equals(experiment.get("jit"))) launch.addAll(List.of("--jit", "full"));
         long started = System.nanoTime();
         Map<String, Object> launched = modaccel(tree, arm + "-launch", launch, 1800);
         row.put("launchSeconds", (System.nanoTime() - started) / 1e9);
+        record.modFromLaunch(launched);
         if (!Boolean.TRUE.equals(launched.get("ok"))) throw new IOException(arm + " run " + run + " did not start: " + launched.get("error"));
         try {
             for (Object step : Json.array(experiment.getOrDefault("setup", List.of()))) {
@@ -170,17 +202,47 @@ final class PerfOptimize {
             if (pid == null) throw new IOException(arm + " run " + run + ": no running game to measure");
             for (String phase : List.of("cold", "warm")) {
                 Path capture = dir.resolve(phase);
+                // A snippet that starts this capture's workload right before it, so the window and the
+                // work line up whatever the previous capture's report took.
+                Object before = Json.object(measure.getOrDefault("before", Map.of())).get(phase);
+                for (Object item : before == null ? List.of() : before instanceof List<?> list ? Json.array(list) : List.of(before)) {
+                    Map<String, Object> step = Json.object(item);
+                    Map<String, Object> answer = eval(tree, arm + "-before-" + phase, experimentDir.resolve(Json.text(step, "file", "")), Json.text(step, "thread", "game"));
+                    if (step.containsKey("expect") && !String.valueOf(answer.get("value")).equals(String.valueOf(step.get("expect")))) {
+                        throw new IOException("Before " + phase + " " + step.get("file") + " returned " + answer.get("value") + ", expected " + step.get("expect"));
+                    }
+                }
                 List<String> args = new ArrayList<>(List.of("perf", "--attach", String.valueOf(((Number) pid).longValue()),
                     "--allow-hidden", "--mod-root", tree.toString(), "--duration", String.valueOf(measure.getOrDefault("seconds", 20)),
-                    "--warmup", phase.equals("cold") ? "0" : String.valueOf(measure.getOrDefault("warmup", 10)), "--out", capture.toString(), "--no-heap"));
+                    "--warmup", phase.equals("cold") ? "0" : String.valueOf(measure.getOrDefault("warmup", 10)), "--out", capture.toString(), "--no-heap",
+                    "--parent", record.record.get("id").toString()));
+                if (!Json.text(record.record, "session", "").isBlank()) {
+                    args.add("--session");
+                    args.add(Json.text(record.record, "session", ""));
+                }
                 if (measure.containsKey("probes")) {
                     args.add("--probes");
                     args.add(experimentDir.resolve(measure.get("probes").toString()).toString());
                 }
                 Map<String, Object> captured = modaccel(tree, arm + "-" + phase, args, 900);
+                if (!Boolean.TRUE.equals(captured.get("ok")) && Files.isRegularFile(capture.resolve("capture.jfr"))
+                    && "complete".equals(Performance.properties(capture.resolve("status.properties")).getProperty("state"))) {
+                    // The recording finished but the command lost track of it: render the report from what was saved.
+                    captured = PerfReport.write(capture, capture);
+                    log.add(Json.map("step", arm + "-" + phase + "-report-again", "reason", "capture completed after its command gave up"));
+                }
                 if (!Boolean.TRUE.equals(captured.get("ok"))) throw new IOException(arm + " " + phase + " capture failed: " + captured.get("error"));
                 Map<String, Object> report = Json.read(capture.resolve("report.json"));
-                captures.put(phase, Json.map("value", metric(report, Json.object(measure.get("metric"))),
+                Map<String, Object> scopes = new LinkedHashMap<>();
+                for (Object item : Json.array(measure.getOrDefault("scopes", List.of()))) {
+                    Map<String, Object> scope = Json.object(item);
+                    try {
+                        scopes.put(scope.get("name").toString(), metric(report, scope));
+                    } catch (IllegalStateException absent) {
+                        scopes.put(scope.get("name").toString(), null);
+                    }
+                }
+                captures.put(phase, Json.map("value", metric(report, Json.object(measure.get("metric"))), "scopes", scopes,
                     "tickMeanMs", PerfAdvice.value(report, "metrics.tick_ms.mean"), "frameMeanMs", PerfAdvice.value(report, "metrics.frame_ms.mean"),
                     "report", capture.resolve("report.json").toString()));
             }
@@ -218,6 +280,38 @@ final class PerfOptimize {
             }
             return number.doubleValue();
         }
+        if (metric.containsKey("mod")) {
+            String statistic = Json.text(metric, "statistic", metric.containsKey("method") ? "cpuMsPerSecond" : "sampledCpuMsPerSecond");
+            for (Object item : Json.array(Json.object(report.get("attribution")).get("mods"))) {
+                Map<String, Object> row = Json.object(item);
+                if (!metric.get("mod").equals(row.get("id"))) continue;
+                if (metric.containsKey("threads")) {
+                    // Sampled CPU on the mod's threads whose names match: one feature's own work, apart from a
+                    // background job of the same mod that takes up whatever time the rest leaves it.
+                    java.util.regex.Pattern threads = java.util.regex.Pattern.compile(metric.get("threads").toString());
+                    double period = ((Number) Json.object(report.get("attribution")).getOrDefault("samplePeriodMs", 0)).doubleValue();
+                    double seconds = ((Number) report.getOrDefault("seconds", 0)).doubleValue();
+                    if (period <= 0 || seconds <= 0) throw new IllegalStateException("No sample period or duration in " + report.get("recording"));
+                    long samples = 0;
+                    for (Object t : Json.array(row.getOrDefault("threads", List.of()))) {
+                        Map<String, Object> thread = Json.object(t);
+                        if (threads.matcher(thread.get("name").toString()).find()) samples += ((Number) thread.get("samples")).longValue();
+                    }
+                    return samples * period / seconds;
+                }
+                if (metric.containsKey("method")) {
+                    // Sampled CPU with the method anywhere on the stack; the busiest overload when several match.
+                    double best = 0;
+                    for (Object m : Json.array(row.getOrDefault("inclusiveMethods", List.of()))) {
+                        Map<String, Object> method = Json.object(m);
+                        if (method.get("name").toString().contains(metric.get("method").toString()) && method.get(statistic) instanceof Number n) best = Math.max(best, n.doubleValue());
+                    }
+                    return best;
+                }
+                if (row.get(statistic) instanceof Number number) return number.doubleValue();
+            }
+            throw new IllegalStateException("Mod " + metric.get("mod") + " has no " + statistic + " in " + report.get("recording") + "; was it sampled?");
+        }
         String label = metric.get("probe").toString();
         String statistic = Json.text(metric, "statistic", "inclusiveMsPerTick");
         Map<String, Object> attribution = Json.object(report.get("attribution"));
@@ -254,6 +348,33 @@ final class PerfOptimize {
             speedups.put(phase, summary);
             faster &= ((Number) summary.get("low")).doubleValue() > 1;
         }
+        Map<String, Object> scopeSpeedups = new LinkedHashMap<>();
+        for (Object item : Json.array(Json.object(experiment.get("measure")).getOrDefault("scopes", List.of()))) {
+            String name = Json.object(item).get("name").toString();
+            Map<String, Object> phases = new LinkedHashMap<>();
+            for (String phase : List.of("cold", "warm")) {
+                List<Double> ratios = new ArrayList<>(), base = new ArrayList<>(), cand = new ArrayList<>();
+                for (var pair : pairs.values()) {
+                    Object b = scope(pair.get("baseline"), phase, name);
+                    Object c = scope(pair.get("candidate"), phase, name);
+                    // A scope one arm did not register (a method below the sampled top list reads 0) is not a ratio.
+                    if (!(b instanceof Number bn) || !(c instanceof Number cn) || bn.doubleValue() <= 0 || cn.doubleValue() <= 0) continue;
+                    base.add(bn.doubleValue());
+                    cand.add(cn.doubleValue());
+                    ratios.add(bn.doubleValue() / Math.max(cn.doubleValue(), 1e-12));
+                }
+                if (ratios.isEmpty()) {
+                    phases.put(phase, Json.map("pairs", 0));
+                    continue;
+                }
+                Map<String, Object> summary = speedup(ratios, 20261114L);
+                summary.put("baselineMean", base.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN));
+                summary.put("candidateMean", cand.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN));
+                phases.put(phase, summary);
+            }
+            scopeSpeedups.put(name, phases);
+        }
+        if (!scopeSpeedups.isEmpty()) speedups.put("scopes", scopeSpeedups);
         result.put("speedup", speedups);
         List<Object> verdicts = new ArrayList<>();
         boolean gatesPass = true;
@@ -274,6 +395,39 @@ final class PerfOptimize {
         result.put("accepted", gatesPass && faster);
         result.put("rule", "Accepted only when every gate passes for every paired run, each gate is stable baseline-to-baseline, "
             + "and the 95% bootstrap interval of the speedup is above 1 for both cold and warm captures.");
+    }
+
+    static Object scope(Map<String, Object> row, String phase, String name) {
+        return Json.object(Json.object(Json.object(row.get("captures")).get(phase)).getOrDefault("scopes", Map.of())).get(name);
+    }
+
+    /** The run's record: phases from every step, gates, speedups with intervals, the verdict and why. */
+    void finishRecord(Map<String, Object> result, boolean accepted) throws Exception {
+        List<Object> gates = new ArrayList<>();
+        for (Object item : Json.array(result.getOrDefault("gates", List.of()))) {
+            Map<String, Object> gate = Json.object(item);
+            gates.add(Json.map("name", gate.get("name"), "compare", gate.get("compare"), "passed", gate.get("passed"), "failures", gate.get("failures")));
+        }
+        record.record.put("gates", gates);
+        if (result.get("speedup") instanceof Map<?, ?> speedup) {
+            Map<String, Object> summary = new LinkedHashMap<>();
+            for (String phase : List.of("cold", "warm")) {
+                if (speedup.get(phase) instanceof Map<?, ?> s) summary.put(phase, PerfRecord.interval(Json.object(s)));
+            }
+            if (speedup.get("scopes") instanceof Map<?, ?> scopes) {
+                Map<String, Object> each = new LinkedHashMap<>();
+                for (var entry : Json.object(scopes).entrySet()) {
+                    Map<String, Object> phases = new LinkedHashMap<>();
+                    for (var phase : Json.object(entry.getValue()).entrySet()) phases.put(phase.getKey(), PerfRecord.interval(Json.object(phase.getValue())));
+                    each.put(entry.getKey(), phases);
+                }
+                summary.put("scopes", each);
+            }
+            record.record.put("speedup", summary);
+        }
+        String verdict = result.containsKey("error") && !result.containsKey("speedup") ? "error" : accepted ? "accepted" : "rejected";
+        record.finish(verdict, accepted ? null : PerfRecord.rejection(result));
+        result.put("record", record.save(home, out).toString());
     }
 
     static double capture(Map<String, Object> row, String phase) {
@@ -431,8 +585,33 @@ final class PerfOptimize {
         if (!Boolean.TRUE.equals(answer.get("ok")) && !answer.containsKey("error")) {
             answer.put("error", Json.text(Json.object(answer.getOrDefault("result", Map.of())), "error", Run.tail(stderr)));
         }
-        log.add(Json.map("step", name, "exit", process.exitValue(), "seconds", (System.nanoTime() - start) / 1e9, "log", stderr.toString(), "result", stdout.toString()));
+        double seconds = (System.nanoTime() - start) / 1e9;
+        log.add(Json.map("step", name, "exit", process.exitValue(), "seconds", seconds, "log", stderr.toString(), "result", stdout.toString()));
+        classify(name, answer, seconds);
         return answer;
+    }
+
+    /** Which session phase a child step's wall time belongs to. */
+    void classify(String name, Map<String, Object> answer, double seconds) {
+        if (name.endsWith("-launch")) {
+            record.launchStages(name, answer, seconds);
+        } else if (name.endsWith("-tests")) {
+            record.step("build", name, seconds);
+        } else if (name.endsWith("-frame-setup")) {
+            record.step("gates", name, seconds);
+        } else if (name.endsWith("-setup") || name.endsWith("-status") || name.contains("-before-")) {
+            record.step("setup", name, seconds);
+        } else if (name.endsWith("-warm")) {
+            double warmup = Math.min(seconds, ((Number) Json.object(experiment.get("measure")).getOrDefault("warmup", 10)).doubleValue());
+            record.step("warmup", name, warmup);
+            record.step("measure", name, seconds - warmup);
+        } else if (name.endsWith("-cold")) {
+            record.step("measure", name, seconds);
+        } else if (name.contains("-gate-") || name.endsWith("-frame")) {
+            record.step("gates", name, seconds);
+        } else {
+            record.step("other", name, seconds);
+        }
     }
 
     static String git(Path directory, String... args) throws Exception {
@@ -471,6 +650,20 @@ final class PerfOptimize {
             text.append(String.format(Locale.ROOT, "%n%s: %.2fx (95%% %.2f–%.2f) over %s paired launches; baseline %.4f → candidate %.4f",
                 phase, s.get("geometricMean"), s.get("low"), s.get("high"), s.get("pairs"), s.get("baselineMean"), s.get("candidateMean")));
         }
+        if (result.get("speedup") instanceof Map<?, ?> speedup && speedup.get("scopes") instanceof Map<?, ?> scopes) {
+            for (var entry : Json.object(scopes).entrySet()) {
+                text.append("\nscope ").append(entry.getKey()).append(":");
+                for (var phase : Json.object(entry.getValue()).entrySet()) {
+                    Map<String, Object> s = Json.object(phase.getValue());
+                    if (!(s.get("geometricMean") instanceof Number)) {
+                        text.append(" ").append(phase.getKey()).append(" unmeasured;");
+                        continue;
+                    }
+                    text.append(String.format(Locale.ROOT, " %s %.2fx (95%% %.2f–%.2f);", phase.getKey(), s.get("geometricMean"), s.get("low"), s.get("high")));
+                }
+            }
+        }
+        if (result.containsKey("record")) text.append("\nRun record: ").append(result.get("record"));
         if (result.get("gates") instanceof List<?> gates) for (Object g : gates) {
             Map<String, Object> gate = Json.object(g);
             text.append("\ngate ").append(gate.get("name")).append(": ").append(Boolean.TRUE.equals(gate.get("passed")) ? "passed" : "FAILED " + gate.get("failures"));
@@ -497,7 +690,10 @@ final class PerfOptimize {
             function row(t,v){const r=document.createElement('tr');for(const x of v){const c=document.createElement('td');c.textContent=x;r.append(c)}el(t).tBodies[0].append(r)}
             el('verdict').textContent=(d.accepted?'Accepted':'Rejected')+(d.error?': '+d.error:'');el('verdict').className=d.accepted?'ok':'bad';
             el('rule').textContent=d.rule||'';
-            for(const [k,s] of Object.entries(d.speedup||{}))row('speed',[k,f(s.geometricMean)+'×',f(s.low)+'–'+f(s.high),f(s.baselineMean),f(s.candidateMean),s.pairs]);
+            for(const [k,s] of Object.entries(d.speedup||{}))if(k!=='scopes')row('speed',[k,f(s.geometricMean)+'×',f(s.low)+'–'+f(s.high),f(s.baselineMean),f(s.candidateMean),s.pairs]);
+            const scopeRow=(name,k,s)=>row('speed',[name+' · '+k,s.geometricMean?f(s.geometricMean)+'×':'unmeasured',
+              s.low?f(s.low)+'–'+f(s.high):'',f(s.baselineMean),f(s.candidateMean),s.pairs]);
+            for(const [name,ph] of Object.entries(d.speedup?.scopes||{}))for(const [k,s] of Object.entries(ph))scopeRow(name,k,s);
             const detail=g=>g.failures.length?g.failures:(g.baselineToBaseline||g.value||g.worstRelativeDifference||g.expected||'');
             for(const g of d.gates||[])row('gates',[g.name,g.compare,g.passed?'passed':'failed',JSON.stringify(detail(g))]);
             for(const m of d.measurements||[])row('runs',[m.run,m.arm,f(m.captures?.cold?.value),f(m.captures?.warm?.value),f(m.launchSeconds)]);

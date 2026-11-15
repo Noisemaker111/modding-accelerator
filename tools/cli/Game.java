@@ -30,10 +30,19 @@ final class Game {
         Path file = build.project.state().resolve("agent.json");
         if (!Files.exists(file)) return null;
         Map<String, Object> value = Json.read(file);
-        if (!build.project.root.toString().equals(value.get("root"))) throw new IOException(
+        if (foreign(value, build.project.root)) throw new IOException(
             "Game session belongs to a different project."
         );
-        return value;
+        return build.project.root.toString().equals(value.get("root")) ? value : null;
+    }
+
+    /**
+     * Whether a recorded session is another project's game that is still running. A checkout copied
+     * with its state folder brings the copy's last session along; once that game has exited it is
+     * nothing to this project, so it does not block starting one.
+     */
+    static boolean foreign(Map<String, Object> session, Path root) {
+        return !root.toString().equals(session.get("root")) && session.get("pid") instanceof Number && alive(session);
     }
 
     static boolean alive(Map<String, Object> session) {
@@ -1040,9 +1049,14 @@ final class Game {
         Path agent = agent();
         String token = UUID.randomUUID().toString();
         Map<String, Object> preferences = Preferences.read(Preferences.file());
-        boolean c1 = c1(preferences, options.command);
+        // A hidden test client runs C1 alone to start cheaply; perf and --jit full keep the JIT players have,
+        // for performance measurements, where C1 alone weighs code differently.
+        String jit = options.get("jit", "");
+        if (!jit.isEmpty() && !jit.equals("full")) throw new IllegalArgumentException("--jit takes full (the JIT players have) or nothing");
+        boolean c1 = c1(preferences, options.command) && !jit.equals("full");
         String background = "-Dmodaccel.background=" + preferences.get("background"), quiet =
             "-Dmodaccel.quiet=" + preferences.get("quiet"), compiler = "-Dmodaccel.c1=" + c1;
+        String jitProperty = "-Dmodaccel.jit=" + jit;
         String task = clientTask(options);
         String missing = missingRuntime(model, LoadedMods.owner(task));
         if (missing != null) throw new IOException(missing);
@@ -1072,6 +1086,7 @@ final class Game {
                     "-Dmodaccel.token=" + token,
                     "-Dmodaccel.jbr=" + jbr,
                     background,
+                    jitProperty,
                     quiet,
                     compiler,
                     "-Dmodaccel.recordOnly=true",
@@ -1106,7 +1121,8 @@ final class Game {
                 if (value != null) environment.put(key, value.toString());
             });
             directory = Path.of(launch.get("directory").toString());
-            mode = "saved launch; dependencies already prepared" + (java != null ? "; runtime " + java : "");
+            if (jit.equals("full") && !jbr) command.removeIf(argument -> argument.equals("-XX:TieredStopAtLevel=1"));
+            mode = "saved launch; dependencies already prepared" + (java != null ? "; runtime " + java : "") + (jit.equals("full") ? "; full JIT" : "");
             command = savedCommand(command, build.report.directory.resolve("client-classpath.args"));
         } else {
             command = build.command(
@@ -1118,6 +1134,7 @@ final class Game {
                     "-Dmodaccel.token=" + token,
                     "-Dmodaccel.jbr=" + jbr,
                     background,
+                    jitProperty,
                     quiet,
                     compiler,
                     task

@@ -1,0 +1,146 @@
+{
+ "schema": 1,
+ "note": "Optimizations modaccel perf-optimize accepted, as reusable patterns. symptom.when is a condition over a perf report's attribution row for one mod: every clause must hold, and a clause holds when the samples of the entries in `in` (methods, features or threads) whose name matches the regex `matches` are at least `minShare` of the mod's samples. modaccel perf lists the patterns a capture's hotspots match. change is what was changed; gain is the measured speedup with its 95% interval for cold and warm captures; gate is the equivalence gate that proved the output unchanged; provenIn names the mod, version, loader, scope and the kept run in coverage/perf-runs.json. test holds two attribution rows: fires must match the symptom and quiet must not (self-test runs both).",
+ "patterns": [
+  {
+   "id": "carry-derived-data-to-replacement-snapshots",
+   "symptom": {
+    "text": "A value derived per chunk snapshot (here biome tint blending) is recomputed far more often than chunks arrive, because every light or block update replaces the snapshot and drops what was derived from it.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(blend|derive|compute)\\w*\\(L[^)]*Snapshot;\\)",
+      "minShare": 0.05
+     }
+    ]
+   },
+   "change": "When a chunk's snapshot is replaced, the new one adopts the old one's derived value if every input the derivation reads is identical: the same biome container objects for the chunk and its eight neighbours (the game swaps containers in rather than mutating them), the same column tops, zoom seed, blend radius and colour-resolver generation. Compare inputs by identity where the game guarantees immutability, by value otherwise, and copy before the snapshot becomes visible to workers.",
+   "gain": {
+    "scope": "tintBlendCpu (inclusive sampled CPU of BiomeTints.blend)",
+    "cold": {
+     "geometricMean": 3.158,
+     "low": 2.52,
+     "high": 4.109,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 2.711,
+     "low": 2.314,
+     "high": 3.331,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "tints-live + bake-digest",
+    "compare": "expect + exact",
+    "detail": "every tint the live map holds after the flight equals a fresh blend of its snapshot; the bake functions' digest on frozen chunks is unchanged"
+   },
+   "provenIn": {
+    "mod": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "scope": "tintBlendCpu",
+    "record": "2026-11-15T06-25-41.604795900Z-ad5239e8",
+    "patch": "bench/diorama/tint-carry-over.patch"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Tints.blend(Lm/ChunkSnapshot;)Lm/Tints;",
+       "samples": 9
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 91
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "redo-only-dirty-blocks-of-a-whole-tile-pass",
+   "symptom": {
+    "text": "A per-sample ray pass (here spawn-spot picking, one ray per map sample) runs over the whole tile on every bake, although most bakes are partial updates whose dirty blocks cover a fraction of it.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(pick|trace|march|raycast)\\w*\\(D+\\)",
+      "minShare": 0.08
+     }
+    ]
+   },
+   "change": "Start from the previous result and redo only the dirty blocks, when the previous result is known to come from the bake immediately before this one: keep, per tile, which bake produced the stored result (a sequence number), under which store, generation and ray start height, and fall back to the whole pass on any gap (a discarded bake, a load from disk, another start height, more dirty than the limit). Correctness rests on the dirty region covering every sample whose ray could change, which the mod's own partial updates already rely on; confirm it with an instrumented build that also runs the whole pass and counts differences.",
+   "gain": {
+    "scope": "spotsCpu (inclusive sampled CPU of TileSpots.pick)",
+    "cold": {
+     "geometricMean": 1.852,
+     "low": 1.323,
+     "high": 2.697,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.75,
+     "low": 1.425,
+     "high": 2.154,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "incremental equals whole pass (instrumented) + bake-digest",
+    "compare": "exact",
+    "detail": "444 incremental picks during the flight equal the whole pick; the bake functions' digest is unchanged"
+   },
+   "provenIn": {
+    "mod": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "scope": "spotsCpu",
+    "record": "2026-11-15T06-25-41.604795900Z-ad5239e8",
+    "patch": "bench/diorama/dirty-only-gpu-spots.patch"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Pick.pick(DD)I",
+       "samples": 15
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 85
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Pick.pick(DD)I",
+       "samples": 3
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 97
+      }
+     ]
+    }
+   }
+  }
+ ]
+}
