@@ -348,7 +348,8 @@ final class Convert {
     /** Names every use of the old loader that no rule changed: the class and where. */
     void leftovers(List<String> prefixes) throws Exception {
         for (String file : javaFiles()) {
-            String text = read(file);
+            String text = dropUnusedImports(read(file), prefixes);
+            write(file, text);
             Matcher m = Pattern.compile("(?m)^import\\s+(?:static\\s+)?([\\w.]+)").matcher(text);
             while (m.find()) for (String prefix : prefixes) if (m.group(1).startsWith(prefix)) leave(
                 file,
@@ -357,6 +358,29 @@ final class Convert {
                 "no rule in knowledge/loaders.json moves this to the other loader yet"
             );
         }
+    }
+
+    /** Imports of the old loader's classes that nothing in the file uses any more: they go, since nothing needs them moved. */
+    static String dropUnusedImports(String text, List<String> prefixes) {
+        boolean[] code = LoaderRules.code(text);
+        Matcher m = Pattern.compile("(?m)^import\\s+([\\w.]+)\\s*;[ \\t]*\\n?").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            String name = m.group(1);
+            String simple = name.substring(name.lastIndexOf('.') + 1);
+            boolean old = prefixes.stream().anyMatch(name::startsWith);
+            boolean used = false;
+            if (old) {
+                Matcher use = Pattern.compile("(?<![\\w$.])" + Pattern.quote(simple) + "(?![\\w$])").matcher(text);
+                while (use.find()) if (code[use.start()] && (use.start() < m.start() || use.start() >= m.end())) {
+                    used = true;
+                    break;
+                }
+            }
+            m.appendReplacement(out, Matcher.quoteReplacement(old && !used ? "" : m.group()));
+        }
+        m.appendTail(out);
+        return out.toString();
     }
 
     // ---- Fabric to NeoForge ----------------------------------------------------------------------------
@@ -1455,9 +1479,12 @@ final class Convert {
             .replace("filesMatching(\"fabric.mod.json\")", "filesMatching(\"META-INF/neoforge.mods.toml\")")
             .replace("filesMatching('fabric.mod.json')", "filesMatching('META-INF/neoforge.mods.toml')");
         gradle = gradle.replaceAll("\\bremapJar\\b", "jar").replaceAll("\\bremapSourcesJar\\b", "sourcesJar");
-        if (gradle.contains("modmenu") || gradle.contains("fabricmc")) for (String line : gradle.lines().toList()) if (
-            line.contains("fabricmc") && !line.strip().startsWith("//")
-        ) leave("build.gradle", 0, line.strip(), "still names Fabric; no rule changes it");
+        // A line of code (not a comment) that still names Fabric.
+        boolean[] gradleCode = LoaderRules.code(gradle);
+        for (Matcher named = Pattern.compile("(?m)^.*fabricmc.*$").matcher(gradle); named.find(); ) {
+            int at = gradle.indexOf("fabricmc", named.start());
+            if (gradleCode[at]) leave("build.gradle", 0, named.group().strip(), "still names Fabric; no rule changes it");
+        }
         write("build.gradle", gradle.replaceAll("\\n{3,}", "\n\n"));
         Map<String, String> props = new LinkedHashMap<>();
         for (String key : List.of(

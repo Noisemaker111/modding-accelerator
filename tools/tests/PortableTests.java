@@ -1055,6 +1055,14 @@ public final class PortableTests {
             widener +
             widenerLeft
         );
+        String cleaned = Convert.dropUnusedImports(
+            "import net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n",
+            List.of("net.fabricmc.")
+        );
+        check(
+            cleaned.equals("import net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n"),
+            "an import of the old loader that no code uses is dropped, not reported:\n" + cleaned
+        );
         List<String> removed = new ArrayList<>();
         String script = Convert.dropLoomTypes(
             "import net.fabricmc.loom.task.prod.ClientProductionRunTask\nimport java.util.List\n\nplugins {\n\tid 'java'\n}\n\n" +
