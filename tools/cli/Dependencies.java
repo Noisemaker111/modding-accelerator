@@ -324,7 +324,7 @@ final class Dependencies {
             versions.sort((a, b) -> Versions.compare(b, a));
             int tried = 0;
             for (String version : versions) {
-                if (tried++ >= 10) break;
+                if (tried++ >= 40) break;
                 String accepts;
                 try {
                     accepts = minecraftConstraint(Target.download(setup.build, base + version + "/" + name + "-" + version + ".jar"));
