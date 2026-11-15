@@ -258,7 +258,15 @@ final class Dependencies {
                 }
                 if (!interpolated) return false;
                 setup.blockers.add(
-                    blocker(group, name, old, binary, "its artifact name carries the Minecraft version, and " + renamed + " publishes no release in the project's repositories", configuration, setup.to)
+                    blocker(
+                        group,
+                        name,
+                        old,
+                        binary,
+                        "its artifact name carries the Minecraft version, and " + renamed + " publishes no release in the project's repositories",
+                        configuration,
+                        setup.to
+                    )
                 );
                 return true;
             }

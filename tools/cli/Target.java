@@ -87,7 +87,8 @@ final class Target {
         var project = Json.object(projects.size() == 1 ? projects.get(0) : modProjects.size() == 1 ? modProjects.get(0) : root);
         Set<String> loaders = Support.loaders(project);
         // A NeoForge build (ModDevGradle or NeoGradle applied) that also lists a Forge artifact among its dependencies is NeoForge.
-        if (loaders.equals(Set.of("forge", "neoforge")) && String.valueOf(project.get("plugins")).toLowerCase(Locale.ROOT).matches("(?s).*(moddev|net\\.neoforged\\.gradle).*")) loaders = Set.of("neoforge");
+        String appliedPlugins = String.valueOf(project.get("plugins")).toLowerCase(Locale.ROOT);
+        if (loaders.equals(Set.of("forge", "neoforge")) && appliedPlugins.matches("(?s).*(moddev|net\\.neoforged\\.gradle).*")) loaders = Set.of("neoforge");
         if (!loaders.equals(Set.of("fabric")) && !loaders.equals(Set.of("neoforge"))) throw new IOException(
             "Automatic target dependency setup requires one Fabric or NeoForge project; found " +
             loaders +
@@ -575,7 +576,16 @@ final class Target {
             if (release.isEmpty()) {
                 setup.originals.putIfAbsent(script, text);
                 setup.texts.put(script, removeStatements(text, Pattern.compile("(?m)^[ \\t]*parchment\\s*\\{")));
-                setup.applied.add(Json.map("file", script.toString(), "change", "parchment block removed for " + to, "evidence", "Parchment publishes no parameter names for " + to + " (maven.parchmentmc.org)"));
+                setup.applied.add(
+                    Json.map(
+                        "file",
+                        script.toString(),
+                        "change",
+                        "parchment block removed for " + to,
+                        "evidence",
+                        "Parchment publishes no parameter names for " + to + " (maven.parchmentmc.org)"
+                    )
+                );
                 continue;
             }
             setProperty(setup, properties, key, release);
@@ -606,7 +616,14 @@ final class Target {
             "distributionSha256Sum=" + fetch(build, "https://services.gradle.org/distributions/gradle-" + gradle + url.group(3) + ".sha256").trim()
         );
         setup.applied.add(
-            Json.map("file", wrapper.toString(), "change", "Gradle " + url.group(2) + " -> " + gradle + " for " + to, "evidence", "Minecraft " + to + " builds on Java 25, which Gradle runs on from 9.1")
+            Json.map(
+                "file",
+                wrapper.toString(),
+                "change",
+                "Gradle " + url.group(2) + " -> " + gradle + " for " + to,
+                "evidence",
+                "Minecraft " + to + " builds on Java 25, which Gradle runs on from 9.1"
+            )
         );
     }
 
@@ -678,7 +695,14 @@ final class Target {
             setup.originals.putIfAbsent(settings, before);
             setup.texts.put(settings, text);
             setup.applied.add(
-                Json.map("file", settings.toString(), "change", "Forge project left out of the build for " + to, "evidence", "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)")
+                Json.map(
+                    "file",
+                    settings.toString(),
+                    "change",
+                    "Forge project left out of the build for " + to,
+                    "evidence",
+                    "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)"
+                )
             );
             dropped = true;
         }
