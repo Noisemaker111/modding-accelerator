@@ -773,6 +773,7 @@ final class PackCheck {
                 checks.start = second;
                 stage("reopen", checks);
             }
+            if (options.has("fingerprint") && Boolean.TRUE.equals(first.get("opened"))) game.put("fingerprint", fingerprint());
             if (!userWorld.isEmpty()) {
                 Path save = Path.of(userWorld).toAbsolutePath().normalize();
                 if (!Files.isRegularFile(save.resolve("level.dat"))) throw new IllegalArgumentException("--world needs a save folder with level.dat; got " + save);
@@ -787,6 +788,37 @@ final class PackCheck {
                 stage("user-world", checks);
             }
             return game;
+        }
+
+        /**
+         * --fingerprint: the behaviour fingerprint with the same probe, on this server. A third start makes a new world
+         * frozen from its first tick (ModaccelFingerprint.content: every block item and entity of the pack's mods, or of
+         * --namespaces), a fourth opens it again (reload); the record is written to --out or the receipt.
+         */
+        Map<String, Object> fingerprint() throws Exception {
+            Path dir = report.directory.resolve(lane + "fingerprint");
+            Files.createDirectories(dir);
+            deleteTree(instance.resolve("fingerprint-world"));
+            Set<String> namespaces = new TreeSet<>();
+            if (options.values.containsKey("namespaces")) namespaces.addAll(Arrays.asList(options.get("namespaces", "").split(",")));
+            namespaces.removeIf(String::isBlank);
+            Map<String, Object> args = Json.map("out", dir.resolve("content.json").toString(), "ticks", Integer.parseInt(options.get("ticks", "100")),
+                "every", Integer.parseInt(options.get("every", "20")), "seed", Long.parseLong(options.get("seed", String.valueOf(Fingerprint.SEED))), "namespaces", new ArrayList<>(namespaces));
+            Map<String, Object> made = start("fingerprint", "fingerprint-world", Map.of("modaccel.fingerprint.args", Json.write(args).replace("\"", "'")));
+            if (!Boolean.TRUE.equals(made.get("opened")) || !Files.isRegularFile(dir.resolve("content.json"))) return Json.map("ok", false, "error", "The fingerprint start wrote no record", "start", made);
+            Map<String, Object> content = Json.read(dir.resolve("content.json"));
+            Map<String, Object> reloadArgs = Json.map("out", dir.resolve("reload.json").toString(), "area", content.get("area"));
+            Map<String, Object> again = start("fingerprint-reload", "fingerprint-world", Map.of("modaccel.fingerprint.args", Json.write(reloadArgs).replace("\"", "'")));
+            Map<String, Object> reload = Files.isRegularFile(dir.resolve("reload.json")) ? Json.read(dir.resolve("reload.json")) : Json.map("error", "The reload start wrote no record");
+            List<Object> logs = new ArrayList<>();
+            for (Map<String, Object> run : List.of(made, again)) if (run.get("log") != null) logs.add(Fingerprint.logFile(Path.of(run.get("log").toString()), run == made ? "content" : "reload"));
+            Map<String, Object> fingerprint = Fingerprint.assemble(content, reload, logs);
+            Set<String> ids = new TreeSet<>(namespaces);
+            if (ids.isEmpty()) for (var entry : scan.providers.entrySet()) for (var p : entry.getValue()) if (!p.bundled()) ids.add(entry.getKey());
+            fingerprint.put("target", Json.map("minecraft", pack.minecraft(), "loaders", List.of(loader.id()), "namespaces", new ArrayList<>(ids), "environment", "dedicated server", "pack", pack.input().toString()));
+            Path out = options.values.containsKey("out") ? Path.of(options.get("out", "")).toAbsolutePath() : dir.resolve("fingerprint.json");
+            Json.save(out, fingerprint);
+            return Json.map("ok", !fingerprint.containsKey("error"), "out", out.toString(), "hash", FingerprintDiff.hash(fingerprint));
         }
 
         /** Runs a stage's checks; a finding of the kind a matched repair is proven against carries that repair. */
@@ -827,7 +859,7 @@ final class PackCheck {
                 long start = System.nanoTime(), wall = System.currentTimeMillis();
                 String ended;
                 try {
-                    ended = runServer(command, log, out, mode.equals("place"));
+                    ended = runServer(command, log, out, mode.equals("place") || mode.equals("fingerprint"));
                 } finally {
                     lock.unlock();
                 }

@@ -45,7 +45,7 @@ WORK = ROOT / ".runs" / "convert-sweep"
 WINDOWS = os.name == "nt"
 MODACCEL = [str(ROOT / ("modaccel.cmd" if WINDOWS else "modaccel"))]
 OTHER = {"fabric": "neoforge", "neoforge": "fabric"}
-TIMEOUT = {"convert": 3600, "ui-check": 1500, "eval": 300, "game-stop": 300}
+TIMEOUT = {"convert": 3600, "ui-check": 1500, "eval": 300, "game-stop": 300, "fingerprint": 3600}
 
 # Reads every registry entry in one namespace; works on 1.20.2 to 26.x (ResourceLocation or Identifier).
 REGISTRY_SNIPPET = """
@@ -335,6 +335,33 @@ def behaviour(converted, original):
             "why": "the mod registers nothing in either game and no applied mixins were read, so there is nothing to compare"}
 
 
+def fingerprint_behaviour(converted, original, name):
+    """
+    The behaviour definition (FINGERPRINT.md): the original's and the converted mod's fingerprints on the same game
+    version, compared on what the mod owns (fingerprint-diff --across-versions: the two loaders' own registries differ).
+    equal is None when either fingerprint could not be taken.
+    """
+    folder = WORK / "fingerprints"
+    folder.mkdir(parents=True, exist_ok=True)
+    a, b = folder / f"{name}-original.json", folder / f"{name}-converted.json"
+    taken = {}
+    for side, work, out in (("original", original, a), ("converted", converted, b)):
+        code, result, seconds = modaccel(["fingerprint", "--root", str(work), "--out", str(out), "--json"], TIMEOUT["fingerprint"])
+        taken[side] = {"ok": code == 0 and out.is_file(), "seconds": round(seconds, 1), "error": None if code == 0 else str(result.get("error") or result)[-800:]}
+    if not (taken["original"]["ok"] and taken["converted"]["ok"]):
+        return {"check": "behaviour fingerprint", "signal": "fingerprint", "equal": None, "taken": taken}
+    code, diff, _ = modaccel(["fingerprint-diff", str(a), str(b), "--across-versions", "--json"], TIMEOUT["eval"])
+    return verdict_from_diff(diff, taken)
+
+
+def verdict_from_diff(diff, taken=None):
+    """A fingerprint-diff answer as a sweep verdict: equal only when something was compared and nothing differed."""
+    compared = diff.get("compared", 0) if isinstance(diff, dict) else 0
+    equal = bool(diff.get("same")) and compared > 0 if isinstance(diff, dict) and "same" in diff else None
+    return {"check": "behaviour fingerprint, the mod's own leaves, converted vs original", "signal": "fingerprint", "equal": equal,
+            "compared": compared, "counts": (diff or {}).get("counts"), "sections": (diff or {}).get("sections"), "taken": taken}
+
+
 def parse_registries(text):
     """{'ResourceKey[minecraft:root / minecraft:item]': [ids]} from the snippet's toString."""
     if not isinstance(text, str):
@@ -429,6 +456,8 @@ def run_mod(mod, args, concepts, started):
                 started.append(original)
                 record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages)
                 record["behaviour"] = behaviour(record["game"], record["originalGame"])
+                if not args.no_fingerprint:
+                    record["fingerprint"] = fingerprint_behaviour(work, original, mod["id"])
             else:
                 hit("game load failed after a clean compile", {"kind": "game", "text": record["game"].get("loadError", "")[:1500]})
         if result.get("compiled") and not args.no_back:
@@ -473,6 +502,8 @@ def outcome(r):
         return "compiles"
     if not r["game"].get("loaded"):
         return "compiles, fails in the game"
+    if (r.get("fingerprint") or {}).get("equal"):
+        return "loads, same behaviour fingerprint as the original"
     b = r.get("behaviour") or {}
     if b.get("equal") and b.get("signal", "registries") == "registries":
         return "loads, registers what the original does"
@@ -495,7 +526,7 @@ def rederive(r):
 
 LADDER = ["refused", "converted, does not compile", "compiles, items left", "compiles", "compiles, fails in the game",
           "loads in the game", "loads, no registry entries to compare", "loads, applies the same mixins as the original",
-          "loads, registers what the original does"]
+          "loads, registers what the original does", "loads, same behaviour fingerprint as the original"]
 
 
 def summarize(records, label):
@@ -529,14 +560,17 @@ def summarize(records, label):
         "same behaviour as the original (registries, or mixins when it registers nothing)": sum(bool((r.get("behaviour") or {}).get("equal")) for r in records),
         "loaded with nothing to compare": sum((r.get("behaviour") or {}).get("signal", "") is None for r in records),
         "converted back and compiled": sum(bool((r.get("back") or {}).get("compiled")) for r in records),
+        "same behaviour fingerprint as the original": sum(bool((r.get("fingerprint") or {}).get("equal")) for r in records),
+        "fingerprinted": sum((r.get("fingerprint") or {}).get("equal") is not None for r in records),
         "outcomes": counts,
     }
+    rates["headline"] = {"name": "conversions with the same behaviour fingerprint as the original", "value": rates["same behaviour fingerprint as the original"], "of": len(records)}
     return ranked, rates
 
 
 def compact(r):
     keep = ["id", "name", "from", "to", "commit", "minecraft", "yarn", "outcome", "convertSeconds", "compileErrors", "capped",
-            "refusal", "rulesApplied", "concepts", "behaviour", "back"]
+            "refusal", "rulesApplied", "concepts", "behaviour", "fingerprint", "back"]
     out = {k: r[k] for k in keep if k in r}
     if "game" in r:
         out["game"] = {k: v for k, v in r["game"].items() if k not in ("registries", "mixins")}
@@ -585,6 +619,7 @@ def main():
     run.add_argument("--no-compile", action="store_true", help="convert without compiling")
     run.add_argument("--no-game", action="store_true")
     run.add_argument("--no-back", action="store_true")
+    run.add_argument("--no-fingerprint", action="store_true", help="skip the behaviour fingerprints of the original and the converted mod")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
     run.add_argument("--modaccel", default="", help="run another modaccel checkout (e.g. the baseline) instead of this one")

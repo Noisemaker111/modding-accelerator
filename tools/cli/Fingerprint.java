@@ -48,10 +48,16 @@ final class Fingerprint {
             ? new TreeSet<>(Arrays.asList(options.get("namespaces", "").split(",")))
             : modIds(root);
         namespaces.removeIf(String::isBlank);
-        Map<String, Object> args = scenario(options, namespaces);
-        Path work = report.directory.resolve("fingerprint");
+        return record(home, root, options.get("project", ""), minecraft, namespaces, scenario(options, namespaces), report, out, "fingerprint");
+    }
+
+    /** The source path's whole run, for fingerprint --root and port --check fingerprint (before and after a port). */
+    static Map<String, Object> record(Path home, Path root, String project, String minecraft, Set<String> namespaces, Map<String, Object> args,
+        Modaccel.Report report, Path out, String name) throws Exception {
+        ProjectModel model = new ProjectModel(root);
+        Path work = report.directory.resolve(name);
         Files.createDirectories(work);
-        Child child = new Child(home, root, options.get("project", ""), work.resolve("logs"));
+        Child child = new Child(home, root, project, work.resolve("logs"));
         long started = System.nanoTime();
         Path template = template(home, minecraft, longValue(args.get("seed")), report);
         Map<String, Object> content, reload;
@@ -176,10 +182,11 @@ final class Fingerprint {
     // ------------------------------------------------------------------------------------------ in the game
 
     /** Compiles the probe inside the running game (once per probe and game), starts the entry, and waits for it. */
-    static Map<String, Object> inGame(Child child, Path home, String minecraft, Path classes, String entry, Map<String, Object> args, Path work) throws Exception {
+    static Map<String, Object> inGame(Runner child, Path home, String minecraft, Path classes, String entry, Map<String, Object> args, Path work) throws Exception {
         Path snippet = work.resolve("start-" + entry + ".java");
         Files.writeString(snippet, bootstrap(home, minecraft, classes, entry, args));
-        Map<String, Object> started = child.ok("eval", List.of("--file", snippet.toString(), "--thread", "control"), 600);
+        Map<String, Object> started = child.run("eval", List.of("--file", snippet.toString(), "--thread", "control"), 600);
+        if (!Boolean.TRUE.equals(started.get("ok"))) throw new IOException("The fingerprint " + entry + " did not start: " + started.get("error"));
         // No quotes in a snippet passed as an argument: Windows' command line drops them. The key is spelled as chars.
         StringBuilder chars = new StringBuilder();
         for (char c : "modaccelFingerprint".toCharArray()) chars.append(chars.length() == 0 ? "" : ",").append((int) c);
@@ -378,7 +385,10 @@ final class Fingerprint {
      * differ by run (hashes, addresses, durations, counts of milliseconds) and paths replaced by placeholders.
      */
     static Map<String, Object> log(Path gameDir, String phase) throws IOException {
-        Path latest = gameDir.resolve("logs/latest.log");
+        return logFile(gameDir.resolve("logs/latest.log"), phase);
+    }
+
+    static Map<String, Object> logFile(Path latest, String phase) throws IOException {
         List<String> warnings = new ArrayList<>(), errors = new ArrayList<>();
         if (Files.isRegularFile(latest)) for (String line : new String(Files.readAllBytes(latest), StandardCharsets.UTF_8).split("\r?\n")) {
             Matcher m = LOG_LINE.matcher(line);
@@ -422,24 +432,40 @@ final class Fingerprint {
 
     static List<Object> loaders(Map<String, Object> discovered) {
         Set<String> loaders = new TreeSet<>();
-        for (Object build : Json.array(discovered.getOrDefault("builds", List.of()))) for (Object loader : Json.array(Json.object(build).getOrDefault("loaderHints", List.of()))) loaders.add(loader.toString());
+        for (Object build : Json.array(discovered.getOrDefault("builds", List.of()))) {
+            if (Json.object(build).get("loaderHints") instanceof Collection<?> hints) for (Object loader : hints) loaders.add(loader.toString());
+        }
         return new ArrayList<>(loaders);
     }
 
     static final Pattern TOML_ID = Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"");
     static final Pattern FABRIC_ID = Pattern.compile("\"id\"\\s*:\\s*\"([^\"]+)\"");
 
-    /** The mod ids its metadata declares (properties like ${mod_id} filled from gradle.properties): its namespaces. */
+    /**
+     * The mod's namespaces: the ids its metadata's [[mods]] entries declare (a property like ${mod_id} filled from
+     * gradle.properties), and the namespaces of its own assets folders. Dependencies' ids are not the mod's.
+     */
     static Set<String> modIds(Path root) throws IOException {
         Properties properties = new Properties();
         Path gradle = root.resolve("gradle.properties");
         if (Files.isRegularFile(gradle)) try (Reader reader = Files.newBufferedReader(gradle, StandardCharsets.ISO_8859_1)) { properties.load(reader); }
         Set<String> ids = new TreeSet<>();
         try (var walk = Files.walk(root, 8)) {
-            for (Path file : walk.filter(p -> !p.toString().contains("build" + File.separator) && !p.toString().contains(".gradle")).toList()) {
+            for (Path file : walk.filter(p -> {
+                String rel = root.relativize(p).toString().replace('\\', '/');
+                return !rel.matches("(?:.*/)?(?:build|\\.gradle|\\.runs|run|runs|bin|out)(?:/.*)?");
+            }).toList()) {
                 String name = file.getFileName().toString();
+                Path parent = file.getParent();
+                if (parent != null && parent.getFileName() != null && parent.getFileName().toString().equals("assets") && Files.isDirectory(file)
+                    && parent.getParent() != null && parent.getParent().getFileName().toString().equals("resources") && name.matches("[a-z0-9_.-]+")) {
+                    if (!name.equals("minecraft")) ids.add(name);
+                    continue;
+                }
                 if (!Set.of("mods.toml", "neoforge.mods.toml", "fabric.mod.json", "quilt.mod.json").contains(name)) continue;
                 String text = Files.readString(file, StandardCharsets.UTF_8);
+                // Only the [[mods]] entries: what follows the first [[dependencies...]] header names other mods.
+                if (!name.endsWith(".json")) text = text.split("(?m)^\\s*\\[\\[dependencies", 2)[0];
                 Matcher m = (name.endsWith(".json") ? FABRIC_ID : TOML_ID).matcher(text);
                 while (m.find()) {
                     String id = m.group(1);
@@ -477,7 +503,12 @@ final class Fingerprint {
      * modaccel commands run as children, each with its own receipt. A child of a command that holds the project's lock
      * (port --check fingerprint) is told so, and does not wait for that lock.
      */
-    static final class Child {
+    /** Runs one modaccel command for the project and returns its JSON answer. */
+    interface Runner {
+        Map<String, Object> run(String command, List<String> args, int timeout) throws Exception;
+    }
+
+    static final class Child implements Runner {
         final Path home, root, logs;
         final String project;
         int step;
@@ -491,11 +522,18 @@ final class Fingerprint {
 
         Map<String, Object> ok(String command, List<String> args, int timeout) throws Exception {
             Map<String, Object> answer = run(command, args, timeout);
+            // A game that crashes before its first frame (a loader reading its own config while it is rewritten) is
+            // started once more; a second crash is the mod's or the setup's, and is reported.
+            if (!Boolean.TRUE.equals(answer.get("ok")) && Set.of("ui-check", "world-check").contains(command) && String.valueOf(answer.get("error")).contains("did not start")) {
+                run("game-stop", List.of(), 300);
+                answer = run(command, args, timeout);
+                answer.put("startedAgain", true);
+            }
             if (!Boolean.TRUE.equals(answer.get("ok"))) throw new IOException("modaccel " + command + " " + String.join(" ", args) + " failed: " + answer.get("error"));
             return answer;
         }
 
-        Map<String, Object> run(String command, List<String> args, int timeout) throws Exception {
+        public Map<String, Object> run(String command, List<String> args, int timeout) throws Exception {
             List<String> argv = PerfOptimize.childJava(home);
             argv.add(command);
             argv.addAll(List.of("--root", root.toString()));

@@ -73,10 +73,22 @@ public final class ModaccelPackProbe {
         void watch() {
             try {
                 long since = System.nanoTime();
+                String mode = System.getProperty("modaccel.probe.mode", "place");
+                boolean fingerprint = mode.startsWith("fingerprint");
+                boolean frozen = false;
                 while ((server = findServer()) == null || !ModaccelPackGame.ready(server) || server.getTickCount() < 1) {
                     if (server != null && !server.isRunning() && server.getTickCount() > 0) return;
-                    Thread.sleep(250);
+                    // The fingerprint's world is frozen from its first tick: the freeze is queued the moment the server exists.
+                    if (fingerprint && server != null && !frozen) frozen = fingerprint("freezeAtLoad", null) != null;
+                    Thread.sleep(fingerprint ? 2 : 250);
                     if (System.nanoTime() - since > TimeUnit.MINUTES.toNanos(60)) return;
+                }
+                if (fingerprint) {
+                    // The behaviour fingerprint (ModaccelFingerprint), run from this thread; it writes its own record.
+                    result.addProperty("mode", mode);
+                    result.addProperty("fingerprint", String.valueOf(fingerprint(mode.equals("fingerprint") ? "content" : "reload", System.getProperty("modaccel.fingerprint.args", "{}"))));
+                    finish(true);
+                    return;
                 }
                 CompletableFuture.runAsync(this::started, server).get(10, TimeUnit.MINUTES);
                 while (!finished) {
@@ -136,6 +148,16 @@ public final class ModaccelPackProbe {
                 result.addProperty("error", stack(failure));
                 finish(false);
             }
+        }
+
+        /** An entry of ModaccelFingerprint, which is in the probe jar when its game layer compiled for this version. */
+        Object fingerprint(String entry, String arguments) throws Exception {
+            Class<?> type;
+            try { type = Class.forName("modaccel.packprobe.ModaccelFingerprint"); }
+            catch (ClassNotFoundException absent) { throw new IllegalStateException("This probe was built without the fingerprint (no layer for this game version)"); }
+            if (arguments == null) return type.getMethod(entry, Object.class).invoke(null, server);
+            try { return type.getMethod(entry, Object.class, String.class).invoke(null, server, arguments); }
+            catch (java.lang.reflect.InvocationTargetException failed) { throw failed.getCause() instanceof Exception ? (Exception) failed.getCause() : failed; }
         }
 
         synchronized void finish(boolean ok) {

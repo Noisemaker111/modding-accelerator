@@ -126,6 +126,19 @@ public final class ModaccelFingerprint {
         return summary(out);
     }
 
+    /**
+     * Queues the tick freeze as the server's first task, from the moment the server exists: it runs while the server
+     * loads its spawn area, before its first tick. False when the game has no tick freeze (before 1.20.3).
+     */
+    public static Boolean freezeAtLoad(Object serverObject) {
+        final MinecraftServer server = (MinecraftServer) serverObject;
+        if (!ModaccelFingerprintGame.canFreeze()) return Boolean.FALSE;
+        server.execute(new Runnable() {
+            public void run() { ModaccelFingerprintGame.freeze(server, true); }
+        });
+        return Boolean.TRUE;
+    }
+
     // ----------------------------------------------------------------------------------------------- the run
 
     /**
@@ -157,7 +170,9 @@ public final class ModaccelFingerprint {
                     // A singleplayer server whose client shows a pause screen skips its ticks: the run proved nothing.
                     if (ticks > 0 && advanced == 0) out.addProperty("error", "The world did not advance: the game was paused while the fingerprint ticked it");
                 } finally {
-                    if (wasFrozen) ModaccelFingerprintGame.freeze(server, true);
+                    // perf-optimize measures the same world after the fingerprint: it asks for the world to run on.
+                    boolean unfreeze = args.has("unfreeze") && args.get("unfreeze").getAsBoolean();
+                    if (wasFrozen && !unfreeze) ModaccelFingerprintGame.freeze(server, true);
                 }
                 JsonObject tickets = new JsonObject();
                 for (Map.Entry<String, Map<Long, TreeSet<String>>> level : seen.entrySet()) {

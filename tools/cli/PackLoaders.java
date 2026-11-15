@@ -630,6 +630,15 @@ final class PackLoaders {
         for (String source : PROBE) hash.update(Files.readAllBytes(context.harness().resolve(source)));
         Path layer = gameLayer(context.harness(), minecraft);
         hash.update(Files.readAllBytes(layer));
+        // The behaviour fingerprint (ModaccelFingerprint) goes in the same jar when it has a layer for this version.
+        List<String> fingerprint = new ArrayList<>();
+        try {
+            fingerprint.add(context.harness().resolve("tools/packcheck/ModaccelFingerprint.java").toString());
+            fingerprint.add(Fingerprint.fingerprintLayer(context.harness(), minecraft).toString());
+            for (String source : fingerprint) hash.update(Files.readAllBytes(Path.of(source)));
+        } catch (IOException noLayer) {
+            fingerprint.clear();
+        }
         Names names = loader.names(context, install, minecraft);
         hash.update((loader.id() + " " + minecraft + " " + names.kind()).getBytes(StandardCharsets.UTF_8));
         Path dir = context.cache().resolve("probes").resolve(HexFormat.of().formatHex(hash.digest()).substring(0, 16));
@@ -667,7 +676,19 @@ final class PackLoaders {
                 layer.toString()
             )
         );
-        step(context, "probe-compile", compileProbe, dir);
+        List<String> withFingerprint = new ArrayList<>(compileProbe);
+        withFingerprint.addAll(fingerprint);
+        if (fingerprint.isEmpty()) step(context, "probe-compile", compileProbe, dir);
+        else {
+            var result = Run.command(withFingerprint, dir, Map.of(), context.report().log("probe-compile"), 600);
+            context.report().stage("probe-compile", result, Map.of("fingerprint", result.exit() == 0));
+            // A fingerprint layer that does not compile for this exact version leaves pack-check's own probe as it was.
+            if (result.exit() != 0) {
+                PackCheck.deleteTree(classes);
+                Files.createDirectories(classes);
+                step(context, "probe-compile-without-fingerprint", compileProbe, dir);
+            }
+        }
         // Only the metadata this loader reads goes in, so no loader sees a file meant for another and warns about it.
         // Quilt reads fabric.mod.json too, so a loader is served by the first of its files the probe has.
         int given = 0;

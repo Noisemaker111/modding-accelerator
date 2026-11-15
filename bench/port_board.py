@@ -82,7 +82,7 @@ def source_version(work):
     return None
 
 
-def run_case(case, cache, modaccel, timeout):
+def run_case(case, cache, modaccel, timeout, fingerprint=False):
     """Port one case and return what it reached. Never raises: a port that cannot run is a result too."""
     started = time.time()
     try:
@@ -91,6 +91,8 @@ def run_case(case, cache, modaccel, timeout):
         if pinned and pinned != case["from"]:
             raise RuntimeError(f"the pinned source is on Minecraft {pinned}, but the case ports from {case['from']}: fix its commit or its from in bench/port-cases.json")
         cmd = modaccel + ["port", "--root", work, "--from", case["from"], "--to", case["to"], "--fix", "--json"]
+        if fingerprint:
+            cmd += ["--check", "fingerprint"]
         if case.get("project"):
             cmd += ["--project", case["project"]]
         r = sh(cmd, timeout=timeout)
@@ -101,6 +103,7 @@ def run_case(case, cache, modaccel, timeout):
         (cache / f"{case['id']}.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
         run = record.read_port(out)
         run["receipt"] = run["receipt"] or str(cache / f"{case['id']}.json")
+        run["fingerprint"] = port_fingerprint(out) if fingerprint else None
     except subprocess.TimeoutExpired:
         run = {"built": False, "errors": None, "unresolved": [], "reason": f"no answer in {timeout} s", "receipt": None}
     except (RuntimeError, OSError, json.JSONDecodeError) as e:
@@ -108,6 +111,41 @@ def run_case(case, cache, modaccel, timeout):
     run["seconds"] = round(time.time() - started, 1)
     run["status"] = "build" if run["built"] else "stop"
     return run
+
+
+def port_fingerprint(out):
+    """port --check fingerprint's verdict: the mod's own leaves before and after the port matched (FINGERPRINT.md)."""
+    result = out.get("result", out) if isinstance(out, dict) else {}
+    check = result.get("gameCheck") or {}
+    diff = check.get("diff") or {}
+    if not check:
+        return {"taken": False, "same": None, "why": "the port did not build, so no fingerprint after it"}
+    return {"taken": True, "same": bool(check.get("ok")), "compared": diff.get("compared"), "counts": diff.get("counts"),
+            "sections": diff.get("sections"), "before": check.get("before"), "after": check.get("after")}
+
+
+def write_sweep(cases, results, path):
+    """coverage/sweeps/port.json: each case's fingerprint verdict and the headline (ports whose fingerprint matches)."""
+    previous = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    runs = {r["id"]: r for r in previous.get("runs", [])}
+    for c in cases:
+        if c["id"] in results:
+            run = results[c["id"]]
+            runs[c["id"]] = {"id": c["id"], "mod": c["mod"], "loader": c["loader"], "from": c["from"], "to": c["to"],
+                             "built": run.get("built"), "errors": run.get("errors"), "fingerprint": run.get("fingerprint"),
+                             "date": time.strftime("%Y-%m-%d")}
+    rows = list(runs.values())
+    same = sum(bool((r.get("fingerprint") or {}).get("same")) for r in rows)
+    data = {"about": "modaccel port --fix --check fingerprint on the cases in bench/port-cases.json, by python bench/port_board.py --fingerprint. "
+                     "A port counts when the mod's fingerprint after it matches the one before, on what the mod owns (FINGERPRINT.md).",
+            "corpus": len(json.loads(CASES.read_text(encoding="utf-8"))["cases"]),
+            "latest": {"date": time.strftime("%Y-%m-%d"), "runs": len(rows), "built": sum(bool(r.get("built")) for r in rows),
+                       "fingerprinted": sum(bool((r.get("fingerprint") or {}).get("taken")) for r in rows), "same behaviour fingerprint": same,
+                       "headline": {"name": "ports whose behaviour fingerprint matches across the jump", "value": same,
+                                    "of": len(json.loads(CASES.read_text(encoding="utf-8"))["cases"])}},
+            "runs": sorted(rows, key=lambda r: r["id"])}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
 # ---- what is already recorded ---------------------------------------------------------------------
@@ -190,6 +228,7 @@ def main(argv=None, book=None, ledger=None):
     ap.add_argument("--cases", type=Path, default=CASES)
     ap.add_argument("--cache", type=Path, default=CACHE, help="where the clones and the last results live")
     ap.add_argument("--timeout", type=int, default=7200, help="seconds one port may take (a cold NeoForge setup decompiles the game)")
+    ap.add_argument("--fingerprint", action="store_true", help="port --check fingerprint, and write coverage/sweeps/port.json (the behaviour verdicts)")
     args = ap.parse_args(argv)
     for stream in (sys.stdout, sys.stderr):   # a Windows console is not UTF-8 by default, and the tables use arrows
         if hasattr(stream, "reconfigure"):
@@ -220,7 +259,7 @@ def main(argv=None, book=None, ledger=None):
     modaccel = modaccel_cmd(args.modaccel)
     for i, c in enumerate(cases, 1):
         print(f"[{i}/{len(cases)}] {c['id']} ...", file=sys.stderr, flush=True)
-        results[c["id"]] = run_case(c, args.cache, modaccel, args.timeout)
+        results[c["id"]] = run_case(c, args.cache, modaccel, args.timeout, args.fingerprint)
         print(f"         {words(results[c['id']])} in {results[c['id']]['seconds']:.0f} s", file=sys.stderr, flush=True)
     print(board(cases, results, book, ledger, previous))
     causes = left_by_cause(cases, results)
@@ -231,6 +270,8 @@ def main(argv=None, book=None, ledger=None):
     keep = dict(previous)
     keep.update({k: {"built": v["built"], "errors": v["errors"], "seconds": v["seconds"]} for k, v in results.items()})
     last.write_text(json.dumps(keep, indent=1), encoding="utf-8")
+    if args.fingerprint:
+        write_sweep(cases, results, ROOT / "coverage" / "sweeps" / "port.json")
 
     worst = 0
     for c in cases:
