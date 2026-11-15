@@ -313,7 +313,7 @@ final class Target {
         int at = 0;
         Matcher m = start.matcher(text);
         while (m.find(at)) {
-            int end = m.end(), depth = 0;
+            int end = m.start(), depth = 0;
             boolean string = false;
             char quote = 0;
             for (; end < text.length(); end++) {

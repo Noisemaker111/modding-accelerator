@@ -485,6 +485,11 @@ def game_checks(mod, rec, work):
     t0 = time.time()
     code, out, err = sh(MODACCEL + ["ui-check", "--root", work, "--json"] + proj, timeout=1800)
     res = last_json(out) or {}
+    if code != 0 and "Framebuffer was" in json.dumps(res):
+        # The hidden window had not taken its 1280x720 size by the first capture (seen on 26.1.1); the game did start.
+        rec["uiCheckRetried"] = " ".join(str((res.get("result") or res).get("error")).split())[:200]
+        code, out, err = sh(MODACCEL + ["ui-check", "--root", work, "--json"] + proj, timeout=1800)
+        res = last_json(out) or {}
     rec["load"] = {"ok": code == 0, "step": "ui-check", "detail": " ".join(str((res.get("result") or res).get("error") or (res.get("result") or res).get("details") or err[-400:] or "").split())[:400]}
     modid, wanted = mod_metadata(work, mod)
     rec["modid"] = modid

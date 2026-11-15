@@ -70,7 +70,7 @@
    "from": "1.18.2",
    "loader": "fabric",
    "names": "yarn",
-   "project": "",
+   "project": ":",
    "kinds": [
     "config",
     "networking",

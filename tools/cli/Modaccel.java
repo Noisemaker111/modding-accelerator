@@ -364,11 +364,39 @@ public final class Modaccel {
                     ? options.get("project", "") + "," + options.get("against", "")
                     : options.get("project", "");
                 Build build = new Build(project, home, selected, report);
-                Map<String, Object> model = Set.of("game-status", "game-stop", "eval").contains(options.command) ||
+                boolean noModel = Set.of("game-status", "game-stop", "eval").contains(options.command) ||
                     (options.command.equals("port") && options.values.containsKey("undo")) ||
-                    options.command.equals("convert")
-                    ? Json.map()
-                    : build.model(options.has("refresh"), options.command.equals("port"));
+                    options.command.equals("convert");
+                Map<String, Object> model;
+                try {
+                    model = noModel ? Json.map() : build.model(options.has("refresh"), options.command.equals("port"));
+                } catch (IOException unreadable) {
+                    // A port may drop a decompiler-only plugin that is no longer published; the port's undo restores it.
+                    String dead = options.command.equals("port") && options.has("fix") && !options.has("dry-run")
+                        ? Port.deadDevPlugin(unreadable.getMessage())
+                        : null;
+                    if (dead == null) throw unreadable;
+                    List<String> changed = Port.removeDevPlugin(project, dead);
+                    if (changed.isEmpty()) throw unreadable;
+                    report.stages.add(
+                        Json.map(
+                            "name",
+                            "dead-dev-plugin",
+                            "plugin",
+                            dead,
+                            "files",
+                            changed,
+                            "evidence",
+                            "the build names a version of this decompiler-only plugin that none of its repositories publishes"
+                        )
+                    );
+                    try {
+                        model = build.model(true, true);
+                    } catch (IOException still) {
+                        Port.restorePending(project);
+                        throw still;
+                    }
+                }
                 switch (options.command) {
                     case "setup" -> {
                         result = summary(model, project);
@@ -390,7 +418,12 @@ public final class Modaccel {
                             : 0;
                     }
                     case "port" -> {
-                        result = new Port(build, model).run(options);
+                        try {
+                            result = new Port(build, model).run(options);
+                        } finally {
+                            // Changes made before the port's transaction are undone unless the transaction took them over.
+                            Port.restorePending(project);
+                        }
                         if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model));
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }

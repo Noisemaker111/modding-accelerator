@@ -1253,6 +1253,24 @@ public final class PortableTests {
             "a Loom build rewritten for the unobfuscated game: " + unobfuscated
         );
         check(Target.unobfuscatedLoom("plugins { id 'java' }\nmappings x\n", 25).equals("plugins { id 'java' }\nmappings x\n"), "a build without Loom is left alone");
+        // A decompiler-only plugin no repository publishes any more is removed with its block; restorePending puts it back.
+        {
+            Path dead = Files.createDirectories(scratch.resolve("dead-plugin"));
+            Files.createDirectories(dead.resolve("gradle/wrapper"));
+            Files.writeString(dead.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-7.4.2-bin.zip\n");
+            String script = "plugins {\n    id 'fabric-loom' version '0.12-SNAPSHOT'\n    id 'io.github.juuxel.loom-quiltflower' version \"1.6.0\"\n}\n\nquiltflower {\n    addToRuntimeClasspath.set(true)\n}\n\ndependencies {}\n";
+            Files.writeString(dead.resolve("build.gradle"), script);
+            ProjectModel deadProject = new ProjectModel(dead);
+            check(Port.deadDevPlugin("Plugin [id: 'io.github.juuxel.loom-quiltflower', version: '1.6.0'] was not found").equals("io.github.juuxel.loom-quiltflower"), "a dead decompiler plugin is named");
+            check(Port.deadDevPlugin("Plugin [id: 'fabric-loom', version: '0.12'] was not found") == null, "a plugin the build needs is never dropped");
+            check(Port.removeDevPlugin(deadProject, "io.github.juuxel.loom-quiltflower").equals(List.of("build.gradle")), "the script that applies it is changed");
+            check(
+                Files.readString(dead.resolve("build.gradle")).equals("plugins {\n    id 'fabric-loom' version '0.12-SNAPSHOT'\n}\n\n\ndependencies {}\n"),
+                "plugin line and its block removed: " + Files.readString(dead.resolve("build.gradle"))
+            );
+            Port.restorePending(deadProject);
+            check(Files.readString(dead.resolve("build.gradle")).equals(script), "restorePending puts the script back byte for byte");
+        }
         // Old Loom states its minimum Gradle only as a constant of its bootstrap class: class constants are read from the
         // class file itself (an int and a String constant of the JDK's own classes), and a major line becomes its newest release.
         try (var integer = Object.class.getResourceAsStream("/java/lang/Integer.class"); var jar = Object.class.getResourceAsStream("/java/util/jar/JarFile.class")) {
