@@ -108,6 +108,7 @@ final class Dependencies {
                 // Target lookup reads Fabric metadata only. A NeoForge or Forge mod jar is still a mod the
                 // port depends on, so it is listed as unchecked instead of disappearing from the result.
                 Path mod = forgeModJar(setup.project, group, name, old);
+                if (gameVersioned(setup, group, name, old, mod, Json.text(dep, "configuration", ""))) continue;
                 if (mod != null) setup.unchecked.add(
                     Json.map(
                         "artifact",
@@ -176,6 +177,109 @@ final class Dependencies {
                 );
             }
         }
+    }
+
+    /**
+     * A library released once per game version names the game in its own version: corelib 1.21.1-2.1.11, openhud
+     * 1.3.0+1.21.1. Retargeting Minecraft changes (or should change) that coordinate, and the same library number is
+     * rarely published for the new game, so the target is the library's own newest release for the target game, read
+     * from the project's repositories (maven-metadata.xml): a version of the same shape with the target game in place of
+     * the source game. Written where the build owns it: the whole version's property, or the library part's property
+     * when the build joins it to the Minecraft property (${minecraft_version}-${corelib_version}). A coordinate built on
+     * the Minecraft property with no release for the target is a blocker, not a guess. Returns false when the version does
+     * not name the source game, so the caller keeps its usual handling.
+     */
+    static boolean gameVersioned(Target.Setup setup, String group, String name, String old, Path binary, String configuration)
+        throws Exception {
+        String from = null;
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+            setup.pins.get(key) != null
+        ) from = setup.pins.get(key);
+        if (from == null || from.equals(setup.to)) return false;
+        Matcher at = Pattern.compile("(?<![0-9.])" + Pattern.quote(from) + "(?![0-9])(?!\\.[0-9])").matcher(old);
+        if (!at.find()) return false;
+        String prefix = old.substring(0, at.start()), suffix = old.substring(at.end());
+        Set<String> published = new TreeSet<>();
+        for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
+            if (!repository.startsWith("https://")) continue;
+            try {
+                String xml = Target.fetch(
+                    setup.build,
+                    repository.replaceFirst("/$", "") + "/" + group.replace('.', '/') + "/" + name + "/maven-metadata.xml"
+                );
+                Matcher version = Pattern.compile("<version>([^<]+)</version>").matcher(xml);
+                while (version.find()) published.add(version.group(1).strip());
+            } catch (IOException unavailable) {}
+        }
+        String chosen = chooseGameRelease(published, old, from, setup.to);
+        Set<String> whole = propertyKeys(setup.build.project, old);
+        // The library part beside the game: "2.1.11" in 1.21.1-2.1.11, "1.3.0" in 1.3.0+1.21.1.
+        String part = prefix.isEmpty() ? suffix.replaceFirst("^[-+_.]", "") : suffix.isEmpty() ? prefix.replaceFirst("[-+_.]$", "") : "";
+        Set<String> partKeys = part.isEmpty() ? Set.of() : propertyKeys(setup.build.project, part);
+        if (chosen == null) {
+            if (whole.isEmpty() && partKeys.size() == 1) {
+                // The coordinate follows the Minecraft property, so keeping it is not possible: it would name a release that does not exist.
+                setup.blockers.add(
+                    blocker(
+                        group,
+                        name,
+                        old,
+                        binary,
+                        "its version is built from the Minecraft version, and no " + setup.to + " release of it is published in the project's repositories",
+                        configuration,
+                        setup.to
+                    )
+                );
+                return true;
+            }
+            return false;
+        }
+        String newPart = prefix.isEmpty()
+            ? chosen.substring(chosen.indexOf(setup.to) + setup.to.length()).replaceFirst("^[-+_.]", "")
+            : chosen.substring(0, chosen.lastIndexOf(setup.to)).replaceFirst("[-+_.]$", "");
+        if (whole.size() == 1) {
+            setup.replacements.put(whole.iterator().next(), chosen);
+            setup.pins.putIfAbsent(whole.iterator().next(), old);
+        } else if (whole.isEmpty() && partKeys.size() == 1) {
+            setup.replacements.put(partKeys.iterator().next(), newPart);
+            setup.pins.putIfAbsent(partKeys.iterator().next(), part);
+        } else return false;
+        setup.applied.add(
+            Json.map(
+                "artifact",
+                group + ":" + name,
+                "from",
+                old,
+                "to",
+                chosen,
+                "configuration",
+                configuration,
+                "evidence",
+                "the library's own release for Minecraft " + setup.to + ", read from its repository's maven-metadata.xml"
+            )
+        );
+        return true;
+    }
+
+    /** The newest published version shaped like old with the target game in place of the source game; stable before pre-releases. */
+    static String chooseGameRelease(Collection<String> published, String old, String from, String to) {
+        String shape = old.replace(from, "@").replaceAll("[0-9]+", "0");
+        String best = null;
+        for (String version : published) {
+            if (!version.contains(to)) continue;
+            String candidate = version.replaceFirst(Pattern.quote(to), "@");
+            if (!candidate.replaceAll("[0-9]+", "0").equals(shape)) continue;
+            if (best == null || numbers(candidate).compareTo(numbers(best.replaceFirst(Pattern.quote(to), "@"))) > 0) best = version;
+        }
+        return best;
+    }
+
+    /** The numbers of a version, zero-padded so text order is number order: 2.1.11 after 2.1.9. */
+    private static String numbers(String version) {
+        StringBuilder key = new StringBuilder();
+        Matcher number = Pattern.compile("[0-9]+").matcher(version);
+        while (number.find()) key.append(String.format("%012d", Long.parseLong(number.group().length() > 12 ? "999999999999" : number.group()))).append('.');
+        return key.toString();
     }
 
     /** compileOnly, modCompileOnly, modCompileOnlyApi: on the compile classpath only, never in the jar or the game. */
@@ -800,7 +904,7 @@ final class Dependencies {
             "configuration",
             configuration,
             "file",
-            binary.toString(),
+            binary == null ? "" : binary.toString(),
             "reason",
             reason,
             "suggestion",
