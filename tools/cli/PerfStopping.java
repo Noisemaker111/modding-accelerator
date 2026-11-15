@@ -181,7 +181,7 @@ final class PerfStopping {
             sequential += both.get(run);
             parallel += slower.get(run);
         }
-        String verdict = result.containsKey("error") && !result.containsKey("speedup") ? "error" : Boolean.TRUE.equals(result.get("accepted")) ? "accepted" : "rejected";
+        String verdict = PerfOptimize.verdict(result);
         String replayed = verdict;
         if (stop != null && "rejected".equals(stop.get("decided"))) replayed = "rejected";
         if (stop != null && "faster".equals(stop.get("decided"))) {

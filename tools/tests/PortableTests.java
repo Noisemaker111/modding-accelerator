@@ -1316,6 +1316,35 @@ public final class PortableTests {
             Json.array(preview.get("changed")).contains("src/main/resources/META-INF/neoforge.mods.toml"),
             "convert --dry-run from the command line leaves every file in the project, its state included, as it was: " + preview.get("details")
         );
+        // Found by an independent check: the command line kept the dry run's receipt in the temp folder, though help says it keeps none.
+        Path previewTemp = Files.createTempDirectory(root.getParent(), "preview-temp-");
+        Path previewOut = previewTemp.resolve("out.json");
+        Process previewRun = new ProcessBuilder(
+            ProcessHandle.current().info().command().orElse("java"),
+            "-Djava.io.tmpdir=" + previewTemp,
+            "-Dmodaccel.home=" + home,
+            "-cp",
+            Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(),
+            "Modaccel",
+            "convert",
+            "--root",
+            root.toString(),
+            "--to",
+            "neoforge",
+            "--dry-run",
+            "--json"
+        ).redirectErrorStream(true).redirectOutput(previewOut.toFile()).start();
+        check(previewRun.waitFor(120, java.util.concurrent.TimeUnit.SECONDS), "convert --dry-run child finishes");
+        List<String> leftInTemp;
+        try (var list = Files.list(previewTemp)) {
+            leftInTemp = list.map(p -> p.getFileName().toString()).filter(n -> !n.equals("out.json")).toList();
+        }
+        String previewText = Files.readString(previewOut);
+        check(
+            previewRun.exitValue() == 0 && leftInTemp.isEmpty() && !previewText.contains("\"receipt\""),
+            "convert --dry-run leaves no receipt in the temp folder: exit " + previewRun.exitValue() + ", left " + leftInTemp + ", " +
+            previewText.substring(Math.max(0, previewText.length() - 400))
+        );
 
         Build build = new Build(project, home, "", new Modaccel.Report(root, "convert"));
         Map<String, Object> dry = new Convert(build).run(

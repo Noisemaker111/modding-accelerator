@@ -307,6 +307,49 @@ final class PackMods {
         for (Object j : Json.array(meta.getOrDefault("jars", List.of()))) nested.add(String.valueOf(j));
     }
 
+    /**
+     * Why a jar cannot run on a server, read from its code: a Fabric or Quilt server entrypoint (fabric.mod.json "main" or
+     * "server", quilt.mod.json "init" or "server_init") that, as it is loaded and initialised (its supertypes, constructor,
+     * static initialiser and onInitialize methods), reaches a game class the server does not have. The loader then stops
+     * at start-up with NoClassDefFoundError. Null when no entrypoint does. Forge's @Mod classes are not read: they name
+     * client classes in handlers that a Dist check keeps a server from running.
+     */
+    static String clientCode(Path jar, java.util.function.Predicate<String> clientOnly) {
+        try (var zip = new ZipFile(jar.toFile())) {
+            Map<String, List<Object>> entrypoints = new LinkedHashMap<>();
+            ZipEntry fabric = zip.getEntry("fabric.mod.json"), quilt = zip.getEntry("quilt.mod.json");
+            if (fabric != null) {
+                var meta = Json.object(lenient(new String(zip.getInputStream(fabric).readAllBytes(), StandardCharsets.UTF_8)));
+                var points = Json.object(meta.getOrDefault("entrypoints", Map.of()));
+                for (String stage : List.of("main", "server")) entrypoints.put(stage, Json.array(points.getOrDefault(stage, List.of())));
+            } else if (quilt != null) {
+                var meta = Json.object(Json.object(lenient(new String(zip.getInputStream(quilt).readAllBytes(), StandardCharsets.UTF_8))).get("quilt_loader"));
+                var points = Json.object(meta.getOrDefault("entrypoints", Map.of()));
+                for (String stage : List.of("init", "server_init")) {
+                    Object value = points.get(stage);
+                    entrypoints.put(stage, value instanceof List<?> list ? Json.array(list) : value == null ? List.of() : List.of(value));
+                }
+            }
+            for (var stage : entrypoints.entrySet()) for (Object point : stage.getValue()) {
+                String type = point instanceof Map<?, ?> m ? String.valueOf(m.get("value")) : String.valueOf(point);
+                if (type.contains("::")) type = type.substring(0, type.indexOf("::"));
+                ZipEntry entry = zip.getEntry(type.replace('.', '/') + ".class");
+                if (entry == null) continue;
+                ClassRefs refs = ClassRefs.read(zip.getInputStream(entry).readAllBytes());
+                List<String> client = refs.touched(m -> m.equals("<init>") || m.equals("<clinit>") || m.startsWith("onInitialize"))
+                    .stream()
+                    .filter(clientOnly)
+                    .sorted()
+                    .toList();
+                if (!client.isEmpty()) return "its " + stage.getKey() + " entrypoint " + type + " reaches client-only game classes: " +
+                    String.join(", ", client.subList(0, Math.min(3, client.size())));
+            }
+        } catch (IOException | RuntimeException unreadable) {
+            return null;
+        }
+        return null;
+    }
+
     /** Mod metadata is often written by hand: a JSON reader that fails would hide the mod, so a broken file reads as empty. */
     static Object lenient(String text) {
         try {

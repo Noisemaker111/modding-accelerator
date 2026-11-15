@@ -147,6 +147,7 @@ public final class PerfTest {
             check(Files.isRegularFile(first.resolve("stacks.speedscope.json")), "sampled stack export exists");
             functionTiming(report, first);
             attribution(report, first);
+            childOutputEncoding(scratch, first);
             Path second = scratch.resolve("no-hooks");
             Files.createDirectories(second);
             Performance.capture(pid, agent, Performance.request(second, 1, 0, true), second, 1, 0, false);
@@ -280,6 +281,37 @@ public final class PerfTest {
             "exact rows come from complete agent totals, not the capped per-call history");
     }
 
+    /**
+     * A perf-optimize child prints a matched pattern's provenIn ("mod version · scope") and the parent reads it.
+     * On Windows the console code page once turned "·" into byte 0xB7 and the whole run ended in MalformedInputException.
+     * LC_ALL=C gives POSIX children an ASCII console the same way.
+     */
+    static void childOutputEncoding(Path scratch, Path capture) throws Exception {
+        Path home = scratch.resolve("pattern-home");
+        Files.createDirectories(home.resolve("knowledge"));
+        Map<String, Object> pattern = Json.map("id", "façade-cache", "symptom", Json.map("text", "Façade work", "when",
+            List.of(Json.map("in", "methods", "matches", ".", "minShare", 0))), "change", "réutiliser", "gain", Json.map(),
+            "gate", Json.map("name", "g"), "provenIn", Json.map("mod", "Façade", "version", "1", "scope", "näive"));
+        Json.save(home.resolve("knowledge/perf-patterns.json"), Json.map("schema", 1, "patterns", List.of(pattern)));
+        List<String> command = PerfOptimize.childJava(home);
+        command.addAll(List.of("perf-report", "--file", capture.toString(), "--out", scratch.resolve("pattern-report").toString(), "--json"));
+        Path stdout = scratch.resolve("pattern-report.json"), stderr = scratch.resolve("pattern-report.log");
+        ProcessBuilder builder = new ProcessBuilder(command).redirectOutput(stdout.toFile()).redirectError(stderr.toFile());
+        builder.environment().put("LC_ALL", "C");
+        Process child = builder.start();
+        check(child.waitFor(120, java.util.concurrent.TimeUnit.SECONDS), "perf-report child finishes");
+        String text = PerfOptimize.childOutput(stdout).strip();
+        Map<String, Object> answer = Json.object(Json.parse(text.substring(Math.max(0, text.lastIndexOf("\n{") + 1))));
+        check(Boolean.TRUE.equals(answer.get("ok")), "the child's report: " + Run.tail(stderr));
+        List<Object> patterns = Json.array(Json.object(answer.get("result")).get("patterns"));
+        check(!patterns.isEmpty() && "Façade 1 · näive".equals(Json.object(patterns.get(0)).get("provenIn")),
+            "a matched pattern's non-ASCII provenIn survives the child's console encoding: " + patterns);
+        Map<String, Object> crashed = Json.map("accepted", false, "error", "java.nio.charset.MalformedInputException: Input length = 1");
+        check("error".equals(PerfOptimize.verdict(crashed)) && PerfOptimize.summary(crashed).startsWith("ERROR"),
+            "a tool crash is an error, never a candidate rejection: " + PerfOptimize.summary(crashed));
+        check("rejected".equals(PerfOptimize.verdict(Json.map("accepted", false))), "a decided slower candidate is still a rejection");
+    }
+
     static void modTemplates() throws Exception {
         Path root = Files.createTempDirectory("perf-mod-");
         fixture(root, "src/main/resources/assets/demo/lang/en_us.json",
@@ -338,21 +370,31 @@ public final class PerfTest {
      */
     /**
      * Every experiment under bench/ names only files the checkout has; only its save is made once per machine. A file the
-     * repository ignores (Pipez's options.txt was) passes on the machine that made it and fails on every other.
+     * repository ignores (Pipez's options.txt was) passes on the machine that made it and fails on every other. Nested
+     * experiments count too: Diorama's is bench/diorama/play, whose options.txt a one-level ignore exception missed.
+     * Files copied out of the save (Diorama's frozen region files) are made with it, by its prepare step.
      */
     static void committedExperiments(Path home) throws Exception {
         int checked = 0;
-        try (var dirs = Files.list(home.resolve("bench"))) {
-            for (Path dir : dirs.sorted().toList()) {
-                Path file = dir.resolve("experiment.json");
-                if (!Files.isRegularFile(file)) continue;
-                Map<String, Object> result = PerfCheck.check(file, Json.read(file), null, null, null);
-                List<String> problems = Json.array(result.get("problems")).stream().map(Object::toString).filter(p -> !p.startsWith("worldSource ")).toList();
-                check(problems.isEmpty(), home.relativize(file) + " names files the checkout lacks: " + problems);
-                checked++;
-            }
+        List<Path> files;
+        try (var walk = Files.walk(home.resolve("bench"), 3)) {
+            files = walk.filter(p -> p.getFileName().toString().equals("experiment.json")).sorted().toList();
         }
-        check(checked >= 3, "bench experiments are checked: " + checked);
+        for (Path file : files) {
+            Map<String, Object> experiment = Json.read(file);
+            Path save = file.getParent().resolve(Json.text(experiment, "worldSource", "-")).normalize();
+            Map<String, Object> result = PerfCheck.check(file, experiment, null, null, null);
+            List<String> problems = new ArrayList<>();
+            for (Object item : Json.array(result.get("problems"))) {
+                String problem = item.toString();
+                if (problem.startsWith("worldSource ")) continue;
+                if (problem.startsWith("files: ") && file.getParent().resolve(problem.substring(7, problem.indexOf(" (for "))).normalize().startsWith(save)) continue;
+                problems.add(problem);
+            }
+            check(problems.isEmpty(), home.relativize(file) + " names files the checkout lacks: " + problems);
+            checked++;
+        }
+        check(checked >= 4, "bench experiments are checked, nested ones too: " + checked);
     }
 
     static void patternLibrary(Path home) throws Exception {

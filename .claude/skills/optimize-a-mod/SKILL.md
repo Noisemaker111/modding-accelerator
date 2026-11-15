@@ -89,7 +89,10 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
      and put back, a barrel replaced, a redstone link powered, a priority changed) so cached state must notice;
    - a workload in steady state can look still: Storage Network's exports and imports move the same items into the
      same slots in the same tick, so two snapshots agree. Perturb it reversibly and check it recovers
-     (`bench/storagenetwork/count.java` rotates the buffers' contents and requires each to hold its own item 2 s later).
+     (`bench/storagenetwork/count.java` rotates the buffers' contents and requires each to hold its own item 2 s later);
+   - **every cache candidate needs a gate that changes the cached source mid-run**, after the candidate has filled the
+     cache, and a stale candidate that fills it once and never again must fail that gate while the others pass (Pipez:
+     `trace-rewire.java` adds a pipe and a barrel at round 5; `sabotage-stale-cache.diff` fails only that gate).
    Run the exact gate in two separate launches and compare: it must return the same text. Then **break it once on
    purpose**: a candidate that changes behaviour slightly (Pipez: nearest-first sorted the other way) must fail the
    exact gate. `perf-optimize` stops at the second pair (an `expect` gate at the first), so this costs two pairs.

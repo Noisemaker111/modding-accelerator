@@ -74,6 +74,8 @@ final class PackCheck {
     }
     PackMods.Scan scan = new PackMods.Scan();
     PackLoaders.Loader loader;
+    /** The game classes the pack's server has; a mod reaching any other game class is client-only. */
+    PackLoaders.GameClasses game = new PackLoaders.GameClasses(Set.of(), Set.of());
     /** Jars a server start showed to be client-only, on this run or an earlier one (client-only.json); every start leaves them out. */
     final Set<String> dropped = Collections.synchronizedSet(new LinkedHashSet<>());
     /** Server starts share this; a start that lost a fixed port (a mod's own, such as a voice chat server's) to the other lane runs again alone. */
@@ -128,6 +130,18 @@ final class PackCheck {
         started = System.nanoTime();
         scan = PackMods.scan(pack.mods(), loader.metadata(pack.minecraft()));
         pack = pack.withMods(sides(pack.mods(), scan));
+        // The loader's server, installed once: the Java build it runs on, and the game classes a server has.
+        Path install = loader.install(context, pack.minecraft(), pack.loaderVersion());
+        Runtimes.Jdk suited = PackLoaders.javaFor(context, install);
+        if (!suited.home().equals(java.home())) {
+            result.put(
+                "javaBuild",
+                Json.map("home", suited.home().toString(), "why", "the loader calls a member of Java that " + java.home() + " lacks (knowledge/pack-loaders.json javaBuilds)")
+            );
+            context = new PackLoaders.Context(harness, cache, report, suited);
+        }
+        game = PackLoaders.gameClasses(context, loader, install, pack.minecraft());
+        pack = pack.withMods(clientCode(pack.mods(), game));
         PackChecks.Context statics = new PackChecks.Context(pack, scan, loader, findings);
         if (!unavailable.isEmpty()) findings.add(
             Json.map(
@@ -213,6 +227,17 @@ final class PackCheck {
         for (Mod mod : mods) {
             String own = scan.sides.get(mod.file());
             out.add(own != null && mod.side().equals("unknown") ? new Mod(mod.file(), mod.jar(), own, mod.source() + ", its own metadata") : mod);
+        }
+        return out;
+    }
+
+    /** A jar whose side no list or metadata gives is client-only when its server entrypoint reaches client-only game classes. */
+    static List<Mod> clientCode(List<Mod> mods, PackLoaders.GameClasses game) {
+        List<Mod> out = new ArrayList<>();
+        for (Mod mod : mods) {
+            boolean unknown = mod.side().equals("unknown") && mod.jar() != null && mod.file().endsWith(".jar");
+            String why = unknown ? PackMods.clientCode(mod.jar(), game::clientOnly) : null;
+            out.add(why == null ? mod : new Mod(mod.file(), mod.jar(), "client", mod.source() + ", " + why));
         }
         return out;
     }
@@ -831,7 +856,7 @@ final class PackCheck {
                 }
                 // A mod that only works in a game client stops a server at start-up; leave it out and start again.
                 Map<String, String> clientOnly = new LinkedHashMap<>();
-                for (String id : PackChecks.clientOnly(text, loader, scan)) for (PackMods.Provider p : scan.providers.getOrDefault(id, List.of())) if (
+                for (String id : PackChecks.clientOnly(text, loader, scan, game::clientOnly)) for (PackMods.Provider p : scan.providers.getOrDefault(id, List.of())) if (
                     !p.bundled() && !change.remove().contains(p.jar())
                 ) clientOnly.put(p.jar(), id);
                 clientOnly.keySet().removeIf(dropped::contains);
@@ -861,7 +886,7 @@ final class PackCheck {
                     "failure",
                     PackChecks.failure(text + "\n" + String.join("\n", reports), loader.failed()),
                     "suspects",
-                    PackChecks.suspects(text, reports, scan, loader)
+                    PackChecks.suspects(text, reports, scan, loader, game::clientOnly)
                 );
             }
         }

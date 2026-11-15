@@ -47,6 +47,10 @@ Add an entry under `loaders` in `knowledge/pack-loaders.json`:
 - `builtIn`, `failed`, `modNamed`, `clientOnly`: mod ids it provides itself, words that mean a start failed, patterns
   whose first group is a mod id it blames, and words that mean a mod reached client-only code on a server.
 
+A loader that needs an exact Java build gets a rule under `javaBuilds`: the JDK member (`call`) its jars under
+`libraries/<libraries>` call, and the Temurin `release` that still has it. It applies when the game's Java as installed
+lacks that member; the release is downloaded and must match both the vendor's API SHA-256 and its published checksum file.
+
 A loader that fits neither style needs a `Style` subclass in `PackLoaders.java`, added to the `switch` in `all()`.
 If it reads a metadata format pack-check does not know, add a reader in `PackMods.read` and the probe's own file
 beside `ModaccelPackProbe.java`. If its server keeps the running game somewhere new, add that lookup to `findServer`
@@ -60,7 +64,9 @@ in the probe. If its run-time names differ, return them from `names()`. Add an a
 only it provides: then it is kept and the loader decides (Fabric and Quilt keep an `environment: client` jar out of the
 game and treat a dependency on it as met; Forge runs it). A jar a start showed to be client-only (`client-only.json`)
 cannot run on a server, and a mod that requires an id only such jars provide is left out with it, through its
-dependants. The result's `game.leftOut` and `game.keptForDependants` say why for each jar.
+dependants. A jar no list or metadata gives a side is client-only when its Fabric or Quilt server entrypoint reaches,
+as it initialises, a game class the installed server does not have (`PackMods.clientCode`). The result's
+`game.leftOut` and `game.keptForDependants` say why for each jar.
 
 ## Add a pack input
 
