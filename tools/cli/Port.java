@@ -309,7 +309,7 @@ final class Port {
      */
     Path supertypes(Path log) throws IOException {
         Matcher located = Pattern.compile("location: (?:variable \\w+ of type |class |interface )([\\w.$]+)").matcher(
-            Files.readString(log)
+            logText(log)
         );
         Set<String> types = new TreeSet<>();
         while (located.find()) types.add(located.group(1).replaceAll("<.*", ""));
@@ -345,7 +345,7 @@ final class Port {
      * itself, and names two game classes share, are left to the compiler. Returns the files changed.
      */
     int importMissingClasses(Path log) throws Exception {
-        String errors = Files.readString(log);
+        String errors = logText(log);
         Matcher reported = Pattern.compile(
             "(?m)^\\s*" + FILE + ":[0-9]+: error: cannot find symbol\\R(?:.*\\R){0,2}?\\s*symbol:\\s+(?:class|variable) ([A-Z]\\w*)\\s*$"
         ).matcher(errors);
@@ -462,6 +462,11 @@ final class Port {
         );
         Files.write(map, lines, StandardCharsets.UTF_8);
         return dropped;
+    }
+
+    /** A build log as text: javac on Windows writes in the console's code page, so bytes that are not UTF-8 never stop a port. */
+    static String logText(Path log) throws IOException {
+        return new String(Files.readAllBytes(log), StandardCharsets.UTF_8);
     }
 
     static List<Path> sources(ProjectModel project) throws IOException {
@@ -1357,7 +1362,7 @@ final class Port {
     static List<Object> errors(Path log) throws IOException {
         List<Object> list = new ArrayList<>();
         Set<String> seen = new HashSet<>();
-        Matcher reported = ERROR.matcher(Files.readString(log));
+        Matcher reported = ERROR.matcher(logText(log));
         while (reported.find()) {
             String key = reported.group(1) + ":" + reported.group(2) + ":" + reported.group(3);
             if (!seen.add(key)) continue;
@@ -1743,7 +1748,7 @@ final class Port {
      * names it and reports an empty match, so remove only that dead name and keep the rest.
      */
     void removeDeadMixinTargets(Path log) throws Exception {
-        String errors = Files.readString(log);
+        String errors = logText(log);
         Matcher reported = Pattern.compile(
             "(?m)^\\s*" + FILE + ":(\\d+): error: Multi-target reference conflict for @\\w+ target (\\w+): \\[\\]"
         ).matcher(errors);
@@ -2077,7 +2082,7 @@ final class Port {
         Set<String> loaders = new TreeSet<>();
         for (Object p : Json.array(model.get("projects"))) loaders.addAll(Support.loaders(Json.object(p)));
         if (!loaders.contains("neoforge")) return List.of();
-        String errors = Files.readString(log);
+        String errors = logText(log);
         Matcher denied = Pattern.compile(
             "(?m)^\\s*" +
             FILE +
@@ -2158,7 +2163,7 @@ final class Port {
     void applyRules(Path log) throws Exception {
         removeDeadMixinTargets(log);
         repairAccess(log);
-        String errors = Files.readString(log);
+        String errors = logText(log);
         List<Path> all = ownedJava();
         Set<Path> logged = new HashSet<>();
         Matcher reported = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error:").matcher(errors);
@@ -3049,7 +3054,7 @@ final class Port {
      * with changedIn empty and the reason.
      */
     List<Object> namedErrors(Path log, Map<String, Object> mapInfo) throws IOException {
-        String text = Files.readString(log);
+        String text = logText(log);
         Map<String, List<Map<String, Object>>> history = new HashMap<>();
         if (mapInfo != null) for (Object item : Json.array(mapInfo.get("history"))) {
             var event = Json.object(item);

@@ -634,7 +634,13 @@ final class Target {
             // build.gradle and the scripts it applies (ModMenu's gradle/*.gradle via apply from:), not settings.
             String file = script.getFileName().toString();
             if (!file.matches(".*\\.gradle(\\.kts)?") || file.startsWith("settings.") || file.startsWith("gradle.init")) continue;
-            String before = setup.text(script), text = removedDsl(before, gradle8);
+            String before;
+            try {
+                before = setup.text(script);
+            } catch (java.nio.charset.CharacterCodingException notText) {
+                continue; // a script in another encoding (owo-lib has one); nothing to rewrite in it
+            }
+            String text = removedDsl(before, gradle8);
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(script, before);
             setup.texts.put(script, text);

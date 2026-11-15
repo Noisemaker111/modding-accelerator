@@ -250,9 +250,12 @@ final class Dependencies {
                 // name written out, or one that only arrives with another dependency, keeps its old coordinate.
                 String head = name.substring(0, named.start());
                 boolean interpolated = false;
-                for (Path input : setup.build.project.inputs()) if (
-                    input.getFileName().toString().contains(".gradle") && setup.text(input).contains(head + "$")
-                ) interpolated = true;
+                for (Path input : setup.build.project.inputs()) {
+                    if (!input.getFileName().toString().contains(".gradle")) continue;
+                    try {
+                        if (setup.text(input).contains(head + "$")) interpolated = true;
+                    } catch (java.nio.charset.CharacterCodingException notText) {}
+                }
                 if (!interpolated) return false;
                 setup.blockers.add(
                     blocker(group, name, old, binary, "its artifact name carries the Minecraft version, and " + renamed + " publishes no release in the project's repositories", configuration, setup.to)
