@@ -22,9 +22,10 @@ public final class HardeningTest {
             badRoot(scratch);
             timeouts(scratch);
             loomVersions();
+            failedStartEndsGame(scratch);
             System.out.println(
                 count +
-                " hardening checks passed: missing dependency, non-compiler failure, mixin audit summary, interrupted undo, NeoForge unchecked, server death, lookup errors, bad root, Gradle timeout"
+                " hardening checks passed: missing dependency, non-compiler failure, mixin audit summary, interrupted undo, NeoForge unchecked, server death, lookup errors, bad root, Gradle timeout, failed start ends its game"
             );
         } finally {
             try (var paths = Files.walk(scratch)) {
@@ -515,6 +516,82 @@ public final class HardeningTest {
             Versions.compare(Dependencies.minor("1.11.2"), Dependencies.minor("1.10-SNAPSHOT")) > 0,
             "Loom minors compare"
         );
+    }
+
+    /**
+     * A command that dies before handing its game off takes the game with it: the game it started itself, and one
+     * a Gradle daemon started that the log names (MODACCEL_PID). A handed-off game stays for reload and eval.
+     * Hidden games left behind by dead commands ran for 13 hours.
+     */
+    static void failedStartEndsGame(Path scratch) throws Exception {
+        Path log = scratch.resolve("owned-game.log");
+        Process launcher = java(FailedStart.class, log.toString()), outside = null;
+        ProcessHandle owned = null, handedOff = null;
+        try {
+            String[] pids = new BufferedReader(
+                new InputStreamReader(launcher.getInputStream(), StandardCharsets.UTF_8)
+            ).readLine().split(" ");
+            // Started here, not by the failing command, once it owns its start: like a game the Gradle daemon started.
+            outside = java(Sleep.class);
+            Files.writeString(log, "> Task :runClient\nMODACCEL_PID " + outside.pid() + "\n");
+            launcher.getOutputStream().close();
+            require(launcher.waitFor(60, java.util.concurrent.TimeUnit.SECONDS), "the failing launcher exits");
+            owned = ProcessHandle.of(Long.parseLong(pids[0])).orElse(null);
+            handedOff = ProcessHandle.of(Long.parseLong(pids[1])).orElse(null);
+            require(gone(owned) && gone(outside.toHandle()), "a start that failed ended its game and the one its log names");
+            require(handedOff != null && handedOff.isAlive(), "a handed-off game keeps running");
+        } finally {
+            for (ProcessHandle process : Arrays.asList(
+                outside == null ? null : outside.toHandle(),
+                owned,
+                handedOff,
+                launcher.toHandle()
+            )) if (process != null) process.destroyForcibly();
+        }
+    }
+
+    static Process java(Class<?> main, String... args) throws IOException {
+        List<String> command = new ArrayList<>(
+            List.of(
+                ProcessHandle.current().info().command().orElse("java"),
+                "-cp",
+                System.getProperty("java.class.path"),
+                main.getName()
+            )
+        );
+        command.addAll(List.of(args));
+        return new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.INHERIT).start();
+    }
+
+    static boolean gone(ProcessHandle process) throws Exception {
+        if (process == null) return true;
+        try {
+            process.onExit().get(15, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.TimeoutException stillRunning) {}
+        return !process.isAlive();
+    }
+
+    /** Stands in for a game: runs until ended. */
+    public static final class Sleep {
+
+        public static void main(String[] args) throws Exception {
+            Thread.sleep(Long.MAX_VALUE);
+        }
+    }
+
+    /** A start that fails: one game owned, one handed off, then an exception ends this JVM. */
+    public static final class FailedStart {
+
+        public static void main(String[] args) throws Exception {
+            Process owned = java(Sleep.class), handedOff = java(Sleep.class);
+            new Run.Owned(owned.toHandle(), Path.of(args[0]));
+            new Run.Owned(handedOff.toHandle(), null).handOff();
+            System.out.println(owned.pid() + " " + handedOff.pid());
+            System.out.flush();
+            // The test starts the game "Gradle" launched, then lets this start fail.
+            System.in.readAllBytes();
+            throw new IllegalStateException("the game did not start");
+        }
     }
 
     static void require(boolean condition, String label) {
