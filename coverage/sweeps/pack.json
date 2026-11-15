@@ -6,15 +6,15 @@
     "date": "2026-11-15",
     "packs": 24,
     "ran": 24,
-    "started": 20,
+    "started": 21,
     "world made and reopened": 20,
     "repaired": 3,
     "passing with repairs": 23,
     "repairs proven": 4,
-    "failed start with a named culprit": 1,
+    "failed start with a named culprit": 0,
     "outcomes": {
       "world made and reopened": 20,
-      "start failed": 1,
+      "reopen failed": 1,
       "repaired: world made and reopened": 3
     }
   },
@@ -79,15 +79,15 @@
       "date": "2026-11-15",
       "packs": 24,
       "ran": 24,
-      "started": 20,
+      "started": 21,
       "world made and reopened": 20,
       "repaired": 3,
       "passing with repairs": 23,
       "repairs proven": 4,
-      "failed start with a named culprit": 1,
+      "failed start with a named culprit": 0,
       "outcomes": {
         "world made and reopened": 20,
-        "start failed": 1,
+        "reopen failed": 1,
         "repaired: world made and reopened": 3
       }
     }
@@ -106,7 +106,6 @@
     {
       "gap": "server start failed, culprit named",
       "packs": [
-        "atm10-neoforge-1.21.1",
         "atm9-forge-1.20.1",
         "create-astral-fabric-1.18.2",
         "sodiumplus-quilt-1.20.1"
@@ -114,21 +113,21 @@
       "rank": 2
     },
     {
-      "gap": "problem with no proven repair: minecraft-mismatch",
-      "packs": [
-        "atm10-neoforge-1.21.1"
-      ],
-      "rank": 3
-    },
-    {
       "gap": "problem with no proven repair: placed-other-block",
       "packs": [
         "prominence-2-fabric-1.20.1"
       ],
+      "rank": 3
+    },
+    {
+      "gap": "problem with no proven repair: world-reopen",
+      "packs": [
+        "atm10-neoforge-1.21.1"
+      ],
       "rank": 4
     },
     {
-      "gap": "problem with no proven repair: server-start",
+      "gap": "world did not reopen, culprit named",
       "packs": [
         "atm10-neoforge-1.21.1"
       ],
@@ -252,11 +251,10 @@
       "loader": "neoforge",
       "minecraft": "1.21.1",
       "exit": 1,
-      "seconds": 669.7,
+      "seconds": 1042.2,
       "gaps": [
-        "server start failed, culprit named",
-        "problem with no proven repair: minecraft-mismatch",
-        "problem with no proven repair: server-start"
+        "world did not reopen, culprit named",
+        "problem with no proven repair: world-reopen"
       ],
       "mods": 499,
       "loaderUsed": "neoforge 21.1.266",
@@ -265,53 +263,16 @@
         "findings": 36
       },
       "start": {
+        "opened": true,
+        "seconds": 732.8596864,
+        "failure": null,
+        "suspects": null
+      },
+      "reopen": {
         "opened": false,
-        "seconds": 623.2969425,
-        "failure": "[09:23:45] [Server Watchdog/FATAL] [ne.ne.ne.co.NeoForgeMod/]: Preparing crash report with UUID 3750e115-9183-4df6-b9cd-42ef1c1da594\n[09:23:46] [Server Watchdog/FATAL] [ne.ne.ne.co.NeoForgeMod/]: Preparing crash report with UUID 562f0a5f-1b27-4176-8e22-acfd142b6e3c",
+        "seconds": 290.3736222,
+        "failure": "[09:42:20] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception\n[09:42:20] [Server thread/FATAL] [ne.ne.ne.co.NeoForgeMod/]: Preparing crash report with UUID c455597f-cfa6-4d6a-ac2b-2930460b4ffd\nDescription: Exception in server tick loop",
         "suspects": [
-          {
-            "mod": "mffs",
-            "jar": "mffs-5.4.44.jar",
-            "why": [
-              "its mixin config mffs.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "alltheleaks",
-            "jar": "alltheleaks-1.1.16-1.21.1-neoforge.jar",
-            "why": [
-              "its mixin config alltheleaks.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "neovitae",
-            "jar": "neovitae-1.21.1-1.1.53.jar",
-            "why": [
-              "its mixin config neovitae.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "ad_astra",
-            "jar": "adastra-1.21.1-1.16.26-neoforge.jar",
-            "why": [
-              "its mixin config adastra.mixins.json is in the failure",
-              "its mixin config adastra-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "xycraft_core",
-            "jar": "xycraft_core-0.7.53-all.jar",
-            "why": [
-              "its mixin config xycraft_core.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "irons_spellbooks",
-            "jar": "irons_spellbooks-1.21.1-3.16.3.jar",
-            "why": [
-              "its mixin config irons_spellbooks.mixins.json is in the failure"
-            ]
-          },
           {
             "mod": "aether",
             "jar": "aether-1.21.1-1.5.10-neoforge.jar",
@@ -320,235 +281,10 @@
             ]
           },
           {
-            "mod": "refurbished_furniture",
-            "jar": "refurbished_furniture-neoforge-1.21.1-1.0.22.jar",
-            "why": [
-              "its mixin config refurbished_furniture.common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "kubejs",
-            "jar": "kubejs-neoforge-2101.7.2-build.381.jar",
-            "why": [
-              "its mixin config kubejs.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "tesseract_api",
-            "jar": "tesseract-api-neoforge-1.12.20-1.21.1.jar",
-            "why": [
-              "its mixin config tesseract_api.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "the_bumblezone",
-            "jar": "the_bumblezone-7.17.3+1.21.1-neoforge.jar",
-            "why": [
-              "its mixin config the_bumblezone-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "createaddition",
-            "jar": "createaddition-1.7.2.jar",
-            "why": [
-              "its mixin config createaddition.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "immersiveengineering",
-            "jar": "ImmersiveEngineering-1.21.1-12.4.2-194.jar",
-            "why": [
-              "its mixin config immersiveengineering.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "ftbchunks",
-            "jar": "ftb-chunks-neoforge-2101.1.24.jar",
-            "why": [
-              "its mixin config ftbchunks-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "create",
-            "jar": "create-1.21.1-6.0.10.jar",
-            "why": [
-              "its mixin config create.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "connectivity",
-            "jar": "connectivity-1.21.1-7.7.jar",
-            "why": [
-              "its mixin config connectivity.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "observerlib",
-            "jar": "observerlib-1.10.3.jar",
-            "why": [
-              "its mixin config observerlib.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "corgilib",
-            "jar": "Corgilib-NeoForge-1.21.1-5.0.0.10.jar",
-            "why": [
-              "its mixin config corgilib-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "lootr",
-            "jar": "lootr-neoforge-1.21.1-1.11.38.127.jar",
-            "why": [
-              "its mixin config lootr-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "copycats",
-            "jar": "copycats-3.0.11-mc.1.21.1-neoforge.jar",
-            "why": [
-              "its mixin config copycats-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "eternal_starlight",
-            "jar": "eternalstarlight-0.9.1+1.21.1+neoforge.jar",
-            "why": [
-              "its mixin config eternal_starlight-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "ohthetreesyoullgrow",
-            "jar": "Oh-The-Trees-Youll-Grow-neoforge-1.21.1-5.3.6.jar",
-            "why": [
-              "its mixin config ohthetreesyoullgrow.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "astralsorcery",
-            "jar": "AstralSorcery-2.0.3.59.jar",
-            "why": [
-              "its mixin config astralsorcery.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "moonlight",
-            "jar": "moonlight-1.21.1-3.8.3-neoforge.jar",
-            "why": [
-              "its mixin config moonlight-common.mixins.json is in the failure",
-              "its mixin config moonlight.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "cupboard",
-            "jar": "cupboard-1.21.1-4.2.jar",
-            "why": [
-              "its mixin config cupboard.mixins.json is in the failure"
-            ]
-          },
-          {
             "mod": "modernfix",
             "jar": "modernfix-neoforge-5.27.27+mc1.21.1.jar",
             "why": [
               "its mixin config modernfix-modernfix.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "journeymap",
-            "jar": "journeymap-neoforge-1.21.1-6.0.9.jar",
-            "why": [
-              "its mixin config journeymap.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "apothic_enchanting",
-            "jar": "ApothicEnchanting-1.21.1-1.6.4.jar",
-            "why": [
-              "its mixin config apothic_enchanting.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "apotheosis",
-            "jar": "Apotheosis-1.21.1-8.9.0.jar",
-            "why": [
-              "its mixin config apotheosis.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "supplementaries",
-            "jar": "supplementaries-1.21.1-4.1.1-neoforge.jar",
-            "why": [
-              "its mixin config supplementaries.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "placebo",
-            "jar": "Placebo-1.21.1-9.9.4.jar",
-            "why": [
-              "its mixin config placebo.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "artifacts",
-            "jar": "artifacts-neoforge-13.2.5.jar",
-            "why": [
-              "its mixin config mixins.artifacts.common.json is in the failure"
-            ]
-          },
-          {
-            "mod": "geckolib",
-            "jar": "geckolib-neoforge-1.21.1-4.9.3.jar",
-            "why": [
-              "its mixin config geckolib.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "ars_nouveau",
-            "jar": "ars_nouveau-1.21.1-5.13.5.jar",
-            "why": [
-              "its mixin config ars_nouveau.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "ars_technica",
-            "jar": "ars_technica-1.21.1-2.7.6.jar",
-            "why": [
-              "its mixin config ars_technica.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "owo",
-            "jar": "owo-lib-neoforge-0.12.15.6-beta.1+1.21.jar",
-            "why": [
-              "its mixin config owo.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "cucumber",
-            "jar": "Cucumber-1.21.1-8.0.16.jar",
-            "why": [
-              "its mixin config cucumber.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "fastsuite",
-            "jar": "FastSuite-1.21.1-6.0.7.jar",
-            "why": [
-              "its mixin config fastsuite.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "invasiveopts",
-            "jar": "invasiveopts-1.0.26.jar",
-            "why": [
-              "its mixin config invasiveopts.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "mahoutsukai",
-            "jar": "mahoutsukai-1.21.1-v1.36.31.jar",
-            "why": [
-              "its mixin config mahoutsukai.mixins.json is in the failure"
             ]
           },
           {
@@ -563,6 +299,20 @@
             "jar": "rechiseled-1.2.6-neoforge-mc1.21.jar",
             "why": [
               "its mixin config rechiseled.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "alltheleaks",
+            "jar": "alltheleaks-1.1.16-1.21.1-neoforge.jar",
+            "why": [
+              "its mixin config alltheleaks.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "lootr",
+            "jar": "lootr-neoforge-1.21.1-1.11.38.127.jar",
+            "why": [
+              "its mixin config lootr-common.mixins.json is in the failure"
             ]
           },
           {
@@ -587,6 +337,20 @@
             ]
           },
           {
+            "mod": "kubejs",
+            "jar": "kubejs-neoforge-2101.7.2-build.381.jar",
+            "why": [
+              "its mixin config kubejs.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "moonlight",
+            "jar": "moonlight-1.21.1-3.8.3-neoforge.jar",
+            "why": [
+              "its mixin config moonlight.mixins.json is in the failure"
+            ]
+          },
+          {
             "mod": "regions_unexplored",
             "jar": "regions_unexplored-neoforge-1.21.1-0.5.9.jar",
             "why": [
@@ -606,33 +370,41 @@
             "why": [
               "its mixin config extended_industrialization.mixins.json is in the failure"
             ]
+          },
+          {
+            "mod": "enderio",
+            "jar": "enderio-8.2.13-beta.jar",
+            "why": [
+              "its code (com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity) is in the stack: at TRANSFORMER/enderio@8.2.13-beta/com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity.getValidPushTargets(CapacitorBankBlockEntity.java:187)",
+              "its code (com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity) is in the stack: at TRANSFORMER/enderio@8.2.13-beta/com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity.getValidPushTargets(CapacitorBankBlockEntity.java:187) ~[enderio-8.2.13-beta.jar%23...",
+              "its code (com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity) is in the stack: at TRANSFORMER/enderio@8.2.13-beta/com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity.getValidPushTargets(CapacitorBankBlockEntity.java:187) ~[enderio-8.2.13-beta.jar%23..."
+            ]
           }
         ]
       },
-      "reopen": null,
       "clientOnlyLeftOut": 0,
       "leftOutOfServer": 40,
       "keptForDependants": [],
-      "probe": {},
+      "probe": {
+        "dimensions": 28,
+        "failed": 26,
+        "placed": 43538
+      },
       "findings": {
-        "warning:duplicate-mod": 1,
-        "warning:minecraft-mismatch": 30,
-        "problem:minecraft-mismatch": 1,
+        "note:duplicate-mod": 1,
+        "note:minecraft-mismatch": 30,
+        "warning:minecraft-mismatch": 1,
         "note:same-block-file": 3,
         "note:same-block-name": 1,
-        "problem:server-start": 1
+        "note:placed-other-block": 1,
+        "note:not-checked": 2,
+        "note:placement-error": 1,
+        "problem:world-reopen": 1
       },
       "problems": [
         {
-          "kind": "minecraft-mismatch",
-          "summary": "Cucumber-1.21.1-8.0.16.jar is for Minecraft [1.21,1.21.1), not 1.21.1.",
-          "jars": [
-            "Cucumber-1.21.1-8.0.16.jar"
-          ]
-        },
-        {
-          "kind": "server-start",
-          "summary": "The pack's server did not finish starting a new world. The log names mffs (mffs-5.4.44.jar), alltheleaks (alltheleaks-1.1.16-1.21.1-neoforge.jar), neovitae (neovitae-1.21.1-1.1.53.jar), ad_astra (adastra-1.21.1-1.16.26-neoforge.jar).",
+          "kind": "world-reopen",
+          "summary": "A world this pack made opens once and then fails to open again. The log names aether (aether-1.21.1-1.5.10-neoforge.jar), modernfix (modernfix-neoforge-5.27.27+mc1.21.1.jar), bcc (better-compatability-checker-neoforge-21.1.8.jar), rechiseled (rechiseled-1.2.6-neoforge-mc1.21.jar).",
           "jars": []
         }
       ],
@@ -664,32 +436,28 @@
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.2
+          "seconds": 0.1
         },
         {
           "name": "read",
-          "seconds": 1.0
+          "seconds": 0.9
         },
         {
           "name": "static-checks",
-          "seconds": 5.0
-        },
-        {
-          "name": "probe-stubs",
-          "seconds": 1.0
-        },
-        {
-          "name": "probe-compile",
-          "seconds": 3.4
+          "seconds": 3.1
         },
         {
           "name": "server-place",
-          "seconds": 623.3
+          "seconds": 732.9
+        },
+        {
+          "name": "server-verify",
+          "seconds": 290.4
         }
       ],
-      "outcome": "start failed",
+      "outcome": "reopen failed",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T09:24:00",
+      "started": "2026-11-15T09:42:42",
       "label": "repairs"
     },
     {
