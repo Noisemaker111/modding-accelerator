@@ -7,7 +7,15 @@ The goal is a porter that needs no hand edits: every failure becomes a rule, a g
 statuses: `stop` (errors left), `build`, `load`, `behaviour` (a game check that fails when the mod is broken on purpose).
 
 1. Pin the port in `bench/port-cases.json` (repo, commit, loader, from, to). Baseline: `mmt compile` on its own version.
-2. `mmt port --root R --from A --to B --fix --json`. Sort the errors by the update that caused them:
+2. `mmt port --root R --from A --to B --fix --json`. Before writing anything, cluster: every sweep error carries
+   `changed` (the game change GameDiff links it to); group by it across the whole corpus
+   (`.runs/sweep/runs/TAG/*.json`, or a cloud sweep's download), largest number of mods first. Fix in this order:
+   - the map already knows it (`renamed`/`moved`) but it is still an error: a porter gap in `tools/VersionMap.java`
+     (`Fix.run`) or `tools/cli/Port.java`, never a rule (overrides are renamed by the class's own supertypes,
+     on-demand imports of moved packages are expanded);
+   - one game change, many names: generate one rule from the game's own mappings (`~/.mmt/mappings/client-V.txt`,
+     `yarn-V*.jar`); a replace can use `$^N` for group N in UPPER_SNAKE (getter → constant: `core-shaders-1212`);
+   - only what is truly semantic by hand. Then sort what is left by the update that caused it:
    a mechanical change → a rule in `knowledge/fixes.json` plus `python bench/rule_test.py --only ID --write`;
    new code needed → a guide in `knowledge/structural.json`; build setup → `tools/cli/Target.java`; a porter bug →
    `tools/cli` with a self-test case.
