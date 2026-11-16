@@ -303,17 +303,24 @@ final class Target {
             if (relative.matches("buildSrc/src/main/.+\\.gradle(\\.kts)?") && !files.contains(input)) applied.add(input);
         }
         for (Path script : applied) {
-            String before = setup.text(script), text = remapTasks(plainConfigurations(before));
+            // A convention plugin that applies Loom itself (ImmediatelyFast's base-conventions) gets the whole rewrite.
+            String before = setup.text(script);
+            String text = appliesLoom(before) ? unobfuscatedLoom(before, javaFor(to)) : remapTasks(plainConfigurations(before));
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(script, before);
             setup.texts.put(script, text);
             setup.applied.add(Json.map("file", script.toString(), "change", "remapping configurations -> plain ones for " + to + " (applied by a Loom script)"));
         }
         fabricMavenFilter(setup, build);
+        boolean anyLoom = false;
+        for (Path file : files) if (Files.isRegularFile(file) && appliesLoom(setup.text(file))) anyLoom = true;
         String newestLoom = null, newestArchitectury = null;
         for (Path file : files) {
             if (!Files.isRegularFile(file)) continue;
             String before = setup.text(file), text = unobfuscatedLoom(before, javaFor(to));
+            // A module script Loom reaches from elsewhere (MidnightLib's root applies it to every subproject, and
+            // common/build.gradle names remapJar) uses the same names.
+            if (!appliesLoom(before) && anyLoom) text = remapTasks(plainConfigurations(before));
             // A Loom older than the unobfuscated line is not published under net.fabricmc.fabric-loom (FerriteCore kept
             // 1.5-SNAPSHOT): it rises to the newest release.
             Matcher old = Pattern.compile(
