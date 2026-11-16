@@ -3,7 +3,8 @@ import java.util.*;
 /** Public capability labels; examples are evidence, never a version allowlist. */
 final class Support {
 
-    static final String VERSION = "0.1.0-beta.3";
+    /** "dev" in a checkout; the Release workflow stamps the release number into the build it publishes. */
+    static final String VERSION = "dev";
 
     private Support() {}
 
