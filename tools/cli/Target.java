@@ -254,22 +254,7 @@ final class Target {
             setup.texts.put(script, text);
             setup.applied.add(Json.map("file", script.toString(), "change", "remapping configurations -> plain ones for " + to + " (applied by a Loom script)"));
         }
-        // A settings filter that sends only some groups to Fabric's Maven (TorchMaster: includeGroup('fabric-loom')) must let
-        // the new plugin id's marker through too; it is in the group net.fabricmc.fabric-loom, not net.fabricmc.
-        for (String name : List.of("settings.gradle", "settings.gradle.kts")) {
-            Path settings = build.project.root.resolve(name);
-            if (!Files.isRegularFile(settings)) continue;
-            String before = setup.text(settings);
-            if (before.contains("net.fabricmc.fabric-loom")) continue;
-            String text = before.replaceFirst(
-                "(?m)^([ \\t]*)(includeGroup\\s*\\(?\\s*([\"'])fabric-loom\\3\\s*\\)?)",
-                "$1$2\n$1includeGroup($3net.fabricmc.fabric-loom$3)"
-            );
-            if (text.equals(before)) continue;
-            setup.originals.putIfAbsent(settings, before);
-            setup.texts.put(settings, text);
-            setup.applied.add(Json.map("file", settings.toString(), "change", "Fabric Maven filter also passes net.fabricmc.fabric-loom, the plugin of the unobfuscated game"));
-        }
+        fabricMavenFilter(setup, build);
         String newestLoom = null;
         for (Path file : files) {
             if (!Files.isRegularFile(file)) continue;
@@ -301,6 +286,16 @@ final class Target {
                 )
             );
         }
+        if (newestLoom != null) {
+            loomInRoot(setup, build, newestLoom);
+            gradleFollows(
+                setup,
+                build,
+                "https://maven.fabricmc.net/net/fabricmc/fabric-loom/" + newestLoom + "/fabric-loom-" + newestLoom + ".module",
+                "Loom " + newestLoom,
+                "fabric-loom " + newestLoom
+            );
+        }
     }
 
     /**
@@ -314,12 +309,56 @@ final class Target {
         for (Path file : build.project.inputs()) {
             String name = file.getFileName().toString();
             if (!name.matches(".+\\.gradle(\\.kts)?") || name.startsWith("settings")) continue;
-            String before = setup.text(file), text = before.replaceAll("(?<![\\w$])additionalRuntimeClasspath(?![\\w$])", "runtimeOnly");
+            String before = setup.text(file), text = withoutAdditionalRuntimeClasspath(before);
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(file, before);
             setup.texts.put(file, text);
             setup.applied.add(Json.map("file", file.toString(), "change", "additionalRuntimeClasspath -> runtimeOnly for " + to, "evidence", "ModDevGradle has no additional runtime classpath after Minecraft 1.21.9"));
         }
+    }
+
+    /**
+     * A settings filter that sends only named groups to Fabric's Maven (TorchMaster: includeGroup('net.fabricmc') and
+     * includeGroup('fabric-loom')) must also pass what a newer Loom brings: its plugin marker for the unobfuscated id
+     * (group net.fabricmc.fabric-loom) and its own libraries (net.fabricmc.unpick). net.fabricmc becomes
+     * includeGroupAndSubgroups (Gradle 8.1+, which every Loom of that age needs).
+     */
+    static void fabricMavenFilter(Setup setup, Build build) throws IOException {
+        for (String name : List.of("settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts")) {
+            Path file = build.project.root.resolve(name);
+            if (!Files.isRegularFile(file)) continue;
+            String before = setup.text(file), text = fabricSubgroups(before);
+            if (text.equals(before)) continue;
+            setup.originals.putIfAbsent(file, before);
+            setup.texts.put(file, text);
+            setup.applied.add(Json.map("file", file.toString(), "change", "Fabric Maven filter passes net.fabricmc and its subgroups (Loom's plugin marker and libraries)"));
+        }
+    }
+
+    static String fabricSubgroups(String text) {
+        return text.replaceAll("includeGroup(\\s*\\(?\\s*([\"'])net\\.fabricmc\\2\\s*\\)?)", "includeGroupAndSubgroups$1");
+    }
+
+    static String withoutAdditionalRuntimeClasspath(String text) {
+        return text.replaceAll("(?<![\\w$])additionalRuntimeClasspath(?![\\w$])", "runtimeOnly");
+    }
+
+    static final Pattern LOOM_WITH_VERSION = Pattern.compile(
+        "(id\\s*\\(?\\s*([\"'])(fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)\\2(?:\\s*\\))?)\\s*version\\s*\\(?\\s*[\"'][^\"']+[\"'](?:\\s*\\))?"
+    );
+
+    static String withoutLoomVersion(String text) {
+        return LOOM_WITH_VERSION.matcher(text).replaceAll("$1");
+    }
+
+    /** A root build script that declares Loom (apply false) in its plugins block; null when it has a buildscript block and no plugins block. */
+    static String rootLoom(String text, String id, String loom, String quote, boolean kotlin) {
+        String line = kotlin
+            ? "id(\"" + id + "\") version \"" + loom + "\" apply false"
+            : "id " + quote + id + quote + " version " + quote + loom + quote + " apply false";
+        Matcher plugins = Pattern.compile("(?m)^plugins\\s*\\{").matcher(text);
+        if (plugins.find()) return text.substring(0, plugins.end()) + "\n    " + line + text.substring(plugins.end());
+        return text.contains("buildscript") ? null : "plugins {\n    " + line + "\n}\n\n" + text;
     }
 
     /** The first Loom that applies its companion plugin (net.fabricmc.fabric-loom-companion) across a multi-project build. */
@@ -336,30 +375,24 @@ final class Target {
         Path root = null;
         for (String name : List.of("build.gradle", "build.gradle.kts")) if (Files.isRegularFile(build.project.root.resolve(name))) root = build.project.root.resolve(name);
         if (root == null || appliesLoom(setup.text(root))) return;
-        Pattern declared = Pattern.compile(
-            "(id\\s*\\(?\\s*([\"'])(fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)\\2\\s*\\)?)\\s*version\\s*\\(?\\s*[\"'][^\"']+[\"']\\s*\\)?"
-        );
+        Map<Path, String> subprojects = new LinkedHashMap<>();
         String id = null, quote = "'";
         for (Path file : build.project.inputs()) {
             String name = build.project.root.relativize(file).toString().replace('\\', '/');
             if (file.equals(root) || name.startsWith("buildSrc/") || !name.matches(".+/build\\.gradle(\\.kts)?")) continue;
-            String before = setup.text(file);
-            Matcher m = declared.matcher(before);
+            Matcher m = LOOM_WITH_VERSION.matcher(setup.text(file));
             if (!m.find()) continue;
             id = m.group(3);
             quote = m.group(2);
-            String text = declared.matcher(before).replaceAll("$1");
-            setup.originals.putIfAbsent(file, before);
-            setup.texts.put(file, text);
+            subprojects.put(file, withoutLoomVersion(setup.text(file)));
         }
         if (id == null) return;
-        String kotlin = root.toString().endsWith(".kts") ? "\"" : quote, line = "id(" + kotlin + id + kotlin + ") version " + kotlin + loom + kotlin + " apply false";
-        if (!root.toString().endsWith(".kts")) line = "id " + quote + id + quote + " version " + quote + loom + quote + " apply false";
-        String before = setup.text(root), text;
-        Matcher plugins = Pattern.compile("(?m)^plugins\\s*\\{").matcher(before);
-        if (plugins.find()) text = before.substring(0, plugins.end()) + "\n    " + line + before.substring(plugins.end());
-        else if (!before.contains("buildscript")) text = "plugins {\n    " + line + "\n}\n\n" + before;
-        else return;
+        String before = setup.text(root), text = rootLoom(before, id, loom, quote, root.toString().endsWith(".kts"));
+        if (text == null) return; // a buildscript block and no plugins block: left as it is
+        for (var sub : subprojects.entrySet()) {
+            setup.originals.putIfAbsent(sub.getKey(), setup.text(sub.getKey()));
+            setup.texts.put(sub.getKey(), sub.getValue());
+        }
         setup.originals.putIfAbsent(root, before);
         setup.texts.put(root, text);
         setup.applied.add(Json.map("file", root.toString(), "change", "Loom " + loom + " declared in the root project (apply false), so its companion plugin resolves", "evidence", "Loom " + FIRST_COMPANION_LOOM + "+ applies net.fabricmc.fabric-loom-companion across the build"));

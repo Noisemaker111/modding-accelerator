@@ -42,6 +42,28 @@ public final class BuildScriptTests {
             "a Loom build rewritten for the unobfuscated game: " + unobfuscated
         );
         check(Target.unobfuscatedLoom("plugins { id 'java' }\nmappings x\n", 25).equals("plugins { id 'java' }\nmappings x\n"), "a build without Loom is left alone");
+        // A script applied by a Loom script (Waystones' fabric/dependencies.gradle) names no plugin but drops remapping too.
+        check(
+            Target.plainConfigurations("dependencies {\n    modImplementation(\"net.blay09.mods:balm-fabric:1\") { changing = true }\n    modCompileOnly x\n    myModImplementationHelper()\n}\n")
+                .equals("dependencies {\n    implementation(\"net.blay09.mods:balm-fabric:1\") { changing = true }\n    compileOnly x\n    myModImplementationHelper()\n}\n"),
+            "an applied script's remapping configurations become plain ones, other names untouched"
+        );
+        // A settings filter that passes only net.fabricmc (TorchMaster) must pass Loom's subgroups: its 26.x plugin marker
+        // (net.fabricmc.fabric-loom) and libraries (net.fabricmc.unpick).
+        check(
+            Target.fabricSubgroups("filter {\n    includeGroup('net.fabricmc')\n    includeGroup('fabric-loom')\n    includeGroup(\"net.fabricmc.unpick\")\n}\n")
+                .equals("filter {\n    includeGroupAndSubgroups('net.fabricmc')\n    includeGroup('fabric-loom')\n    includeGroup(\"net.fabricmc.unpick\")\n}\n"),
+            "includeGroup('net.fabricmc') widened to its subgroups, other groups untouched"
+        );
+        check(Target.withoutAdditionalRuntimeClasspath("additionalRuntimeClasspath(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n").equals("runtimeOnly(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n"), "NeoForge's removed additional classpath -> runtimeOnly");
+        // Loom 1.12+ in a multi-project build: the subproject drops its version and the root declares Loom with apply false.
+        check(Target.withoutLoomVersion("plugins {\n    id 'fabric-loom' version '1.10-SNAPSHOT'\n}\n").equals("plugins {\n    id 'fabric-loom'\n}\n"), "subproject Loom loses its version");
+        check(
+            "plugins {\n    id 'fabric-loom' version '1.19.4' apply false\n    id 'idea'\n}\n".equals(Target.rootLoom("plugins {\n    id 'idea'\n}\n", "fabric-loom", "1.19.4", "'", false)),
+            "root plugins block gains Loom with apply false"
+        );
+        check("plugins {\n    id(\"net.fabricmc.fabric-loom\") version \"1.19.4\" apply false\n}\n\nversion = 1\n".equals(Target.rootLoom("version = 1\n", "net.fabricmc.fabric-loom", "1.19.4", "'", true)), "a Kotlin root with no plugins block gets one");
+        check(Target.rootLoom("buildscript { }\napply plugin: 'java'\n", "fabric-loom", "1.19.4", "'", false) == null, "a buildscript-only root is not rewritten");
         // A decompiler-only plugin no repository publishes any more is removed with its block; restorePending puts it back.
         {
             Path dead = Files.createDirectories(scratch.resolve("dead-plugin"));
