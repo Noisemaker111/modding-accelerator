@@ -1135,6 +1135,56 @@
     "fabric": "import net.minecraft.client.renderer.block.FluidModel;\nimport net.neoforged.neoforge.client.fluid.FluidTintSources;\nclass A { int c(FluidModel model, FluidStack stack) {\n    return FluidTintSources.of(model.tintSource()).colorAsStack(stack);\n} }",
     "neoforge": "import net.minecraft.client.renderer.block.FluidModel;\nclass A { int c(FluidModel model, FluidStack stack) {\n    return model.fluidTintSource().colorAsStack(stack);\n} }"
    }
+  },
+  {
+   "id": "neoforge-item-creator-mod-id",
+   "about": "NeoForge adds getCreatorModId(registries, stack) to Item (IItemExtension); its default (CommonHooks.getDefaultCreatorModId) is the item's namespace, or for a minecraft item the namespace of its one stored enchantment, its potion or its spawn egg's entity, which the NeoForge bridge's IItemExtension.getCreatorModId returns on Fabric.",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "IItemExtension.getCreatorModId($item, $registries, $stack)",
+   "neoforge": "$item.getCreatorModId($registries, $stack)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IItemExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getCreatorModId",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#getDefaultCreatorModId"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IItemExtension;\nclass A { String a(ItemStack stack, HolderLookup.Provider registries) { return IItemExtension.getCreatorModId(stack.getItem(), registries, stack); } }",
+    "neoforge": "class A { String a(ItemStack stack, HolderLookup.Provider registries) { return stack.getItem().getCreatorModId(registries, stack); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-enchant-power-bonus",
+   "about": "NeoForge adds getEnchantPowerBonus(level, pos) to BlockState (IBlockStateExtension); its default is 1 for #minecraft:enchantment_power_provider and 0 otherwise. On Fabric the NeoForge bridge's IBlockStateExtension.getEnchantPowerBonus gives a provider what Fabric API's getProvidedEnchantmentPower says, which Fabric's enchanting table counts.",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "IBlockStateExtension.getEnchantPowerBonus($state, $level, $pos)",
+   "neoforge": "$state.getEnchantPowerBonus($level, $pos)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getEnchantPowerBonus",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getEnchantPowerBonus"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { float a(Level level, BlockPos pos) { return IBlockStateExtension.getEnchantPowerBonus(level.getBlockState(pos), level, pos); } }",
+    "neoforge": "class A { float a(Level level, BlockPos pos) { return level.getBlockState(pos).getEnchantPowerBonus(level, pos); } }"
+   }
   }
  ],
  "types": [
@@ -2136,7 +2186,7 @@
  "bridges": [
   {
    "id": "neoforge-on-fabric",
-   "about": "For mods written for NeoForge first. NeoForge's registration (DeferredRegister and its holders), event bus (IEventBus, @SubscribeEvent, @EventBusSubscriber, NeoForge.EVENT_BUS), mod container, config (ModConfigSpec, read and written as the same TOML file), play payloads (PayloadRegistrar, PacketDistributor, IPayloadContext) the commonest lifecycle events, and the game events Fabric API has a callback for at the same moment (player log in and out, respawn, clone and dimension change; living death and incoming damage; entity join, level load, unload and tick; datapack sync; item tooltips; key mappings), written for this project on Fabric's API in knowledge/bridges/neoforge-on-fabric and copied into the converted mod beside its first @Mod class. Each class mirrors the NeoForge class named in classes (the members its symbols list), and each event is posted from the Fabric callback that fires at the same moment. @Mod constructors become Fabric entrypoints that receive their IEventBus and ModContainer from the bridge; registration runs at the end of the main entrypoint in the game's registry order, as NeoForge's RegisterEvent does. Capabilities and transfer (Minecraft 26.1 and later; the 1.21.1 layer drops them): NeoForge's capabilities are Fabric API lookups of the same name, so a converted mod's handlers are visible to Fabric mods and theirs to it. Capabilities.Item.BLOCK and ITEM are Fabric's ItemStorage.SIDED and ITEM, Fluid.BLOCK and ITEM are FluidStorage.SIDED and ITEM: a ResourceHandler is a SlottedStorage (one slot per index) and a Storage is a ResourceHandler, the same object again when it comes back; registerBlock/registerBlockEntity/registerEntity/registerItem register lookup providers (asked in registration order, the first non-null winning) and level/entity/stack.getCapability is the lookup's find, through interfaces the bridge's mixins add to Level, Entity and ItemStack (Loom interface injection for the compile). RegisterCapabilitiesEvent is posted after registration. Amounts: items are ints on NeoForge and longs on Fabric (larger Fabric amounts read as Integer.MAX_VALUE); fluids convert at 81 droplets per millibucket, a handler seen from Fabric moves whole millibuckets only (below 81 droplets moves nothing) and a Fabric storage seen from NeoForge reads amounts divided by 81 rounded down (below 81 droplets is not visible) and moves whole millibuckets, retrying a part-millibucket move in a nested transaction. Transactions: NeoForge's Transaction is a Fabric transaction (openRoot = openOuter, open = openNested, depth = nestingDepth, ROOT_CLOSING = OUTER_CLOSING; both nest, both abort on close), and SnapshotJournal keeps NeoForge's snapshot order on Fabric's close callbacks, so the two loaders' handlers share transactions exactly. Energy: Fabric API has none; Energy.BLOCK, ENTITY and ITEM are lookups the bridge creates (neoforge:energy_handler, carrying a Fabric Storage of Unit), seen by mods converted from NeoForge only; so are the entity item and fluid capabilities. Sides: a null direction is the same no-side context on both. Not mirrored: capability proxying, BlockCapabilityCache's invalidation listener (Fabric's cache revalidates itself), invalidateCapabilities (a no-op), ItemAccess.oneByOne, FluidStack and FluidResource templates; FluidType is the fluid itself with its Fabric attributes. The legacy IItemHandler, ItemStackHandler, SlotItemHandler, IEnergyStorage and their helpers (still in NeoForge 26.1) are mirrored as plain classes; IItemHandler.of and IEnergyStorage.of wrap a transfer handler.",
+   "about": "For mods written for NeoForge first. NeoForge's registration (DeferredRegister and its holders), event bus (IEventBus, @SubscribeEvent, @EventBusSubscriber, NeoForge.EVENT_BUS), mod container, config (ModConfigSpec, read and written as the same TOML file), play payloads (PayloadRegistrar, PacketDistributor, IPayloadContext) the commonest lifecycle events, and the game events Fabric API has a callback for at the same moment (player log in and out, respawn, clone and dimension change; living death and incoming damage; entity join, level load, unload and tick; datapack sync; item tooltips; key mappings), written for this project on Fabric's API in knowledge/bridges/neoforge-on-fabric and copied into the converted mod beside its first @Mod class. Each class mirrors the NeoForge class named in classes (the members its symbols list), and each event is posted from the Fabric callback that fires at the same moment. @Mod constructors become Fabric entrypoints that receive their IEventBus and ModContainer from the bridge; registration runs at the end of the main entrypoint in the game's registry order, as NeoForge's RegisterEvent does. Capabilities and transfer (Minecraft 26.1 and later; the 1.21.1 layer drops them): NeoForge's capabilities are Fabric API lookups of the same name, so a converted mod's handlers are visible to Fabric mods and theirs to it. Capabilities.Item.BLOCK and ITEM are Fabric's ItemStorage.SIDED and ITEM, Fluid.BLOCK and ITEM are FluidStorage.SIDED and ITEM: a ResourceHandler is a SlottedStorage (one slot per index) and a Storage is a ResourceHandler, the same object again when it comes back; registerBlock/registerBlockEntity/registerEntity/registerItem register lookup providers (asked in registration order, the first non-null winning) and level/entity/stack.getCapability is the lookup's find, through interfaces the bridge's mixins add to Level, Entity and ItemStack (Loom interface injection for the compile). RegisterCapabilitiesEvent is posted after registration. Amounts: items are ints on NeoForge and longs on Fabric (larger Fabric amounts read as Integer.MAX_VALUE); fluids convert at 81 droplets per millibucket, a handler seen from Fabric moves whole millibuckets only (below 81 droplets moves nothing) and a Fabric storage seen from NeoForge reads amounts divided by 81 rounded down (below 81 droplets is not visible) and moves whole millibuckets, retrying a part-millibucket move in a nested transaction. Transactions: NeoForge's Transaction is a Fabric transaction (openRoot = openOuter, open = openNested, depth = nestingDepth, ROOT_CLOSING = OUTER_CLOSING; both nest, both abort on close), and SnapshotJournal keeps NeoForge's snapshot order on Fabric's close callbacks, so the two loaders' handlers share transactions exactly. Energy: Fabric API has none; Energy.BLOCK, ENTITY and ITEM are lookups the bridge creates (neoforge:energy_handler, carrying a Fabric Storage of Unit), seen by mods converted from NeoForge only; so are the entity item and fluid capabilities. Sides: a null direction is the same no-side context on both. Not mirrored: capability proxying, BlockCapabilityCache's invalidation listener (Fabric's cache revalidates itself), invalidateCapabilities (a no-op), ItemAccess.oneByOne, FluidStack and FluidResource templates; FluidType is the fluid itself with its Fabric attributes. The legacy IItemHandler, ItemStackHandler, SlotItemHandler, IEnergyStorage and their helpers (still in NeoForge 26.1) are mirrored as plain classes; IItemHandler.of and IEnergyStorage.of wrap a transfer handler. Mod list: ModList.getSortedMods and getMods list every mod Fabric Loader loaded (by id), IModInfo gives Fabric Loader's version and fabric.mod.json's custom values as the mod's properties, and each mod is its own file whose ModFileScanData ASM reads from the mod's class files when asked (annotations on classes, fields and methods; an enum constant as its name). Extension methods NeoForge adds to game classes that mods call on them (connection.send(payload), builder.has(type), entity.isMultipartEntity() and getParts()) are interfaces the bridge's mixins add, listed when the code uses them; no entity has NeoForge parts on Fabric (the ender dragon's are the game's EnderDragonPart). RenderTooltipEvent.GatherComponents is posted for tooltips of lines and an image (item tooltips), without NeoForge's wrapping of wide lines. Renderers: EntityRenderersEvent (RegisterLayerDefinitions, RegisterRenderers) and RegisterColorHandlersEvent (BlockTintSources, ColorResolvers) are posted while the client mod loads, each registration going to Fabric API's own registry (ModelLayerRegistry, EntityRendererRegistry, BlockEntityRendererRegistry, BlockColorRegistry, ColorResolverRegistry), which the game reads when it builds renderers as NeoForge's events fill them.",
    "from": "neoforge",
    "to": "fabric",
    "minecraft": "26.3",
@@ -2312,7 +2362,27 @@
     "net.neoforged.neoforge.common.extensions.IBlockExtension": "IBlockExtension",
     "net.neoforged.fml.Logging": "Logging",
     "net.neoforged.neoforge.client.fluid.FluidTintSource": "FluidTintSource",
-    "net.neoforged.neoforge.client.fluid.FluidTintSources": "FluidTintSources"
+    "net.neoforged.neoforge.client.fluid.FluidTintSources": "FluidTintSources",
+    "net.neoforged.neoforgespi.language.IModFileInfo": "IModFileInfo",
+    "net.neoforged.neoforgespi.locating.IModFile": "IModFile",
+    "net.neoforged.neoforgespi.language.ModFileScanData": "ModFileScanData",
+    "net.neoforged.fml.i18n.MavenVersionTranslator": "MavenVersionTranslator",
+    "net.neoforged.fml.loading.LoadingModList": "LoadingModList",
+    "net.neoforged.neoforge.common.tooltip.ItemTooltipHandler": "ItemTooltipHandler",
+    "net.neoforged.neoforge.client.ClientTooltipFlag": "ClientTooltipFlag",
+    "net.neoforged.neoforge.client.ItemDecoratorHandler": "ItemDecoratorHandler",
+    "net.neoforged.neoforge.common.TranslatableEnum": "TranslatableEnum",
+    "net.neoforged.neoforge.common.ItemAbility": "ItemAbility",
+    "net.neoforged.neoforge.common.ItemAbilities": "ItemAbilities",
+    "net.neoforged.neoforge.common.loot.CanItemPerformAbility": "CanItemPerformAbility",
+    "net.neoforged.neoforge.entity.PartEntity": "PartEntity",
+    "net.neoforged.neoforge.client.event.RenderTooltipEvent": "RenderTooltipEvent",
+    "net.neoforged.neoforge.common.extensions.IItemExtension": "IItemExtension",
+    "net.neoforged.neoforge.common.extensions.IServerCommonPacketListenerExtension": "extensions.IServerCommonPacketListenerExtension",
+    "net.neoforged.neoforge.common.extensions.IClientCommonPacketListenerExtension": "extensions.IClientCommonPacketListenerExtension",
+    "net.neoforged.neoforge.common.extensions.IDataComponentMapBuilderExtensions": "extensions.IDataComponentMapBuilderExtensions",
+    "net.neoforged.neoforge.client.event.EntityRenderersEvent": "EntityRenderersEvent",
+    "net.neoforged.neoforge.client.event.RegisterColorHandlersEvent": "RegisterColorHandlersEvent"
    },
    "symbols": {
     "neoforge": [
@@ -3237,7 +3307,44 @@
      "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#colorAsStack",
      "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#colorInWorld",
      "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#of",
-     "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#constant"
+     "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSources#constant",
+     "fml|net.neoforged.fml.ModList#getSortedMods",
+     "fml|net.neoforged.fml.ModList#getMods",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getVersion",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getModProperties",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getOwningFile",
+     "fml|net.neoforged.neoforgespi.language.IModFileInfo#getFile",
+     "fml|net.neoforged.neoforgespi.language.IModFileInfo#getMods",
+     "fml|net.neoforged.neoforgespi.locating.IModFile#getScanResult",
+     "fml|net.neoforged.neoforgespi.language.ModFileScanData#getAnnotatedBy",
+     "fml|net.neoforged.neoforgespi.language.ModFileScanData#getAnnotations",
+     "fml|net.neoforged.neoforgespi.language.ModFileScanData$AnnotationData#memberName",
+     "fml|net.neoforged.neoforgespi.language.ModFileScanData$AnnotationData#annotationData",
+     "fml|net.neoforged.fml.loading.LoadingModList#getModFileById",
+     "fml|net.neoforged.fml.loading.FMLLoader#getLoadingModList",
+     "fml|net.neoforged.fml.i18n.MavenVersionTranslator#artifactVersionToString",
+     "neoforge|net.neoforged.neoforge.common.tooltip.ItemTooltipHandler#addDetailsToTooltipMiddle",
+     "neoforge|net.neoforged.neoforge.client.ClientTooltipFlag#of",
+     "neoforge|net.neoforged.neoforge.client.ItemDecoratorHandler#of",
+     "neoforge|net.neoforged.neoforge.client.ItemDecoratorHandler#render",
+     "neoforge|net.neoforged.neoforge.common.TranslatableEnum#getTranslatedName",
+     "neoforge|net.neoforged.neoforge.common.ItemAbility#get",
+     "neoforge|net.neoforged.neoforge.common.ItemAbilities#SHEARS_DIG",
+     "neoforge|net.neoforged.neoforge.common.loot.CanItemPerformAbility#canItemPerformAbility",
+     "neoforge|net.neoforged.neoforge.entity.PartEntity#getParent",
+     "neoforge|net.neoforged.neoforge.client.event.RenderTooltipEvent$GatherComponents#getTooltipElements",
+     "neoforge|net.neoforged.neoforge.client.event.RenderTooltipEvent$GatherComponents#setMaxWidth",
+     "neoforge|net.neoforged.neoforge.common.extensions.IServerCommonPacketListenerExtension#send",
+     "neoforge|net.neoforged.neoforge.common.extensions.IClientCommonPacketListenerExtension#send",
+     "neoforge|net.neoforged.neoforge.common.extensions.IDataComponentMapBuilderExtensions#set",
+     "neoforge|net.neoforged.neoforge.common.extensions.IEntityExtension#isMultipartEntity",
+     "neoforge|net.neoforged.neoforge.common.extensions.IEntityExtension#getParts",
+     "neoforge|net.neoforged.neoforge.fluids.FluidStack#getTooltipLines",
+     "neoforge|net.neoforged.neoforge.client.event.EntityRenderersEvent$RegisterLayerDefinitions#registerLayerDefinition",
+     "neoforge|net.neoforged.neoforge.client.event.EntityRenderersEvent$RegisterRenderers#registerEntityRenderer",
+     "neoforge|net.neoforged.neoforge.client.event.EntityRenderersEvent$RegisterRenderers#registerBlockEntityRenderer",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterColorHandlersEvent$BlockTintSources#register",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterColorHandlersEvent$ColorResolvers#register"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -3591,7 +3698,23 @@
      "minecraft|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops",
      "minecraft|net.minecraft.client.color.block.BlockTintSource#colorInWorld",
      "minecraft|net.minecraft.client.color.block.BlockTintSource#colorAsTerrainParticle",
-     "minecraft|net.minecraft.client.renderer.block.FluidModel#tintSource"
+     "minecraft|net.minecraft.client.renderer.block.FluidModel#tintSource",
+     "fabric-loader|net.fabricmc.loader.api.ModContainer#getRootPaths",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getCustomValues",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getType",
+     "fabric-loader|net.fabricmc.loader.api.Version#getFriendlyString",
+     "fabric-api|net.fabricmc.fabric.api.item.v1.FabricComponentMapBuilder#contains",
+     "fabric-api|net.fabricmc.fabric.api.block.v1.FabricBlockState#getProvidedEnchantmentPower",
+     "minecraft|net.minecraft.world.item.ItemStack#addDetailsToTooltip",
+     "minecraft|net.minecraft.client.gui.GuiGraphicsExtractor#setTooltipForNextFrameInternal",
+     "minecraft|net.minecraft.world.item.SpawnEggItem#getType",
+     "minecraft|net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket#<init>",
+     "minecraft|net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket#<init>",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry#registerModelLayer",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry#register",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry#register",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.BlockColorRegistry#register",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.ColorResolverRegistry#register"
     ]
    },
    "test": {
@@ -4163,7 +4286,18 @@
       "mixin/EntityCapabilitiesMixin.java",
       "mixin/ItemStackCapabilitiesMixin.java",
       "FluidTintSource.java",
-      "FluidTintSources.java"
+      "FluidTintSources.java",
+      "IItemExtension.java",
+      "ItemTooltipHandler.java",
+      "ItemDecoratorHandler.java",
+      "ClientTooltipFlag.java",
+      "CanItemPerformAbility.java",
+      "RenderTooltipEvent.java",
+      "mixin/TooltipGatherMixin.java",
+      "extensions/IDataComponentMapBuilderExtensions.java",
+      "mixin/ComponentMapBuilderExtensionsMixin.java",
+      "EntityRenderersEvent.java",
+      "RegisterColorHandlersEvent.java"
      ],
      "mixins": [
       {
@@ -4667,6 +4801,26 @@
      "name": "Tabbed",
      "from": "package demo;\n\nimport static net.neoforged.fml.Logging.CORE;\n\nimport net.minecraft.world.item.*;\nimport org.apache.logging.log4j.LogManager;\n\npublic final class Tabbed {\n\tstatic final CreativeModeTab TAB = CreativeModeTab.builder().build();\n\n\tstatic void warn() {\n\t\tLogManager.getLogger().warn(CORE, \"changed\");\n\t}\n}\n",
      "to": "package demo;\n\nimport static demo.loaderbridge.Logging.CORE;\n\nimport net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;\nimport net.minecraft.world.item.*;\nimport org.apache.logging.log4j.LogManager;\n\npublic final class Tabbed {\n\tstatic final CreativeModeTab TAB = FabricCreativeModeTab.builder().build();\n\n\tstatic void warn() {\n\t\tLogManager.getLogger().warn(CORE, \"changed\");\n\t}\n}\n"
+    },
+    {
+     "name": "Mods",
+     "from": "package demo;\n\nimport java.lang.annotation.ElementType;\nimport java.util.List;\nimport net.minecraft.core.component.DataComponentMap;\nimport net.minecraft.core.component.DataComponentType;\nimport net.minecraft.network.protocol.common.custom.CustomPacketPayload;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.minecraft.world.entity.Entity;\nimport net.neoforged.fml.ModContainer;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.i18n.MavenVersionTranslator;\nimport net.neoforged.fml.loading.FMLLoader;\nimport net.neoforged.neoforge.common.ItemAbilities;\nimport net.neoforged.neoforge.common.TranslatableEnum;\nimport net.neoforged.neoforge.entity.PartEntity;\nimport net.neoforged.neoforgespi.language.IModFileInfo;\n\npublic final class Mods {\n\tstatic int plugins(Class<? extends java.lang.annotation.Annotation> marker) {\n\t\tint found = 0;\n\t\tfor (ModContainer container : ModList.get().getSortedMods()) {\n\t\t\tIModFileInfo file = container.getModInfo().getOwningFile();\n\t\t\tif (file != null) found += (int) file.getFile().getScanResult().getAnnotatedBy(marker, ElementType.TYPE).count();\n\t\t}\n\t\treturn found;\n\t}\n\n\tstatic String version(String modid) {\n\t\treturn ModList.get().getModContainerById(modid).map(c -> MavenVersionTranslator.artifactVersionToString(c.getModInfo().getVersion())).orElse(\"\");\n\t}\n\n\tstatic boolean loading(String modid) {\n\t\treturn FMLLoader.getCurrent().getLoadingModList().getModFileById(modid) != null;\n\t}\n\n\tstatic boolean has(DataComponentMap.Builder builder, DataComponentType<?> type) {\n\t\treturn builder.has(type);\n\t}\n\n\tstatic void send(ServerPlayer player, CustomPacketPayload payload) {\n\t\tplayer.connection.send(payload);\n\t}\n\n\tstatic Entity parent(Entity entity) {\n\t\treturn entity.isMultipartEntity() && entity instanceof PartEntity<?> part ? part.getParent() : entity;\n\t}\n\n\tstatic Object name(Object value) {\n\t\treturn value instanceof TranslatableEnum e ? e.getTranslatedName() : ItemAbilities.SHEARS_DIG.name();\n\t}\n}\n",
+     "to": "package demo;\n\nimport java.lang.annotation.ElementType;\nimport java.util.List;\nimport net.minecraft.core.component.DataComponentMap;\nimport net.minecraft.core.component.DataComponentType;\nimport net.minecraft.network.protocol.common.custom.CustomPacketPayload;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.minecraft.world.entity.Entity;\nimport demo.loaderbridge.ModContainer;\nimport demo.loaderbridge.ModList;\nimport demo.loaderbridge.MavenVersionTranslator;\nimport demo.loaderbridge.FMLLoader;\nimport demo.loaderbridge.ItemAbilities;\nimport demo.loaderbridge.TranslatableEnum;\nimport demo.loaderbridge.PartEntity;\nimport demo.loaderbridge.IModFileInfo;\n\npublic final class Mods {\n\tstatic int plugins(Class<? extends java.lang.annotation.Annotation> marker) {\n\t\tint found = 0;\n\t\tfor (ModContainer container : ModList.get().getSortedMods()) {\n\t\t\tIModFileInfo file = container.getModInfo().getOwningFile();\n\t\t\tif (file != null) found += (int) file.getFile().getScanResult().getAnnotatedBy(marker, ElementType.TYPE).count();\n\t\t}\n\t\treturn found;\n\t}\n\n\tstatic String version(String modid) {\n\t\treturn ModList.get().getModContainerById(modid).map(c -> MavenVersionTranslator.artifactVersionToString(c.getModInfo().getVersion())).orElse(\"\");\n\t}\n\n\tstatic boolean loading(String modid) {\n\t\treturn FMLLoader.getCurrent().getLoadingModList().getModFileById(modid) != null;\n\t}\n\n\tstatic boolean has(DataComponentMap.Builder builder, DataComponentType<?> type) {\n\t\treturn builder.has(type);\n\t}\n\n\tstatic void send(ServerPlayer player, CustomPacketPayload payload) {\n\t\tplayer.connection.send(payload);\n\t}\n\n\tstatic Entity parent(Entity entity) {\n\t\treturn entity.isMultipartEntity() && entity instanceof PartEntity<?> part ? part.getParent() : entity;\n\t}\n\n\tstatic Object name(Object value) {\n\t\treturn value instanceof TranslatableEnum e ? e.getTranslatedName() : ItemAbilities.SHEARS_DIG.name();\n\t}\n}\n",
+     "mixins": [
+      "EntityPartsMixin",
+      "ServerPayloadSendMixin",
+      "ComponentMapBuilderExtensionsMixin"
+     ],
+     "injects": [
+      "net/minecraft/world/entity/Entity=demo/loaderbridge/extensions/EntityParts",
+      "net/minecraft/server/network/ServerCommonPacketListenerImpl=demo/loaderbridge/extensions/IServerCommonPacketListenerExtension",
+      "net/minecraft/core/component/DataComponentMap$Builder=demo/loaderbridge/extensions/IDataComponentMapBuilderExtensions"
+     ]
+    },
+    {
+     "name": "Renderers",
+     "from": "package demo;\n\nimport net.minecraft.client.model.geom.ModelLayerLocation;\nimport net.minecraft.client.model.geom.builders.LayerDefinition;\nimport net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;\nimport net.minecraft.client.renderer.entity.EntityRendererProvider;\nimport net.minecraft.world.entity.EntityType;\nimport net.minecraft.world.level.block.entity.BlockEntityType;\nimport net.neoforged.neoforge.client.event.EntityRenderersEvent;\nimport net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;\n\npublic final class Renderers {\n\tstatic EntityType<?> ENTITY;\n\tstatic BlockEntityType<?> CHEST;\n\tstatic ModelLayerLocation LAYER;\n\n\tstatic void renderers(EntityRenderersEvent.RegisterRenderers event, EntityRendererProvider provider, BlockEntityRendererProvider chest) {\n\t\tevent.registerEntityRenderer(ENTITY, provider);\n\t\tevent.registerBlockEntityRenderer(CHEST, chest);\n\t}\n\n\tstatic void layers(EntityRenderersEvent.RegisterLayerDefinitions event, LayerDefinition definition) {\n\t\tevent.registerLayerDefinition(LAYER, () -> definition);\n\t}\n\n\tstatic void colors(RegisterColorHandlersEvent.ColorResolvers event) {\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.client.model.geom.ModelLayerLocation;\nimport net.minecraft.client.model.geom.builders.LayerDefinition;\nimport net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;\nimport net.minecraft.client.renderer.entity.EntityRendererProvider;\nimport net.minecraft.world.entity.EntityType;\nimport net.minecraft.world.level.block.entity.BlockEntityType;\nimport demo.loaderbridge.EntityRenderersEvent;\nimport demo.loaderbridge.RegisterColorHandlersEvent;\n\npublic final class Renderers {\n\tstatic EntityType<?> ENTITY;\n\tstatic BlockEntityType<?> CHEST;\n\tstatic ModelLayerLocation LAYER;\n\n\tstatic void renderers(EntityRenderersEvent.RegisterRenderers event, EntityRendererProvider provider, BlockEntityRendererProvider chest) {\n\t\tevent.registerEntityRenderer(ENTITY, provider);\n\t\tevent.registerBlockEntityRenderer(CHEST, chest);\n\t}\n\n\tstatic void layers(EntityRenderersEvent.RegisterLayerDefinitions event, LayerDefinition definition) {\n\t\tevent.registerLayerDefinition(LAYER, () -> definition);\n\t}\n\n\tstatic void colors(RegisterColorHandlersEvent.ColorResolvers event) {\n\t}\n}\n"
     }
    ],
    "mixins": [
@@ -4926,12 +5080,83 @@
      "for": [
       "CustomizeGuiOverlayEvent"
      ]
+    },
+    {
+     "mixin": "EntityPartsMixin",
+     "uses": [
+      [
+       "\\.isMultipartEntity\\s*\\("
+      ],
+      [
+       "\\.getParts\\s*\\(\\s*\\)",
+       "\\bPartEntity\\b"
+      ]
+     ],
+     "for": [
+      "PartEntity"
+     ],
+     "injects": {
+      "net/minecraft/world/entity/Entity": "extensions.EntityParts"
+     }
+    },
+    {
+     "mixin": "ServerPayloadSendMixin",
+     "uses": [
+      [
+       "CustomPacketPayload",
+       "\\.send\\s*\\("
+      ]
+     ],
+     "for": [
+      "extensions.IServerCommonPacketListenerExtension"
+     ],
+     "injects": {
+      "net/minecraft/server/network/ServerCommonPacketListenerImpl": "extensions.IServerCommonPacketListenerExtension"
+     }
+    },
+    {
+     "mixin": "ClientPayloadSendMixin",
+     "client": true,
+     "uses": [
+      [
+       "CustomPacketPayload",
+       "\\.send\\s*\\("
+      ]
+     ],
+     "for": [
+      "extensions.IClientCommonPacketListenerExtension"
+     ],
+     "injects": {
+      "net/minecraft/client/multiplayer/ClientCommonPacketListenerImpl": "extensions.IClientCommonPacketListenerExtension"
+     }
+    },
+    {
+     "mixin": "ComponentMapBuilderExtensionsMixin",
+     "uses": [
+      [
+       "DataComponentMap\\.(?:Builder|builder\\(\\))",
+       "\\.has\\s*\\("
+      ]
+     ],
+     "for": [
+      "extensions.IDataComponentMapBuilderExtensions"
+     ],
+     "injects": {
+      "net/minecraft/core/component/DataComponentMap$Builder": "extensions.IDataComponentMapBuilderExtensions"
+     }
+    },
+    {
+     "mixin": "TooltipGatherMixin",
+     "client": true,
+     "for": [
+      "RenderTooltipEvent"
+     ]
     }
    ]
   },
   {
    "id": "fabric-on-neoforge",
-   "about": "For mods written for Fabric first: the Fabric API and Fabric Loader classes the code uses that no rule rewrites, written for this project on NeoForge's API with Fabric's names and members, in knowledge/bridges/fabric-on-neoforge (a file at fabric/api/event/Event.java mirrors net.fabricmc.fabric.api.event.Event). convert copies the bridge under the main entrypoint's package (net.fabricmc.X becomes PACKAGE.fabricbridge.X, so converted mods never share a package), points the mirrored imports at it, and each @Mod constructor it writes calls FabricBridge.init(modBus) first, so the bridge can listen for the NeoForge events its Fabric callbacks are posted from. Fabric's events (Event, EventFactory) keep Fabric's phase ordering. FabricLoader reads NeoForge's mod list: a converted mod is found by the Fabric id it keeps (modproperties fabricId), and the entrypoints and custom values of fabric.mod.json are kept in modproperties (fabric.entrypoints.KEY, fabric.custom). The way back points the imports at Fabric's classes again and removes the bridge. Transfer: Fabric API's Transfer API (Storage, StorageView, SlottedStorage, SingleSlotStorage, SingleVariantStorage, ItemVariant, FluidVariant, FluidConstants, FluidVariantAttributes, client FluidVariantRendering), its BlockApiLookup, and Team Reborn Energy's EnergyStorage (whose library the bridge replaces in the build) are written on NeoForge's capabilities and transfer API. BlockApiLookup.get makes a NeoForge BlockCapability; ItemStorage.SIDED, FluidStorage.SIDED and EnergyStorage.SIDED are NeoForge's Capabilities.Item, Fluid and Energy BLOCK, the storage converted to and from ResourceHandler or EnergyHandler, so NeoForge mods see the converted mod's storages and it sees theirs; providers are registered in RegisterCapabilitiesEvent on the mod's bus (fallbacks last, for every block). Amounts: fluid code keeps Fabric's droplets (81000 per bucket); a NeoForge handler reads as millibuckets times 81 and moves whole millibuckets, a converted storage reads to NeoForge as droplets divided by 81 rounded down and moves whole millibuckets (a part-millibucket move is retried for the whole ones in a nested transaction); item and energy amounts are capped at Integer.MAX_VALUE toward NeoForge. Transactions: each Fabric transaction is a NeoForge transaction (openOuter = openRoot, openNested = open, nestingDepth = depth; both nest and abort on close) and SnapshotParticipant is a NeoForge SnapshotJournal; close callbacks of transactions the bridge opened are exact, those added to a NeoForge caller's own transaction are told at its abort or the root commit, and getOpenTransaction cannot reach past it. Sides: a null direction is NeoForge's null context. Not mirrored: ItemStorage.ITEM, FluidStorage.ITEM (ContainerItemContext), entity and item lookups, Team Reborn's ITEM and ENERGY_COMPONENT.",
+   "about": "For mods written for Fabric first: the Fabric API and Fabric Loader classes the code uses that no rule rewrites, written for this project on NeoForge's API with Fabric's names and members, in knowledge/bridges/fabric-on-neoforge (a file at fabric/api/event/Event.java mirrors net.fabricmc.fabric.api.event.Event). convert copies the bridge under the main entrypoint's package (net.fabricmc.X becomes PACKAGE.fabricbridge.X, so converted mods never share a package), points the mirrored imports at it, and each @Mod constructor it writes calls FabricBridge.init(modBus) first, so the bridge can listen for the NeoForge events its Fabric callbacks are posted from. Fabric's events (Event, EventFactory) keep Fabric's phase ordering. FabricLoader reads NeoForge's mod list: a converted mod is found by the Fabric id it keeps (modproperties fabricId), and the entrypoints and custom values of fabric.mod.json are kept in modproperties (fabric.entrypoints.KEY, fabric.custom). The way back points the imports at Fabric's classes again and removes the bridge. Transfer: Fabric API's Transfer API (Storage, StorageView, SlottedStorage, SingleSlotStorage, SingleVariantStorage, ItemVariant, FluidVariant, FluidConstants, FluidVariantAttributes, client FluidVariantRendering), its BlockApiLookup, and Team Reborn Energy's EnergyStorage (whose library the bridge replaces in the build) are written on NeoForge's capabilities and transfer API. BlockApiLookup.get makes a NeoForge BlockCapability; ItemStorage.SIDED, FluidStorage.SIDED and EnergyStorage.SIDED are NeoForge's Capabilities.Item, Fluid and Energy BLOCK, the storage converted to and from ResourceHandler or EnergyHandler, so NeoForge mods see the converted mod's storages and it sees theirs; providers are registered in RegisterCapabilitiesEvent on the mod's bus (fallbacks last, for every block). Amounts: fluid code keeps Fabric's droplets (81000 per bucket); a NeoForge handler reads as millibuckets times 81 and moves whole millibuckets, a converted storage reads to NeoForge as droplets divided by 81 rounded down and moves whole millibuckets (a part-millibucket move is retried for the whole ones in a nested transaction); item and energy amounts are capped at Integer.MAX_VALUE toward NeoForge. Transactions: each Fabric transaction is a NeoForge transaction (openOuter = openRoot, openNested = open, nestingDepth = depth; both nest and abort on close) and SnapshotParticipant is a NeoForge SnapshotJournal; close callbacks of transactions the bridge opened are exact, those added to a NeoForge caller's own transaction are told at its abort or the root commit, and getOpenTransaction cannot reach past it. Sides: a null direction is NeoForge's null context. Not mirrored: ItemStorage.ITEM, FluidStorage.ITEM (ContainerItemContext), entity and item lookups, Team Reborn's ITEM and ENERGY_COMPONENT. Injected interfaces: what Fabric API injects into game classes (FabricItem on Item, FabricItemStack on ItemStack, FabricComponentMapBuilder on DataComponentMap.Builder, FabricBlock on Block, FabricBlockState on BlockState) is mirrored, added at runtime by the bridge's mixins and for the compile by ModDevGradle's interface injection (fabricbridge-interfaces.json), listed when the code calls one of their methods (mixins[].uses). Mirrored are the queries: getCreatorNamespace (Fabric's rule), ItemStack.getCraftingRemainder (NeoForge's stack-aware remainder), the builder's getOrCreate, getOrEmpty and contains (read from the builder's map as Fabric's are), and getProvidedEnchantmentPower, which is NeoForge's getEnchantPowerBonus (0 rather than Fabric's unasked 1 for a block outside #minecraft:enchantment_power_provider; a converted block's override of it is not what NeoForge counts). get and getOrDefault on the builder are NeoForge's (its getOrDefault does not put the default in). getAppearance is NeoForge's own. Fabric's item hooks NeoForge never calls (allowComponentsUpdateAnimation, allowContinuingBlockBreaking, getCraftingRemainder(ItemStack), canBeEnchantedWith) are not mirrored, so an override of one fails to compile and is listed.",
    "from": "fabric",
    "to": "neoforge",
    "minecraft": "26.1",
@@ -5329,7 +5554,15 @@
      "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents#unloading",
      "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Loading#onModConfigLoading",
      "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Reloading#onModConfigReloading",
-     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Unloading#onModConfigUnloading"
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Unloading#onModConfigUnloading",
+     "fabric-api|net.fabricmc.fabric.api.item.v1.FabricItem#getCreatorNamespace",
+     "fabric-api|net.fabricmc.fabric.api.item.v1.FabricItemStack#getCraftingRemainder",
+     "fabric-api|net.fabricmc.fabric.api.item.v1.FabricItemStack#getCreatorNamespace",
+     "fabric-api|net.fabricmc.fabric.api.item.v1.FabricComponentMapBuilder#getOrCreate",
+     "fabric-api|net.fabricmc.fabric.api.item.v1.FabricComponentMapBuilder#getOrEmpty",
+     "fabric-api|net.fabricmc.fabric.api.item.v1.FabricComponentMapBuilder#contains",
+     "fabric-api|net.fabricmc.fabric.api.block.v1.FabricBlock#getProvidedEnchantmentPower",
+     "fabric-api|net.fabricmc.fabric.api.block.v1.FabricBlockState#getProvidedEnchantmentPower"
     ],
     "neoforge": [
      "neoforge|net.neoforged.neoforge.client.ClientCommandHandler#runCommand",
@@ -5540,7 +5773,13 @@
      "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener$StateKey",
      "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener$PreparationBarrier#wait",
      "minecraft|net.minecraft.server.packs.resources.ReloadableResourceManager#registerReloadListener",
-     "minecraft|net.minecraft.tags.TagKey#create"
+     "minecraft|net.minecraft.tags.TagKey#create",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getEnchantPowerBonus",
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getCraftingRemainder",
+     "minecraft|net.minecraft.world.item.ItemStack#typeHolder",
+     "minecraft|net.minecraft.core.component.DataComponentMap$Builder#map",
+     "minecraft|net.minecraft.core.component.DataComponentMap$Builder#set",
+     "minecraft|net.minecraft.core.component.DataComponentGetter#get"
     ]
    },
    "test": {
@@ -5602,6 +5841,25 @@
      "name": "Notes",
      "from": "package demo;\n\nimport com.mojang.serialization.Codec;\nimport fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;\nimport net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;\nimport net.fabricmc.fabric.api.attachment.v1.AttachmentType;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.neoforged.fml.config.ModConfig;\nimport net.neoforged.neoforge.common.ModConfigSpec;\n\npublic class Notes {\n\tpublic static final AttachmentType<Boolean> GOT_NOTE = AttachmentRegistry.create(\n\t\tIdentifier.fromNamespaceAndPath(\"demo\", \"got_note\"),\n\t\tbuilder -> builder.initializer(() -> false).persistent(Codec.BOOL).copyOnDeath()\n\t);\n\n\tpublic static void init(ModConfigSpec spec) {\n\t\tModConfigEvents.loading(\"demo\").register(config -> spec.afterReload());\n\t\tConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.COMMON, spec);\n\t}\n\n\tstatic void join(ServerPlayer player) {\n\t\tif (!player.getAttachedOrCreate(GOT_NOTE)) {\n\t\t\tplayer.setAttached(GOT_NOTE, true);\n\t\t}\n\t}\n}\n",
      "to": "package demo;\n\nimport com.mojang.serialization.Codec;\nimport demo.fabricbridge.fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport demo.fabricbridge.fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;\nimport demo.fabricbridge.fabric.api.attachment.v1.AttachmentRegistry;\nimport demo.fabricbridge.fabric.api.attachment.v1.AttachmentTarget;\nimport demo.fabricbridge.fabric.api.attachment.v1.AttachmentType;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.neoforged.fml.config.ModConfig;\nimport net.neoforged.neoforge.common.ModConfigSpec;\n\npublic class Notes {\n\tpublic static final AttachmentType<Boolean> GOT_NOTE = AttachmentRegistry.create(\n\t\tIdentifier.fromNamespaceAndPath(\"demo\", \"got_note\"),\n\t\tbuilder -> builder.initializer(() -> false).persistent(Codec.BOOL).copyOnDeath()\n\t);\n\n\tpublic static void init(ModConfigSpec spec) {\n\t\tModConfigEvents.loading(\"demo\").register(config -> spec.afterReload());\n\t\tConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.LOCAL, spec);\n\t}\n\n\tstatic void join(ServerPlayer player) {\n\t\tif (!AttachmentTarget.getAttachedOrCreate(player, GOT_NOTE)) {\n\t\t\tAttachmentTarget.setAttached(player, GOT_NOTE, true);\n\t\t}\n\t}\n}\n"
+    },
+    {
+     "name": "Injected",
+     "from": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.core.component.DataComponentMap;\nimport net.minecraft.core.component.DataComponentType;\nimport net.minecraft.world.item.ItemStack;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.block.state.BlockState;\n\nclass Injected {\n\tstatic boolean has(DataComponentMap.Builder builder, DataComponentType<?> type) {\n\t\treturn builder.contains(type);\n\t}\n\n\tstatic String creator(ItemStack stack) {\n\t\treturn stack.getItem().getCreatorNamespace(stack) + stack.getCreatorNamespace();\n\t}\n\n\tstatic float power(BlockState state, Level level, BlockPos pos) {\n\t\treturn state.getBlock().getProvidedEnchantmentPower(state, level, pos) + state.getProvidedEnchantmentPower(level, pos);\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.core.component.DataComponentMap;\nimport net.minecraft.core.component.DataComponentType;\nimport net.minecraft.world.item.ItemStack;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.block.state.BlockState;\n\nclass Injected {\n\tstatic boolean has(DataComponentMap.Builder builder, DataComponentType<?> type) {\n\t\treturn builder.contains(type);\n\t}\n\n\tstatic String creator(ItemStack stack) {\n\t\treturn stack.getItem().getCreatorNamespace(stack) + stack.getCreatorNamespace();\n\t}\n\n\tstatic float power(BlockState state, Level level, BlockPos pos) {\n\t\treturn state.getBlock().getProvidedEnchantmentPower(state, level, pos) + state.getProvidedEnchantmentPower(level, pos);\n\t}\n}\n",
+     "mixins": [
+      "ItemFabricItem",
+      "ItemStackFabricItemStack",
+      "ComponentMapBuilderMixin",
+      "BlockFabricBlock",
+      "BlockStateFabricBlockState"
+     ],
+     "injects": [
+      "net/minecraft/world/item/Item=demo/fabricbridge/fabric/api/item/v1/FabricItem",
+      "net/minecraft/world/item/ItemStack=demo/fabricbridge/fabric/api/item/v1/FabricItemStack",
+      "net/minecraft/core/component/DataComponentMap$Builder=demo/fabricbridge/fabric/api/item/v1/FabricComponentMapBuilder",
+      "net/minecraft/world/level/block/Block=demo/fabricbridge/fabric/api/block/v1/FabricBlock",
+      "net/minecraft/world/level/block/state/BlockState=demo/fabricbridge/fabric/api/block/v1/FabricBlockState"
+     ]
     }
    ],
    "replaces": {
@@ -5630,6 +5888,79 @@
       "fabric.api.client.command.v2.ClientCommands",
       "fabric.api.client.command.v2.FabricClientCommandSource"
      ]
+    },
+    {
+     "mixin": "ItemFabricItem",
+     "uses": [
+      [
+       "\\b(?:getCreatorNamespace|getCraftingRemainder)\\s*\\("
+      ]
+     ],
+     "for": [
+      "fabric.api.item.v1.FabricItem",
+      "fabric.api.item.v1.FabricItemStack"
+     ],
+     "injects": {
+      "net/minecraft/world/item/Item": "fabric.api.item.v1.FabricItem"
+     }
+    },
+    {
+     "mixin": "ItemStackFabricItemStack",
+     "uses": [
+      [
+       "\\b(?:getCreatorNamespace|getCraftingRemainder)\\s*\\("
+      ]
+     ],
+     "for": [
+      "fabric.api.item.v1.FabricItemStack"
+     ],
+     "injects": {
+      "net/minecraft/world/item/ItemStack": "fabric.api.item.v1.FabricItemStack"
+     }
+    },
+    {
+     "mixin": "ComponentMapBuilderMixin",
+     "uses": [
+      [
+       "DataComponentMap\\.(?:Builder|builder\\(\\))",
+       "\\.(?:contains|getOrCreate|getOrEmpty)\\s*\\("
+      ]
+     ],
+     "for": [
+      "fabric.api.item.v1.FabricComponentMapBuilder"
+     ],
+     "injects": {
+      "net/minecraft/core/component/DataComponentMap$Builder": "fabric.api.item.v1.FabricComponentMapBuilder"
+     }
+    },
+    {
+     "mixin": "BlockFabricBlock",
+     "uses": [
+      [
+       "\\bgetProvidedEnchantmentPower\\s*\\("
+      ]
+     ],
+     "for": [
+      "fabric.api.block.v1.FabricBlock",
+      "fabric.api.block.v1.FabricBlockState"
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/Block": "fabric.api.block.v1.FabricBlock"
+     }
+    },
+    {
+     "mixin": "BlockStateFabricBlockState",
+     "uses": [
+      [
+       "\\bgetProvidedEnchantmentPower\\s*\\("
+      ]
+     ],
+     "for": [
+      "fabric.api.block.v1.FabricBlockState"
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/state/BlockState": "fabric.api.block.v1.FabricBlockState"
+     }
     }
    ]
   }
