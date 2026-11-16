@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(command -v python || command -v python3)\" \"$CLAUDE_PROJECT_DIR/tools/hooks/pr_gate.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
