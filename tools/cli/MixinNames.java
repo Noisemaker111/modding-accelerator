@@ -188,10 +188,18 @@ final class MixinNames {
             String outer = imports.get(nested.group(1)), to = null;
             if (code[nested.start()] && outer != null && outer.startsWith("net.minecraft.")) {
                 String mojang = outer.replace('.', '/');
-                String yarn = back.get(mojang);
-                String renamed = yarn == null ? null : classes.get(yarn + "$" + nested.group(2));
-                // Outer.Inner already in Mojang's names (CustomPacketPayload.Type) is left: yarn's Inner of that name is another class.
-                if (renamed != null && renamed.startsWith(mojang + "$") && !back.containsKey(mojang + "$" + nested.group(2))) to = renamed.substring(mojang.length() + 1);
+                // Outer.Inner already in Mojang's names (CustomPacketPayload.Type) is left: yarn's Inner of that name is
+                // another class. Inner may be declared by a supertype (Block.Settings is AbstractBlock's).
+                Deque<String> todo = new ArrayDeque<>(List.of(mojang));
+                Set<String> seen = new HashSet<>();
+                boolean mojangAlready = back.containsKey(mojang + "$" + nested.group(2));
+                while (to == null && !todo.isEmpty() && !mojangAlready) {
+                    String up = todo.poll();
+                    if (!seen.add(up)) continue;
+                    String renamed = classes.get(back.getOrDefault(up, up) + "$" + nested.group(2));
+                    if (renamed != null && renamed.startsWith(up + "$")) to = renamed.substring(up.length() + 1);
+                    todo.addAll(supers.getOrDefault(up, List.of()));
+                }
             }
             nested.appendReplacement(out, Matcher.quoteReplacement(to == null ? nested.group() : nested.group(1) + "." + to));
         }
@@ -408,8 +416,14 @@ final class MixinNames {
             if (to != null && !to.equals(name)) (method ? methodRenames : fieldRenames).put(name, to);
         }
         String text = source;
-        for (var e : methodRenames.entrySet()) text = renameInCode(text, "(?<![\\w$.])" + Pattern.quote(e.getKey()) + "(?=\\s*\\()|(?<=\\bthis\\.)" + Pattern.quote(e.getKey()) + "(?=\\s*\\()", e.getValue());
-        for (var e : fieldRenames.entrySet()) text = renameInCode(text, "(?<![\\w$.])" + Pattern.quote(e.getKey()) + "(?![\\w$(])|(?<=\\bthis\\.)" + Pattern.quote(e.getKey()) + "(?![\\w$(])", e.getValue());
+        for (var e : methodRenames.entrySet()) {
+            String name = Pattern.quote(e.getKey());
+            text = renameInCode(text, "(?<![\\w$.])" + name + "(?=\\s*\\()|(?<=\\bthis\\.)" + name + "(?=\\s*\\()", e.getValue());
+        }
+        for (var e : fieldRenames.entrySet()) {
+            String name = Pattern.quote(e.getKey());
+            text = renameInCode(text, "(?<![\\w$.])" + name + "(?![\\w$(])|(?<=\\bthis\\.)" + name + "(?![\\w$(])", e.getValue());
+        }
         return text;
     }
 

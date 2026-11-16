@@ -148,16 +148,15 @@ public final class VersionMap {
             : cache.resolve("map-" + names + "-" + pos.get(0) + "-to-" + pos.get(1) + ".json");
         Files.createDirectories(target.toAbsolutePath().getParent());
         String json = d.json(pos.get(0), pos.get(1), names);
-        // --hierarchy: each game class's supertypes in the target's names (Mojang's), read from the game jar itself
-        // (GameDiff), so a member a class inherits or overrides is found on the supertype the mappings declare it on.
+        // --hierarchy: each game class's supertypes in the target's names (Mojang's), read from the client jar
+        // and its official mappings, so a member a class inherits or overrides is found on the supertype the mappings declare it on.
         if (hierarchy && bNames.equals("mojmap")) {
-            GameDiff.Snap game = GameDiff.load(pos.get(1), null, null);
             StringBuilder supers = new StringBuilder(",\n  \"supers\": {");
             boolean first = true;
-            for (GameDiff.Cls c : game.classes.values()) {
-                List<String> up = GameDiff.supertypes(c);
+            for (var c : hierarchy(pos.get(1)).entrySet()) {
+                List<String> up = c.getValue();
                 if (up.isEmpty()) continue;
-                supers.append(first ? "\n    " : ",\n    ").append(Diff.q(c.name)).append(": [");
+                supers.append(first ? "\n    " : ",\n    ").append(Diff.q(c.getKey())).append(": [");
                 for (int i = 0; i < up.size(); i++) supers.append(i == 0 ? "" : ", ").append(Diff.q(up.get(i)));
                 supers.append("]");
                 first = false;
@@ -183,6 +182,68 @@ public final class VersionMap {
             (System.nanoTime() - t0) / 1e9
         );
         System.out.println("        " + target);
+    }
+
+    /**
+     * Each game class's superclass and interfaces in Mojang's names (slash form), read from the release's client jar
+     * with its official mappings (Table.load has cached the version json and the mappings by now). java/lang/Object
+     * is left out.
+     */
+    static Map<String, List<String>> hierarchy(String version) throws Exception {
+        String versionJson = Files.readString(cache.resolve("version-" + version + ".json"), StandardCharsets.UTF_8);
+        int downloads = versionJson.indexOf("\"downloads\"");
+        String jarUrl = jsonString(versionJson, "url", versionJson.indexOf("\"client\"", downloads));
+        Path jar = fetch(jarUrl, "client-" + version + ".jar");
+        int dl = versionJson.indexOf("\"client_mappings\"");
+        String mappings = fetchText(jsonString(versionJson, "url", dl), "client-" + version + ".txt");
+        Map<String, String> names = Proguard.parse(mappings).classes;
+        Map<String, List<String>> out = new TreeMap<>();
+        try (ZipFile zip = new ZipFile(jar.toFile())) {
+            for (var entries = zip.entries(); entries.hasMoreElements();) {
+                ZipEntry e = entries.nextElement();
+                if (!e.getName().endsWith(".class") || e.getName().startsWith("META-INF/")) continue;
+                List<String> types = supertypes(zip.getInputStream(e).readAllBytes());
+                if (types.isEmpty()) continue;
+                List<String> up = new ArrayList<>();
+                for (String t : types.subList(1, types.size())) if (!t.equals("java/lang/Object")) up.add(names.getOrDefault(t, t));
+                out.put(names.getOrDefault(types.get(0), types.get(0)), up);
+            }
+        }
+        return out;
+    }
+
+    /** A class file's own name, then its superclass and interfaces (slash form); empty when it is no class file. */
+    static List<String> supertypes(byte[] b) throws IOException {
+        DataInputStream in = new DataInputStream(new ByteArrayInputStream(b));
+        if (in.readInt() != 0xCAFEBABE) return List.of();
+        in.readUnsignedShort();
+        in.readUnsignedShort();
+        int count = in.readUnsignedShort();
+        String[] utf = new String[count];
+        int[] classRef = new int[count];
+        for (int i = 1; i < count; i++) {
+            int tag = in.readUnsignedByte();
+            switch (tag) {
+                case 1 -> utf[i] = in.readUTF();
+                case 7 -> classRef[i] = in.readUnsignedShort();
+                case 8, 16, 19, 20 -> in.readUnsignedShort();
+                case 15 -> in.skipBytes(3);
+                case 3, 4, 9, 10, 11, 12, 17, 18 -> in.skipBytes(4);
+                case 5, 6 -> {
+                    in.skipBytes(8);
+                    i++;
+                }
+                default -> throw new IOException("unknown constant pool tag " + tag);
+            }
+        }
+        in.readUnsignedShort();
+        List<String> out = new ArrayList<>();
+        out.add(utf[classRef[in.readUnsignedShort()]]);
+        int sup = in.readUnsignedShort();
+        out.add(sup == 0 ? "java/lang/Object" : utf[classRef[sup]]);
+        int interfaces = in.readUnsignedShort();
+        for (int i = 0; i < interfaces; i++) out.add(utf[classRef[in.readUnsignedShort()]]);
+        return out;
     }
 
     // ------------------------------------------------------------------ downloads

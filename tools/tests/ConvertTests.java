@@ -251,13 +251,13 @@ public final class ConvertTests {
         );
         MixinNames mixinNames = new MixinNames(Json.object(Json.parse(
             "{\"classes\":[{\"from\":\"net.minecraft.client.render.WorldRenderer\",\"to\":\"net.minecraft.client.renderer.LevelRenderer\"},{\"from\":\"net.minecraft.util.math.BlockPos\",\"to\":\"net.minecraft.core.BlockPos\"}," +
-            "{\"from\":\"net.minecraft.block.Block\",\"to\":\"net.minecraft.world.level.block.Block\"},{\"from\":\"net.minecraft.block.Block$Settings\",\"to\":\"net.minecraft.world.level.block.Block$Properties\"}," +
+            "{\"from\":\"net.minecraft.block.Block\",\"to\":\"net.minecraft.world.level.block.Block\"},{\"from\":\"net.minecraft.block.AbstractBlock\",\"to\":\"net.minecraft.world.level.block.state.BlockBehaviour\"},{\"from\":\"net.minecraft.block.AbstractBlock$Settings\",\"to\":\"net.minecraft.world.level.block.state.BlockBehaviour$Properties\"}," +
             "{\"from\":\"net.minecraft.block.Block$Type\",\"to\":\"net.minecraft.world.level.block.Block$TypeAndCodec\"},{\"from\":\"net.minecraft.block.Block$Id\",\"to\":\"net.minecraft.world.level.block.Block$Type\"}]," +
             "\"methods\":[{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"scheduleBlockRender\",\"desc\":\"(Lnet/minecraft/util/math/BlockPos;)V\",\"to\":\"setSectionDirty\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"render\",\"desc\":\"()V\",\"to\":\"renderLevel\"}," +
             "{\"owner\":\"net.minecraft.Base\",\"from\":\"readNbt\",\"desc\":\"(I)V\",\"to\":\"loadAdditional\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"of\",\"desc\":\"(I)V\",\"to\":\"create\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"of\",\"desc\":\"(II)V\",\"to\":\"build\"}," +
             "{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"method_1\",\"desc\":\"()V\",\"to\":\"lambda$render$0\"},{\"owner\":\"net.minecraft.Other\",\"from\":\"getAttributes\",\"desc\":\"()I\",\"to\":\"getBasicAttributes\"}," +
             "{\"owner\":\"net.minecraft.Base\",\"from\":\"getRenderLayer\",\"desc\":\"(IZ)V\",\"to\":\"getRenderType\"}]," +
-            "\"supers\":{\"net/minecraft/client/renderer/LevelRenderer\":[\"net/minecraft/Base\"]}," +
+            "\"supers\":{\"net/minecraft/client/renderer/LevelRenderer\":[\"net/minecraft/Base\"],\"net/minecraft/world/level/block/Block\":[\"net/minecraft/world/level/block/state/BlockBehaviour\"]}," +
             "\"fields\":[{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"world\",\"desc\":\"Lnet/minecraft/client/world/ClientWorld;\",\"to\":\"level\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"MAX_DISTANCE\",\"desc\":\"I\",\"to\":\"OUTLINE_DISTANCE\"}]}"
         )));
         String mixedIn = mixinNames.remap(

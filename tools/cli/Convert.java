@@ -768,7 +768,9 @@ final class Convert {
         // What Mixin reads by name when the game runs, which migrateMappings leaves in yarn's names.
         MixinNames mixins = new MixinNames(table);
         int mixinFiles = 0;
-        for (String file : javaFiles()) {
+        List<String> every = new ArrayList<>(javaFiles());
+        every.addAll(testJavaFiles());
+        for (String file : every) {
             String text = read(file), out = mixins.remap(mixins.javaNames(text));
             if (!out.equals(text)) {
                 write(file, out);
