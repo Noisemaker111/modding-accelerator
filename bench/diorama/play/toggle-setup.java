@@ -113,10 +113,14 @@ for (TileKey key : keys) {
 source.holes = Boolean.TRUE.equals(vars.get("toggle.holes"));
 vars.put("perf.work", (java.util.concurrent.Callable<Object>) () -> {
     // First meshes of new land: nothing kept from the round before, by the tile (REUSE) or by its chunks
-    // (what bakes share per chunk: solid masks, open heights, shadow caster faces).
+    // (what bakes share per chunk: solid masks, open heights, shadow caster faces, blended tints).
     synchronized (source) {
         for (ChunkSnapshot chunk : source.chunks.values()) {
-            if (chunk != null) chunk.bakeData().set(null);
+            if (chunk == null) continue;
+            chunk.bakeData().set(null);
+            // Blended biome tints too, the chunk's own and a turned view's.
+            chunk.chunk().setTints(null);
+            chunk.setTints(null);
         }
     }
     boolean reuse = GpuMesher.REUSE;

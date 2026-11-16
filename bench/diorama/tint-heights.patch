@@ -1,0 +1,53 @@
+diff --git a/src/main/java/dev/diorama/bake/BiomeTints.java b/src/main/java/dev/diorama/bake/BiomeTints.java
+index d44068af..857a59e7 100644
+--- a/src/main/java/dev/diorama/bake/BiomeTints.java
++++ b/src/main/java/dev/diorama/bake/BiomeTints.java
+@@ -72,6 +72,12 @@ public final class BiomeTints {
+ 		return tints;
+ 	}
+ 
++	/**
++	 * Whether a blend keeps each block's colours for two heights, not one. Only for checking that
++	 * tints come out the same either way.
++	 */
++	public static boolean TWO_HEIGHTS = true;
++
+ 	/** Blends the snapshot's tints. Any thread. */
+ 	public static ChunkSnapshot.Tints blend(ChunkSnapshot snapshot) {
+ 		// Where the game had no chunk, the lookup gives null, and the blend leaves that block out:
+@@ -90,6 +96,14 @@ public final class BiomeTints {
+ 		java.util.Arrays.fill(heights, Integer.MIN_VALUE);
+ 		int[][] sampled = new int[RESOLVERS.length][size * size];
+ 		boolean[] known = new boolean[size * size];
++		// A second height per block, for ground that steps back and forth: the one asked less lately.
++		boolean two = TWO_HEIGHTS;
++		int[] heights2 = two ? new int[size * size] : null;
++		int[][] sampled2 = two ? new int[RESOLVERS.length][size * size] : null;
++		boolean[] known2 = two ? new boolean[size * size] : null;
++		if (two) {
++			java.util.Arrays.fill(heights2, Integer.MIN_VALUE);
++		}
+ 		for (int z = 0; z < 16; z++) {
+ 			for (int x = 0; x < 16; x++) {
+ 				int bx = (snapshot.chunkX << 4) + x;
+@@ -102,6 +116,20 @@ public final class BiomeTints {
+ 				for (int dz = -radius; dz <= radius; dz++) {
+ 					for (int dx = -radius; dx <= radius; dx++) {
+ 						int cell = (z + dz + radius) * size + x + dx + radius;
++						if (two && heights[cell] != y) {
++							// Swap the two heights' slots: the one asked now goes first, the other is kept.
++							int h = heights2[cell];
++							heights2[cell] = heights[cell];
++							heights[cell] = h;
++							boolean k = known2[cell];
++							known2[cell] = known[cell];
++							known[cell] = k;
++							for (int r = 0; r < RESOLVERS.length; r++) {
++								int c = sampled2[r][cell];
++								sampled2[r][cell] = sampled[r][cell];
++								sampled[r][cell] = c;
++							}
++						}
+ 						if (heights[cell] != y) {
+ 							heights[cell] = y;
+ 							Holder<Biome> biome = biomes.getBiome(pos.set(bx + dx, y, bz + dz));
