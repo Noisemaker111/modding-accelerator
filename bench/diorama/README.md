@@ -57,8 +57,8 @@ python bench/diorama/play/prepare_world.py --root .runs/diorama
   with GPU-baked tiles; `reuse-live.java` requires everything a build carries between bakes to
   change nothing (below); `slabs-ring.java` requires a build that keeps those in a ring of arrays
   to have gone round it during the flight and to read nothing stale once it goes round again.
-- `bake-bench.java` times those functions in one client (descriptive), and `toggle-bench.java`
-  compares switchable variants of one build in the same JVM with randomized order.
+- `bake-bench.java` times those functions in one client (descriptive), and `toggle-setup.java`
+  is the input `mmt perf-toggle` compares switchable variants of one build on, in the same JVM.
 
 ### Exact optimizations for ordinary play
 
