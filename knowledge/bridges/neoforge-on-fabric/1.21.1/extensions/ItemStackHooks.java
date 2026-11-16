@@ -3,7 +3,10 @@ package ${package}.extensions;
 import ${package}.ItemAbility;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.core.Holder;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 /** NeoForge 21.1's ItemStack methods that ask the item about this stack (ItemHooks): crafting remainder, abilities, food. Added by ItemStackHooksMixin. */
 public interface ItemStackHooks {
@@ -26,5 +29,9 @@ public interface ItemStackHooks {
     default FoodProperties getFoodProperties(LivingEntity entity) {
         ItemStack self = (ItemStack) (Object) this;
         return ((ItemHooks) self.getItem()).getFoodProperties(self, entity);
+    }
+
+    default int getEnchantmentLevel(Holder<Enchantment> enchantment) {
+        return EnchantmentHelper.getItemEnchantmentLevel(enchantment, (ItemStack) (Object) this);
     }
 }

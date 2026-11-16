@@ -2856,7 +2856,14 @@
     "net.neoforged.neoforge.common.loot.LootModifier": "loot.LootModifier",
     "net.neoforged.neoforge.common.loot.AddTableLootModifier": "loot.AddTableLootModifier",
     "net.neoforged.neoforge.common.loot.LootTableIdCondition": "loot.LootTableIdCondition",
-    "net.neoforged.neoforge.event.level.block.CropGrowEvent": "CropGrowEvent"
+    "net.neoforged.neoforge.event.level.block.CropGrowEvent": "CropGrowEvent",
+    "net.neoforged.neoforge.common.FarmlandWaterManager": "FarmlandWaterManager",
+    "net.neoforged.neoforge.common.IShearable": "IShearable",
+    "net.neoforged.fml.common.asm.enumextension.EnumProxy": "EnumProxy",
+    "net.neoforged.neoforge.client.IArmPoseTransformer": "IArmPoseTransformer",
+    "net.neoforged.neoforge.client.event.RegisterRecipeBookCategoriesEvent": "RegisterRecipeBookCategoriesEvent",
+    "net.neoforged.neoforge.common.EffectCure": "EffectCure",
+    "net.neoforged.neoforge.common.EffectCures": "EffectCures"
    },
    "symbols": {
     "neoforge": [
@@ -5174,7 +5181,7 @@
        "mixin": "ItemStackHooksMixin",
        "uses": [
         [
-         "\\b(getCraftingRemainingItem|hasCraftingRemainingItem|shouldCauseReequipAnimation|getCreatorModId|canPerformAction|supportsEnchantment|isPrimaryItemFor|getFoodProperties)\\s*\\("
+         "\\b(getCraftingRemainingItem|hasCraftingRemainingItem|shouldCauseReequipAnimation|getCreatorModId|canPerformAction|supportsEnchantment|isPrimaryItemFor|getFoodProperties|getEnchantmentLevel)\\s*\\("
         ]
        ],
        "injects": {
@@ -5325,6 +5332,89 @@
        "uses": [
         [
          "\\.lootFrom\\s*\\("
+        ]
+       ]
+      },
+      {
+       "mixin": "BlockItemMapHooksMixin",
+       "uses": [
+        [
+         "removeFromBlockToItemMap"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/item/BlockItem": "extensions.MiscHooks$BlockItemMap"
+       }
+      },
+      {
+       "mixin": "LookupHolderHooksMixin",
+       "uses": [
+        [
+         "\\.holder\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/core/HolderLookup$Provider": "extensions.MiscHooks$LookupHolder"
+       }
+      },
+      {
+       "mixin": "TagAppenderTagsHooksMixin",
+       "uses": [
+        [
+         "\\.addTags\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/data/tags/TagsProvider$TagAppender": "extensions.MiscHooks$TagAppenderTags<TT;>"
+       }
+      },
+      {
+       "mixin": "ModelTransformHooksMixin",
+       "uses": [
+        [
+         "applyTransform"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/client/resources/model/BakedModel": "extensions.MiscHooks$ModelTransform"
+       },
+       "client": true
+      },
+      {
+       "mixin": "EffectHooksMixin",
+       "uses": [
+        [
+         "EffectCure"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/effect/MobEffect": "extensions.EffectHooks$Effect"
+       }
+      },
+      {
+       "mixin": "EffectInstanceHooksMixin",
+       "uses": [
+        [
+         "EffectCure"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/effect/MobEffectInstance": "extensions.EffectHooks$Instance"
+       }
+      },
+      {
+       "mixin": "MilkCureMixin",
+       "uses": [
+        [
+         "EffectCure"
+        ]
+       ]
+      },
+      {
+       "mixin": "TotemCureMixin",
+       "uses": [
+        [
+         "EffectCure"
         ]
        ]
       }

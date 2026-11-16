@@ -44,6 +44,27 @@ class GameHooksTest {
     }
 
     @Test
+    void effectsHaveNeoForgesCures() {
+        assertTrue(new MobEffectInstance(MobEffects.POISON, 100).getCures().contains(EffectCures.HONEY));
+        assertTrue(new MobEffectInstance(MobEffects.POISON, 100).getCures().contains(EffectCures.MILK));
+        assertFalse(new MobEffectInstance(MobEffects.REGENERATION, 100).getCures().contains(EffectCures.HONEY));
+        assertTrue(new MobEffectInstance(MobEffects.REGENERATION, 100).getCures().contains(EffectCures.PROTECTED_BY_TOTEM));
+    }
+
+    @Test
+    void gameClassAdditionsAnswerAsOnNeoForge() {
+        assertEquals(net.minecraft.client.RecipeBookCategories.UNKNOWN, new EnumProxy<>(net.minecraft.client.RecipeBookCategories.class, "x").getValue());
+        var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
+        var stick = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.withDefaultNamespace("stick"));
+        assertEquals(net.minecraft.world.item.Items.STICK, registries.holder(stick).orElseThrow().value());
+        java.util.Map<net.minecraft.world.level.block.Block, net.minecraft.world.item.Item> map = new java.util.HashMap<>();
+        map.put(net.minecraft.world.level.block.Blocks.STONE, net.minecraft.world.item.Items.STONE);
+        map.put(net.minecraft.world.level.block.Blocks.DIRT, net.minecraft.world.item.Items.DIRT);
+        ((net.minecraft.world.item.BlockItem) net.minecraft.world.item.Items.STONE).removeFromBlockToItemMap(map, net.minecraft.world.item.Items.STONE);
+        assertEquals(java.util.Set.of(net.minecraft.world.level.block.Blocks.DIRT), map.keySet());
+    }
+
+    @Test
     void toolsCanDoTheirAbilities() {
         assertTrue(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_AXE).canPerformAction(ItemAbilities.AXE_STRIP));
         assertFalse(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_AXE).canPerformAction(ItemAbilities.HOE_TILL));
