@@ -52,7 +52,7 @@ def module_of(api_jar, cls):
                 if path in inner.namelist():
                     meta = json.loads(inner.read("fabric.mod.json"))
                     return meta["id"], meta["version"]
-    raise SystemExit(f"{cls} is in no module of the pinned Fabric API jar")
+    raise LookupError(f"{cls} is in no module of the pinned Fabric API jar")
 
 
 def source_of(module, version, cls):
@@ -138,7 +138,12 @@ def generate_once(classes, bridge_id, write, force):
     known_file.write_text("\n".join(sorted(known)), encoding="utf-8")
     reports = {}
     for cls in classes:
-        module, version = module_of(api_jar, cls)
+        try:
+            module, version = module_of(api_jar, cls)
+        except LookupError as gone:
+            # A class of an older Fabric API (a mod on an older game): the pinned release has none to mirror.
+            print(f"skipped: {gone}", file=sys.stderr)
+            continue
         src = OUT / "sources" / relative(cls)
         src.parent.mkdir(parents=True, exist_ok=True)
         text, same = source_of(module, version, cls)
@@ -188,15 +193,42 @@ def main(argv=None):
     p.add_argument("--force", action="store_true")
     p.add_argument("--unglued", action="store_true")
     p.add_argument("--closure", action="store_true", help="also mirror every Fabric API class the named ones need")
+    p.add_argument("--from-sources", nargs="+", metavar="DIR",
+                   help="mirror every Fabric API class these mods import that no rule rewrites and the bridge lacks (with --closure)")
     a = p.parse_args(argv)
     if a.unglued:
         left = unglued()
         print("\n".join(left) or "every bridge event is posted")
         return 1 if left else 0
-    if not a.classes:
-        p.error("name at least one Fabric API class")
-    print(json.dumps(generate(a.classes, a.bridge, a.write, a.force, a.closure), indent=1))
+    classes = list(a.classes)
+    if a.from_sources:
+        classes += wanted(a.from_sources, a.bridge)
+        a.closure = True
+    if not classes:
+        p.error("name at least one Fabric API class, or --from-sources DIR")
+    reports = generate(classes, a.bridge, a.write, a.force, a.closure)
+    print(json.dumps(reports, indent=1))
+    events = sum(len(r["events"]) for r in reports.values())
+    stubs = sum(len(r["stubbed"]) for r in reports.values())
+    print(f"{len(reports)} classes mirrored; {events} events to glue, {stubs} members stubbed", file=sys.stderr)
     return 0
+
+
+def wanted(folders, bridge_id):
+    """The Fabric API classes the Java sources under folders import, less what the bridge mirrors and what a rule rewrites."""
+    rules = loader_api.load_rules()
+    known = mirrored(ROOT / bridge_rule(rules, bridge_id)["folder"])
+    rewritten = {s.split("|", 1)[1].split("#")[0] for rid, syms in loader_api.symbols(rules).items() for s in syms}
+    out = set()
+    for folder in folders:
+        for f in Path(folder).rglob("*.java"):
+            text = f.read_text(encoding="utf-8", errors="replace")
+            for m in re.finditer(r"(?m)^import\s+(net\.fabricmc\.fabric\.api\.[\w.]+?)(?:\.\*)?\s*;", text):
+                cls = m.group(1)
+                if cls in rewritten or any(cls == k or cls.startswith(k + ".") for k in known):
+                    continue
+                out.add(cls)
+    return sorted(out)
 
 
 if __name__ == "__main__":

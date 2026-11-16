@@ -116,6 +116,8 @@ public final class Skeleton {
             }
 
             String text(Tree t) {
+                // An enum constant's type has no position in the source.
+                if (t == null || start(t) < 0 || end(t) < start(t)) return "";
                 return source.substring(start(t), end(t));
             }
         }.scan(unit, null);
