@@ -158,6 +158,12 @@ def measure(rules, version, key, layer_version):
     }
 
 
+def read_long(path):
+    """A file's bytes, past Windows' 260-character path limit (deep mod packages exceed it)."""
+    name = str(path.resolve())
+    return open("\\\\?\\" + name if sys.platform == "win32" else name, "rb").read()
+
+
 def class_refs(data):
     """(superclass, {(owner, method) the class calls}, {methods it declares}) from one .class file."""
     count = struct.unpack(">H", data[8:10])[0]
@@ -284,7 +290,7 @@ def corpus_use(rules, folders, release=RELEASES[0]):
         mod = folder.name.removesuffix("-original")
         for f in folder.glob("build/classes/**/*.class"):
             try:
-                superclass, calls, declared = class_refs(f.read_bytes())
+                superclass, calls, declared = class_refs(read_long(f))
             except (ValueError, KeyError, IndexError, struct.error):
                 continue
             for owner, name in calls:
