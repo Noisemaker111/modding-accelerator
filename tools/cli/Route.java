@@ -28,9 +28,51 @@ final class Route {
         return harness.resolve("coverage/changes/index.json");
     }
 
-    /** A precise refusal for releases with no official names, or null when the versions are portable. */
+    /** Whether a plain release sits in the SRG world: before the first Mojang-mapped release. */
+    static boolean legacy(String version) {
+        return version.matches("\\d+(\\.\\d+)*") && Versions.compare(version, FIRST_MAPPED) < 0;
+    }
+
+    /** A precise refusal for releases no indexed step touches or jumps port cannot join yet, or null when portable. */
     static Map<String, Object> blocked(Path harness, String from, String to) throws IOException {
         if (from.isBlank() || to.isBlank()) return null;
+        // Within the SRG world (either endpoint at or before 1.14.4, the other before it) one SRG
+        // chain joins the route. Crossing past 1.14.4 leaves MCP names for Mojang's, which needs a
+        // name bridge at the seam release that port does not build yet.
+        boolean seam =
+            (legacy(from) && Versions.compare(to, FIRST_MAPPED) > 0) ||
+            (legacy(to) && Versions.compare(from, FIRST_MAPPED) > 0);
+        if (seam) {
+            String old = legacy(from) ? from : to, modern = old.equals(from) ? to : from;
+            String reason =
+                "A port between " +
+                old +
+                " (MCP names, joined through Forge SRG ids) and " +
+                modern +
+                " crosses " +
+                FIRST_MAPPED +
+                " into Mojang's names. Crossing that seam needs an MCP to Mojang name bridge at " +
+                FIRST_MAPPED +
+                ", which port does not build yet; ports from a pre-" +
+                FIRST_MAPPED +
+                " release run to " +
+                FIRST_MAPPED +
+                " at the newest for now.";
+            return Json.map(
+                "ok",
+                false,
+                "tier",
+                "blocked",
+                "sourcesChanged",
+                false,
+                "gameVerified",
+                false,
+                "blocked",
+                List.of(Json.map("version", old, "reason", reason)),
+                "details",
+                "Blocked: " + reason + " Nothing was changed."
+            );
+        }
         for (String version : List.of(from, to)) {
             String reason = blockedReason(harness, version);
             if (reason != null) return Json.map(
@@ -45,15 +87,7 @@ final class Route {
                 "blocked",
                 List.of(Json.map("version", version, "reason", reason)),
                 "details",
-                "Blocked: Minecraft " +
-                version +
-                " is before " +
-                FIRST_MAPPED +
-                ". " +
-                reason +
-                " mmt ports between " +
-                FIRST_MAPPED +
-                " and the newest indexed release; nothing was changed."
+                "Blocked: Minecraft " + version + ". " + reason + " Nothing was changed."
             );
         }
         for (String version : List.of(from, to)) {
@@ -128,13 +162,6 @@ final class Route {
                 if (version.equals(row.get("id"))) return String.valueOf(row.get("reason"));
             }
         }
-        if (Versions.compare(version, FIRST_MAPPED) < 0) return (
-            "Mojang published no official mappings before " +
-            FIRST_MAPPED +
-            " and Fabric intermediary ids start there. This release's names are indexed through Forge's SRG ids (MCP names), but porting from a pre-" +
-            FIRST_MAPPED +
-            " release is not wired into port yet."
-        );
         return null;
     }
 
@@ -190,10 +217,26 @@ final class Route {
         return linked.getOrDefault(step, linked.getOrDefault(p[1] + " -> " + p[0], "unknown"));
     }
 
-    /** The releases a rename map can be joined across: the leading run of releases before 26.1. */
+    /** The releases an intermediary rename map can be joined across: the leading run before 26.1, from 1.14.4 on. */
     List<String> mappedChain() {
         List<String> chain = new ArrayList<>();
-        for (String version : versions) if (Versions.compare(version, FIRST_UNOBFUSCATED) < 0) chain.add(version);
+        for (String version : versions) if (
+            Versions.compare(version, FIRST_MAPPED) >= 0 && Versions.compare(version, FIRST_UNOBFUSCATED) < 0
+        ) chain.add(version);
+        return chain;
+    }
+
+    /**
+     * The releases an SRG rename map can be joined across: this route's run at or before 1.14.4, in
+     * walking order. Before 1.14.4 the index holds only the SRG hubs, so the run is hub to hub;
+     * 1.14.4 itself has SRG data and closes the chain.
+     */
+    List<String> srgChain() {
+        List<String> chain = new ArrayList<>();
+        for (String version : versions) {
+            if (Versions.compare(version, FIRST_MAPPED) > 0) break;
+            chain.add(version);
+        }
         return chain;
     }
 
@@ -211,7 +254,8 @@ final class Route {
         if (jump == null || jump.isBlank()) return steps();
         String tag = jump.contains("(") ? jump.substring(jump.indexOf('(')).toLowerCase(Locale.ROOT) : "";
         if (tag.contains("yarn") && !names.equals("yarn")) return List.of();
-        if ((tag.contains("mojmap") || tag.contains("official")) && names.equals("yarn")) return List.of();
+        if ((tag.contains("mojmap") || tag.contains("official")) && !names.equals("mojmap")) return List.of();
+        if (tag.contains("mcp") && !(names.equals("mcp") || names.startsWith("mcp:"))) return List.of();
         String[] range = jump.replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
         if (range.length != 2 || !range[0].matches("\\d[\\w.]*") || !range[1].matches("\\d[\\w.]*")) return steps();
         // A rule rewrites old code into new code, so a forward rule never runs on a backport (or the reverse).

@@ -619,16 +619,31 @@ final class Port {
         );
 
         JavaTools tools = new JavaTools(build);
-        String names = options.get("names", inferNames());
+        String names = options.get("names", inferNames(from));
+        // A route touching the SRG world is read in MCP names, the only names its source was written
+        // against; --names mcp:stable_39 pins the published set, as VersionMap accepts.
+        boolean legacy = Route.legacy(from) || Route.legacy(to);
+        boolean mcp = names.equals("mcp") || names.startsWith("mcp:");
         if (
-            !Set.of("yarn", "mojmap").contains(names) ||
+            !(Set.of("yarn", "mojmap").contains(names) || mcp) ||
             !from.matches("[A-Za-z0-9._+\\-]+") ||
             !to.matches("[A-Za-z0-9._+\\-]+")
         ) throw new IllegalArgumentException("Invalid version or mapping namespace");
+        if (legacy && !mcp) throw new IllegalArgumentException(
+            "A port touching a release before " +
+            Route.FIRST_MAPPED +
+            " reads its source in MCP names (Forge SRG ids), not " +
+            names +
+            ": pass --names mcp (or mcp:stable_39 to pin the published name set). Nothing was changed."
+        );
+        if (mcp && !legacy && !from.equals(Route.FIRST_MAPPED) && !to.equals(Route.FIRST_MAPPED)) throw new IllegalArgumentException(
+            "MCP names serve releases up to " + Route.FIRST_MAPPED + "; this route is in Mojang's names. Nothing was changed."
+        );
         namespace = names;
+        String mapNames = names.replace(':', '-'); // a pinned channel (mcp:stable_39) cannot sit in a file name
         Path map = options.values.containsKey("map")
             ? Path.of(options.get("map", "")).toAbsolutePath()
-            : build.project.state().resolve("maps/" + names + "-" + from + "-" + to + ".json");
+            : build.project.state().resolve("maps/" + mapNames + "-" + from + "-" + to + ".json");
         // A routed port joins every update it crosses into one map: old names resolve straight to final
         // names and each removal keeps the update that removed it. Only releases before 26.1 share
         // intermediary ids; the rest of a route into 26.x is left to the compiler and the rules. Yarn has no
@@ -648,7 +663,7 @@ final class Port {
             !options.has("intermediary") &&
             Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0 &&
             Versions.compare(from, Route.FIRST_UNOBFUSCATED) < 0;
-        List<String> chain = route == null ? List.of() : own || bridge ? route.versions : route.mappedChain();
+        List<String> chain = route == null ? List.of() : own || bridge ? route.versions : mcp ? route.srgChain() : route.mappedChain();
         boolean routed =
             chain.size() >= 2 && (bridge || !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0));
         // A generated map is named after the tools that made it, so a changed generator makes a new one.
@@ -660,7 +675,7 @@ final class Port {
             (own
                     ? "game-" + generator.substring(0, Math.min(12, generator.length())) + "-"
                     : bridge ? "bridge-" + generator.substring(0, Math.min(12, generator.length())) + "-" : "route-") +
-            names +
+            mapNames +
             "-" +
             from +
             "-" +
@@ -762,6 +777,10 @@ final class Port {
                 String.join(" -> ", chain) +
                 " from the game itself: Mojang's jars and mappings linked release to release by their own bytecode" +
                 (loaderDiff.isEmpty() ? "" : ", with " + loaderDiff + "'s own published classes")
+                : routed && mcp
+                ? "one map joined across " +
+                String.join(" -> ", chain) +
+                " by Forge SRG ids (MCP names); classes have no SRG id, so a class rename on these steps reads as a removal and an addition"
                 : routed
                 ? "one map joined across " +
                 String.join(" -> ", chain) +
@@ -1670,7 +1689,11 @@ final class Port {
         return actual;
     }
 
-    String inferNames() {
+    String inferNames(String from) {
+        // A source from a pre-1.14.4 release was written against MCP names, even when its build was
+        // already retargeted (and so reads as the target release); say so before the yarn pins.
+        if (Route.legacy(from)) return "mcp";
+        for (String version : versions(model)) if (Route.legacy(version)) return "mcp";
         for (Object p : Json.array(model.get("projects"))) {
             var pins = Json.object(Json.object(p).get("pins"));
             if (pins.containsKey("yarn_mappings") || pins.containsKey("yarn_version")) return "yarn";

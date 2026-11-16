@@ -525,7 +525,7 @@
  },
  "routing": "Route from X to Y: neighbouring steps from X to its family's hub, then hub to hub, then neighbouring steps from the last hub to Y. A backport walks the same steps in reverse (added and removed swap, renames flip). A step inside a family breaks under 0.5% of names.",
  "matching": [
-  "A change counts as handled by the mappings when the two releases are linked by Fabric's intermediary ids (every release up to 1.21.11) and the change is a rename or a move: port --fix rewrites those imports and call sites from the generated map. A change into 26.1 or later has no shared id, so nothing there is counted as mapped.",
+  "A change counts as handled by the mappings when the two releases are linked by Fabric's intermediary ids (every release up to 1.21.11) and the change is a rename or a move: port --fix rewrites those imports and call sites from the generated map. On the legacy hub steps the link is Forge's SRG ids, which id members only, so there member renames count as mapped and class renames do not. A change into 26.1 or later has no shared id, so nothing there is counted as mapped.",
   "A change counts as handled by a rule when a rule in knowledge/ applies to that update (its jump range covers it) and names the change: for a rename the rule's old side names the old name and its new side the new name; for a removal or a new signature the rule's old side names the member (names shorter than six letters also need the class name). This is matching by name and is approximate: a rule can name a method without fixing every use of it.",
   "Automatic rules are knowledge/fixes.json (applied by port --fix) and knowledge/renames.json. A written how-to is a note in knowledge/version-changes.json or knowledge/structural.json that names the change: it explains what to do and shows in the port report, but nothing is edited for you.",
   "Rules written in yarn names (knowledge/learned and fixes marked yarn) are not compared: the index uses Mojang's names, and the two only sometimes agree."
@@ -7012,19 +7012,19 @@
    "coverage": {
     "listed": 4179,
     "listedWithPrivate": 5580,
-    "mappings": 0,
+    "mappings": 900,
     "rule": 0,
     "note": 0,
-    "left": 4179,
+    "left": 3279,
     "withPrivate": {
-     "mappings": 0,
+     "mappings": 1538,
      "rule": 0,
      "note": 0,
-     "left": 5580
+     "left": 4042
     },
     "back": {
-     "mappings": 0,
-     "left": 5495,
+     "mappings": 900,
+     "left": 4595,
      "listed": 5495
     },
     "rulesInRange": 0,
@@ -7076,19 +7076,19 @@
    "coverage": {
     "listed": 5212,
     "listedWithPrivate": 6645,
-    "mappings": 0,
+    "mappings": 1524,
     "rule": 0,
     "note": 0,
-    "left": 5212,
+    "left": 3688,
     "withPrivate": {
-     "mappings": 0,
+     "mappings": 2454,
      "rule": 0,
      "note": 0,
-     "left": 6645
+     "left": 4191
     },
     "back": {
-     "mappings": 0,
-     "left": 6336,
+     "mappings": 1524,
+     "left": 4812,
      "listed": 6336
     },
     "rulesInRange": 0,
@@ -7140,19 +7140,19 @@
    "coverage": {
     "listed": 1621,
     "listedWithPrivate": 2095,
-    "mappings": 0,
+    "mappings": 521,
     "rule": 0,
     "note": 0,
-    "left": 1621,
+    "left": 1100,
     "withPrivate": {
-     "mappings": 0,
+     "mappings": 747,
      "rule": 0,
      "note": 0,
-     "left": 2095
+     "left": 1348
     },
     "back": {
-     "mappings": 0,
-     "left": 2387,
+     "mappings": 521,
+     "left": 1866,
      "listed": 2387
     },
     "rulesInRange": 0,
@@ -7204,19 +7204,19 @@
    "coverage": {
     "listed": 4176,
     "listedWithPrivate": 4707,
-    "mappings": 0,
+    "mappings": 265,
     "rule": 0,
     "note": 0,
-    "left": 4176,
+    "left": 3911,
     "withPrivate": {
-     "mappings": 0,
+     "mappings": 317,
      "rule": 0,
      "note": 0,
-     "left": 4707
+     "left": 4390
     },
     "back": {
-     "mappings": 0,
-     "left": 6146,
+     "mappings": 265,
+     "left": 5881,
      "listed": 6146
     },
     "rulesInRange": 0,
@@ -22428,10 +22428,10 @@
    "broken": 4473,
    "coverage": {
     "listed": 4179,
-    "mappings": 0,
+    "mappings": 900,
     "rule": 0,
     "note": 0,
-    "left": 4179
+    "left": 3279
    },
    "bestRun": {},
    "backportRun": {},

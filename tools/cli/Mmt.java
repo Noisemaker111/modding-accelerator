@@ -420,7 +420,7 @@ public final class Mmt {
                 !options.values.containsKey("undo") &&
                 (result = Route.blocked(home, options.get("from", ""), options.get("to", ""))) != null
             ) {
-                // Refuse before evaluating a build that predates official names; nothing is changed.
+                // Refuse before evaluating the build when no port route joins these releases; nothing is changed.
                 exit = 1;
             } else if (
                 options.command.equals("dependencies") && Route.unknownRelease(home, options.get("to", "")) != null
@@ -918,7 +918,7 @@ public final class Mmt {
             "  mmt port --root SOURCE --from 1.21.1 --to 26.3 --fix --check \"java tools/tests/ZombieAiCheck.java ...\" --json\n" +
             "--check COMMAND runs the mod's own real-game check on the ported project (MMT_PORTED_ROOT is set); the port is ok only when it passes.\n" +
             "--check fingerprint is the built-in behaviour check for any mod: its fingerprint on --from before any change and on --to after the port must match, comparing only what the mod owns after the game's renames (FINGERPRINT.md). --learn-from-mods also runs the rule book's older rules mined from other mods (provenance third-party-mods) and learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and our own rules.\n" +
-            "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
+            "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 port hub to hub (1.7.10, 1.8.9, 1.10.2, 1.12.2) in MCP names through Forge SRG ids -- --names mcp[:stable_N] pins the name set -- up to 1.14.4; crossing past 1.14.4 into Mojang's names is refused until the MCP to Mojang bridge exists.\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .mmt/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "convert" -> "Move a mod's source to another loader on the same Minecraft version: mmt convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +
             "  mmt convert --root SOURCE --undo [ID]   restore every file the conversion changed, byte for byte\n" +

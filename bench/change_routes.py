@@ -42,8 +42,9 @@ HUB_PLAIN = (
 MATCH_PLAIN = [
     "A change counts as handled by the mappings when the two releases are linked by Fabric's intermediary ids "
     "(every release up to 1.21.11) and the change is a rename or a move: port --fix rewrites those imports and "
-    "call sites from the generated map. A change into 26.1 or later has no shared id, so nothing there is "
-    "counted as mapped.",
+    "call sites from the generated map. On the legacy hub steps the link is Forge's SRG ids, which id members "
+    "only, so there member renames count as mapped and class renames do not. A change into 26.1 or later has "
+    "no shared id, so nothing there is counted as mapped.",
     "A change counts as handled by a rule when a rule in knowledge/ applies to that update (its jump range "
     "covers it) and names the change: for a rename the rule's old side names the old name and its new side the "
     "new name; for a removal or a new signature the rule's old side names the member (names shorter than six "
@@ -213,7 +214,9 @@ def main():
         for r in rs:
             if r["auto"] and names(r):
                 return "rule", r
-        if renamed and s["linked"] == "exact":
+        # Intermediary steps link classes and members; SRG steps link members only (classes have
+        # no SRG id), so an SRG class rename stays left even though port rewrites its members.
+        if renamed and (s["linked"] == "exact" or (s["linked"] == "srg" and kind != "class renamed")):
             return "mappings", None
         for r in rs:
             if not r["auto"] and names(r):
@@ -245,7 +248,7 @@ def main():
                 for it in lists.get(key, []):
                     if it.startswith("private "):
                         continue
-                    back["mappings" if key.endswith("Renamed") and s["linked"] == "exact" else "left"] += 1
+                    back["mappings" if key.endswith("Renamed") and s["linked"] in ("exact", "srg") else "left"] += 1
         back["listed"] = back["mappings"] + back["left"]
         listed = sum(tally.values())
         return {"listed": listed, "listedWithPrivate": sum(tally_all.values()), **tally, "withPrivate": tally_all,

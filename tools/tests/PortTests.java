@@ -14,7 +14,7 @@ public final class PortTests {
         System.out.println("PASS " + message);
     }
 
-    /** Hub routing from the change index, rule ranges, the pre-1.14.4 refusal and errors named by update. */
+    /** Hub routing from the change index, rule ranges, the legacy SRG route and its seam refusal, and errors named by update. */
     static void routeChecks(Path home, Port port, Path scratch) throws Exception {
         Route forward = Route.plan(home, "1.20.1", "1.21.6");
         check(
@@ -56,11 +56,32 @@ public final class PortTests {
         check(
             refused != null &&
             "blocked".equals(refused.get("tier")) &&
-            String.valueOf(refused.get("details")).contains("1.14.4") &&
-            String.valueOf(refused.get("details")).contains("not wired into port yet") &&
+            String.valueOf(refused.get("details")).contains("name bridge at 1.14.4") &&
+            Route.blocked(home, "1.20.1", "1.12.2") != null &&
             Route.blocked(home, "1.20.1", "1.21.6") == null,
-            "releases before 1.14.4 are refused as not yet wired (their names are indexed through SRG ids); later ones are not: " +
+            "a port crossing 1.14.4 out of the SRG world is refused (no MCP to Mojang bridge yet), either way; later routes are not: " +
             (refused == null ? null : refused.get("details"))
+        );
+        Route hubs = Route.plan(home, "1.7.10", "1.14.4");
+        check(
+            hubs != null &&
+            hubs.waypoints.equals(List.of("1.7.10", "1.8.9", "1.10.2", "1.12.2", "1.14.4")) &&
+            hubs.srgChain().equals(hubs.versions) &&
+            hubs.mappedChain().equals(List.of("1.14.4")) &&
+            hubs.linkOf("1.12.2 -> 1.14.4").equals("srg") &&
+            Route.blocked(home, "1.7.10", "1.12.2") == null &&
+            Route.blocked(home, "1.12.2", "1.14.4") == null &&
+            Route.blocked(home, "1.14.4", "1.12.2") == null &&
+            Route.blocked(home, "1.9", "1.12.2") != null,
+            "the legacy hubs route hub to hub on the SRG chain to 1.14.4; a non-hub legacy release stays blocked: " +
+            (hubs == null ? null : hubs.waypoints)
+        );
+        check(
+            hubs.stepsCovered("1.12.2 -> 1.14.4 (mojmap)", "mcp").isEmpty() &&
+            hubs.stepsCovered("1.12.2 -> 1.14.4 (mcp)", "mcp").equals(List.of("1.12.2 -> 1.14.4")) &&
+            hubs.stepsCovered("1.12.2 -> 1.14.4 (mcp)", "mojmap").isEmpty() &&
+            hubs.stepsCovered("1.12.2 -> 1.14.4 (mcp)", "mcp:stable_39").equals(List.of("1.12.2 -> 1.14.4")),
+            "Mojang-named rules never run on an MCP source; MCP rules run only there, pinned channel included"
         );
         check(
             Route.plan(home, "1.21.1-rc1", "1.21.6") == null,

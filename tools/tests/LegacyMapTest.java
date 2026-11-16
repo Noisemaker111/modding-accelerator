@@ -83,6 +83,14 @@ public final class LegacyMapTest {
                 "a member gone by the later table is reported removed, with its step");
         check(d.methodRemoved.stream().anyMatch(c -> c.from().equals("func_94530_a")),
                 "an unnamed member is reported under its SRG id, never dropped");
+        String map = chain.json("mcp:stable_39");
+        check(map.contains("\"from\": \"1.7.10\"") && map.contains("\"to\": \"1.12.2\"")
+                        && map.contains("\"names\": \"mcp:stable_39\"")
+                        && map.contains("\"methodsMoved\"")
+                        && map.contains("\"from\": \"calculateInitialSkylight\"")
+                        && map.contains("\"newOwner\": \"net.minecraft.block.Block\"")
+                        && map.contains("\"chain\": [\"1.7.10\", \"1.12.2\"]"),
+                "the chain map port hands the typed fixer keeps its MCP identity and the moved member, pinned channel included");
         System.out.println(count + " legacy map checks passed");
     }
 }
