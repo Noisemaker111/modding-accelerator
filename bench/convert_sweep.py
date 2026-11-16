@@ -442,7 +442,14 @@ def original_references(mod, src, started):
     code, result, seconds = mmt(["compile", "--root", str(work), "--json"], TIMEOUT["convert"])
     out = {"commit": mod["commit"], "minecraft": minecraft_of(work), "compiled": code == 0, "seconds": round(seconds, 1)}
     if code == 0:
-        out.update(convert_coverage.mod_references(work / "build" / "classes"))
+        # mmt compile names where it wrote each set's classes (its own javac writes them under .mmt, Gradle under build).
+        folders = [c["classes"] for c in (result.get("result") or {}).get("compiled", []) if isinstance(c, dict) and c.get("classes")]
+        merged = {"classes": set(), "members": set()}
+        for folder in folders or [work / "build" / "classes"]:
+            found = convert_coverage.mod_references(folder)
+            merged["classes"] |= set(found["classes"])
+            merged["members"] |= set(found["members"])
+        out.update({k: sorted(v) for k, v in merged.items()})
     stop(work)
     return out
 

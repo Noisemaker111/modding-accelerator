@@ -119,7 +119,13 @@ def version(v):
     return tuple(nums) if nums else (0,)
 
 
-DECLARED = re.compile(r"(?m)^\s*(?:@\w+(?:\([^)]*\))?\s*)*(?:public|protected)\s+(?:[\w<>\[\],.?\s]+?\s+)?(\w+)\s*(?:\(|=|;)")
+# A member declaration: modifiers (interface members need none), type parameters, a type, the name, then ( = or ;.
+DECLARED = re.compile(
+    r"(?m)^\s*(?:@\w+(?:\([^)]*\))?\s*)*(?:(?:public|protected|static|final|abstract|default|synchronized|native)\s+)*"
+    r"(?:<[^;{}()]*?>\s+)?(?!return\b|new\b|throw\b|else\b|case\b)[\w.$]+(?:<[^;{}()]*?>)?(?:\[\])*\s+(\w+)\s*(?:\(|=|;)"
+)
+# Java's own supertypes a bridge class may extend or implement: their members are the JDK's, so any name counts.
+JDK = {"Iterable", "Comparable", "Runnable", "Supplier", "Consumer", "Function", "Predicate", "AutoCloseable", "Closeable", "Collection", "List", "Map", "Set", "Record", "Enum"}
 
 
 def bridge_provides(rules, frm, minecraft):
@@ -155,6 +161,8 @@ def bridge_provides(rules, frm, minecraft):
         # A member declared by another bridge class it extends or implements (DeferredItem's get is DeferredHolder's).
         by_simple = {c.rsplit("/", 1)[-1].split("$")[-1]: c for c in out}
         for cls in out:
+            if supers.get(cls, set()) & JDK:
+                out[cls].add("*")
             seen, todo = set(), list(supers.get(cls, ()))
             while todo:
                 s = by_simple.get(todo.pop())
@@ -208,7 +216,7 @@ def coverage(refs, rules, corpus):
             if any(outer == k or outer.startswith(k + "/") for k in rewritten[frm]):
                 continue
             declared = (bridge or {}).get(owner)
-            if declared is not None and declared and name not in declared and name not in ("<init>", "<clinit>", "values", "valueOf"):
+            if declared is not None and declared and "*" not in declared and name not in declared and name not in ("<init>", "<clinit>", "values", "valueOf"):
                 missing.append(f"{owner}#{name}")
         for x in missing:
             need[x].add(mod_id)
