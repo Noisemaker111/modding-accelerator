@@ -216,6 +216,7 @@ final class PerfOptimize {
                     Files.copy(file(experimentDir, entry.getValue().toString()), target, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
+            if (experiment.get("pack") instanceof Map<?, ?> pack) buildPackJars(Json.object(pack), arms);
             result.put("changedFiles", Arrays.stream(git(arms.get("candidate"), "diff", "--name-only").split("\n")).filter(s -> !s.isBlank()).toList());
             Json.object(record.record.get("candidate")).put("changedFiles", result.get("changedFiles"));
             record.step("setup", "worktrees", (System.nanoTime() - setupStart) / 1e9);
@@ -287,6 +288,37 @@ final class PerfOptimize {
         result.put("html", out.resolve("optimize.html").toString());
         result.put("details", summary(result));
         return result;
+    }
+
+    /** Pack mode: each arm's jar of the mod, built in its worktree, and the pack instance that arm's games run in. */
+    final Map<Path, Path> packJars = new HashMap<>(), packRoots = new HashMap<>();
+
+    void buildPackJars(Map<String, Object> pack, Map<String, Path> arms) throws Exception {
+        long start = System.nanoTime();
+        for (var arm : arms.entrySet()) {
+            Path tree = arm.getValue();
+            Map<String, Object> built = mmt(tree, arm.getKey() + "-jar", List.of("compile", "--task", Json.text(pack, "task", "")), 3600);
+            if (!Boolean.TRUE.equals(built.get("ok"))) throw new IOException(arm.getKey() + "'s jar did not build: " + built.get("error"));
+            PathMatcher glob = tree.getFileSystem().getPathMatcher("glob:" + Json.text(pack, "jar", ""));
+            Path jar;
+            try (var walk = Files.walk(tree)) {
+                jar = walk.filter(p -> glob.matches(tree.relativize(p))).filter(Files::isRegularFile)
+                    .max(Comparator.comparing(p -> p.toFile().lastModified())).orElse(null);
+            }
+            if (jar == null) throw new IOException(arm.getKey() + ": " + pack.get("task") + " made no jar matching " + pack.get("jar"));
+            // Kept outside the worktree, under the jar's own name: pack-run swaps it in for the pack's jar with the same mod id.
+            Path kept = out.resolve("jars").resolve(arm.getKey()).resolve(jar.getFileName().toString());
+            Files.createDirectories(kept.getParent());
+            Files.copy(jar, kept, StandardCopyOption.REPLACE_EXISTING);
+            packJars.put(tree, kept);
+            packRoots.put(tree, out.resolve("instances").resolve(arm.getKey()));
+        }
+        record.step("setup", "pack-jars", (System.nanoTime() - start) / 1e9);
+    }
+
+    /** Where an arm's game commands point: its pack instance in pack mode, else its checkout. */
+    Path gameRoot(Path tree) {
+        return packRoots.getOrDefault(tree, tree);
     }
 
     /** Both arms of one pair at once, each in its own game; waits for both so neither game is left running. */
@@ -362,7 +394,8 @@ final class PerfOptimize {
         Path dir = out.resolve(String.format(Locale.ROOT, "runs/%02d-%s", run, arm));
         Files.createDirectories(dir);
         String world = Json.text(experiment, "world", "");
-        Path game = tree.resolve(Json.text(experiment, "gameDirectory", "run"));
+        boolean inPack = packRoots.containsKey(tree);
+        Path game = inPack ? gameRoot(tree) : tree.resolve(Json.text(experiment, "gameDirectory", "run"));
         if (!world.isBlank()) {
             Path saves = game.resolve("saves").resolve(world);
             deleteTree(saves);
@@ -374,10 +407,18 @@ final class PerfOptimize {
         // Two arms sampling at once read each other's interval (the second reads 0): a pair together samples once.
         if (!parallel) record.sampleLoad(arm + " run " + run + " before launch");
         List<String> launch = new ArrayList<>(world.isBlank() ? List.of("ui-check") : List.of("world-check", "--world", world));
+        if (inPack) {
+            Map<String, Object> pack = Json.object(experiment.get("pack"));
+            launch = new ArrayList<>(List.of("pack-run", "--pack", experimentDir.resolve(Json.text(pack, "input", "")).toString(),
+                "--mod", packJars.get(tree).toString(), "--dir", gameRoot(tree).toString(), "--memory", Json.text(pack, "memory", "10G")));
+            if (!Json.text(pack, "without", "").isBlank()) launch.addAll(List.of("--without", Json.text(pack, "without", "")));
+            if (!world.isBlank()) launch.addAll(List.of("--world", world));
+        }
         // The fingerprint gate needs the world as saved: frozen from its first tick until the fingerprint has run.
-        if (fingerprinted(experiment)) launch.add("--freeze");
+        if (fingerprinted(experiment) && !inPack) launch.add("--freeze");
         // "jit": "full" measures with the JIT players have, not the C1 a hidden test client starts with.
-        if ("full".equals(experiment.get("jit"))) launch.addAll(List.of("--jit", "full"));
+        // A pack's client always runs with the full JIT.
+        if ("full".equals(experiment.get("jit")) && !inPack) launch.addAll(List.of("--jit", "full"));
         long started = System.nanoTime();
         Map<String, Object> launched = mmt(tree, arm + "-launch", launch, 1800);
         row.put("launchSeconds", (System.nanoTime() - started) / 1e9);
@@ -844,9 +885,11 @@ final class PerfOptimize {
         List<String> command = childJava(home);
         command.add(args.get(0));
         // perf selects its game by --attach; every other step works on the arm's checkout.
-        if (!args.contains("--attach")) {
-            command.addAll(List.of("--root", tree.toString()));
-            if (!Json.text(experiment, "project", "").isBlank()) command.addAll(List.of("--project", experiment.get("project").toString()));
+        // A pack arm's game commands go to its instance; building the jar (compile) and tests work on the checkout.
+        boolean onGame = packRoots.containsKey(tree) && !args.get(0).equals("compile") && !args.get(0).equals("fast");
+        if (!args.contains("--attach") && !args.get(0).equals("pack-run")) {
+            command.addAll(List.of("--root", (onGame ? gameRoot(tree) : tree).toString()));
+            if (!onGame && !Json.text(experiment, "project", "").isBlank()) command.addAll(List.of("--project", experiment.get("project").toString()));
         }
         command.addAll(args.subList(1, args.size()));
         command.add("--json");
