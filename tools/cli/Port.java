@@ -2600,6 +2600,100 @@ final class Port {
      * (client, handler, buf, responseSender) or (server, player, handler, buf, responseSender) gets the new
      * (payload, context) one with the old names declared first, so its body runs unchanged. Every line when lines is null.
      */
+    /**
+     * A method that now takes a different argument type, written the same way for every argument: in each statement that
+     * starts with apply.statement (a regex), every top-level argument of a call to one of apply.calls, across lines, is
+     * rewritten by apply.wrap ($0 is the argument), unless it already matches apply.skip. 26.2's TagAppender.add takes a
+     * ResourceKey: tag(T).add(BLOCK_A, BLOCK_B.get()) -> add(BLOCK_A.builtInRegistryHolder().key(), ...).
+     */
+    static String callArguments(String text, Map<String, Object> apply) {
+        Pattern statement = Pattern.compile(Json.text(apply, "statement", ""));
+        Pattern call = Pattern.compile("\\.(?:" + String.join("|", ProjectModel.strings(apply.get("calls"))) + ")\\s*\\(");
+        String skip = Json.text(apply, "skip", ""), wrap = Json.text(apply, "wrap", "$0");
+        StringBuilder out = new StringBuilder();
+        int done = 0;
+        Matcher start = statement.matcher(text);
+        while (start.find(done)) {
+            int end = statementEnd(text, start.start());
+            if (end < 0) break;
+            out.append(text, done, start.start());
+            String body = text.substring(start.start(), end);
+            StringBuilder rewritten = new StringBuilder();
+            int at = 0;
+            Matcher c = call.matcher(body);
+            while (c.find(at)) {
+                int close = closingParen(body, c.end() - 1);
+                if (close < 0) break;
+                rewritten.append(body, at, c.end());
+                List<String> parts = topLevelArguments(body.substring(c.end(), close));
+                for (int i = 0; i < parts.size(); i++) {
+                    String part = parts.get(i), arg = part.strip();
+                    boolean keep = arg.isEmpty() || (!skip.isEmpty() && Pattern.compile(skip).matcher(arg).find());
+                    String lead = part.substring(0, part.indexOf(arg.isEmpty() ? part : arg)), tail = part.substring(lead.length() + arg.length());
+                    rewritten.append(lead).append(keep ? arg : wrap.replace("$0", arg)).append(tail);
+                    if (i < parts.size() - 1) rewritten.append(',');
+                }
+                rewritten.append(')');
+                at = close + 1;
+            }
+            rewritten.append(body.substring(at));
+            out.append(rewritten);
+            done = end;
+        }
+        return out.append(text.substring(done)).toString();
+    }
+
+    /** The index just after the ';' that ends the statement starting at from, outside brackets and strings; -1 if none. */
+    static int statementEnd(String text, int from) {
+        int depth = 0;
+        for (int i = from; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"') i = stringEnd(text, i);
+            else if (ch == '(' || ch == '{' || ch == '[') depth++;
+            else if (ch == ')' || ch == '}' || ch == ']') depth--;
+            else if (ch == ';' && depth <= 0) return i + 1;
+        }
+        return -1;
+    }
+
+    /** The index of the ')' closing the '(' at open; -1 if none. */
+    static int closingParen(String text, int open) {
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"') i = stringEnd(text, i);
+            else if (ch == '(') depth++;
+            else if (ch == ')' && --depth == 0) return i;
+        }
+        return -1;
+    }
+
+    static int stringEnd(String text, int quote) {
+        for (int i = quote + 1; i < text.length(); i++) {
+            if (text.charAt(i) == '\\') i++;
+            else if (text.charAt(i) == '"') return i;
+        }
+        return text.length() - 1;
+    }
+
+    /** An argument list split at its top-level commas, each part with its own whitespace. */
+    static List<String> topLevelArguments(String args) {
+        List<String> parts = new ArrayList<>();
+        int depth = 0, from = 0;
+        for (int i = 0; i < args.length(); i++) {
+            char ch = args.charAt(i);
+            if (ch == '"') i = stringEnd(args, i);
+            else if (ch == '(' || ch == '{' || ch == '[') depth++;
+            else if (ch == ')' || ch == '}' || ch == ']') depth--;
+            else if (ch == ',' && depth == 0) {
+                parts.add(args.substring(from, i));
+                from = i + 1;
+            }
+        }
+        parts.add(args.substring(from));
+        return parts;
+    }
+
     static String payloadCalls(String text, String name, Set<Integer> lines) {
         Matcher call = Pattern.compile(
             "\\b(?:(Client|Server)PlayNetworking\\s*\\.\\s*(registerGlobalReceiver|send)|new\\s+CustomPayload(?:S2C|C2S)Packet)\\s*\\("
@@ -2753,6 +2847,7 @@ final class Port {
         String when = Json.text(rule, "when", "");
         if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return original;
         if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
+        else if ("call-arguments".equals(apply.get("transform"))) text = callArguments(text, apply);
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(
             text,

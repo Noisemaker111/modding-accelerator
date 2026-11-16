@@ -7629,6 +7629,32 @@
         "after": "package mod;\nimport net.minecraft.client.renderer.CoreShaders;\n\nclass HudOverlay {\n\tvoid draw() {\n\t\tRenderSystem.setShader(CoreShaders.POSITION_TEX);\n\t\tRenderSystem.setShader(CoreShaders.RENDERTYPE_ENTITY_CUTOUT_NO_CULL_Z_OFFSET);\n\t\tRenderSystem.setShader(GameRenderer::getRendertypeGlintDirectShader);\n\t}\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "tag-appender-keys-262",
+      "provenance": "hand",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "method (?:add|addOptional) in interface TagAppender<T> cannot be applied to given types",
+      "apply": {
+        "transform": "call-arguments",
+        "statement": "(?m)^[ \\t]*(?:this\\.)?tag\\(",
+        "calls": [
+          "add",
+          "addOptional"
+        ],
+        "wrap": "$0.builtInRegistryHolder().key()",
+        "skip": "ResourceKey|\\.key\\(\\)|getKey\\(\\)|unwrapKey|\\b[A-Z0-9_]*KEY\\b"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2 dropped IntrinsicHolderTagsProvider: NeoForge's BlockTagsProvider and ItemTagsProvider are plain TagsProvider<T>, so tag(T) returns TagAppender<T>, whose add and addOptional take ResourceKey<T>. Every block, item, entity type and fluid has builtInRegistryHolder().key(), so each argument of add/addOptional in a tag(...) statement is wrapped, across lines; an argument that is already a key is left alone, and addTag is untouched.",
+      "verified": "26.1.2 client jar: TagAppender<E,T>.add(E), IntrinsicHolderTagsProvider<T>.tag(TagKey<T>) -> TagAppender<T,T>; 26.3 client jar: TagAppender<T>.add(ResourceKey<T>), no IntrinsicHolderTagsProvider; NeoForge 26.1.1 BlockTagsProvider extends IntrinsicHolderTagsProvider<Block>, 26.2.0.93 extends TagsProvider<Block>; Block, Item, EntityType, Fluid.builtInRegistryHolder() -> Holder$Reference, whose key() is the ResourceKey",
+      "test": {
+        "error": "IronChestsBlockTags.java:20: error: method add in interface TagAppender<T> cannot be applied to given types;\n    tag(BlockTags.MINEABLE_WITH_SHOVEL).add(\n                                       ^\n",
+        "before": "package mod;\n\nclass IronChestsBlockTags {\n  protected void addTags(HolderLookup.Provider provider) {\n    tag(BlockTags.MINEABLE_WITH_SHOVEL).add(\n      IronChestsBlocks.DIRT_CHEST.get(),\n      IronChestsBlocks.TRAPPED_DIRT_CHEST.get()\n    );\n    this.tag(BlockTags.GUARDED_BY_PIGLINS).add(Blocks.CHEST).addTag(Tags.Blocks.CHESTS).addOptional(OTHER_CHEST_KEY);\n    builder.add(Blocks.STONE);\n  }\n}\n",
+        "after": "package mod;\n\nclass IronChestsBlockTags {\n  protected void addTags(HolderLookup.Provider provider) {\n    tag(BlockTags.MINEABLE_WITH_SHOVEL).add(\n      IronChestsBlocks.DIRT_CHEST.get().builtInRegistryHolder().key(),\n      IronChestsBlocks.TRAPPED_DIRT_CHEST.get().builtInRegistryHolder().key()\n    );\n    this.tag(BlockTags.GUARDED_BY_PIGLINS).add(Blocks.CHEST.builtInRegistryHolder().key()).addTag(Tags.Blocks.CHESTS).addOptional(OTHER_CHEST_KEY);\n    builder.add(Blocks.STONE);\n  }\n}\n",
+        "from": "written for this rule, from Iron Chests 26.1.2's IronChestsBlockTags"
+      }
     }
   ]
 }
