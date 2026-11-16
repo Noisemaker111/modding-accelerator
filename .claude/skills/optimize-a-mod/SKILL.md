@@ -15,6 +15,9 @@ change; mmt only profiles, measures and gates. Reference: PERFORMANCE.md.
    run continuously. Scale it until the mod costs ~0.5 ms a tick; if it never does, pick another mod.
 3. Profile: `world-check --world NAME --jit full`, then `perf --root R --duration 30 --warmup 5`. Read your mod's row
    in `report.html`/`report.json` and its **Known patterns**: a matching pattern is the first candidate.
+   Young GC pauses: read `survivingAllocationSites` (who allocates what the collector copies) and judge by
+   `gcCopiedBytes` and `gcPauseTotalMs`, not the mean pause: a change that allocates less makes fewer, longer
+   collections. Per-job scratch alive across a collection (decode buffers, readbacks) is the usual survivor.
 4. `perf --probes CAPTURE/probes.suggested.json`, then `perf-template --family experiment --from CAPTURE --root R`.
    Use `serverInclusiveMsPerTick` (server thread) or `threadCpu` (the mod's own threads) as the metric.
 5. Fill the gates. `exact` gates hash frozen inputs ticked by hand (reseed randomness, no clocks); `expect` gates
