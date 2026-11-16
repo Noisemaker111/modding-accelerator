@@ -2388,7 +2388,11 @@
     "net.neoforged.neoforge.common.data.ItemTagsProvider": "data.ItemTagsProvider",
     "net.neoforged.neoforge.common.data.LanguageProvider": "data.LanguageProvider",
     "net.neoforged.neoforge.common.data.SoundDefinitionsProvider": "data.SoundDefinitionsProvider",
-    "net.neoforged.neoforge.common.data.SoundDefinition": "data.SoundDefinition"
+    "net.neoforged.neoforge.common.data.SoundDefinition": "data.SoundDefinition",
+    "net.neoforged.neoforge.common.conditions.ICondition": "conditions.ICondition",
+    "net.neoforged.neoforge.common.conditions.ModLoadedCondition": "conditions.ModLoadedCondition",
+    "net.neoforged.neoforge.common.conditions.NeoForgeConditions": "conditions.NeoForgeConditions",
+    "net.neoforged.neoforge.common.conditions.WithConditions": "conditions.WithConditions"
    },
    "symbols": {
     "neoforge": [
@@ -4307,7 +4311,10 @@
       "data/",
       "DataEntrypoint.java",
       "extensions/IDataGeneratorExtension.java",
-      "mixin/DataGeneratorExtensionMixin.java"
+      "mixin/DataGeneratorExtensionMixin.java",
+      "conditions/",
+      "extensions/IRecipeOutputExtension.java",
+      "mixin/RecipeOutputExtensionMixin.java"
      ],
      "mixins": [
       {
@@ -5169,6 +5176,17 @@
      ],
      "injects": {
       "net/minecraft/data/DataGenerator": "extensions.IDataGeneratorExtension"
+     }
+    },
+    {
+     "mixin": "RecipeOutputExtensionMixin",
+     "for": [
+      "conditions.ICondition",
+      "conditions.ModLoadedCondition",
+      "conditions.NeoForgeConditions"
+     ],
+     "injects": {
+      "net/minecraft/data/recipes/RecipeOutput": "extensions.IRecipeOutputExtension"
      }
     }
    ]
