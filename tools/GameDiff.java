@@ -1952,12 +1952,129 @@ public final class GameDiff {
          * reference of b most of them line up with. Says why the miner gave no replacement: nothing in the game used it,
          * every user was redesigned, or the users disagree.
          */
-        record Evidence(int sites, int kept, int aligned, String best, int votes) {}
+        record Evidence(int sites, int kept, int aligned, String best, int votes, String template, int templateVotes, int templateSites) {}
+
+        /** The references of b each template string stands for, and the reference of a each evidence key came from. */
+        final Map<String, List<Ref>> templateRefs = new HashMap<>();
+        final Map<String, Ref> unlinkedMember = new HashMap<>();
+
+        /**
+         * A member the game replaced with a chain on the same receiver (1.21.2: input.up -> input.keyPresses.forward()):
+         * steps are "f:name" or "m:name" joined by commas; the last takes the old call's arguments.
+         */
+        record Chain(String owner, String newOwner, String name, String desc, boolean field, String steps, int votes, int of) {}
+
+        /**
+         * Templates the game's own code agrees on (two uses, 60%) that are a type-correct chain: the first step is a member
+         * of the old owner's class in b, every step is an instance member of what the step before returns, every step but
+         * the last is a field or a no-argument method, and the last gives what the old member gave (same field type, or
+         * the same parameters and return type) after the map's renames.
+         */
+        List<Chain> chains() {
+            Map<String, Evidence> ev = evidence();
+            List<Chain> out = new ArrayList<>();
+            for (var e : ev.entrySet()) {
+                Evidence x = e.getValue();
+                Ref old = unlinkedMember.get(e.getKey());
+                if (old == null || x.template() == null || x.templateVotes() < 2 || x.templateVotes() * 10 < x.templateSites() * 6) {
+                    continue;
+                }
+                String steps = chain(old, templateRefs.get(x.template()));
+                if (steps == null) {
+                    continue;
+                }
+                String key = e.getKey();
+                int cut = old.kind() == 'm' ? key.lastIndexOf('.', key.indexOf('(')) : key.lastIndexOf('.');
+                String owner = key.substring(0, cut);
+                Cls oa = a.classes.get(owner.replace('.', '/'));
+                Cls ob = oa == null ? null : cAB.get(oa);
+                out.add(new Chain(owner, ob == null ? owner : ob.name.replace('/', '.'), old.name(), old.kind() == 'm' ? old.desc() : "",
+                    old.kind() != 'm', steps, x.templateVotes(), x.templateSites()));
+            }
+            out.sort(Comparator.comparing(Chain::owner).thenComparing(Chain::name));
+            return out;
+        }
+
+        /** The steps of a type-correct chain from old's receiver, or null. */
+        String chain(Ref old, List<Ref> refs) {
+            if (refs == null || refs.isEmpty() || old.kind() == 'c' || old.kind() == 'k') {
+                return null;
+            }
+            Cls oa = a.classes.get(old.owner());
+            Cls cur = oa == null ? null : cAB.get(oa);
+            String want;
+            if (old.kind() == 'm') {
+                Meth m = a.method(old.owner(), old.name(), old.desc());
+                if (m == null || m.isStatic() || m.special()) {
+                    return null;
+                }
+                want = old.desc();
+            } else {
+                Fld f = a.field(old.owner(), old.name());
+                if (f == null || (f.flags & ACC_STATIC) != 0) {
+                    return null;
+                }
+                want = f.desc;
+            }
+            StringBuilder steps = new StringBuilder();
+            for (int i = 0; i < refs.size(); i++) {
+                Ref r = refs.get(i);
+                boolean last = i == refs.size() - 1;
+                if (cur == null || (r.kind() != 'm' && r.kind() != 'f') || r.name().contains("$") || !subtypeB(cur.name, r.owner())) {
+                    return null;
+                }
+                String type;
+                if (r.kind() == 'm') {
+                    Meth m = b.method(r.owner(), r.name(), r.desc());
+                    if (m != null && m.isStatic() || r.name().startsWith("<") || !last && !r.desc().startsWith("()")) {
+                        return null;
+                    }
+                    String mapped = descBA(r.desc());
+                    if (last && (old.kind() == 'm' ? !mapped.equals(want) : !mapped.equals("()" + want))) {
+                        return null;
+                    }
+                    type = r.desc().substring(r.desc().indexOf(')') + 1);
+                } else {
+                    Fld f = b.field(r.owner(), r.name());
+                    if (f != null && (f.flags & ACC_STATIC) != 0 || last && (old.kind() == 'm' || !descBA(r.desc()).equals(want))) {
+                        return null;
+                    }
+                    type = r.desc();
+                }
+                steps.append(i == 0 ? "" : ",").append(r.kind()).append(':').append(r.name());
+                cur = type.startsWith("L") ? b.classes.get(type.substring(1, type.length() - 1)) : null;
+            }
+            return steps.toString();
+        }
+
+        /** sub is sup, or extends or implements it, in b. */
+        boolean subtypeB(String sub, String sup) {
+            Deque<String> todo = new ArrayDeque<>(List.of(sub));
+            Set<String> seen = new HashSet<>();
+            while (!todo.isEmpty()) {
+                String c = todo.pop();
+                if (c.equals(sup)) {
+                    return true;
+                }
+                Cls k = b.classes.get(c);
+                if (k == null || !seen.add(c)) {
+                    continue;
+                }
+                if (k.sup != null) {
+                    todo.push(k.sup);
+                }
+                k.ifaces.forEach(todo::push);
+            }
+            return false;
+        }
 
         /** Evidence for every unlinked class, method and field of a, keyed as Exposure keys them (dotted owner, name, desc). */
         Map<String, Evidence> evidence() {
             Map<String, int[]> counts = new HashMap<>();
             Map<String, Map<String, Integer>> votes = new HashMap<>();
+            Map<String, Map<String, Integer>> templates = new HashMap<>();
+            templateRefs.clear();
+            unlinkedMember.clear();
             for (Cls c : a.classes.values()) {
                 for (Meth x : c.methods.values()) {
                     Meth y = mAB.get(x);
@@ -1973,6 +2090,29 @@ public final class GameDiff {
                         }
                         for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
                             opposite.put(p[0], y.refs[p[1]]);
+                        }
+                        // A stretch the game rewrote into another number of references (a field read that became a call
+                        // chain): the new stretch, in b's names, is a vote for a template for every unlinked thing in it.
+                        for (int[] g : gaps(ta, tb)) {
+                            int na = g[1] - g[0], nb = g[3] - g[2];
+                            if (na == nb || na == 0 || na > 3 || nb > 4) {
+                                continue;
+                            }
+                            StringBuilder t = new StringBuilder();
+                            for (int j = g[2]; j < g[3]; j++) {
+                                Ref rb = y.refs[j];
+                                t.append(t.length() == 0 ? "" : " ; ").append(rb.kind()).append(' ')
+                                    .append(rb.kind() == 'm' ? rb.owner() + "." + rb.name() + rb.desc() : rb.kind() == 'c' || rb.kind() == 'k' ? rb.owner() : rb.owner() + "." + rb.name());
+                            }
+                            String ts = t.toString().replace('/', '.');
+                            templateRefs.putIfAbsent(ts, List.of(Arrays.copyOfRange(y.refs, g[2], g[3])));
+                            for (int k = g[0]; k < g[1]; k++) {
+                                String key = unlinkedKey(x.refs[k]);
+                                if (key != null) {
+                                    templates.computeIfAbsent(key, z -> new HashMap<>()).merge(ts, 1, Integer::sum);
+                                    unlinkedMember.putIfAbsent(key, x.refs[k]);
+                                }
+                            }
                         }
                     }
                     for (int i = 0; i < x.refs.length; i++) {
@@ -2004,10 +2144,19 @@ public final class GameDiff {
                         best = v.getKey();
                     }
                 }
+                String template = null;
+                int tTop = 0, tAll = 0;
+                for (var v : templates.getOrDefault(e.getKey(), Map.of()).entrySet()) {
+                    tAll += v.getValue();
+                    if (v.getValue() > tTop) {
+                        tTop = v.getValue();
+                        template = v.getKey();
+                    }
+                }
                 int[] n = e.getValue();
-                out.put(e.getKey(), new Evidence(n[0], n[1], n[2], best, top));
+                out.put(e.getKey(), new Evidence(n[0], n[1], n[2], best, top, template, tTop, tAll));
             }
-            Evidence none = new Evidence(0, 0, 0, null, 0);
+            Evidence none = new Evidence(0, 0, 0, null, 0, null, 0, 0);
             for (Cls c : a.classes.values()) {
                 if (!cAB.containsKey(c)) {
                     out.putIfAbsent(c.name.replace('/', '.'), none);
@@ -2253,6 +2402,45 @@ public final class GameDiff {
             return out;
         }
 
+        /** Every stretch the longest common subsequence leaves unmatched on both sides: {i0, i1, j0, j1}, either side possibly empty. */
+        static List<int[]> gaps(long[] ta, long[] tb) {
+            List<int[]> out = new ArrayList<>();
+            int n = ta.length;
+            int m = tb.length;
+            if ((long) n * m > 250_000) {
+                return out;
+            }
+            int[][] l = new int[n + 1][m + 1];
+            for (int i = n - 1; i >= 0; i--) {
+                for (int j = m - 1; j >= 0; j--) {
+                    l[i][j] = ta[i] == tb[j] ? l[i + 1][j + 1] + 1 : Math.max(l[i + 1][j], l[i][j + 1]);
+                }
+            }
+            int i = 0;
+            int j = 0;
+            int gi = 0;
+            int gj = 0;
+            while (i < n && j < m) {
+                if (ta[i] == tb[j]) {
+                    if (i > gi || j > gj) {
+                        out.add(new int[] { gi, i, gj, j });
+                    }
+                    i++;
+                    j++;
+                    gi = i;
+                    gj = j;
+                } else if (l[i + 1][j] >= l[i][j + 1]) {
+                    i++;
+                } else {
+                    j++;
+                }
+            }
+            if (n > gi || m > gj) {
+                out.add(new int[] { gi, n, gj, m });
+            }
+            return out;
+        }
+
         static void gap(int i0, int i1, int j0, int j1, List<int[]> out) {
             if (i1 - i0 != j1 - j0) {
                 return;
@@ -2412,6 +2600,8 @@ public final class GameDiff {
         final List<String> rewrites = new ArrayList<>();
         /** Removed classes and the class the game's code uses in their place (Hop.classRewrites). */
         final List<String> classRewrites = new ArrayList<>();
+        /** Members the game replaced with a chain on the same receiver (Hop.chains). */
+        final List<String> chains = new ArrayList<>();
         Snap prev;
         Path prevLoaderJar;
         String prevLoaderVersion;
@@ -2507,6 +2697,18 @@ public final class GameDiff {
                         ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
                     );
                 }
+                for (Hop.Chain c : h.chains()) {
+                    chains.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"owner\": " + VersionMap.Diff.q(c.owner()) +
+                        ", \"newOwner\": " + VersionMap.Diff.q(c.newOwner()) +
+                        ", \"from\": " + VersionMap.Diff.q(c.name()) +
+                        ", \"desc\": " + VersionMap.Diff.q(c.desc()) +
+                        ", \"field\": " + c.field() +
+                        ", \"steps\": " + VersionMap.Diff.q(c.steps()) +
+                        ", \"votes\": " + c.votes() + ", \"of\": " + c.of() + " }"
+                    );
+                }
                 for (Hop.ClassRewrite r : h.classRewrites()) {
                     classRewrites.add(
                         "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
@@ -2583,6 +2785,11 @@ public final class GameDiff {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(rewrites.get(i));
             }
             head.append(rewrites.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"chains\": [");
+            for (int i = 0; i < chains.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(chains.get(i));
+            }
+            head.append(chains.isEmpty() ? "],\n" : "\n  ],\n");
             head.append("  \"classRewrites\": [");
             for (int i = 0; i < classRewrites.size(); i++) {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(classRewrites.get(i));

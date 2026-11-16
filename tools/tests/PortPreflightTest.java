@@ -348,6 +348,41 @@ public final class PortPreflightTest {
         require(converted.contains("    Widget w = id;"), "a type with no known conversion is left alone");
         require(targeted.contains("var u = new Other(\"a\", 1, 2, \"b\");"), "which of two equal arguments goes is not guessed");
 
+        // A member the game replaced with a chain on the same receiver: a field read becomes the chain, a call keeps its
+        // arguments on the last step, an assigned field is left for the compiler to name.
+        Path ch = Files.createDirectories(scratch.resolve("chains"));
+        Path chMap = scratch.resolve("chains.json");
+        Files.writeString(chMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "chains": [
+                { "step": "1.21.1 -> 1.21.2", "owner": "net.minecraft.client.player.Input", "newOwner": "net.minecraft.client.player.ClientInput", "from": "up", "desc": "", "field": true, "steps": "f:keyPresses,m:forward", "votes": 2, "of": 3 },
+                { "step": "1.21.1 -> 1.21.2", "owner": "net.minecraft.core.Registry", "newOwner": "net.minecraft.core.Registry", "from": "getOrCreateTag", "desc": "(Lnet/minecraft/tags/TagKey;)Lnet/minecraft/core/HolderSet$Named;", "field": false, "steps": "m:getOrThrow", "votes": 2, "of": 2 }
+              ]
+            }
+            """);
+        String[] keys = {
+            "class Keys {",
+            "  void f(ClientInput input, Registry<Item> items) {",
+            "    if (input.up && go) run();",
+            "    input.up = true;",
+            "    var tag = items.getOrCreateTag(ModTags.FOOD);",
+            "  }",
+            "}",
+        };
+        Files.writeString(ch.resolve("Keys.java"), String.join("\n", keys) + "\n");
+        String keysFile = ch.resolve("Keys.java").toString();
+        java.util.function.BiFunction<Integer, String, String> keyErr = (line, token) -> keysFile + ":" + line + ": error: cannot find symbol\n"
+            + keys[line - 1] + "\n" + " ".repeat(keys[line - 1].indexOf(token)) + "^\n";
+        Files.writeString(scratch.resolve("chains.log"),
+            keyErr.apply(3, ".up") + "  symbol:   variable up\n  location: variable input of type ClientInput\n"
+            + keyErr.apply(4, ".up") + "  symbol:   variable up\n  location: variable input of type ClientInput\n"
+            + keyErr.apply(5, ".getOrCreateTag") + "  symbol:   method getOrCreateTag(TagKey<Item>)\n  location: variable items of type Registry<Item>\n");
+        VersionMap.Fix.run(chMap, scratch.resolve("chains.log"), ch, false, null);
+        String chained = Files.readString(ch.resolve("Keys.java"));
+        require(chained.contains("if (input.keyPresses.forward() && go) run();"), "a field read becomes the game's chain: " + chained);
+        require(chained.contains("    input.up = true;"), "an assigned field is not turned into a call");
+        require(chained.contains("items.getOrThrow(ModTags.FOOD)"), "a call keeps its arguments on the last step");
+
         // A call the game deleted: a no-argument void call that is a whole statement goes; one with arguments, or used
         // inside an expression, stays for the compiler to name.
         Path del = Files.createDirectories(scratch.resolve("deleted"));

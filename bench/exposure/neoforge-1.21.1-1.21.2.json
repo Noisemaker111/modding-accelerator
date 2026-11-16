@@ -3,20 +3,28 @@
  "from": "1.21.1",
  "to": "1.21.2",
  "modsRead": 150,
- "modsWithNothingBroken": 57,
- "usesCarried": 0.986,
+ "modsWithNothingBroken": 58,
+ "usesCarried": 0.9865,
  "gameEvidence": {
   "linked": {
    "modUses": 263,
    "members": 110
   },
   "redesigned": {
-   "modUses": 786,
-   "members": 360
+   "modUses": 543,
+   "members": 273
   },
   "replaced": {
-   "modUses": 213,
-   "members": 72
+   "modUses": 134,
+   "members": 49
+  },
+  "split": {
+   "modUses": 206,
+   "members": 78
+  },
+  "template": {
+   "modUses": 65,
+   "members": 25
   },
   "unused": {
    "modUses": 206,
@@ -60,8 +68,8 @@
    "member": "net.minecraft.world.item.crafting.Ingredient.EMPTY",
    "mods": 15,
    "why": "removed: field",
-   "game": "replaced",
-   "gameDetail": "java.util.Optional.empty()Ljava.util.Optional; at 1 of 2 aligned uses (8 uses)",
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (8 uses)",
    "examples": [
     "amendments--amendments-1.21-2.2.7-neoforge.jar",
     "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
@@ -127,20 +135,6 @@
    ]
   },
   {
-   "member": "net.minecraft.client.player.Input.up",
-   "mods": 9,
-   "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "5 uses, 5 in methods b kept, none line up",
-   "examples": [
-    "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
-    "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
-    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ]
-  },
-  {
    "member": "net.minecraft.data.recipes.RecipeProvider.<init>(Lnet/minecraft/data/PackOutput;Ljava/util/concurrent/CompletableFuture;)V",
    "mods": 9,
    "why": "signature: swap PackOutput->HolderLookup.Provider;CompletableFuture->RecipeOutput",
@@ -183,53 +177,11 @@
    ]
   },
   {
-   "member": "net.minecraft.client.player.Input.down",
-   "mods": 8,
-   "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "5 uses, 5 in methods b kept, none line up",
-   "examples": [
-    "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
-    "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
-    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ]
-  },
-  {
-   "member": "net.minecraft.client.player.Input.left",
-   "mods": 8,
-   "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "5 uses, 5 in methods b kept, none line up",
-   "examples": [
-    "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
-    "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
-    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ]
-  },
-  {
-   "member": "net.minecraft.client.player.Input.right",
-   "mods": 8,
-   "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "5 uses, 5 in methods b kept, none line up",
-   "examples": [
-    "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
-    "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
-    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ]
-  },
-  {
    "member": "net.minecraft.world.entity.LivingEntity.hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z",
    "mods": 8,
    "why": "signature",
-   "game": "replaced",
-   "gameDetail": "net.minecraft.world.entity.LivingEntity.hurtServer(Lnet.minecraft.server.level.ServerLevel;Lnet.minecraft.world.damagesource.DamageSource;F)Z at 22 of 32 aligned uses (64 uses)",
+   "game": "split",
+   "gameDetail": "m net.minecraft.world.entity.LivingEntity.hurtServer(Lnet.minecraft.server.level.ServerLevel;Lnet.minecraft.world.damagesource.DamageSource;F)Z at 2 of 4 rewritten uses (64 uses)",
    "examples": [
     "balm--balm-neoforge-1.21.1-21.0.67.jar",
     "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
@@ -242,8 +194,8 @@
    "member": "net.minecraft.world.item.armortrim.ArmorTrim",
    "mods": 8,
    "why": "removed: class",
-   "game": "replaced",
-   "gameDetail": "net.minecraft.world.item.equipment.trim.ArmorTrim at 1 of 1 aligned uses (10 uses)",
+   "game": "split",
+   "gameDetail": "c net.minecraft.world.item.equipment.trim.ArmorTrim ; m java.util.Map.values()Ljava.util.Collection; ; m java.util.Collection.iterator()Ljava.util.Iterator; at 1 of 1 rewritten uses (10 uses)",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
     "entitytexturefeatures--entity_texture_features-7.2.7-1.21-neoforge.jar",
@@ -309,20 +261,6 @@
    ]
   },
   {
-   "member": "net.minecraft.client.player.Input.jumping",
-   "mods": 7,
-   "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "11 uses, 11 in methods b kept, none line up",
-   "examples": [
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
-    "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
-    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar",
-    "supplementaries--supplementaries-1.21.1-4.1.1-neoforge.jar"
-   ]
-  },
-  {
    "member": "net.minecraft.client.renderer.PostChain.<init>(Lnet/minecraft/client/renderer/texture/TextureManager;Lnet/minecraft/server/packs/resources/ResourceProvider;Lcom/mojang/blaze3d/pipeline/RenderTarget;Lnet/minecraft/resources/ResourceLocation;)V",
    "mods": 7,
    "why": "signature: fewer",
@@ -354,8 +292,8 @@
    "member": "net.minecraft.client.renderer.block.model.ItemOverrides.EMPTY",
    "mods": 7,
    "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "3 uses, 1 in methods b kept, none line up",
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (3 uses)",
    "examples": [
     "amendments--amendments-1.21-2.2.7-neoforge.jar",
     "athena-ctm--athena-neoforge-1.21.1-4.0.6.jar",
@@ -368,8 +306,8 @@
    "member": "net.minecraft.core.registries.Registries.ARMOR_MATERIAL",
    "mods": 7,
    "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "5 uses, 5 in methods b kept, none line up",
+   "game": "template",
+   "gameDetail": " at 2 of 3 rewritten uses (5 uses)",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
@@ -396,8 +334,8 @@
    "member": "net.minecraft.world.item.ArmorItem.getEquipmentSlot()Lnet/minecraft/world/entity/EquipmentSlot;",
    "mods": 7,
    "why": "removed",
-   "game": "redesigned",
-   "gameDetail": "3 uses, 3 in methods b kept, none line up",
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (3 uses)",
    "examples": [
     "inventory-profiles-next--InventoryProfilesNext-neoforge-1.21.1-2.2.5.jar",
     "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
@@ -424,8 +362,8 @@
    "member": "net.minecraft.world.item.ItemStack.getDescriptionId()Ljava/lang/String;",
    "mods": 7,
    "why": "removed",
-   "game": "redesigned",
-   "gameDetail": "3 uses, 3 in methods b kept, none line up",
+   "game": "split",
+   "gameDetail": "m net.minecraft.world.item.ItemStack.getItem()Lnet.minecraft.world.item.Item; ; m net.minecraft.world.item.Item.getDescriptionId()Ljava.lang.String; at 1 of 2 rewritten uses (3 uses)",
    "examples": [
     "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
     "create--create-1.21.1-6.0.10.jar",
@@ -508,8 +446,8 @@
    "member": "com.mojang.blaze3d.systems.RenderSystem.getVertexSorting()Lcom/mojang/blaze3d/vertex/VertexSorting;",
    "mods": 6,
    "why": "removed",
-   "game": "redesigned",
-   "gameDetail": "1 uses, 1 in methods b kept, none line up",
+   "game": "split",
+   "gameDetail": "m com.mojang.blaze3d.systems.RenderSystem.getProjectionType()Lcom.mojang.blaze3d.ProjectionType; ; m com.mojang.blaze3d.ProjectionType.vertexSorting()Lcom.mojang.blaze3d.vertex.VertexSorting; at 1 of 1 rewritten uses (1 uses)",
    "examples": [
     "enhancedvisuals--EnhancedVisuals_NEOFORGE_v1.8.34_mc1.21.1.jar",
     "iris--iris-neoforge-1.8.14-beta.1+mc1.21.1.jar",
@@ -522,8 +460,8 @@
    "member": "net.minecraft.client.model.EntityModel.young",
    "mods": 6,
    "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "17 uses, 7 in methods b kept, none line up",
+   "game": "split",
+   "gameDetail": " at 1 of 2 rewritten uses (17 uses)",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
     "entity-model-features--entity_model_features-3.3.12-1.21-neoforge.jar",
@@ -544,20 +482,6 @@
     "geckolib--geckolib-neoforge-1.21.1-4.9.3.jar",
     "not-enough-animations--notenoughanimations-neoforge-1.12.7-mc1.21.1.jar",
     "physicsmod--physics-mod-3.0.35-mc-1.21.1-neoforge.jar"
-   ]
-  },
-  {
-   "member": "net.minecraft.client.player.Input.shiftKeyDown",
-   "mods": 6,
-   "why": "removed: field",
-   "game": "redesigned",
-   "gameDetail": "7 uses, 7 in methods b kept, none line up",
-   "examples": [
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
-    "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
-    "quark--Quark-4.1-488.jar",
-    "supplementaries--supplementaries-1.21.1-4.1.1-neoforge.jar"
    ]
   },
   {
@@ -614,6 +538,90 @@
     "lootr--lootr-neoforge-1.21.1-1.11.38.127.jar",
     "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
     "quark--Quark-4.1-488.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.entity.vehicle.ContainerEntity.setContainerLootTable(Lnet/minecraft/resources/ResourceKey;)V",
+   "mods": 6,
+   "why": "removed: new abstract method to implement",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "examples": [
+    "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
+    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
+    "lootr--lootr-neoforge-1.21.1-1.11.38.127.jar",
+    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
+    "quark--Quark-4.1-488.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.entity.vehicle.ContainerEntity.setContainerLootTableSeed(J)V",
+   "mods": 6,
+   "why": "removed: new abstract method to implement",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "examples": [
+    "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
+    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
+    "lootr--lootr-neoforge-1.21.1-1.11.38.127.jar",
+    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
+    "quark--Quark-4.1-488.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.item.ArmorItem.getMaterial()Lnet/minecraft/core/Holder;",
+   "mods": 6,
+   "why": "removed",
+   "game": "template",
+   "gameDetail": " at 3 of 3 rewritten uses (9 uses)",
+   "examples": [
+    "create--create-1.21.1-6.0.10.jar",
+    "emi--emi-1.1.24+1.21.1+neoforge.jar",
+    "geckolib--geckolib-neoforge-1.21.1-4.9.3.jar",
+    "l_enders-cataclysm--L_Ender's Cataclysm 1.21.1-3.33.jar",
+    "quark--Quark-4.1-488.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.item.ArmorMaterial$Layer.<init>(Lnet/minecraft/resources/ResourceLocation;)V",
+   "mods": 6,
+   "why": "removed",
+   "game": "redesigned",
+   "gameDetail": "1 uses, 0 in methods b kept, none line up",
+   "examples": [
+    "create--create-1.21.1-6.0.10.jar",
+    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
+    "l_enders-cataclysm--L_Ender's Cataclysm 1.21.1-3.33.jar",
+    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar",
+    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.item.crafting.ShapelessRecipe.getIngredients()Lnet/minecraft/core/NonNullList;",
+   "mods": 6,
+   "why": "removed",
+   "game": "redesigned",
+   "gameDetail": "1 uses, 0 in methods b kept, none line up",
+   "examples": [
+    "emi--emi-1.1.24+1.21.1+neoforge.jar",
+    "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
+    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
+    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
+    "rei--RoughlyEnoughItems-16.0.799-neoforge.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.level.block.state.BlockBehaviour$Properties.dropsLike(Lnet/minecraft/world/level/block/Block;)Lnet/minecraft/world/level/block/state/BlockBehaviour$Properties;",
+   "mods": 6,
+   "why": "removed",
+   "game": "redesigned",
+   "gameDetail": "58 uses, 58 in methods b kept, none line up",
+   "examples": [
+    "amendments--amendments-1.21-2.2.7-neoforge.jar",
+    "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
+    "l_enders-cataclysm--L_Ender's Cataclysm 1.21.1-3.33.jar",
+    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
+    "supplementaries--supplementaries-1.21.1-4.1.1-neoforge.jar"
    ]
   }
  ]

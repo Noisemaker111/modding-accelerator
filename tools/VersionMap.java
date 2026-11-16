@@ -1095,6 +1095,11 @@ public final class VersionMap {
         final Map<String, List<Rewrite>> rewrites = new HashMap<>();
         /** Removed classes and the class the game's own code uses in their place (GameDiff's "classRewrites"), dotted, $ nested. */
         final Map<String, String> classRewrites = new HashMap<>();
+        /**
+         * Members the game replaced with a chain on the same receiver (GameDiff's "chains"), by owner (simple, old and new)
+         * and name: {steps ("f:keyPresses,m:forward"), "f" for an old field or "m" for an old method}.
+         */
+        final Map<String, List<String[]>> chains = new HashMap<>();
 
         static Known load(Path mapFile) throws IOException {
             Known k = new Known();
@@ -1167,6 +1172,13 @@ public final class VersionMap {
                         .add(new String[] { ownerSimple, to, ownerSimple });
                     case "fieldsRemoved" -> k.fieldGone.add(from);
                     case "classRewrites" -> k.classRewrites.put(from, to);
+                    case "chains" -> {
+                        String[] chain = { field(t, "steps"), t.contains("\"field\": true") ? "f" : "m" };
+                        k.chains.computeIfAbsent(ownerSimple + "." + from, x -> new ArrayList<>()).add(chain);
+                        if (newOwner != null && !simple(newOwner).equals(ownerSimple)) {
+                            k.chains.computeIfAbsent(simple(newOwner) + "." + from, x -> new ArrayList<>()).add(chain);
+                        }
+                    }
                     case "rewrites" -> k.rewrites
                         .computeIfAbsent(ownerSimple + "." + from, x -> new ArrayList<>())
                         .add(
@@ -1492,6 +1504,46 @@ public final class VersionMap {
          * exactly one way: its old parameter count must match the call, and every argument of the replacement must come
          * from the call (the same types in order, some dropped, or the receiver passed in or taken out).
          */
+        /**
+         * The member name on the error's line (from the caret on) replaced by the chain: fields as written, methods with
+         * "()" except a last method step when the old member was a method (it keeps the call's own arguments). A field
+         * that is assigned (=, +=, ++) is left alone: a chain ending in a call cannot be assigned.
+         */
+        static String applyChain(String text, Err e, String name, boolean method, String steps) {
+            int lineStart = 0;
+            for (int i = 1; i < e.line() && lineStart > -1; i++) {
+                int next = text.indexOf('\n', lineStart);
+                lineStart = next < 0 ? -1 : next + 1;
+            }
+            if (lineStart < 0) {
+                return null;
+            }
+            int lineEnd = text.indexOf('\n', lineStart);
+            lineEnd = lineEnd < 0 ? text.length() : lineEnd;
+            Matcher use = Pattern.compile("(?<![\\w$])" + Pattern.quote(name) + (method ? "(?=\\s*\\()" : "(?![\\w$]|\\s*\\()")).matcher(text);
+            use.region(Math.min(lineEnd, lineStart + Math.max(0, e.caret())), lineEnd);
+            if (!use.find()) {
+                use.region(lineStart, lineEnd);
+                if (!use.find()) {
+                    return null;
+                }
+            }
+            String after = text.substring(use.end(), lineEnd).stripLeading();
+            if (!method && (after.matches("^(=[^=]|\\+\\+|--|[-+*/%&|^]=|<<=|>>=).*") || after.equals("="))) {
+                return null;
+            }
+            String[] parts = steps.split(",");
+            StringBuilder out = new StringBuilder();
+            for (int i = 0; i < parts.length; i++) {
+                boolean isMethod = parts[i].startsWith("m:");
+                out.append(i == 0 ? "" : ".").append(parts[i].substring(2));
+                if (isMethod && !(method && i == parts.length - 1)) {
+                    out.append("()");
+                }
+            }
+            return text.substring(0, use.start()) + out + text.substring(use.end());
+        }
+
         static String applyRewrite(String text, Err e, String name, List<Rewrite> candidates, Known k, Set<String> importsOut) {
             int lineStart = 0;
             for (int i = 1; i < e.line() && lineStart > -1; i++) {
@@ -3019,6 +3071,42 @@ public final class VersionMap {
                     text = withImport(text, fqn);
                 }
                 texts.put(entry.getKey(), text);
+            }
+
+            // 2e. A member the game replaced with a chain on the same receiver (GameDiff's "chains"): input.up becomes
+            // input.keyPresses.forward(), a call keeps its arguments on the chain's last step. Not where it is assigned.
+            Pattern missingMember = Pattern.compile("^(variable|method) (\\w+)");
+            List<Err> chainOrder = new ArrayList<>(readErrors(log));
+            chainOrder.sort(Comparator.comparing(Err::file).thenComparing(Comparator.comparingInt(Err::line).reversed()));
+            for (Err e : chainOrder) {
+                Matcher mm = missingMember.matcher(e.symbol() == null ? "" : e.symbol());
+                String type = Known.locationType(e.location());
+                if (!e.message().equals("cannot find symbol") || !mm.find() || type == null) {
+                    continue;
+                }
+                boolean method = mm.group(1).equals("method");
+                String[] chain = null;
+                Set<String> owners = new LinkedHashSet<>();
+                owners.add(type);
+                owners.addAll(SUPERS.getOrDefault(type, Set.of()));
+                for (String owner : owners) {
+                    for (String[] c : k.chains.getOrDefault(owner + "." + mm.group(2), List.of())) {
+                        if (c[1].equals(method ? "m" : "f")) {
+                            chain = c;
+                        }
+                    }
+                }
+                Path f = sourcePath(e, repo);
+                if (chain == null || f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                String rewritten = applyChain(text, e, mm.group(2), method, chain[0]);
+                if (rewritten != null) {
+                    texts.put(f, rewritten);
+                    replacements++;
+                    byKind.merge("game chain", 1, Integer::sum);
+                }
             }
 
             // 3. Learned rewrites (from other mods' real ports of this jump), on the reported lines only.

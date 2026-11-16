@@ -418,6 +418,9 @@ public final class Exposure {
             if (!owner.equals(u.owner()) && declaring(b, route.cls(u.owner()), 'f', u.name(), null) != null) {
                 return new Verdict("ok", key, "");
             }
+            if (route.rewrites.contains(owner + "." + u.name())) {
+                return new Verdict("rewritten", key, "chain");
+            }
             return new Verdict("removed", key, "field");
         }
         String[] moved = route.method(owner, u.name(), u.desc());
@@ -649,6 +652,12 @@ public final class Exposure {
         if (e.sites() == 0) {
             return new String[] {"unused", "the game never uses it"};
         }
+        if (e.templateVotes() >= 2 && e.templateVotes() * 10 >= e.templateSites() * 6) {
+            return new String[] {"template", e.template() + " at " + e.templateVotes() + " of " + e.templateSites() + " rewritten uses (" + e.sites() + " uses)"};
+        }
+        if (e.templateVotes() > 0) {
+            return new String[] {"split", e.template() + " at " + e.templateVotes() + " of " + e.templateSites() + " rewritten uses (" + e.sites() + " uses)"};
+        }
         if (e.aligned() == 0) {
             return new String[] {"redesigned", e.sites() + " uses, " + e.kept() + " in methods b kept, none line up"};
         }
@@ -704,6 +713,10 @@ public final class Exposure {
                 r.fields.put(owner + "." + Json.text(f, "from", ""), new String[] { newOwner, Json.text(f, "to", "") });
             }
             for (Object o : Json.array(map.getOrDefault("rewrites", List.of()))) {
+                var w = Json.object(o);
+                r.rewrites.add(internal(Json.text(w, "owner", "")) + "." + Json.text(w, "from", "") + Json.text(w, "desc", ""));
+            }
+            for (Object o : Json.array(map.getOrDefault("chains", List.of()))) {
                 var w = Json.object(o);
                 r.rewrites.add(internal(Json.text(w, "owner", "")) + "." + Json.text(w, "from", "") + Json.text(w, "desc", ""));
             }
