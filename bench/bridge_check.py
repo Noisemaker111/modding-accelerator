@@ -84,10 +84,12 @@ test {
 """
 
 
-def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric):
-    """Copies knowledge/bridge-tests/ID into the host's tests and runs them; None when the bridge has none."""
+def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric, drops=()):
+    """Copies knowledge/bridge-tests/ID into the host's tests and runs them; None when the bridge has none. A test under a
+    path the version layer drops (the bridge has no such classes there) is left out, as the classes are."""
     folder = TESTS / bridge_id
     sources = sorted(folder.rglob("*.java")) if folder.is_dir() else []
+    sources = [f for f in sources if not any(f.relative_to(folder).as_posix().startswith(d) for d in drops)]
     if not sources:
         return None
     test_java = work / "src" / "test" / "java" / pkg_rel
@@ -162,6 +164,8 @@ def main():
             if code not in (0, 1) or "error" in result and "from" not in result:
                 print(json.dumps({"ok": False, "stage": "convert", "result": result}, indent=1))
                 return 1
+    # A kept host still holds the last run's tests; they are copied again (and filtered for this layer) before running.
+    convert_sweep.rmtree(work / "src" / "test" / "java")
     java = work / "src" / "main" / "java"
     if to_fabric:
         pkg_dir = next(p.parent for p in java.rglob("Bridge.java") if "What a NeoForge @Mod class" in p.read_text(encoding="utf-8"))
@@ -222,7 +226,7 @@ def main():
             out["errors"] = ["with the interfaces injected: " + f"{Path(e['file']).name}:{e['line']}: {e['message']} {e['symbol']}".strip()
                              for e in (convert_sweep.compile_errors(logs[-1].read_text(encoding="utf-8", errors="replace")) if logs else [])][:200]
     if code == 0:
-        tests = run_tests(work, pkg_dir.relative_to(java), pkg, modid, args.bridge, to_fabric)
+        tests = run_tests(work, pkg_dir.relative_to(java), pkg, modid, args.bridge, to_fabric, (layer or {}).get("drops", []))
         if tests is not None:
             out["tests"] = tests
             out["ok"] = tests["ok"]
