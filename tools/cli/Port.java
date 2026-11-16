@@ -1871,8 +1871,21 @@ final class Port {
         if (written.isEmpty()) return true;
         if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
         if (supertypeIndex.bySimple.getOrDefault("Minecraft", List.of()).isEmpty()) return true;
-        for (String name : written) if (supertypeIndex.qualified(name) == null) return false;
+        for (String name : written) if (supertypeIndex.qualified(name) == null && !mapRenames(name)) return false;
         return true;
+    }
+
+    Set<String> mapClassesFrom;
+
+    /** Whether the route map renames this class (dotted, nested with '.'): the typed fixer carries it to the target's name. */
+    boolean mapRenames(String name) throws IOException {
+        if (mapClassesFrom == null) {
+            mapClassesFrom = new HashSet<>();
+            if (mapFile != null && Files.isRegularFile(mapFile)) for (Object o : Json.array(Json.read(mapFile).get("classes"))) {
+                mapClassesFrom.add(Json.text(Json.object(o), "from", "").replace('$', '.'));
+            }
+        }
+        return mapClassesFrom.contains(name);
     }
 
     static boolean loaderFits(Map<String, Object> rule, Set<String> loaders) {
