@@ -207,7 +207,7 @@ def main():
         text = rewrite(f.read_text(encoding="utf-8"), layer)
         target.write_text(text.replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
     mixins = (layer or {}).get("mixins") if (layer or {}).get("mixins") is not None else b.get("mixins") or []
-    mixins = [m for m in mixins if "mixin/" + m["mixin"] + ".java" in files]
+    mixins = [m for m in mixins if "mixin/" + m["mixin"].replace(".", "/") + ".java" in files]
     if mixins:
         config = {"required": True, "minVersion": "0.8", "package": pkg + ".mixin",
                   "compatibilityLevel": "JAVA_21" if args.minecraft.startswith("1.") else "JAVA_25",

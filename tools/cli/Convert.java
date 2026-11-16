@@ -3720,7 +3720,7 @@ final class Convert {
             ) needed = true;
             if (!needed) continue;
             // A mixin of a game version this one does not have (its file is only in another version layer) is not listed.
-            if (!exists("src/main/java/" + pkg.replace('.', '/') + "/mixin/" + Json.text(mixin, "mixin", "") + ".java")) continue;
+            if (!exists("src/main/java/" + pkg.replace('.', '/') + "/mixin/" + Json.text(mixin, "mixin", "").replace('.', '/') + ".java")) continue;
             (Boolean.TRUE.equals(mixin.get("client")) ? client : common).add(Json.text(mixin, "mixin", ""));
             // A mixin that adds one of the bridge's interfaces to a game class: Loom injects it for the mod's compile.
             if (mixin.get("injects") instanceof Map<?, ?> injects) for (var e : Json.object(injects).entrySet()) bridgeInjected

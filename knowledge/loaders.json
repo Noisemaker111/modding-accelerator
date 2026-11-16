@@ -4817,7 +4817,11 @@
       "RegisterSpecialModelRendererEvent.java",
       "transfer/",
       "inventory/",
-      "common/util/ValueIOSerializable.java"
+      "common/util/ValueIOSerializable.java",
+      "generated/",
+      "mixin/generated/",
+      "generated261/",
+      "mixin/generated261/"
      ],
      "rewrites": {
       "org.jspecify.annotations.Nullable": "org.jetbrains.annotations.Nullable",
@@ -5511,7 +5515,9 @@
      },
      "drops": [
       "mixin/InventoryDropsMixin.java",
-      "mixin/EquipmentDropsMixin.java"
+      "mixin/EquipmentDropsMixin.java",
+      "generated/",
+      "mixin/generated/"
      ]
     }
    ],
@@ -6221,6 +6227,4829 @@
        "shouldTriggerClientSideContainerClosingOnOpen"
       ]
      ]
+    },
+    {
+     "mixin": "generated.TransformationGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getNormalMatrix)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/math/Transformation": "generated.TransformationGenerated"
+     }
+    },
+    {
+     "mixin": "generated.RenderPipelineGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:toBuilder)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/api/pipeline/RenderPipeline": "generated.RenderPipelineGenerated"
+     }
+    },
+    {
+     "mixin": "generated.DirectStateAccessGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:bindFrameBufferTextures)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/backend/opengl/DirectStateAccess": "generated.DirectStateAccessGenerated"
+     }
+    },
+    {
+     "mixin": "generated.GlCommandEncoderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:clearStencilTexture)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/backend/opengl/GlCommandEncoder": "generated.GlCommandEncoderGenerated"
+     }
+    },
+    {
+     "mixin": "generated.GlRenderPassGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setViewport)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/backend/opengl/GlRenderPass": "generated.GlRenderPassGenerated"
+     }
+    },
+    {
+     "mixin": "generated.GlTextureGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:hasStencilAspect)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/backend/opengl/GlTexture": "generated.GlTextureGenerated"
+     }
+    },
+    {
+     "mixin": "generated.GlTextureViewGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:hasStencilAspect)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/backend/opengl/GlTextureView": "generated.GlTextureViewGenerated"
+     }
+    },
+    {
+     "mixin": "generated.VulkanCommandEncoderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:clearStencilTexture)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/backend/vulkan/VulkanCommandEncoder": "generated.VulkanCommandEncoderGenerated"
+     }
+    },
+    {
+     "mixin": "generated.VulkanRenderPassGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setViewport)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/backend/vulkan/VulkanRenderPass": "generated.VulkanRenderPassGenerated"
+     }
+    },
+    {
+     "mixin": "generated.VulkanRenderPipelineGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:withDepthStencilPipeline|withStencilPipeline)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/backend/vulkan/VulkanRenderPipeline": "generated.VulkanRenderPipelineGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FrontendCommandEncoderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:clearStencilTexture)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/frontend/FrontendCommandEncoder": "generated.FrontendCommandEncoderGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FrontendRenderPassGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setViewport)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/renderpearl/frontend/FrontendRenderPass": "generated.FrontendRenderPassGenerated"
+     }
+    },
+    {
+     "mixin": "generated.CrashReportCategoryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setStackTrace)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/CrashReportCategory": "generated.CrashReportCategoryGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EntityPredicateGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPartIfExists)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/advancements/predicates/entity/EntityPredicate": "generated.EntityPredicateGenerated"
+     }
+    },
+    {
+     "mixin": "generated.CameraGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getBlockAtCamera|getRoll)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/Camera": "generated.CameraGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MinecraftGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getBlockModelResolver)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/Minecraft": "generated.MinecraftGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MouseHandlerGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getXVelocity|getYVelocity)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/MouseHandler": "generated.MouseHandlerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ModelTemplateGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:createBaseTemplate)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/data/models/model/ModelTemplate": "generated.ModelTemplateGenerated"
+     }
+    },
+    {
+     "mixin": "generated.GuiGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:clearScreenLayers|popScreenLayer|pushScreenLayer|resizeScreenLayers)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/Gui": "generated.GuiGenerated"
+     }
+    },
+    {
+     "mixin": "generated.GuiGraphicsExtractorGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:peekScissorStack|setComponentTooltipForNextFrame|setComponentTooltipFromElementsForNextFrame|submitGuiElementRenderState|submitPictureInPictureRenderState|tooltip)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/GuiGraphicsExtractor": "generated.GuiGraphicsExtractorGenerated"
+     }
+    },
+    {
+     "mixin": "generated.HudGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:initModdedOverlays)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/Hud": "generated.HudGenerated"
+     }
+    },
+    {
+     "mixin": "generated.AbstractWidgetGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getLabelTextColor|setLabelTextColor)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/components/AbstractWidget": "generated.AbstractWidgetGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EditBoxGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getTextShadow)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/components/EditBox": "generated.EditBoxGenerated"
+     }
+    },
+    {
+     "mixin": "generated.WorldCreationContextGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:withDataConfiguration)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/screens/worldselection/WorldCreationContext": "generated.WorldCreationContextGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ClientCommonPacketListenerImplGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getPacketProcessor)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/multiplayer/ClientCommonPacketListenerImpl": "generated.ClientCommonPacketListenerImplGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ClientConfigurationPacketListenerImplGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:handleCustomPayload)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/multiplayer/ClientConfigurationPacketListenerImpl": "generated.ClientConfigurationPacketListenerImplGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockStatePredictionHandlerGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:retainSnapshot)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/multiplayer/prediction/BlockStatePredictionHandler": "generated.BlockStatePredictionHandlerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TerrainParticleGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:updateSprite)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/particle/TerrainParticle": "generated.TerrainParticleGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SubmitNodeCollectionGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:submitMultiLayerBlockModel)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/SubmitNodeCollection": "generated.SubmitNodeCollectionGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockModelLighterGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:reset)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/BlockModelLighter": "generated.BlockModelLighterGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockModelRenderStateGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:submitMultiLayer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/BlockModelRenderState": "generated.BlockModelRenderStateGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockStateModelDispatcherGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:instantiateVanilla)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/dispatch/BlockStateModelDispatcher": "generated.BlockStateModelDispatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated.WeightedVariantsGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:collectParts)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/dispatch/WeightedVariants": "generated.WeightedVariantsGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MultiPartModelGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:collectParts)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/dispatch/multipart/MultiPartModel": "generated.MultiPartModelGenerated"
+     }
+    },
+    {
+     "mixin": "generated.AbstractSignRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/AbstractSignRenderer": "generated.AbstractSignRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BannerRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/BannerRenderer": "generated.BannerRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockEntityRenderDispatcherGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:tryExtractRenderState)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher": "generated.BlockEntityRenderDispatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockEntityWithBoundingBoxRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/BlockEntityWithBoundingBoxRenderer": "generated.BlockEntityWithBoundingBoxRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BrushableBlockRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/BrushableBlockRenderer": "generated.BrushableBlockRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ConduitRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/ConduitRenderer": "generated.ConduitRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.CopperGolemStatueBlockRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/CopperGolemStatueBlockRenderer": "generated.CopperGolemStatueBlockRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.DecoratedPotRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/DecoratedPotRenderer": "generated.DecoratedPotRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EnchantTableRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/EnchantTableRenderer": "generated.EnchantTableRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LecternRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/LecternRenderer": "generated.LecternRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PistonHeadRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/PistonHeadRenderer": "generated.PistonHeadRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ShulkerBoxRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/ShulkerBoxRenderer": "generated.ShulkerBoxRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SkullBlockRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/SkullBlockRenderer": "generated.SkullBlockRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SpawnerRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/SpawnerRenderer": "generated.SpawnerRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TheEndGatewayRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/TheEndGatewayRenderer": "generated.TheEndGatewayRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TrialSpawnerRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/TrialSpawnerRenderer": "generated.TrialSpawnerRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EntityRenderDispatcherGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getMannequinRenderers|getPlayerRenderers)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/entity/EntityRenderDispatcher": "generated.EntityRenderDispatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated.AvatarRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:submit)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/entity/player/AvatarRenderer": "generated.AvatarRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LevelExtractorGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:iterateVisibleBlockEntities)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/extract/LevelExtractor": "generated.LevelExtractorGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SpriteContentsGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getOriginalImage)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/texture/SpriteContents": "generated.SpriteContentsGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TextureAtlasGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getTextures)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/texture/TextureAtlas": "generated.TextureAtlasGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TextureAtlasSpriteGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getPixelARGB)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/texture/TextureAtlasSprite": "generated.TextureAtlasSpriteGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ClientLanguageGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getComponent|getLanguageData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/language/ClientLanguage": "generated.ClientLanguageGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LanguageManagerGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getJavaLocale)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/language/LanguageManager": "generated.LanguageManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ModelManagerGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getMissingModels|getModelBakery)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/model/ModelManager": "generated.ModelManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.CuboidModelGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:fillAdditionalProperties)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/model/cuboid/CuboidModel": "generated.CuboidModelGenerated"
+     }
+    },
+    {
+     "mixin": "generated.UnbakedCuboidGeometryGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:bake)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/model/cuboid/UnbakedCuboidGeometry": "generated.UnbakedCuboidGeometryGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MappedRegistryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:unfreeze)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/MappedRegistry": "generated.MappedRegistryGenerated"
+     }
+    },
+    {
+     "mixin": "generated.RegistrySetBuilderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getEntryKeys)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/RegistrySetBuilder": "generated.RegistrySetBuilderGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockTransformerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:transformBlock)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/component/BlockTransformer": "generated.BlockTransformerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.DataComponentPatchGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPatch|isPatched)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/component/DataComponentPatch": "generated.DataComponentPatchGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PatchedDataComponentMapGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isPatchEmpty|patchEquals)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/component/PatchedDataComponentMap": "generated.PatchedDataComponentMapGenerated"
+     }
+    },
+    {
+     "mixin": "generated.DataGeneratorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getBuiltinDatapack|getPackGenerator|getProvidersView)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/data/DataGenerator": "generated.DataGeneratorGenerated"
+     }
+    },
+    {
+     "mixin": "generated.VanillaBlockLootGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getKnownBlocks)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/data/loot/packs/VanillaBlockLoot": "generated.VanillaBlockLootGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LanguageGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getComponent|getLanguageData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/locale/Language": "generated.LanguageGenerated"
+     }
+    },
+    {
+     "mixin": "generated.NbtAccounterGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:readUTF)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/nbt/NbtAccounter": "generated.NbtAccounterGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ConnectionGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:channel|getInboundProtocol)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/Connection": "generated.ConnectionGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ConnectionProtocolGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isConfiguration|isPlay)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/ConnectionProtocol": "generated.ConnectionProtocolGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PacketProcessorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:scheduleIfPossible)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/PacketProcessor": "generated.PacketProcessorGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BundlerInfoGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:unbundlePacket)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/protocol/BundlerInfo": "generated.BundlerInfoGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FileToIdConverterGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:listMatchingResourceStacksFromNamespace|listMatchingResourcesFromNamespace)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/resources/FileToIdConverter": "generated.FileToIdConverterGenerated"
+     }
+    },
+    {
+     "mixin": "generated.IdentifierGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:compareNamespaced)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/resources/Identifier": "generated.IdentifierGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MinecraftServerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getStatusJson|getTickTime|handleCustomClickAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/MinecraftServer": "generated.MinecraftServerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ReloadableServerResourcesGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getRegistryLookup)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/ReloadableServerResources": "generated.ReloadableServerResourcesGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MinecraftApiGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:logger)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/jsonrpc/internalapi/MinecraftApi": "generated.MinecraftApiGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ChunkMapGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPlayersWatching|scheduleOnMainThreadMailbox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ChunkMap": "generated.ChunkMapGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ServerEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:sendPairingData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ServerEntity": "generated.ServerEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ServerLevelGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:cleanCapabilityListenerReferences|getSeedOverride|syncData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ServerLevel": "generated.ServerLevelGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ServerPlayerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getLanguage|getTabListFooter|getTabListHeader|refreshTabListName|setTabListFooter|setTabListHeader|setTabListHeaderFooter)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ServerPlayer": "generated.ServerPlayerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EventLoopGroupHolderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:serverEventLoopGroup)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/network/EventLoopGroupHolder": "generated.EventLoopGroupHolderGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ServerCommonPacketListenerImplGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPacketProcessor)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/network/ServerCommonPacketListenerImpl": "generated.ServerCommonPacketListenerImplGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ServerConfigurationPacketListenerImplGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:handleCustomPayload|handlePong)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/network/ServerConfigurationPacketListenerImpl": "generated.ServerConfigurationPacketListenerImplGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PackTypeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getSerializedName)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/PackType": "generated.PackTypeGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PackGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isHidden|streamSelfAndChildren|withChildren)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/repository/Pack": "generated.PackGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PackRepositoryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addPackFinder)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/repository/PackRepository": "generated.PackRepositoryGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ReloadableResourceManagerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getListeners|updateListenersFrom)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/resources/ReloadableResourceManager": "generated.ReloadableResourceManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ResourceFilterSectionGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isFiltered)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/resources/ResourceFilterSection": "generated.ResourceFilterSectionGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PlayerListGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPlayerIo)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/players/PlayerList": "generated.PlayerListGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TagBuilderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getRemoveEntries)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/tags/TagBuilder": "generated.TagBuilderGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TagEntryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isRequired|isTag)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/tags/TagEntry": "generated.TagEntryGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TriStateGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isDefault)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/util/TriState": "generated.TriStateGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MobEffectGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addAttributeModifier)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/effect/MobEffect": "generated.MobEffectGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canTrample|getFluidHeight|getFluidInteraction|isAddedToLevel|isEyeInFluid|onAddedToLevel|onRemovedFromLevel|revive|syncData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/Entity": "generated.EntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EntityFluidInteractionGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:applyCurrentTo|getFallDistanceModifier|getFirstEyeInFluid|getFluidHeight|getMaxHeightFluidType|isEyeInFluid|isInAnyFluid|isInFluid)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/EntityFluidInteraction": "generated.EntityFluidInteractionGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EntityTypeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getTags)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/EntityType": "generated.EntityTypeGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LightningBoltGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getDamage|setDamage)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/LightningBolt": "generated.LightningBoltGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LivingEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:randomTeleport|setItemSlot)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/LivingEntity": "generated.LivingEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MobGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isSpawnCancelled|jumpInFluid|setSpawnCancelled)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/Mob": "generated.MobGenerated"
+     }
+    },
+    {
+     "mixin": "generated.AttributeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getMergedStyle)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/ai/attributes/Attribute": "generated.AttributeGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BeeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:jumpInFluid)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/animal/bee/Bee": "generated.BeeGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MagmaCubeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:jumpInFluid)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/monster/cubemob/MagmaCube": "generated.MagmaCubeGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PlayerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:dropWithoutEvent|getDestroySpeed|getForcedPose|getPrefixes|getSuffixes|refreshDisplayName|setForcedPose)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/player/Player": "generated.PlayerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FeatureFlagGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isModded)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/flag/FeatureFlag": "generated.FeatureFlagGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FeatureFlagRegistryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getAllFlags|getFlag|hasAnyModdedFlags)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/flag/FeatureFlagRegistry": "generated.FeatureFlagRegistryGenerated"
+     }
+    },
+    {
+     "mixin": "generated.AnvilMenuGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setCost)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/inventory/AnvilMenu": "generated.AnvilMenuGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SlotGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getSlotIndex|setBackground)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/inventory/Slot": "generated.SlotGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ArrowItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isInfinite)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ArrowItem": "generated.ArrowItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BrushItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/BrushItem": "generated.BrushItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BucketItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:emptyContents)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/BucketItem": "generated.BucketItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.CreativeModeTabGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getLabelColor|getScrollerSprite|getSearchBarWidth|hasSearchBar)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/CreativeModeTab": "generated.CreativeModeTabGenerated"
+     }
+    },
+    {
+     "mixin": "generated.DyeColorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getDyedTag)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/DyeColor": "generated.DyeColorGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FireChargeItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/FireChargeItem": "generated.FireChargeItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FishingRodItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/FishingRodItem": "generated.FishingRodItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FlintAndSteelItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/FlintAndSteelItem": "generated.FlintAndSteelItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:computeDefaultResource|isCombineRepairable|resetDefaultResource)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/Item": "generated.ItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ItemDisplayContextGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:fallback|isModded)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ItemDisplayContext": "generated.ItemDisplayContextGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ItemStackGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getTagEnchantments|hurtAndBreak|onItemUseFirst)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ItemStack": "generated.ItemStackGenerated"
+     }
+    },
+    {
+     "mixin": "generated.MobBucketItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:emptyContents)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/MobBucketItem": "generated.MobBucketItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ProjectileWeaponItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:customArrow|getAllSupportedProjectiles|getDefaultCreativeAmmo|getSupportedHeldProjectiles)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ProjectileWeaponItem": "generated.ProjectileWeaponItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.RarityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getStyleModifier)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/Rarity": "generated.RarityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ShearsItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction|interactLivingEntity)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ShearsItem": "generated.ShearsItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SpyglassItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/SpyglassItem": "generated.SpyglassItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TridentItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/TridentItem": "generated.TridentItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlocksAttacksGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:hurtBlockingItem)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/component/BlocksAttacks": "generated.BlocksAttacksGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ItemContainerContentsGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getTemplateInSlot)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/component/ItemContainerContents": "generated.ItemContainerContentsGenerated"
+     }
+    },
+    {
+     "mixin": "generated.IngredientGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isCustom|isSimple)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/crafting/Ingredient": "generated.IngredientGenerated"
+     }
+    },
+    {
+     "mixin": "generated.RecipeManagerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:recipeMap|setPriorityMap)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/crafting/RecipeManager": "generated.RecipeManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BaseSpawnerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getOwner)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/BaseSpawner": "generated.BaseSpawnerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.DataPackConfigGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addModPacks)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/DataPackConfig": "generated.DataPackConfigGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LevelGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addFreshBlockEntities|getMaxEntityRadius|increaseMaxEntityRadius|markAndNotifyBlock)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/Level": "generated.LevelGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LevelSettingsGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:withLifecycle)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/LevelSettings": "generated.LevelSettingsGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TicketStorageGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:shouldForceNaturalSpawning)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/TicketStorage": "generated.TicketStorageGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BiomeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getModifiedEnvironmentAttributes|getModifiedSpecialEffects)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/biome/Biome": "generated.BiomeGenerated"
+     }
+    },
+    {
+     "mixin": "generated.AbstractCauldronBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onPlace)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/AbstractCauldronBlock": "generated.AbstractCauldronBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BaseRailBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getRailDirection|isFlexibleRail)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/BaseRailBlock": "generated.BaseRailBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ComparatorBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getWeakChanges|onNeighborChange)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/ComparatorBlock": "generated.ComparatorBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.DropExperienceBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/DropExperienceBlock": "generated.DropExperienceBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FireBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canCatchFire)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/FireBlock": "generated.FireBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FlowerPotBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getEmptyPot|getFullPot|getFullPots)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/FlowerPotBlock": "generated.FlowerPotBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.IronBarsBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:attachesTo)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/IronBarsBlock": "generated.IronBarsBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PoweredRailBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isActivatorRail)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/PoweredRailBlock": "generated.PoweredRailBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.RedStoneOreBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/RedStoneOreBlock": "generated.RedStoneOreBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.RotationGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getInverse)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/Rotation": "generated.RotationGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SculkCatalystBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/SculkCatalystBlock": "generated.SculkCatalystBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SculkSensorBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/SculkSensorBlock": "generated.SculkSensorBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SculkShriekerBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/SculkShriekerBlock": "generated.SculkShriekerBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.SpawnerBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/SpawnerBlock": "generated.SpawnerBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TntBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onCaughtFire)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/TntBlock": "generated.TntBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TrapDoorBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isLadder)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/TrapDoorBlock": "generated.TrapDoorBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.AbstractFurnaceBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onTransfer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity": "generated.AbstractFurnaceBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getAndClearAttachmentTypesToSync|syncData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/BlockEntity": "generated.BlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockEntityTypeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getValidBlocks)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/BlockEntityType": "generated.BlockEntityTypeGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ChestBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setBlockState)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/ChestBlockEntity": "generated.ChestBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ChiseledBookShelfBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onTransfer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/ChiseledBookShelfBlockEntity": "generated.ChiseledBookShelfBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.HopperBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getLastUpdateTime|onTransfer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/HopperBlockEntity": "generated.HopperBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.JukeboxBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onTransfer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/JukeboxBlockEntity": "generated.JukeboxBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TrialSpawnerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getOwner)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/trialspawner/TrialSpawner": "generated.TrialSpawnerGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PistonBaseBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:rotate)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/piston/PistonBaseBlock": "generated.PistonBaseBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BlockMatcherGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:filterPosition)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/blockscan/BlockMatcher": "generated.BlockMatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated.BoxBlockMatcherGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:filterPosition)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/blockscan/BoxBlockMatcher": "generated.BoxBlockMatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated.OrderedBlockMatcherGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:filterPosition)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/blockscan/OrderedBlockMatcher": "generated.OrderedBlockMatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ChunkAccessGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:findBlocks|hasAttachments|readAttachmentsFromNBT|writeAttachmentsToNBT)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/ChunkAccess": "generated.ChunkAccessGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ChunkGeneratorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:refreshFeaturesPerStep)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/ChunkGenerator": "generated.ChunkGeneratorGenerated"
+     }
+    },
+    {
+     "mixin": "generated.ImposterProtoChunkGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:findBlocks)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/ImposterProtoChunk": "generated.ImposterProtoChunkGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LevelChunkGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:syncData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/LevelChunk": "generated.LevelChunkGenerated"
+     }
+    },
+    {
+     "mixin": "generated.EnderDragonFightGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addPlayer|removePlayer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/dimension/end/EnderDragonFight": "generated.EnderDragonFightGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FlatLevelSourceGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:refreshFeaturesPerStep)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/levelgen/FlatLevelSource": "generated.FlatLevelSourceGenerated"
+     }
+    },
+    {
+     "mixin": "generated.StructureGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getModifiedStructureSettings)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/levelgen/structure/Structure": "generated.StructureGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FlowingFluidGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canConvertToSource)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/material/FlowingFluid": "generated.FlowingFluidGenerated"
+     }
+    },
+    {
+     "mixin": "generated.FluidGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:computeDefaultResource)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/material/Fluid": "generated.FluidGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PlayerDataStorageGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPlayerDir)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/PlayerDataStorage": "generated.PlayerDataStorageGenerated"
+     }
+    },
+    {
+     "mixin": "generated.PrimaryLevelDataGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:hasConfirmedExperimentalWarning|withConfirmedWarning)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/PrimaryLevelData": "generated.PrimaryLevelDataGenerated"
+     }
+    },
+    {
+     "mixin": "generated.TagValueInputGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:rawChildOrEmpty)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/TagValueInput": "generated.TagValueInputGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LootContextGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getQueriedLootTableId|setQueriedLootTableId)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/loot/LootContext": "generated.LootContextGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LootPoolGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:freeze|getBonusRolls|getRolls|isFrozen|setBonusRolls|setRolls)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/loot/LootPool": "generated.LootPoolGenerated"
+     }
+    },
+    {
+     "mixin": "generated.LootTableGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addPool|freeze|getLootTableId|getPool|isFrozen|removePool|setLootTableId)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/loot/LootTable": "generated.LootTableGenerated"
+     }
+    },
+    {
+     "mixin": "generated.AABBGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isInfinite)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/phys/AABB": "generated.AABBGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.DirectStateAccessGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:bindFrameBufferTextures)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/blaze3d/opengl/DirectStateAccess": "generated261.DirectStateAccessGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.GlCommandEncoderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:clearStencilTexture)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/blaze3d/opengl/GlCommandEncoder": "generated261.GlCommandEncoderGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.GlRenderPassGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setViewport)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/blaze3d/opengl/GlRenderPass": "generated261.GlRenderPassGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.RenderPipelineGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:toBuilder)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/blaze3d/pipeline/RenderPipeline": "generated261.RenderPipelineGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.CommandEncoderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:clearStencilTexture)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/blaze3d/systems/CommandEncoder": "generated261.CommandEncoderGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.RenderPassGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setViewport)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/blaze3d/systems/RenderPass": "generated261.RenderPassGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TextureFormatGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:hasStencilAspect)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/blaze3d/textures/TextureFormat": "generated261.TextureFormatGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.VertexFormatGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getElementMapping)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/blaze3d/vertex/VertexFormat": "generated261.VertexFormatGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TransformationGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:applyOrigin|blockCenterToCorner|blockCornerToCenter|getNormalMatrix|isIdentity|rotateTransform|transformNormal|transformPosition)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "com/mojang/math/Transformation": "generated261.TransformationGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.CrashReportCategoryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setStackTrace)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/CrashReportCategory": "generated261.CrashReportCategoryGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.CameraGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getBlockAtCamera|getRoll)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/Camera": "generated261.CameraGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.KeyMappingGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:hasKeyModifierConflict|setToDefault)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/KeyMapping": "generated261.KeyMappingGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MinecraftGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getBlockModelResolver|getLocale|popGuiLayer|pushGuiLayer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/Minecraft": "generated261.MinecraftGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MouseHandlerGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getXVelocity|getYVelocity)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/MouseHandler": "generated261.MouseHandlerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ItemModelGeneratorsGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:generateDynamicTrimmableItem)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/data/models/ItemModelGenerators": "generated261.ItemModelGeneratorsGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ModelProviderGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:mcLocation|modLocation)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/data/models/ModelProvider": "generated261.ModelProviderGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ModelTemplateGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:createBaseTemplate)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/data/models/model/ModelTemplate": "generated261.ModelTemplateGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TexturedModelGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:updateTemplate)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/data/models/model/TexturedModel": "generated261.TexturedModelGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FontGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:ellipsize)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/Font": "generated261.FontGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.GuiGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:initModdedOverlays)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/Gui": "generated261.GuiGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.GuiGraphicsExtractorGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:peekScissorStack|setComponentTooltipForNextFrame|setComponentTooltipFromElementsForNextFrame|submitGuiElementRenderState|submitPictureInPictureRenderState|tooltip)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/GuiGraphicsExtractor": "generated261.GuiGraphicsExtractorGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AbstractWidgetGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:clearFGColor|getFGColor|setFGColor)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/components/AbstractWidget": "generated261.AbstractWidgetGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.EditBoxGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getTextShadow|setFilter)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/components/EditBox": "generated261.EditBoxGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.GlyphRenderTypesGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:select)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/font/GlyphRenderTypes": "generated261.GlyphRenderTypesGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.WorldCreationContextGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:withDataConfiguration)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/screens/worldselection/WorldCreationContext": "generated261.WorldCreationContextGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ClientCommonPacketListenerImplGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getPacketProcessor)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/multiplayer/ClientCommonPacketListenerImpl": "generated261.ClientCommonPacketListenerImplGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ClientConfigurationPacketListenerImplGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:handleCustomPayload)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/multiplayer/ClientConfigurationPacketListenerImpl": "generated261.ClientConfigurationPacketListenerImplGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ClientLevelGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:addBreakingBlockEffect)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/multiplayer/ClientLevel": "generated261.ClientLevelGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockStatePredictionHandlerGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:retainSnapshot)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/multiplayer/prediction/BlockStatePredictionHandler": "generated261.BlockStatePredictionHandlerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TerrainParticleGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:updateSprite)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/particle/TerrainParticle": "generated261.TerrainParticleGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LevelRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getTicks|iterateVisibleBlockEntities)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/LevelRenderer": "generated261.LevelRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SubmitNodeCollectionGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:submitMultiLayerBlockModel)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/SubmitNodeCollection": "generated261.SubmitNodeCollectionGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockModelRenderStateGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:submitMultiLayer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/BlockModelRenderState": "generated261.BlockModelRenderStateGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockStateModelDispatcherGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:instantiateVanilla)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/dispatch/BlockStateModelDispatcher": "generated261.BlockStateModelDispatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.WeightedVariantsGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:collectParts)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/dispatch/WeightedVariants": "generated261.WeightedVariantsGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MultiPartModelGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:collectParts)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/block/dispatch/multipart/MultiPartModel": "generated261.MultiPartModelGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AbstractSignRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/AbstractSignRenderer": "generated261.AbstractSignRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BannerRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/BannerRenderer": "generated261.BannerRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockEntityRenderDispatcherGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:tryExtractRenderState)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher": "generated261.BlockEntityRenderDispatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockEntityWithBoundingBoxRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/BlockEntityWithBoundingBoxRenderer": "generated261.BlockEntityWithBoundingBoxRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BrushableBlockRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/BrushableBlockRenderer": "generated261.BrushableBlockRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ConduitRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/ConduitRenderer": "generated261.ConduitRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.CopperGolemStatueBlockRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/CopperGolemStatueBlockRenderer": "generated261.CopperGolemStatueBlockRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.DecoratedPotRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/DecoratedPotRenderer": "generated261.DecoratedPotRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.EnchantTableRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/EnchantTableRenderer": "generated261.EnchantTableRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LecternRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/LecternRenderer": "generated261.LecternRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PistonHeadRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/PistonHeadRenderer": "generated261.PistonHeadRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ShulkerBoxRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/ShulkerBoxRenderer": "generated261.ShulkerBoxRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SkullBlockRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/SkullBlockRenderer": "generated261.SkullBlockRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SpawnerRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/SpawnerRenderer": "generated261.SpawnerRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TheEndGatewayRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/TheEndGatewayRenderer": "generated261.TheEndGatewayRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TrialSpawnerRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderBoundingBox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/blockentity/TrialSpawnerRenderer": "generated261.TrialSpawnerRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.EntityRenderDispatcherGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getMannequinRenderers|getPlayerRenderers)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/entity/EntityRenderDispatcher": "generated261.EntityRenderDispatcherGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AvatarRendererGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:renderLeftHand|renderRightHand|submit)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/entity/player/AvatarRenderer": "generated261.AvatarRendererGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SpriteContentsGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getOriginalImage)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/texture/SpriteContents": "generated261.SpriteContentsGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TextureAtlasGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getTextures)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/texture/TextureAtlas": "generated261.TextureAtlasGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TextureAtlasSpriteGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getPixelRGBA)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/texture/TextureAtlasSprite": "generated261.TextureAtlasSpriteGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ClientLanguageGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getComponent|getLanguageData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/language/ClientLanguage": "generated261.ClientLanguageGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LanguageManagerGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getJavaLocale)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/language/LanguageManager": "generated261.LanguageManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ModelManagerGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getModelBakery)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/model/ModelManager": "generated261.ModelManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.CuboidModelGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:fillAdditionalProperties)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/model/cuboid/CuboidModel": "generated261.CuboidModelGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.UnbakedCuboidGeometryGeneratedMixin",
+     "generated": true,
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:bake)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/resources/model/cuboid/UnbakedCuboidGeometry": "generated261.UnbakedCuboidGeometryGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.CommandSourceStackGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getAdvancement|getScoreboard|getSourceProfile|getUnsidedLevel)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/commands/CommandSourceStack": "generated261.CommandSourceStackGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MappedRegistryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:unfreeze)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/MappedRegistry": "generated261.MappedRegistryGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.RegistrySetBuilderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getEntryKeys)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/RegistrySetBuilder": "generated261.RegistrySetBuilderGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.DataComponentPatchGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPatch)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/component/DataComponentPatch": "generated261.DataComponentPatchGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PatchedDataComponentMapGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isPatchEmpty|patchEquals)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/core/component/PatchedDataComponentMap": "generated261.PatchedDataComponentMapGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.DataGeneratorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getBuiltinDatapack|getPackGenerator|getProvidersView)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/data/DataGenerator": "generated261.DataGeneratorGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LootTableProviderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getTables)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/data/loot/LootTableProvider": "generated261.LootTableProviderGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LanguageGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getComponent|getLanguageData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/locale/Language": "generated261.LanguageGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.NbtAccounterGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:readUTF)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/nbt/NbtAccounter": "generated261.NbtAccounterGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ConnectionGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:channel|getInboundProtocol)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/Connection": "generated261.ConnectionGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ConnectionProtocolGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isConfiguration|isPlay)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/ConnectionProtocol": "generated261.ConnectionProtocolGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FriendlyByteBufGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:readArray|readMap|writeArray|writeByte|writeMap|writeObjectCollection)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/FriendlyByteBuf": "generated261.FriendlyByteBufGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PacketProcessorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:scheduleIfPossible)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/PacketProcessor": "generated261.PacketProcessorGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BundlerInfoGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:unbundlePacket)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/protocol/BundlerInfo": "generated261.BundlerInfoGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PacketFlowGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getReceptionSide|isClientbound|isServerbound)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/network/protocol/PacketFlow": "generated261.PacketFlowGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FileToIdConverterGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:listMatchingResourceStacksFromNamespace|listMatchingResourcesFromNamespace)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/resources/FileToIdConverter": "generated261.FileToIdConverterGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.IdentifierGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:compareNamespaced)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/resources/Identifier": "generated261.IdentifierGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MinecraftServerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:forgeGetWorldMap|getStatusJson|getTickTime|handleCustomClickAction|markWorldsDirty)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/MinecraftServer": "generated261.MinecraftServerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ReloadableServerResourcesGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getRegistryLookup)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/ReloadableServerResources": "generated261.ReloadableServerResourcesGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ChunkMapGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPlayersWatching|scheduleOnMainThreadMailbox)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ChunkMap": "generated261.ChunkMapGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ServerChunkCacheGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:sendToTrackingPlayers|sendToTrackingPlayersAndSelf)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ServerChunkCache": "generated261.ServerChunkCacheGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ServerEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:sendPairingData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ServerEntity": "generated261.ServerEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ServerLevelGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:cleanCapabilityListenerReferences|getSeedOverride|syncData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ServerLevel": "generated261.ServerLevelGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ServerPlayerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getLanguage|getTabListFooter|getTabListHeader|refreshTabListName|setTabListFooter|setTabListHeader|setTabListHeaderFooter)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/level/ServerPlayer": "generated261.ServerPlayerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.EventLoopGroupHolderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:serverEventLoopGroup)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/network/EventLoopGroupHolder": "generated261.EventLoopGroupHolderGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ServerCommonPacketListenerImplGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPacketProcessor)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/network/ServerCommonPacketListenerImpl": "generated261.ServerCommonPacketListenerImplGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ServerConfigurationPacketListenerImplGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:handleCustomPayload|handlePong)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/network/ServerConfigurationPacketListenerImpl": "generated261.ServerConfigurationPacketListenerImplGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PackTypeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getSerializedName)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/PackType": "generated261.PackTypeGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PackGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isHidden|streamSelfAndChildren|withChildren)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/repository/Pack": "generated261.PackGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PackRepositoryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addPackFinder)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/repository/PackRepository": "generated261.PackRepositoryGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ReloadableResourceManagerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getListeners|updateListenersFrom)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/resources/ReloadableResourceManager": "generated261.ReloadableResourceManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ResourceFilterSectionGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isFiltered)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/packs/resources/ResourceFilterSection": "generated261.ResourceFilterSectionGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PlayerListGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:broadcast|broadcastAll|getPlayerIo)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/players/PlayerList": "generated261.PlayerListGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TagBuilderGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getRemoveEntries|removeElement)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/tags/TagBuilder": "generated261.TagBuilderGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TagEntryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isRequired|isTag)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/tags/TagEntry": "generated261.TagEntryGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TriStateGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isDefault)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/util/TriState": "generated261.TriStateGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ServerClockManagerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getRate)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/clock/ServerClockManager": "generated261.ServerClockManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MobEffectGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addAttributeModifier|getSortOrder)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/effect/MobEffect": "generated261.MobEffectGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.EntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canTrample|getFluidHeight|getFluidInteraction|isAddedToLevel|isEyeInFluid|onAddedToLevel|onRemovedFromLevel|revive|syncData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/Entity": "generated261.EntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.EntityFluidInteractionGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:applyCurrentTo|getFallDistanceModifier|getFirstEyeInFluid|getFluidHeight|getMaxHeightFluidType|isEyeInFluid|isInAnyFluid|isInFluid)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/EntityFluidInteraction": "generated261.EntityFluidInteractionGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.EntityTypeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getTags)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/EntityType": "generated261.EntityTypeGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LightningBoltGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getDamage|setDamage)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/LightningBolt": "generated261.LightningBoltGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LivingEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canDrownInFluidType|canSwimInFluidType|jumpInFluid|moveInFluid|randomTeleport|setItemSlot|sinkInFluid)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/LivingEntity": "generated261.LivingEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MobGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isSpawnCancelled|jumpInFluid|setSpawnCancelled)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/Mob": "generated261.MobGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AttributeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getBaseId|getDebugInfo|getMergedStyle|toBaseComponent|toComponent|toValueComponent)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/ai/attributes/Attribute": "generated261.AttributeGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BeeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:jumpInFluid)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/animal/bee/Bee": "generated261.BeeGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MagmaCubeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:jumpInFluid)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/monster/MagmaCube": "generated261.MagmaCubeGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PlayerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getDestroySpeed|getForcedPose|getPrefixes|getSuffixes|isCloseEnough|mayFly|refreshDisplayName|setForcedPose)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/player/Player": "generated261.PlayerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AbstractBoatGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canBoatInFluid)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/entity/vehicle/boat/AbstractBoat": "generated261.AbstractBoatGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FeatureFlagGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isModded)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/flag/FeatureFlag": "generated261.FeatureFlagGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FeatureFlagRegistryGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getAllFlags|getFlag|hasAnyModdedFlags)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/flag/FeatureFlagRegistry": "generated261.FeatureFlagRegistryGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AnvilMenuGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setCost)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/inventory/AnvilMenu": "generated261.AnvilMenuGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SlotGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getSlotIndex|setBackground)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/inventory/Slot": "generated261.SlotGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ArrowItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isInfinite)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ArrowItem": "generated261.ArrowItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AxeItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/AxeItem": "generated261.AxeItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BrushItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/BrushItem": "generated261.BrushItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BucketItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:emptyContents)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/BucketItem": "generated261.BucketItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.CreativeModeTabGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getLabelColor|getScrollerSprite|getSearchBarWidth|getTabsImage|hasSearchBar)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/CreativeModeTab": "generated261.CreativeModeTabGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.DyeColorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getDyedTag)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/DyeColor": "generated261.DyeColorGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FireChargeItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/FireChargeItem": "generated261.FireChargeItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FishingRodItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/FishingRodItem": "generated261.FishingRodItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FlintAndSteelItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/FlintAndSteelItem": "generated261.FlintAndSteelItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.HoeItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/HoeItem": "generated261.HoeItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:applyEnchantments|canBeHurtBy|canContinueUsing|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canPerformAction|canWalkOnPowderedSnow|computeDefaultResource|createEntity|damageItem|doesSneakBypassUse|getAllEnchantments|getBurnTime|getDamage|getDefaultAttributeModifiers|getEnchantmentLevel|getEntityLifespan|getHighlightTip|getMaxDamage|getSweepHitBox|getXpRepairRatio|hasCustomEntity|isCombineRepairable|isDamageable|isDamaged|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onItemUseFirst|onLeftClickEntity|onStopUsing|resetDefaultResource|setDamage|shouldCauseBlockBreakReset|shouldCauseReequipAnimation|supportsEnchantment)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/Item": "generated261.ItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ItemDisplayContextGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:fallback|isModded)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ItemDisplayContext": "generated261.ItemDisplayContextGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ItemStackGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canEquip|canFitInsideContainerItems|canGrindstoneRepair|canWalkOnPowderedSnow|doesSneakBypassUse|getAllEnchantments|getAttributeModifiers|getBurnTime|getEntityLifespan|getHighlightTip|getSweepHitBox|getTagEnchantments|getXpRepairRatio|hurtAndBreak|isCombineRepairable|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onItemUseFirst|onStopUsing|shouldCauseBlockBreakReset|supportsEnchantment)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ItemStack": "generated261.ItemStackGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ProjectileWeaponItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:customArrow|getAllSupportedProjectiles|getDefaultCreativeAmmo|getSupportedHeldProjectiles)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ProjectileWeaponItem": "generated261.ProjectileWeaponItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.RarityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getStyleModifier)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/Rarity": "generated261.RarityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ShearsItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction|interactLivingEntity)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ShearsItem": "generated261.ShearsItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ShovelItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ShovelItem": "generated261.ShovelItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SpyglassItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/SpyglassItem": "generated261.SpyglassItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TridentItemGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canPerformAction)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/TridentItem": "generated261.TridentItemGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PotionBrewingGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isInput)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/alchemy/PotionBrewing": "generated261.PotionBrewingGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlocksAttacksGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:hurtBlockingItem)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/component/BlocksAttacks": "generated261.BlocksAttacksGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.IngredientGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isCustom|isSimple)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/crafting/Ingredient": "generated261.IngredientGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.RecipeManagerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:recipeMap|setPriorityMap)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/crafting/RecipeManager": "generated261.RecipeManagerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BaseSpawnerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getOwner)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/BaseSpawner": "generated261.BaseSpawnerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.DataPackConfigGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addModPacks)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/DataPackConfig": "generated261.DataPackConfigGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LevelGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addFreshBlockEntities|getDescriptionKey|getMaxEntityRadius|increaseMaxEntityRadius|markAndNotifyBlock)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/Level": "generated261.LevelGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LevelSettingsGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:withLifecycle)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/LevelSettings": "generated261.LevelSettingsGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TicketStorageGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:shouldForceNaturalSpawning)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/TicketStorage": "generated261.TicketStorageGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BiomeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getModifiedSpecialEffects)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/biome/Biome": "generated261.BiomeGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.MobSpawnSettingsGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getEntityTypes|getSpawnerTypes)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/biome/MobSpawnSettings": "generated261.MobSpawnSettingsGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AbstractCauldronBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onPlace)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/AbstractCauldronBlock": "generated261.AbstractCauldronBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BaseRailBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canMakeSlopes|getRailDirection|isFlexibleRail|isValidRailShape)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/BaseRailBlock": "generated261.BaseRailBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addLandingEffects|addRunningEffects|canBeHydrated|canConnectRedstone|canDropFromExplosion|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getMapColor|getPistonPushReaction|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBed|isBurning|isConduitFrame|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|makesOpenTrapdoorAboveClimbable|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/Block": "generated261.BlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ComparatorBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getWeakChanges|onNeighborChange)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/ComparatorBlock": "generated261.ComparatorBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.DropExperienceBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/DropExperienceBlock": "generated261.DropExperienceBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FireBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canCatchFire)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/FireBlock": "generated261.FireBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FlowerPotBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addPlant|getEmptyPot|getFullPotsView)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/FlowerPotBlock": "generated261.FlowerPotBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PoweredRailBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isActivatorRail)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/PoweredRailBlock": "generated261.PoweredRailBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.RedStoneOreBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/RedStoneOreBlock": "generated261.RedStoneOreBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SculkCatalystBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/SculkCatalystBlock": "generated261.SculkCatalystBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SculkSensorBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/SculkSensorBlock": "generated261.SculkSensorBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SculkShriekerBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/SculkShriekerBlock": "generated261.SculkShriekerBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.SpawnerBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getExpDrop)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/SpawnerBlock": "generated261.SpawnerBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TntBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onCaughtFire)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/TntBlock": "generated261.TntBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TrapDoorBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isLadder)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/TrapDoorBlock": "generated261.TrapDoorBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AbstractFurnaceBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onTransfer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity": "generated261.AbstractFurnaceBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|handleUpdateTag|hasCustomOutlineRendering|onChunkUnloaded|onDataPacket|requestModelDataUpdate|syncData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/BlockEntity": "generated261.BlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockEntityTypeGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getValidBlocks)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/BlockEntityType": "generated261.BlockEntityTypeGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ChestBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:setBlockState)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/ChestBlockEntity": "generated261.ChestBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ChiseledBookShelfBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onTransfer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/ChiseledBookShelfBlockEntity": "generated261.ChiseledBookShelfBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.HopperBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getLastUpdateTime|onTransfer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/HopperBlockEntity": "generated261.HopperBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.JukeboxBlockEntityGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onTransfer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/JukeboxBlockEntity": "generated261.JukeboxBlockEntityGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TrialSpawnerGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getOwner)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/entity/trialspawner/TrialSpawner": "generated261.TrialSpawnerGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PistonBaseBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:rotate)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/piston/PistonBaseBlock": "generated261.PistonBaseBlockGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.BlockStateGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addLandingEffects|addRunningEffects|canBeHydrated|canDropFromExplosion|canHarvestBlock|canRedstoneConnectTo|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBed|isBurning|isConduitFrame|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/state/BlockState": "generated261.BlockStateGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ChunkAccessGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:findBlocks|hasAttachments|readAttachmentsFromNBT|writeAttachmentsToNBT)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/ChunkAccess": "generated261.ChunkAccessGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ChunkGeneratorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:refreshFeaturesPerStep)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/ChunkGenerator": "generated261.ChunkGeneratorGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ImposterProtoChunkGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:findBlocks)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/ImposterProtoChunk": "generated261.ImposterProtoChunkGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LevelChunkGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:syncData)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/LevelChunk": "generated261.LevelChunkGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.ChunkStatusGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getChunkSaveHeightmaps)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/chunk/status/ChunkStatus": "generated261.ChunkStatusGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.EnderDragonFightGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addPlayer|removePlayer)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/dimension/end/EnderDragonFight": "generated261.EnderDragonFightGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FlatLevelSourceGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:refreshFeaturesPerStep)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/levelgen/FlatLevelSource": "generated261.FlatLevelSourceGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.StructureGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getModifiedStructureSettings)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/levelgen/structure/Structure": "generated261.StructureGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.StructureProcessorGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:processEntity)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/levelgen/structure/templatesystem/StructureProcessor": "generated261.StructureProcessorGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FlowingFluidGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canConvertToSource)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/material/FlowingFluid": "generated261.FlowingFluidGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FluidGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canConvertToSource|canExtinguish|canHydrate|computeDefaultResource|getAdjacentBlockPathType|getBlockPathType|getExplosionResistance|supportsBoating)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/material/Fluid": "generated261.FluidGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.FluidStateGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:canConvertToSource|canExtinguish|canHydrate|getAdjacentBlockPathType|getBlockPathType|getExplosionResistance|supportsBoating)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/material/FluidState": "generated261.FluidStateGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.DerivedLevelDataGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getDayTimeFraction|getDayTimePerTick|setDayTimeFraction|setDayTimePerTick)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/DerivedLevelData": "generated261.DerivedLevelDataGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PlayerDataStorageGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getPlayerDir)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/PlayerDataStorage": "generated261.PlayerDataStorageGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.PrimaryLevelDataGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getDayTimeFraction|getDayTimePerTick|hasConfirmedExperimentalWarning|setDayTimeFraction|setDayTimePerTick|withConfirmedWarning)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/PrimaryLevelData": "generated261.PrimaryLevelDataGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.TagValueInputGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:rawChildOrEmpty)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/TagValueInput": "generated261.TagValueInputGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LootContextGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getQueriedLootTableId|setQueriedLootTableId)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/loot/LootContext": "generated261.LootContextGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LootPoolGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:freeze|getBonusRolls|getRolls|isFrozen|setBonusRolls|setRolls)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/loot/LootPool": "generated261.LootPoolGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.LootTableGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:addPool|freeze|getLootTableId|getPool|isFrozen|removePool|setLootTableId)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/storage/loot/LootTable": "generated261.LootTableGenerated"
+     }
+    },
+    {
+     "mixin": "generated261.AABBGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:isInfinite)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/phys/AABB": "generated261.AABBGenerated"
+     }
     }
    ]
   },
