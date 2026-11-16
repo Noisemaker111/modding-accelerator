@@ -55,6 +55,8 @@ public final class BuildScriptTests {
                 .equals("filter {\n    includeGroupAndSubgroups('net.fabricmc')\n    includeGroup('fabric-loom')\n    includeGroup(\"net.fabricmc.unpick\")\n}\n"),
             "includeGroup('net.fabricmc') widened to its subgroups, other groups untouched"
         );
+        check(Target.remapTasks("def main = name == 'Fabric' ? remapJar.archivePath : jar.archivePath\ntasks.remapSourcesJar { }\nmyRemapJarTask()\n")
+            .equals("def main = name == 'Fabric' ? jar.archivePath : jar.archivePath\ntasks.sourcesJar { }\nmyRemapJarTask()\n"), "a convention script's remap tasks become the plain ones");
         check(Target.withoutAdditionalRuntimeClasspath("additionalRuntimeClasspath(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n").equals("runtimeOnly(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n"), "NeoForge's removed additional classpath -> runtimeOnly");
         // Loom 1.12+ in a multi-project build: the subproject drops its version and the root declares Loom with apply false.
         check(Target.withoutLoomVersion("plugins {\n    id 'fabric-loom' version '1.10-SNAPSHOT'\n}\n").equals("plugins {\n    id 'fabric-loom'\n}\n"), "subproject Loom loses its version");
@@ -64,6 +66,13 @@ public final class BuildScriptTests {
         );
         check("plugins {\n    id(\"net.fabricmc.fabric-loom\") version \"1.19.4\" apply false\n}\n\nversion = 1\n".equals(Target.rootLoom("version = 1\n", "net.fabricmc.fabric-loom", "1.19.4", "'", true)), "a Kotlin root with no plugins block gets one");
         check(Target.rootLoom("buildscript { }\napply plugin: 'java'\n", "fabric-loom", "1.19.4", "'", false) == null, "a buildscript-only root is not rewritten");
+        // NeoForm numbers 26.x releases (26.3-1) where 1.21.x used timestamps; snapshots of a later game are not releases.
+        String neoForm = "<version>1.21.1-20240808.144430</version><version>1.21.1-20240801.000000</version><version>26.3-snapshot-1-1</version>"
+            + "<version>26.2-1</version><version>26.2-10</version><version>26.2-2</version><version>26.3-1</version><version>26.4-snapshot-8-1</version>";
+        check("26.2-10".equals(Target.neoFormRelease(neoForm, "26.2")), "NeoForm's newest numbered release: " + Target.neoFormRelease(neoForm, "26.2"));
+        check("26.3-1".equals(Target.neoFormRelease(neoForm, "26.3")), "a snapshot is not a 26.3 release");
+        check("1.21.1-20240808.144430".equals(Target.neoFormRelease(neoForm, "1.21.1")), "a timestamped release still resolves");
+        check(Target.neoFormRelease(neoForm, "26.4") == null, "no release for a game NeoForm only has snapshots of");
         // A decompiler-only plugin no repository publishes any more is removed with its block; restorePending puts it back.
         {
             Path dead = Files.createDirectories(scratch.resolve("dead-plugin"));

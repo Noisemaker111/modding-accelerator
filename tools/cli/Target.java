@@ -137,6 +137,7 @@ final class Target {
             }
             forgeSibling(setup, build, pins, to);
             Dependencies.resolve(setup, "neoforge");
+            siblingDependencies(setup, build, modProjects, project, to, selections);
             applyReplacements(setup, build, pins);
             neoGradleFollows(setup, build, to);
             modDevFollows(setup, build, to);
@@ -170,6 +171,7 @@ final class Target {
         forgeSibling(setup, build, pins, to);
         neoFormFollows(setup, build, to);
         Dependencies.resolve(setup);
+        siblingDependencies(setup, build, modProjects, project, to, selections);
         applyReplacements(setup, build, pins);
         loomFollows(setup, build, to);
         unobfuscatedFabric(setup, build, to);
@@ -179,6 +181,41 @@ final class Target {
         parchmentFollows(setup, build, to);
         manifest(setup);
         return setup;
+    }
+
+    /**
+     * A multi-loader build ported through one loader's project still builds the other loaders' modules: their own
+     * libraries move to the target too (TorchMaster's Fabric module kept owo-lib 0.12.11+1.21, whose 1.21 jar Loom then
+     * refused on 26.3). Each other single-loader mod project is resolved like the selected one, against the same pending
+     * edits, and its changes, blockers and unchecked entries join the port's.
+     */
+    static void siblingDependencies(Setup setup, Build build, List<Object> modProjects, Map<String, Object> selected, String to,
+        List<Dependencies.Selection> selections) throws Exception {
+        for (Object item : modProjects) {
+            var sibling = Json.object(item);
+            if (sibling == selected || Objects.equals(sibling.get("path"), selected.get("path"))) continue;
+            Set<String> loaders = Support.loaders(sibling);
+            if (loaders.size() != 1 || !(loaders.contains("fabric") || loaders.contains("neoforge"))) continue;
+            Setup view = new Setup(build, sibling, to, selections);
+            view.texts.putAll(setup.texts);
+            view.originals.putAll(setup.originals);
+            view.pins.putAll(setup.pins);
+            view.replacements.putAll(setup.replacements);
+            try {
+                Dependencies.resolve(view, loaders.iterator().next());
+            } catch (IOException unresolved) {
+                setup.unchecked.add(Json.map("artifact", "dependencies of project " + view.project.get("path"), "version", to, "reason", String.valueOf(unresolved.getMessage())));
+                continue;
+            }
+            setup.texts.putAll(view.texts);
+            for (var original : view.originals.entrySet()) setup.originals.putIfAbsent(original.getKey(), original.getValue());
+            for (var r : view.replacements.entrySet()) setup.replacements.putIfAbsent(r.getKey(), r.getValue());
+            setup.applied.addAll(view.applied);
+            setup.blockers.addAll(view.blockers);
+            setup.unchecked.addAll(view.unchecked);
+            setup.excluded.addAll(view.excluded);
+            for (var built : view.loomBuilt.entrySet()) setup.loomBuilt.putIfAbsent(built.getKey(), built.getValue());
+        }
     }
 
     /**
@@ -247,8 +284,14 @@ final class Target {
                 if (script.startsWith(build.project.root) && Files.isRegularFile(script) && !files.contains(script)) applied.add(script);
             }
         }
+        // Convention plugins in buildSrc (the MultiLoader template: FerriteCore's remapJar.archivePath) configure the Loom
+        // modules from outside them, naming the same remapping tasks and configurations.
+        for (Path input : build.project.inputs()) {
+            String relative = build.project.root.relativize(input).toString().replace('\\', '/');
+            if (relative.matches("buildSrc/src/main/.+\\.gradle(\\.kts)?") && !files.contains(input)) applied.add(input);
+        }
         for (Path script : applied) {
-            String before = setup.text(script), text = plainConfigurations(before);
+            String before = setup.text(script), text = remapTasks(plainConfigurations(before));
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(script, before);
             setup.texts.put(script, text);
@@ -414,6 +457,11 @@ final class Target {
         while (v.find()) if (line.isEmpty() || Versions.compare(v.group(1), line) > 0) line = v.group(1);
         if (line.isEmpty()) throw new IOException("No published Fabric Loom release");
         return line;
+    }
+
+    /** Loom's remapping tasks as the plain ones (remapJar -> jar, remapSourcesJar -> sourcesJar). */
+    static String remapTasks(String text) {
+        return text.replaceAll("(?<![\\w$])remapSourcesJar(?![\\w$])", "sourcesJar").replaceAll("(?<![\\w$])remapJar(?![\\w$])", "jar");
     }
 
     /** Loom's remapping configurations as the plain ones the unobfuscated game uses. */
@@ -732,6 +780,23 @@ final class Target {
      * its full version, or a timestamp the build joins to the Minecraft version (JEI: ${minecraftVersion}-${neoformTimestamp}).
      * It moves to NeoForm's newest release for the target game on maven.neoforged.net; the old one does not exist for it.
      */
+    /**
+     * NeoForm's newest release for a game version: a timestamp through 1.21.x (1.21.1-20240808.144430), a build number from
+     * 26.1 on (26.3-1); snapshots and pre-releases are not releases of that version. Null when there is none.
+     */
+    static String neoFormRelease(String metadata, String to) {
+        String newest = null, key = null;
+        Matcher version = Pattern.compile("<version>(" + Pattern.quote(to) + "-(\\d{8}\\.\\d{6}|\\d+))</version>").matcher(metadata);
+        while (version.find()) {
+            String k = version.group(2).contains(".") ? version.group(2) : String.format("%020d", Long.parseLong(version.group(2)));
+            if (key == null || k.compareTo(key) > 0) {
+                key = k;
+                newest = version.group(1);
+            }
+        }
+        return newest;
+    }
+
     static void neoFormFollows(Setup setup, Build build, String to) throws Exception {
         Path properties = build.project.root.resolve("gradle.properties");
         if (!Files.isRegularFile(properties)) return;
@@ -741,16 +806,17 @@ final class Target {
         ).matcher(text);
         if (!pin.find()) return;
         // TorchMaster: neo_form_version=1.21-20240613.152323 (a full version names its own game, which may lag the mod's).
-        String newest = null;
-        Matcher version = Pattern.compile("<version>(" + Pattern.quote(to) + "-(\\d{8}\\.\\d{6}))</version>").matcher(
-            fetch(build, "https://maven.neoforged.net/releases/net/neoforged/neoform/maven-metadata.xml")
-        );
-        while (version.find()) if (newest == null || version.group(2).compareTo(newest.substring(newest.indexOf('-') + 1)) > 0) newest = version.group(1);
+        String newest = neoFormRelease(fetch(build, "https://maven.neoforged.net/releases/net/neoforged/neoform/maven-metadata.xml"), to);
         if (newest == null) {
             setup.unchecked.add(Json.map("artifact", "net.neoforged:neoform", "version", to, "reason", "NeoForm publishes no release for Minecraft " + to));
             return;
         }
-        String value = pin.group(2).toLowerCase(Locale.ROOT).contains("timestamp") ? newest.substring(newest.indexOf('-') + 1) : newest;
+        boolean timestampKey = pin.group(2).toLowerCase(Locale.ROOT).contains("timestamp");
+        if (timestampKey && !newest.matches(".+-\\d{8}\\.\\d{6}")) {
+            setup.unchecked.add(Json.map("artifact", "net.neoforged:neoform", "version", newest, "reason", "the build keeps a NeoForm timestamp, and NeoForm " + to + " is numbered without one; set the full version"));
+            return;
+        }
+        String value = timestampKey ? newest.substring(newest.indexOf('-') + 1) : newest;
         if (value.equals(pin.group(3))) return;
         setup.replace(properties, pin.group(0), pin.group(1) + value);
         setup.applied.add(Json.map("artifact", "net.neoforged:neoform", "from", pin.group(3), "to", newest, "evidence", "NeoForm's newest release for " + to + " on maven.neoforged.net"));
