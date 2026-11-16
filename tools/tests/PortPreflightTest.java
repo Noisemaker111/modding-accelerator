@@ -183,7 +183,31 @@ public final class PortPreflightTest {
         require(lint.hits.stream().anyMatch(h -> h.detail().contains("getFoo") && h.detail().contains("[review]")), "ambiguous rename reported");
         require(lint.hits.stream().anyMatch(h -> h.detail().contains("deadMethod") && h.detail().contains("[hand-fix]")), "removed method reported with its update");
         require(lint.hits.stream().anyMatch(h -> h.detail().contains("deadField") && h.detail().contains("[hand-fix]")), "removed field reported");
-        require(lint.hits.stream().anyMatch(h -> h.oldName().equals("getFoo") && h.detail().contains("[review: unqualified call]")), "unqualified call reported, never auto-applied");
+        require(lint.hits.stream().noneMatch(h -> h.detail().contains("unqualified call")), "plain unqualified calls stay silent: no game superclass, no static import");
+        String heir = String.join("\n",
+            "import net.minecraft.block.Block;",
+            "class GameChild extends Block {",
+            "  Object u(Block b) {",
+            "    return getFoo(b);",
+            "  }",
+            "  float slip() {",
+            "    return slipperiness;",
+            "  }",
+            "}");
+        VersionMap.ApiFix.Lint heirLint = VersionMap.ApiFix.lintKnown(known, scratch.resolve("GameChild.java"), heir);
+        require(heirLint.hits.stream().anyMatch(h -> h.detail().contains("getFoo") && h.detail().contains("[review: unqualified call in game subclass]")), "inherited game calls are reported, never auto-applied");
+        require(heirLint.hits.stream().anyMatch(h -> h.detail().contains("slipperiness") && h.detail().contains("[review: unqualified field in game subclass]")), "inherited game fields are reported");
+        require(heirLint.hits.stream().noneMatch(h -> h.auto()), "nothing auto-applies without a provable receiver");
+        String staticImp = String.join("\n",
+            "import net.minecraft.block.Block;",
+            "import static net.minecraft.block.Block.getBlockState;",
+            "class StaticUser {",
+            "  Object state(Block block) {",
+            "    return getBlockState();",
+            "  }",
+            "}");
+        VersionMap.ApiFix.Lint staticLint = VersionMap.ApiFix.lintKnown(known, scratch.resolve("StaticUser.java"), staticImp);
+        require(staticLint.hits.stream().anyMatch(h -> h.auto() && h.detail().startsWith("getBlockState -> getStateContainer")), "unambiguous static imports auto-apply");
         require(lint.hits.stream().anyMatch(h -> h.detail().contains("signature changed") && h.detail().contains("[review args]")), "arity change flagged");
         require(lint.hits.stream().noneMatch(h -> h.detail().contains("keys2")), "matching arity stays quiet");
         require(lint.fixed.contains("block.getStateContainer()") && lint.fixed.contains("block.friction"), "rewrites applied");

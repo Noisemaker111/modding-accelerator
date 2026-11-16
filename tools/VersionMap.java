@@ -2911,10 +2911,11 @@ public final class VersionMap {
             return line;
         }
 
-        /** The source's own declarations and imports, for telling game members from the mod's own. */
+        /** Call sites and field reads by their receiver: game code we can rewrite, mod code we leave alone. */
         static final class Scope {
             final Set<String> methods = new HashSet<>(), vars = new HashSet<>(), types = new HashSet<>();
-            final Map<String, String> varTypes = new HashMap<>(), imports = new HashMap<>();
+            final Map<String, String> varTypes = new HashMap<>(), imports = new HashMap<>(), staticImports = new HashMap<>();
+            final Set<String> ambiguousStatics = new HashSet<>();
         }
 
         static String simpleTypeName(String type) {
@@ -2939,22 +2940,114 @@ public final class VersionMap {
                 }
             }
             for (ImportTree i : unit.getImports()) {
-                if (!i.isStatic()) {
-                    String fqn = i.getQualifiedIdentifier().toString();
-                    int dot = fqn.lastIndexOf('.');
-                    if (dot > 0) {
-                        s.imports.put(fqn.substring(dot + 1), fqn);
+                String fqn = i.getQualifiedIdentifier().toString();
+                int dot = fqn.lastIndexOf('.');
+                if (dot <= 0) {
+                    continue;
+                }
+                if (i.isStatic()) {
+                    String name = fqn.substring(dot + 1);
+                    if (name.equals("*") || s.staticImports.containsKey(name)) {
+                        s.ambiguousStatics.add(name);
+                    } else {
+                        s.staticImports.put(name, fqn);
                     }
+                } else {
+                    s.imports.put(fqn.substring(dot + 1), fqn);
                 }
             }
             return s;
-        }
+            }
 
         static boolean gameImport(Scope scope, String simple) {
             String fqn = scope.imports.get(simple);
             return fqn != null && !scope.types.contains(simple) &&
                 (fqn.startsWith("net.minecraft.") || fqn.startsWith("com.mojang."));
         }
+
+        /** Whether a statically imported name unambiguously names game code. */
+        static boolean gameStaticImport(Scope scope, String name) {
+            String fqn = scope.staticImports.get(name);
+            return fqn != null && !scope.ambiguousStatics.contains(name) && !scope.types.contains(name) &&
+                (fqn.startsWith("net.minecraft.") || fqn.startsWith("com.mojang."));
+        }
+
+        /** The simple name of a type, or null when the tree is not a plain or qualified name. */
+        static String typeName(Tree t) {
+            if (t instanceof IdentifierTree id) {
+                return id.getName().toString();
+            }
+            if (t instanceof MemberSelectTree m) {
+                return m.getIdentifier().toString();
+            }
+            if (t instanceof ParameterizedTypeTree p) {
+                return typeName(p.getType());
+            }
+            return null;
+        }
+
+        /** Whether the nearest enclosing class or interface directly extends a game type. */
+        static boolean extendsGame(Scope scope, TreePath p) {
+            for (TreePath q = p; q != null; q = q.getParentPath()) {
+                if (!(q.getLeaf() instanceof ClassTree c)) {
+                    continue;
+                }
+                if (c.getExtendsClause() != null) {
+                    String sup = typeName(c.getExtendsClause());
+                    if (sup != null && gameImport(scope, sup)) {
+                        return true;
+                    }
+                }
+                for (Tree io : c.getImplementsClause()) {
+                    String sup = typeName(io);
+                    if (sup != null && gameImport(scope, sup)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            return false;
+        }
+
+        /** A bare identifier in a type, annotation or declaration position: a name, never a field read. */
+        static boolean nonValuePosition(TreePath p) {
+            TreePath parent = p.getParentPath();
+            if (parent == null) {
+                return true;
+            }
+            Tree t = parent.getLeaf();
+            if (t instanceof VariableTree v) {
+                return v.getType() == p.getLeaf();
+            }
+            if (t instanceof MethodTree m) {
+                return m.getReturnType() == p.getLeaf();
+            }
+            if (t instanceof NewClassTree n) {
+                return n.getIdentifier() == p.getLeaf();
+            }
+            if (t instanceof InstanceOfTree io) {
+                return io.getType() == p.getLeaf();
+            }
+            if (
+                t instanceof ClassTree ||
+                t instanceof TypeParameterTree ||
+                t instanceof ParameterizedTypeTree ||
+                t instanceof ArrayTypeTree ||
+                t instanceof WildcardTree ||
+                t instanceof UnionTypeTree ||
+                t instanceof IntersectionTypeTree ||
+                t instanceof AnnotatedTypeTree ||
+                t instanceof AnnotationTree
+            ) {
+                return true;
+            }
+            for (TreePath q = p; q != null; q = q.getParentPath()) {
+                if (q.getLeaf() instanceof AnnotationTree) {
+                    return true;
+                }
+            }
+            return false;
+            }
 
         /** The leftmost name of a receiver expression, or null when it is not a plain name. */
         static String receiverRoot(ExpressionTree receiver) {
@@ -3070,10 +3163,10 @@ public final class VersionMap {
         /**
          * Map-driven lint for any namespace: parse only, no build. Every method call and dotted
          * field read whose name the map renamed, moved or removed is reported with the update that
-         * changed it. A rename is rewritten only when it is unanimous (one new name everywhere),
-         * the file does not declare the name itself, and the receiver provably names a game type;
-         * everything else is reported for a human. Unqualified calls are reported, never rewritten;
-         * constructors ride along with class renames, which stay the fixer's textual job.
+         * A rename is rewritten only when it is unanimous (one new name everywhere),
+         * the file does not declare the name itself, and the receiver provably names a game type
+         * (or is a game static import); unqualified calls in a game subclass and everything else
+         * are reported for a human.
          */
         static Lint lintKnown(Known k, Path file, String source) throws IOException {
             ApiFix a = new ApiFix(file, source);
@@ -3203,16 +3296,64 @@ public final class VersionMap {
                     call.getMethodSelect() instanceof IdentifierTree id &&
                     !(call.getMethodSelect() instanceof MemberSelectTree)
                 ) {
+                    // An unqualified call: provable only through a static import or an inherited
+                    // game member. Anything else is the mod's own code or broken code; stay silent.
                     String name = id.getName().toString();
                     if (scope.methods.contains(name) || !k.methodTo.containsKey(name)) {
                         continue;
                     }
                     int line = lineOf(source, a.start(call));
+                    String steps = stepsFor(k, "method", name, Set.of("renamed", "moved"));
+                    if (gameStaticImport(scope, name)) {
+                        String to = Known.unanimous(k.methodTo.get(name));
+                        if (to != null) {
+                            String next = replaceCall(out.fixed, line, name, to);
+                            if (!next.equals(out.fixed)) {
+                                out.fixed = next;
+                                out.hits.add(new LintHit(line, name, name + " -> " + to + " (" + steps + ") [auto: static import]", true));
+                                continue;
+                            }
+                        }
+                    }
+                    if (!extendsGame(scope, p)) {
+                        continue;
+                    }
                     out.hits.add(
                         new LintHit(
                             line,
                             name,
-                            name + " -> " + candidatesDetail(k.methodTo.get(name)) + " (" + stepsFor(k, "method", name, Set.of("renamed", "moved")) + ") [review: unqualified call]",
+                            name + " -> " + candidatesDetail(k.methodTo.get(name)) + " (" + steps + ") [review: unqualified call in game subclass]",
+                            false
+                        )
+                    );
+                } else if (p.getLeaf() instanceof IdentifierTree id && !(p.getParentPath() instanceof MemberSelectTree) && !nonValuePosition(p)) {
+                    // A bare name: a local (skipped silently), an inherited game field (reported),
+                    // a static import (auto when unanimous), or nothing we can prove (skipped).
+                    String name = id.getName().toString();
+                    if (scope.vars.contains(name) || scope.methods.contains(name) || !k.fieldTo.containsKey(name)) {
+                        continue;
+                    }
+                    int line = lineOf(source, a.start(id));
+                    String steps = stepsFor(k, "field", name, Set.of("renamed", "moved"));
+                    if (gameStaticImport(scope, name)) {
+                        String to = Known.unanimous(k.fieldTo.get(name));
+                        if (to != null) {
+                            String next = replaceField(out.fixed, line, name, to);
+                            if (!next.equals(out.fixed)) {
+                                out.fixed = next;
+                                out.hits.add(new LintHit(line, name, name + " -> " + to + " (" + steps + ") [auto: static import]", true));
+                                continue;
+                            }
+                        }
+                    }
+                    if (!extendsGame(scope, p)) {
+                        continue;
+                    }
+                    out.hits.add(
+                        new LintHit(
+                            line,
+                            name,
+                            name + " -> " + candidatesDetail(k.fieldTo.get(name)) + " (" + steps + ") [review: unqualified field in game subclass]",
                             false
                         )
                     );
