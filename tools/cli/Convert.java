@@ -363,6 +363,8 @@ final class Convert {
             result.put("ok", dryRun || left.isEmpty());
         } else {
             compile(result);
+            // The build repair at compile time wrote files after the undo record was made: it is made again.
+            if (repairedBuild) Port.finishTransaction(project, transaction, before, removed);
             // A yarn mod renamed on Fabric: its new refmaps must resolve every mixin to what the original's did.
             if (namesOnly && refmapNames != null && Boolean.TRUE.equals(result.get("compiled"))) {
                 List<String> differ = refmapNames.check(originalRefmaps, RefmapNames.read(project.root.resolve("build/classes")));
@@ -4483,14 +4485,23 @@ final class Convert {
 
     void compile(Map<String, Object> result) throws Exception {
         Build fresh = new Build(project, build.harness, "", build.report);
-        Map<String, Object> model;
-        try {
-            model = fresh.model(true, false);
-        } catch (IOException failure) {
-            result.put("compiled", false);
-            result.put("ok", false);
-            result.put("compileError", failure.getMessage());
-            return;
+        Map<String, Object> model = null;
+        // Build logic written for Fabric's Loom that no rule moves (a third-party plugin that needs Loom, a shared remote
+        // script that applies it, a task only Loom creates) stops the converted build from loading. Gradle names the
+        // statement it stopped at; it is commented out with a note, listed, and the build is loaded again.
+        for (int attempt = 0; model == null; attempt++) {
+            try {
+                model = fresh.model(true, false);
+            } catch (IOException failure) {
+                Matcher log = Pattern.compile("\\nLog: (.+)$").matcher(failure.getMessage());
+                String gradle = log.find() && Files.isRegularFile(Path.of(log.group(1).strip())) ? Files.readString(Path.of(log.group(1).strip())) : "";
+                if (attempt >= 8 || !disableLoomOnlyStatement(gradle)) {
+                    result.put("compiled", false);
+                    result.put("ok", false);
+                    result.put("compileError", failure.getMessage());
+                    return;
+                }
+            }
         }
         List<String> tasks = fresh.tasks(model, "classes");
         Run.Result run = fresh.gradle(tasks, "convert-compile");
@@ -4499,6 +4510,84 @@ final class Convert {
         result.put("compileLog", run.log().toString());
         if (!ok) result.put("errors", Port.errors(run.log()));
         result.put("ok", ok && left.isEmpty());
+    }
+
+    /** Set when the compile step commented out a statement of the build that needs Loom. */
+    boolean repairedBuild;
+
+    static final String LOOM_ONLY ="// mmt convert: needs Fabric's Loom, which a NeoForge build does not have: ";
+
+    /**
+     * The statement of the build's own files at which Gradle stopped loading the converted build (its "* Where:" file and
+     * line), commented out with a note and listed as left: a plugin line inside plugins { } alone, any other statement
+     * with the block it opens. A failure inside a remote or shared script disables the project's apply from that names
+     * it. False when the failure names no statement of the project's files, or one already commented out.
+     */
+    boolean disableLoomOnlyStatement(String gradle) throws Exception {
+        Matcher where = Pattern.compile("\\* Where:\\s*\\n(?:Build file|Script|Settings file|Initialization script) '([^']+)' line: (\\d+)").matcher(gradle);
+        if (!where.find()) return false;
+        Matcher wrong = Pattern.compile("\\* What went wrong:\\s*\\r?\\n([^\\r\\n]+)(?:\\r?\\n> ([^\\r\\n]+))?").matcher(gradle);
+        String why = wrong.find() ? (wrong.group(2) != null ? wrong.group(2) : wrong.group(1)).strip() : "the build stopped loading here";
+        String where0 = where.group(1).replace('\\', '/');
+        int line = Integer.parseInt(where.group(2));
+        String file = null;
+        Path root = project.root.toAbsolutePath().normalize();
+        if (!where0.contains("://")) {
+            Path p = Path.of(where.group(1)).toAbsolutePath().normalize();
+            if (p.startsWith(root)) file = root.relativize(p).toString().replace('\\', '/');
+        }
+        if (file == null || file.startsWith(".mmt/") || file.startsWith(".gradle/")) {
+            // A shared script outside the project: the project's own apply from that names it.
+            // By the script's name, else (a script applied by another shared script) by the folder it was published in.
+            String name = where0.substring(where0.lastIndexOf('/') + 1);
+            String folder = where0.substring(0, where0.lastIndexOf('/') + 1);
+            for (String key : List.of(name, folder)) for (String candidate : List.of("build.gradle", "settings.gradle")) {
+                String[] lines = read(candidate).split("\n", -1);
+                for (int i = 0; i < lines.length; i++) if (lines[i].contains("apply") && lines[i].contains(key) && !lines[i].strip().startsWith("//")) {
+                    return disableLines(candidate, i, i, why);
+                }
+            }
+            return false;
+        }
+        String[] lines = read(file).split("\n", -1);
+        int start = line - 1;
+        if (start < 0 || start >= lines.length || lines[start].strip().startsWith("//")) return false;
+        int end = start;
+        if (!insidePlugins(lines, start)) {
+            int depth = 0;
+            for (end = start; end < lines.length; end++) {
+                String code = lines[end].replaceAll("//.*$", "").replaceAll("'[^']*'|\"[^\"]*\"", "");
+                for (char c : code.toCharArray()) depth += c == '{' || c == '(' ? 1 : c == '}' || c == ')' ? -1 : 0;
+                if (depth <= 0) break;
+            }
+            end = Math.min(end, lines.length - 1);
+        }
+        return disableLines(file, start, end, why);
+    }
+
+    boolean disableLines(String file, int start, int end, String why) throws Exception {
+        String[] lines = read(file).split("\n", -1);
+        String indent = lines[start].replaceAll("^(\\s*).*$", "$1");
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < lines.length; i++) {
+            if (i == start) out.append(indent).append(LOOM_ONLY).append(why.replaceAll("\\s+", " ")).append('\n');
+            out.append(i >= start && i <= end ? lines[i].replaceAll("^(\\s*)", "$1// ") : lines[i]);
+            if (i < lines.length - 1) out.append('\n');
+        }
+        write(file, out.toString());
+        repairedBuild = true;
+        leave(file, start + 1, lines[start].strip(), "needs Fabric's Loom, which a NeoForge build does not have (" + why + "); commented out");
+        return true;
+    }
+
+    static boolean insidePlugins(String[] lines, int index) {
+        int depth = 0;
+        for (int i = index - 1; i >= 0; i--) {
+            String code = lines[i].replaceAll("//.*$", "");
+            for (int c = code.length() - 1; c >= 0; c--) depth += code.charAt(c) == '}' ? 1 : code.charAt(c) == '{' ? -1 : 0;
+            if (depth < 0) return code.matches("\\s*plugins\\s*\\{.*");
+        }
+        return false;
     }
 
     static String text(Map<String, Object> result) {

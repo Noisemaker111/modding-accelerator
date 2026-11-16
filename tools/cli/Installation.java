@@ -73,6 +73,7 @@ final class Installation {
         "tools/tests/PortRepairTests.java",
         "tools/tests/ConvertTests.java",
         "tools/tests/ConvertBridgeTests.java",
+        "tools/tests/ConvertNamesTests.java",
         "tools/tests/BuildScriptTests.java",
         "tools/tests/CommandTests.java",
         "tools/tests/GameTests.java",

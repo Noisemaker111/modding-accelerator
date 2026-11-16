@@ -112,24 +112,23 @@ def test_stub(cls, report):
     return {"name": f"Uses{simple}", "from": fabric, "to": neo}
 
 
-def generate(classes, bridge_id, write, force, closure=False):
+def generate(classes, bridge_id, write, force, closure=False, api="fabric-api"):
     """Mirrors classes; with closure, also every Fabric API class they need that the bridge does not mirror yet."""
     reports, todo = {}, list(classes)
     while todo:
         batch = [c for c in dict.fromkeys(todo) if c not in reports]
         if not batch:
             break
-        reports.update(generate_once(batch, bridge_id, write, force))
+        reports.update(generate_once(batch, bridge_id, write, force, api))
         todo = [n for r in reports.values() for n in r["needs"] if n.startswith("net.fabricmc.fabric.api.")] if closure else []
     return reports
 
 
-def generate_once(classes, bridge_id, write, force):
+def generate_once(classes, bridge_id, write, force, api="fabric-api"):
     rules = loader_api.load_rules()
     b = bridge_rule(rules, bridge_id)
     if b["from"] != "fabric":
         raise SystemExit("the generator mirrors Fabric API classes (bridges from fabric); NeoForge mirrors are not generated yet")
-    api = "fabric-api"
     _, _, api_jar = loader_api.fetch(api, rules["published"][api])
     folder = ROOT / b["folder"]
     known = mirrored(folder) | set(classes)
@@ -192,6 +191,7 @@ def main(argv=None):
     p.add_argument("--write", action="store_true")
     p.add_argument("--force", action="store_true")
     p.add_argument("--unglued", action="store_true")
+    p.add_argument("--api", default="fabric-api", help="the published Fabric API to mirror (a key of loaders.json published, e.g. fabric-api-1.21.1)")
     p.add_argument("--closure", action="store_true", help="also mirror every Fabric API class the named ones need")
     p.add_argument("--from-sources", nargs="+", metavar="DIR",
                    help="mirror every Fabric API class these mods import that no rule rewrites and the bridge lacks (with --closure)")
@@ -206,7 +206,7 @@ def main(argv=None):
         a.closure = True
     if not classes:
         p.error("name at least one Fabric API class, or --from-sources DIR")
-    reports = generate(classes, a.bridge, a.write, a.force, a.closure)
+    reports = generate(classes, a.bridge, a.write, a.force, a.closure, a.api)
     print(json.dumps(reports, indent=1))
     events = sum(len(r["events"]) for r in reports.values())
     stubs = sum(len(r["stubbed"]) for r in reports.values())
