@@ -2186,7 +2186,7 @@
  "bridges": [
   {
    "id": "neoforge-on-fabric",
-   "about": "For mods written for NeoForge first. NeoForge's registration (DeferredRegister and its holders), event bus (IEventBus, @SubscribeEvent, @EventBusSubscriber, NeoForge.EVENT_BUS), mod container, config (ModConfigSpec, read and written as the same TOML file), play payloads (PayloadRegistrar, PacketDistributor, IPayloadContext) the commonest lifecycle events, and the game events Fabric API has a callback for at the same moment (player log in and out, respawn, clone and dimension change; living death and incoming damage; entity join, level load, unload and tick; datapack sync; item tooltips; key mappings), written for this project on Fabric's API in knowledge/bridges/neoforge-on-fabric and copied into the converted mod beside its first @Mod class. Each class mirrors the NeoForge class named in classes (the members its symbols list), and each event is posted from the Fabric callback that fires at the same moment. @Mod constructors become Fabric entrypoints that receive their IEventBus and ModContainer from the bridge; registration runs at the end of the main entrypoint in the game's registry order, as NeoForge's RegisterEvent does. Capabilities and transfer (Minecraft 26.1 and later; the 1.21.1 layer drops them): NeoForge's capabilities are Fabric API lookups of the same name, so a converted mod's handlers are visible to Fabric mods and theirs to it. Capabilities.Item.BLOCK and ITEM are Fabric's ItemStorage.SIDED and ITEM, Fluid.BLOCK and ITEM are FluidStorage.SIDED and ITEM: a ResourceHandler is a SlottedStorage (one slot per index) and a Storage is a ResourceHandler, the same object again when it comes back; registerBlock/registerBlockEntity/registerEntity/registerItem register lookup providers (asked in registration order, the first non-null winning) and level/entity/stack.getCapability is the lookup's find, through interfaces the bridge's mixins add to Level, Entity and ItemStack (Loom interface injection for the compile). RegisterCapabilitiesEvent is posted after registration. Amounts: items are ints on NeoForge and longs on Fabric (larger Fabric amounts read as Integer.MAX_VALUE); fluids convert at 81 droplets per millibucket, a handler seen from Fabric moves whole millibuckets only (below 81 droplets moves nothing) and a Fabric storage seen from NeoForge reads amounts divided by 81 rounded down (below 81 droplets is not visible) and moves whole millibuckets, retrying a part-millibucket move in a nested transaction. Transactions: NeoForge's Transaction is a Fabric transaction (openRoot = openOuter, open = openNested, depth = nestingDepth, ROOT_CLOSING = OUTER_CLOSING; both nest, both abort on close), and SnapshotJournal keeps NeoForge's snapshot order on Fabric's close callbacks, so the two loaders' handlers share transactions exactly. Energy: Fabric API has none; Energy.BLOCK, ENTITY and ITEM are lookups the bridge creates (neoforge:energy_handler, carrying a Fabric Storage of Unit), seen by mods converted from NeoForge only; so are the entity item and fluid capabilities. Sides: a null direction is the same no-side context on both. Not mirrored: capability proxying, BlockCapabilityCache's invalidation listener (Fabric's cache revalidates itself), invalidateCapabilities (a no-op), ItemAccess.oneByOne, FluidStack and FluidResource templates; FluidType is the fluid itself with its Fabric attributes. The legacy IItemHandler, ItemStackHandler, SlotItemHandler, IEnergyStorage and their helpers (still in NeoForge 26.1) are mirrored as plain classes; IItemHandler.of and IEnergyStorage.of wrap a transfer handler. Mod list: ModList.getSortedMods and getMods list every mod Fabric Loader loaded (by id), IModInfo gives Fabric Loader's version and fabric.mod.json's custom values as the mod's properties, and each mod is its own file whose ModFileScanData ASM reads from the mod's class files when asked (annotations on classes, fields and methods; an enum constant as its name). Extension methods NeoForge adds to game classes that mods call on them (connection.send(payload), builder.has(type), entity.isMultipartEntity() and getParts()) are interfaces the bridge's mixins add, listed when the code uses them; no entity has NeoForge parts on Fabric (the ender dragon's are the game's EnderDragonPart). RenderTooltipEvent.GatherComponents is posted for tooltips of lines and an image (item tooltips), without NeoForge's wrapping of wide lines. Renderers: EntityRenderersEvent (RegisterLayerDefinitions, RegisterRenderers) and RegisterColorHandlersEvent (BlockTintSources, ColorResolvers) are posted while the client mod loads, each registration going to Fabric API's own registry (ModelLayerRegistry, EntityRendererRegistry, BlockEntityRendererRegistry, BlockColorRegistry, ColorResolverRegistry), which the game reads when it builds renderers as NeoForge's events fill them.",
+   "about": "For mods written for NeoForge first. NeoForge's registration (DeferredRegister and its holders), event bus (IEventBus, @SubscribeEvent, @EventBusSubscriber, NeoForge.EVENT_BUS), mod container, config (ModConfigSpec, read and written as the same TOML file), play payloads (PayloadRegistrar, PacketDistributor, IPayloadContext) the commonest lifecycle events, and the game events Fabric API has a callback for at the same moment (player log in and out, respawn, clone and dimension change; living death and incoming damage; entity join, level load, unload and tick; datapack sync; item tooltips; key mappings), written for this project on Fabric's API in knowledge/bridges/neoforge-on-fabric and copied into the converted mod beside its first @Mod class. Each class mirrors the NeoForge class named in classes (the members its symbols list), and each event is posted from the Fabric callback that fires at the same moment. @Mod constructors become Fabric entrypoints that receive their IEventBus and ModContainer from the bridge; registration runs at the end of the main entrypoint in the game's registry order, as NeoForge's RegisterEvent does. Capabilities and transfer (Minecraft 26.1 and later; on 1.21.1, NeoForge 21.1's item, fluid and energy handlers instead, the block item and fluid handlers being Fabric's ItemStorage.SIDED and FluidStorage.SIDED): NeoForge's capabilities are Fabric API lookups of the same name, so a converted mod's handlers are visible to Fabric mods and theirs to it. Capabilities.Item.BLOCK and ITEM are Fabric's ItemStorage.SIDED and ITEM, Fluid.BLOCK and ITEM are FluidStorage.SIDED and ITEM: a ResourceHandler is a SlottedStorage (one slot per index) and a Storage is a ResourceHandler, the same object again when it comes back; registerBlock/registerBlockEntity/registerEntity/registerItem register lookup providers (asked in registration order, the first non-null winning) and level/entity/stack.getCapability is the lookup's find, through interfaces the bridge's mixins add to Level, Entity and ItemStack (Loom interface injection for the compile). RegisterCapabilitiesEvent is posted after registration. Amounts: items are ints on NeoForge and longs on Fabric (larger Fabric amounts read as Integer.MAX_VALUE); fluids convert at 81 droplets per millibucket, a handler seen from Fabric moves whole millibuckets only (below 81 droplets moves nothing) and a Fabric storage seen from NeoForge reads amounts divided by 81 rounded down (below 81 droplets is not visible) and moves whole millibuckets, retrying a part-millibucket move in a nested transaction. Transactions: NeoForge's Transaction is a Fabric transaction (openRoot = openOuter, open = openNested, depth = nestingDepth, ROOT_CLOSING = OUTER_CLOSING; both nest, both abort on close), and SnapshotJournal keeps NeoForge's snapshot order on Fabric's close callbacks, so the two loaders' handlers share transactions exactly. Energy: Fabric API has none; Energy.BLOCK, ENTITY and ITEM are lookups the bridge creates (neoforge:energy_handler, carrying a Fabric Storage of Unit), seen by mods converted from NeoForge only; so are the entity item and fluid capabilities. Sides: a null direction is the same no-side context on both. Not mirrored: capability proxying, BlockCapabilityCache's invalidation listener (Fabric's cache revalidates itself), invalidateCapabilities (a no-op), ItemAccess.oneByOne, FluidStack and FluidResource templates; FluidType is the fluid itself with its Fabric attributes. The legacy IItemHandler, ItemStackHandler, SlotItemHandler, IEnergyStorage and their helpers (still in NeoForge 26.1) are mirrored as plain classes; IItemHandler.of and IEnergyStorage.of wrap a transfer handler. Mod list: ModList.getSortedMods and getMods list every mod Fabric Loader loaded (by id), IModInfo gives Fabric Loader's version and fabric.mod.json's custom values as the mod's properties, and each mod is its own file whose ModFileScanData ASM reads from the mod's class files when asked (annotations on classes, fields and methods; an enum constant as its name). Extension methods NeoForge adds to game classes that mods call on them (connection.send(payload), builder.has(type), entity.isMultipartEntity() and getParts()) are interfaces the bridge's mixins add, listed when the code uses them; no entity has NeoForge parts on Fabric (the ender dragon's are the game's EnderDragonPart). RenderTooltipEvent.GatherComponents is posted for tooltips of lines and an image (item tooltips), without NeoForge's wrapping of wide lines. Renderers: EntityRenderersEvent (RegisterLayerDefinitions, RegisterRenderers) and RegisterColorHandlersEvent (BlockTintSources, ColorResolvers) are posted while the client mod loads, each registration going to Fabric API's own registry (ModelLayerRegistry, EntityRendererRegistry, BlockEntityRendererRegistry, BlockColorRegistry, ColorResolverRegistry), which the game reads when it builds renderers as NeoForge's events fill them.",
    "from": "neoforge",
    "to": "fabric",
    "minecraft": "26.3",
@@ -2412,7 +2412,14 @@
     "net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent": "RegisterClientTooltipComponentFactoriesEvent",
     "net.neoforged.neoforge.client.event.RenderLevelStageEvent": "RenderLevelStageEvent",
     "net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent": "RegisterRenderPipelinesEvent",
-    "net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent": "RegisterSpecialModelRendererEvent"
+    "net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent": "RegisterSpecialModelRendererEvent",
+    "net.neoforged.neoforge.fluids.capability.IFluidHandler": "fluids.capability.IFluidHandler",
+    "net.neoforged.neoforge.fluids.capability.IFluidHandlerItem": "fluids.capability.IFluidHandlerItem",
+    "net.neoforged.neoforge.fluids.FluidUtil": "fluids.FluidUtil",
+    "net.neoforged.neoforge.items.ComponentItemHandler": "items.ComponentItemHandler",
+    "net.neoforged.neoforge.items.ItemHandlerCopySlot": "items.ItemHandlerCopySlot",
+    "net.neoforged.neoforge.items.StackCopySlot": "items.StackCopySlot",
+    "net.neoforged.neoforge.common.util.INBTSerializable": "common.util.INBTSerializable"
    },
    "symbols": {
     "neoforge": [
@@ -3755,7 +3762,7 @@
     {
      "minecraft": "1.21.1",
      "folder": "knowledge/bridges/neoforge-on-fabric/1.21.1",
-     "about": "Minecraft 1.21.1 (an obfuscated game, built with Loom on Mojang's names): the files whose names differ from 26.1's. NeoForge 21.1's registration (ResourceLocation ids, properties passed directly and not given their id, DeferredRegister.DataComponents, DeferredHolder as a plain Holder) Fabric API's networking (PayloadTypeRegistry.playS2C and playC2S, PlayerLookup.world), its world events where 26.1 says level, ServerEntityEvents.ENTITY_LOAD (so EntityJoinLevelEvent cannot be cancelled there), KeyBindingHelper, and its item group events (ItemGroupEvents.MODIFY_ENTRIES_ALL and FabricItemGroupEntries) for BuildCreativeModeTabContentsEvent. Checked against NeoForge 21.1.250, Fabric API 0.116.18+1.21.1 and Mojang's 1.21.1 mappings.",
+     "about": "Minecraft 1.21.1 (an obfuscated game, built with Loom on Mojang's names): the files whose names differ from 26.1's. NeoForge 21.1's registration (ResourceLocation ids, properties passed directly and not given their id, DeferredRegister.DataComponents, DeferredHolder as a plain Holder) Fabric API's networking (PayloadTypeRegistry.playS2C and playC2S, PlayerLookup.world), its world events where 26.1 says level, ServerEntityEvents.ENTITY_LOAD (so EntityJoinLevelEvent cannot be cancelled there), KeyBindingHelper, and its item group events (ItemGroupEvents.MODIFY_ENTRIES_ALL and FabricItemGroupEntries) for BuildCreativeModeTabContentsEvent. Checked against NeoForge 21.1.250, Fabric API 0.116.18+1.21.1 and Mojang's 1.21.1 mappings. Its rewrites rename words in every bridge file for this game (Identifier is ResourceLocation here), so a file that differs only by those needs no copy.",
      "symbols": {
       "neoforge": [
        "neoforge-21.1|net.neoforged.neoforge.registries.DeferredRegister#createBlocks",
@@ -4306,15 +4313,6 @@
      },
      "below": "1.21.2",
      "drops": [
-      "capabilities/",
-      "transfer/",
-      "fluids/",
-      "items/",
-      "energy/",
-      "common/",
-      "mixin/LevelCapabilitiesMixin.java",
-      "mixin/EntityCapabilitiesMixin.java",
-      "mixin/ItemStackCapabilitiesMixin.java",
       "FluidTintSource.java",
       "FluidTintSources.java",
       "IItemExtension.java",
@@ -4329,8 +4327,14 @@
       "EntityRenderersEvent.java",
       "RegisterColorHandlersEvent.java",
       "RegisterRenderPipelinesEvent.java",
-      "RegisterSpecialModelRendererEvent.java"
+      "RegisterSpecialModelRendererEvent.java",
+      "transfer/",
+      "common/util/ValueIOSerializable.java"
      ],
+     "rewrites": {
+      "org.jspecify.annotations.Nullable": "org.jetbrains.annotations.Nullable",
+      "Identifier": "ResourceLocation"
+     },
      "mixins": [
       {
        "mixin": "EntityTickMixin",
@@ -4609,6 +4613,36 @@
        "for": [
         "RenderLevelStageEvent"
        ]
+      },
+      {
+       "mixin": "LevelCapabilitiesMixin",
+       "for": [
+        "capabilities.Capabilities",
+        "capabilities.BlockCapability"
+       ],
+       "injects": {
+        "net/minecraft/world/level/Level": "capabilities.LevelCapabilities"
+       }
+      },
+      {
+       "mixin": "EntityCapabilitiesMixin",
+       "for": [
+        "capabilities.Capabilities",
+        "capabilities.EntityCapability"
+       ],
+       "injects": {
+        "net/minecraft/world/entity/Entity": "capabilities.EntityCapabilities"
+       }
+      },
+      {
+       "mixin": "ItemStackCapabilitiesMixin",
+       "for": [
+        "capabilities.Capabilities",
+        "capabilities.ItemCapability"
+       ],
+       "injects": {
+        "net/minecraft/world/item/ItemStack": "capabilities.ItemStackCapabilities"
+       }
       }
      ]
     },

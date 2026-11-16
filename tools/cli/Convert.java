@@ -3187,10 +3187,12 @@ final class Convert {
             );
         }
         bridgeUsers = sourcesOutside(bridgeFolder());
-        for (var template : files.entrySet()) write(
-            bridgeFolder() + "/" + template.getKey(),
-            fillBridge(Files.readString(template.getValue(), StandardCharsets.UTF_8), bridgePackage)
-        );
+        Map<String, Object> rewrites = bridgeLayer == null ? Map.of() : Json.object(bridgeLayer.getOrDefault("rewrites", Map.of()));
+        for (var template : files.entrySet()) {
+            // For an older game, the layer's whole-word renames (Identifier is ResourceLocation there).
+            String text = layerRewrites(Files.readString(template.getValue(), StandardCharsets.UTF_8), rewrites);
+            write(bridgeFolder() + "/" + template.getKey(), fillBridge(text, bridgePackage));
+        }
         bridgeMixinConfig = bridgeMixins(bridge, bridgeLayer, bridgePackage, javaFiles().stream().filter(f -> !f.startsWith(bridgeFolder() + "/")).toList());
         notes.add(
             "NeoForge bridge: " +
@@ -3326,6 +3328,19 @@ final class Convert {
      * Whether a version layer leaves out one of the bridge's files (bridges[].layers[].drops: path prefixes under the
      * bridge folder, such as "transfer/"): parts of the bridge written for a newer game than the layer's.
      */
+    /**
+     * A version layer's "rewrites" (knowledge/loaders.json): whole-word renames applied to the bridge's base files for that
+     * game, for names that differ there and nothing else (Identifier for ResourceLocation), so such a file needs no copy.
+     */
+    static String layerRewrites(String text, Map<String, Object> rewrites) {
+        String out = text;
+        for (var r : rewrites.entrySet()) out = out.replaceAll(
+            "(?<![\\w$])" + Pattern.quote(r.getKey()) + "(?![\\w$])",
+            Matcher.quoteReplacement(String.valueOf(r.getValue()))
+        );
+        return out;
+    }
+
     static boolean dropped(List<String> drops, String rel) {
         for (String prefix : drops) if (rel.startsWith(prefix)) return true;
         return false;

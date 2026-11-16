@@ -55,6 +55,13 @@ def layer_of(b, minecraft):
     return best
 
 
+def rewrite(text, layer):
+    """A version layer's whole-word renames for the bridge's base files (Convert.layerRewrites)."""
+    for name, to in (layer or {}).get("rewrites", {}).items():
+        text = re.sub(r"(?<![\w$])" + re.escape(name) + r"(?![\w$])", lambda m: to, text)
+    return text
+
+
 def templates(b, layer):
     """{relative path: file} as Convert.bridgeTemplates reads them (the layer's files replace the bridge's own)."""
     out = {}
@@ -85,7 +92,7 @@ test {
 """
 
 
-def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric, drops=(), layer_name=None):
+def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric, drops=(), layer_name=None, layer=None):
     """Copies knowledge/bridge-tests/ID into the host's tests and runs them; None when the bridge has none. A test under a
     path the version layer drops (the bridge has no such classes there) is left out, as the classes are."""
     folder = TESTS / bridge_id
@@ -110,14 +117,17 @@ def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric, drops=(), layer_n
     for f in sources:
         target = test_java / test_root[f]
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(f.read_text(encoding="utf-8").replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
+        text = rewrite(f.read_text(encoding="utf-8"), layer)
+        target.write_text(text.replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
     build = work / "build.gradle"
     text = build.read_text(encoding="utf-8")
     if "bench/bridge_check.py: the bridge's runtime tests" not in text:
         # ModDevGradle gives the game to the main source set only; Loom gives it to the tests too. Its unit tests run inside
         # FML with the host mod loaded, so the bridge's mixins apply as in the game (tests that use injected interfaces).
         # NeoForge's test framework starts a server for a test that asks for one (tags and item components bound).
-        extra = "" if to_fabric else ("\nneoForge {\n    unitTest {\n        enable()\n        testedMod = mods.getByName(mod_id)\n    }\n}\n"
+        # On Fabric, fabric-loader-junit runs them inside Fabric Loader's Knot, so Fabric API's mixins (item and fluid
+        # variants) and the bridge's own apply as in the game.
+        extra = ("\ndependencies {\n    testImplementation \"net.fabricmc:fabric-loader-junit:${project.loader_version}\"\n}\n") if to_fabric else ("\nneoForge {\n    unitTest {\n        enable()\n        testedMod = mods.getByName(mod_id)\n    }\n}\n"
                                       "dependencies {\n    testImplementation \"net.neoforged:testframework:${neo_version}\"\n}\n")
         build.write_text(text + TEST_BUILD + extra, encoding="utf-8")
     code, result, seconds = convert_sweep.mmt(["test", "--root", str(work), "--json"], 3600)
@@ -194,7 +204,8 @@ def main():
     for rel, f in files.items():
         target = pkg_dir / rel
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(f.read_text(encoding="utf-8").replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
+        text = rewrite(f.read_text(encoding="utf-8"), layer)
+        target.write_text(text.replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
     mixins = (layer or {}).get("mixins") if (layer or {}).get("mixins") is not None else b.get("mixins") or []
     mixins = [m for m in mixins if "mixin/" + m["mixin"] + ".java" in files]
     if mixins:
@@ -242,7 +253,7 @@ def main():
             out["errors"] = ["with the interfaces injected: " + f"{Path(e['file']).name}:{e['line']}: {e['message']} {e['symbol']}".strip()
                              for e in (convert_sweep.compile_errors(logs[-1].read_text(encoding="utf-8", errors="replace")) if logs else [])][:200]
     if code == 0:
-        tests = run_tests(work, pkg_dir.relative_to(java), pkg, modid, args.bridge, to_fabric, (layer or {}).get("drops", []), (layer or {}).get("minecraft"))
+        tests = run_tests(work, pkg_dir.relative_to(java), pkg, modid, args.bridge, to_fabric, (layer or {}).get("drops", []), (layer or {}).get("minecraft"), layer)
         if tests is not None:
             out["tests"] = tests
             out["ok"] = tests["ok"]

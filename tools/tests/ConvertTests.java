@@ -229,6 +229,14 @@ public final class ConvertTests {
             "an access transformer field line becomes an access widener field with its type from Mojang's mappings, a private method stays overridable, and a field the game lacks is dropped:\n" + typed + typedLeft
         );
         ConvertNamesTests.run();
+        String renamed = Convert.layerRewrites(
+            "import net.minecraft.resources.Identifier;\nimport org.jspecify.annotations.Nullable;\nIdentifier id = Identifier.parse(s); IdentifierCache c; my.Identifier x;",
+            Json.object(Json.parse("{\"org.jspecify.annotations.Nullable\":\"org.jetbrains.annotations.Nullable\",\"Identifier\":\"ResourceLocation\"}"))
+        );
+        check(
+            renamed.equals("import net.minecraft.resources.ResourceLocation;\nimport org.jetbrains.annotations.Nullable;\nResourceLocation id = ResourceLocation.parse(s); IdentifierCache c; my.ResourceLocation x;"),
+            "a version layer's rewrites rename whole words only, dotted names included: " + renamed
+        );
         String neoData = "{\"type\":\"minecraft:crafting_shaped\",\"neoforge:conditions\":[{\"type\":\"neoforge:mod_loaded\",\"modid\":\"create\"}," +
             "{\"type\":\"neoforge:not\",\"value\":{\"type\":\"neoforge:mod_loaded\",\"modid\":\"jumbofurnace\"}},{\"type\":\"neoforge:tag_empty\",\"tag\":\"c:ingots/zinc\"}]}";
         DataConditions dataConditions = new DataConditions();
