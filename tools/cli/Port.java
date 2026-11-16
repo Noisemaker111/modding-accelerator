@@ -284,6 +284,74 @@ final class Port {
         return out;
     }
 
+    /**
+     * A yarn route (Fabric's tables) knows names, not what the game's own code does at a call site: the game's call-site
+     * rewrites come from GameDiff over the same releases, in Mojang's names, and are added to the route map in yarn names,
+     * the removed member by the source release's table and its replacement by the target's. A rewrite either side cannot
+     * name in yarn is left out; without GameDiff or a table, the route map stays as it was.
+     */
+    static void yarnRewrites(JavaTools tools, List<String> chain, String from, String to, Path map) {
+        try {
+            Path game = map.resolveSibling(map.getFileName().toString().replace(".json", ".game.json"));
+            var diff = tools.run("GameDiff", List.of("--chain", String.join(",", chain), "--out", game.toString()), "mapping-rewrites");
+            if (diff.exit() != 0) return;
+            Map<String, Map<String, Object>> tables = new HashMap<>();
+            for (String version : new LinkedHashSet<>(List.of(from, to))) {
+                Path table = map.resolveSibling("names-yarn-" + version + ".json");
+                if (!Files.isRegularFile(table)) {
+                    var made = tools.run(
+                        "VersionMap",
+                        List.of(version, version, "--from-names", "yarn", "--to-names", "mojmap", "--names", "yarn", "--out", table.toString()),
+                        "mapping-yarn-" + version
+                    );
+                    if (made.exit() != 0) return;
+                }
+                tables.put(version, Json.read(table));
+            }
+            List<Object> rewrites = yarnRewrites(Json.array(Json.read(game).get("rewrites")), tables.get(from), tables.get(to));
+            if (rewrites.isEmpty()) return;
+            Map<String, Object> route = new LinkedHashMap<>(Json.read(map));
+            route.put("rewrites", rewrites);
+            saveMap(map, route);
+        } catch (Exception unavailable) {
+            System.err.println("Warning: the game's call-site rewrites are not in this yarn route: " + unavailable.getMessage());
+        }
+    }
+
+    /** The game's rewrites (Mojang names) in yarn: the removed member as the source table names it, the replacement as the target's. */
+    static List<Object> yarnRewrites(List<Object> game, Map<String, Object> source, Map<String, Object> target) {
+        Map<String, Map<String, Object>> sourceMember = new HashMap<>(), targetMember = new HashMap<>();
+        for (var side : List.of(Map.entry(source, sourceMember), Map.entry(target, targetMember))) {
+            Map<String, String> mojangClass = new HashMap<>();
+            for (Object o : Json.array(side.getKey().get("classes"))) {
+                var c = Json.object(o);
+                mojangClass.put(Json.text(c, "from", ""), Json.text(c, "to", ""));
+            }
+            for (Object o : Json.array(side.getKey().get("methods"))) {
+                var m = Json.object(o);
+                String owner = Json.text(m, "owner", "");
+                String mojangOwner = Json.text(m, "newOwner", mojangClass.getOrDefault(owner, owner));
+                side.getValue().put(mojangOwner + "." + Json.text(m, "to", "") + Json.text(m, "newDesc", ""), m);
+            }
+        }
+        List<Object> out = new ArrayList<>();
+        for (Object o : game) {
+            var r = Json.object(o);
+            var old = sourceMember.get(Json.text(r, "owner", "") + "." + Json.text(r, "from", "") + Json.text(r, "desc", ""));
+            var neu = targetMember.get(Json.text(r, "toOwner", "") + "." + Json.text(r, "to", "") + Json.text(r, "newDesc", ""));
+            if (old == null || neu == null) continue;
+            Map<String, Object> yarn = new LinkedHashMap<>(r);
+            yarn.put("owner", old.get("owner"));
+            yarn.put("from", old.get("from"));
+            yarn.put("desc", old.get("desc"));
+            yarn.put("toOwner", neu.get("owner"));
+            yarn.put("to", neu.get("from"));
+            yarn.put("newDesc", neu.get("desc"));
+            out.add(yarn);
+        }
+        return out;
+    }
+
     /** A JVM descriptor with each class name passed through names (dotted names, as the maps keep them). */
     static String descriptor(String desc, java.util.function.UnaryOperator<String> names) {
         Matcher type = Pattern.compile("L([^;]+);").matcher(desc);
@@ -808,6 +876,7 @@ final class Port {
                 if (mapped.exit() != 0) throw new IOException(
                     "No verified mapping along the route " + String.join(" -> ", chain) + ". " + Run.tail(mapped.log())
                 );
+                if (!own && names.equals("yarn")) yarnRewrites(tools, chain, from, to, map);
             }
             build.report.stages.add(
                 Json.map("name", "route", "waypoints", route.waypoints, "mapped", chain, "cached", current)

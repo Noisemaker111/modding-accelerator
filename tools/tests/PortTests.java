@@ -166,8 +166,32 @@ public final class PortTests {
         check("entryOf".equals(yarn.get("from")) && "net.minecraft.registry.Registry".equals(yarn.get("owner")) && "getOrThrow".equals(yarn.get("to")), "yarn key, game replacement");
     }
 
+    /** A yarn route gets the game's rewrites in yarn: the removed member as the source names it, the replacement as the target names it. */
+    static void yarnRouteRewrites() {
+        Map<String, Object> rewrite = Json.map("step", "1.20.1 -> 1.20.2", "owner", "net.minecraft.network.FriendlyByteBuf", "from", "getVarIntSize", "desc", "(I)I", "static", true,
+            "toOwner", "net.minecraft.network.VarInt", "to", "getByteSize", "newDesc", "(I)I", "newStatic", true);
+        Map<String, Object> unnamed = Json.map("step", "1.20.1 -> 1.20.2", "owner", "net.minecraft.network.FriendlyByteBuf", "from", "gone", "desc", "()V", "static", true,
+            "toOwner", "net.minecraft.network.VarInt", "to", "notInYarn", "newDesc", "()V", "newStatic", true);
+        Map<String, Object> source = Json.map(
+            "classes", List.of(Json.map("from", "net.minecraft.network.PacketByteBuf", "to", "net.minecraft.network.FriendlyByteBuf")),
+            "methods", List.of(Json.map("owner", "net.minecraft.network.PacketByteBuf", "from", "getVarIntLength", "desc", "(I)I", "to", "getVarIntSize", "newDesc", "(I)I"),
+                Json.map("owner", "net.minecraft.network.PacketByteBuf", "from", "gone", "desc", "()V", "to", "gone", "newDesc", "()V")));
+        Map<String, Object> target = Json.map(
+            "classes", List.of(Json.map("from", "net.minecraft.network.encoding.VarInts", "to", "net.minecraft.network.VarInt")),
+            "methods", List.of(Json.map("owner", "net.minecraft.network.encoding.VarInts", "from", "getSizeInBytes", "desc", "(I)I", "to", "getByteSize", "newDesc", "(I)I")));
+        List<Object> yarn = Port.yarnRewrites(List.of(rewrite, unnamed), source, target);
+        check(yarn.size() == 1, "a rewrite whose replacement yarn cannot name is left out: " + yarn);
+        var r = Json.object(yarn.get(0));
+        check(
+            "net.minecraft.network.PacketByteBuf".equals(r.get("owner")) && "getVarIntLength".equals(r.get("from")) &&
+            "net.minecraft.network.encoding.VarInts".equals(r.get("toOwner")) && "getSizeInBytes".equals(r.get("to")),
+            "source yarn names for the removed member, target yarn names for its replacement: " + r
+        );
+    }
+
     public static void main(String[] args) throws Exception {
         bridgeRewrites();
+        yarnRouteRewrites();
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
             Files.createDirectories(Path.of(args[1])),
