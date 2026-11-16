@@ -252,7 +252,8 @@ public final class ConvertTests {
         MixinNames mixinNames = new MixinNames(Json.object(Json.parse(
             "{\"classes\":[{\"from\":\"net.minecraft.client.render.WorldRenderer\",\"to\":\"net.minecraft.client.renderer.LevelRenderer\"},{\"from\":\"net.minecraft.util.math.BlockPos\",\"to\":\"net.minecraft.core.BlockPos\"}]," +
             "\"methods\":[{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"scheduleBlockRender\",\"desc\":\"(Lnet/minecraft/util/math/BlockPos;)V\",\"to\":\"setSectionDirty\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"render\",\"desc\":\"()V\",\"to\":\"renderLevel\"}," +
-            "{\"owner\":\"net.minecraft.Base\",\"from\":\"readNbt\",\"desc\":\"(I)V\",\"to\":\"loadAdditional\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"of\",\"desc\":\"(I)V\",\"to\":\"create\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"of\",\"desc\":\"(II)V\",\"to\":\"build\"}]," +
+            "{\"owner\":\"net.minecraft.Base\",\"from\":\"readNbt\",\"desc\":\"(I)V\",\"to\":\"loadAdditional\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"of\",\"desc\":\"(I)V\",\"to\":\"create\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"of\",\"desc\":\"(II)V\",\"to\":\"build\"}," +
+            "{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"method_1\",\"desc\":\"()V\",\"to\":\"lambda$render$0\"}]," +
             "\"supers\":{\"net/minecraft/client/renderer/LevelRenderer\":[\"net/minecraft/Base\"]}," +
             "\"fields\":[{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"world\",\"desc\":\"Lnet/minecraft/client/world/ClientWorld;\",\"to\":\"level\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"MAX_DISTANCE\",\"desc\":\"I\",\"to\":\"OUTLINE_DISTANCE\"}]}"
         )));
@@ -260,15 +261,15 @@ public final class ConvertTests {
             "import net.minecraft.client.renderer.LevelRenderer;\n@Mixin(LevelRenderer.class)\nabstract class M {\n\t@Shadow private ClientLevel world;\n" +
             "\t@Invoker(\"scheduleBlockRender\") abstract void my$schedule(BlockPos pos);\n\t@Accessor(\"MAX_DISTANCE\") static int my$distance() { throw new AssertionError(); }\n" +
             "\t@Inject(method = \"render\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/render/WorldRenderer;scheduleBlockRender(Lnet/minecraft/util/math/BlockPos;)V\"))\n" +
-            "\tvoid a(CallbackInfo ci) { this.world.tick(); String s = \"world\"; }\n\t@Inject(method = \"readNbt\", at = @At(\"TAIL\")) void b(CallbackInfo ci) {}\n" +
+            "\tvoid a(CallbackInfo ci) { this.world.tick(); String s = \"world\"; }\n\t@Inject(method = \"readNbt\", at = @At(\"TAIL\")) void b(CallbackInfo ci) {}\n\t@Inject(method = {\"render()V\", \"method_1\"}, at = @At(\"TAIL\")) void c() {}\n" +
             "\t@Invoker(\"of\") abstract void my$of(@Coerce int a, Map<String, Integer> b);\n\t@Mixin(BlockPos.class) interface N { @Accessor(\"world\") int w(); }\n}\n"
         );
         check(
             mixedIn.contains("private ClientLevel level;") && mixedIn.contains("this.level.tick()") && mixedIn.contains("String s = \"world\"") &&
             mixedIn.contains("@Invoker(\"setSectionDirty\") abstract void my$schedule(") && mixedIn.contains("@Accessor(\"OUTLINE_DISTANCE\") static int my$distance()") &&
-            mixedIn.contains("method = \"renderLevel\"") && mixedIn.contains("method = \"loadAdditional\"") && mixedIn.contains("@Invoker(\"build\")") && mixedIn.contains("@Accessor(\"world\") int w()") &&
+            mixedIn.contains("method = \"renderLevel\"") && mixedIn.contains("method = \"loadAdditional\"") && mixedIn.contains("method = {\"renderLevel()V\", \"method_1\"}") && mixedIn.contains("@Invoker(\"build\")") && mixedIn.contains("@Accessor(\"world\") int w()") &&
             mixedIn.contains("\"Lnet/minecraft/client/renderer/LevelRenderer;setSectionDirty(Lnet/minecraft/core/BlockPos;)V\""),
-            "a mixin's names Mixin reads at run time (shadows and their uses, $-named invokers and accessors, overloads by arity, inherited targets, method = and @At targets) move from yarn to Mojang, each @Mixin against its own target; strings that name nothing stay:\n" + mixedIn
+            "a mixin's names Mixin reads at run time (shadows and their uses, $-named invokers and accessors, overloads by arity, inherited targets, method = and @At targets) move, lambdas keep the intermediary name Loom's game has, from yarn to Mojang, each @Mixin against its own target; strings that name nothing stay:\n" + mixedIn
         );
         String cleaned = Convert.dropUnusedImports(
             "import net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n",

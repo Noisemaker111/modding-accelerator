@@ -52,10 +52,18 @@ final class MixinNames {
         return null;
     }
 
+    /** A Mojang name the compiler made up (lambda$name$0, access$000), which Loom's game does not use. */
+    static boolean synthetic(String name) {
+        return name.startsWith("lambda$") || name.startsWith("access$");
+    }
+
     static void load(Object list, Map<String, Map<String, String>> into, Map<String, Set<String>> byName) {
         for (Object o : Json.array(list)) {
             var m = Json.object(o);
             String owner = Json.text(m, "owner", "").replace('.', '/'), name = Json.text(m, "from", "");
+            // Loom's Mojang-named game keeps intermediary names (method_NNNN, as yarn has them) for lambdas, whose
+            // Mojang names are not stable: a lambda keeps its yarn name.
+            if (synthetic(Json.text(m, "to", ""))) continue;
             into.computeIfAbsent(owner + " " + name, k -> new LinkedHashMap<>()).put(Json.text(m, "desc", ""), Json.text(m, "to", ""));
             byName.computeIfAbsent(name, k -> new TreeSet<>()).add(Json.text(m, "to", ""));
         }
@@ -212,8 +220,9 @@ final class MixinNames {
         StringBuilder out = new StringBuilder();
         while (literal.find()) {
             String value = literal.group(1), next = value;
-            if (value.contains(";")) next = reference(value);
-            else if (methodString(source, literal.start())) next = methodName(value, owners);
+            // method = "name(desc)ret" holds ';' too: it is a method of the target, not an @At reference.
+            if (methodString(source, literal.start())) next = methodName(value, owners);
+            else if (value.contains(";")) next = reference(value);
             else if (value.matches("net[./]minecraft[./][\\w./$]+")) {
                 String slash = value.replace('.', '/');
                 String to = type(slash);

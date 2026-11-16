@@ -815,6 +815,7 @@ final class Convert {
         }
         for (String kind : List.of("methods", "fields")) for (Object o : Json.array(table.get(kind))) {
             var m = Json.object(o);
+            if (MixinNames.synthetic(Json.text(m, "to", ""))) continue;
             members.put(Json.text(m, "owner", "").replace('.', '/') + " " + Json.text(m, "from", "") + " " + Json.text(m, "desc", ""), Json.text(m, "to", ""));
         }
         java.util.function.UnaryOperator<String> type = name -> classes.getOrDefault(name, name);
