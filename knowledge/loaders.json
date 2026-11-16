@@ -2411,7 +2411,8 @@
     "net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent": "RegisterParticleProvidersEvent",
     "net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent": "RegisterClientTooltipComponentFactoriesEvent",
     "net.neoforged.neoforge.client.event.RenderLevelStageEvent": "RenderLevelStageEvent",
-    "net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent": "RegisterRenderPipelinesEvent"
+    "net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent": "RegisterRenderPipelinesEvent",
+    "net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent": "RegisterSpecialModelRendererEvent"
    },
    "symbols": {
     "neoforge": [
@@ -4327,7 +4328,8 @@
       "mixin/ComponentMapBuilderExtensionsMixin.java",
       "EntityRenderersEvent.java",
       "RegisterColorHandlersEvent.java",
-      "RegisterRenderPipelinesEvent.java"
+      "RegisterRenderPipelinesEvent.java",
+      "RegisterSpecialModelRendererEvent.java"
      ],
      "mixins": [
       {
