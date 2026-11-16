@@ -251,7 +251,8 @@ public final class ConvertTests {
         );
         MixinNames mixinNames = new MixinNames(Json.object(Json.parse(
             "{\"classes\":[{\"from\":\"net.minecraft.client.render.WorldRenderer\",\"to\":\"net.minecraft.client.renderer.LevelRenderer\"},{\"from\":\"net.minecraft.util.math.BlockPos\",\"to\":\"net.minecraft.core.BlockPos\"}," +
-            "{\"from\":\"net.minecraft.block.Block\",\"to\":\"net.minecraft.world.level.block.Block\"},{\"from\":\"net.minecraft.block.Block$Settings\",\"to\":\"net.minecraft.world.level.block.Block$Properties\"}]," +
+            "{\"from\":\"net.minecraft.block.Block\",\"to\":\"net.minecraft.world.level.block.Block\"},{\"from\":\"net.minecraft.block.Block$Settings\",\"to\":\"net.minecraft.world.level.block.Block$Properties\"}," +
+            "{\"from\":\"net.minecraft.block.Block$Type\",\"to\":\"net.minecraft.world.level.block.Block$TypeAndCodec\"},{\"from\":\"net.minecraft.block.Block$Id\",\"to\":\"net.minecraft.world.level.block.Block$Type\"}]," +
             "\"methods\":[{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"scheduleBlockRender\",\"desc\":\"(Lnet/minecraft/util/math/BlockPos;)V\",\"to\":\"setSectionDirty\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"render\",\"desc\":\"()V\",\"to\":\"renderLevel\"}," +
             "{\"owner\":\"net.minecraft.Base\",\"from\":\"readNbt\",\"desc\":\"(I)V\",\"to\":\"loadAdditional\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"of\",\"desc\":\"(I)V\",\"to\":\"create\"},{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"of\",\"desc\":\"(II)V\",\"to\":\"build\"}," +
             "{\"owner\":\"net.minecraft.client.render.WorldRenderer\",\"from\":\"method_1\",\"desc\":\"()V\",\"to\":\"lambda$render$0\"},{\"owner\":\"net.minecraft.Other\",\"from\":\"getAttributes\",\"desc\":\"()I\",\"to\":\"getBasicAttributes\"}," +
@@ -274,11 +275,11 @@ public final class ConvertTests {
             "a mixin's names Mixin reads at run time (shadows and their uses, $-named invokers and accessors, overloads by arity, inherited targets, method = and @At targets) move, lambdas keep the intermediary name Loom's game has, from yarn to Mojang, each @Mixin against its own target; strings that name nothing stay:\n" + mixedIn
         );
         String plain = mixinNames.javaNames(
-            "import net.minecraft.world.level.block.Block;\nimport net.minecraft.client.renderer.LevelRenderer;\nclass R extends LevelRenderer {\n\tBlock.Settings s = Block.Settings.of(Blocks.STONE);\n" +
+            "import net.minecraft.world.level.block.Block;\nimport net.minecraft.client.renderer.LevelRenderer;\nclass R extends LevelRenderer {\n\tBlock.Settings s = Block.Settings.of(Blocks.STONE);\n\tBlock.Type<R> t;\n" +
             "\t@Override\n\tprotected void getRenderLayer(int a, boolean b) { super.getRenderType(a, b); }\n\t@Override public void getRenderLayer() {}\n}\n"
         );
         check(
-            plain.contains("Block.Properties s = Block.Properties.of(Blocks.STONE)") && plain.contains("protected void getRenderType(int a, boolean b)") && plain.contains("public void getRenderLayer() {}"),
+            plain.contains("Block.Properties s = Block.Properties.of(Blocks.STONE)") && plain.contains("Block.Type<R> t;") && plain.contains("protected void getRenderType(int a, boolean b)") && plain.contains("public void getRenderLayer() {}"),
             "migrateMappings' gaps in any source: a nested game type named through its outer class, and an override of a game method (by its parameter count) move to Mojang's names:\n" + plain
         );
         String cleaned = Convert.dropUnusedImports(

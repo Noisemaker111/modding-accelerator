@@ -28,8 +28,28 @@ final class MixinNames {
             back.put(to, from);
         }
         load(table.get("methods"), methods, methodsByName);
+        for (Object o : Json.array(table.get("methods"))) {
+            var m = Json.object(o);
+            mojangMethods.computeIfAbsent(Json.text(m, "newOwner", "").replace('.', '/'), k -> new HashSet<>()).add(Json.text(m, "to", ""));
+        }
         load(table.get("fields"), fields, fieldsByName);
         if (table.get("supers") instanceof Map<?, ?> up) for (var e : up.entrySet()) supers.put(String.valueOf(e.getKey()), Json.array(e.getValue()).stream().map(String::valueOf).toList());
+    }
+
+    /** The Mojang names of the methods the table renames, by Mojang owner (slash form). */
+    final Map<String, Set<String>> mojangMethods = new HashMap<>();
+
+    /** Whether a Mojang class or one of its supertypes has a method of this Mojang name (that the table renames). */
+    boolean mojangDeclares(String owner, String name) {
+        Deque<String> todo = new ArrayDeque<>(List.of(owner));
+        Set<String> seen = new HashSet<>();
+        while (!todo.isEmpty()) {
+            String up = todo.poll();
+            if (!seen.add(up)) continue;
+            if (mojangMethods.getOrDefault(up, Set.of()).contains(name)) return true;
+            todo.addAll(supers.getOrDefault(up, List.of()));
+        }
+        return false;
     }
 
     /** Each game class's supertypes in Mojang's names (slash form), from the table's supers (VersionMap --hierarchy). */
@@ -170,7 +190,8 @@ final class MixinNames {
                 String mojang = outer.replace('.', '/');
                 String yarn = back.get(mojang);
                 String renamed = yarn == null ? null : classes.get(yarn + "$" + nested.group(2));
-                if (renamed != null && renamed.startsWith(mojang + "$")) to = renamed.substring(mojang.length() + 1);
+                // Outer.Inner already in Mojang's names (CustomPacketPayload.Type) is left: yarn's Inner of that name is another class.
+                if (renamed != null && renamed.startsWith(mojang + "$") && !back.containsKey(mojang + "$" + nested.group(2))) to = renamed.substring(mojang.length() + 1);
             }
             nested.appendReplacement(out, Matcher.quoteReplacement(to == null ? nested.group() : nested.group(1) + "." + to));
         }
@@ -193,7 +214,9 @@ final class MixinNames {
         out = new StringBuilder();
         while (m.find()) {
             String name = m.group(2), to = null;
-            if (code[m.start()]) for (String owner : owners) {
+            // A name a supertype already has in Mojang's names was renamed by migrateMappings: renaming it again as if
+            // it were yarn's would pick another method.
+            if (code[m.start()] && owners.stream().noneMatch(o -> mojangDeclares(type(o), name))) for (String owner : owners) {
                 to = member(methods, methodsByName, owner, name, null, false, javaArity(text, m.end() - 1));
                 if (to != null) break;
             }

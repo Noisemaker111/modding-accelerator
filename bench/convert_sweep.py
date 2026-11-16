@@ -305,7 +305,7 @@ def mixin_snippet(packages):
 
 
 # The registry snippet in yarn's names, for the untouched original of a yarn-named mod (its game is in yarn's names).
-YARN_SNIPPET_NAMES = [("net.minecraft.core.registries.BuiltInRegistries.REGISTRY", "net.minecraft.registry.Registries.REGISTRY"),
+YARN_SNIPPET_NAMES = [("net.minecraft.core.registries.BuiltInRegistries.REGISTRY", "net.minecraft.registry.Registries.REGISTRIES"),
                       ("registry.keySet()", "registry.getIds()"), ("registry.key()", "registry.getKey()")]
 
 
