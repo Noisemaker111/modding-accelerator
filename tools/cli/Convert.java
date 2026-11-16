@@ -4885,7 +4885,15 @@ final class Convert {
                 }
             }
         }
-        List<String> tasks = fresh.tasks(model, "classes");
+        List<String> tasks = new ArrayList<>(fresh.tasks(model, "classes"));
+        Map<String, String> unwired = unwiredSourceSets(model);
+        if (!unwired.isEmpty()) {
+            tasks.removeAll(unwired.keySet());
+            notes.add(
+                "Not compiled: source set(s) " + String.join(", ", unwired.values()) +
+                ", whose classpath the build declares with neither the game nor the mod's own classes (the original's declaration, unchanged), so no loader compiles them."
+            );
+        }
         Run.Result run = fresh.gradle(tasks, "convert-compile");
         boolean ok = run.exit() == 0;
         // The original compiled on its own loader: an override the compiler now refuses is of a method that loader adds to
@@ -4902,6 +4910,38 @@ final class Convert {
         result.put("compileLog", run.log().toString());
         if (!ok) result.put("errors", Port.errors(run.log()));
         result.put("ok", ok && left.isEmpty());
+    }
+
+    /**
+     * Source sets besides main whose runtime classpath has neither a game jar nor main's output (a datagen set the
+     * build never wires up): the loader's plugin gives the game to main (and test) only, so neither loader's build
+     * compiles them. By classes task ("project:datagenClasses") to the set's name.
+     */
+    static Map<String, String> unwiredSourceSets(Map<String, Object> model) {
+        Map<String, String> unwired = new LinkedHashMap<>();
+        Pattern game = Pattern.compile("(?i)(minecraft|neoforge|forge)[^/\\\\]*\\.jar$");
+        for (Object item : Json.array(model.get("projects"))) {
+            var p = Json.object(item);
+            String prefix = p.get("path").equals(":") ? "" : String.valueOf(p.get("path"));
+            Set<String> mainOutput = new HashSet<>();
+            boolean resolved = false;
+            for (Object s : Json.array(p.get("sourceSets"))) if ("main".equals(Json.object(s).get("name"))) {
+                mainOutput.addAll(ProjectModel.strings(Json.object(s).get("output")));
+                resolved = !ProjectModel.strings(Json.object(s).get("runtime")).isEmpty();
+            }
+            // A model read without classpaths says nothing about wiring.
+            if (!resolved) continue;
+            for (Object s : Json.array(p.get("sourceSets"))) {
+                var set = Json.object(s);
+                String name = Json.text(set, "name", "");
+                String task = Json.text(set, "classesTask", "");
+                if (name.equals("main") || task.isEmpty()) continue;
+                List<String> runtime = ProjectModel.strings(set.get("runtime"));
+                boolean wired = runtime.stream().anyMatch(path -> mainOutput.contains(path) || game.matcher(path).find());
+                if (!wired) unwired.put(prefix + ":" + task, prefix.isEmpty() ? name : prefix + ":" + name);
+            }
+        }
+        return unwired;
     }
 
     /** The other loader's hooks the converted code overrides, which nothing calls here ("Class.method"). */

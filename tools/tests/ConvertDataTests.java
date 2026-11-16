@@ -73,5 +73,17 @@ final class ConvertDataTests {
                 "\"tool\":{\"fabric:type\":\"fabric:any\",\"ingredients\":[{\"fabric:type\":\"demo:item_ability\"},{\"tag\":\"c:tools/knife\"}]}}"),
             "an ingredient's alternatives holding a custom ingredient are Fabric's any; a list of ingredients stays a list: " + Json.write(alternatives)
         );
+        Map<String, String> unwired = Convert.unwiredSourceSets(Json.object(Json.parse(
+            "{\"projects\":[{\"path\":\":\",\"sourceSets\":[" +
+            "{\"name\":\"main\",\"classesTask\":\"classes\",\"output\":[\"/p/build/main\"],\"runtime\":[\"/c/minecraft-merged-1.21.1.jar\"]}," +
+            "{\"name\":\"test\",\"classesTask\":\"testClasses\",\"output\":[],\"runtime\":[\"/p/build/main\",\"/c/junit.jar\"]}," +
+            "{\"name\":\"gametest\",\"classesTask\":\"gametestClasses\",\"output\":[],\"runtime\":[\"/c/neoforge-21.1.200.jar\"]}," +
+            "{\"name\":\"datagen\",\"classesTask\":\"datagenClasses\",\"output\":[],\"runtime\":[\"/c/guava.jar\"]}]}," +
+            "{\"path\":\":planned\",\"sourceSets\":[{\"name\":\"main\",\"classesTask\":\"classes\",\"output\":[],\"runtime\":[]},{\"name\":\"extra\",\"classesTask\":\"extraClasses\",\"runtime\":[]}]}]}"
+        )));
+        ConvertTests.check(
+            unwired.equals(Map.of(":datagenClasses", "datagen")),
+            "only a source set given neither the game nor main's classes is left out of the compile; a model without classpaths leaves none out: " + unwired
+        );
     }
 }
