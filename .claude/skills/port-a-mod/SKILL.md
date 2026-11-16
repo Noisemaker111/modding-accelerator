@@ -13,8 +13,14 @@ statuses: `stop` (errors left), `build`, `load`, `behaviour` (a game check that 
    - the map already knows it (`renamed`/`moved`) but it is still an error: a porter gap in `tools/VersionMap.java`
      (`Fix.run`) or `tools/cli/Port.java`, never a rule (overrides are renamed by the class's own supertypes,
      on-demand imports of moved packages are expanded);
+   - the game's own code shows the change: GameDiff mines it into the route map (`rewrites`: a call the game rewrote,
+     another owner/arguments/static-ness or deleted; `classRewrites`: a class it replaced), and the typed fixer applies
+     it. When a removed member is still an error, check the map's `rewrites` before writing anything; tune the miner
+     (tools/GameDiff.java `Hop.rewrites`) rather than adding a rule;
    - one game change, many names: generate one rule from the game's own mappings (`~/.mmt/mappings/client-V.txt`,
-     `yarn-V*.jar`); a replace can use `$^N` for group N in UPPER_SNAKE (getter → constant: `core-shaders-1212`);
+     `yarn-V*.jar`); a replace can use `$^N` for group N in UPPER_SNAKE (getter → constant: `core-shaders-1212`), and
+     `call-arguments` rewrites every argument of a call across lines (`tag-appender-keys-262`);
+   - a redesign: one transform, written once for every mod, that keeps behaviour (`entity-render-state-1212`);
    - only what is truly semantic by hand. Then sort what is left by the update that caused it:
    a mechanical change → a rule in `knowledge/fixes.json` plus `python bench/rule_test.py --only ID --write`;
    new code needed → a guide in `knowledge/structural.json`; build setup → `tools/cli/Target.java`; a porter bug →
