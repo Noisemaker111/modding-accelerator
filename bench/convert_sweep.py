@@ -304,7 +304,32 @@ def mixin_snippet(packages):
     return MIXIN_SNIPPET.replace("PACKAGES", test)
 
 
-def game_registries(work, namespace, packages=()):
+# The registry snippet in yarn's names, for the untouched original of a yarn-named mod (its game is in yarn's names).
+YARN_SNIPPET_NAMES = [("net.minecraft.core.registries.BuiltInRegistries.REGISTRY", "net.minecraft.registry.Registries.REGISTRY"),
+                      ("registry.keySet()", "registry.getIds()"), ("registry.key()", "registry.getKey()")]
+
+
+def registry_snippet(namespace, yarn=False):
+    text = REGISTRY_SNIPPET.replace("NAMESPACE", namespace or "")
+    for mojang, named in YARN_SNIPPET_NAMES if yarn else []:
+        text = text.replace(mojang, named)
+    return text
+
+
+def yarn_to_mojang_targets(mixins, table_file):
+    """An original yarn mod's applied mixins ("Mixin > game class") with the game classes in Mojang's names, from the
+    yarn -> Mojang table convert wrote, so they compare with the renamed mod's."""
+    if not isinstance(mixins, str) or not Path(table_file).is_file():
+        return mixins
+    classes = {c["from"]: c["to"] for c in json.loads(Path(table_file).read_text(encoding="utf-8")).get("classes", [])}
+    out = []
+    for line in mixins.split("\n"):
+        mixin, sep, target = line.partition(" > ")
+        out.append(mixin + sep + classes.get(target, target) if sep else line)
+    return "\n".join(sorted(out))
+
+
+def game_registries(work, namespace, packages=(), yarn=False):
     """Starts the project in a hidden client, reads its registry entries and its applied mixins, stops the game."""
     record = {}
     code, ui, seconds = mmt(["ui-check", "--root", str(work), "--json"], TIMEOUT["ui-check"])
@@ -313,7 +338,7 @@ def game_registries(work, namespace, packages=()):
     if code != 0:
         record["loadError"] = str(ui.get("error") or ui.get("details") or ui)[-1500:]
     else:
-        record["registries"], error = evaluate(work, "registries", REGISTRY_SNIPPET.replace("NAMESPACE", namespace or ""))
+        record["registries"], error = evaluate(work, "registries", registry_snippet(namespace, yarn))
         if error:
             record["evalError"] = error
         record["mixins"], error = evaluate(work, "mixins", mixin_snippet(packages))
@@ -475,7 +500,12 @@ def run_mod(mod, args, concepts, started):
             if record["game"].get("loaded"):
                 original = fresh_copy(src, f"{mod['id']}-original")
                 started.append(original)
-                record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages)
+                renamed = record.get("renamedFromYarn", False)
+                record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages, yarn=renamed)
+                if renamed:
+                    tables = sorted((work / ".mmt" / "portable" / "yarn-to-mojang").glob("names-*.json"))
+                    if tables:
+                        record["originalGame"]["mixins"] = yarn_to_mojang_targets(record["originalGame"].get("mixins"), tables[-1])
                 record["behaviour"] = behaviour(record["game"], record["originalGame"])
                 if not args.no_fingerprint:
                     record["fingerprint"] = fingerprint_behaviour(work, original, mod["id"])

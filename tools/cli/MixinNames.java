@@ -91,6 +91,8 @@ final class MixinNames {
         if (found == null) found = declaredAbove(kind, owner, name);
         if (found != null) {
             if (desc != null && found.containsKey(desc)) return found.get(desc);
+            // A method the mod declares or invokes with a parameter count none of these have is another method.
+            if (arity >= 0 && found.keySet().stream().noneMatch(d -> descArity(d) == arity)) return null;
             Set<String> names = new TreeSet<>(found.values());
             if (names.size() == 1) return names.iterator().next();
             if (arity >= 0) {
@@ -101,8 +103,10 @@ final class MixinNames {
             left.add(owner.replace('/', '.') + "." + name + (desc == null ? "" : desc) + ": its overloads have different Mojang names (" + String.join(", ", names) + ")");
             return null;
         }
-        // Declared by a supertype: one Mojang name for every member of that yarn name is the answer.
-        if (inherited && byName.containsKey(name) && byName.get(name).size() == 1) return byName.get(name).iterator().next();
+        // Without the game's hierarchy, a supertype's member is guessed: one Mojang name for every member of that yarn
+        // name. With it, a member found on no supertype has the same name in both (the table lists only renames), and
+        // the guess would take an unrelated class's rename (getAttributes is getBasicAttributes on another class).
+        if (inherited && supers.isEmpty() && byName.containsKey(name) && byName.get(name).size() == 1) return byName.get(name).iterator().next();
         return null;
     }
 
@@ -145,6 +149,58 @@ final class MixinNames {
         // Put each renamed type back, outer ones first, so the nested ones they hold come back too.
         for (int i = done.size() - 1; i >= 0; i--) text = text.replace("\u0000" + i + "\u0000", done.get(i));
         return text;
+    }
+
+    /**
+     * What Loom's migrateMappings leaves in yarn's names in any source, mixin or not: a nested game type named through
+     * its outer class (Block.Settings is Block.Properties), and the declaration of a method that overrides a game
+     * method (its super call is renamed, its own name is not). Overrides are found through the game's hierarchy from
+     * the classes the file extends or implements; a name the table does not rename stays.
+     */
+    String javaNames(String source) {
+        Map<String, String> imports = new HashMap<>();
+        Matcher imp = Pattern.compile("(?m)^import\\s+([\\w.]+)\\s*;").matcher(source);
+        while (imp.find()) imports.put(imp.group(1).substring(imp.group(1).lastIndexOf('.') + 1), imp.group(1));
+        boolean[] code = LoaderRules.code(source);
+        StringBuilder out = new StringBuilder();
+        Matcher nested = Pattern.compile("(?<![\\w$.])([A-Z]\\w*)\\.([A-Z]\\w*)(?![\\w$])").matcher(source);
+        while (nested.find()) {
+            String outer = imports.get(nested.group(1)), to = null;
+            if (code[nested.start()] && outer != null && outer.startsWith("net.minecraft.")) {
+                String mojang = outer.replace('.', '/');
+                String yarn = back.get(mojang);
+                String renamed = yarn == null ? null : classes.get(yarn + "$" + nested.group(2));
+                if (renamed != null && renamed.startsWith(mojang + "$")) to = renamed.substring(mojang.length() + 1);
+            }
+            nested.appendReplacement(out, Matcher.quoteReplacement(to == null ? nested.group() : nested.group(1) + "." + to));
+        }
+        nested.appendTail(out);
+        String text = out.toString();
+        List<String> owners = new ArrayList<>();
+        Matcher sup = Pattern.compile("\\b(?:extends|implements)\\s+([\\w.<>,\\s?]+?)\\s*\\{").matcher(text);
+        while (sup.find()) for (String t : sup.group(1).replaceAll("<[^<>]*>", "").split("[,\\s]+|\\b(?:extends|implements)\\b")) {
+            String simple = t.strip();
+            if (simple.isEmpty()) continue;
+            String head = simple.contains(".") ? simple.substring(0, simple.indexOf('.')) : simple;
+            String full = imports.containsKey(head) ? imports.get(head) + simple.substring(head.length()) : null;
+            if (full == null || !full.startsWith("net.minecraft.")) continue;
+            String slash = toBinary(full.replace('.', '/'));
+            owners.add(back.getOrDefault(slash, slash));
+        }
+        if (owners.isEmpty()) return text;
+        code = LoaderRules.code(text);
+        Matcher m = Pattern.compile("@Override\\b((?:\\s*@[\\w.]+(?:\\([^)]*\\))?)*(?:\\s+(?:public|protected|private|static|final|abstract|synchronized))*\\s+[\\w.<>\\[\\], ?$]+\\s+)([\\w$]+)\\s*\\(").matcher(text);
+        out = new StringBuilder();
+        while (m.find()) {
+            String name = m.group(2), to = null;
+            if (code[m.start()]) for (String owner : owners) {
+                to = member(methods, methodsByName, owner, name, null, false, javaArity(text, m.end() - 1));
+                if (to != null) break;
+            }
+            m.appendReplacement(out, Matcher.quoteReplacement(to == null || synthetic(to) ? m.group() : "@Override" + m.group(1) + to + "("));
+        }
+        m.appendTail(out);
+        return out.toString();
     }
 
     /** The parameter count of a JVM method descriptor. */

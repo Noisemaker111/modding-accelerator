@@ -769,7 +769,7 @@ final class Convert {
         MixinNames mixins = new MixinNames(table);
         int mixinFiles = 0;
         for (String file : javaFiles()) {
-            String text = read(file), out = mixins.remap(text);
+            String text = read(file), out = mixins.remap(mixins.javaNames(text));
             if (!out.equals(text)) {
                 write(file, out);
                 mixinFiles++;
