@@ -70,6 +70,10 @@ public final class BuildScriptTests {
         check(Target.removedDsl("def main = jar.archivePath\ndef n = jar.archiveName\ninto jar.destinationDir\njar.archivePathname = 1\n", true, false)
             .equals("def main = jar.archiveFile.get().asFile\ndef n = jar.archiveFileName.get()\ninto jar.destinationDirectory.get().asFile\njar.archivePathname = 1\n"), "Gradle 8's removed archive properties -> their Provider forms");
         check(Target.removedDsl("def main = jar.archivePath\n", false, false).equals("def main = jar.archivePath\n"), "archivePath stays on Gradle 7");
+        check(Target.removedDsl("configurations {\n    archivesBaseName = rootProject.name\n}\n", true, true).equals("configurations {\n    project.base.archivesName = rootProject.name\n}\n"),
+            "archivesBaseName set inside a block names the project's base extension");
+        check(Target.remapTasks("remapJar {\n    inputFile.set shadowJar.archiveFile\n    archiveClassifier = null\n}\n").equals("jar {\n    archiveClassifier = null\n}\n"),
+            "remapJar's input goes with it: " + Target.remapTasks("remapJar {\n    inputFile.set shadowJar.archiveFile\n    archiveClassifier = null\n}\n"));
         check(Target.remapTasks("def main = name == 'Fabric' ? remapJar.archivePath : jar.archivePath\ntasks.remapSourcesJar { }\nmyRemapJarTask()\n")
             .equals("def main = name == 'Fabric' ? jar.archivePath : jar.archivePath\ntasks.sourcesJar { }\nmyRemapJarTask()\n"), "a convention script's remap tasks become the plain ones");
         check(Target.withoutAdditionalRuntimeClasspath("additionalRuntimeClasspath(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n").equals("runtimeOnly(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n"), "NeoForge's removed additional classpath -> runtimeOnly");

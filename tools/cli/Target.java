@@ -175,9 +175,11 @@ final class Target {
         applyReplacements(setup, build, pins);
         loomFollows(setup, build, to);
         unobfuscatedFabric(setup, build, to);
-        buildDslFollows(setup, build);
         toolchain(setup, build, to);
         gradleForJava25(setup, build, to);
+        // After every step that can raise Gradle: what it removed depends on the Gradle the build ends on (MidnightLib's
+        // archivesBaseName was left for Gradle 8, and Java 25 then brought Gradle 9).
+        buildDslFollows(setup, build);
         parchmentFollows(setup, build, to);
         manifest(setup);
         return setup;
@@ -518,6 +520,9 @@ final class Target {
 
     /** Loom's remapping tasks as the plain ones (remapJar -> jar, remapSourcesJar -> sourcesJar). */
     static String remapTasks(String text) {
+        // remapJar's input (Architectury's template: remapJar { inputFile.set shadowJar.archiveFile }) has no meaning once
+        // nothing is remapped, and jar has no such property.
+        text = removeStatements(text, Pattern.compile("(?m)^[ \\t]*inputFile\\b"));
         return text.replaceAll("(?<![\\w$])remapSourcesJar(?![\\w$])", "sourcesJar").replaceAll("(?<![\\w$])remapJar(?![\\w$])", "jar");
     }
 
@@ -550,6 +555,7 @@ final class Target {
         configurations.put("modLocalRuntime", "localRuntime");
         configurations.put("remapSourcesJar", "sourcesJar");
         configurations.put("remapJar", "jar");
+        text = removeStatements(text, Pattern.compile("(?m)^[ \\t]*inputFile\\b"));
         for (var c : configurations.entrySet()) text = text.replaceAll("(?<![\\w$])" + c.getKey() + "(?![\\w$])", c.getValue());
         text = text.replaceAll("JavaVersion\\.VERSION_(?:1_8|1[0-9]|2[0-4])\\b", "JavaVersion.VERSION_" + java);
         text = text.replaceAll("JavaLanguageVersion\\.of\\((?:[89]|1[0-9]|2[0-4])\\)", "JavaLanguageVersion.of(" + java + ")");
@@ -977,7 +983,9 @@ final class Target {
         if (gradle9) {
             text = text.replaceAll("(?m)^(sourceCompatibility|targetCompatibility)([ \\t]*=)", "java.$1$2");
             // Gradle 9 removed the project-level archivesBaseName; the base extension owns it.
-            text = text.replaceAll("(?m)^([ \\t]*)archivesBaseName([ \\t]*=)", "$1base.archivesName$2");
+            text = text.replaceAll("(?m)^archivesBaseName([ \\t]*=)", "base.archivesName$1");
+            // Inside a block (MidnightLib sets it in configurations { }) a bare name resolves against that block.
+            text = text.replaceAll("(?m)^([ \\t]+)archivesBaseName([ \\t]*=)", "$1project.base.archivesName$2");
             text = text.replaceAll("(?<![\\w.$])(?:project\\.)?archivesBaseName(?![\\w(])", "project.base.archivesName.get()");
         }
         if (gradle8) {
