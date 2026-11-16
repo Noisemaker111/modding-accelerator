@@ -1,0 +1,91 @@
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index f315dcaf..e709806c 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -350,6 +350,41 @@ public final class VoxelReader {
+ 		return out;
+ 	}
+ 
++	/**
++	 * Whether {@link #casterChunk} jumps down a column straight to the next block that may cast, with
++	 * {@link #casterColumns}, instead of testing every block's bit: under the surface nearly every
++	 * block is rock under rock. It visits the same blocks in the same order. Only for checking that
++	 * casters come out the same either way.
++	 */
++	public static boolean CASTER_JUMP = true;
++
++	/**
++	 * {@link #casterSection} turned on its side: per column {@code (z << 4) | x}, a bit per y in the
++	 * section for each block that may cast. Null where {@link #casterSection} is. Don't write to it.
++	 */
++	char @Nullable [] casterColumns(int sx, int sy, int sz) {
++		long[] bits = this.casterSection(sx, sy, sz);
++		if (bits == null) {
++			return null;
++		}
++		Decoded chunk = this.chunk(sx, sz);
++		int index = sy - chunk.snapshot.minSectionY;
++		char[] columns = chunk.casterColumns[index];
++		if (columns == null) {
++			columns = new char[256];
++			for (int w = 0; w < 64; w++) {
++				long word = bits[w];
++				while (word != 0) {
++					int i = (w << 6) | Long.numberOfTrailingZeros(word);
++					columns[i & 255] |= (char) (1 << (i >> 8));
++					word &= word - 1;
++				}
++			}
++			chunk.casterColumns[index] = columns;
++		}
++		return columns;
++	}
++
+ 	/**
+ 	 * Whether bakes share what they work out from a chunk's blocks ({@link ChunkBakeData}). Only
+ 	 * for checking that they come out the same either way.
+@@ -384,12 +419,27 @@ public final class VoxelReader {
+ 			int x = (cx << 4) | (column & 15);
+ 			int z = (cz << 4) | (column >> 4);
+ 			long[] mayCast = null;
++			char[] mayCastColumns = null;
++			boolean jump = CASTER_JUMP;
+ 			int castY = Integer.MIN_VALUE;
+ 			for (int y = chunk.snapshot.surface(column & 15, column >> 4) + 1; y >= downTo; y--) {
+ 				// As GpuMesher.casters: rock under rock casts nothing, which these bits skip.
+ 				if (y >> 4 != castY) {
+ 					castY = y >> 4;
+ 					mayCast = this.casterSection(cx, castY, cz);
++					mayCastColumns = jump && mayCast != null ? this.casterColumns(cx, castY, cz) : null;
++				}
++				if (mayCastColumns != null) {
++					// Straight to the highest block at or below y that may cast, else past this section.
++					int below = mayCastColumns[column] & ((2 << (y & 15)) - 1);
++					if (below == 0) {
++						y = castY << 4;
++						continue;
++					}
++					y = (castY << 4) | (31 - Integer.numberOfLeadingZeros(below));
++					if (y < downTo) {
++						break;
++					}
+ 				}
+ 				int i = ((y & 15) << 8) | column;
+ 				if (mayCast != null && (mayCast[i >> 6] >>> i & 1) == 0) {
+@@ -624,6 +674,8 @@ public final class VoxelReader {
+ 		final long[][] partial;
+ 		/** See {@link VoxelReader#casterSection}; built when first read. */
+ 		final long[][] casters;
++		/** See {@link VoxelReader#casterColumns}; built when first read. */
++		final char[][] casterColumns;
+ 		/** See {@link VoxelReader#solidTop}; {@code Integer.MAX_VALUE} until worked out. */
+ 		int solidTop = Integer.MAX_VALUE;
+ 
+@@ -639,6 +691,7 @@ public final class VoxelReader {
+ 			this.solid = new long[snapshot.sectionCount()][];
+ 			this.partial = new long[snapshot.sectionCount()][];
+ 			this.casters = new long[snapshot.sectionCount()][];
++			this.casterColumns = new char[snapshot.sectionCount()][];
+ 		}
+ 
+ 		/** The section's solid mask, indexed as its ids. */

@@ -32,6 +32,8 @@ change; mmt only profiles, measures and gates. Reference: PERFORMANCE.md.
    worker, the work waits for it outside the measure (blocked time isn't CPU). Only a candidate gaining ~10% on
    that scope, or cutting allocation / GC copying, goes on to step 7; stop a paired run once decided (`stop` file).
    Profiles mislead on inlined code: a frame JFR names can be one it never ran; trust the pre-screen.
+   A per-call saving pays only as often as the call runs: multiply it by the calls a second in a perf capture
+   (probe counts) before a paired run. A fast path for something done a few times a minute moves no frame.
 7. Measure locally: `perf-optimize --root R --experiment E --patch P --dry-run --out .runs/<mod>-opt/NAME` (it
    interleaves baseline and candidate runs), then `game-stop`. A wide A/B sweep goes to
    `tools/cloud-run perf -f repo=URL -f commit=SHA -f experiment=E -f patch=P`.

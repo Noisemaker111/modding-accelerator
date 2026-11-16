@@ -5,7 +5,7 @@ import dev.diorama.data.*;
 
 // Setup for `mmt perf-toggle`: the bake-digest gate's frozen input (chunks from the experiment's own
 // copy of the save, the flight's tiles), and as the work, a first mesh of each tile plus its spawn
-// spots whole and over saved spots. The work returns each mesh's face counts and every spot array,
+// spots whole and over saved spots. The work returns a hash of every face of each mesh's four lists (casters too) and every spot array,
 // so a switch that changes them fails the screen. Switches are the candidate's own static booleans:
 //   mmt perf-toggle --root DIORAMA --project :1.21.1 --file bench/diorama/play/toggle-setup.java \
 //     --switch dev.diorama.bake.VoxelReader.POOL_IDS
@@ -79,11 +79,13 @@ class FrozenSave implements ChunkSave {
 class Pinned implements ChunkSource {
     final ChunkSource from;
     final Map<Long, ChunkSnapshot> chunks = new HashMap<>();
+    /** Once set, every fourth chunk is gone, as chunks unloaded since a tile's spots were saved are. */
+    volatile boolean holes;
     Pinned(ChunkSource from) { this.from = from; }
     public synchronized ChunkSnapshot chunk(int x, int z) {
         long key = ChunkSnapshot.key(x, z);
         if (!chunks.containsKey(key)) chunks.put(key, from.chunk(x, z));
-        return chunks.get(key);
+        return holes && Math.floorMod(x * 31 + z, 4) == 0 ? null : chunks.get(key);
     }
     public int minY() { return from.minY(); }
     public int maxY() { return from.maxY(); }
@@ -106,15 +108,33 @@ for (TileKey key : keys) {
     images.put(key, TileBaker.bake(key, source, looks, null, false));
     spotsOf.put(key, TileSpots.pick(images.get(key), source, looks, false, null));
 }
-vars.put("perf.work", (java.util.function.Supplier<Object>) () -> {
-    // First meshes: nothing kept from the round before.
+// vars "toggle.holes" true: the work runs with every fourth chunk gone, so meshes and picks read the
+// saved spots where they are missing.
+source.holes = Boolean.TRUE.equals(vars.get("toggle.holes"));
+vars.put("perf.work", (java.util.concurrent.Callable<Object>) () -> {
+    // First meshes of new land: nothing kept from the round before, by the tile (REUSE) or by its chunks
+    // (what bakes share per chunk: solid masks, open heights, shadow caster faces).
+    synchronized (source) {
+        for (ChunkSnapshot chunk : source.chunks.values()) {
+            if (chunk != null) chunk.bakeData().set(null);
+        }
+    }
     boolean reuse = GpuMesher.REUSE;
     GpuMesher.REUSE = false;
     try {
         List<Object> out = new ArrayList<>();
         for (TileKey key : keys) {
             var m = GpuMesher.build(key, source, looks, false, null, spotsOf.get(key));
-            out.add(new int[] {m.opaque.count, m.water.count, m.tinted.count});
+            // Every face of every list, hashed where it lies (outside the heap) before the mesh frees it.
+            long[] faces = new long[4];
+            GpuMesher.Quads[] lists = {m.opaque, m.water, m.tinted, m.casters};
+            for (int q = 0; q < 4; q++) {
+                java.nio.IntBuffer data = (java.nio.IntBuffer) field(field(lists[q], "memory"), "data");
+                long h = lists[q].count;
+                for (int n = 0, end = lists[q].count * GpuMesher.STRIDE; n < end; n++) h = h * 31 + data.get(n);
+                faces[q] = h;
+            }
+            out.add(faces);
             m.freeFaces();
             out.add(TileSpots.pick(images.get(key), source, looks, false, null));
             out.add(TileSpots.pick(images.get(key), source, looks, false, spotsOf.get(key)));
