@@ -2528,9 +2528,96 @@ final class Port {
         return text.substring(0, block.end()) + "    // mmt port: annotation-only library the target no longer brings along\n" + lines + text.substring(block.end());
     }
 
+    /**
+     * A mixin that extends a game class must declare a constructor, and Mixin never runs it (the mixin's own constructors
+     * are dropped when it is applied). When the game changes that class's constructors (1.21.2: Level, MinecartChest), the
+     * super call stops compiling for no reason the game cares about: its arguments become typed placeholders (null for an
+     * object, zero or false otherwise) for a constructor the target class has, the one with fewest parameters. Only in
+     * files annotated @Mixin, only on a super(...) call javac reported. Returns the calls changed.
+     */
+    int mixinConstructors(Path log) throws Exception {
+        Matcher reported = Pattern.compile(
+            "(?m)^\\s*" + FILE + ":(\\d+): error: constructor (\\w+) in class ([\\w.$]+)(?:<[^>]*>)? cannot be applied to given types"
+        ).matcher(logText(log));
+        Map<Path, List<String[]>> sites = new LinkedHashMap<>();
+        while (reported.find()) {
+            Path file = Path.of(reported.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            if (Files.isRegularFile(file)) sites.computeIfAbsent(file.normalize(), f -> new ArrayList<>()).add(new String[] { reported.group(2), reported.group(4) });
+        }
+        int changed = 0;
+        for (var entry : sites.entrySet()) {
+            String text = Files.readString(entry.getKey());
+            if (!text.contains("@Mixin")) continue;
+            List<String> imports = new ArrayList<>();
+            Matcher imp = Pattern.compile("(?m)^import\\s+([\\w.]+)\\s*;").matcher(text);
+            while (imp.find()) imports.add(imp.group(1));
+            String after = text;
+            for (String[] site : entry.getValue()) {
+                if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+                List<String> found = supertypeIndex.resolve(site[1].replaceAll(".*\\.", ""), imports);
+                Explain.ClassInfo info = found.isEmpty() ? null : supertypeIndex.info(found.get(0));
+                if (info == null) continue;
+                Explain.Member ctor = null;
+                for (Explain.Member m : info.members()) {
+                    if (!m.method() || !m.name().equals("<init>") || (m.access() & 0x0002) != 0) continue;
+                    if (ctor == null || placeholders(m.descriptor()).size() < placeholders(ctor.descriptor()).size()) ctor = m;
+                }
+                if (ctor == null) continue;
+                int lineStart = 0;
+                for (int i = 1; i < Integer.parseInt(site[0]); i++) lineStart = after.indexOf('\n', lineStart) + 1;
+                Matcher superCall = Pattern.compile("\\bsuper\\s*\\(").matcher(after);
+                if (!superCall.find(lineStart) || after.substring(lineStart, superCall.start()).contains("\n")) continue;
+                int open = superCall.end() - 1, close = closingParen(after, open);
+                if (close < 0) continue;
+                after = after.substring(0, open + 1) + String.join(", ", placeholders(ctor.descriptor())) + after.substring(close);
+            }
+            if (!after.equals(text)) {
+                Files.writeString(entry.getKey(), after);
+                changed++;
+            }
+        }
+        if (changed > 0) rulesApplied.putIfAbsent("mixin-constructor-placeholders", List.of());
+        return changed;
+    }
+
+    /** Typed placeholder arguments for a descriptor's parameters: (fully.Qualified) null, or the primitive's zero. */
+    static List<String> placeholders(String descriptor) {
+        List<String> out = new ArrayList<>();
+        Matcher p = Pattern.compile("(\\[*)(?:L([^;]+);|([ZBCSIJFD]))").matcher(descriptor.substring(descriptor.indexOf('(') + 1, descriptor.indexOf(')')));
+        while (p.find()) {
+            if (!p.group(1).isEmpty() || p.group(2) != null) {
+                String base = p.group(2) != null ? p.group(2).replace('/', '.').replace('$', '.') : switch (p.group(3)) {
+                    case "Z" -> "boolean";
+                    case "B" -> "byte";
+                    case "C" -> "char";
+                    case "S" -> "short";
+                    case "I" -> "int";
+                    case "J" -> "long";
+                    case "F" -> "float";
+                    default -> "double";
+                };
+                out.add("(" + base + "[]".repeat(p.group(1).length()) + ") null");
+                continue;
+            }
+            out.add(switch (p.group(3)) {
+                case "Z" -> "false";
+                case "J" -> "0L";
+                case "F" -> "0.0F";
+                case "D" -> "0.0D";
+                case "C" -> "(char) 0";
+                case "B" -> "(byte) 0";
+                case "S" -> "(short) 0";
+                default -> "0";
+            });
+        }
+        return out;
+    }
+
     void applyRules(Path log) throws Exception {
         removeDeadMixinTargets(log);
         repairAccess(log);
+        mixinConstructors(log);
         String errors = logText(log);
         List<Path> all = ownedJava();
         Set<Path> logged = new HashSet<>();
@@ -2879,8 +2966,11 @@ final class Port {
 
     static String callArguments(String text, Map<String, Object> apply) {
         Pattern statement = Pattern.compile(Json.text(apply, "statement", ""));
-        Pattern call = Pattern.compile("\\.(?:" + String.join("|", ProjectModel.strings(apply.get("calls"))) + ")\\s*\\(");
-        String skip = Json.text(apply, "skip", ""), wrap = Json.text(apply, "wrap", "$0");
+        // A method call (.name( ) or a constructor call (new Name( ); "rename" gives the call a new name, "argument" (from 0)
+        // rewrites that argument alone.
+        Pattern call = Pattern.compile("(\\.|\\bnew\\s+)(" + String.join("|", ProjectModel.strings(apply.get("calls"))) + ")(\\s*\\()");
+        String skip = Json.text(apply, "skip", ""), wrap = Json.text(apply, "wrap", "$0"), rename = Json.text(apply, "rename", "");
+        int only = apply.get("argument") instanceof Number n ? n.intValue() : -1;
         StringBuilder out = new StringBuilder();
         int done = 0;
         Matcher start = statement.matcher(text);
@@ -2895,11 +2985,11 @@ final class Port {
             while (c.find(at)) {
                 int close = closingParen(body, c.end() - 1);
                 if (close < 0) break;
-                rewritten.append(body, at, c.end());
+                rewritten.append(body, at, c.start()).append(c.group(1)).append(rename.isEmpty() ? c.group(2) : rename).append(c.group(3));
                 List<String> parts = topLevelArguments(body.substring(c.end(), close));
                 for (int i = 0; i < parts.size(); i++) {
                     String part = parts.get(i), arg = part.strip();
-                    boolean keep = arg.isEmpty() || (!skip.isEmpty() && Pattern.compile(skip).matcher(arg).find());
+                    boolean keep = arg.isEmpty() || (only >= 0 && i != only) || (!skip.isEmpty() && Pattern.compile(skip).matcher(arg).find());
                     String lead = part.substring(0, part.indexOf(arg.isEmpty() ? part : arg)), tail = part.substring(lead.length() + arg.length());
                     rewritten.append(lead).append(keep ? arg : wrap.replace("$0", arg)).append(tail);
                     if (i < parts.size() - 1) rewritten.append(',');
@@ -3149,6 +3239,9 @@ final class Port {
      * find or replace stands for the symbol that error names. Used where the same call is right elsewhere in the file:
      * getCategory() needs .value() only where its receiver became a RegistryEntry.
      */
+    /** A pattern that matches nothing: a {receiver} javac named no variable for leaves the line alone. */
+    static final String NOTHING = "(?!)";
+
     static String rewriteReported(
         Map<String, Object> rule,
         String text,
@@ -3159,7 +3252,7 @@ final class Port {
         if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return text;
         Pattern match = Pattern.compile(rule.get("match").toString());
         List<String> log = errors.lines().toList();
-        Map<Integer, String> sites = new TreeMap<>();
+        Map<Integer, String> sites = new TreeMap<>(), looked = new HashMap<>();
         for (int i = 0; i < log.size(); i++) {
             Matcher error = ERROR.matcher(log.get(i));
             if (!error.find() || !sameFile.test(error.group(1))) continue;
@@ -3170,6 +3263,9 @@ final class Port {
             if (!match.matcher(block).find()) continue;
             Matcher symbol = Pattern.compile("symbol:\\s+\\w+ (\\w+)").matcher(block);
             sites.put(Integer.parseInt(error.group(2)), symbol.find() ? symbol.group(1) : "");
+            // {receiver}: the variable javac looked the symbol up on ("location: variable stack of type ItemStack").
+            Matcher receiver = Pattern.compile("location:\\s+variable (\\w+) of type").matcher(block);
+            looked.put(Integer.parseInt(error.group(2)), receiver.find() ? receiver.group(1) : NOTHING);
         }
         if (sites.isEmpty()) return text;
         String[] lines = text.split("\n", -1);
@@ -3191,7 +3287,7 @@ final class Port {
             );
             for (String key : List.of("find", "replace", "literal")) if (
                 apply.get(key) instanceof String value
-            ) apply.put(key, value.replace("{symbol}", site.getValue()));
+            ) apply.put(key, value.replace("{symbol}", site.getValue()).replace("{receiver}", looked.getOrDefault(site.getKey(), NOTHING)));
             apply.remove("ensureImports");
             bound.put("apply", apply);
             bound.put("when", "");

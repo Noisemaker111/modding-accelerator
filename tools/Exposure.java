@@ -72,6 +72,7 @@ public final class Exposure {
                 continue;
             }
             Set<Use> uses = uses(classes, a);
+            uses.addAll(newAbstracts(classes, a, b, route));
             Map<String, Integer> counts = new TreeMap<>();
             List<Object> broken = new ArrayList<>();
             for (Use u : uses) {
@@ -183,6 +184,8 @@ public final class Exposure {
                 }
             }
             List<String> supers = gameSupertypes(rc, a);
+            // A mixin's constructor never runs; the porter gives its super call placeholders (Port.mixinConstructors).
+            boolean mixin = new String(e.getValue(), java.nio.charset.StandardCharsets.ISO_8859_1).contains("Lorg/spongepowered/asm/mixin/Mixin;");
             for (GameDiff.RawMeth m : rc.methods.values()) {
                 for (String t : types(m.desc)) {
                     out.add(new Use('c', t, null, null));
@@ -190,6 +193,8 @@ public final class Exposure {
                 for (GameDiff.RawRef r : m.refs) {
                     if (r.kind() == 'c' && gameName(r.owner())) {
                         out.add(new Use('c', r.owner(), null, null));
+                    } else if (mixin && m.name.equals("<init>") && r.kind() == 'm' && r.name().equals("<init>") && r.owner().equals(rc.sup)) {
+                        continue;
                     } else if ((r.kind() == 'm' || r.kind() == 'f') && gameName(r.owner())) {
                         out.add(new Use(r.kind(), r.owner(), r.name(), r.desc()));
                     }
@@ -207,6 +212,83 @@ public final class Exposure {
             }
         }
         return out;
+    }
+
+    /**
+     * Abstract methods the new release adds to a game class a concrete mod class extends or implements (1.21.2:
+     * Recipe.placementInfo(), recipeBookCategory()): the mod must now write them, so each is a use that breaks
+     * (kind 'a', judged as removed) unless the mod class or a game supertype already has a method of that name.
+     */
+    static Set<Use> newAbstracts(Map<String, byte[]> classes, GameDiff.Snap a, GameDiff.Snap b, Route route) {
+        Set<Use> out = new LinkedHashSet<>();
+        Map<String, GameDiff.RawCls> mod = new HashMap<>();
+        for (var e : classes.entrySet()) {
+            try {
+                GameDiff.RawCls rc = GameDiff.parse(e.getValue());
+                mod.put(rc.name, rc);
+            } catch (RuntimeException unreadable) {
+                // skipped like in uses()
+            }
+        }
+        for (GameDiff.RawCls rc : mod.values()) {
+            if ((rc.flags & 0x0600) != 0) {
+                continue; // an interface or an abstract class need not implement anything
+            }
+            Set<String> names = new HashSet<>();
+            for (GameDiff.RawCls c = rc; c != null; c = mod.get(c.sup)) {
+                for (GameDiff.RawMeth m : c.methods.values()) {
+                    names.add(m.name);
+                }
+            }
+            for (String s : gameSupertypes(rc, a)) {
+                GameDiff.Cls target = b.classes.get(route.cls(s));
+                GameDiff.Cls old = a.classes.get(s);
+                if (target == null || old == null) {
+                    continue;
+                }
+                for (GameDiff.Meth m : target.methods.values()) {
+                    if ((m.flags & 0x0400) == 0 || names.contains(m.name) || implementedInGame(target, m.name, b)) {
+                        continue;
+                    }
+                    boolean wasAbstract = false;
+                    for (GameDiff.Meth o : old.methods.values()) {
+                        wasAbstract |= o.name.equals(m.name) && (o.flags & 0x0400) != 0;
+                    }
+                    if (!wasAbstract) {
+                        out.add(new Use('a', target.name, m.name, m.desc));
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    /** Whether a non-abstract method of that name exists on the class or one of its supertypes in the release. */
+    static boolean implementedInGame(GameDiff.Cls start, String name, GameDiff.Snap s) {
+        Deque<GameDiff.Cls> queue = new ArrayDeque<>(List.of(start));
+        Set<String> seen = new HashSet<>();
+        while (!queue.isEmpty()) {
+            GameDiff.Cls c = queue.poll();
+            if (c == null || !seen.add(c.name)) {
+                continue;
+            }
+            for (GameDiff.Meth m : c.methods.values()) {
+                if (m.name.equals(name) && (m.flags & 0x0400) == 0 && c != start) {
+                    return true;
+                }
+            }
+            List<String> parents = new ArrayList<>(c.ifaces);
+            if (c.sup != null) {
+                parents.add(c.sup);
+            }
+            for (String p : parents) {
+                GameDiff.Cls parent = s.classes.get(p);
+                if (parent != null) {
+                    queue.add(parent); // a JDK or library supertype is not the game's
+                }
+            }
+        }
+        return false;
     }
 
     /** The game classes a mod class extends or implements, nearest first, through the game's own hierarchy. */
@@ -286,6 +368,10 @@ public final class Exposure {
             }
             return new Verdict("removed", key, "class");
         }
+        if (u.kind() == 'a') {
+            // A new abstract method the mod has to write: what the port must add, keyed by its new owner.
+            return new Verdict("removed", dotted(u.owner()) + "." + u.name() + u.desc(), "new abstract method to implement");
+        }
         GameDiff.Cls decl = declaring(a, u.owner(), u.kind() == 'f' ? 'f' : 'm', u.name(), u.desc());
         if (decl == null) {
             return null; // a library's or the JDK's member reached through a game class, or not the game's at all
@@ -323,6 +409,11 @@ public final class Exposure {
             for (String m : c.methods.keySet()) {
                 sameName |= m.startsWith(newName + "(");
             }
+        }
+        if (u.kind() == 'o' && !sameName) {
+            // The porter drops the @Override and keeps the method (VersionMap.Fix 2b''): it compiles, and the game no longer
+            // calls it. Counted apart from what breaks, so a hook that went silent stays visible.
+            return new Verdict("unhooked", key, "overridden");
         }
         return new Verdict(sameName ? "signature" : "removed", key, u.kind() == 'o' ? "overridden" : "");
     }

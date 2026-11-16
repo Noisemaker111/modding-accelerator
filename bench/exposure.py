@@ -145,7 +145,9 @@ def run(loader, frm, to, count, save):
             "--rules", str(ROOT / "knowledge" / "fixes.json")]
     if loader == "neoforge":
         args += ["--loader", "neoforge"]
-    subprocess.run(args + [str(j) for j in jars], check=True)
+    done = subprocess.run(args + [str(j) for j in jars])
+    if done.returncode:
+        raise SystemExit(f"Exposure failed (exit {done.returncode}); its output is above")
     report = json.loads(out.read_text(encoding="utf-8"))
     total = sum(r.get("gameUses", 0) for r in report["mods"])
     carried = sum(r.get("gameUses", 0) - len(r.get("broken", [])) for r in report["mods"])

@@ -364,6 +364,22 @@ public final class PortPreflightTest {
         require(ghosted.contains("import net.minecraft.server.level.ServerLevel;"), "the new parameter's type imported");
         require(ghosted.contains("public boolean hurt(DamageSource source, float amount)"), "a changed return type is left alone");
         require(stoned.contains("public void wasExploded(ServerLevel level, BlockPos pos, Explosion explosion)") && stoned.contains("super.wasExploded(level, pos, explosion)"), "a narrowed type keeps the mod's name: " + stoned);
+        // An override of a method the game removed (no rename, no new signature) loses the annotation and stays a method.
+        Files.writeString(sigMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "methodsRemoved": [
+                { "owner": "net.minecraft.world.item.crafting.Recipe", "from": "canCraftInDimensions", "desc": "(II)Z" }
+              ]
+            }
+            """);
+        String recipe = "class Mix implements Recipe<CraftingInput> {\n    @Override\n    public boolean canCraftInDimensions(int w, int h) {\n        return w * h >= 2;\n    }\n}\n";
+        Files.writeString(sig.resolve("Mix.java"), recipe);
+        Files.writeString(sigLog, sig.resolve("Mix.java") + ":2" + err);
+        VersionMap.SUPERS.put("Mix", Set.of("Recipe"));
+        VersionMap.Fix.run(sigMap, sigLog, sig, false, null);
+        VersionMap.SUPERS.clear();
+        require(Files.readString(sig.resolve("Mix.java")).equals(recipe.replace("    @Override\n", "\n")), "the removed method's @Override goes, its line kept: " + Files.readString(sig.resolve("Mix.java")));
+
         // Parameters the game dropped go from the declaration only when the body never uses them.
         Files.writeString(sigMap, """
             { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",

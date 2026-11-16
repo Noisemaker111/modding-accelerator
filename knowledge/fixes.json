@@ -1190,7 +1190,7 @@
       "id": "level-getminy",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
-      "members": ["net.minecraft.world.level.LevelHeightAccessor.getMinBuildHeight"],
+      "members": ["net.minecraft.world.level.LevelHeightAccessor.getMinBuildHeight", "net.minecraft.world.level.LevelHeightAccessor.getMinY"],
       "match": "symbol:\\s+(method )?getMinBuildHeight",
       "apply": {
         "find": "\\.getMinBuildHeight\\(\\)",
@@ -5560,6 +5560,7 @@
       "id": "profiler-get",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.Minecraft.getProfiler", "net.minecraft.world.level.Level.getProfiler", "net.minecraft.server.MinecraftServer.getProfiler"],
       "match": "symbol:\\s+method getProfiler\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )(?:Minecraft|Level|ClientLevel|ServerLevel|MinecraftServer)\\b",
       "apply": {
         "find": "\\b(?:\\w+\\.)*(?:\\w+\\(\\)\\.)?getProfiler\\(\\)",
@@ -7700,7 +7701,7 @@
       "id": "entity-render-state-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
-      "members": ["net.minecraft.client.renderer.entity.EntityRenderer.render", "net.minecraft.client.renderer.entity.EntityRenderer.getTextureLocation"],
+      "members": ["net.minecraft.client.renderer.entity.EntityRenderer.render", "net.minecraft.client.renderer.entity.EntityRenderer.getTextureLocation", "net.minecraft.client.renderer.entity.EntityRenderer.createRenderState"],
       "match": "wrong number of type arguments; required 2",
       "apply": {
         "transform": "entity-render-state"
@@ -7720,7 +7721,7 @@
       "id": "hurt-server-override-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
-      "members": ["net.minecraft.world.entity.Entity.hurt"],
+      "members": ["net.minecraft.world.entity.Entity.hurt", "net.minecraft.world.entity.Entity.hurtServer"],
       "match": "does not override abstract method hurtServer|hurt\\(DamageSource,float\\) in \\w+ cannot override hurt",
       "apply": {
         "find": "(?m)^([ \\t]*)(@Override\\s+)?public\\s+boolean\\s+hurt\\s*\\(\\s*(?:final\\s+)?DamageSource\\s+(\\w+)\\s*,\\s*(?:final\\s+)?float\\s+(\\w+)\\s*\\)",
@@ -7879,6 +7880,157 @@
         "before": "package mod;\n\nclass Types {\n    Object t(boolean blur) { return new TextureStateShard(TEXTURE, blur, false); }\n}\n",
         "after": "package mod;\nimport net.minecraft.util.TriState;\n\nclass Types {\n    Object t(boolean blur) { return new TextureStateShard(TEXTURE, (blur ? TriState.TRUE : TriState.FALSE), false); }\n}\n",
         "from": "written for this rule"
+      }
+    },
+    {
+      "id": "recipe-placement-info-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.crafting.Recipe.placementInfo"
+      ],
+      "match": "does not override abstract method placementInfo\\(\\)",
+      "apply": {
+        "find": "(\\bclass\\s+\\w+(?:<[^{]*?>)?[^{;]*?\\bimplements\\b[^{;]*?\\b\\w*Recipe<[^{]*\\{)",
+        "replace": "$1\n    @Override\n    public PlacementInfo placementInfo() {\n        return PlacementInfo.NOT_PLACEABLE;\n    }\n",
+        "ensureImports": [
+          "net.minecraft.world.item.crafting.PlacementInfo"
+        ]
+      },
+      "scope": "log",
+      "when": "^(?![\\s\\S]*\\bplacementInfo\\s*\\(\\s*\\))",
+      "note": "1.21.2's Recipe asks where the recipe book may place a recipe's ingredients. A mod's own recipe type the book never placed says NOT_PLACEABLE; the recipe itself still matches and crafts as before.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Recipe gained abstract placementInfo() and recipeBookCategory(); PlacementInfo.NOT_PLACEABLE; RecipeBookCategories.CRAFTING_MISC; Ingredient.getItems()/isEmpty() removed, Ingredient.items() List<Holder<Item>>, ItemStack(Holder)",
+      "test": {
+        "error": "Mix.java:3: error: Mix is not abstract and does not override abstract method placementInfo() in Recipe\n",
+        "before": "package mod;\n\nclass Mix implements Recipe<CraftingInput> {\n    public boolean matches(CraftingInput input, Level level) {\n        return true;\n    }\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.item.crafting.PlacementInfo;\n\nclass Mix implements Recipe<CraftingInput> {\n    @Override\n    public PlacementInfo placementInfo() {\n        return PlacementInfo.NOT_PLACEABLE;\n    }\n\n    public boolean matches(CraftingInput input, Level level) {\n        return true;\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "recipe-book-category-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.crafting.Recipe.recipeBookCategory"
+      ],
+      "match": "does not override abstract method recipeBookCategory\\(\\)",
+      "apply": {
+        "find": "(\\bclass\\s+\\w+(?:<[^{]*?>)?[^{;]*?\\bimplements\\b[^{;]*?\\b\\w*Recipe<[^{]*\\{)",
+        "replace": "$1\n    @Override\n    public RecipeBookCategory recipeBookCategory() {\n        return RecipeBookCategories.CRAFTING_MISC;\n    }\n",
+        "ensureImports": [
+          "net.minecraft.world.item.crafting.RecipeBookCategory",
+          "net.minecraft.world.item.crafting.RecipeBookCategories"
+        ]
+      },
+      "scope": "log",
+      "when": "^(?![\\s\\S]*\\brecipeBookCategory\\s*\\(\\s*\\))",
+      "note": "1.21.2's Recipe names the recipe book tab it shows under; a mod's own recipe type goes under misc, which only groups it in the book.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Recipe gained abstract placementInfo() and recipeBookCategory(); PlacementInfo.NOT_PLACEABLE; RecipeBookCategories.CRAFTING_MISC; Ingredient.getItems()/isEmpty() removed, Ingredient.items() List<Holder<Item>>, ItemStack(Holder)",
+      "test": {
+        "error": "Mix.java:3: error: Mix is not abstract and does not override abstract method recipeBookCategory() in Recipe\n",
+        "before": "package mod;\n\nclass Mix implements Recipe<CraftingInput> {\n    public boolean matches(CraftingInput input, Level level) {\n        return true;\n    }\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.item.crafting.RecipeBookCategories;\nimport net.minecraft.world.item.crafting.RecipeBookCategory;\n\nclass Mix implements Recipe<CraftingInput> {\n    @Override\n    public RecipeBookCategory recipeBookCategory() {\n        return RecipeBookCategories.CRAFTING_MISC;\n    }\n\n    public boolean matches(CraftingInput input, Level level) {\n        return true;\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "ingredient-get-items-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.crafting.Ingredient.getItems"
+      ],
+      "match": "symbol:\\s+method getItems\\(\\)\\n\\s*location: variable \\w+ of type Ingredient",
+      "apply": {
+        "find": "\\b{receiver}\\s*\\.\\s*getItems\\s*\\(\\s*\\)",
+        "replace": "{receiver}.items().stream().map(net.minecraft.world.item.ItemStack::new).toArray(net.minecraft.world.item.ItemStack[]::new)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's Ingredient lists its items as holders (items()); the stacks getItems() returned are made from them, one of each.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Recipe gained abstract placementInfo() and recipeBookCategory(); PlacementInfo.NOT_PLACEABLE; RecipeBookCategories.CRAFTING_MISC; Ingredient.getItems()/isEmpty() removed, Ingredient.items() List<Holder<Item>>, ItemStack(Holder)",
+      "test": {
+        "error": "Show.java:3: error: cannot find symbol\n        ItemStack[] stacks = ingredient.getItems();\n                                       ^\n  symbol:   method getItems()\n  location: variable ingredient of type Ingredient\n",
+        "before": "class Show {\n    void f(Ingredient ingredient, ItemStack held) {\n        ItemStack[] stacks = ingredient.getItems(); boolean e = held.getItems() == null;\n    }\n}\n",
+        "after": "class Show {\n    void f(Ingredient ingredient, ItemStack held) {\n        ItemStack[] stacks = ingredient.items().stream().map(net.minecraft.world.item.ItemStack::new).toArray(net.minecraft.world.item.ItemStack[]::new); boolean e = held.getItems() == null;\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "ingredient-is-empty-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.crafting.Ingredient.isEmpty"
+      ],
+      "match": "symbol:\\s+method isEmpty\\(\\)\\n\\s*location: variable \\w+ of type Ingredient",
+      "apply": {
+        "find": "\\b{receiver}\\s*\\.\\s*isEmpty\\s*\\(\\s*\\)",
+        "replace": "{receiver}.items().isEmpty()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's Ingredient has no empty form any more; whether it lists no items is the same question.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Recipe gained abstract placementInfo() and recipeBookCategory(); PlacementInfo.NOT_PLACEABLE; RecipeBookCategories.CRAFTING_MISC; Ingredient.getItems()/isEmpty() removed, Ingredient.items() List<Holder<Item>>, ItemStack(Holder)",
+      "test": {
+        "error": "Show.java:3: error: cannot find symbol\n        if (ingredient.isEmpty() || stack.isEmpty()) return;\n                      ^\n  symbol:   method isEmpty()\n  location: variable ingredient of type Ingredient\n",
+        "before": "class Show {\n    void f(Ingredient ingredient, ItemStack stack) {\n        if (ingredient.isEmpty() || stack.isEmpty()) return;\n    }\n}\n",
+        "after": "class Show {\n    void f(Ingredient ingredient, ItemStack stack) {\n        if (ingredient.items().isEmpty() || stack.isEmpty()) return;\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-name-block-item-new-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.ItemNameBlockItem"
+      ],
+      "match": "symbol:\\s+class ItemNameBlockItem\\b",
+      "apply": {
+        "transform": "call-arguments",
+        "statement": "(?m)^[^\\n]*?\\bnew\\s+ItemNameBlockItem\\b",
+        "calls": [
+          "ItemNameBlockItem"
+        ],
+        "rename": "BlockItem",
+        "argument": 1,
+        "wrap": "$0.useItemDescriptionPrefix()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed ItemNameBlockItem: a BlockItem whose properties use the item's own description prefix names itself like one (seeds named as items, not as the crop block).",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: ItemNameBlockItem(Block, Item$Properties) removed; 1.21.2 Item$Properties.useItemDescriptionPrefix(); BlockItem(Block, Item$Properties)",
+      "test": {
+        "error": "Items.java:3: error: cannot find symbol\nimport net.minecraft.world.item.ItemNameBlockItem;\n                               ^\n  symbol:   class ItemNameBlockItem\n  location: package net.minecraft.world.item\n",
+        "before": "package mod;\n\nimport net.minecraft.world.item.ItemNameBlockItem;\n\nclass Items {\n    static final DeferredItem<ItemNameBlockItem> SEEDS = ITEMS.register(\"seeds\",\n        () -> new ItemNameBlockItem(Blocks.CROP.get(), new Item.Properties().stacksTo(64)));\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.item.ItemNameBlockItem;\n\nclass Items {\n    static final DeferredItem<ItemNameBlockItem> SEEDS = ITEMS.register(\"seeds\",\n        () -> new BlockItem(Blocks.CROP.get(), new Item.Properties().stacksTo(64).useItemDescriptionPrefix()));\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-name-block-item-type-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.ItemNameBlockItem"
+      ],
+      "match": "symbol:\\s+class ItemNameBlockItem\\b",
+      "apply": {
+        "find": "\\bItemNameBlockItem\\b",
+        "replace": "BlockItem"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The type names that are left (an import, a declared type) after item-name-block-item-new-1212 are BlockItem's.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: ItemNameBlockItem(Block, Item$Properties) removed; 1.21.2 Item$Properties.useItemDescriptionPrefix(); BlockItem(Block, Item$Properties)",
+      "test": {
+        "error": "Items.java:3: error: cannot find symbol\nimport net.minecraft.world.item.ItemNameBlockItem;\n                               ^\n  symbol:   class ItemNameBlockItem\n  location: package net.minecraft.world.item\n",
+        "before": "package mod;\n\nimport net.minecraft.world.item.ItemNameBlockItem;\n\nclass Items {\n    static final DeferredItem<ItemNameBlockItem> SEEDS = ITEMS.register(\"seeds\",\n        () -> new BlockItem(Blocks.CROP.get(), new Item.Properties().stacksTo(64).useItemDescriptionPrefix()));\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.item.BlockItem;\n\nclass Items {\n    static final DeferredItem<BlockItem> SEEDS = ITEMS.register(\"seeds\",\n        () -> new BlockItem(Blocks.CROP.get(), new Item.Properties().stacksTo(64).useItemDescriptionPrefix()));\n}\n",
+        "from": "written for this rule, after item-name-block-item-new-1212"
       }
     }
   ]

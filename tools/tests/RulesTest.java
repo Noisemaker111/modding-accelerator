@@ -47,7 +47,7 @@ public final class RulesTest {
                 var apply = Json.object(rule.get("apply"));
                 // {symbol} stands for the name javac reported; the porter fills it in before it compiles the pattern.
                 if (apply.containsKey("find")) find = Pattern.compile(
-                    apply.get("find").toString().replace("{symbol}", "symbol")
+                    apply.get("find").toString().replace("{symbol}", "symbol").replace("{receiver}", "receiver")
                 );
                 else if (apply.containsKey("literal")) {
                     // The porter replaces the literal text with "replace". Any other shape is read as text that is never there.

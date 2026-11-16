@@ -189,7 +189,17 @@ public final class PortTests {
         );
     }
 
+    /** A mixin's never-run constructor calls its super constructor with typed placeholders for whatever it now takes. */
+    static void mixinPlaceholders() {
+        List<String> args = Port.placeholders("(Lnet/minecraft/world/level/storage/WritableLevelData;Lnet/minecraft/core/Holder$Reference;ZJF[I[Ljava/lang/String;CI)V");
+        check(
+            args.equals(List.of("(net.minecraft.world.level.storage.WritableLevelData) null", "(net.minecraft.core.Holder.Reference) null", "false", "0L", "0.0F", "(int[]) null", "(java.lang.String[]) null", "(char) 0", "0")),
+            "typed placeholders for every kind of parameter: " + args
+        );
+    }
+
     public static void main(String[] args) throws Exception {
+        mixinPlaceholders();
         bridgeRewrites();
         yarnRouteRewrites();
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.

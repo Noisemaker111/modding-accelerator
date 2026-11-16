@@ -1012,6 +1012,8 @@ public final class VersionMap {
         final Map<String, Set<String>> sigTo = new HashMap<>();
         final Map<String, Set<String>> sigTransitions = new HashMap<>();
         final Set<String> methodGone = new HashSet<>(), fieldGone = new HashSet<>(), sigNames = new HashSet<>();
+        /** Removed methods by owner (simple) and name: an override of one has nothing left to override. */
+        final Set<String> removedByOwner = new HashSet<>();
         /** Call-site rewrites the game made (GameDiff's "rewrites"), by old owner (simple) and name. */
         final Map<String, List<Rewrite>> rewrites = new HashMap<>();
         /** Removed classes and the class the game's own code uses in their place (GameDiff's "classRewrites"), dotted, $ nested. */
@@ -1079,7 +1081,10 @@ public final class VersionMap {
                             .add(field(t, "desc") + " -> " + field(t, "newDesc"));
                         k.sigNames.add(from);
                     }
-                    case "methodsRemoved" -> k.methodGone.add(from);
+                    case "methodsRemoved" -> {
+                        k.methodGone.add(from);
+                        k.removedByOwner.add(ownerSimple + "." + from);
+                    }
                     case "fields" -> k.fieldTo
                         .computeIfAbsent(from, x -> new HashSet<>())
                         .add(new String[] { ownerSimple, to, ownerSimple });
@@ -2268,6 +2273,60 @@ public final class VersionMap {
                     break;
                 }
             }
+            // 2b''. An @Override of a method the game removed from the class's supertype, with no rename or new signature
+            // (1.21.2: Recipe.getResultItem, canCraftInDimensions, getIngredients): nothing is left to override, so the
+            // annotation goes and the method stays as the mod's own (its own callers keep working). The game no longer
+            // calls it; that is reported by mmt's exposure check as an unhooked override, not hidden.
+            for (Err e : readErrors(log)) {
+                if (!e.message().startsWith("method does not override or implement a method from a supertype")) {
+                    continue;
+                }
+                Path f = sourcePath(e, repo);
+                if (f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                String[] lines = text.split("\r?\n", -1);
+                if (e.line() < 1 || e.line() > lines.length || !lines[e.line() - 1].contains("@Override")) {
+                    continue;
+                }
+                String enclosing = null;
+                for (int back = e.line() - 1; back >= 0 && enclosing == null; back--) {
+                    Matcher type = Pattern.compile("\\b(?:class|enum|record)\\s+(\\w+)").matcher(lines[back]);
+                    if (type.find()) {
+                        enclosing = type.group(1);
+                    }
+                }
+                Set<String> supers = enclosing == null ? null : SUPERS.get(enclosing);
+                if (supers == null) {
+                    continue;
+                }
+                String method = null;
+                for (int at = e.line() - 1; at < Math.min(lines.length, e.line() + 3) && method == null; at++) {
+                    Matcher declared = Pattern.compile("(\\w+)\\s*\\(").matcher(lines[at].replaceAll("@\\w+(\\([^)]*\\))?", ""));
+                    if (declared.find()) {
+                        method = declared.group(1);
+                    }
+                }
+                boolean removed = false, moved = false;
+                for (String s : supers) {
+                    removed |= k.removedByOwner.contains(s + "." + method);
+                    moved |= k.sigTransitions.containsKey(s + "." + method);
+                }
+                moved |= Known.within(k.methodTo.get(method), supers) != null;
+                if (!removed || moved) {
+                    continue;
+                }
+                lines[e.line() - 1] = lines[e.line() - 1].replaceFirst("@Override\\s*", "");
+                if (lines[e.line() - 1].isBlank()) {
+                    // A line of its own: keep it empty, so the lines below keep their numbers for the steps after this one.
+                    lines[e.line() - 1] = "";
+                }
+                texts.put(f, String.join(text.contains("\r\n") ? "\r\n" : "\n", lines));
+                replacements++;
+                byKind.merge("unhooked override", 1, Integer::sum);
+            }
+
             // 2b'. An @Override whose method the game gave new parameters with the same name and return type (1.21.2:
             // Mob.doHurtTarget(Entity) -> doHurtTarget(ServerLevel, Entity); Block.wasExploded(Level, ...) -> (ServerLevel,
             // ...)): the declaration takes the new parameter list (an added parameter gets a fresh name, a type that
