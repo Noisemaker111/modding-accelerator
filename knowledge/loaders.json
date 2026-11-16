@@ -2392,7 +2392,15 @@
     "net.neoforged.neoforge.common.conditions.ICondition": "conditions.ICondition",
     "net.neoforged.neoforge.common.conditions.ModLoadedCondition": "conditions.ModLoadedCondition",
     "net.neoforged.neoforge.common.conditions.NeoForgeConditions": "conditions.NeoForgeConditions",
-    "net.neoforged.neoforge.common.conditions.WithConditions": "conditions.WithConditions"
+    "net.neoforged.neoforge.common.conditions.WithConditions": "conditions.WithConditions",
+    "net.neoforged.neoforge.registries.datamaps.DataMapType": "datamaps.DataMapType",
+    "net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent": "datamaps.RegisterDataMapTypesEvent",
+    "net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent": "datamaps.DataMapsUpdatedEvent",
+    "net.neoforged.neoforge.registries.datamaps.builtin.NeoForgeDataMaps": "datamaps.builtin.NeoForgeDataMaps",
+    "net.neoforged.neoforge.registries.datamaps.builtin.ParrotImitation": "datamaps.builtin.ParrotImitation",
+    "net.neoforged.neoforge.registries.datamaps.builtin.FurnaceFuel": "datamaps.builtin.FurnaceFuel",
+    "net.neoforged.neoforge.registries.datamaps.builtin.Compostable": "datamaps.builtin.Compostable",
+    "net.neoforged.neoforge.common.data.DataMapProvider": "data.DataMapProvider"
    },
    "symbols": {
     "neoforge": [
@@ -4314,7 +4322,10 @@
       "mixin/DataGeneratorExtensionMixin.java",
       "conditions/",
       "extensions/IRecipeOutputExtension.java",
-      "mixin/RecipeOutputExtensionMixin.java"
+      "mixin/RecipeOutputExtensionMixin.java",
+      "datamaps/",
+      "extensions/IHolderExtension.java",
+      "mixin/HolderExtensionMixin.java"
      ],
      "mixins": [
       {
@@ -5188,6 +5199,23 @@
      "injects": {
       "net/minecraft/data/recipes/RecipeOutput": "extensions.IRecipeOutputExtension"
      }
+    },
+    {
+     "mixin": "HolderExtensionMixin",
+     "for": [
+      "datamaps.DataMapType",
+      "datamaps.builtin.NeoForgeDataMaps"
+     ],
+     "injects": {
+      "net/minecraft/core/Holder": "extensions.IHolderExtension<TT;>"
+     }
+    },
+    {
+     "mixin": "FuelValuesBuilderMixin",
+     "for": [
+      "datamaps.builtin.NeoForgeDataMaps",
+      "datamaps.builtin.FurnaceFuel"
+     ]
     }
    ]
   },

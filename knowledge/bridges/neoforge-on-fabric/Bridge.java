@@ -47,6 +47,8 @@ public final class Bridge {
         Bus.INSTANCE.post(new ${package}.capabilities.RegisterCapabilitiesEvent());
         hook();
         Bus.INSTANCE.post(new RegisterPayloadHandlersEvent());
+        // Data maps: NeoForge's own types and the mod's (RegisterDataMapTypesEvent), loaded with the data packs.
+        ${package}.datamaps.DataMaps.start(() -> Bus.INSTANCE.post(new ${package}.datamaps.RegisterDataMapTypesEvent()));
         Bus.INSTANCE.post(new FMLCommonSetupEvent(container(modid)));
         lifecycle(modid);
     }

@@ -3372,6 +3372,8 @@ final class Convert {
                 Pattern.compile("(?m)^import\\s+(?:static\\s+)?" + Pattern.quote(pkg + "." + target) + "\\b").matcher(text).find()
             ) needed = true;
             if (!needed) continue;
+            // A mixin of a game version this one does not have (its file is only in another version layer) is not listed.
+            if (!exists("src/main/java/" + pkg.replace('.', '/') + "/mixin/" + Json.text(mixin, "mixin", "") + ".java")) continue;
             (Boolean.TRUE.equals(mixin.get("client")) ? client : common).add(Json.text(mixin, "mixin", ""));
             // A mixin that adds one of the bridge's interfaces to a game class: Loom injects it for the mod's compile.
             if (mixin.get("injects") instanceof Map<?, ?> injects) for (var e : Json.object(injects).entrySet()) bridgeInjected
@@ -3822,7 +3824,8 @@ final class Convert {
         DataConditions conditions = new DataConditions();
         List<Path> files;
         try (var walk = Files.walk(src)) {
-            files = walk.filter(p -> p.toString().endsWith(".json") && p.toString().replace('\\', '/').contains("/resources/")).toList();
+            // Data maps are NeoForge's own files, which the NeoForge bridge reads in NeoForge's form on Fabric too.
+            files = walk.filter(p -> p.toString().endsWith(".json") && p.toString().replace('\\', '/').contains("/resources/") && !p.toString().replace('\\', '/').contains("/data_maps/")).toList();
         }
         int converted = 0;
         for (Path p : files) {
