@@ -43,8 +43,11 @@ MATCH_PLAIN = [
     "A change counts as handled by the mappings when the two releases are linked by Fabric's intermediary ids "
     "(every release up to 1.21.11) and the change is a rename or a move: port --fix rewrites those imports and "
     "call sites from the generated map. On the legacy hub steps the link is Forge's SRG ids, which id members "
-    "only, so there member renames count as mapped and class renames do not. A change into 26.1 or later has "
-    "no shared id, so nothing there is counted as mapped.",
+    "only: member renames count as mapped, and class renames count as mapped when each side is the other's best "
+    "match by shared member ids (the residual renames nobody claims stay left). At 1.14.4 itself a bridge step "
+    "translates MCP names to Mojang's through the obfuscated names both lanes share, in both directions, so its "
+    "renames count as mapped too. A change into 26.1 or later has no shared id, so nothing there is "
+    "counted as mapped.",
     "A change counts as handled by a rule when a rule in knowledge/ applies to that update (its jump range "
     "covers it) and names the change: for a rename the rule's old side names the old name and its new side the "
     "new name; for a removal or a new signature the rule's old side names the member (names shorter than six "
@@ -118,10 +121,27 @@ def main():
         d = load(CHANGES / f"{a}__{b}.json")
         steps.append({"from": a, "to": b, "file": f"{a}__{b}.json", "linked": d["linked"], "breakingShare": d["breakingShare"],
                       "broken": d["broken"], "oldSize": d["oldSize"], "counts": d["counts"], "_data": d})
+    bridge_file = CHANGES / "1.14.4__1.14.4.json"
+    if bridge_file.is_file():
+        d = load(bridge_file)
+        bridge = {"from": "1.14.4", "to": "1.14.4", "file": "1.14.4__1.14.4.json", "linked": d["linked"],
+                  "breakingShare": d["breakingShare"], "broken": d["broken"], "oldSize": d["oldSize"],
+                  "counts": d["counts"], "_data": d, "newFamily": False}
+        for i, s in enumerate(steps):
+            if s["from"] == "1.14.4":
+                steps.insert(i, bridge)
+                break
+        else:
+            steps.append(bridge)
+    else:
+        print("no 1.14.4__1.14.4.json bridge step; run tools/ChangeIndex.java --pair 1.14.4 1.14.4")
 
     # ---- families and hubs -----------------------------------------------------------------
+    # A self-step (the 1.14.4 bridge) is not an update and never starts a family.
     families, cur = [], [indexed[0]]
     for s in steps:
+        if s["from"] == s["to"]:
+            continue
         s["newFamily"] = s["breakingShare"] >= THRESHOLD
         if s["newFamily"]:
             families.append(cur)
@@ -214,9 +234,10 @@ def main():
         for r in rs:
             if r["auto"] and names(r):
                 return "rule", r
-        # Intermediary steps link classes and members; SRG steps link members only (classes have
-        # no SRG id), so an SRG class rename stays left even though port rewrites its members.
-        if renamed and (s["linked"] == "exact" or (s["linked"] == "srg" and kind != "class renamed")):
+        # A bridge or SRG rename counts as mapped when the step links it: intermediary ids
+        # prove exact renames, SRG ids prove member renames, shared member ids link renamed
+        # classes, and the bridge translates either side by the shared obfuscated names.
+        if renamed and s["linked"] in ("exact", "srg", "bridge"):
             return "mappings", None
         for r in rs:
             if not r["auto"] and names(r):
@@ -241,14 +262,14 @@ def main():
         d = s["_data"]
         back = {"mappings": 0, "left": 0}
         for o, n in d["classesRenamed"]:
-            back["mappings" if s["linked"] == "exact" else "left"] += 1
+            back["mappings" if s["linked"] in ("exact", "srg", "bridge") else "left"] += 1
         back["left"] += len(d["classesAdded"])
         for owner, lists in d["members"].items():
             for key in ("methodsRenamed", "fieldsRenamed", "methodsChanged", "fieldsChanged", "methodsAdded", "fieldsAdded"):
                 for it in lists.get(key, []):
                     if it.startswith("private "):
                         continue
-                    back["mappings" if key.endswith("Renamed") and s["linked"] in ("exact", "srg") else "left"] += 1
+                    back["mappings" if key.endswith("Renamed") and s["linked"] in ("exact", "srg", "bridge") else "left"] += 1
         back["listed"] = back["mappings"] + back["left"]
         listed = sum(tally.values())
         return {"listed": listed, "listedWithPrivate": sum(tally_all.values()), **tally, "withPrivate": tally_all,
@@ -353,12 +374,13 @@ def main():
 
     blocked = [{"id": v["id"], "released": v["released"], "reason": v["reason"]} for v in meta["versions"] if v["status"] == "blocked"]
     out = {
-        "about": "Change index: what changed in Minecraft between neighbouring releases (in Mojang's official names from 1.14.4, in MCP names for the legacy hub steps before it), with families, hubs, rule coverage and the best recorded port per step. Generated by tools/ChangeIndex.java and bench/change_routes.py.",
+        "about": "Change index: what changed in Minecraft between neighbouring releases (in Mojang's official names from 1.14.4, in MCP names for the legacy hub steps before it), plus the 1.14.4 bridge step translating MCP names to Mojang's through the obfuscated names both lanes share, with families, hubs, rule coverage and the best recorded port per step. Generated by tools/ChangeIndex.java and bench/change_routes.py.",
         "generated": date.today().isoformat(),
         "names": "official (Mojang) from 1.14.4; MCP names for the legacy hub steps before it (each step file says which, and where they came from)",
         "counting": "Counts in each step file are per listed change. 'Api' counts leave out private members. breakingShare = (classes removed or renamed + non-private methods and fields removed, renamed or with a new signature, including those of removed classes) / (classes + non-private methods and fields of the older release).",
         "linked": {"exact": "Both releases are obfuscated and joined through Fabric intermediary ids: a rename is proven by the shared id.",
-                   "srg": "Both releases predate Mojang's mappings and are joined through Forge SRG ids (func_/field_), which are assigned once and never reused: a member rename is proven by the shared id. Classes have no SRG id, so they link only by an unchanged name and a class rename reads as a removal plus an addition. The names are MCP's, from Forge's published mcp/mcp_config SRG tables and mcp_stable name sets (each step file's source names them).",
+                   "srg": "Both releases predate Mojang's mappings and are joined through Forge SRG ids (func_/field_), which are assigned once and never reused: a member rename is proven by the shared id. Classes have no SRG id, so a renamed class is linked back up when each side is the other's best match by shared member ids; what no other class claims still reads as a removal plus an addition. The names are MCP's, from Forge's published mcp/mcp_config SRG tables and mcp_stable name sets (each step file's source names them).",
+                   "bridge": "One release in both lanes: the SRG side is rekeyed into intermediary space through the obfuscated names both lanes share at 1.14.4 (mcp_config's joined.tsrg and intermediary's tiny), then the usual diff pairs, renames and counts every member the intermediary did not drop. Nothing was renamed by an update; the names changed lanes, in both directions. The readable side is MCP's.",
                    "by-name": "At least one release ships unobfuscated (26.1+), so there is no shared id: classes and members are matched by name, and renames and moves are best guesses (same simple name, nested classes that moved together, half or more member names shared, or one member on each side with the same signature)."},
         "families": {"rule": THRESHOLD_PLAIN, "threshold": THRESHOLD, "hubRule": HUB_PLAIN, "list": fam_out},
         "routing": "Route from X to Y: neighbouring steps from X to its family's hub, then hub to hub, then neighbouring steps from the last hub to Y. A backport walks the same steps in reverse (added and removed swap, renames flip). A step inside a family breaks under 0.5% of names.",

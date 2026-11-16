@@ -20,10 +20,11 @@ import java.util.zip.*;
  *
  * A pair touching a release before 1.14.4 (the legacy hubs, named with --pair) is read through
  * Forge's SRG data instead: SRG member ids stay the same across versions, so members are linked,
- * not guessed ("srg"), and the readable names are MCP's. SRG has no class ids, so classes link
- * only by an unchanged name and a class rename there reads as a removal plus an addition.
- * 1.14.4 has SRG data too, so 1.12.2 -> 1.14.4 is one SRG step; its Mojang-named side is the
- * neighbouring 1.14.4 -> 1.15 step.
+ * not guessed ("srg"), and the readable names are MCP's. SRG has no class ids, so a renamed class
+ * is linked back up when each side is the other's best match by shared member keys (the by-name
+ * hop's convention, keyed on ids); what no other class claims still reads as a removal plus an
+ * addition. 1.14.4 has SRG data too, so 1.12.2 -> 1.14.4 is one SRG step; its Mojang-named side is
+ * the neighbouring 1.14.4 -> 1.15 step.
  *
  * Single file plus tools/VersionMap.java (mapping parsers and the cached downloader), JDK 25:
  *   java tools/ChangeIndex.java [--out coverage/changes] [--cache .mmt/change-index]
@@ -76,6 +77,26 @@ public final class ChangeIndex {
 		}
 		for (String[] p : pairs) {
 			boolean srg = legacyPair(ids, p);
+			if (p[0].equals(p[1]) && p[0].equals(Route.FIRST_MAPPED)) {
+				// The seam step: one release in both lanes, linked through the bridge's exact
+				// obf join instead of guessed. The SRG side is rekeyed into intermediary space so
+				// the usual diff pairs, renames and counts it like any other step.
+				Snap sa = load(releases, p[0], true);
+				int[] lane = SIZES.get(p[0]);
+				Snap sb = load(releases, p[1], false);
+				if (lane != null) {
+					SIZES.put(p[0], lane);
+				}
+				Diff d = Diff.bridgeOf(sa, sb);
+				Path file = out.resolve(p[0] + "__" + p[1] + ".json");
+				Files.writeString(file, d.json(), StandardCharsets.UTF_8);
+				System.out.printf(
+					"%-8s -> %-8s %-7s classes +%d -%d ~%d  methods +%d -%d ~%d sig %d  fields +%d -%d ~%d  breaks %.1f%%  %,d bytes%n",
+					p[0], p[1], d.linked, d.c("classesAdded"), d.c("classesRemoved"), d.c("classesRenamed"),
+					d.c("methodsAdded"), d.c("methodsRemoved"), d.c("methodsRenamed"), d.c("methodsChanged"), d.c("fieldsAdded"),
+					d.c("fieldsRemoved"), d.c("fieldsRenamed"), 100.0 * d.breakingShare(), Files.size(file));
+				continue;
+			}
 			Snap sa = held.computeIfAbsent(p[0] + (srg ? "|srg" : ""), v -> load(releases, p[0], srg));
 			Snap sb = held.computeIfAbsent(p[1] + (srg ? "|srg" : ""), v -> load(releases, p[1], srg));
 			Diff d = Diff.of(sa, sb);
@@ -415,6 +436,38 @@ public final class ChangeIndex {
 			for (String k : B.keySet()) { if (!A.containsKey(k)) { fresh.add(k); } }
 			Map<Cls, Cls> pairs = new LinkedHashMap<>();
 			for (var e : A.entrySet()) { Cls cb = B.get(e.getKey()); if (cb != null) { pairs.put(e.getValue(), cb); } }
+			if (d.linked.equals("srg")) {
+				// SRG has no class ids, so a renamed class reads as removed plus added. Link the
+				// rename back up when the two sides share most of their member keys: each side's best
+				// match by Jaccard over SRG ids and MCP names, kept when mutual and at least half
+				// shared. The same convention as the by-name hop's member-name pairing, keyed on the
+				// SRG lane's member keys instead of names.
+				Map<String, Set<String>> goneKeys = new HashMap<>(), freshKeys = new HashMap<>();
+				for (String k : gone) { goneKeys.put(k, memberKeys(A.get(k))); }
+				for (String k : fresh) { freshKeys.put(k, memberKeys(B.get(k))); }
+				Map<String, String> best = new HashMap<>(), bestBack = new HashMap<>();
+				Map<String, Double> score = new HashMap<>(), scoreBack = new HashMap<>();
+				for (String g : gone) {
+					Set<String> gn = goneKeys.get(g);
+					if (gn.size() < 4) { continue; }
+					for (String f : fresh) {
+						Set<String> fn = freshKeys.get(f);
+						if (fn.size() < 4) { continue; }
+						int common = 0;
+						for (String n : gn) { if (fn.contains(n)) { common++; } }
+						double j = (double) common / (gn.size() + fn.size() - common);
+						if (j > score.getOrDefault(g, 0.0)) { score.put(g, j); best.put(g, f); }
+						if (j > scoreBack.getOrDefault(f, 0.0)) { scoreBack.put(f, j); bestBack.put(f, g); }
+					}
+				}
+				for (var e : best.entrySet()) {
+					if (score.get(e.getKey()) >= 0.5 && e.getKey().equals(bestBack.get(e.getValue()))) {
+						pairs.put(A.get(e.getKey()), B.get(e.getValue()));
+						gone.remove(e.getKey());
+						fresh.remove(e.getValue());
+					}
+				}
+			}
 			if (!d.exact) {
 				// Same simple name, one candidate on each side: a move. A best guess, labelled by the hop.
 				Map<String, List<String>> goneBySimple = new HashMap<>(), freshBySimple = new HashMap<>();
@@ -570,6 +623,68 @@ public final class ChangeIndex {
 			Set<String> s = new HashSet<>();
 			for (Mem m : c.methods.values()) { if (!m.name().equals("<init>")) { s.add("m" + m.name()); } }
 			for (Mem m : c.fields.values()) { s.add("f" + m.name()); }
+			return s;
+		}
+
+		/**
+		 * The seam step's diff: both lanes keyed by official identity at 1.14.4, so the usual diff
+		 * pairs every member Mojang's own mappings know on both sides: no intermediary, none of
+		 * its dropped overloads missing. The step reads "bridge", not "exact": nothing was renamed
+		 * by an update, the names changed lanes.
+		 */
+		static Diff bridgeOf(Snap a, Snap b) throws Exception {
+			VersionMap.Bridge bridge = VersionMap.Bridge.at();
+			Snap r = new Snap(a.version, a.obfuscated, false, a.source);
+			for (Cls c : a.classes.values()) {
+				String okey = bridge.classesOfficial.get(c.key);
+				Cls nc = new Cls(c.named, okey != null ? okey : c.key, c.flags);
+				r.classes.putIfAbsent(nc.key, nc);
+				Cls target = r.classes.get(nc.key);
+				for (Mem m : c.methods.values()) {
+					String mo = bridge.membersOfficial.get(c.key + "." + m.key());
+				if (mo == null) mo = bridge.initForward(c.key + "." + m.key(), m.cmpDesc());
+					Mem nm = mo != null
+						? new Mem(m.name(), m.desc(), mo, mo.substring(mo.lastIndexOf("\0") + 1), m.flags())
+						: new Mem(m.name(), m.desc(), m.key(), m.cmpDesc(), m.flags());
+					target.methods.putIfAbsent(nm.key(), nm);
+				}
+				for (Mem m : c.fields.values()) {
+					String fo = bridge.membersOfficial.get(c.key + "." + m.key());
+					Mem nm = fo != null
+						? new Mem(m.name(), m.desc(), fo, fo.substring(fo.lastIndexOf("\0") + 1), m.flags())
+						: new Mem(m.name(), m.desc(), m.key(), m.cmpDesc(), m.flags());
+					target.fields.putIfAbsent(nm.key(), nm);
+				}
+			}
+			Snap s = new Snap(b.version, b.obfuscated, false, b.source);
+			for (Cls c : b.classes.values()) {
+				Cls nc = new Cls(c.named, c.named, c.flags);
+				s.classes.putIfAbsent(nc.key, nc);
+				Cls target = s.classes.get(nc.key);
+				for (Mem m : c.methods.values()) {
+					String key = c.named + "\0" + m.name() + "\0" + m.desc();
+					String cmp = key.substring(key.lastIndexOf("\0") + 1);
+					target.methods.putIfAbsent(key, new Mem(m.name(), m.desc(), key, cmp, m.flags()));
+				}
+				for (Mem m : c.fields.values()) {
+					String key = c.named + "\0" + m.name() + "\0";
+					target.fields.putIfAbsent(key, new Mem(m.name(), m.desc(), key, "", m.flags()));
+				}
+			}
+			Diff d = Diff.of(r, s);
+			d.linked = "bridge";
+			d.names = "mcp";
+			if (a.source != null) {
+				d.source = a.source + "; Mojang client and server mappings for " + b.version + " (bridge)";
+			}
+			return d;
+		}
+
+		/** A class's member keys, minus constructors: the link evidence on the SRG lane. */
+		static Set<String> memberKeys(Cls c) {
+			Set<String> s = new HashSet<>();
+			for (Mem m : c.methods.values()) { if (!m.name().equals("<init>")) { s.add("m" + m.key()); } }
+			for (Mem m : c.fields.values()) { s.add("f" + m.key()); }
 			return s;
 		}
 
