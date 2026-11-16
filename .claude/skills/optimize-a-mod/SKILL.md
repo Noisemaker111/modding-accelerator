@@ -25,7 +25,11 @@ change; mmt only profiles, measures and gates. Reference: PERFORMANCE.md.
    cable, replace a barrel) so a stale cache fails; keep `chunks.java` for any cached lookup (chunk tickets are
    behaviour). Run the exact gate in two launches (same text), then prove it fails on a deliberately wrong
    `sabotage-*.diff`. `perf-optimize --check-only --experiment E --root R --patch P` checks it all offline.
-6. Write one idea per candidate diff (`git -C R diff > .runs/<mod>-cands/NAME.diff`).
+6. Write one idea per candidate diff (`git -C R diff > .runs/<mod>-cands/NAME.diff`), behind a static boolean
+   switch (default on). Pre-screen it in one running game before any paired run: a setup snippet freezes an input
+   and puts the work in `vars` as `perf.work`, then `perf-toggle --root R --file S --switch pkg.Class.FIELD`
+   (minutes; fails if outputs differ). Only a candidate gaining ~10% on its own scope, or cutting allocation / GC
+   copying, goes on to step 7; stop a paired run as soon as it is decided (`stop` file).
 7. Measure locally: `perf-optimize --root R --experiment E --patch P --dry-run --out .runs/<mod>-opt/NAME` (it
    interleaves baseline and candidate runs), then `game-stop`. A wide A/B sweep goes to
    `tools/cloud-run perf -f repo=URL -f commit=SHA -f experiment=E -f patch=P`.

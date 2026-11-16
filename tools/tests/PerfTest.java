@@ -43,6 +43,7 @@ public final class PerfTest {
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Mmt.Report receipt = new Mmt.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
+        toggleRounds(home, scratch);
         Path source = scratch.resolve("net/minecraft/client/Minecraft.java");
         Files.createDirectories(source.getParent());
         Files.writeString(source, """
@@ -254,6 +255,41 @@ public final class PerfTest {
         } finally {
             process.destroy();
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
+        }
+    }
+
+    /** perf-toggle's round snippet, run by the agent's own eval: FAST sums by formula instead of a loop, WRONG changes the result. */
+    public static final class Toggled {
+        public static boolean FAST, WRONG;
+        static long[] work() {
+            long n = 300_000_000L, sum = FAST ? n * (n - 1) / 2 : 0;
+            for (long i = 0; !FAST && i < n; i++) sum += i;
+            return new long[]{sum, WRONG ? 1 : 0};
+        }
+    }
+
+    static void toggleRounds(Path home, Path scratch) throws Exception {
+        Path classes = Files.createDirectories(scratch.resolve("console"));
+        check(javax.tools.ToolProvider.getSystemJavaCompiler().run(null, null, null, "-d", classes.toString(), home.resolve("tools/agent/Console.java").toString()) == 0, "eval's Console compiles");
+        Class<?> console = Class.forName("Console", true, new java.net.URLClassLoader(new java.net.URL[]{classes.toUri().toURL()}, PerfTest.class.getClassLoader()));
+        java.lang.reflect.Method compile = console.getDeclaredMethod("compile", String.class, ClassLoader.class);
+        compile.setAccessible(true);
+        java.lang.reflect.Field vars = console.getDeclaredField("vars");
+        vars.setAccessible(true);
+        Json.object(vars.get(null)).put(PerfToggle.WORK, (java.util.function.Supplier<Object>) Toggled::work);
+        for (List<String> switches : List.of(List.of("PerfTest$Toggled.FAST"), List.of("PerfTest$Toggled.FAST", "PerfTest$Toggled.WRONG"))) {
+            List<List<Map<String, Object>>> rounds = new ArrayList<>();
+            for (int round = 0; round < 4; round++) {
+                Object snippet = compile.invoke(null, PerfToggle.snippet(switches, round, 1), PerfTest.class.getClassLoader());
+                java.lang.reflect.Method run = snippet.getClass().getDeclaredMethod("run");
+                run.setAccessible(true);
+                // As mmt eval --json hands it back: the snippet's answer under "result".
+                rounds.add(PerfToggle.settings(Json.map("ok", true, "result", run.invoke(snippet))));
+            }
+            Map<String, Object> result = PerfToggle.summarize(switches, rounds);
+            double fast = ((Number) Json.object(Json.object(Json.array(result.get("settings")).get(1)).get("cpuSpeedup")).get("geometricMean")).doubleValue();
+            check(fast > 5 && !Toggled.FAST && !Toggled.WRONG, "perf-toggle times the faster setting faster (" + fast + ") and restores the switches");
+            check(Boolean.TRUE.equals(result.get("ok")) == (switches.size() == 1), "perf-toggle fails exactly when a setting changes the result: " + result.get("differingRounds"));
         }
     }
 
