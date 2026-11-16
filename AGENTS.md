@@ -10,7 +10,7 @@ JDK 17+ and Python 3.12+; no install step. Windows: `mmt.cmd` and `python` for `
 ```sh
 ./mmt help                    # every command
 python3 bench/run_tests.py         # every offline check, as CI runs them (--list, --only NAME)
-tools/cloud-run packs|ports|perf|convert   # full sweeps on GitHub's runners (below)
+tools/cloud-run packs|ports|convert   # full sweeps on GitHub's runners (below)
 ```
 
 Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
@@ -24,10 +24,10 @@ Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
   and a PR's claims ("tests pass", numbers) must be ones CI, a linked cloud run or the local in-game run's receipt shows.
 - **Prove every change in-game locally before merge, at the smallest real scope:** `pack-check --focus MODID`, one
   mod plus its dependencies, a headless server when the metric is server-side, `python3 bench/port_board.py
-  --changed`. Shut it down afterwards (`game-stop`). Local timing comparisons interleave A/B runs. "Not tested
-  in-game" or "saved for the cloud" is never an acceptable PR result.
-- **Only full sweeps go to the cloud** (all packs, the whole port corpus, wide A/B timing): push, then
-  `tools/cloud-run packs|ports|perf|convert [-f KEY=VALUE]`; it waits with a hard timeout and downloads to `.runs/cloud/`.
+  --changed`. Shut it down afterwards (`game-stop`). Time A/B runs locally, interleaved, never in the cloud (its
+  runners have software graphics). "Not tested in-game" or "saved for the cloud" is never an acceptable PR result.
+- **Only full sweeps go to the cloud** (all packs, the whole port corpus, every convert): push, then
+  `tools/cloud-run packs|ports|convert [-f KEY=VALUE]`; it waits with a hard timeout and downloads to `.runs/cloud/`.
   One full sweep per PR, on its final commit; small local tests in between, and cancel a run a newer commit makes stale
   (GitHub's terms forbid load "disproportionate to the benefits").
 - **Tests: follow `~/.claude/skills/minimal-tests`.** A test proves something users depend on, fails on a wrong
