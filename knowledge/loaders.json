@@ -2400,7 +2400,11 @@
     "net.neoforged.neoforge.registries.datamaps.builtin.ParrotImitation": "datamaps.builtin.ParrotImitation",
     "net.neoforged.neoforge.registries.datamaps.builtin.FurnaceFuel": "datamaps.builtin.FurnaceFuel",
     "net.neoforged.neoforge.registries.datamaps.builtin.Compostable": "datamaps.builtin.Compostable",
-    "net.neoforged.neoforge.common.data.DataMapProvider": "data.DataMapProvider"
+    "net.neoforged.neoforge.common.data.DataMapProvider": "data.DataMapProvider",
+    "net.neoforged.neoforge.common.data.JsonCodecProvider": "data.JsonCodecProvider",
+    "net.neoforged.neoforge.client.data.SpriteSourceProvider": "data.SpriteSourceProvider",
+    "net.neoforged.neoforge.common.data.BlockTagCopyingItemTagProvider": "data.BlockTagCopyingItemTagProvider",
+    "net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider": "data.DatapackBuiltinEntriesProvider"
    },
    "symbols": {
     "neoforge": [

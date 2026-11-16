@@ -33,6 +33,8 @@ class DataProvidersTest {
     static void bootstrap() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
+        // The atlas source types, which the client's own start-up registers.
+        net.minecraft.client.renderer.texture.atlas.SpriteSources.bootstrap();
     }
 
     static JsonElement read(Path file) throws Exception {
@@ -65,6 +67,38 @@ class DataProvidersTest {
             }
         };
         assertThrows(IllegalStateException.class, () -> twice.run(CachedOutput.NO_CACHE));
+    }
+
+    @Test
+    void atlasesAreWrittenInTheGamesForm() throws Exception {
+        new SpriteSourceProvider(new PackOutput(this.out), java.util.concurrent.CompletableFuture.completedFuture(lookup()), "demo") {
+            @Override
+            protected void gather() {
+                atlas(Identifier.fromNamespaceAndPath("minecraft", "blocks")).addSource(new net.minecraft.client.renderer.texture.atlas.sources.DirectoryLister("demo_block", "demo_block/"));
+            }
+        }.run(CachedOutput.NO_CACHE).join();
+        assertEquals(
+            JsonParser.parseString("{\"sources\":[{\"type\":\"minecraft:directory\",\"source\":\"demo_block\",\"prefix\":\"demo_block/\"}]}"),
+            read(this.out.resolve("assets/minecraft/atlases/blocks.json"))
+        );
+    }
+
+    @Test
+    void anItemTagCopiesItsBlockTag() throws Exception {
+        TagKey<net.minecraft.world.level.block.Block> blocks = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("demo", "stones"));
+        net.minecraft.data.tags.TagsProvider.TagLookup<net.minecraft.world.level.block.Block> built =
+            key -> key.equals(blocks) ? java.util.Optional.of(net.minecraft.tags.TagBuilder.create().addElement(Identifier.withDefaultNamespace("stone"))) : java.util.Optional.empty();
+        new BlockTagCopyingItemTagProvider(new PackOutput(this.out), java.util.concurrent.CompletableFuture.completedFuture(lookup()), java.util.concurrent.CompletableFuture.completedFuture(built), "demo") {
+            @Override
+            protected void addTags(net.minecraft.core.HolderLookup.Provider provider) {
+                copy(blocks, TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("demo", "stones")));
+            }
+        }.run(CachedOutput.NO_CACHE).join();
+        assertEquals(JsonParser.parseString("{\"values\":[\"minecraft:stone\"]}"), read(this.out.resolve("data/demo/tags/item/stones.json")));
+    }
+
+    static net.minecraft.core.HolderLookup.Provider lookup() {
+        return net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
     }
 
     @Test
