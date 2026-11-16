@@ -2412,6 +2412,58 @@ public final class VersionMap {
                 byKind.merge("type arguments dropped", 1, Integer::sum);
             }
 
+            // 2c'''. A class that gained type parameters, written with the old count in a declared type (1.21.2:
+            // EntityRenderer<? super T> getRenderer(...) -> EntityRenderer<T, S>): each missing one is a wildcard. Not
+            // after extends, implements or new, where a wildcard is not allowed and a transform owns the change.
+            Pattern needs = Pattern.compile("^wrong number of type arguments; required (\\d+)");
+            for (Err e : readErrors(log)) {
+                Matcher nd = needs.matcher(e.message());
+                Path f = sourcePath(e, repo);
+                if (!nd.find() || f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                int required = Integer.parseInt(nd.group(1));
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                String[] lines = text.split("\r?\n", -1);
+                if (e.line() < 1 || e.line() > lines.length) {
+                    continue;
+                }
+                String line = lines[e.line() - 1];
+                int caret = Math.max(0, Math.min(line.length() - 1, e.caret()));
+                Matcher typed = Pattern.compile("(\\b[A-Z][\\w.]*)\\s*<").matcher(line);
+                int open = -1;
+                String before = "";
+                while (typed.find()) {
+                    if (typed.start() <= caret + 1) {
+                        open = typed.end() - 1;
+                        before = line.substring(0, typed.start());
+                    }
+                }
+                if (open < 0 || Pattern.compile("\\b(extends|implements|new)\\s*$").matcher(before).find()) {
+                    continue;
+                }
+                int depth = 0, close = -1;
+                for (int i = open; i < line.length(); i++) {
+                    if (line.charAt(i) == '<') {
+                        depth++;
+                    } else if (line.charAt(i) == '>' && --depth == 0) {
+                        close = i;
+                        break;
+                    }
+                }
+                if (close < 0) {
+                    continue;
+                }
+                int have = topLevelArguments(line.substring(open + 1, close).replace('<', '(').replace('>', ')')).size();
+                if (have >= required) {
+                    continue;
+                }
+                lines[e.line() - 1] = line.substring(0, close) + ", ?".repeat(required - have) + line.substring(close);
+                texts.put(f, String.join(text.contains("\r\n") ? "\r\n" : "\n", lines));
+                replacements++;
+                byKind.merge("type arguments added", 1, Integer::sum);
+            }
+
             // 2c'. One overload renamed while another keeps the name (1.21.2: Direction.getNearest(double,double,double) ->
             // getApproximateNearest, getNearest(int,int,int) stays): javac finds no suitable method; the overload whose
             // parameters are the argument types javac lists, on the class the call names, gives the new name.

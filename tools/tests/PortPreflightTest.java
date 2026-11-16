@@ -394,6 +394,14 @@ public final class PortPreflightTest {
         VersionMap.Fix.run(map, tpLog, tp, false, null);
         String typed = Files.readString(tp.resolve("GhostRenderer.java"));
         require(typed.contains("  PlayerModel model;") && typed.contains("Map<String, PlayerModel> byName;"), "type arguments of a class that lost them: " + typed);
+        // A class that gained type parameters: a declared type gets wildcards; an extends clause is left to its transform.
+        String renderers = "class Renderers {\n  private <T extends Entity> EntityRenderer<? super T> getRenderer(T entity) {\n    return null;\n  }\n}\nclass Sub extends EntityRenderer<Entity> {\n}\n";
+        Files.writeString(tp.resolve("Renderers.java"), renderers);
+        Files.writeString(tpLog, tp.resolve("Renderers.java") + ":2: error: wrong number of type arguments; required 2\n  private <T extends Entity> EntityRenderer<? super T> getRenderer(T entity) {\n                                           ^\n"
+            + tp.resolve("Renderers.java") + ":6: error: wrong number of type arguments; required 2\nclass Sub extends EntityRenderer<Entity> {\n                                ^\n");
+        VersionMap.Fix.run(map, tpLog, tp, false, null);
+        String widened = Files.readString(tp.resolve("Renderers.java"));
+        require(widened.contains("EntityRenderer<? super T, ?> getRenderer(T entity)") && widened.contains("class Sub extends EntityRenderer<Entity> {"), "a declared type gets a wildcard, an extends clause does not: " + widened);
 
         // A class the game replaced: the file that imports it switches import and uses; a mod's own class of that name stays.
         Path cr = Files.createDirectories(scratch.resolve("class-rewrites"));
