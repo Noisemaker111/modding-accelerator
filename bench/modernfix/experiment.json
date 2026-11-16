@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "project": ":forge",
+  "pack": {
+    "input": "../../.runs/atm9/atm9-1.1.1-fixed.zip",
+    "without": "journeymap",
+    "task": ":forge:remapJar",
+    "jar": "forge/build/libs/modernfix-forge-*+mc1.20.1{,.dirty}.jar",
+    "memory": "10G"
+  },
+  "world": "perf",
+  "worldSource": "../../.runs/atm9/perf-world",
+  "jit": "full",
+  "frames": 60,
+  "measure": {
+    "seconds": 20,
+    "warmup": 10,
+    "metric": {
+      "report": "estimatedAllocationBytesPerSecond"
+    },
+    "scopes": [
+      {
+        "name": "gc-copied",
+        "report": "gcCopiedBytes"
+      },
+      {
+        "name": "young-collections",
+        "report": "youngCollections"
+      },
+      {
+        "name": "tick-ms",
+        "report": "metrics.tick_ms.mean"
+      }
+    ]
+  },
+  "gates": [
+    {
+      "name": "fluid-pushing",
+      "file": "fluids.java",
+      "thread": "control",
+      "compare": "exact"
+    }
+  ],
+  "setup": [
+    {
+      "file": "farm.java",
+      "thread": "control",
+      "expect": "true"
+    }
+  ]
+}

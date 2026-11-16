@@ -1066,6 +1066,75 @@
      ]
     }
    }
+  },
+  {
+   "id": "size-per-call-maps-to-what-they-hold",
+   "symptom": {
+    "text": "Each entity's fluid pushing (or any per-entity, per-tick check) builds a map or array sized to a whole registry (Forge: new Object2ObjectArrayMap(FluidType.SIZE - 1), 759 fluid types in All the Mods 9, two 758-slot arrays a call) though a call holds a few entries: allocation in the millions of bytes a second that grows with the entity count, and young collections with it.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "(?i)\\.\\w*(FluidPushing|FluidHeight|updateInWaterState)\\w*\\(",
+      "minShare": 0.05
+     }
+    ]
+   },
+   "change": "Start the per-call map empty (Object2ObjectArrayMap() shares fastutil's empty arrays) and let it grow as entries arrive; an array map keeps insertion order, so iterating it afterwards visits the same entries in the same order. In a mod, redirect the NEW of the pre-sized map (here a ModernFix mixin on Forge's Entity.updateFluidHeightAndDoFluidPushing(Predicate)).",
+   "gain": {
+    "scope": "whole-game allocation bytes a second (estimatedAllocationBytesPerSecond), All the Mods 9 1.1.1 client with 300 cows penned beside the player, both arms at once",
+    "cold": {
+     "geometricMean": 1.64,
+     "low": 1.62,
+     "high": 1.67,
+     "pairs": 3
+    },
+    "warm": {
+     "geometricMean": 1.67,
+     "low": 1.62,
+     "high": 1.71,
+     "pairs": 3
+    },
+    "note": "217 to 132 MB/s cold; with the player alone in new land the same change was 0.97x (rejected, 2026-11-16T10-42-29.157326400Z-886caed6): it pays with entities"
+   },
+   "gate": {
+    "name": "fluid-pushing",
+    "compare": "exact",
+    "detail": "a fixed rig 300 high over the player (still water, a flowing slope, lava) built on the server thread; seven armor stands in it run the method once from rest; their water and lava heights and push vectors are the same text in every launch of both arms"
+   },
+   "provenIn": {
+    "mod": "modernfix",
+    "version": "5.24.4",
+    "loader": "forge",
+    "scope": "estimatedAllocationBytesPerSecond",
+    "record": "2026-11-16T11-34-14.350867800Z-bf11b30f",
+    "patch": "bench/modernfix/fluid-map-empty-first.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.MobEntity.updateFluidHeightAndDoFluidPushing(Ljava/util/function/Predicate;)V",
+       "samples": 20
+      },
+      {
+       "name": "m.MobEntity.tick()V",
+       "samples": 80
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.MobEntity.tick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
   }
  ]
 }

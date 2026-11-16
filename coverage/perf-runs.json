@@ -69487,6 +69487,1301 @@
    "wallSeconds": 864.9212971,
    "finished": "2026-11-16T10:05:47.384220800Z",
    "seconds": 1114.3595380500003
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-16T10-42-29.157326400Z-886caed6",
+   "kind": "perf-optimize",
+   "session": "atm9",
+   "started": "2026-11-16T10:42:29.158469500Z",
+   "mod": {
+    "id": "",
+    "version": "",
+    "loader": "",
+    "project": ""
+   },
+   "phases": {
+    "setup": 249.05496675,
+    "build": 2.0981832000000002,
+    "launch": 655.5861132485,
+    "warmup": 50.0,
+    "measure": 316.41811739950003,
+    "gates": 66.09063245349999,
+    "other": 996.2817904010001
+   },
+   "steps": [
+    {
+     "phase": "other",
+     "name": "baseline-jar",
+     "seconds": 57.5243944
+    },
+    {
+     "phase": "other",
+     "name": "candidate-jar",
+     "seconds": 58.4644583
+    },
+    {
+     "phase": "setup",
+     "name": "pack-jars",
+     "seconds": 116.2092968
+    },
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 117.246328301
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 2.1287679,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 126.1762911,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 2.0675985,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 126.24969939900001,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 69.6643916,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 70.402799801,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 2.9860356,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 2.9486504,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 33.4423881,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 33.2113709,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 31.185503599999997,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 30.923075601,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-pushing",
+     "seconds": 11.06293,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-pushing",
+     "seconds": 10.9923275,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 103.47138,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 106.455076601,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 126.8306246,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 126.867621299,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 78.4137363,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 81.4082874,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 3.192751,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 2.9324542,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 32.3653222,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 32.547842,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 30.902983901,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 31.958428499,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-pushing",
+     "seconds": 27.5921263,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-pushing",
+     "seconds": 23.689864101,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 77.4329906,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 81.9422981,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 137.074594999,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 137.1389243,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 75.185071401,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 3.8050733,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 80.1978894,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 2.842665499,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 31.012686501,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 31.1277064,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 30.532140499999997,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 29.897774400000003,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-pushing",
+     "seconds": 8.968243101,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-pushing",
+     "seconds": 9.510169701,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 92.522454,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 95.7374823,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 126.8423821,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 127.7395729,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 78.31725,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 78.7553387,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 3.0465687,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 2.889204599,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 31.9281131,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 32.5115557,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 31.066874399,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 31.990551099999998,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-pushing",
+     "seconds": 9.532569801,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-pushing",
+     "seconds": 9.320631601,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 106.771036499,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 112.193745,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 137.3225408,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 138.929975,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 81.841185999,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 3.2945628,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 85.87276,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 3.2607172,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 31.7477255,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 32.198096299,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 30.7410068,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 31.545089298999997,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-pushing",
+     "seconds": 10.840384501,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-pushing",
+     "seconds": 10.672018301,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 100.551485901,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 102.5824982,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 0.195282901
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 0.238075899
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "pair 0 before launch",
+      "at": "2026-11-16T10:44:28.185916300Z",
+      "systemCpu": 0.27930663155611357,
+      "javaProcesses": 13
+     },
+     {
+      "when": "pair 1 before launch",
+      "at": "2026-11-16T10:51:03.398557100Z",
+      "systemCpu": 0.6096331098106201,
+      "javaProcesses": 15
+     },
+     {
+      "when": "pair 2 before launch",
+      "at": "2026-11-16T10:57:36.842638100Z",
+      "systemCpu": 0.624027676250261,
+      "javaProcesses": 12
+     },
+     {
+      "when": "pair 3 before launch",
+      "at": "2026-11-16T11:04:15.384122600Z",
+      "systemCpu": 0.6100716990389556,
+      "javaProcesses": 11
+     },
+     {
+      "when": "pair 4 before launch",
+      "at": "2026-11-16T11:11:00.465279500Z",
+      "systemCpu": 0.5304225279767997,
+      "javaProcesses": 12
+     }
+    ],
+    "meanSystemCpu": 0.5306923289265499,
+    "maxSystemCpu": 0.624027676250261,
+    "jit": "full",
+    "framesPerSecond": 60
+   },
+   "candidate": {
+    "label": "fluid map empty first",
+    "diffSha256": "57f83c98ac18f10bb6db246bcc45e59ac9d746c4db6ec13fc4a1cba4446eecfa",
+    "changedFiles": [
+     "common/src/main/resources/assets/modernfix/lang/en_us.json"
+    ]
+   },
+   "gates": [
+    {
+     "name": "fluid-pushing",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 0.973652128348747,
+     "low": 0.8788696518775071,
+     "high": 1.0523969096285273,
+     "pairs": 5,
+     "baselineMean": 344977427.9742621,
+     "candidateMean": 357896176.847982
+    },
+    "warm": {
+     "geometricMean": 0.9784163631057724,
+     "low": 0.830963381603267,
+     "high": 1.0934428994648364,
+     "pairs": 5,
+     "baselineMean": 399708257.21194637,
+     "candidateMean": 415774663.50640213
+    },
+    "scopes": {
+     "gc-copied": {
+      "cold": {
+       "geometricMean": 0.9855021191036799,
+       "low": 0.8537028085836837,
+       "high": 1.1415094140298798,
+       "pairs": 5,
+       "baselineMean": 1058290131.2,
+       "candidateMean": 1077650576.0
+      },
+      "warm": {
+       "geometricMean": 0.8892510168701971,
+       "low": 0.759718137809824,
+       "high": 1.0455917160355916,
+       "pairs": 5,
+       "baselineMean": 1088910476.8,
+       "candidateMean": 1184468416.0
+      }
+     },
+     "young-collections": {
+      "cold": {
+       "geometricMean": 1.0129913682242364,
+       "low": 0.8746896591546225,
+       "high": 1.1884016386440022,
+       "pairs": 5,
+       "baselineMean": 4.0,
+       "candidateMean": 4.0
+      },
+      "warm": {
+       "geometricMean": 1.0,
+       "low": 1.0,
+       "high": 1.0,
+       "pairs": 5,
+       "baselineMean": 4.2,
+       "candidateMean": 4.2
+      }
+     },
+     "tick-ms": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": 1.0550331324763305,
+       "low": 0.907651194450247,
+       "high": 1.1677369353110323,
+       "pairs": 5,
+       "baselineMean": 33.941015063278726,
+       "candidateMean": 32.129156120579566
+      }
+     }
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "cold speedup 0.974x, 95% interval 0.879-1.052 includes 1; warm speedup 0.978x, 95% interval 0.831-1.093 includes 1",
+   "metric": {
+    "report": "estimatedAllocationBytesPerSecond"
+   },
+   "source": ".\\.runs\\atm9\\opt\\modernfix-fluid-map-4",
+   "arms": "parallel",
+   "wallSeconds": 2129.2139718,
+   "finished": "2026-11-16T11:17:58.418611700Z",
+   "seconds": 2335.5298034525003
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-16T11-34-14.350867800Z-bf11b30f",
+   "kind": "perf-optimize",
+   "session": "atm9",
+   "started": "2026-11-16T11:34:14.350867800Z",
+   "mod": {
+    "id": "",
+    "version": "",
+    "loader": "",
+    "project": ""
+   },
+   "phases": {
+    "setup": 719.1324519979999,
+    "build": 1.8535123,
+    "launch": 383.89507625,
+    "warmup": 30.0,
+    "measure": 210.92836690000001,
+    "gates": 30.4874906495,
+    "other": 356.9164804994999
+   },
+   "steps": [
+    {
+     "phase": "other",
+     "name": "baseline-jar",
+     "seconds": 58.0799138
+    },
+    {
+     "phase": "other",
+     "name": "candidate-jar",
+     "seconds": 53.8033163
+    },
+    {
+     "phase": "setup",
+     "name": "pack-jars",
+     "seconds": 112.0889629
+    },
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 113.141624199
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 1.9134746,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 136.644903599,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 1.79355,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 137.01297870099998,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 80.8051846,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 86.8321442,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 52.1066515,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 50.429193199,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 115.813720999,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 116.662769101,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 39.7778939,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 38.3565779,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 31.4618082,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 32.4675915,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-pushing",
+     "seconds": 9.9276846,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-pushing",
+     "seconds": 9.5986733,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.759039299,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.6167273,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 116.3423418,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 116.9037875,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 69.690313899,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 69.965765301,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 44.3354318,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 45.1453636,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 114.1677288,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 116.325711099,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 36.8383973,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 36.531635099,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 32.884289901,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 34.1242532,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-pushing",
+     "seconds": 10.447104101,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-pushing",
+     "seconds": 10.2587243,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 5.920738799,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.6231612,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 130.4244087,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 130.4617322,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 73.5569337,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 75.898131,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 47.4602736,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 47.4727237,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 117.9878572,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 119.8963052,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 37.824246601,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 37.6268007,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 31.211119299000003,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 32.7521202,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-pushing",
+     "seconds": 10.395301099,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-pushing",
+     "seconds": 10.347493899,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 6.358539,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.110852101,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 0.2602133
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 0.2042719
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "pair 0 before launch",
+      "at": "2026-11-16T11:36:09.315768300Z",
+      "systemCpu": 0.09649316923706008,
+      "javaProcesses": 15
+     },
+     {
+      "when": "pair 1 before launch",
+      "at": "2026-11-16T11:44:18.624194600Z",
+      "systemCpu": 0.47306612792868696,
+      "javaProcesses": 15
+     },
+     {
+      "when": "pair 2 before launch",
+      "at": "2026-11-16T11:51:43.742759400Z",
+      "systemCpu": 0.35687065682566266,
+      "javaProcesses": 14
+     }
+    ],
+    "meanSystemCpu": 0.3088099846638032,
+    "maxSystemCpu": 0.47306612792868696,
+    "jit": "full",
+    "framesPerSecond": 60
+   },
+   "candidate": {
+    "label": "fluid map empty first, 300-cow farm",
+    "diffSha256": "57f83c98ac18f10bb6db246bcc45e59ac9d746c4db6ec13fc4a1cba4446eecfa",
+    "changedFiles": [
+     "common/src/main/resources/assets/modernfix/lang/en_us.json"
+    ]
+   },
+   "gates": [
+    {
+     "name": "fluid-pushing",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 1.6414171446871633,
+     "low": 1.6227532478418976,
+     "high": 1.6705380134405083,
+     "pairs": 3,
+     "baselineMean": 217314697.6648685,
+     "candidateMean": 132366216.58867647
+    },
+    "warm": {
+     "geometricMean": 1.6672813553406387,
+     "low": 1.618669330831506,
+     "high": 1.7072356151420265,
+     "pairs": 3,
+     "baselineMean": 247534991.56853938,
+     "candidateMean": 148475656.37212387
+    },
+    "scopes": {
+     "gc-copied": {
+      "cold": {
+       "geometricMean": 1.0044525996799194,
+       "low": 0.6509895032291759,
+       "high": 1.8779387458203332,
+       "pairs": 3,
+       "baselineMean": 481962728.0,
+       "candidateMean": 507874757.3333333
+      },
+      "warm": {
+       "geometricMean": 0.7626970729790565,
+       "low": 0.2768220167458571,
+       "high": 3.2374957159005913,
+       "pairs": 3,
+       "baselineMean": 207646266.66666666,
+       "candidateMean": 117969557.33333333
+      }
+     },
+     "young-collections": {
+      "cold": {
+       "geometricMean": 1.2599210498948732,
+       "low": 1.0,
+       "high": 2.0,
+       "pairs": 3,
+       "baselineMean": 2.0,
+       "candidateMean": 1.6666666666666667
+      },
+      "warm": {
+       "geometricMean": 1.4422495703074085,
+       "low": 1.0,
+       "high": 3.0000000000000004,
+       "pairs": 3,
+       "baselineMean": 1.6666666666666667,
+       "candidateMean": 1.0
+      }
+     },
+     "tick-ms": {
+      "cold": {
+       "geometricMean": 1.0669116738442523,
+       "low": 1.0054185729518654,
+       "high": 1.1058227477887317,
+       "pairs": 3,
+       "baselineMean": 50.97136605247159,
+       "candidateMean": 47.75262725798793
+      },
+      "warm": {
+       "geometricMean": 1.3901226352708234,
+       "low": 0.969408460076782,
+       "high": 2.8281053544823456,
+       "pairs": 3,
+       "baselineMean": 93.1432695037315,
+       "candidateMean": 74.7590576447141
+      }
+     }
+    }
+   },
+   "verdict": "accepted",
+   "rejection": null,
+   "metric": {
+    "report": "estimatedAllocationBytesPerSecond"
+   },
+   "source": ".\\.runs\\atm9\\opt\\modernfix-fluid-map-farm-2",
+   "arms": "parallel",
+   "stopped": {
+    "afterPairs": 3,
+    "decided": "faster",
+    "intervals": {
+     "cold": {
+      "geometricMean": 1.6414171446871633,
+      "low": 1.5022836814777993,
+      "high": 1.793436403584322,
+      "pairs": 3
+     },
+     "warm": {
+      "geometricMean": 1.6672813553406387,
+      "low": 1.4272881075872468,
+      "high": 1.9476285853496422,
+      "pairs": 3
+     }
+    },
+    "reason": "cold and warm 99% t intervals both lie above 1 after 3 pairs"
+   },
+   "wallSeconds": 1521.8455121,
+   "finished": "2026-11-16T11:59:36.248101300Z",
+   "seconds": 1733.213378597
   }
  ]
 }

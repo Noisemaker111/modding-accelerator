@@ -166,7 +166,10 @@ final class PerfOptimize {
         Object setting = experiment.get("fingerprint");
         List<Object> gates = new ArrayList<>(Json.array(experiment.getOrDefault("gates", List.of())));
         boolean present = gates.stream().anyMatch(g -> "fingerprint".equals(Json.object(g).get("compare")));
-        if (!Boolean.FALSE.equals(setting) && !Json.text(experiment, "world", "").isBlank() && !present) {
+        // Not added in a pack ("pack"): its snippets are written in Mojang names and a shipped Forge client before 1.20.2
+        // runs with SRG names (getSingleplayerServer is m_91092_ there); the pack's gates name what they check.
+        boolean inPack = experiment.get("pack") instanceof Map<?, ?>;
+        if (!Boolean.FALSE.equals(setting) && !inPack && !Json.text(experiment, "world", "").isBlank() && !present) {
             Map<String, Object> gate = Json.map("name", "fingerprint", "compare", "fingerprint");
             if (setting instanceof Map<?, ?> tuned) gate.putAll(Json.object(tuned));
             gates.add(gate);
@@ -424,6 +427,14 @@ final class PerfOptimize {
         row.put("launchSeconds", (System.nanoTime() - started) / 1e9);
         record.modFromLaunch(launched);
         if (!Boolean.TRUE.equals(launched.get("ok"))) throw new IOException(arm + " run " + run + " did not start: " + launched.get("error"));
+        // pack-run returns once the client is up; its save opens after (quick play). Setup waits until the player is in it.
+        if (inPack && !world.isBlank()) {
+            long joinBy = System.nanoTime() + TimeUnit.MINUTES.toNanos(10);
+            while (!Boolean.TRUE.equals(Json.object(mmt(tree, arm + "-joined", List.of("game-status"), 120).get("result")).get("inWorld"))) {
+                if (System.nanoTime() > joinBy) throw new IOException(arm + " run " + run + ": the player was not in " + world + " 10 minutes after the client started");
+                Thread.sleep(2000);
+            }
+        }
         Map<String, Object> gates = new LinkedHashMap<>();
         try {
             for (Object item : Json.array(experiment.get("gates"))) {
