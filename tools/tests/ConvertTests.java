@@ -237,6 +237,16 @@ public final class ConvertTests {
             renamed.equals("import net.minecraft.resources.ResourceLocation;\nimport org.jetbrains.annotations.Nullable;\nResourceLocation id = ResourceLocation.parse(s); IdentifierCache c; my.ResourceLocation x;"),
             "a version layer's rewrites rename whole words only, dotted names included: " + renamed
         );
+        String wildcard = Convert.wildcardBridgeImports(
+            "import net.neoforged.neoforge.client.event.*;\nimport java.util.*;\nclass A { void a(RegisterMenuScreensEvent e, EntityRenderersEvent.RegisterRenderers r) {} }",
+            Json.object(Json.parse("{\"net.neoforged.neoforge.client.event.RegisterMenuScreensEvent\":\"RegisterMenuScreensEvent\",\"net.neoforged.neoforge.client.event.EntityRenderersEvent\":\"EntityRenderersEvent\",\"net.neoforged.neoforge.client.event.ScreenEvent\":\"ScreenEvent\",\"net.neoforged.neoforge.client.event.RenderGuiEvent\":\"RenderGuiEvent\"}")),
+            List.of("RenderGuiEvent.java"),
+            "demo.bridge"
+        );
+        check(
+            wildcard.startsWith("import demo.bridge.RegisterMenuScreensEvent;\nimport demo.bridge.EntityRenderersEvent;\nimport java.util.*;\n") && !wildcard.contains("ScreenEvent;"),
+            "a wildcard import of a NeoForge package imports each mirrored class of it the file names, and no other: " + wildcard
+        );
         String neoData = "{\"type\":\"minecraft:crafting_shaped\",\"neoforge:conditions\":[{\"type\":\"neoforge:mod_loaded\",\"modid\":\"create\"}," +
             "{\"type\":\"neoforge:not\",\"value\":{\"type\":\"neoforge:mod_loaded\",\"modid\":\"jumbofurnace\"}},{\"type\":\"neoforge:tag_empty\",\"tag\":\"c:ingots/zinc\"}]}";
         DataConditions dataConditions = new DataConditions();

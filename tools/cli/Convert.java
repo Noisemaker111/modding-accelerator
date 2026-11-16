@@ -2842,6 +2842,30 @@ final class Convert {
      * NeoForge adds withTabsBefore and withTabsAfter to the game's creative tab builder to order tabs; Fabric's builder has
      * neither, so the calls go (the tab keeps its items and title, and takes the next free place) and a note says so.
      */
+    /**
+     * A wildcard import of a NeoForge package (import net.neoforged.neoforge.client.event.*;) becomes an import of each
+     * mirrored class of that package the file names, as the package itself does not exist on Fabric; a class the bridge
+     * does not mirror is then named in the compiler's errors, as with an explicit import.
+     */
+    static String wildcardBridgeImports(String text, Map<String, Object> classes, List<String> drops, String bridgePackage) {
+        Matcher wild = Pattern.compile("(?m)^import\\s+(net\\.neoforged\\.[\\w.]+)\\.\\*\\s*;[ \\t]*\\n").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (wild.find()) {
+            StringBuilder imports = new StringBuilder();
+            for (var c : classes.entrySet()) {
+                String name = c.getKey();
+                int dot = name.lastIndexOf('.');
+                if (!name.substring(0, dot).equals(wild.group(1))) continue;
+                if (dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) continue;
+                if (!Pattern.compile("(?<![\\w.])" + Pattern.quote(name.substring(dot + 1)) + "\\b").matcher(text).find()) continue;
+                imports.append("import ").append(bridgePackage).append('.').append(c.getValue()).append(";\n");
+            }
+            wild.appendReplacement(out, Matcher.quoteReplacement(imports.toString()));
+        }
+        wild.appendTail(out);
+        return out.toString();
+    }
+
     /** Where setAsideDatagen keeps data generation code the bridge cannot build: a folder no source set compiles. */
     static final String DATAGEN_ASIDE = "src/neoforge-datagen/java/";
 
@@ -3221,7 +3245,7 @@ final class Convert {
         sources.addAll(testJavaFiles());
         for (String file : sources) {
             String text = read(file);
-            String out = text;
+            String out = wildcardBridgeImports(text, classes, drops, bridgePackage);
             // Plain, static and nested-class imports of a mirrored class (import static ...FluidType.BUCKET_VOLUME;).
             for (var c : classes.entrySet()) if (!dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) out = out.replaceAll(
                 "(?m)^import(\\s+static)?\\s+" + Pattern.quote(c.getKey()) + "((?:\\.\\w+)*(?:\\.\\*)?)\\s*;",
