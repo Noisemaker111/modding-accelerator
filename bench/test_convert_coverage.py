@@ -70,6 +70,9 @@ check(rows["demo"]["bridge"] and not rows["old"]["bridge"] and rows["old"]["cove
       "a mod on a game version with no bridge layer has nothing covered: " + str(rows))
 provides = C.bridge_provides(rules, "neoforge", "26.3")
 check("get" in provides.get("net/neoforged/neoforge/registries/DeferredItem", set()), "a bridge class has the members of the bridge classes it extends (DeferredItem's get is DeferredHolder's)")
+old = C.bridge_provides(rules, "neoforge", "1.21.1")
+check("net/neoforged/neoforge/data/event/GatherDataEvent" in provides and "net/neoforged/neoforge/data/event/GatherDataEvent" not in old,
+      "a class a version layer drops is not provided for that version")
 game = {"net/minecraft/A": [["net/minecraft/B"], ["own"]], "net/minecraft/B": [["java/lang/Object"], ["inherited"]]}
 check(C.declared_by_game(game, "net/minecraft/A", "inherited") and C.declared_by_game(game, "net/minecraft/A", "hashCode"),
       "a method the game declares on a supertype, or Object's, is the game's")

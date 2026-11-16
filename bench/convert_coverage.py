@@ -135,11 +135,14 @@ def bridge_provides(rules, frm, minecraft):
         if b["from"] != frm:
             continue
         folders = [ROOT / b["folder"]]
+        drops = []
         if version(minecraft) < version(b["minecraft"]):
             layers = [l for l in b.get("layers", []) if version(minecraft) >= version(l["minecraft"]) and (not l.get("below") or version(minecraft) < version(l["below"]))]
             if not layers:
                 return None
-            folders.append(ROOT / max(layers, key=lambda l: version(l["minecraft"]))["folder"])
+            layer = max(layers, key=lambda l: version(l["minecraft"]))
+            folders.append(ROOT / layer["folder"])
+            drops = layer.get("drops", [])
         names = {}
         if frm == "neoforge":
             names = {simple.replace(".", "/"): full.replace(".", "/") for full, simple in b.get("classes", {}).items()}
@@ -147,6 +150,9 @@ def bridge_provides(rules, frm, minecraft):
         for folder in folders:
             for p in folder.rglob("*.java"):
                 rel = p.relative_to(folder).as_posix()[:-5]
+                # As convert reads them: the base folder's version layers are read only as the layer; a layer's drops go.
+                if folder == folders[0] and rel[:1].isdigit() or any((rel + ".java").startswith(d) for d in drops):
+                    continue
                 if "/" not in rel and frm == "fabric" or rel.startswith("mixin/"):
                     continue
                 if frm == "fabric":
