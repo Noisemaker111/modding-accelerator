@@ -231,7 +231,16 @@ final class Target {
             for (var original : view.originals.entrySet()) setup.originals.putIfAbsent(original.getKey(), original.getValue());
             for (var r : view.replacements.entrySet()) {
                 if (setup.pins.containsKey(r.getKey())) setup.replacements.putIfAbsent(r.getKey(), r.getValue());
-                else setup.unchecked.add(Json.map("artifact", r.getKey(), "version", r.getValue(), "reason", "a library of project " + sibling.get("path") + " moves, but its property has no gradle.properties owner mmt can find"));
+                else setup.unchecked.add(
+                    Json.map(
+                        "artifact",
+                        r.getKey(),
+                        "version",
+                        r.getValue(),
+                        "reason",
+                        "a library of project " + sibling.get("path") + " moves, but its property has no gradle.properties owner mmt can find"
+                    )
+                );
             }
             setup.applied.addAll(view.applied);
             setup.blockers.addAll(view.blockers);
@@ -363,7 +372,9 @@ final class Target {
             ).matcher(text);
             if (plugin.find()) {
                 if (newestArchitecturyPlugin == null) newestArchitecturyPlugin = newestArchitecturyPlugin(build);
-                if (!plugin.group(2).equals(newestArchitecturyPlugin)) text = text.substring(0, plugin.start()) + plugin.group(1) + newestArchitecturyPlugin + plugin.group(3) + text.substring(plugin.end());
+                if (!plugin.group(2).equals(newestArchitecturyPlugin)) {
+                    text = text.substring(0, plugin.start()) + plugin.group(1) + newestArchitecturyPlugin + plugin.group(3) + text.substring(plugin.end());
+                }
             }
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(file, before);
@@ -413,7 +424,16 @@ final class Target {
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(file, before);
             setup.texts.put(file, text);
-            setup.applied.add(Json.map("file", file.toString(), "change", "additionalRuntimeClasspath -> runtimeOnly for " + to, "evidence", "ModDevGradle has no additional runtime classpath after Minecraft 1.21.9"));
+            setup.applied.add(
+                Json.map(
+                    "file",
+                    file.toString(),
+                    "change",
+                    "additionalRuntimeClasspath -> runtimeOnly for " + to,
+                    "evidence",
+                    "ModDevGradle has no additional runtime classpath after Minecraft 1.21.9"
+                )
+            );
         }
     }
 
@@ -495,7 +515,16 @@ final class Target {
         }
         setup.originals.putIfAbsent(root, before);
         setup.texts.put(root, text);
-        setup.applied.add(Json.map("file", root.toString(), "change", "Loom " + loom + " declared in the root project (apply false), so its companion plugin resolves", "evidence", "Loom " + FIRST_COMPANION_LOOM + "+ applies net.fabricmc.fabric-loom-companion across the build"));
+        setup.applied.add(
+            Json.map(
+                "file",
+                root.toString(),
+                "change",
+                "Loom " + loom + " declared in the root project (apply false), so its companion plugin resolves",
+                "evidence",
+                "Loom " + FIRST_COMPANION_LOOM + "+ applies net.fabricmc.fabric-loom-companion across the build"
+            )
+        );
     }
 
     /** The first Loom published under net.fabricmc.fabric-loom, the plugin id of the unobfuscated game. */
@@ -878,7 +907,16 @@ final class Target {
         }
         boolean timestampKey = pin.group(2).toLowerCase(Locale.ROOT).contains("timestamp");
         if (timestampKey && !newest.matches(".+-\\d{8}\\.\\d{6}")) {
-            setup.unchecked.add(Json.map("artifact", "net.neoforged:neoform", "version", newest, "reason", "the build keeps a NeoForm timestamp, and NeoForm " + to + " is numbered without one; set the full version"));
+            setup.unchecked.add(
+                Json.map(
+                    "artifact",
+                    "net.neoforged:neoform",
+                    "version",
+                    newest,
+                    "reason",
+                    "the build keeps a NeoForm timestamp, and NeoForm " + to + " is numbered without one; set the full version"
+                )
+            );
             return;
         }
         String value = timestampKey ? newest.substring(newest.indexOf('-') + 1) : newest;
