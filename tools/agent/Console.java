@@ -116,7 +116,7 @@ final class Console {
                 "    throw new NoSuchFieldException(type.getName() + \".\" + name);\n  }\n"
             );
             source.append("  public Object run(Map<String, Object> vars) throws Throwable {\n    this.vars = vars;\n");
-            if (minecraft) source.append("    final Minecraft mc = Minecraft.getInstance();\n");
+            if (minecraft) source.append("    final Minecraft mc = Minecraft." + instanceMethod(game) + "();\n");
             else if (yarn) source.append(
                 "    final net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();\n"
             );
@@ -203,6 +203,19 @@ final class Console {
                 return defineClass(name, code, 0, code.length);
             }
         };
+    }
+
+    /**
+     * Minecraft.getInstance, by the name it has at run time: a shipped Forge client before 1.20.2 runs with SRG names,
+     * where it is m_91087_ (a pack's client that pack-run started).
+     */
+    private static String instanceMethod(ClassLoader loader) {
+        try {
+            Class.forName("net.minecraft.client.Minecraft", false, loader).getMethod("getInstance");
+            return "getInstance";
+        } catch (Throwable srg) {
+            return "m_91087_";
+        }
     }
 
     private static boolean loads(ClassLoader loader, String name) {
