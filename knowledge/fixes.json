@@ -1190,6 +1190,7 @@
       "id": "level-getminy",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "members": ["net.minecraft.world.level.LevelHeightAccessor.getMinBuildHeight"],
       "match": "symbol:\\s+(method )?getMinBuildHeight",
       "apply": {
         "find": "\\.getMinBuildHeight\\(\\)",
@@ -1210,6 +1211,7 @@
       "id": "level-getmaxy",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "members": ["net.minecraft.world.level.LevelHeightAccessor.getMaxBuildHeight"],
       "match": "symbol:\\s+(method )?getMaxBuildHeight",
       "apply": {
         "find": "\\.getMaxBuildHeight\\(\\)",
@@ -1250,6 +1252,7 @@
       "id": "equipable-to-component",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "members": ["net.minecraft.world.item.Equipable"],
       "match": "symbol:\\s+(class|variable) Equipable",
       "apply": {
         "find": "Equipable\\.get\\(([^;]+?)\\)",
@@ -1334,6 +1337,7 @@
       "id": "level-getgamerules-serverlevel",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "members": ["net.minecraft.world.level.Level.getGameRules"],
       "match": "symbol:\\s+(method )?getGameRules",
       "apply": {
         "find": "([\\w.()]+?)\\.level\\(\\)\\.getGameRules\\(\\)",
@@ -1377,6 +1381,7 @@
       "id": "entitytype-create-spawn-reason-natural",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "members": ["net.minecraft.world.entity.EntityType.create"],
       "match": "no suitable method found for create\\(ServerLevel\\)",
       "apply": {
         "find": "(EntityTypes?\\.[A-Z_]+)\\.create\\((\\w+)\\)",
@@ -1400,6 +1405,7 @@
       "id": "registry-get-item-optional",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "members": ["net.minecraft.core.Registry.get", "net.minecraft.core.DefaultedRegistry.get"],
       "match": "incompatible types: Optional<Reference<Item>> cannot be converted",
       "apply": {
         "find": "Item (\\w+) = (\\w+)\\.get\\((\\w+)\\);",
@@ -1460,6 +1466,7 @@
       "id": "mob-convert-to-conversion-params",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "members": ["net.minecraft.world.entity.Mob.convertTo"],
       "match": "no suitable method found for convertTo",
       "apply": {
         "find": "(\\w+)\\.convertTo\\((EntityTypes?\\.[A-Z_]+),\\s*(true|false)\\)",
@@ -1483,6 +1490,7 @@
       "id": "spawn-at-location-serverlevel",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "members": ["net.minecraft.world.entity.Entity.spawnAtLocation"],
       "match": "no suitable method found for spawnAtLocation",
       "apply": {
         "find": "(\\w+)\\.spawnAtLocation\\(([^)]*)\\)",
@@ -1867,6 +1875,7 @@
       "id": "gui-blit-render-type-7-official",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
       "match": "no suitable method found for blit\\(",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -1886,6 +1895,7 @@
       "id": "gui-blit-render-type-9-official",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
       "match": "no suitable method found for blit\\(",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -1905,6 +1915,7 @@
       "id": "gui-blit-render-type-10-official",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
       "match": "no suitable method found for blit\\(",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -1924,6 +1935,7 @@
       "id": "gui-blit-render-type-11-official",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
       "match": "no suitable method found for blit\\(",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -2218,6 +2230,7 @@
       "id": "tooltip-component-height-font-official",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
+      "members": ["net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent.getHeight"],
       "match": "does not override abstract method getHeight\\(Font\\) in ClientTooltipComponent",
       "apply": {
         "find": "\\bpublic int getHeight\\(\\s*\\)",
@@ -3670,6 +3683,7 @@
       "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
       "match": "no suitable method found for blit\\((?:ResourceLocation|Identifier),int,int,(?:int|float),(?:int|float),int,int,int,int\\)",
       "apply": {
         "find": "\\.blit\\(\\s*(?!RenderType|RenderPipelines|net\\.minecraft)((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*\\)",
@@ -4206,6 +4220,7 @@
       "id": "hunger-exhaustion-accessor-official",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
+      "members": ["net.minecraft.world.food.FoodData.getExhaustionLevel", "net.minecraft.world.food.FoodData.setExhaustion"],
       "match": "symbol:\\s+method (?:getExhaustionLevel|setExhaustion)\\(",
       "apply": {
         "transform": "accessor",
@@ -4355,6 +4370,7 @@
       "id": "registry-access-lookup-official",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
+      "members": ["net.minecraft.core.RegistryAccess.registry"],
       "match": "symbol:\\s+method registry\\(ResourceKey<[^\\n]*\\n\\s*location: (?:interface RegistryAccess|variable \\w+ of type RegistryAccess)",
       "apply": {
         "find": "\\.registry\\(",
@@ -4895,6 +4911,7 @@
       "id": "minecraft-get-timer-delta-tracker",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.Minecraft.getTimer"],
       "match": "symbol:\\s+method getTimer\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )Minecraft\\b",
       "apply": {
         "find": "\\.getTimer\\(\\)",
@@ -4915,6 +4932,7 @@
       "id": "event-loop-tell-schedule",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.util.thread.BlockableEventLoop.tell"],
       "match": "symbol:\\s+method tell\\(",
       "apply": {
         "find": "\\.tell\\(",
@@ -4935,6 +4953,7 @@
       "id": "mth-color-argb",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.util.Mth.color"],
       "match": "symbol:\\s+method color\\(\\w+,\\w+,\\w+\\)\\n\\s*location: class Mth",
       "apply": {
         "find": "\\bMth\\.color\\(",
@@ -4958,6 +4977,7 @@
       "id": "options-set-key-mapping",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.Options.setKey"],
       "match": "symbol:\\s+method setKey\\(KeyMapping,Key\\)\\n\\s*location: (?:variable \\w+ of type |class )Options\\b",
       "apply": {
         "find": "\\b(\\w+(?:\\.\\w+\\(\\))?)\\.setKey\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\);",
@@ -5018,6 +5038,7 @@
       "id": "gui-blit-sprite-render-type-5",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blitSprite"],
       "match": "no suitable method found for blitSprite\\((?:ResourceLocation|TextureAtlasSprite),int,int,int,int\\)",
       "apply": {
         "find": "\\.blitSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5041,6 +5062,7 @@
       "id": "gui-blit-sprite-render-type-offset",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blitSprite"],
       "match": "no suitable method found for blitSprite\\((?:ResourceLocation|TextureAtlasSprite),int,int,int,int,int\\)",
       "apply": {
         "find": "\\.blitSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5064,6 +5086,7 @@
       "id": "gui-blit-sprite-region-render-type",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blitSprite"],
       "match": "TextureAtlasSprite cannot be converted to (?:RenderPipeline|Function<)",
       "apply": {
         "find": "\\.blitSprite\\(\\s*(\\w*[Ss]prite\\w*)\\s*,((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5087,6 +5110,7 @@
       "id": "gui-blit-tiled-sprite-render-type",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blitTiledSprite"],
       "match": "method blitTiledSprite in class GuiGraphics cannot be applied to given types",
       "apply": {
         "find": "\\.blitTiledSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5110,6 +5134,7 @@
       "id": "gui-blit-render-type-9-lossy",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
       "match": "possible lossy conversion from float to int",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5133,6 +5158,7 @@
       "id": "gui-graphics-set-color-shader",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.gui.GuiGraphics.setColor"],
       "match": "symbol:\\s+method setColor\\((?:int|float|double)(?:,(?:int|float|double)){3}\\)\\n\\s*location: (?:variable \\w+ of type |class )GuiGraphics\\b",
       "apply": {
         "find": "\\b\\w+\\.setColor\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5577,6 +5603,7 @@
       "id": "registry-get-holder",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.core.Registry.getHolder"],
       "match": "symbol:\\s+method getHolder\\((?:int|ResourceKey<[^)]*>|ResourceLocation)\\)",
       "apply": {
         "find": "\\.getHolder\\(",
@@ -5740,6 +5767,7 @@
       "id": "json-reload-listener-element",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener"],
       "match": "is not abstract and does not override abstract method apply\\(Object,ResourceManager,ProfilerFiller\\) in SimplePreparableReloadListener",
       "apply": {
         "find": "\\bextends\\s+SimpleJsonResourceReloadListener\\b(?!\\s*<)",
@@ -5920,6 +5948,7 @@
       "id": "registry-access-lookup-or-throw",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.core.RegistryAccess.registryOrThrow"],
       "match": "symbol:\\s+method registryOrThrow\\(",
       "apply": {
         "find": "\\.registryOrThrow\\(",
@@ -6211,6 +6240,7 @@
       "id": "item-interaction-result-type",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.ItemInteractionResult"],
       "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
       "apply": {
         "find": "\\bItemInteractionResult\\b",
@@ -6315,6 +6345,7 @@
       "id": "direction-property-type",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.level.block.state.properties.DirectionProperty"],
       "match": "symbol:\\s+(?:class|variable) DirectionProperty\\b",
       "apply": {
         "find": "(?m)^(?!import)(.*?)\\bDirectionProperty\\b(?!\\.)",
@@ -6482,6 +6513,7 @@
       "id": "block-update-shape-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.level.block.state.BlockBehaviour.updateShape"],
       "match": "method does not override or implement a method from a supertype|method updateShape in class \\w+ cannot be applied",
       "apply": {
         "find": "(\\bupdateShape\\s*\\()\\s*(?:final\\s+)?BlockState\\s+(\\w+)\\s*,\\s*(?:final\\s+)?Direction\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockState\\s+(\\w+)\\s*,\\s*(?:final\\s+)?LevelAccessor\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockPos\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockPos\\s+(\\w+)\\s*\\)",
@@ -6731,6 +6763,7 @@
       "id": "interaction-holder-type-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.InteractionResultHolder"],
       "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
       "apply": {
         "find": "\\bInteractionResultHolder\\s*<[^<>;]*(?:<[^<>;]*>[^<>;]*)?>",
@@ -6891,6 +6924,7 @@
       "id": "interaction-result-sided-success-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.InteractionResult.sidedSuccess", "net.minecraft.world.InteractionResult.CONSUME_PARTIAL", "net.minecraft.world.InteractionResult.SUCCESS_NO_ITEM_USED"],
       "match": "symbol:\\s+(?:method sidedSuccess\\(boolean\\)|variable (?:CONSUME_PARTIAL|SUCCESS_NO_ITEM_USED))\\s*\\n\\s*location: (?:class|interface) InteractionResult",
       "apply": {
         "find": "\\bInteractionResult\\.sidedSuccess\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -6951,6 +6985,7 @@
       "id": "block-entity-type-builder-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.level.block.entity.BlockEntityType$Builder"],
       "match": "symbol:\\s+(?:class|method) (?:Builder|of)\\b[^\\n]*\\n\\s*location: class BlockEntityType|symbol:\\s+class Builder\\b",
       "apply": {
         "find": "\\bBlockEntityType\\.Builder\\.of\\(\\s*((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+(?:,(?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)*)\\)\\s*\\.build\\(\\s*(?:null|[^()]*(?:\\([^()]*\\))?[^()]*)\\)",
@@ -6972,6 +7007,7 @@
       "id": "properties-loot-from-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.level.block.state.BlockBehaviour$Properties.lootFrom"],
       "match": "symbol:\\s+method lootFrom\\(",
       "apply": {
         "find": "\\.lootFrom\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -7405,6 +7441,7 @@
       "id": "fast-color-argb32-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.util.FastColor"],
       "match": "symbol:\\s+(?:class|variable) FastColor\\b|package FastColor does not exist|cannot find symbol\\s+import net\\.minecraft\\.util\\.FastColor",
       "apply": {
         "find": "\\bFastColor\\.ARGB32\\.",
@@ -7568,6 +7605,7 @@
       "id": "sign-item-arguments-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.item.SignItem.<init>"],
       "match": "incompatible types: Properties cannot be converted to Block",
       "apply": {
         "find": "\\bnew\\s+SignItem\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -7588,6 +7626,7 @@
       "id": "ingredient-of-item-tag-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.item.crafting.Ingredient.of"],
       "match": "no suitable method found for of\\(TagKey<Item>\\)",
       "apply": {
         "find": "\\bIngredient\\.of\\(\\s*((?:\\w+\\.)*(?:Tags\\.Items|ItemTags)\\.[A-Z][A-Z0-9_]*|\\w*[Tt]ag\\w*)\\s*\\)",
@@ -7611,6 +7650,7 @@
       "id": "core-shaders-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["com.mojang.blaze3d.systems.RenderSystem.setShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityTranslucentEmissiveShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeItemEntityTranslucentCullShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityCutoutNoCullZOffsetShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextBackgroundSeeThroughShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextIntensitySeeThroughShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTranslucentMovingBlockShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGuiGhostRecipeOverlayShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntitySmoothCutoutShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityCutoutNoCullShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityTranslucentShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeArmorCutoutNoCullShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGlintTranslucentShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGuiTextHighlightShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeArmorEntityGlintShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityNoOutlineShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextBackgroundShader", "net.minecraft.client.renderer.GameRenderer.getPositionColorTexLightmapShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextSeeThroughShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextIntensityShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeCutoutMippedShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityCutoutShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityShadowShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityAlphaShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityDecalShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityGlintShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEnergySwirlShader", "net.minecraft.client.renderer.GameRenderer.getPositionColorLightmapShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntitySolidShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTranslucentShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeBreezeWindShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEndGatewayShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGuiOverlayShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeBeaconBeamShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEndPortalShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeLightningShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeWaterMaskShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeCrumblingShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTripwireShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeOutlineShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeCloudsShader", "net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeCutoutShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGlintShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeSolidShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeLeashShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeLinesShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEyesShader", "net.minecraft.client.renderer.GameRenderer.getPositionColorShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGuiShader", "net.minecraft.client.renderer.GameRenderer.getPositionTexShader", "net.minecraft.client.renderer.GameRenderer.getParticleShader", "net.minecraft.client.renderer.GameRenderer.getPositionShader"],
       "match": "symbol:\\s+method get\\w+Shader\\(\\)",
       "apply": {
         "find": "\\bGameRenderer::get(RendertypeEntityTranslucentEmissive|RendertypeItemEntityTranslucentCull|RendertypeEntityCutoutNoCullZOffset|RendertypeTextBackgroundSeeThrough|RendertypeTextIntensitySeeThrough|RendertypeTranslucentMovingBlock|RendertypeGuiGhostRecipeOverlay|RendertypeEntitySmoothCutout|RendertypeEntityCutoutNoCull|RendertypeEntityTranslucent|RendertypeArmorCutoutNoCull|RendertypeGlintTranslucent|RendertypeGuiTextHighlight|RendertypeArmorEntityGlint|RendertypeEntityNoOutline|RendertypeTextBackground|PositionColorTexLightmap|RendertypeTextSeeThrough|RendertypeTextIntensity|RendertypeCutoutMipped|RendertypeEntityCutout|RendertypeEntityShadow|RendertypeEntityAlpha|RendertypeEntityDecal|RendertypeEntityGlint|RendertypeEnergySwirl|PositionColorLightmap|RendertypeEntitySolid|RendertypeTranslucent|RendertypeBreezeWind|RendertypeEndGateway|RendertypeGuiOverlay|RendertypeBeaconBeam|RendertypeEndPortal|RendertypeLightning|RendertypeWaterMask|RendertypeCrumbling|RendertypeTripwire|RendertypeOutline|RendertypeClouds|PositionTexColor|RendertypeCutout|RendertypeGlint|RendertypeSolid|RendertypeLeash|RendertypeLines|RendertypeText|RendertypeEyes|PositionColor|RendertypeGui|PositionTex|Particle|Position)Shader\\b",
@@ -7660,6 +7700,7 @@
       "id": "entity-render-state-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.renderer.entity.EntityRenderer.render", "net.minecraft.client.renderer.entity.EntityRenderer.getTextureLocation"],
       "match": "wrong number of type arguments; required 2",
       "apply": {
         "transform": "entity-render-state"
@@ -7679,6 +7720,7 @@
       "id": "hurt-server-override-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.entity.Entity.hurt"],
       "match": "does not override abstract method hurtServer|hurt\\(DamageSource,float\\) in \\w+ cannot override hurt",
       "apply": {
         "find": "(?m)^([ \\t]*)(@Override\\s+)?public\\s+boolean\\s+hurt\\s*\\(\\s*(?:final\\s+)?DamageSource\\s+(\\w+)\\s*,\\s*(?:final\\s+)?float\\s+(\\w+)\\s*\\)",
@@ -7735,6 +7777,107 @@
         "error": "Trap.java:3: error: incompatible types: void cannot be converted to boolean\n",
         "before": "class Trap {\n    void spring(Entity target) {\n        if (target.hurt(damageSources().generic(), 4.0F)) {\n            count++;\n        }\n        target.hurt(damageSources().generic(), 1.0F);\n    }\n}\n",
         "after": "class Trap {\n    void spring(Entity target) {\n        if (target.hurtOrSimulate(damageSources().generic(), 4.0F)) {\n            count++;\n        }\n        target.hurt(damageSources().generic(), 1.0F);\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "gui-buffer-source-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.client.gui.GuiGraphics.bufferSource"
+      ],
+      "match": "symbol:\\s+method bufferSource\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )GuiGraphics",
+      "apply": {
+        "find": "(?<![\\w.])[\\w.]*\\w\\s*\\.\\s*bufferSource\\s*\\(\\s*\\)",
+        "replace": "Minecraft.getInstance().renderBuffers().bufferSource()",
+        "ensureImports": [
+          "net.minecraft.client.Minecraft"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 made GuiGraphics.bufferSource() private (drawSpecial takes a callback instead). GuiGraphics is still built on the client's own renderBuffers().bufferSource(), so that is the same buffer source the call returned.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: GuiGraphics.bufferSource() public in 1.21.1, gone in 1.21.2; GuiGraphics(Minecraft, BufferSource) built by GameRenderer from minecraft.renderBuffers().bufferSource() in both",
+      "test": {
+        "error": "Hud.java:5: error: cannot find symbol\n        guiGraphics.bufferSource().endBatch();\n                   ^\n  symbol:   method bufferSource()\n  location: variable guiGraphics of type GuiGraphics\n",
+        "before": "package mod;\n\nclass Hud {\n    void draw(GuiGraphics guiGraphics) {\n        guiGraphics.bufferSource().endBatch();\n    }\n}\n",
+        "after": "package mod;\nimport net.minecraft.client.Minecraft;\n\nclass Hud {\n    void draw(GuiGraphics guiGraphics) {\n        Minecraft.getInstance().renderBuffers().bufferSource().endBatch();\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "registry-as-lookup-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.core.Registry.asLookup"
+      ],
+      "match": "symbol:\\s+method asLookup\\(\\)",
+      "apply": {
+        "find": "\\s*\\.\\s*asLookup\\s*\\(\\s*\\)",
+        "replace": ""
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's Registry is itself a HolderLookup.RegistryLookup, so asLookup() (which returned one) goes and the registry is used directly.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: 1.21.2 interface Registry extends Keyable, HolderLookup$RegistryLookup, IdMap; asLookup removed",
+      "test": {
+        "error": "Tags.java:3: error: cannot find symbol\n        var lookup = BuiltInRegistries.BLOCK.asLookup();\n                                            ^\n  symbol:   method asLookup()\n  location: variable BLOCK of type DefaultedRegistry<Block>\n",
+        "before": "class Tags {\n    void f() {\n        var lookup = BuiltInRegistries.BLOCK.asLookup();\n    }\n}\n",
+        "after": "class Tags {\n    void f() {\n        var lookup = BuiltInRegistries.BLOCK;\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "texture-state-shard-tristate-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.client.renderer.RenderStateShard$TextureStateShard.<init>"
+      ],
+      "match": "TextureStateShard",
+      "apply": {
+        "find": "(new\\s+(?:RenderStateShard\\.)?TextureStateShard\\s*\\(\\s*[^,()]+(?:\\([^()]*\\))?\\s*,\\s*)(true|false)(\\s*,)",
+        "replace": "$1TriState.$^2$3",
+        "ensureImports": [
+          "net.minecraft.util.TriState"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2's TextureStateShard(texture, blur, mipmap) takes the blur as a TriState; a literal true or false is TriState.TRUE or FALSE.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: RenderStateShard$TextureStateShard.<init>(ResourceLocation,boolean,boolean) -> <init>(ResourceLocation,TriState,boolean); TriState TRUE, FALSE, DEFAULT",
+      "test": {
+        "error": "Types.java:4: error: constructor TextureStateShard in class TextureStateShard cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass Types {\n    static final Object T = new RenderStateShard.TextureStateShard(ResourceLocation.parse(\"x:y\"), false, false);\n}\n",
+        "after": "package mod;\nimport net.minecraft.util.TriState;\n\nclass Types {\n    static final Object T = new RenderStateShard.TextureStateShard(ResourceLocation.parse(\"x:y\"), TriState.FALSE, false);\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "texture-state-shard-tristate-expr-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.client.renderer.RenderStateShard$TextureStateShard.<init>"
+      ],
+      "match": "TextureStateShard",
+      "apply": {
+        "find": "(new\\s+(?:RenderStateShard\\.)?TextureStateShard\\s*\\(\\s*[^,()]+(?:\\([^()]*\\))?\\s*,\\s*)(?!TriState\\.)([\\w.!]+)(\\s*,)",
+        "replace": "$1($2 ? TriState.TRUE : TriState.FALSE)$3",
+        "ensureImports": [
+          "net.minecraft.util.TriState"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The same for a blur given as a variable or field: it chooses TriState.TRUE or FALSE.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: RenderStateShard$TextureStateShard.<init>(ResourceLocation,boolean,boolean) -> <init>(ResourceLocation,TriState,boolean)",
+      "test": {
+        "error": "Types.java:4: error: constructor TextureStateShard in class TextureStateShard cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass Types {\n    Object t(boolean blur) { return new TextureStateShard(TEXTURE, blur, false); }\n}\n",
+        "after": "package mod;\nimport net.minecraft.util.TriState;\n\nclass Types {\n    Object t(boolean blur) { return new TextureStateShard(TEXTURE, (blur ? TriState.TRUE : TriState.FALSE), false); }\n}\n",
         "from": "written for this rule"
       }
     }

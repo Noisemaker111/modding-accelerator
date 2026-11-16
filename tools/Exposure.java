@@ -1,0 +1,465 @@
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.*;
+import java.util.regex.*;
+import java.util.stream.*;
+import java.util.zip.*;
+
+/**
+ * Exposure - what a mod uses of the game, and what of it a port would carry over, without building anything.
+ *
+ * Every class, method and field of the game (and of NeoForge, with --loader neoforge) that a mod's bytecode refers to,
+ * and every game method it overrides, is found where the old release declares it, followed through the route map
+ * (GameDiff --chain FROM,TO) to the new release, and looked up there:
+ *   ok        the same name and descriptor are there (a supertype may declare it);
+ *   renamed   the map moves it to a name that is there;
+ *   rewritten the map's call-site or class rewrites (from the game's own code) give its replacement;
+ *   signature the new release has the name with other parameters or another return type;
+ *   removed   nothing of that name is left.
+ * The last two are what a port cannot carry yet. Mods are jars or class folders in the old release's Mojang names
+ * (NeoForge jars from 1.20.5 on, any jar from 26.1 on, or a Mojang-named build's classes).
+ *
+ *   java Exposure --from 1.21.1 --to 1.21.2 --map route.json [--loader neoforge] --out report.json MOD.jar|DIR ...
+ *
+ * report.json: per mod the counts and its broken members; across mods, every broken member with the number of mods
+ * that use it, most first (the order to fix them in), and the share of mods with nothing broken.
+ */
+public final class Exposure {
+
+    record Use(char kind, String owner, String name, String desc) {}
+
+    record Verdict(String status, String key, String detail) {}
+
+    public static void main(String[] args) throws Exception {
+        String from = null, to = null, map = null, out = null, loader = null, rules = null;
+        List<Path> mods = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--from" -> from = args[++i];
+                case "--to" -> to = args[++i];
+                case "--map" -> map = args[++i];
+                case "--out" -> out = args[++i];
+                case "--loader" -> loader = args[++i];
+                case "--cache" -> VersionMap.cache = Path.of(args[++i]).toAbsolutePath();
+                case "--rules" -> rules = args[++i];
+                default -> mods.add(Path.of(args[i]));
+            }
+        }
+        if (from == null || to == null || map == null || out == null || mods.isEmpty()) {
+            System.err.println("usage: Exposure --from V --to V --map route.json [--loader neoforge] --out report.json MOD.jar|DIR ...");
+            System.exit(2);
+        }
+        GameDiff.Snap a = snap(from, loader), b = snap(to, loader);
+        Route route = Route.read(Path.of(map));
+        if (rules != null) {
+            route.ruled.addAll(ruledMembers(Path.of(rules), from, to));
+        }
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("from", from);
+        report.put("to", to);
+        report.put("loader", loader == null ? "" : loader);
+        List<Object> perMod = new ArrayList<>();
+        Map<String, Set<String>> brokenBy = new TreeMap<>();
+        Map<String, String> brokenDetail = new HashMap<>();
+        int clean = 0, read = 0;
+        for (Path mod : mods) {
+            Map<String, byte[]> classes;
+            try {
+                classes = classes(mod);
+            } catch (IOException | RuntimeException unreadable) {
+                perMod.add(Map.of("mod", mod.getFileName().toString(), "error", String.valueOf(unreadable.getMessage())));
+                continue;
+            }
+            Set<Use> uses = uses(classes, a);
+            Map<String, Integer> counts = new TreeMap<>();
+            List<Object> broken = new ArrayList<>();
+            for (Use u : uses) {
+                Verdict v = judge(u, a, b, route);
+                if (v == null) {
+                    continue; // not the game's (a library, the JDK, the mod itself)
+                }
+                if ((v.status().equals("signature") || v.status().equals("removed")) && route.ruled(v.key())) {
+                    counts.merge("ruled", 1, Integer::sum);
+                    continue;
+                }
+                counts.merge(v.status(), 1, Integer::sum);
+                if (v.status().equals("signature") || v.status().equals("removed")) {
+                    broken.add(Map.of("member", v.key(), "status", v.status(), "detail", v.detail()));
+                    brokenBy.computeIfAbsent(v.key(), k -> new TreeSet<>()).add(mod.getFileName().toString());
+                    brokenDetail.putIfAbsent(v.key(), v.status() + (v.detail().isEmpty() ? "" : ": " + v.detail()));
+                }
+            }
+            read++;
+            int game = counts.values().stream().mapToInt(Integer::intValue).sum();
+            if (broken.isEmpty() && game > 0) {
+                clean++;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("mod", mod.getFileName().toString());
+            row.put("gameUses", game);
+            row.put("counts", counts);
+            row.put("carried", game == 0 ? 1.0 : Math.round(1000.0 * (game - broken.size()) / game) / 1000.0);
+            broken.sort(Comparator.comparing(o -> String.valueOf(((Map<?, ?>) o).get("member"))));
+            row.put("broken", broken);
+            perMod.add(row);
+        }
+        List<Object> ranked = new ArrayList<>();
+        brokenBy.entrySet()
+            .stream()
+            .sorted((x, y) -> y.getValue().size() != x.getValue().size() ? y.getValue().size() - x.getValue().size() : x.getKey().compareTo(y.getKey()))
+            .forEach(e -> ranked.add(Map.of("member", e.getKey(), "mods", e.getValue().size(), "why", brokenDetail.get(e.getKey()), "examples", List.copyOf(e.getValue()).subList(0, Math.min(5, e.getValue().size())))));
+        report.put("modsRead", read);
+        report.put("modsWithNothingBroken", clean);
+        report.put("mods", perMod);
+        report.put("brokenByMods", ranked);
+        Files.createDirectories(Path.of(out).toAbsolutePath().getParent());
+        Files.writeString(Path.of(out), Json.write(report), StandardCharsets.UTF_8);
+        System.out.printf("%s -> %s: %d mods read, %d with nothing broken, %d distinct broken members%n", from, to, read, clean, ranked.size());
+        for (int i = 0; i < Math.min(15, ranked.size()); i++) {
+            Map<?, ?> r = (Map<?, ?>) ranked.get(i);
+            System.out.printf("  %3d mods  %s  (%s)%n", (Integer) r.get("mods"), r.get("member"), r.get("why"));
+        }
+    }
+
+    /** One release of the game in Mojang names, with NeoForge's own classes when asked. */
+    static GameDiff.Snap snap(String version, String loader) throws Exception {
+        if (!"neoforge".equals(loader)) {
+            return GameDiff.load(version, null, null);
+        }
+        String metadata = VersionMap.fetchText(GameDiff.NEOFORGE + "maven-metadata.xml", "neoforge-maven-metadata.xml");
+        String lv = GameDiff.neoforgeFor(version, metadata);
+        Path jar = lv == null ? null : VersionMap.fetch(GameDiff.NEOFORGE + lv + "/neoforge-" + lv + "-universal.jar", "neoforge-" + lv + "-universal.jar");
+        return GameDiff.load(version, jar, lv);
+    }
+
+    /** A jar's (or a folder's) class files by internal name; nested jars (jar-in-jar libraries) are not the mod's. */
+    static Map<String, byte[]> classes(Path mod) throws IOException {
+        Map<String, byte[]> out = new LinkedHashMap<>();
+        if (Files.isDirectory(mod)) {
+            try (Stream<Path> walk = Files.walk(mod)) {
+                for (Path p : walk.filter(p -> p.toString().endsWith(".class")).toList()) {
+                    out.put(mod.relativize(p).toString().replace('\\', '/').replaceAll("\\.class$", ""), Files.readAllBytes(p));
+                }
+            }
+            return out;
+        }
+        try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(mod))) {
+            for (ZipEntry e; (e = zip.getNextEntry()) != null; ) {
+                String n = e.getName();
+                if (n.endsWith(".class") && !n.startsWith("META-INF/")) {
+                    out.put(n.replaceAll("\\.class$", ""), zip.readAllBytes());
+                }
+            }
+        }
+        return out;
+    }
+
+    static boolean gameName(String internal) {
+        return internal != null && (internal.startsWith("net/minecraft/") || internal.startsWith("com/mojang/") || internal.startsWith("net/neoforged/"));
+    }
+
+    /** Everything of the game the mod's classes name: calls, field access, types, supertypes, and overridden methods. */
+    static Set<Use> uses(Map<String, byte[]> classes, GameDiff.Snap a) {
+        Set<Use> out = new LinkedHashSet<>();
+        for (var e : classes.entrySet()) {
+            GameDiff.RawCls rc;
+            try {
+                rc = GameDiff.parse(e.getValue());
+            } catch (RuntimeException broken) {
+                continue;
+            }
+            if (gameName(rc.sup)) {
+                out.add(new Use('c', rc.sup, null, null));
+            }
+            for (String i : rc.ifaces) {
+                if (gameName(i)) {
+                    out.add(new Use('c', i, null, null));
+                }
+            }
+            for (var f : rc.fields.values()) {
+                for (String t : types(f[0])) {
+                    out.add(new Use('c', t, null, null));
+                }
+            }
+            List<String> supers = gameSupertypes(rc, a);
+            for (GameDiff.RawMeth m : rc.methods.values()) {
+                for (String t : types(m.desc)) {
+                    out.add(new Use('c', t, null, null));
+                }
+                for (GameDiff.RawRef r : m.refs) {
+                    if (r.kind() == 'c' && gameName(r.owner())) {
+                        out.add(new Use('c', r.owner(), null, null));
+                    } else if ((r.kind() == 'm' || r.kind() == 'f') && gameName(r.owner())) {
+                        out.add(new Use(r.kind(), r.owner(), r.name(), r.desc()));
+                    }
+                }
+                // An override of a game method: the mod relies on that method's name and descriptor staying.
+                if ((m.flags & 0x000A) == 0 && !m.name.startsWith("<")) {
+                    for (String s : supers) {
+                        GameDiff.Meth over = a.method(s, m.name, m.desc);
+                        if (over != null && (over.flags & 0x001A) == 0) {
+                            out.add(new Use('o', s, m.name, m.desc));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    /** The game classes a mod class extends or implements, nearest first, through the game's own hierarchy. */
+    static List<String> gameSupertypes(GameDiff.RawCls rc, GameDiff.Snap a) {
+        List<String> out = new ArrayList<>();
+        Deque<String> queue = new ArrayDeque<>();
+        if (gameName(rc.sup)) {
+            queue.add(rc.sup);
+        }
+        for (String i : rc.ifaces) {
+            if (gameName(i)) {
+                queue.add(i);
+            }
+        }
+        Set<String> seen = new HashSet<>();
+        while (!queue.isEmpty()) {
+            String n = queue.poll();
+            if (!seen.add(n)) {
+                continue;
+            }
+            out.add(n);
+            GameDiff.Cls c = a.classes.get(n);
+            if (c == null) {
+                continue;
+            }
+            if (c.sup != null) {
+                queue.add(c.sup);
+            }
+            queue.addAll(c.ifaces);
+        }
+        return out;
+    }
+
+    static List<String> types(String desc) {
+        List<String> out = new ArrayList<>();
+        Matcher m = Pattern.compile("L([^;<]+)[;<]").matcher(desc == null ? "" : desc);
+        while (m.find()) {
+            if (gameName(m.group(1))) {
+                out.add(m.group(1));
+            }
+        }
+        return out;
+    }
+
+    /** The member a reference names, where the old release declares it (the owner or one of its supertypes). */
+    static GameDiff.Cls declaring(GameDiff.Snap s, String owner, char kind, String name, String desc) {
+        Deque<String> queue = new ArrayDeque<>(List.of(owner));
+        Set<String> seen = new HashSet<>();
+        while (!queue.isEmpty()) {
+            GameDiff.Cls c = s.classes.get(queue.poll());
+            if (c == null || !seen.add(c.name)) {
+                continue;
+            }
+            if (kind == 'f' ? c.fields.containsKey(name) : c.methods.containsKey(name + desc)) {
+                return c;
+            }
+            if (c.sup != null) {
+                queue.add(c.sup);
+            }
+            queue.addAll(c.ifaces);
+        }
+        return null;
+    }
+
+    static Verdict judge(Use u, GameDiff.Snap a, GameDiff.Snap b, Route route) {
+        if (u.kind() == 'c') {
+            if (!a.classes.containsKey(u.owner())) {
+                return null;
+            }
+            String target = route.cls(u.owner());
+            String key = dotted(u.owner());
+            if (b.classes.containsKey(target)) {
+                return new Verdict(target.equals(u.owner()) ? "ok" : "renamed", key, "");
+            }
+            if (route.classRewrites.containsKey(u.owner())) {
+                return new Verdict("rewritten", key, "-> " + dotted(route.classRewrites.get(u.owner())));
+            }
+            return new Verdict("removed", key, "class");
+        }
+        GameDiff.Cls decl = declaring(a, u.owner(), u.kind() == 'f' ? 'f' : 'm', u.name(), u.desc());
+        if (decl == null) {
+            return null; // a library's or the JDK's member reached through a game class, or not the game's at all
+        }
+        String owner = decl.name;
+        String key = dotted(owner) + "." + u.name() + (u.kind() == 'f' ? "" : u.desc());
+        if (u.kind() == 'f') {
+            String[] moved = route.field(owner, u.name());
+            String newOwner = moved[0], newName = moved[1];
+            if (declaring(b, newOwner, 'f', newName, null) != null) {
+                return new Verdict(newOwner.equals(route.cls(owner)) && newName.equals(u.name()) ? "ok" : "renamed", key, "");
+            }
+            if (!owner.equals(u.owner()) && declaring(b, route.cls(u.owner()), 'f', u.name(), null) != null) {
+                return new Verdict("ok", key, "");
+            }
+            return new Verdict("removed", key, "field");
+        }
+        String[] moved = route.method(owner, u.name(), u.desc());
+        String newOwner = moved[0], newName = moved[1], newDesc = moved[2];
+        // The class the mod's code names may declare it itself now (1.21.2 took sendSystemMessage from Entity, and
+        // Player keeps its own): a call written on that class still compiles.
+        if (!owner.equals(u.owner()) && moved[1].equals(u.name()) && declaring(b, route.cls(u.owner()), 'm', u.name(), route.desc(u.desc())) != null) {
+            return new Verdict("ok", key, "");
+        }
+        if (declaring(b, newOwner, 'm', newName, newDesc) != null) {
+            boolean same = newName.equals(u.name()) && newOwner.equals(route.cls(owner));
+            return new Verdict(same ? "ok" : "renamed", key, same ? "" : "-> " + dotted(newOwner) + "." + newName);
+        }
+        if (route.rewrites.contains(owner + "." + u.name() + u.desc())) {
+            return new Verdict("rewritten", key, "");
+        }
+        GameDiff.Cls target = b.classes.get(newOwner);
+        boolean sameName = false;
+        for (GameDiff.Cls c = target; c != null && !sameName; c = c.sup == null ? null : b.classes.get(c.sup)) {
+            for (String m : c.methods.keySet()) {
+                sameName |= m.startsWith(newName + "(");
+            }
+        }
+        return new Verdict(sameName ? "signature" : "removed", key, u.kind() == 'o' ? "overridden" : "");
+    }
+
+    /**
+     * The game members the port rules of knowledge/fixes.json say they carry ("members"), for the rules whose update lies
+     * on this route in its direction: a member a rule rewrites is carried over though the map alone cannot.
+     */
+    static Set<String> ruledMembers(Path rules, String from, String to) throws IOException {
+        Set<String> out = new HashSet<>();
+        boolean forward = compareVersions(from, to) < 0;
+        for (Object o : Json.array(Json.read(rules).get("rules"))) {
+            var rule = Json.object(o);
+            if (!(rule.get("members") instanceof List<?> members)) {
+                continue;
+            }
+            String[] jump = Json.text(rule, "jump", "").replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
+            if (jump.length != 2) {
+                continue;
+            }
+            boolean ruleForward = compareVersions(jump[0], jump[1]) < 0;
+            String lo = forward ? from : to, hi = forward ? to : from;
+            String rlo = ruleForward ? jump[0] : jump[1], rhi = ruleForward ? jump[1] : jump[0];
+            if (ruleForward != forward || compareVersions(rlo, lo) < 0 || compareVersions(rhi, hi) > 0) {
+                continue;
+            }
+            for (Object m : members) {
+                out.add(String.valueOf(m));
+            }
+        }
+        return out;
+    }
+
+    /** Releases compared number by number (1.21.10 after 1.21.9, 26.1 after 1.21.11). */
+    static int compareVersions(String a, String b) {
+        String[] x = a.split("\\D+"), y = b.split("\\D+");
+        for (int i = 0; i < Math.max(x.length, y.length); i++) {
+            int p = i < x.length && !x[i].isEmpty() ? Integer.parseInt(x[i]) : 0, q = i < y.length && !y[i].isEmpty() ? Integer.parseInt(y[i]) : 0;
+            if (p != q) {
+                return Integer.compare(p, q);
+            }
+        }
+        return 0;
+    }
+
+    static String dotted(String internal) {
+        return internal.replace('/', '.');
+    }
+
+    /** A GameDiff route map read for lookups: classes, members (by old owner, name, descriptor) and rewrites. */
+    static final class Route {
+
+        final Map<String, String> classes = new HashMap<>(); // internal -> internal
+        final Map<String, String[]> methods = new HashMap<>(); // owner.name+desc -> {owner, name, desc}
+        final Map<String, String[]> fields = new HashMap<>(); // owner.name -> {owner, name}
+        final Set<String> rewrites = new HashSet<>(); // owner.name+desc
+        final Map<String, String> classRewrites = new HashMap<>();
+        /** Members a port rule of this route covers (its "members"), as written: a class, a member, or one overload. */
+        final Set<String> ruled = new HashSet<>();
+
+        boolean ruled(String key) {
+            for (String r : ruled) {
+                if (key.equals(r) || key.startsWith(r + ".") || key.startsWith(r + "$") || key.startsWith(r + "(") || (key.startsWith(r) && key.length() > r.length() && key.charAt(r.length()) == '(')) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static Route read(Path file) throws IOException {
+            Route r = new Route();
+            Map<String, Object> map = Json.read(file);
+            for (Object o : Json.array(map.getOrDefault("classes", List.of()))) {
+                var c = Json.object(o);
+                r.classes.put(internal(Json.text(c, "from", "")), internal(Json.text(c, "to", "")));
+            }
+            for (String list : List.of("methods", "methodsMoved", "signatures")) {
+                for (Object o : Json.array(map.getOrDefault(list, List.of()))) {
+                    var m = Json.object(o);
+                    String owner = internal(Json.text(m, "owner", ""));
+                    String newOwner = m.get("newOwner") == null ? null : internal(Json.text(m, "newOwner", ""));
+                    r.methods.put(
+                        owner + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""),
+                        new String[] { newOwner, Json.text(m, "to", ""), Json.text(m, "newDesc", "") }
+                    );
+                }
+            }
+            for (Object o : Json.array(map.getOrDefault("fields", List.of()))) {
+                var f = Json.object(o);
+                String owner = internal(Json.text(f, "owner", ""));
+                String newOwner = f.get("newOwner") == null ? null : internal(Json.text(f, "newOwner", ""));
+                r.fields.put(owner + "." + Json.text(f, "from", ""), new String[] { newOwner, Json.text(f, "to", "") });
+            }
+            for (Object o : Json.array(map.getOrDefault("rewrites", List.of()))) {
+                var w = Json.object(o);
+                r.rewrites.add(internal(Json.text(w, "owner", "")) + "." + Json.text(w, "from", "") + Json.text(w, "desc", ""));
+            }
+            for (Object o : Json.array(map.getOrDefault("classRewrites", List.of()))) {
+                var w = Json.object(o);
+                r.classRewrites.put(internal(Json.text(w, "from", "")), internal(Json.text(w, "to", "")));
+            }
+            return r;
+        }
+
+        static String internal(String dotted) {
+            // Map names are dotted with $ for nested classes: a.b.C$D -> a/b/C$D.
+            return dotted.replace('.', '/');
+        }
+
+        String cls(String internal) {
+            return classes.getOrDefault(internal, internal);
+        }
+
+        String desc(String d) {
+            Matcher m = Pattern.compile("L([^;]+);").matcher(d);
+            StringBuilder sb = new StringBuilder();
+            while (m.find()) {
+                m.appendReplacement(sb, Matcher.quoteReplacement("L" + cls(m.group(1)) + ";"));
+            }
+            return m.appendTail(sb).toString();
+        }
+
+        /** {owner, name, desc} of a method in the new release, by the map or else unchanged (classes renamed). */
+        String[] method(String owner, String name, String desc) {
+            String[] e = methods.get(owner + "." + name + desc);
+            if (e == null) {
+                return new String[] { cls(owner), name, desc(desc) };
+            }
+            return new String[] { e[0] != null ? e[0] : cls(owner), e[1].isEmpty() ? name : e[1], e[2].isEmpty() ? desc(desc) : e[2] };
+        }
+
+        String[] field(String owner, String name) {
+            String[] e = fields.get(owner + "." + name);
+            if (e == null) {
+                return new String[] { cls(owner), name };
+            }
+            return new String[] { e[0] != null ? e[0] : cls(owner), e[1].isEmpty() ? name : e[1] };
+        }
+    }
+}
