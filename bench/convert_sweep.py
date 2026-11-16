@@ -417,6 +417,36 @@ def stop(work):
         mmt(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
 
 
+def minecraft_of(work):
+    """The game version a checkout's gradle.properties names (minecraft_version, or NeoForge's own numbering)."""
+    p = Path(work) / "gradle.properties"
+    props = p.read_text(encoding="utf-8", errors="replace") if p.is_file() else ""
+    m = re.search(r"(?m)^\s*minecraft_version\s*=\s*(\S+)", props)
+    if m:
+        return m.group(1)
+    n = re.search(r"(?m)^\s*neo(?:forge)?_version\s*=\s*(\S+)", props)
+    if not n:
+        return ""
+    parts = n.group(1).split(".")
+    if int(parts[0]) >= 26:
+        return ".".join(parts[:2] if len(parts) < 4 or parts[2] == "0" else parts[:3])
+    return "1." + parts[0] + ("" if parts[1] == "0" else "." + parts[1])
+
+
+def original_references(mod, src, started):
+    """The untouched mod built once: every loader class and member, and game method, its compiled classes name
+    (bench/convert_coverage.py reads them; coverage/convert-references.json keeps them)."""
+    import convert_coverage
+    work = fresh_copy(src, f"{mod['id']}-references")
+    started.append(work)
+    code, result, seconds = mmt(["compile", "--root", str(work), "--json"], TIMEOUT["convert"])
+    out = {"commit": mod["commit"], "minecraft": minecraft_of(work), "compiled": code == 0, "seconds": round(seconds, 1)}
+    if code == 0:
+        out.update(convert_coverage.mod_references(work / "build" / "classes"))
+    stop(work)
+    return out
+
+
 def run_one(mod, args, concepts):
     started = []
     try:
@@ -438,6 +468,8 @@ def run_mod(mod, args, concepts, started):
     except Exception as e:
         record.update(stage="clone", error=str(e), concepts={"clone failed": 1})
         return record
+    if getattr(args, "references", False):
+        record["references"] = original_references(mod, src, started)
     work = fresh_copy(src, f"{mod['id']}-to-{to}" + (f"-{names}" if names else ""))
     started.append(work)
     props = (work / "gradle.properties").read_text(encoding="utf-8", errors="replace") if (work / "gradle.properties").is_file() else ""
@@ -670,6 +702,7 @@ def main():
     run.add_argument("--no-compile", action="store_true", help="convert without compiling")
     run.add_argument("--no-game", action="store_true")
     run.add_argument("--no-back", action="store_true")
+    run.add_argument("--references", action="store_true", help="also build each untouched mod once and record the loader API it uses (bench/convert_coverage.py)")
     run.add_argument("--names", default="", help="mojang: rename yarn-named Fabric mods to Mojang's names, staying on Fabric, instead of converting")
     run.add_argument("--no-fingerprint", action="store_true", help="skip the behaviour fingerprints of the original and the converted mod")
     run.add_argument("--label", default="latest")
