@@ -332,7 +332,15 @@ def error_class(e, rec):
         return "mixin-target-change", api
     if ACCESS.search(msg):
         return "access-transformer", api
-    if pkg and third_party(pkg.group(1), own):
+    # "package InventoryChangeTrigger does not exist" is a class used as a qualifier (Foo.Bar) that did not resolve:
+    # it belongs to whoever the file imports it from, not to a library by default.
+    bare = pkg and "." not in pkg.group(1) and pkg.group(1)[:1].isupper()
+    if bare:
+        where = imported(lines, pkg.group(1)) if lines else None
+        if where and third_party(where, own):
+            return "dependency-unavailable", where
+        symbol = symbol or pkg.group(1)
+    elif pkg and third_party(pkg.group(1), own):
         return "dependency-unavailable", pkg.group(1)
     if NOT_FOUND.search(msg) and symbol:
         where = imported(lines, symbol) if lines else None

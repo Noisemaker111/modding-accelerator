@@ -113,6 +113,69 @@ public final class PortPreflightTest {
         VersionMap.Known wrongHop = VersionMap.Known.load(colorMap); wrongHop.fromVersion = "1.21.4";
         require(VersionMap.ApiFix.preflight(wrongHop, scratch.resolve("ColorDemo.java"), rgb).equals(rgb), "unknown version hop refused");
 
+        // An @Override that stopped overriding: the game renamed render differently per owner, so the class's own
+        // supertypes pick the new name; without them nothing is guessed.
+        Path repo = Files.createDirectories(scratch.resolve("overrides"));
+        Path overrideMap = scratch.resolve("override.json");
+        Files.writeString(overrideMap, """
+            { "from": "26.1.2", "to": "26.2", "names": "mojmap",
+              "methods": [
+                { "owner": "net.minecraft.client.gui.screens.Screen", "from": "render", "desc": "()V", "to": "extractRenderState" },
+                { "owner": "net.minecraft.client.gui.components.Panel", "from": "render", "desc": "()V", "to": "draw" }
+              ]
+            }
+            """);
+        String screen = "import net.minecraft.client.gui.screens.Screen;\nclass MyScreen extends Screen {\n  @Override\n  public void render() {}\n}\n";
+        String panel = "import net.minecraft.client.gui.components.Panel;\nclass MyPanel extends ModPanel {\n  @Override\n  public void render() {}\n}\n";
+        Files.writeString(repo.resolve("MyScreen.java"), screen);
+        Files.writeString(repo.resolve("MyPanel.java"), panel);
+        Path overrideLog = scratch.resolve("override.log");
+        Files.writeString(overrideLog, repo.resolve("MyScreen.java") + ":4: error: method does not override or implement a method from a supertype\n  public void render() {}\n  ^\n"
+            + repo.resolve("MyPanel.java") + ":4: error: method does not override or implement a method from a supertype\n  public void render() {}\n  ^\n");
+        VersionMap.Fix.run(overrideMap, overrideLog, repo, false, null);
+        require(Files.readString(repo.resolve("MyScreen.java")).equals(screen), "no supertypes: no guess between two renames");
+        VersionMap.SUPERS.put("MyScreen", Set.of("Screen", "AbstractContainerEventHandler"));
+        VersionMap.SUPERS.put("MyPanel", Set.of("ModPanel", "Panel"));
+        VersionMap.Fix.run(overrideMap, overrideLog, repo, false, null);
+        require(Files.readString(repo.resolve("MyScreen.java")).contains("void extractRenderState()"), "Screen override renamed as Screen's");
+        require(Files.readString(repo.resolve("MyPanel.java")).contains("void draw()"), "override through the mod's own parent renamed as Panel's");
+        VersionMap.SUPERS.clear();
+
+        // An on-demand import of a package the game split: each moved class the file names gets its own import, a renamed
+        // one is renamed in the body, the wildcard goes only when javac says the package is gone, and a class of the
+        // mod's own package with the same name is never shadowed.
+        Path split = Files.createDirectories(scratch.resolve("split"));
+        Path splitMap = scratch.resolve("split.json");
+        Files.writeString(splitMap, """
+            { "from": "1.21.1", "to": "26.2", "names": "mojmap",
+              "classes": [
+                { "from": "net.minecraft.advancements.critereon.InventoryChangeTrigger", "to": "net.minecraft.advancements.triggers.InventoryChangeTrigger" },
+                { "from": "net.minecraft.advancements.critereon.MinMaxBounds", "to": "net.minecraft.advancements.predicates.MinMaxBounds" },
+                { "from": "net.minecraft.advancements.critereon.KilledByCrossbowTrigger", "to": "net.minecraft.advancements.triggers.KilledByArrowTrigger" },
+                { "from": "net.minecraft.advancements.critereon.ItemPredicate", "to": "net.minecraft.advancements.predicates.ItemPredicate" },
+                { "from": "net.minecraft.advancements.critereon.EntityPredicate", "to": "net.minecraft.advancements.predicates.EntityPredicate" }
+              ]
+            }
+            """);
+        String gen = "package mod;\nimport net.minecraft.advancements.critereon.*;\nimport java.util.List;\n\nclass Gen {\n  Object a = InventoryChangeTrigger.TriggerInstance.hasItems();\n  Object b = KilledByCrossbowTrigger.TriggerInstance.crossbowKilled();\n  Object c = MinMaxBounds.Ints.ANY;\n  Object d = EntityPredicate.ANY;\n}\n";
+        Files.writeString(split.resolve("Gen.java"), gen);
+        Files.writeString(split.resolve("EntityPredicate.java"), "package mod;\nclass EntityPredicate { static Object ANY; }\n");
+        Path splitLog = scratch.resolve("split.log");
+        Files.writeString(splitLog, split.resolve("Gen.java") + ":6: error: cannot find symbol\n  Object a = InventoryChangeTrigger.TriggerInstance.hasItems();\n             ^\n");
+        VersionMap.Fix.run(splitMap, splitLog, split, false, null);
+        String kept = Files.readString(split.resolve("Gen.java"));
+        require(kept.contains("import net.minecraft.advancements.critereon.*;"), "wildcard kept while the package still exists");
+        require(kept.contains("import net.minecraft.advancements.triggers.InventoryChangeTrigger;") && kept.contains("import net.minecraft.advancements.predicates.MinMaxBounds;"), "each moved class used gets its import");
+        require(kept.contains("import net.minecraft.advancements.triggers.KilledByArrowTrigger;") && kept.contains("KilledByArrowTrigger.TriggerInstance.crossbowKilled()"), "renamed class imported and renamed in the body");
+        require(!kept.contains("ItemPredicate;"), "an unused moved class is not imported");
+        require(!kept.contains("predicates.EntityPredicate"), "the mod's own EntityPredicate is not shadowed");
+        Files.writeString(split.resolve("Gen.java"), gen);
+        Files.writeString(splitLog, split.resolve("Gen.java") + ":2: error: package net.minecraft.advancements.critereon does not exist\nimport net.minecraft.advancements.critereon.*;\n^\n");
+        VersionMap.Fix.run(splitMap, splitLog, split, false, null);
+        String gone = Files.readString(split.resolve("Gen.java"));
+        require(!gone.contains("critereon") && gone.contains("import net.minecraft.advancements.triggers.InventoryChangeTrigger;"), "wildcard of a gone package replaced");
+        require(gone.contains("import java.util.List;"), "other imports untouched");
+
         System.out.println("PASS: mapping-backed preflight and guarded lookalikes");
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }

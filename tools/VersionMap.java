@@ -1104,6 +1104,20 @@ public final class VersionMap {
             return names.size() == 1 ? names.iterator().next() : null;
         }
 
+        /** The one new name among the owners that are one of these supertypes (simple names), else null. */
+        static String within(Set<String[]> candidates, Set<String> supers) {
+            if (candidates == null) {
+                return null;
+            }
+            Set<String> names = new HashSet<>();
+            for (String[] c : candidates) {
+                if (supers.contains(c[0]) || supers.contains(c[2])) {
+                    names.add(c[1]);
+                }
+            }
+            return names.size() == 1 ? names.iterator().next() : null;
+        }
+
         /** The new name when every owner that renamed this member chose the same one, else null. */
         static String unanimous(Set<String[]> candidates) {
             if (candidates == null || candidates.isEmpty()) {
@@ -1426,6 +1440,77 @@ public final class VersionMap {
                 byKind.merge("class", hits, Integer::sum);
             }
 
+            // 1b. On-demand imports (import a.b.*;) of a package whose classes moved: each moved class the file names gets
+            // its own import, and the wildcard goes when javac says the package is gone (1.21.11's critereon -> criterion,
+            // split again in 26.2 into triggers, predicates, ...).
+            Set<String> gonePackages = new HashSet<>();
+            for (Err e : readErrors(log)) {
+                Matcher gone = Pattern.compile("^package ([\\w.]+) does not exist$").matcher(e.message());
+                Path f = sourcePath(e, repo);
+                if (gone.find() && f != null && e.source().matches("\\s*import\\s+[\\w.]+\\.\\*\\s*;\\s*")) {
+                    gonePackages.add(f + "|" + gone.group(1));
+                }
+            }
+            Map<String, Map<String, String>> movedByPackage = new HashMap<>(); // old package -> old simple -> new fqn
+            for (var e : k.classFqn.entrySet()) {
+                String from = e.getKey(), to = e.getValue();
+                if (from.contains("$") || !from.contains(".")) {
+                    continue;
+                }
+                String pkg = from.substring(0, from.lastIndexOf('.'));
+                if (!to.startsWith(pkg + ".") || to.substring(pkg.length() + 1).contains(".")) {
+                    movedByPackage.computeIfAbsent(pkg, x -> new HashMap<>()).put(simple(from), to.replace('$', '.'));
+                }
+            }
+            Pattern onDemand = Pattern.compile("(?m)^import\\s+([\\w.]+)\\.\\*\\s*;[ \\t]*\\r?\\n?");
+            for (Path f : files) {
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                Matcher m = onDemand.matcher(text);
+                StringBuilder sb = new StringBuilder();
+                int hits = 0;
+                List<String[]> simpleRenames = new ArrayList<>();
+                while (m.find()) {
+                    Map<String, String> moved = movedByPackage.get(m.group(1));
+                    if (moved == null) {
+                        continue;
+                    }
+                    String body = text.substring(Math.max(text.lastIndexOf("\nimport "), 0));
+                    String nl = text.contains("\r\n") ? "\r\n" : "\n";
+                    Set<String> added = new TreeSet<>();
+                    for (var c : moved.entrySet()) {
+                        boolean declared = Pattern.compile("\\b(?:class|interface|enum|record)\\s+" + Pattern.quote(c.getKey()) + "\\b").matcher(text).find();
+                        boolean explicit = Pattern.compile("(?m)^import\\s+[\\w.]+\\." + Pattern.quote(c.getKey()) + "\\s*;").matcher(text).find();
+                        // A class of the file's own package with that name wins over an on-demand import; an explicit one would not.
+                        boolean ownPackage = f.getParent() != null && Files.exists(f.getParent().resolve(c.getKey() + ".java"));
+                        if (declared || explicit || ownPackage || !Pattern.compile("\\b" + Pattern.quote(c.getKey()) + "\\b").matcher(body).find()) {
+                            continue;
+                        }
+                        added.add("import " + c.getValue() + ";" + nl);
+                        if (!simple(c.getValue()).equals(c.getKey())) {
+                            simpleRenames.add(new String[] { c.getKey(), simple(c.getValue()) });
+                        }
+                    }
+                    boolean keep = !gonePackages.contains(f + "|" + m.group(1));
+                    if (added.isEmpty() && keep) {
+                        continue;
+                    }
+                    m.appendReplacement(sb, Matcher.quoteReplacement((keep ? m.group() : "") + String.join("", added)));
+                    hits += Math.max(1, added.size());
+                }
+                if (hits == 0) {
+                    continue;
+                }
+                m.appendTail(sb);
+                String updated = sb.toString();
+                for (String[] r : simpleRenames) {
+                    int at = updated.indexOf("\n", updated.lastIndexOf("\nimport "));
+                    updated = updated.substring(0, at) + updated.substring(at).replaceAll("\\b" + Pattern.quote(r[0]) + "\\b", Matcher.quoteReplacement(r[1]));
+                }
+                texts.put(f, updated);
+                replacements += hits;
+                byKind.merge("on-demand import", hits, Integer::sum);
+            }
+
             // 2. Renamed methods and fields at the reported line and column.
             for (Err e : readErrors(log)) {
                 String sym = e.symbol() == null ? "" : e.symbol();
@@ -1509,7 +1594,8 @@ public final class VersionMap {
                         enclosing = type.group(1);
                     }
                 }
-                if (!extendsGameClass(text, enclosing)) {
+                Set<String> supers = enclosing == null ? null : SUPERS.get(enclosing);
+                if (supers == null && !extendsGameClass(text, enclosing)) {
                     continue;
                 }
                 for (int at = e.line() - 1; at >= 0 && at < Math.min(lines.length, e.line() + 3); at++) {
@@ -1519,7 +1605,10 @@ public final class VersionMap {
                     if (!declared.find() || lines[at].trim().startsWith("@")) {
                         continue;
                     }
-                    String to = Known.unanimous(k.methodTo.get(declared.group(2)));
+                    // Narrowed by the class's own supertypes (from --supers) when the owners renamed it differently.
+                    String to = supers == null
+                        ? Known.unanimous(k.methodTo.get(declared.group(2)))
+                        : Known.within(k.methodTo.get(declared.group(2)), supers);
                     if (to != null) {
                         lines[at] = declared.group(1) + to + lines[at].substring(declared.end(2));
                         texts.put(f, String.join(nl, lines));
