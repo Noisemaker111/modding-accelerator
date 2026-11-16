@@ -282,6 +282,19 @@ public final class PortPreflightTest {
         require(paletted.contains("return VarInts.getSizeInBytes(this.size) + n;") && paletted.contains("import net.minecraft.network.encoding.VarInts;"), "a call on the class name is static: " + paletted);
         require(paletted.contains("this.manager.isWithinViewDistance(a, b, c, d, e)"), "a call on a value stays an instance call");
 
+        // Arguments javac says the only candidate no longer takes go, for a constructor too, without a map: trailing ones, or
+        // ones matched one way only; an inner choice between equal types is left alone.
+        Path jr = Files.createDirectories(scratch.resolve("javac-required"));
+        String targets = "class Targets {\n  void f() {\n    var t = new TextureTarget(w, h,\n        true, Minecraft.ON_OSX);\n    var u = new Other(\"a\", 1, 2, \"b\");\n  }\n}\n";
+        Files.writeString(jr.resolve("Targets.java"), targets);
+        Path jrLog = scratch.resolve("javac-required.log");
+        Files.writeString(jrLog, jr.resolve("Targets.java") + ":3: error: constructor TextureTarget in class TextureTarget cannot be applied to given types;\n    var t = new TextureTarget(w, h,\n            ^\n  required: int,int,boolean\n  found:    int,int,boolean,boolean\n  reason: actual and formal argument lists differ in length\n"
+            + jr.resolve("Targets.java") + ":5: error: constructor Other in class Other cannot be applied to given types;\n    var u = new Other(\"a\", 1, 2, \"b\");\n            ^\n  required: String,int,String\n  found:    String,int,int,String\n  reason: actual and formal argument lists differ in length\n");
+        VersionMap.Fix.run(map, jrLog, jr, false, null);
+        String targeted = Files.readString(jr.resolve("Targets.java"));
+        require(targeted.contains("var t = new TextureTarget(w, h, true);"), "the argument javac no longer takes goes, over lines: " + targeted);
+        require(targeted.contains("var u = new Other(\"a\", 1, 2, \"b\");"), "which of two equal arguments goes is not guessed");
+
         // A call the game deleted: a no-argument void call that is a whole statement goes; one with arguments, or used
         // inside an expression, stays for the compiler to name.
         Path del = Files.createDirectories(scratch.resolve("deleted"));

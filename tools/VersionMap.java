@@ -964,7 +964,7 @@ public final class VersionMap {
             if (caret >= indent) {
                 caret -= indent;
             }
-            String symbol = null, location = null;
+            String symbol = null, location = null, required = null, found = null;
             for (int j = i + 1; j < Math.min(lines.size(), i + 8); j++) {
                 String s = lines.get(j).trim();
                 if (head.matcher(lines.get(j)).find()) {
@@ -976,12 +976,24 @@ public final class VersionMap {
                 if (s.startsWith("location:")) {
                     location = s.substring(9).trim();
                 }
+                if (s.startsWith("required:") && required == null) {
+                    required = s.substring(9).trim();
+                }
+                if (s.startsWith("found:") && found == null) {
+                    found = s.substring(6).trim();
+                }
+            }
+            if (required != null && found != null) {
+                REQUIRED_FOUND.put(m.group(1) + ":" + m.group(2), new String[] { required, found });
             }
             Err e = new Err(m.group(1), Integer.parseInt(m.group(2)), m.group(3), source, caret, symbol, location);
             seen.putIfAbsent(e.file() + ":" + e.line() + ":" + e.caret() + ":" + e.message() + ":" + symbol, e);
         }
         return new ArrayList<>(seen.values());
     }
+
+    /** javac's "required:" and "found:" argument types for a call it reports at file:line (one candidate only). */
+    static final Map<String, String[]> REQUIRED_FOUND = new HashMap<>();
 
     /** Supertypes of the receiver types a compiler log names (simple names), from --supers. */
     static final Map<String, Set<String>> SUPERS = new HashMap<>();
@@ -2430,6 +2442,71 @@ public final class VersionMap {
                 texts.put(f, text);
                 replacements++;
                 byKind.merge("dropped parameters", 1, Integer::sum);
+            }
+
+            // 2c*. Arguments javac itself says the one candidate no longer takes (required: int,int,boolean / found:
+            // int,int,boolean,boolean), for a method or a constructor (1.21.2's TextureTarget(int, int, boolean)): when the
+            // required types are the found ones with some left out (trailing ones, or one way only), those arguments go.
+            Pattern single = Pattern.compile("^(?:method|constructor) (\\w+) in (?:class|interface|enum|record) [\\w.$]+(?:<[^>]*>)? cannot be applied to given types");
+            List<Err> fewer = new ArrayList<>(readErrors(log));
+            fewer.sort(Comparator.comparing(Err::file).thenComparing(Comparator.comparingInt(Err::line).reversed()));
+            for (Err e : fewer) {
+                Matcher sm = single.matcher(e.message());
+                String[] rf = REQUIRED_FOUND.get(e.file() + ":" + e.line());
+                Path f = sourcePath(e, repo);
+                if (!sm.find() || rf == null || f == null || !Files.isRegularFile(f) || rf[0].equals("no arguments")) {
+                    continue;
+                }
+                List<String> required = new ArrayList<>(), found = new ArrayList<>();
+                for (String t : topLevelArguments(rf[0].replace('<', '(').replace('>', ')'))) {
+                    required.add(t.strip().replaceAll("\\(.*", ""));
+                }
+                for (String t : topLevelArguments(rf[1].replace('<', '(').replace('>', ')'))) {
+                    found.add(t.strip().replaceAll("\\(.*", ""));
+                }
+                // Equal types leave a choice (int,int,boolean,boolean to int,int,boolean): trailing parameters are what
+                // the game drops when the rest are kept in order, so a required list that starts the found one keeps those.
+                int[] kept = found.size() > required.size() && found.subList(0, required.size()).equals(required)
+                    ? java.util.stream.IntStream.range(0, required.size()).toArray()
+                    : uniqueEmbedding(found, required);
+                if (kept == null) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                int lineStart = 0;
+                for (int i = 1; i < e.line() && lineStart > -1; i++) {
+                    int next = text.indexOf('\n', lineStart);
+                    lineStart = next < 0 ? -1 : next + 1;
+                }
+                if (lineStart < 0) {
+                    continue;
+                }
+                int lineEnd = text.indexOf('\n', lineStart);
+                lineEnd = lineEnd < 0 ? text.length() : lineEnd;
+                Matcher callAt = Pattern.compile("(?<![\\w$])(?:" + Pattern.quote(sm.group(1)) + "|super|this)\\s*(?:<[^>()]*>)?\\s*\\(").matcher(text);
+                callAt.region(Math.min(lineEnd, lineStart + Math.max(0, e.caret())), lineEnd);
+                if (!callAt.find()) {
+                    callAt.region(lineStart, lineEnd);
+                    if (!callAt.find()) {
+                        continue;
+                    }
+                }
+                int open = callAt.end() - 1, close = closingParen(text, open);
+                if (close < 0) {
+                    continue;
+                }
+                List<String> args = topLevelArguments(text.substring(open + 1, close));
+                if (args.size() != found.size()) {
+                    continue;
+                }
+                List<String> keep = new ArrayList<>();
+                for (int i : kept) {
+                    keep.add(args.get(i).strip());
+                }
+                text = text.substring(0, open + 1) + String.join(", ", keep) + text.substring(close);
+                texts.put(f, text);
+                replacements++;
+                byKind.merge("arguments javac no longer takes", 1, Integer::sum);
             }
 
             // 2c''. A class that lost its type parameters (1.21.2: PlayerModel<T> -> PlayerModel): javac names the type, and

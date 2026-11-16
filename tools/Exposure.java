@@ -415,7 +415,30 @@ public final class Exposure {
             // calls it. Counted apart from what breaks, so a hook that went silent stays visible.
             return new Verdict("unhooked", key, "overridden");
         }
+        if (sameName && u.kind() == 'm' && target != null && fewerArguments(target, newName, route.desc(u.desc()))) {
+            // The porter drops what javac says the one candidate no longer takes (VersionMap.Fix 2c*).
+            return new Verdict("rewritten", key, "arguments dropped");
+        }
         return new Verdict(sameName ? "signature" : "removed", key, u.kind() == 'o' ? "overridden" : "");
+    }
+
+    /** The class has one method of that name, and its parameters are the old ones with trailing ones, or one choice, left out. */
+    static boolean fewerArguments(GameDiff.Cls c, String name, String oldDesc) {
+        String only = null;
+        for (String m : c.methods.keySet()) {
+            if (m.startsWith(name + "(")) {
+                if (only != null) {
+                    return false;
+                }
+                only = m;
+            }
+        }
+        if (only == null) {
+            return false;
+        }
+        List<String> before = VersionMap.Fix.paramTypes(oldDesc), after = VersionMap.Fix.paramTypes(only);
+        boolean trailing = before.size() > after.size() && before.subList(0, after.size()).equals(after);
+        return trailing || VersionMap.Fix.uniqueEmbedding(before, after) != null;
     }
 
     /**
@@ -437,7 +460,9 @@ public final class Exposure {
             boolean ruleForward = compareVersions(jump[0], jump[1]) < 0;
             String lo = forward ? from : to, hi = forward ? to : from;
             String rlo = ruleForward ? jump[0] : jump[1], rhi = ruleForward ? jump[1] : jump[0];
-            if (ruleForward != forward || compareVersions(rlo, lo) < 0 || compareVersions(rhi, hi) > 0) {
+            // The porter runs a rule on a route when the rule's range covers one of the route's updates (Route.stepsCovered):
+            // the two ranges overlap.
+            if (ruleForward != forward || compareVersions(rlo, hi) >= 0 || compareVersions(rhi, lo) <= 0) {
                 continue;
             }
             for (Object m : members) {

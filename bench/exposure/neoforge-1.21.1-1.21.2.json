@@ -3,22 +3,12 @@
  "from": "1.21.1",
  "to": "1.21.2",
  "modsRead": 150,
- "modsWithNothingBroken": 55,
- "usesCarried": 0.984,
+ "modsWithNothingBroken": 56,
+ "usesCarried": 0.9847,
  "top": [
   {
-   "why": "removed",
-   "examples": [
-    "amendments--amendments-1.21-2.2.7-neoforge.jar",
-    "bookshelf-lib--bookshelf-neoforge-1.21.1-21.1.81.jar",
-    "chipped--chipped-neoforge-1.21.1-4.0.2.jar",
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "create--create-1.21.1-6.0.10.jar"
-   ],
-   "member": "net.minecraft.world.level.Level.getRecipeManager()Lnet/minecraft/world/item/crafting/RecipeManager;",
-   "mods": 16
-  },
-  {
+   "member": "net.minecraft.world.item.crafting.Ingredient.EMPTY",
+   "mods": 15,
    "why": "removed: field",
    "examples": [
     "amendments--amendments-1.21-2.2.7-neoforge.jar",
@@ -26,11 +16,11 @@
     "create--create-1.21.1-6.0.10.jar",
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "jei--jei-1.21.1-neoforge-19.70.0.469.jar"
-   ],
-   "member": "net.minecraft.world.item.crafting.Ingredient.EMPTY",
-   "mods": 15
+   ]
   },
   {
+   "member": "net.minecraft.client.renderer.block.model.ItemOverrides",
+   "mods": 14,
    "why": "removed: class",
    "examples": [
     "amendments--amendments-1.21-2.2.7-neoforge.jar",
@@ -38,11 +28,11 @@
     "balm--balm-neoforge-1.21.1-21.0.67.jar",
     "creativecore--CreativeCore_NEOFORGE_v2.13.54_mc1.21.1.jar",
     "lootr--lootr-neoforge-1.21.1-1.11.38.127.jar"
-   ],
-   "member": "net.minecraft.client.renderer.block.model.ItemOverrides",
-   "mods": 14
+   ]
   },
   {
+   "member": "net.minecraft.world.item.crafting.Recipe.getIngredients()Lnet/minecraft/core/NonNullList;",
+   "mods": 14,
    "why": "removed",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -50,23 +40,11 @@
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
-   ],
-   "member": "net.minecraft.world.item.crafting.Recipe.getIngredients()Lnet/minecraft/core/NonNullList;",
-   "mods": 14
+   ]
   },
   {
-   "why": "removed: new abstract method to implement",
-   "examples": [
-    "chipped--chipped-neoforge-1.21.1-4.0.2.jar",
-    "create--create-1.21.1-6.0.10.jar",
-    "creativecore--CreativeCore_NEOFORGE_v2.13.54_mc1.21.1.jar",
-    "distanthorizons--DistantHorizons-3.3.3-1.21.1-fabric-neoforge.jar",
-    "iceberg--Iceberg-1.21.1-neoforge-1.3.2.jar"
-   ],
-   "member": "net.minecraft.world.level.LevelHeightAccessor.getMinY()I",
-   "mods": 13
-  },
-  {
+   "member": "net.minecraft.client.multiplayer.ClientLevel.getRecipeManager()Lnet/minecraft/world/item/crafting/RecipeManager;",
+   "mods": 12,
    "why": "removed",
    "examples": [
     "chipped--chipped-neoforge-1.21.1-4.0.2.jar",
@@ -74,23 +52,11 @@
     "create--create-1.21.1-6.0.10.jar",
     "emi--emi-1.1.24+1.21.1+neoforge.jar",
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar"
-   ],
-   "member": "net.minecraft.client.multiplayer.ClientLevel.getRecipeManager()Lnet/minecraft/world/item/crafting/RecipeManager;",
-   "mods": 12
+   ]
   },
   {
-   "why": "removed",
-   "examples": [
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "collective--collective-1.21.1-8.87.jar",
-    "enhancedvisuals--EnhancedVisuals_NEOFORGE_v1.8.34_mc1.21.1.jar",
-    "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
-    "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar"
-   ],
-   "member": "net.minecraft.world.entity.Entity.sendSystemMessage(Lnet/minecraft/network/chat/Component;)V",
-   "mods": 12
-  },
-  {
+   "member": "net.minecraft.world.item.crafting.Recipe.getResultItem(Lnet/minecraft/core/HolderLookup$Provider;)Lnet/minecraft/world/item/ItemStack;",
+   "mods": 12,
    "why": "removed",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -98,11 +64,11 @@
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
-   ],
-   "member": "net.minecraft.world.item.crafting.Recipe.getResultItem(Lnet/minecraft/core/HolderLookup$Provider;)Lnet/minecraft/world/item/ItemStack;",
-   "mods": 12
+   ]
   },
   {
+   "member": "net.minecraft.world.item.crafting.RecipeManager.getAllRecipesFor(Lnet/minecraft/world/item/crafting/RecipeType;)Ljava/util/List;",
+   "mods": 12,
    "why": "removed",
    "examples": [
     "balm--balm-neoforge-1.21.1-21.0.67.jar",
@@ -110,11 +76,11 @@
     "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
     "create--create-1.21.1-6.0.10.jar",
     "emi--emi-1.1.24+1.21.1+neoforge.jar"
-   ],
-   "member": "net.minecraft.world.item.crafting.RecipeManager.getAllRecipesFor(Lnet/minecraft/world/item/crafting/RecipeType;)Ljava/util/List;",
-   "mods": 12
+   ]
   },
   {
+   "member": "net.minecraft.client.renderer.RenderStateShard$ShaderStateShard.<init>(Ljava/util/function/Supplier;)V",
+   "mods": 11,
    "why": "signature",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -122,35 +88,11 @@
     "iris--iris-neoforge-1.8.14-beta.1+mc1.21.1.jar",
     "modern-ui--ModernUI-NeoForge-1.21.1-3.13.0.1-universal.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
-   "member": "net.minecraft.client.renderer.RenderStateShard$ShaderStateShard.<init>(Ljava/util/function/Supplier;)V",
-   "mods": 11
+   ]
   },
   {
-   "why": "signature",
-   "examples": [
-    "balm--balm-neoforge-1.21.1-21.0.67.jar",
-    "emi--emi-1.1.24+1.21.1+neoforge.jar",
-    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
-    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar",
-    "owo-lib--owo-lib-neoforge-0.12.15.6-beta.1+1.21.jar"
-   ],
-   "member": "com.mojang.blaze3d.pipeline.TextureTarget.<init>(IIZZ)V",
-   "mods": 10
-  },
-  {
-   "why": "removed: new abstract method to implement",
-   "examples": [
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "dynamic-fps--dynamic-fps-3.11.4+minecraft-1.21.0-neoforge.jar",
-    "emi--emi-1.1.24+1.21.1+neoforge.jar",
-    "fancymenu--fancymenu_neoforge_3.10.0_MC_1.21.1.jar",
-    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
-   ],
    "member": "net.minecraft.client.gui.components.toasts.Toast.getWantedVisibility()Lnet/minecraft/client/gui/components/toasts/Toast$Visibility;",
-   "mods": 10
-  },
-  {
+   "mods": 10,
    "why": "removed: new abstract method to implement",
    "examples": [
     "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
@@ -158,11 +100,23 @@
     "emi--emi-1.1.24+1.21.1+neoforge.jar",
     "fancymenu--fancymenu_neoforge_3.10.0_MC_1.21.1.jar",
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
-   ],
-   "member": "net.minecraft.client.gui.components.toasts.Toast.update(Lnet/minecraft/client/gui/components/toasts/ToastManager;J)V",
-   "mods": 10
+   ]
   },
   {
+   "member": "net.minecraft.client.gui.components.toasts.Toast.update(Lnet/minecraft/client/gui/components/toasts/ToastManager;J)V",
+   "mods": 10,
+   "why": "removed: new abstract method to implement",
+   "examples": [
+    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
+    "dynamic-fps--dynamic-fps-3.11.4+minecraft-1.21.0-neoforge.jar",
+    "emi--emi-1.1.24+1.21.1+neoforge.jar",
+    "fancymenu--fancymenu_neoforge_3.10.0_MC_1.21.1.jar",
+    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
+   ]
+  },
+  {
+   "member": "net.neoforged.neoforge.client.event.RegisterShadersEvent.getResourceProvider()Lnet/minecraft/server/packs/resources/ResourceProvider;",
+   "mods": 10,
    "why": "removed",
    "examples": [
     "architectury-api--architectury-13.0.12-neoforge.jar",
@@ -170,11 +124,11 @@
     "create--create-1.21.1-6.0.10.jar",
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
     "modern-ui--ModernUI-NeoForge-1.21.1-3.13.0.1-universal.jar"
-   ],
-   "member": "net.neoforged.neoforge.client.event.RegisterShadersEvent.getResourceProvider()Lnet/minecraft/server/packs/resources/ResourceProvider;",
-   "mods": 10
+   ]
   },
   {
+   "member": "net.minecraft.client.player.Input.up",
+   "mods": 9,
    "why": "removed: field",
    "examples": [
     "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
@@ -182,11 +136,11 @@
     "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
     "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
-   "member": "net.minecraft.client.player.Input.up",
-   "mods": 9
+   ]
   },
   {
+   "member": "net.minecraft.data.recipes.RecipeProvider.<init>(Lnet/minecraft/data/PackOutput;Ljava/util/concurrent/CompletableFuture;)V",
+   "mods": 9,
    "why": "signature",
    "examples": [
     "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
@@ -194,11 +148,11 @@
     "create--create-1.21.1-6.0.10.jar",
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar"
-   ],
-   "member": "net.minecraft.data.recipes.RecipeProvider.<init>(Lnet/minecraft/data/PackOutput;Ljava/util/concurrent/CompletableFuture;)V",
-   "mods": 9
+   ]
   },
   {
+   "member": "net.minecraft.world.food.FoodProperties$PossibleEffect",
+   "mods": 9,
    "why": "removed: class",
    "examples": [
     "appleskin--appleskin-neoforge-mc1.21-3.0.9.jar",
@@ -206,11 +160,11 @@
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "inventory-profiles-next--InventoryProfilesNext-neoforge-1.21.1-2.2.5.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar"
-   ],
-   "member": "net.minecraft.world.food.FoodProperties$PossibleEffect",
-   "mods": 9
+   ]
   },
   {
+   "member": "net.minecraft.world.food.FoodProperties.effects()Ljava/util/List;",
+   "mods": 9,
    "why": "removed",
    "examples": [
     "appleskin--appleskin-neoforge-mc1.21-3.0.9.jar",
@@ -218,11 +172,11 @@
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "inventory-profiles-next--InventoryProfilesNext-neoforge-1.21.1-2.2.5.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar"
-   ],
-   "member": "net.minecraft.world.food.FoodProperties.effects()Ljava/util/List;",
-   "mods": 9
+   ]
   },
   {
+   "member": "net.minecraft.world.item.ArmorMaterial$Layer",
+   "mods": 9,
    "why": "removed: class",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -230,11 +184,11 @@
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
     "l_enders-cataclysm--L_Ender's Cataclysm 1.21.1-3.33.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
-   "member": "net.minecraft.world.item.ArmorMaterial$Layer",
-   "mods": 9
+   ]
   },
   {
+   "member": "net.minecraft.world.item.Tier",
+   "mods": 9,
    "why": "removed: class",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -242,11 +196,11 @@
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
-   ],
-   "member": "net.minecraft.world.item.Tier",
-   "mods": 9
+   ]
   },
   {
+   "member": "net.minecraft.world.item.crafting.RecipeHolder.<init>(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/world/item/crafting/Recipe;)V",
+   "mods": 9,
    "why": "signature",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -254,11 +208,11 @@
     "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
-   "member": "net.minecraft.world.item.crafting.RecipeHolder.<init>(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/world/item/crafting/Recipe;)V",
-   "mods": 9
+   ]
   },
   {
+   "member": "net.minecraft.world.item.crafting.ShapelessRecipe.<init>(Ljava/lang/String;Lnet/minecraft/world/item/crafting/CraftingBookCategory;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/core/NonNullList;)V",
+   "mods": 9,
    "why": "signature",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -266,23 +220,11 @@
     "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
-   ],
-   "member": "net.minecraft.world.item.crafting.ShapelessRecipe.<init>(Ljava/lang/String;Lnet/minecraft/world/item/crafting/CraftingBookCategory;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/core/NonNullList;)V",
-   "mods": 9
+   ]
   },
   {
-   "why": "removed: field",
-   "examples": [
-    "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
-    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
-    "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
-    "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
-    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
    "member": "net.minecraft.client.player.Input.down",
-   "mods": 8
-  },
-  {
+   "mods": 8,
    "why": "removed: field",
    "examples": [
     "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
@@ -290,11 +232,11 @@
     "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
     "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
+   ]
+  },
+  {
    "member": "net.minecraft.client.player.Input.left",
-   "mods": 8
-  },
-  {
+   "mods": 8,
    "why": "removed: field",
    "examples": [
     "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
@@ -302,11 +244,23 @@
     "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
     "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
-   "member": "net.minecraft.client.player.Input.right",
-   "mods": 8
+   ]
   },
   {
+   "member": "net.minecraft.client.player.Input.right",
+   "mods": 8,
+   "why": "removed: field",
+   "examples": [
+    "better-third-person--BetterThirdPerson-neoforge-1.9.0.jar",
+    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
+    "controlify--controlify-3.0.1+lts+1.21.1-neoforge.jar",
+    "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
+    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.entity.LivingEntity.hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z",
+   "mods": 8,
    "why": "signature",
    "examples": [
     "balm--balm-neoforge-1.21.1-21.0.67.jar",
@@ -314,11 +268,11 @@
     "collective--collective-1.21.1-8.87.jar",
     "create--create-1.21.1-6.0.10.jar",
     "l_enders-cataclysm--L_Ender's Cataclysm 1.21.1-3.33.jar"
-   ],
-   "member": "net.minecraft.world.entity.LivingEntity.hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z",
-   "mods": 8
+   ]
   },
   {
+   "member": "net.minecraft.world.food.FoodProperties$PossibleEffect.effect()Lnet/minecraft/world/effect/MobEffectInstance;",
+   "mods": 8,
    "why": "removed",
    "examples": [
     "appleskin--appleskin-neoforge-mc1.21-3.0.9.jar",
@@ -326,11 +280,11 @@
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "inventory-profiles-next--InventoryProfilesNext-neoforge-1.21.1-2.2.5.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar"
-   ],
-   "member": "net.minecraft.world.food.FoodProperties$PossibleEffect.effect()Lnet/minecraft/world/effect/MobEffectInstance;",
-   "mods": 8
+   ]
   },
   {
+   "member": "net.minecraft.world.item.armortrim.ArmorTrim",
+   "mods": 8,
    "why": "removed: class",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -338,11 +292,11 @@
     "geckolib--geckolib-neoforge-1.21.1-4.9.3.jar",
     "iris--iris-neoforge-1.8.14-beta.1+mc1.21.1.jar",
     "quark--Quark-4.1-488.jar"
-   ],
-   "member": "net.minecraft.world.item.armortrim.ArmorTrim",
-   "mods": 8
+   ]
   },
   {
+   "member": "net.minecraft.world.item.crafting.Recipe.getRemainingItems(Lnet/minecraft/world/item/crafting/RecipeInput;)Lnet/minecraft/core/NonNullList;",
+   "mods": 8,
    "why": "removed",
    "examples": [
     "amendments--amendments-1.21-2.2.7-neoforge.jar",
@@ -350,11 +304,11 @@
     "emi--emi-1.1.24+1.21.1+neoforge.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
     "quark--Quark-4.1-488.jar"
-   ],
-   "member": "net.minecraft.world.item.crafting.Recipe.getRemainingItems(Lnet/minecraft/world/item/crafting/RecipeInput;)Lnet/minecraft/core/NonNullList;",
-   "mods": 8
+   ]
   },
   {
+   "member": "net.neoforged.neoforge.client.event.RecipesUpdatedEvent",
+   "mods": 8,
    "why": "removed: class",
    "examples": [
     "architectury-api--architectury-13.0.12-neoforge.jar",
@@ -362,11 +316,11 @@
     "emi--emi-1.1.24+1.21.1+neoforge.jar",
     "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
     "modernfix--modernfix-neoforge-5.27.27+mc1.21.1.jar"
-   ],
-   "member": "net.neoforged.neoforge.client.event.RecipesUpdatedEvent",
-   "mods": 8
+   ]
   },
   {
+   "member": "com.mojang.blaze3d.systems.RenderSystem.getShaderFogStart()F",
+   "mods": 7,
    "why": "removed",
    "examples": [
     "embeddium--embeddium-1.0.15+mc1.21.1.jar",
@@ -374,11 +328,11 @@
     "iris--iris-neoforge-1.8.14-beta.1+mc1.21.1.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar",
     "physicsmod--physics-mod-3.0.35-mc-1.21.1-neoforge.jar"
-   ],
-   "member": "com.mojang.blaze3d.systems.RenderSystem.getShaderFogStart()F",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.client.model.HierarchicalModel",
+   "mods": 7,
    "why": "removed: class",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -386,11 +340,11 @@
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar",
     "physicsmod--physics-mod-3.0.35-mc-1.21.1-neoforge.jar",
     "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar"
-   ],
-   "member": "net.minecraft.client.model.HierarchicalModel",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.client.player.Input.jumping",
+   "mods": 7,
    "why": "removed: field",
    "examples": [
     "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
@@ -398,11 +352,11 @@
     "freecam--freecam-neoforge-1.3.0+mc1.21.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar",
     "supplementaries--supplementaries-1.21.1-4.1.1-neoforge.jar"
-   ],
-   "member": "net.minecraft.client.player.Input.jumping",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.client.renderer.PostChain.<init>(Lnet/minecraft/client/renderer/texture/TextureManager;Lnet/minecraft/server/packs/resources/ResourceProvider;Lcom/mojang/blaze3d/pipeline/RenderTarget;Lnet/minecraft/resources/ResourceLocation;)V",
+   "mods": 7,
    "why": "signature",
    "examples": [
     "enhancedvisuals--EnhancedVisuals_NEOFORGE_v1.8.34_mc1.21.1.jar",
@@ -410,11 +364,11 @@
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
     "modern-ui--ModernUI-NeoForge-1.21.1-3.13.0.1-universal.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
-   "member": "net.minecraft.client.renderer.PostChain.<init>(Lnet/minecraft/client/renderer/texture/TextureManager;Lnet/minecraft/server/packs/resources/ResourceProvider;Lcom/mojang/blaze3d/pipeline/RenderTarget;Lnet/minecraft/resources/ResourceLocation;)V",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.client.renderer.PostChain.resize(II)V",
+   "mods": 7,
    "why": "removed",
    "examples": [
     "enhancedvisuals--EnhancedVisuals_NEOFORGE_v1.8.34_mc1.21.1.jar",
@@ -422,11 +376,11 @@
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
     "modern-ui--ModernUI-NeoForge-1.21.1-3.13.0.1-universal.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
-   "member": "net.minecraft.client.renderer.PostChain.resize(II)V",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.client.renderer.block.model.ItemOverrides.EMPTY",
+   "mods": 7,
    "why": "removed: field",
    "examples": [
     "amendments--amendments-1.21-2.2.7-neoforge.jar",
@@ -434,11 +388,11 @@
     "balm--balm-neoforge-1.21.1-21.0.67.jar",
     "create--create-1.21.1-6.0.10.jar",
     "creativecore--CreativeCore_NEOFORGE_v2.13.54_mc1.21.1.jar"
-   ],
-   "member": "net.minecraft.client.renderer.block.model.ItemOverrides.EMPTY",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.core.registries.Registries.ARMOR_MATERIAL",
+   "mods": 7,
    "why": "removed: field",
    "examples": [
     "create--create-1.21.1-6.0.10.jar",
@@ -446,11 +400,11 @@
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
     "l_enders-cataclysm--L_Ender's Cataclysm 1.21.1-3.33.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ],
-   "member": "net.minecraft.core.registries.Registries.ARMOR_MATERIAL",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.data.loot.LootTableProvider$SubProviderEntry.<init>(Ljava/util/function/Function;Lnet/minecraft/world/level/storage/loot/parameters/LootContextParamSet;)V",
+   "mods": 7,
    "why": "signature",
    "examples": [
     "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
@@ -458,11 +412,11 @@
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "lootr--lootr-neoforge-1.21.1-1.11.38.127.jar",
     "quark--Quark-4.1-488.jar"
-   ],
-   "member": "net.minecraft.data.loot.LootTableProvider$SubProviderEntry.<init>(Ljava/util/function/Function;Lnet/minecraft/world/level/storage/loot/parameters/LootContextParamSet;)V",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.data.recipes.ShapelessRecipeBuilder.shapeless(Lnet/minecraft/data/recipes/RecipeCategory;Lnet/minecraft/world/level/ItemLike;)Lnet/minecraft/data/recipes/ShapelessRecipeBuilder;",
+   "mods": 7,
    "why": "signature",
    "examples": [
     "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
@@ -470,11 +424,11 @@
     "create--create-1.21.1-6.0.10.jar",
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar"
-   ],
-   "member": "net.minecraft.data.recipes.ShapelessRecipeBuilder.shapeless(Lnet/minecraft/data/recipes/RecipeCategory;Lnet/minecraft/world/level/ItemLike;)Lnet/minecraft/data/recipes/ShapelessRecipeBuilder;",
-   "mods": 7
+   ]
   },
   {
+   "member": "net.minecraft.world.item.ArmorItem.getEquipmentSlot()Lnet/minecraft/world/entity/EquipmentSlot;",
+   "mods": 7,
    "why": "removed",
    "examples": [
     "inventory-profiles-next--InventoryProfilesNext-neoforge-1.21.1-2.2.5.jar",
@@ -482,9 +436,55 @@
     "l_enders-cataclysm--L_Ender's Cataclysm 1.21.1-3.33.jar",
     "physicsmod--physics-mod-3.0.35-mc-1.21.1-neoforge.jar",
     "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar"
-   ],
-   "member": "net.minecraft.world.item.ArmorItem.getEquipmentSlot()Lnet/minecraft/world/entity/EquipmentSlot;",
-   "mods": 7
+   ]
+  },
+  {
+   "member": "net.minecraft.world.item.ArmorMaterial.<init>(Ljava/util/Map;ILnet/minecraft/core/Holder;Ljava/util/function/Supplier;Ljava/util/List;FF)V",
+   "mods": 7,
+   "why": "signature",
+   "examples": [
+    "create--create-1.21.1-6.0.10.jar",
+    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
+    "l_enders-cataclysm--L_Ender's Cataclysm 1.21.1-3.33.jar",
+    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar",
+    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.item.ItemStack.getDescriptionId()Ljava/lang/String;",
+   "mods": 7,
+   "why": "removed",
+   "examples": [
+    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
+    "create--create-1.21.1-6.0.10.jar",
+    "inventory-profiles-next--InventoryProfilesNext-neoforge-1.21.1-2.2.5.jar",
+    "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
+    "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.item.TieredItem",
+   "mods": 7,
+   "why": "removed: class",
+   "examples": [
+    "dynamiccrosshair--dynamiccrosshair-9.11+1.21.1-neoforge.jar",
+    "emi--emi-1.1.24+1.21.1+neoforge.jar",
+    "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
+    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
+    "quark--Quark-4.1-488.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.item.crafting.Ingredient$TagValue",
+   "mods": 7,
+   "why": "removed: class",
+   "examples": [
+    "create--create-1.21.1-6.0.10.jar",
+    "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
+    "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
+    "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
+    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
+   ]
   }
  ]
 }

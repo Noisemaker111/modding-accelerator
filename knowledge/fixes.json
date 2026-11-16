@@ -8032,6 +8032,69 @@
         "after": "package mod;\n\nimport net.minecraft.world.item.BlockItem;\n\nclass Items {\n    static final DeferredItem<BlockItem> SEEDS = ITEMS.register(\"seeds\",\n        () -> new BlockItem(Blocks.CROP.get(), new Item.Properties().stacksTo(64).useItemDescriptionPrefix()));\n}\n",
         "from": "written for this rule, after item-name-block-item-new-1212"
       }
+    },
+    {
+      "id": "server-level-recipe-access-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.server.level.ServerLevel.getRecipeManager"],
+      "match": "symbol:\\s+method getRecipeManager\\(\\)\\n\\s*location: (?:variable \\w+ of type|class) (?:[\\w.]*\\.)?ServerLevel\\b",
+      "apply": {
+        "find": "\\.\\s*getRecipeManager\\s*\\(\\s*\\)",
+        "replace": ".recipeAccess()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's server level hands out its RecipeManager as recipeAccess().",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Level.getRecipeManager() removed; 1.21.2 Level.recipeAccess() RecipeAccess, ServerLevel.recipeAccess() RecipeManager, MinecraftServer.getRecipeManager() RecipeManager; Entity.sendSystemMessage(Component) removed, Player and ServerPlayer keep it",
+      "test": {
+        "error": "Oven.java:3: error: cannot find symbol\n        var r = level.getRecipeManager().getRecipeFor(type, input, level);\n                     ^\n  symbol:   method getRecipeManager()\n  location: variable level of type ServerLevel\n",
+        "before": "class Oven {\n    void f(ServerLevel level) {\n        var r = level.getRecipeManager().getRecipeFor(type, input, level);\n    }\n}\n",
+        "after": "class Oven {\n    void f(ServerLevel level) {\n        var r = level.recipeAccess().getRecipeFor(type, input, level);\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "level-recipe-manager-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.level.Level.getRecipeManager"],
+      "match": "symbol:\\s+method getRecipeManager\\(\\)\\n\\s*location: (?:variable \\w+ of type|class) (?:[\\w.]*\\.)?Level\\b",
+      "apply": {
+        "find": "\\.\\s*getRecipeManager\\s*\\(\\s*\\)",
+        "replace": ".getServer().getRecipeManager()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 keeps recipes on the server only: a level reaches them through its server. A client no longer receives the recipe list, so client code that read it has nothing to read and needs the recipe book or recipe displays instead.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Level.getRecipeManager() removed; 1.21.2 Level.recipeAccess() RecipeAccess, ServerLevel.recipeAccess() RecipeManager, MinecraftServer.getRecipeManager() RecipeManager; Entity.sendSystemMessage(Component) removed, Player and ServerPlayer keep it",
+      "test": {
+        "error": "Oven.java:3: error: cannot find symbol\n        var r = this.level().getRecipeManager().getRecipeFor(type, input, level);\n                            ^\n  symbol:   method getRecipeManager()\n  location: class Level\n",
+        "before": "class Oven {\n    void f() {\n        var r = this.level().getRecipeManager().getRecipeFor(type, input, level);\n        var s = other.getRecipeManager();\n    }\n}\n",
+        "after": "class Oven {\n    void f() {\n        var r = this.level().getServer().getRecipeManager().getRecipeFor(type, input, level);\n        var s = other.getRecipeManager();\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "entity-system-message-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.entity.Entity.sendSystemMessage"],
+      "match": "symbol:\\s+method sendSystemMessage\\((?:[\\w.]*\\.)?Component\\)\\n\\s*location: variable \\w+ of type \\w+",
+      "apply": {
+        "find": "(^\\s*|[;{]\\s*)\\b{receiver}\\s*\\.\\s*sendSystemMessage\\s*\\(",
+        "replace": "$1if ({receiver} instanceof net.minecraft.world.entity.player.Player mmtPlayer) mmtPlayer.sendSystemMessage("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 took sendSystemMessage off Entity; players keep it. In 1.21.1 an entity that was not a player ignored the message, so the statement now sends it to players only, as before.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Level.getRecipeManager() removed; 1.21.2 Level.recipeAccess() RecipeAccess, ServerLevel.recipeAccess() RecipeManager, MinecraftServer.getRecipeManager() RecipeManager; Entity.sendSystemMessage(Component) removed, Player and ServerPlayer keep it",
+      "test": {
+        "error": "Warn.java:3: error: cannot find symbol\n        entity.sendSystemMessage(Component.literal(\"hi\"));\n              ^\n  symbol:   method sendSystemMessage(Component)\n  location: variable entity of type Entity\n",
+        "before": "class Warn {\n    void f(Entity entity) {\n        entity.sendSystemMessage(Component.literal(\"hi\"));\n    }\n}\n",
+        "after": "class Warn {\n    void f(Entity entity) {\n        if (entity instanceof net.minecraft.world.entity.player.Player mmtPlayer) mmtPlayer.sendSystemMessage(Component.literal(\"hi\"));\n    }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }
