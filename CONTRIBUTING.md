@@ -83,8 +83,10 @@ handing to people, usually every few weeks: a goal that landed and was proven, o
 
 - **One button:** Actions → Release → Run workflow, on `main`. It numbers the release, builds the command line and
   the desktop app (Windows and Linux) into one portable ZIP, tests that exact ZIP, tags the commit and publishes.
-  Notes come from the PR titles merged since the last release, so PR titles should read well to users. Run it on any
-  other branch to rehearse: everything but the tag and publish.
+  Run it on any other branch to rehearse: everything but the tag and publish.
+- **Notes are `.github/whats-new.md`:** a short, plain list of what people can now do. A PR that adds something users
+  will notice adds a line there. The full list of merged PRs is folded underneath. The release refuses to publish
+  when the file hasn't changed since the last release.
 - **Version numbers are `0.MINOR.PATCH`.** Pick `minor` when people can do something new, `patch` for fixes only.
   A checkout says `dev`; only the Release workflow stamps a number. `1.0` is the maker's call.
 - **Publishing is the maker's decision:** agents can rehearse a release but don't run it on `main` unasked.
