@@ -1376,6 +1376,95 @@ public final class VersionMap {
         }
 
         /** Whether the file declares TYPE as extending a class it imports from the game (net.minecraft or com.mojang). */
+        /** A descriptor's parameter types: class names dotted ($ kept), primitives and arrays as written. */
+        static List<String> paramTypes(String desc) {
+            List<String> out = new ArrayList<>();
+            int open = desc.indexOf('('), close = desc.indexOf(')');
+            if (open < 0 || close < 0) {
+                return out;
+            }
+            Matcher m = Pattern.compile("\\[*(?:L([^;]+);|[ZBCSIJFD])").matcher(desc.substring(open + 1, close));
+            while (m.find()) {
+                out.add(m.group(1) != null ? m.group().replaceFirst("L([^;]+);", "$1").replace('/', '.') : m.group());
+            }
+            return out;
+        }
+
+        /** The indices of before that keep after's types in order, when there is exactly one such choice and something is dropped. */
+        static int[] uniqueEmbedding(List<String> before, List<String> after) {
+            if (after.size() >= before.size()) {
+                return null;
+            }
+            List<int[]> found = new ArrayList<>();
+            embed(before, after, 0, 0, new int[after.size()], found);
+            return found.size() == 1 ? found.get(0) : null;
+        }
+
+        static void embed(List<String> before, List<String> after, int i, int j, int[] picked, List<int[]> found) {
+            if (found.size() > 1) {
+                return;
+            }
+            if (j == after.size()) {
+                found.add(picked.clone());
+                return;
+            }
+            for (int at = i; at <= before.size() - (after.size() - j); at++) {
+                if (before.get(at).equals(after.get(j))) {
+                    picked[j] = at;
+                    embed(before, after, at + 1, j + 1, picked, found);
+                }
+            }
+        }
+
+        static int closingParen(String text, int open) {
+            int depth = 0;
+            for (int i = open; i < text.length(); i++) {
+                char ch = text.charAt(i);
+                if (ch == '"') {
+                    i = stringEnd(text, i);
+                } else if (ch == '(') {
+                    depth++;
+                } else if (ch == ')' && --depth == 0) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        static int stringEnd(String text, int quote) {
+            for (int i = quote + 1; i < text.length(); i++) {
+                if (text.charAt(i) == '\\') {
+                    i++;
+                } else if (text.charAt(i) == '"') {
+                    return i;
+                }
+            }
+            return text.length() - 1;
+        }
+
+        static List<String> topLevelArguments(String args) {
+            List<String> parts = new ArrayList<>();
+            if (args.isBlank()) {
+                return parts;
+            }
+            int depth = 0, from = 0;
+            for (int i = 0; i < args.length(); i++) {
+                char ch = args.charAt(i);
+                if (ch == '"') {
+                    i = stringEnd(args, i);
+                } else if (ch == '(' || ch == '{' || ch == '[') {
+                    depth++;
+                } else if (ch == ')' || ch == '}' || ch == ']') {
+                    depth--;
+                } else if (ch == ',' && depth == 0) {
+                    parts.add(args.substring(from, i));
+                    from = i + 1;
+                }
+            }
+            parts.add(args.substring(from));
+            return parts;
+        }
+
         static boolean extendsGameClass(String text, String type) {
             if (type == null) {
                 return false;
@@ -1645,6 +1734,71 @@ public final class VersionMap {
                     break;
                 }
             }
+            // 2c. A call whose method only lost parameters (the game's new descriptor keeps some of the old parameter types,
+            // in order, matched exactly one way): the arguments for the dropped parameters go, and a rename is applied.
+            Pattern applied = Pattern.compile("^method (\\w+) in (?:class|interface) ([\\w.$]+)(?:<[^>]*>)? cannot be applied to given types");
+            List<Err> bottomUp = new ArrayList<>(readErrors(log));
+            // Last line first: a call that spanned lines and loses arguments must not shift the lines of the ones above it.
+            bottomUp.sort(Comparator.comparing(Err::file).thenComparing(Comparator.comparingInt(Err::line).reversed()));
+            for (Err e : bottomUp) {
+                Matcher am = applied.matcher(e.message());
+                if (!am.find()) {
+                    continue;
+                }
+                String name = am.group(1), owner = simple(am.group(2));
+                Set<String> transitions = k.sigTransitions.get(owner + "." + name);
+                Set<String> targets = k.sigTo.get(owner + "." + name);
+                if (transitions == null || transitions.size() != 1 || targets == null || targets.size() != 1) {
+                    continue;
+                }
+                String[] t = transitions.iterator().next().split(" -> ");
+                if (t.length != 2 || !t[0].startsWith("(") || !t[1].startsWith("(")) {
+                    continue;
+                }
+                List<String> before = paramTypes(t[0]), after = paramTypes(t[1]);
+                before.replaceAll(type -> k.classFqn.getOrDefault(type, type));
+                int[] kept = uniqueEmbedding(before, after);
+                if (kept == null) {
+                    continue;
+                }
+                String target = targets.iterator().next();
+                String newName = target.substring(0, target.indexOf('('));
+                Path f = sourcePath(e, repo);
+                if (f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                int lineStart = 0;
+                for (int i = 1; i < e.line() && lineStart >= 0; i++) {
+                    lineStart = text.indexOf('\n', lineStart) + 1;
+                }
+                int lineEnd = text.indexOf('\n', lineStart);
+                Matcher callAt = Pattern.compile("\\b" + Pattern.quote(name) + "\\s*\\(").matcher(text);
+                callAt.region(lineStart + Math.max(0, e.caret()), lineEnd < 0 ? text.length() : lineEnd);
+                if (!callAt.find()) {
+                    callAt.region(lineStart, lineEnd < 0 ? text.length() : lineEnd);
+                    if (!callAt.find()) {
+                        continue;
+                    }
+                }
+                int open = callAt.end() - 1, close = closingParen(text, open);
+                if (close < 0) {
+                    continue;
+                }
+                List<String> args = topLevelArguments(text.substring(open + 1, close));
+                if (args.size() != before.size()) {
+                    continue;
+                }
+                List<String> keep = new ArrayList<>();
+                for (int i : kept) {
+                    keep.add(args.get(i).strip());
+                }
+                text = text.substring(0, callAt.start()) + newName + "(" + String.join(", ", keep) + ")" + text.substring(close + 1);
+                texts.put(f, text);
+                replacements++;
+                byKind.merge("dropped parameters", 1, Integer::sum);
+            }
+
             // 3. Learned rewrites (from other mods' real ports of this jump), on the reported lines only.
             if (rulesFile != null && Files.isRegularFile(rulesFile)) {
                 Map<Path, Set<String>> pendingImports = new LinkedHashMap<>();

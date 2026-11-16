@@ -197,6 +197,28 @@ public final class PortPreflightTest {
         require(renamedCaps.contains("Capabilities.Item.BLOCK"), "nested class renamed through its outer class: " + renamedCaps);
         require(renamedCaps.contains("Other.ItemHandler.BLOCK"), "another outer class's ItemHandler untouched");
 
+        // A method that only lost parameters: the arguments for them go (even over several lines) when the kept types
+        // match one way only; (int,int) -> (int) could drop either, so it is left alone.
+        Path drops = Files.createDirectories(scratch.resolve("drops"));
+        Path dropMap = scratch.resolve("drops.json");
+        Files.writeString(dropMap, """
+            { "from": "26.1.2", "to": "26.2", "names": "mojmap",
+              "signatures": [
+                { "owner": "net.minecraft.client.renderer.LevelRenderer", "from": "setSectionDirty", "desc": "(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;I)V", "to": "markDirty", "newDesc": "(Lnet/minecraft/core/BlockPos;I)V" },
+                { "owner": "com.mojang.blaze3d.platform.Window", "from": "resize", "desc": "(II)V", "to": "resize", "newDesc": "(I)V" }
+              ]
+            }
+            """);
+        String calls = "class Calls {\n  void f() {\n    renderer.setSectionDirty(\n      pos,\n      level.getBlockState(pos),\n      3);\n    window.resize(w, h);\n  }\n}\n";
+        Files.writeString(drops.resolve("Calls.java"), calls);
+        Path dropLog = scratch.resolve("drops.log");
+        Files.writeString(dropLog, drops.resolve("Calls.java") + ":3: error: method setSectionDirty in class LevelRenderer cannot be applied to given types;\n    renderer.setSectionDirty(\n            ^\n"
+            + drops.resolve("Calls.java") + ":7: error: method resize in class Window cannot be applied to given types;\n    window.resize(w, h);\n          ^\n");
+        VersionMap.Fix.run(dropMap, dropLog, drops, false, null);
+        String dropped = Files.readString(drops.resolve("Calls.java"));
+        require(dropped.contains("renderer.markDirty(pos, 3);"), "dropped parameter's argument removed and the call renamed: " + dropped);
+        require(dropped.contains("window.resize(w, h);"), "an ambiguous drop is left alone");
+
         System.out.println("PASS: mapping-backed preflight and guarded lookalikes");
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }
