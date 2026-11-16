@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "14042a4d5680b090b09e75985021c3e8ffde19ded99c0498632b83cff9339448",
+ "rules_sha256": "c3dddbdca342435bb28fc05f5c80c67e0f78ba83d4349b077a6e7457921898e2",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -11152,6 +11152,7 @@
     "symbol": "minecraft|net.minecraft.core.component.DataComponentGetter#get",
     "found": true
    }
-  ]
+  ],
+  "fabric-on-neoforge@1.21.1": []
  }
 }

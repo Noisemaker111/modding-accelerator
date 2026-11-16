@@ -31,7 +31,7 @@ import convert_sweep  # noqa: E402  (the sweep's clone and copy helpers)
 
 WORK = ROOT / ".runs" / "bridge-check"
 HOSTS = {("neoforge-on-fabric", "26.3"): "mdk-mdg-26.3", ("neoforge-on-fabric", "1.21.1"): "mdk-mdg-1.21.1",
-         ("fabric-on-neoforge", "26.3"): "mdk-mdg-26.3", ("neoforge-on-fabric", "26.1"): "mdk-mdg-26.3"}
+         ("fabric-on-neoforge", "26.3"): "mdk-mdg-26.3", ("fabric-on-neoforge", "1.21.1"): "mdk-mdg-1.21.1", ("neoforge-on-fabric", "26.1"): "mdk-mdg-26.3"}
 # A host built on another game release than its own: the gradle.properties values that pin it there.
 PINS = {("neoforge-on-fabric", "26.1"): {"minecraft_version": "26.1.2", "minecraft_version_range": "[26.1.2]", "neo_version": "26.1.2.126"}}
 

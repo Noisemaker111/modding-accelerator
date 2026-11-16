@@ -109,6 +109,24 @@ final class ConvertDataTests {
             Convert.nonTransitiveCompileOnly("> Could not find a:b:1.", depsBuild, Map.of()) == null,
             "a compile-only dependency whose own dependencies cannot be found is made non-transitive, matched with the build's properties; others stay: " + nonTransitive
         );
+        ConvertTests.check(
+            Convert.otherTypeNamed("import com.demo.util.mod.Mod;\nimport net.neoforged.fml.common.Mod;\n", "Mod", "net.neoforged.fml.common.Mod") &&
+            !Convert.otherTypeNamed("import net.neoforged.fml.common.Mod;\nimport com.demo.Modded;\n", "Mod", "net.neoforged.fml.common.Mod"),
+            "a mod's own type named Mod, imported, is found (so the @Mod convert writes is qualified); NeoForge's own or a longer name is not"
+        );
+        String placeholderToml = "[[mods]]\nmodId = \"demo\"\nversion = \"$version\"\n";
+        ConvertTests.check(
+            Convert.unexpandedVersion(placeholderToml, "plugins {}\n").equals("[[mods]]\nmodId = \"demo\"\nversion = \"${file.jarVersion}\"\n") &&
+            Convert.unexpandedVersion(placeholderToml.replace("$version", "${version}"), "").contains("version = \"${file.jarVersion}\"") &&
+            Convert.unexpandedVersion(placeholderToml, "processResources { filesMatching(\"META-INF/neoforge.mods.toml\") { expand version: project.version } }").equals(placeholderToml) &&
+            Convert.unexpandedVersion(placeholderToml.replace("$version", "1.2.0"), "").equals(placeholderToml.replace("$version", "1.2.0")),
+            "a mod version left as a Gradle placeholder no build step expands is NeoForge's ${file.jarVersion}; an expanded or literal version stays"
+        );
+        ConvertTests.check(
+            Convert.fabricOnly("fabric-screen-api-v1") && Convert.fabricOnly("fabric-key-mapping-api-v1") && Convert.fabricOnly("fabric-api") &&
+            !Convert.fabricOnly("fabric-language-kotlin") && !Convert.fabricOnly("sodium"),
+            "Fabric API's modules (fabric-...-vN) and Fabric API itself are no NeoForge dependency; other fabric- mods still are"
+        );
         Map<String, String> mod = Map.of(
             "FramedBlock", "public class FramedBlock extends Block {\n    @Override\n    public ItemStack getCloneItemStack(LevelReader l) { return null; }\n}",
             "FramedMiddle", "public class FramedMiddle extends FramedBlock {}"

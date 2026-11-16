@@ -6963,7 +6963,7 @@
      "mixin": "ItemFabricItem",
      "uses": [
       [
-       "\\b(?:getCreatorNamespace|getCraftingRemainder)\\s*\\("
+       "\\b(?:getCreatorNamespace|getCraftingRemainder|getRecipeRemainder)\\s*\\("
       ]
      ],
      "for": [
@@ -6978,7 +6978,7 @@
      "mixin": "ItemStackFabricItemStack",
      "uses": [
       [
-       "\\b(?:getCreatorNamespace|getCraftingRemainder)\\s*\\("
+       "\\b(?:getCreatorNamespace|getCraftingRemainder|getRecipeRemainder)\\s*\\("
       ]
      ],
      "for": [
@@ -7031,6 +7031,39 @@
      "injects": {
       "net/minecraft/world/level/block/state/BlockState": "fabric.api.block.v1.FabricBlockState"
      }
+    }
+   ],
+   "layers": [
+    {
+     "minecraft": "1.21.1",
+     "below": "1.21.2",
+     "folder": "knowledge/bridges/fabric-on-neoforge/1.21.1",
+     "about": "Minecraft 1.21.1 with NeoForge 21.1 and Fabric API 1.21.1's names: the files that differ from 26.1's (KeyBindingHelper, a PacketSender taking a PacketSendListener, client payload handlers given with the payload type, attachments without syncing, which neither NeoForge 21.1 nor Fabric API 1.21.1 has). Its rewrites rename words in every bridge file for this game (Identifier is ResourceLocation here), so a file that differs only by those needs no copy. Left out for now, as NeoForge 21.1 has no counterpart the bridge is written on: Fabric's transfer and block API lookup (NeoForge 21.1 has item handlers, not its transfer API), client commands, the resource loader and the 26.x HUD element API.",
+     "rewrites": {
+      "org.jspecify.annotations.Nullable": "org.jetbrains.annotations.Nullable",
+      "Identifier": "ResourceLocation",
+      "GuiGraphicsExtractor": "GuiGraphics",
+      "FMLEnvironment.getDist()": "FMLEnvironment.dist",
+      "FMLEnvironment.isProduction()": "FMLEnvironment.production",
+      "ChunkPos.containing": "new ChunkPos",
+      "gui.screen()": "screen"
+     },
+     "drops": [
+      "fabric/api/client/rendering/v1/hud/",
+      "fabric/api/client/keymapping/",
+      "fabric/api/client/command/",
+      "ClientCommandForwarding.java",
+      "mixin/ClientPacketListenerCommands.java",
+      "mixin/UnattendedCommandMixin.java",
+      "fabric/api/resource/",
+      "fabric/api/networking/v1/context/",
+      "fabric/api/transfer/",
+      "fabric/api/lookup/",
+      "TransferBridge.java",
+      "TransferTransactions.java",
+      "TransferHooks.java",
+      "team/"
+     ]
     }
    ]
   }

@@ -1044,6 +1044,12 @@ final class Convert {
         write("src/main/resources/META-INF/neoforge.mods.toml", modsToml(meta, minecraft));
         delete(metaFile);
         buildToNeoForge(minecraft);
+        String toml = read("src/main/resources/META-INF/neoforge.mods.toml");
+        String settled = unexpandedVersion(toml, exists("build.gradle") ? read("build.gradle") : "");
+        if (!settled.equals(toml)) {
+            write("src/main/resources/META-INF/neoforge.mods.toml", settled);
+            notes.add("Version: fabric.mod.json's version was a Gradle placeholder that no step of the converted build expands (it was in a script that needs Loom), so neoforge.mods.toml reads the jar's version (${file.jarVersion}).");
+        }
         // Fabric's loader and API packages: net.fabricmc's libraries (mapping-io, tiny-remapper) are plain dependencies
         // the build keeps, which compile on any loader.
         leftovers(List.of("net.fabricmc.api.", "net.fabricmc.loader.", "net.fabricmc.fabric.", "com.terraformersmc.modmenu."));
@@ -1108,6 +1114,10 @@ final class Convert {
             build.harness.resolve(Json.text(b, "folder", "")),
             layer == null ? null : build.harness.resolve(Json.text(layer, "folder", ""))
         );
+        // A version layer leaves out what its game's Fabric API or NeoForge lacks, and renames words (Identifier) in the rest.
+        List<String> layerDrops = layer == null ? List.of() : LoaderRules.strings(layer.get("drops"));
+        templates.keySet().removeIf(rel -> dropped(layerDrops, rel));
+        Map<String, Object> layerWords = layer != null && layer.get("rewrites") instanceof Map<?, ?> words ? Json.object(words) : Map.of();
         Set<String> classes = mirroredClasses(templates);
         String entry = null;
         if (meta.get("entrypoints") instanceof Map<?, ?> eps) for (String side : List.of("main", "client", "server")) {
@@ -1170,7 +1180,7 @@ final class Convert {
         bridgeUsers = sourcesOutside(folder);
         for (var template : templates.entrySet()) write(
             folder + "/" + template.getKey(),
-            fillBridge(Files.readString(template.getValue(), StandardCharsets.UTF_8), pkg)
+            fillBridge(layerRewrites(Files.readString(template.getValue(), StandardCharsets.UTF_8), layerWords), pkg)
         );
         bridgeMixinConfig = bridgeMixins(b, layer, pkg, javaFiles().stream().filter(f -> !f.startsWith(folder + "/")).toList());
         notes.add(
@@ -1438,7 +1448,7 @@ final class Convert {
             leave(file, 0, "entrypoint " + name, "the class declaration was not found");
             return;
         }
-        if (text.contains("@Mod(")) {
+        if (text.contains("@Mod(") || text.contains("@net.neoforged.fml.common.Mod(")) {
             leave(
                 file,
                 LoaderRules.line(text, c.start()),
@@ -1460,9 +1470,12 @@ final class Convert {
         }
         String indent = c.group(1);
         String inner = indent + unit;
-        String annotation = dist == null
-            ? "@Mod(" + LoaderRules.quote(modid) + ")"
-            : "@Mod(value = " + LoaderRules.quote(modid) + ", dist = Dist." + dist + ")";
+        // A mod type of its own named Mod (imported, or in the same package) would be what @Mod names: the annotation is qualified.
+        String dir = file.substring(0, file.lastIndexOf('/') + 1);
+        boolean modShadowed = otherTypeNamed(text, "Mod", "net.neoforged.fml.common.Mod") || exists(dir + "Mod.java");
+        String annotation = (modShadowed ? "@net.neoforged.fml.common.Mod(" : "@Mod(") + (dist == null
+            ? LoaderRules.quote(modid) + ")"
+            : "value = " + LoaderRules.quote(modid) + ", dist = Dist." + dist + ")");
         // NeoForge loads a @Mod class before any registry is open. An entry class that registers in a static field
         // (a game rule, a block) must not be that class: a small generated holder runs it once registries are open.
         boolean holder = STATIC_REGISTRATION.matcher(text).find();
@@ -1547,9 +1560,8 @@ final class Convert {
         out = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.api\\." + api + "\\s*;[^\\n]*\\n?")
             .matcher(out)
             .replaceAll("");
-        List<String> needed = new ArrayList<>(
-            List.of("net.neoforged.fml.common.Mod", "net.neoforged.bus.api.IEventBus")
-        );
+        List<String> needed = new ArrayList<>(List.of("net.neoforged.bus.api.IEventBus"));
+        if (!modShadowed) needed.add("net.neoforged.fml.common.Mod");
         if (client) needed.add("net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent");
         else needed.addAll(
             List.of("net.neoforged.neoforge.registries.RegisterEvent", "net.minecraft.core.registries.Registries")
@@ -1697,16 +1709,20 @@ final class Convert {
             "Mod Menu API",
             "only getModConfigScreenFactory has a NeoForge counterpart (IConfigScreenFactory)"
         );
-        write(file, LoaderRules.modMenuToNeoForge(text));
-        for (String other : javaFiles()) {
-            String body = read(other);
-            String next = body.replace(".getModConfigScreenFactory().create(", ".getModConfigScreenFactory().apply(");
-            write(other, next);
+        // Mod Menu itself (or a mod shipping its API): ModMenuApi and ConfigScreenFactory are the mod's own types, kept.
+        boolean ownApi = javaFiles().stream().anyMatch(f -> f.contains("/com/terraformersmc/modmenu/api/"));
+        if (!ownApi) {
+            write(file, LoaderRules.modMenuToNeoForge(text));
+            for (String other : javaFiles()) {
+                String body = read(other);
+                String next = body.replace(".getModConfigScreenFactory().create(", ".getModConfigScreenFactory().apply(");
+                write(other, next);
+            }
         }
         String register =
             "container.registerExtensionPoint(IConfigScreenFactory.class, (modContainer, parent) -> new " +
             menu +
-            "().getModConfigScreenFactory().apply(parent));";
+            "().getModConfigScreenFactory()." + (ownApi ? "create" : "apply") + "(parent));";
         String client = null;
         for (Object item : Json.array(entrypoints.getOrDefault("client", List.of()))) client = item instanceof String s
             ? s
@@ -1812,6 +1828,11 @@ final class Convert {
         "modmenu"
     );
 
+    /** Fabric's loader and Fabric API, whole or one of its modules (fabric-screen-api-v1 ...): no NeoForge mod of that id. */
+    static boolean fabricOnly(String id) {
+        return FABRIC_ONLY.contains(id) || id.matches("fabric-[a-z0-9-]+-v\\d+");
+    }
+
     String modsToml(Map<String, Object> meta, String minecraft) {
         StringBuilder out = new StringBuilder();
         out.append("modLoader = \"javafml\"\nloaderVersion = \"[1,)\"\n");
@@ -1852,6 +1873,11 @@ final class Convert {
         out.append("description = ").append(tomlString(Json.text(meta, "description", ""))).append('\n');
         StringBuilder properties = new StringBuilder();
         if (!modid.equals(fabricId)) properties.append("fabricId = ").append(tomlString(fabricId)).append('\n');
+        // The side fabric.mod.json names, which the Fabric bridge's ModMetadata.getEnvironment reads.
+        if (meta.get("environment") instanceof String side && (side.equals("client") || side.equals("server"))) properties
+            .append("fabricEnvironment = ")
+            .append(tomlString(side))
+            .append('\n');
         for (var e : ownEntrypoints.entrySet()) properties
             .append(tomlString("fabric.entrypoints." + e.getKey()))
             .append(" = [")
@@ -1892,7 +1918,7 @@ final class Convert {
             if (!(meta.get(kind.getKey()) instanceof Map<?, ?>)) continue;
             for (var dep : Json.object(meta.get(kind.getKey())).entrySet()) {
                 String id = dep.getKey();
-                if (FABRIC_ONLY.contains(id)) continue;
+                if (fabricOnly(id)) continue;
                 if (id.equals("another-mod")) continue;
                 // A Fabric-only library the Fabric bridge carries in this mod (bridges[].replacesMods) is no dependency there.
                 if (fabricBridgePackage != null && fabricBridgeReplacedMods.contains(id)) {
@@ -2703,7 +2729,7 @@ final class Convert {
         for (String file : javaFiles()) {
             String text = read(file);
             Matcher annotation = Pattern.compile(
-                "@Mod\\(\\s*(?:value\\s*=\\s*)?([^,)]+?)\\s*(?:,\\s*dist\\s*=\\s*Dist\\.(\\w+)\\s*)?\\)"
+                "@(?:net\\.neoforged\\.fml\\.common\\.)?Mod\\(\\s*(?:value\\s*=\\s*)?([^,)]+?)\\s*(?:,\\s*dist\\s*=\\s*Dist\\.(\\w+)\\s*)?\\)"
             ).matcher(text);
             if (!annotation.find()) continue;
             String name = file.replaceFirst("^src/\\w+/java/", "").replaceAll("\\.java$", "").replace('/', '.');
@@ -3199,7 +3225,7 @@ final class Convert {
         List<String> common = new ArrayList<>(), all = new ArrayList<>();
         Pattern pkg = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;");
         for (String text : sources) {
-            Matcher annotation = Pattern.compile("@Mod\\(([^)]*)\\)").matcher(text);
+            Matcher annotation = Pattern.compile("@(?:net\\.neoforged\\.fml\\.common\\.)?Mod\\(([^)]*)\\)").matcher(text);
             Matcher p = pkg.matcher(text);
             if (!annotation.find() || !p.find()) continue;
             all.add(p.group(1));
@@ -3990,7 +4016,8 @@ final class Convert {
                 .replaceAll("\\bimplements\\s+" + api + "\\s*$", "")
                 .replaceAll("\\bimplements\\s+" + api + "\\s*,\\s*", "implements ")
                 .replaceAll(",\\s*" + api + "\\b", "");
-            String annotation = side == null ? "@Mod(" + id + ")" : "@Mod(value = " + id + ", dist = Dist." + side + ")";
+            String at = otherTypeNamed(out, "Mod", "net.neoforged.fml.common.Mod") ? "@net.neoforged.fml.common.Mod(" : "@Mod(";
+            String annotation = side == null ? at + id + ")" : at + "value = " + id + ", dist = Dist." + side + ")";
             out =
                 out.substring(0, c.start()) +
                 c.group(1) +
@@ -4006,8 +4033,25 @@ final class Convert {
             break;
         }
         out = LoaderRules.dropImport(out, "net.fabricmc.api." + api);
-        out = LoaderRules.addImport(out, "net.neoforged.fml.common.Mod");
+        if (!out.contains("@net.neoforged.fml.common.Mod(")) out = LoaderRules.addImport(out, "net.neoforged.fml.common.Mod");
         return side == null ? out : LoaderRules.addImport(out, "net.neoforged.api.distmarker.Dist");
+    }
+
+    /**
+     * neoforge.mods.toml whose mod version is a Gradle placeholder ($version, ${version}) that the build does not expand
+     * (no processResources expand of it): NeoForge refuses such a version, so it becomes NeoForge's own ${file.jarVersion}.
+     */
+    static String unexpandedVersion(String toml, String gradle) {
+        boolean expands = gradle.contains("neoforge.mods.toml") && gradle.contains("expand");
+        if (expands) return toml;
+        return toml.replaceAll("(?m)^(version\\s*=\\s*)\"\\$\\{?(?:project\\.)?version}?\"", "$1\"\\${file.jarVersion}\"");
+    }
+
+    /** Whether the file imports a type of that simple name other than the one given. */
+    static boolean otherTypeNamed(String text, String simple, String qualified) {
+        Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+\\." + Pattern.quote(simple) + ")\\s*;").matcher(text);
+        while (imported.find()) if (!imported.group(1).equals(qualified)) return true;
+        return false;
     }
 
     /** The class implements the Fabric entrypoint interface again, with @Override on its entry method. */

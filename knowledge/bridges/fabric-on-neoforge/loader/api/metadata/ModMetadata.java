@@ -35,12 +35,24 @@ public final class ModMetadata {
         return fabricId == null ? info.getModId() : String.valueOf(fabricId);
     }
 
+    /** The side a converted mod's fabric.mod.json named (kept in modproperties fabricEnvironment), else every side. */
+    public ModEnvironment getEnvironment() {
+        Object environment = info.getModProperties().get("fabricEnvironment");
+        if ("client".equals(environment)) return ModEnvironment.CLIENT;
+        if ("server".equals(environment)) return ModEnvironment.SERVER;
+        return ModEnvironment.UNIVERSAL;
+    }
+
     public Collection<String> getProvides() {
         return List.of();
     }
 
     public Version getVersion() {
-        return Version.parse(info.getVersion().toString());
+        try {
+            return Version.parse(info.getVersion().toString());
+        } catch (${package}.loader.api.VersionParsingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public String getName() {
