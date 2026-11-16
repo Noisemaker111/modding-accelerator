@@ -225,6 +225,10 @@ gradle.afterProject { p ->
                         "-Dmmt.quiet=${System.getProperty('mmt.quiet', 'false')}",
                         "-Dmmt.state=${state.absolutePath}", '-Dprismlab.lab.port=', '-Dmodlabbridge.port=',
                         '-Dfabric.noGui=true'
+                // A hidden game draws about 8 frames a second; game tests that wait on frames hold a player's rate.
+                def frames = System.getProperty('mmt.frames', '')
+                if (frames) t.jvmArgs "-Dmmt.frames=${frames}"
+                if (System.getProperty('mmt.lease', '') == 'false') t.jvmArgs '-Dmmt.lease=false'
                 // Game.start decides: hidden test sessions run C1 alone, perf and visible games the full JIT.
                 if (c1) t.jvmArgs '-XX:TieredStopAtLevel=1'
             }

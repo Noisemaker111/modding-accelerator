@@ -27,6 +27,9 @@ public final class PortableAgent {
     // reload nobody ran, ran for 13 hours. Each request renews it. A visible game may be someone playing, so it stays.
     static final long LEASE = 15 * 60 * 1000000000L;
     static boolean leaseOver(boolean hidden, long lastContact, long now) { return hidden && now - lastContact >= LEASE; }
+    // mmt game-test runs a mod's own test suite, which talks to no mmt command for far longer than the lease and ends by
+    // itself (its run task owns the client): -Dmmt.lease=false keeps such a game from being stopped mid-suite.
+    static final boolean LEASED = !"false".equals(System.getProperty("mmt.lease"));
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
     private static boolean installed;
     public static synchronized void premain(String args, Instrumentation instrumentation) {
@@ -128,7 +131,7 @@ public final class PortableAgent {
                 Socket accepted;
                 try { accepted = server.accept(); }
                 catch (SocketTimeoutException idle) {
-                    if (!leaseOver(hidden, lastContact, System.nanoTime())) continue;
+                    if (!leaseOver(hidden && LEASED, lastContact, System.nanoTime())) continue;
                     leaseEnded();
                     return;
                 }

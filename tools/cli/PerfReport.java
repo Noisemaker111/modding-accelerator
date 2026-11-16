@@ -20,6 +20,11 @@ final class PerfReport {
     Instant start, end;
     boolean hidden, c1Only;
     final Map<String, Long> allocationSites = new HashMap<>(), allocationClasses = new HashMap<>();
+    /** Per allocated class: estimated bytes per allocation site outside the JDK, to charge young-collection copying to code. */
+    final Map<String, Map<String, Long>> allocationSitesByClass = new HashMap<>();
+    /** Per class: what young collections copied (survivor or promotion), from G1's sampled PLAB/promotion events. */
+    final Map<String, Long> copiedClasses = new HashMap<>();
+    long youngCollections, gcCopiedBytes, copiedWeight;
     final Map<String, Double> lockSites = new HashMap<>();
     final Map<String, Long> probeCalls = new TreeMap<>();
     final Map<String, double[]> timingTotals = new TreeMap<>();
@@ -142,7 +147,19 @@ final class PerfReport {
                 RecordedClass type = event.getClass("objectClass");
                 allocationClasses.merge(type == null ? "unknown" : type.getName(), weight, Long::sum);
                 allocationSites.merge(site(event), weight, Long::sum);
+                allocationSitesByClass.computeIfAbsent(type == null ? "unknown" : type.getName(), k -> new HashMap<>())
+                    .merge(ownSite(event), weight, Long::sum);
                 attribution.allocation(event, weight);
+            }
+            case "jdk.YoungGarbageCollection" -> youngCollections++;
+            case "jdk.EvacuationInformation" -> gcCopiedBytes += Math.max(0, event.getLong("bytesCopied"));
+            case "jdk.PromoteObjectInNewPLAB", "jdk.PromoteObjectOutsidePLAB" -> {
+                // A new PLAB stands for the PLAB's bytes of copying; an object copied outside one, for itself.
+                RecordedClass type = event.getClass("objectClass");
+                long weight = name.endsWith("InNewPLAB") ? event.getLong("plabSize") : event.getLong("objectSize");
+                if (weight <= 0) return;
+                copiedWeight += weight;
+                copiedClasses.merge(type == null ? "unknown" : type.getName(), weight, Long::sum);
             }
             case "jdk.GCHeapSummary" -> add("heap_at_gc_boundary_bytes", event.getLong("heapUsed"));
             case "jdk.GCPhasePause" -> {
@@ -201,6 +218,49 @@ final class PerfReport {
         if (frames.isEmpty()) return "No stack recorded";
         RecordedMethod method = frames.get(0).getMethod();
         return method.getType().getName() + "." + method.getName() + method.getDescriptor();
+    }
+
+    static final String PROFILER_SITE = "mmt's own profiler (its recording, not the game)";
+
+    /** The first frame outside the JDK and its caller, with lines: who asked for the allocation, not Arrays.copyOf. */
+    static String ownSite(RecordedEvent event) {
+        List<RecordedFrame> frames = frames(event.getStackTrace());
+        // The capture's own buffers survive collections too; they are the profiler's cost, not the game's.
+        if (PerfAttribution.profiler(frames)) {
+            return PROFILER_SITE;
+        }
+        for (int i = 0; i < frames.size(); i++) {
+            String type = frames.get(i).getMethod().getType().getName();
+            if (type.startsWith("java.") || type.startsWith("jdk.") || type.startsWith("sun.")) continue;
+            String own = line(frames.get(i));
+            // The caller too: a library's clone or copy says little until it names who asked.
+            return i + 1 < frames.size() ? own + " <- " + line(frames.get(i + 1)) : own;
+        }
+        return frames.isEmpty() ? "No stack recorded" : site(event);
+    }
+
+    static String line(RecordedFrame frame) {
+        String type = frame.getMethod().getType().getName();
+        return type.substring(type.lastIndexOf('.') + 1) + "." + frame.getMethod().getName() + ":" + frame.getLineNumber();
+    }
+
+    /**
+     * Allocation sites charged with the bytes young collections copied: each class's copied bytes are
+     * split over the sites that allocated that class, in proportion to what each allocated. A site whose
+     * objects die young allocates a lot and is charged little; one whose objects live for seconds is
+     * charged what the collector spends copying them, which is what makes young pauses long.
+     */
+    Map<String, Double> survivingSites() {
+        Map<String, Double> sites = new HashMap<>();
+        double scale = gcCopiedBytes > 0 && copiedWeight > 0 ? (double) gcCopiedBytes / copiedWeight : 1;
+        copiedClasses.forEach((type, copied) -> {
+            Map<String, Long> bySite = allocationSitesByClass.get(type);
+            if (bySite == null) return;
+            double allocated = bySite.values().stream().mapToLong(Long::longValue).sum();
+            if (allocated <= 0) return;
+            bySite.forEach((where, weight) -> sites.merge(where, copied * scale * weight / allocated, Double::sum));
+        });
+        return sites;
     }
 
     static List<Object> weighted(Map<String, ? extends Number> values, double total, String unit) {
@@ -280,6 +340,23 @@ final class PerfReport {
             if (completeWindow) result.put("observedTicksPerSecond", ticks.size() / seconds);
         }
         if (events.containsKey("jdk.GCPhasePause")) result.put("gcPauseTotalMs", gcPauseMs);
+        if (events.containsKey("jdk.EvacuationInformation")) {
+            // Mean pause alone misleads: a change that allocates less makes fewer, longer young collections.
+            // What the collector spends is the bytes it copies, in total.
+            result.put("youngCollections", youngCollections);
+            result.put("gcCopiedBytes", gcCopiedBytes);
+            if (youngCollections > 0) result.put("gcCopiedBytesPerYoungCollection", (double) gcCopiedBytes / youngCollections);
+        }
+        if (!copiedClasses.isEmpty()) {
+            double copiedTotal = gcCopiedBytes > 0 ? gcCopiedBytes : copiedWeight;
+            double scale = gcCopiedBytes > 0 ? (double) gcCopiedBytes / copiedWeight : 1;
+            Map<String, Double> classes = new HashMap<>();
+            copiedClasses.forEach((type, weight) -> classes.put(type, weight * scale));
+            result.put("gcCopiedClasses", weighted(classes, copiedTotal, "estimated bytes copied by young collections"));
+            if (!allocationSitesByClass.isEmpty()) {
+                result.put("survivingAllocationSites", weighted(survivingSites(), copiedTotal, "estimated bytes copied by young collections"));
+            }
+        }
         if (!threadCpuTime.isEmpty()) {
             List<Object> rows = new ArrayList<>();
             threadCpuTime.forEach((thread, sum) -> rows.add(Json.map("thread", thread, "cpuMs", sum[0], "userMs", sum[1],
@@ -317,6 +394,8 @@ final class PerfReport {
             + "I/O and lock events may be thresholded and are observed lower bounds, not complete totals.");
         if (c1Only) warnings.add("This JVM compiled with C1 only (-XX:TieredStopAtLevel=1, as hidden mmt test sessions and JBR reload sessions do): "
             + "its code is slower than players' and JFR gets far fewer execution samples from it. perf --root launches a new game with the full JIT; stop this one first.");
+        if (!copiedClasses.isEmpty()) warnings.add("gcCopiedClasses and survivingAllocationSites are estimates from G1's sampled promotion events; "
+            + "a class's copied bytes are split over its allocation sites by what each allocated, assuming its objects survive alike at every site.");
         warnings.add("Explicit probes count method entries (including failed/simulated operations), not delivered items. Their overhead can be substantial.");
         warnings.add("Instrumentation overhead is not calibrated. Compare with --no-hooks and external baseline measurements before performance claims.");
         warnings.add("Raw JFR and class-origin files may contain local paths, JVM arguments and server addresses. Reports stay local.");
@@ -481,6 +560,8 @@ background:#80e4b3}
 <option value="samplesByThread">Thread</option>
 <option value="allocationSites">Allocation sites (estimated bytes)</option>
 <option value="allocationClasses">Allocated classes (estimated bytes)</option>
+<option value="survivingAllocationSites">Allocation sites whose objects young collections copy (estimated bytes)</option>
+<option value="gcCopiedClasses">Classes young collections copy (estimated bytes)</option>
 <option value="lockSites">Lock contention sites (observed ms)</option>
 </select>
 <input id="search" placeholder="Filter names" aria-label="Filter hotspots">
@@ -610,7 +691,7 @@ li.textContent=text;
 el(id).append(li)}
 function hotspots(){const body=el('hot').tBodies[0];
 body.replaceChildren();
-for(const r of d[el('group').value])if(r.name.toLowerCase().includes(el('search').value.toLowerCase()))row(body,[r.name,fmt(r.samples??r.amount)+(r.unit?' '+r.unit:''),fmt(r.percent)+'%'])}
+for(const r of d[el('group').value]||[])if(r.name.toLowerCase().includes(el('search').value.toLowerCase()))row(body,[r.name,fmt(r.samples??r.amount)+(r.unit?' '+r.unit:''),fmt(r.percent)+'%'])}
 el('group').onchange=hotspots;
 el('search').oninput=hotspots;
 hotspots();

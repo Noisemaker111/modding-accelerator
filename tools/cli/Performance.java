@@ -12,6 +12,7 @@ final class Performance {
         if (options.command.equals("perf-template")) return PerfTemplates.run(options);
         if (options.command.equals("perf-diff")) return PerfDiff.run(options);
         if (options.command.equals("perf-optimize")) return PerfOptimize.run(home, options);
+        if (options.command.equals("perf-toggle")) return PerfToggle.run(home, options);
         if (options.command.equals("perf-report")) {
             Path input = Path.of(options.get("file", "")).toAbsolutePath();
             return PerfReport.write(input, output(options));

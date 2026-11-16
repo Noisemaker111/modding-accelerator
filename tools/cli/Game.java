@@ -383,6 +383,7 @@ final class Game {
             }
         }
         String command = options.command;
+        if (command.equals("game-test")) return this.gameTest(options);
         Map<String, Object> current = session();
         if (command.equals("eval")) {
             if (current == null) throw new IOException(noGame("eval against it"));
@@ -958,6 +959,85 @@ final class Game {
     }
 
     /** The Gradle task that runs the client: --client-task or --task, else the one runClient task. */
+    /** Run tasks that run a mod's own game tests, most specific first. */
+    static final List<String> GAME_TEST_TASKS = List.of(":runClientGameTest", ":runProductionClientGameTest", ":runGameTest", ":runGameTestServer");
+
+    /**
+     * Runs the mod's own game tests (Fabric's client game tests, a game test server) as its build defines
+     * them, with the window hidden and the sound off as the user's preferences say, and reads the result.
+     */
+    Map<String, Object> gameTest(Mmt.Options options) throws Exception {
+        String task = options.get("task", "");
+        if (task.isEmpty()) {
+            List<String> found = new ArrayList<>();
+            String project = options.get("project", "");
+            for (String wanted : GAME_TEST_TASKS) {
+                for (Object p : Json.array(model.get("projects"))) for (Object t : Json.array(Json.object(p).get("tasks"))) {
+                    String path = Json.text(Json.object(t), "task", "");
+                    if (path.endsWith(wanted) && (project.isEmpty() || path.equals(project + wanted))) found.add(path);
+                }
+                if (!found.isEmpty()) break;
+            }
+            if (found.size() != 1) throw new IOException("Choose --project or --task for the game tests: " + (found.isEmpty() ? "none of " + GAME_TEST_TASKS + " found" : found));
+            task = found.get(0);
+        }
+        Map<String, Object> preferences = Preferences.read(Preferences.file());
+        // A whole suite takes far longer than one build step: an hour unless --timeout says otherwise.
+        int timeout = Performance.integer(options, "timeout", 3600, 60, 6 * 3600);
+        long start = System.nanoTime();
+        List<String> command = build.command(List.of(
+            "-Dmmt.captureTask=" + task,
+            "-Dmmt.agent=" + agent(),
+            "-Dmmt.fingerprint=game-test",
+            "-Dmmt.token=" + UUID.randomUUID(),
+            "-Dmmt.background=" + preferences.get("background"),
+            "-Dmmt.quiet=" + preferences.get("quiet"),
+            // Hidden, the client would draw about 8 frames a second and every test waiting on frames would crawl.
+            "-Dmmt.frames=60",
+            // The suite ends by itself; the hidden game's 15-minute lease would stop it partway.
+            "-Dmmt.lease=false",
+            "-Dmmt.c1=false",
+            task
+        ));
+        Run.Result result;
+        try {
+            result = Run.command(command, build.project.root, Map.of("JAVA_HOME", build.jdk.home().toString()), build.report.log("game-test"), timeout);
+        } catch (Run.Timeout stopped) {
+            throw new IOException("The game tests ran past " + timeout + " s and were stopped; raise --timeout. Log: " + stopped.log);
+        }
+        List<String> said = gameTestFailure(Files.readAllLines(result.log(), java.nio.charset.StandardCharsets.UTF_8));
+        boolean failed = !said.isEmpty();
+        boolean passed = result.exit() == 0 && !failed;
+        return Json.map("ok", passed, "task", task, "exit", result.exit(), "seconds", (System.nanoTime() - start) / 1e9,
+            "log", result.log().toString(), "lines", said.size() > 200 ? said.subList(said.size() - 200, said.size()) : said,
+            "details", (passed ? "The game tests passed" : "The game tests failed (exit " + result.exit() + ")") + " in " + task
+                + ". The client ran hidden and muted as your preferences say. Log: " + result.log());
+    }
+
+    /**
+     * What a game test run's log says failed, empty if nothing. Fabric's client test runner can log a failed suite and
+     * still exit 0, so the log decides too: the failure line, the exception after it and the mod's own test frames.
+     */
+    static List<String> gameTestFailure(List<String> lines) {
+        List<String> said = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            String l = lines.get(i).toLowerCase(Locale.ROOT);
+            if (!(l.contains("gametests failed") || l.contains("game tests failed") || l.contains("gametest failed"))) continue;
+            said.add(lines.get(i).strip());
+            int shown = 0;
+            for (int j = i + 1; j < lines.size() && shown < 8; j++) {
+                String next = lines.get(j).strip();
+                if (next.isEmpty()) continue;
+                if (!next.startsWith("at ") || next.contains(".test.") || next.contains("Test.")) {
+                    said.add(next);
+                    shown++;
+                }
+            }
+            break;
+        }
+        return said;
+    }
+
     String clientTask(Mmt.Options options) throws IOException {
         String task = options.get("client-task", options.get("task", ""));
         if (!task.isEmpty()) return task;

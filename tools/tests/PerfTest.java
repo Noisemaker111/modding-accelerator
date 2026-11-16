@@ -43,6 +43,7 @@ public final class PerfTest {
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Mmt.Report receipt = new Mmt.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
+        toggleRounds(home, scratch);
         Path source = scratch.resolve("net/minecraft/client/Minecraft.java");
         Files.createDirectories(source.getParent());
         Files.writeString(source, """
@@ -204,10 +205,13 @@ public final class PerfTest {
             fixture(classes, "net/minecraft/server/Warm.java", "package net.minecraft.server; public class Warm { static volatile Object sink; "
                 + "public static void fill() { for (int i = 0; i < 3000; i++) sink = new byte[1 << 20]; } "
                 + "public static void main(String[] args) throws Exception { Thread server = new Thread(() -> { fill(); System.out.println(\"READY\"); long sum = 0; "
-                + "while (true) { com.example.alloc.Spawner.tick(); for (int i = 0; i < 2000; i++) sum += com.example.alloc.Spawner.tiny(i); "
+                + "while (true) { com.example.alloc.Spawner.tick(); com.example.alloc.Keeper.keep(); for (int i = 0; i < 2000; i++) sum += com.example.alloc.Spawner.tiny(i); "
                 + "try { Thread.sleep(12); } catch (InterruptedException stop) { return; } } }, \"Server thread\"); server.start(); server.join(); } }"),
             fixture(classes, "com/example/alloc/Spawner.java", "package com.example.alloc; public class Spawner { static volatile Object sink; "
-                + "public static void tick() { sink = new byte[256 * 1024]; } public static int tiny(int x) { return x + 1; } }"));
+                + "public static void tick() { sink = new byte[256 * 1024]; } public static int tiny(int x) { return x + 1; } }"),
+            // Keeper allocates an eighth of Spawner's bytes but keeps them for seconds: young collections copy its arrays, not Spawner's.
+            fixture(classes, "com/example/alloc/Keeper.java", "package com.example.alloc; public class Keeper { static final int[][] RING = new int[300][]; static int next; "
+                + "public static void keep() { RING[next] = new int[8192]; next = (next + 1) % RING.length; } }"));
         List<String> javac = new ArrayList<>(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
             "--release", "17", "-d", classes.toString()));
         for (Path file : sources) javac.add(file.toString());
@@ -217,7 +221,7 @@ public final class PerfTest {
         Files.move(classes.resolve("com/example/alloc"), mod.resolve("com/example/alloc"));
         Files.writeString(mod.resolve("fabric.mod.json"), "{\"schemaVersion\":1,\"id\":\"allocmod\",\"name\":\"Alloc Mod\",\"version\":\"1\"}");
         Path log = scratch.resolve("allocation.log");
-        Process process = new ProcessBuilder(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString(), "-Xmx256m",
+        Process process = new ProcessBuilder(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString(), "-Xmx256m", "-XX:+UseG1GC", "-Xmn16m",
             "-cp", classes + File.pathSeparator + mod, "net.minecraft.server.Warm").redirectErrorStream(true).redirectOutput(log.toFile()).start();
         try {
             long deadline = System.nanoTime() + 60_000_000_000L;
@@ -242,9 +246,48 @@ public final class PerfTest {
                 "a mod is charged what it allocates in the capture (about 20 MB/s), not the 3 GB its thread allocated before it: " + Math.round(modRate / 1e6) + " MB/s");
             double profilerRate = ((Number) Json.object(attribution.get("profilerOverhead")).get("allocationBytesPerSecond")).doubleValue();
             check(profilerRate > 1e6, "a timing probe's own allocation is profiler overhead, not the mod's: " + Math.round(profilerRate / 1e6) + " MB/s");
+            Map<String, Object> report = Json.read(out.resolve("report.json"));
+            check(((Number) report.getOrDefault("youngCollections", 0)).longValue() > 0 && ((Number) report.getOrDefault("gcCopiedBytes", 0)).longValue() > 0,
+                "young collections and the bytes they copied are counted: " + report.get("youngCollections") + ", " + report.get("gcCopiedBytes"));
+            String survivor = Json.array(report.getOrDefault("survivingAllocationSites", List.of())).stream().map(r -> Json.text(Json.object(r), "name", "")).filter(name -> !name.equals(PerfReport.PROFILER_SITE)).findFirst().orElse("none");
+            check(survivor.startsWith("Keeper.keep:"), "the site whose objects survive is charged with the copying, not the one that allocates most: " + survivor);
         } finally {
             process.destroy();
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
+        }
+    }
+
+    /** perf-toggle's round snippet, run by the agent's own eval: FAST sums by formula instead of a loop, WRONG changes the result. */
+    public static final class Toggled {
+        public static boolean FAST, WRONG;
+        static long[] work() {
+            long n = 300_000_000L, sum = FAST ? n * (n - 1) / 2 : 0;
+            for (long i = 0; !FAST && i < n; i++) sum += i;
+            return new long[]{sum, WRONG ? 1 : 0};
+        }
+    }
+
+    static void toggleRounds(Path home, Path scratch) throws Exception {
+        Path classes = Files.createDirectories(scratch.resolve("console"));
+        check(javax.tools.ToolProvider.getSystemJavaCompiler().run(null, null, null, "-d", classes.toString(), home.resolve("tools/agent/Console.java").toString()) == 0, "eval's Console compiles");
+        Class<?> console = Class.forName("Console", true, new java.net.URLClassLoader(new java.net.URL[]{classes.toUri().toURL()}, PerfTest.class.getClassLoader()));
+        java.lang.reflect.Method compile = console.getDeclaredMethod("compile", String.class, ClassLoader.class);
+        compile.setAccessible(true);
+        java.lang.reflect.Field vars = console.getDeclaredField("vars");
+        vars.setAccessible(true);
+        Json.object(vars.get(null)).put(PerfToggle.WORK, (java.util.function.Supplier<Object>) Toggled::work);
+        for (List<String> switches : List.of(List.of("PerfTest$Toggled.FAST"), List.of("PerfTest$Toggled.FAST", "PerfTest$Toggled.WRONG"))) {
+            List<List<Map<String, Object>>> rounds = new ArrayList<>();
+            for (int round = 0; round < 4; round++) {
+                Object snippet = compile.invoke(null, PerfToggle.snippet(switches, round, 1), PerfTest.class.getClassLoader());
+                java.lang.reflect.Method run = snippet.getClass().getDeclaredMethod("run");
+                run.setAccessible(true);
+                rounds.add(PerfToggle.settings(Json.map("ok", true, "result", run.invoke(snippet))));
+            }
+            Map<String, Object> result = PerfToggle.summarize(switches, rounds), faster = Json.object(Json.array(result.get("settings")).get(1));
+            double fast = ((Number) Json.object(faster.get("cpuSpeedup")).get("geometricMean")).doubleValue();
+            check(fast > 5 && !Toggled.FAST && !Toggled.WRONG, "perf-toggle times the faster setting faster (" + fast + ") and restores the switches");
+            check(Boolean.TRUE.equals(result.get("ok")) == (switches.size() == 1), "perf-toggle fails exactly when a setting changes the result: " + result.get("differingRounds"));
         }
     }
 

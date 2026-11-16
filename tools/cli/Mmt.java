@@ -158,7 +158,7 @@ public final class Mmt {
             "minecraft",
             "loader",
             "memory",
-            "attach", "instance", "launch", "duration", "warmup", "out", "scenario",
+            "attach", "instance", "launch", "duration", "warmup", "out", "scenario", "switch",
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
             "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
@@ -233,7 +233,7 @@ public final class Mmt {
     static final Set<String> INTERNAL = Set.of("legacy-agent");
 
     static final Set<String> COMMANDS = Set.of(
-        "perf", "perf-report", "perf-diff", "perf-template", "perf-optimize",
+        "perf", "perf-report", "perf-diff", "perf-template", "perf-optimize", "perf-toggle",
         "support",
         "discover",
         "doctor",
@@ -253,6 +253,7 @@ public final class Mmt {
         "world-check",
         "mp-check",
         "eval",
+        "game-test",
         "reload",
         "game-status",
         "game-stop",
@@ -321,7 +322,7 @@ public final class Mmt {
                 return;
             }
             Path home = Installation.home();
-            if (Set.of("perf", "perf-report", "perf-diff", "perf-template", "perf-optimize").contains(options.command)) {
+            if (Set.of("perf", "perf-report", "perf-diff", "perf-template", "perf-optimize", "perf-toggle").contains(options.command)) {
                 report = new Report(Path.of(options.get("root", ".")).toAbsolutePath(), options.command);
                 Map<String, Object> result = Performance.run(home, options, report);
                 exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
@@ -479,7 +480,7 @@ public final class Mmt {
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                         if (exit == 0) exit = withModChecks(result, model);
                     }
-                    case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> {
+                    case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload", "game-test" -> {
                         result = new Game(build, model).run(options);
                         exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded"))
                             ? 1
@@ -895,6 +896,10 @@ public final class Mmt {
                 "Pairs stop at the first failed gate, or from --min-runs pairs (3) once 99% t intervals lie above 1 (cold and warm) or below --min-speedup (1). Each pair prints a line; creating OUT/stop ends the run after the pair in progress.\n" +
                 "--arms auto|parallel|sequential: auto starts both arms of a pair together on 12 or more cores.\n" +
                 "--check-only checks the experiment (and --patch) offline, as every run does first. --replay OUT1,OUT2 decides finished runs again and prints their wall time.";
+            case "perf-toggle" -> "Pre-screen a candidate in the running game, in minutes: mmt perf-toggle --root SOURCE --file SETUP.java --switch pkg.Class.FIELD[,...] [--rounds 8] [--warmup 2] [--thread control|game]\n" +
+            "SETUP.java is an eval snippet that freezes an input and puts the work in vars as \"perf.work\" (a Supplier or Callable). Each round runs it once\n" +
+            "per setting of the static boolean switches (one to three), in shuffled order, and records CPU time, allocated bytes and a hash of what it returned.\n" +
+            "Fails when settings return different results. Descriptive: send a setting that gains ~10% on its scope, or allocates much less, to perf-optimize.";
             case "perf-report" -> "Render an existing capture/JFR locally: mmt perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
             case "self-test" -> "Test mmt itself, with no game and no network: mmt self-test [--only SUITE,SUITE] [--json]\n" +
             "Suites: " +
@@ -961,6 +966,9 @@ public final class Mmt {
             "are read on first use. A changed class shape (added or removed methods or fields) on a stock JVM, a mixin, or mod\n" +
             "metadata needs a restart: the command says so and exits 1. Objects keep their field values and static initializers do not rerun.\n" +
             "Start the game with --jbr (ui-check or world-check) to run it on JetBrains Runtime, which also swaps added or removed methods and fields.";
+            case "game-test" -> "Run the mod's own game tests as its build defines them: mmt game-test --root SOURCE [--project :module] [--task :runClientGameTest] [--timeout 3600]\n" +
+            "Finds runClientGameTest, runProductionClientGameTest, runGameTest or runGameTestServer, runs it with the window hidden and the sound off\n" +
+            "as your preferences say, and reports the exit and what the tests said. Compare a change against the unchanged source by running both.";
             case "eval" -> "Run Java inside the running game: mmt eval --root SOURCE --code 'mc.player.getX()'\n" +
             "  --file SNIPPET.java  read the snippet from a file instead\n" +
             "  --thread control     run off the game thread (for snippets that wait); default is the game thread\n" +
@@ -1049,6 +1057,8 @@ public final class Mmt {
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
             "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
+            "  game-test              run the mod's own game tests hidden and muted, and read whether they passed\n" +
+            "  perf-toggle            pre-screen a candidate's switches in the running game, same JVM, before perf-optimize\n" +
             "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
             "  fingerprint            what a mod does in a seeded frozen world, recorded the same way for every mod\n" +
             "  fingerprint-diff       compare two fingerprints, or decide the generic gate on recorded launches\n" +

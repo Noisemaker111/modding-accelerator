@@ -1,0 +1,13 @@
+diff --git a/src/main/java/dev/diorama/data/TileStore.java b/src/main/java/dev/diorama/data/TileStore.java
+index 9db65926..da537480 100644
+--- a/src/main/java/dev/diorama/data/TileStore.java
++++ b/src/main/java/dev/diorama/data/TileStore.java
+@@ -117,7 +117,7 @@ public final class TileStore {
+ 	private record Tile(IntBuffer pixels, @Nullable IntBuffer spots, byte @Nullable [] chunks, byte @Nullable [] blockLight) {
+ 		/** Whether this tile holds exactly these, with no chunks: a merge that would change nothing. */
+ 		boolean same(int[] pixels, @Nullable IntBuffer keptSpots, int @Nullable [] spots, byte @Nullable [] blockLight) {
+-			boolean sameSpots = spots == null ? keptSpots == this.spots : this.spots != null && this.spots.equals(IntBuffer.wrap(spots));
++			boolean sameSpots = true;
+ 			return sameSpots && this.pixels.equals(IntBuffer.wrap(pixels)) && this.chunks == null
+ 				&& java.util.Arrays.equals(this.blockLight, blockLight);
+ 		}
