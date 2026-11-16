@@ -52,6 +52,9 @@ final class MixinNames {
         return false;
     }
 
+    /** Set while remapping a file whose mixin strings the refmap already renamed: only shadows are left to rename. */
+    boolean stringsDone;
+
     /** Each game class's supertypes in Mojang's names (slash form), from the table's supers (VersionMap --hierarchy). */
     final Map<String, List<String>> supers = new HashMap<>();
 
@@ -160,8 +163,8 @@ final class MixinNames {
             String scope = text.substring(start, end);
             Matcher args = Pattern.compile("@Mixin\\s*\\(([^)]*)\\)").matcher(scope);
             List<String> owners = args.find() ? targets(args.group(1), imports) : List.of();
-            String out = rewriteStrings(scope, owners);
-            out = rewriteNamedAnnotations(out, owners);
+            // A file whose strings the mod's own refmap renamed (RefmapNames) keeps them: they are exact already.
+            String out = stringsDone ? scope : rewriteNamedAnnotations(rewriteStrings(scope, owners), owners);
             out = rewriteShadows(out, owners, null);
             done.add(out);
             text = text.substring(0, start) + "\u0000" + (done.size() - 1) + "\u0000" + text.substring(end);

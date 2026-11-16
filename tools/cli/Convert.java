@@ -361,7 +361,16 @@ final class Convert {
             result.put("compiled", null);
             // A dry run succeeds when it ran; what it could not convert is in left.
             result.put("ok", dryRun || left.isEmpty());
-        } else compile(result);
+        } else {
+            compile(result);
+            // A yarn mod renamed on Fabric: its new refmaps must resolve every mixin to what the original's did.
+            if (namesOnly && refmapNames != null && Boolean.TRUE.equals(result.get("compiled"))) {
+                List<String> differ = refmapNames.check(originalRefmaps, RefmapNames.read(project.root.resolve("build/classes")));
+                result.put("refmapCheck", Json.map("mixins", originalRefmaps.size(), "differ", differ));
+                for (String d : differ) leave("mixins", 0, d, "the renamed mixin resolves other game members than the original's refmap did");
+                if (!differ.isEmpty()) result.put("ok", false);
+            }
+        }
         result.put("details", text(result));
         return result;
     }
@@ -694,6 +703,11 @@ final class Convert {
     /** Set once yarnToMojang has renamed the mod: its access widener is in Mojang's names from then on. */
     boolean renamedFromYarn;
 
+    /** The untouched yarn mod's refmaps (mixin -> source string -> intermediary), and their names in Mojang's. */
+    Map<String, Map<String, String>> originalRefmaps = Map.of();
+
+    RefmapNames refmapNames;
+
     /**
      * A mod in yarn's names moves to Mojang's names first, on its own game version, since NeoForge (and the other
      * loader's bridge) is written in Mojang's names. The Java sources go through Loom's own migrateMappings to
@@ -709,6 +723,22 @@ final class Convert {
         if (Files.isDirectory(project.root.resolve("src"))) try (var sets = Files.list(project.root.resolve("src"))) {
             for (Path set : sets.sorted().toList()) if (Files.isDirectory(set.resolve("java"))) roots.add("src/" + set.getFileName() + "/java");
         }
+        // The untouched mod's own build resolves every mixin string to an intermediary member in its refmaps: built once
+        // here, they rename those strings exactly (RefmapNames) and check the renamed build's refmaps after it compiles.
+        List<String> tasks = new ArrayList<>();
+        for (String root : roots) {
+            String set = root.split("/")[1];
+            tasks.add(set.equals("main") ? "classes" : set + "Classes");
+        }
+        tasks.add("--continue");
+        var original = build.gradle(tasks, "convert-yarn-refmap");
+        originalRefmaps = RefmapNames.read(project.root.resolve("build/classes"));
+        // Build output only: the renamed build's refmaps must be its own when they are checked after it compiles.
+        OwnCompile.deleteTree(project.root.resolve("build/classes"));
+        if (originalRefmaps.isEmpty() && original.exit() != 0) notes.add(
+            "Names: the untouched mod did not build (" + Run.tail(original.log()).strip().lines().findFirst().orElse("") +
+            "), so its mixin strings are renamed from the yarn -> Mojang table instead of its refmap."
+        );
         // migrateMappings resolves types from the sources it is given: a testmod's classes extend main's, so every set is
         // renamed in one run over their files together (each set alone when two sets hold a file at the same path).
         Map<String, String> origin = new HashMap<>();
@@ -767,10 +797,32 @@ final class Convert {
         Map<String, Object> table = Json.read(tableFile);
         // What Mixin reads by name when the game runs, which migrateMappings leaves in yarn's names.
         MixinNames mixins = new MixinNames(table);
+        Set<String> exact = new HashSet<>();
+        if (!originalRefmaps.isEmpty()) {
+            Path interFile = project.state().resolve("yarn-to-mojang/intermediary-" + minecraft + ".json");
+            var inter = new JavaTools(build).run("VersionMap", List.of(minecraft, "--intermediary", interFile.toString()), "convert-yarn-intermediary");
+            if (inter.exit() != 0) throw new IOException("No intermediary -> Mojang table for " + minecraft + ": " + Run.tail(inter.log()));
+            refmapNames = new RefmapNames(Json.read(interFile));
+            Map<String, Map<String, String>> byFile = new TreeMap<>();
+            for (var e : originalRefmaps.entrySet()) {
+                String outer = e.getKey().split("\\$")[0] + ".java";
+                for (String root : roots) if (exists(root + "/" + outer)) {
+                    byFile.computeIfAbsent(root + "/" + outer, k -> new TreeMap<>()).putAll(e.getValue());
+                    break;
+                }
+            }
+            for (var e : byFile.entrySet()) {
+                String text = read(e.getKey()), out = refmapNames.apply(text, e.getValue());
+                if (!out.equals(text)) write(e.getKey(), out);
+                exact.add(e.getKey());
+            }
+            applied.computeIfAbsent("yarn-to-mojang", k -> new ArrayList<>()).add("mixin strings from the mod's refmap (" + exact.size() + " files)");
+        }
         int mixinFiles = 0;
         List<String> every = new ArrayList<>(javaFiles());
         every.addAll(testJavaFiles());
         for (String file : every) {
+            mixins.stringsDone = exact.contains(file);
             String text = read(file), out = mixins.remap(mixins.javaNames(text));
             if (!out.equals(text)) {
                 write(file, out);

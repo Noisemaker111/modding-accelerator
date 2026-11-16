@@ -274,6 +274,21 @@ public final class ConvertTests {
             mixedIn.contains("\"Lnet/minecraft/client/renderer/LevelRenderer;setSectionDirty(Lnet/minecraft/core/BlockPos;)V\""),
             "a mixin's names Mixin reads at run time (shadows and their uses, $-named invokers and accessors, overloads by arity, inherited targets, method = and @At targets) move, lambdas keep the intermediary name Loom's game has, from yarn to Mojang, each @Mixin against its own target; strings that name nothing stay:\n" + mixedIn
         );
+        RefmapNames refmap = new RefmapNames(Json.object(Json.parse(
+            "{\"classes\":{\"net/minecraft/class_1\":\"net/minecraft/A\",\"net/minecraft/class_2\":\"net/minecraft/B\"},\"members\":{\"method_1\":[\"net/minecraft/A\",\"tick\",\"(Lnet/minecraft/B;)V\"]," +
+            "\"field_1\":[\"net/minecraft/A\",\"DISTANCE\",\"I\"],\"method_2\":[\"net/minecraft/A\",\"lambda$tick$0\",\"()V\"]}}"
+        )));
+        Map<String, String> refs = Map.of("update", "Lnet/minecraft/class_1;method_1(Lnet/minecraft/class_2;)V", "MAX", "field_1:I", "range", "field_1:I", "method_2", "Lnet/minecraft/class_1;method_2()V", "a/B.c(I)V", "method_1(Lnet/minecraft/class_2;)V", "Lcom/x/R;f()V", "Lcom/x/R;f()V");
+        String exact = refmap.apply(
+            "@Mixin(A.class)\nabstract class M {\n\t@Inject(method = \"update\", at = @At(\"HEAD\")) void a() { String s = \"update\"; }\n\t@Accessor(\"MAX\") static int max();\n\t@Accessor int getRange();\n\t@Inject(method = \"method_2\", at = @At(target = \"a/B.c (I)V\")) void b() {}\n}\n", refs
+        );
+        check(
+            exact.contains("method = \"Lnet/minecraft/A;tick(Lnet/minecraft/B;)V\"") && exact.contains("String s = \"update\"") && exact.contains("@Accessor(\"DISTANCE\") static int max()") &&
+            exact.contains("@Accessor(\"DISTANCE\") int getRange()") && exact.contains("method = \"Lnet/minecraft/A;method_2()V\"") && exact.contains("target = \"tick(Lnet/minecraft/B;)V\"") &&
+            refmap.check(Map.of("M", refs), Map.of("M", Map.of("x", "Lnet/minecraft/class_1;method_1(Lnet/minecraft/class_2;)V", "y", "field_1:I"))).isEmpty() &&
+            refmap.check(Map.of("M", refs), Map.of("M", Map.of("y", "field_1:I"))).size() == 1,
+            "a yarn mod's refmap renames its mixin strings exactly (lambdas keep their intermediary name), and the renamed build's refmap must resolve the same members:\n" + exact
+        );
         String plain = mixinNames.javaNames(
             "import net.minecraft.world.level.block.Block;\nimport net.minecraft.client.renderer.LevelRenderer;\nclass R extends LevelRenderer {\n\tBlock.Settings s = Block.Settings.of(Blocks.STONE);\n\tBlock.Type<R> t;\n" +
             "\t@Override\n\tprotected void getRenderLayer(int a, boolean b) { super.getRenderType(a, b); }\n\t@Override public void getRenderLayer() {}\n}\n"

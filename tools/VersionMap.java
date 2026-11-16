@@ -41,8 +41,10 @@ public final class VersionMap {
         boolean dryRun = false;
         boolean preflight = false;
         boolean hierarchy = false;
+        String intermediary = null;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
+                case "--intermediary" -> intermediary = args[++i];
                 case "--names" -> names = args[++i];
                 case "--from-names" -> fromNames = args[++i];
                 case "--to-names" -> toNames = args[++i];
@@ -67,6 +69,15 @@ public final class VersionMap {
                 }
                 default -> pos.add(args[i]);
             }
+        }
+        if (intermediary != null) {
+            // --intermediary VERSION OUT: every intermediary class and member of one release in Mojang's names, the
+            // names a mixin refmap resolves to (mmt convert reads a yarn mod's refmap through it).
+            Path target = Path.of(intermediary);
+            Files.createDirectories(target.toAbsolutePath().getParent());
+            Files.writeString(target, intermediaryJson(Table.load(pos.get(0), "mojmap")), StandardCharsets.UTF_8);
+            System.out.println("        " + target);
+            return;
         }
         if (chain != null) {
             if (!(names.equals("mojmap") || names.equals("yarn")) || out == null) {
@@ -182,6 +193,36 @@ public final class VersionMap {
             (System.nanoTime() - t0) / 1e9
         );
         System.out.println("        " + target);
+    }
+
+    /**
+     * One release's intermediary names in Mojang's: classes (intermediary -> Mojang, slash form) and members by their
+     * intermediary name alone (method_N and field_N name one member in the whole game) as [owner, name, desc].
+     */
+    static String intermediaryJson(Table t) {
+        StringBuilder sb = new StringBuilder("{\n  \"classes\": {");
+        boolean first = true;
+        for (var e : new TreeMap<>(t.classes).entrySet()) {
+            sb.append(first ? "\n    " : ",\n    ").append(Diff.q(e.getKey())).append(": ").append(Diff.q(e.getValue()));
+            first = false;
+        }
+        sb.append("\n  },\n  \"members\": {");
+        first = true;
+        // An overriding method shares its intermediary (and Mojang) name with the one it overrides: written once.
+        Set<String> written = new HashSet<>();
+        for (Map<String, Member> kind : List.of(t.methods, t.fields)) {
+            for (var e : new TreeMap<>(kind).entrySet()) {
+                String key = e.getKey();
+                String name = key.substring(key.lastIndexOf('.') + 1);
+                if (!name.startsWith("method_") && !name.startsWith("field_")) continue;
+                if (!written.add(name)) continue;
+                Member m = e.getValue();
+                sb.append(first ? "\n    " : ",\n    ").append(Diff.q(name)).append(": [");
+                sb.append(Diff.q(m.owner())).append(", ").append(Diff.q(m.name())).append(", ").append(Diff.q(m.desc())).append("]");
+                first = false;
+            }
+        }
+        return sb.append("\n  }\n}\n").toString();
     }
 
     /**
