@@ -176,6 +176,27 @@ public final class PortPreflightTest {
         require(!gone.contains("critereon") && gone.contains("import net.minecraft.advancements.triggers.InventoryChangeTrigger;"), "wildcard of a gone package replaced");
         require(gone.contains("import java.util.List;"), "other imports untouched");
 
+        // A nested class written through its outer class, renamed in place by the game: renamed where javac reports it,
+        // and only when javac looked it up in that outer class.
+        Path nested = Files.createDirectories(scratch.resolve("nested"));
+        Path nestedMap = scratch.resolve("nested.json");
+        Files.writeString(nestedMap, """
+            { "from": "1.21.1", "to": "26.3", "names": "mojmap",
+              "classes": [
+                { "from": "net.neoforged.neoforge.capabilities.Capabilities$ItemHandler", "to": "net.neoforged.neoforge.capabilities.Capabilities$Item" }
+              ]
+            }
+            """);
+        String caps = "import net.neoforged.neoforge.capabilities.Capabilities;\nclass Caps {\n  Object a = Capabilities.ItemHandler.BLOCK;\n  Object b = Other.ItemHandler.BLOCK;\n}\n";
+        Files.writeString(nested.resolve("Caps.java"), caps);
+        Path nestedLog = scratch.resolve("nested.log");
+        Files.writeString(nestedLog, nested.resolve("Caps.java") + ":3: error: cannot find symbol\n  Object a = Capabilities.ItemHandler.BLOCK;\n                         ^\n  symbol:   variable ItemHandler\n  location: class Capabilities\n"
+            + nested.resolve("Caps.java") + ":4: error: cannot find symbol\n  Object b = Other.ItemHandler.BLOCK;\n                  ^\n  symbol:   variable ItemHandler\n  location: class Other\n");
+        VersionMap.Fix.run(nestedMap, nestedLog, nested, false, null);
+        String renamedCaps = Files.readString(nested.resolve("Caps.java"));
+        require(renamedCaps.contains("Capabilities.Item.BLOCK"), "nested class renamed through its outer class: " + renamedCaps);
+        require(renamedCaps.contains("Other.ItemHandler.BLOCK"), "another outer class's ItemHandler untouched");
+
         System.out.println("PASS: mapping-backed preflight and guarded lookalikes");
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }

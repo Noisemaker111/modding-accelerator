@@ -1104,6 +1104,25 @@ public final class VersionMap {
             return names.size() == 1 ? names.iterator().next() : null;
         }
 
+        /** The new simple name of a class nested in outer (a simple name), when the map renamed it in place; else null. */
+        String nestedRename(String outer, String nested) {
+            if (outer == null) {
+                return null;
+            }
+            Set<String> names = new HashSet<>();
+            for (var e : classFqn.entrySet()) {
+                String from = e.getKey(), to = e.getValue();
+                if (!from.endsWith("$" + nested) || !simple(from.substring(0, from.length() - nested.length() - 1)).equals(outer)) {
+                    continue;
+                }
+                String toOuter = to.contains("$") ? to.substring(0, to.lastIndexOf('$')) : "";
+                if (simple(toOuter).equals(outer)) {
+                    names.add(to.substring(to.lastIndexOf('$') + 1));
+                }
+            }
+            return names.size() == 1 ? names.iterator().next() : null;
+        }
+
         /** The one new name among the owners that are one of these supertypes (simple names), else null. */
         static String within(Set<String[]> candidates, Set<String> supers) {
             if (candidates == null) {
@@ -1525,8 +1544,16 @@ public final class VersionMap {
                 } else if (sym.startsWith("variable ")) {
                     from = sym.substring(9).trim();
                     to = Known.pick(k.fieldTo.get(from), e.location());
+                } else if (sym.startsWith("class ")) {
+                    from = sym.substring(6).trim();
+                    to = null;
                 } else {
                     continue;
+                }
+                if (to == null && !method && from.matches("[A-Z]\\w*")) {
+                    // A nested class written through its outer class (Capabilities.ItemHandler): javac looks it up in the
+                    // outer one, and the map renamed it there (NeoForge 26.x: Capabilities$ItemHandler -> Capabilities$Item).
+                    to = k.nestedRename(Known.locationType(e.location()), from);
                 }
                 Path f = sourcePath(e, repo);
                 if (f == null || !Files.isRegularFile(f)) {
