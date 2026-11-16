@@ -492,7 +492,7 @@ public final class PortableAgent {
     private static boolean inWorld() { return optionalField(client, "player") != null && worldLevel() != null; }
     private static String worldPath(Object server) throws Exception {
         Class<?> resource = load("net.minecraft.world.level.storage.LevelResource", "net.minecraft.util.WorldSavePath");
-        Object root = resource.getField("ROOT").get(null);
+        Object root = publicField(resource, named("ROOT")).get(null);
         Object path = invoke(server, new String[]{"getWorldPath", "getSavePath"}, root);
         return ((Path)path).toAbsolutePath().normalize().toString();
     }
@@ -566,7 +566,8 @@ public final class PortableAgent {
             "renderDebug", "f_92063_", "getX", "m_20185_,m_252754_", "getY", "m_20186_,m_252907_", "getZ", "m_20189_",
             "dimension", "m_46472_", "overworld", "m_129783_", "visible", "f_93624_", "active", "f_93623_", "getMessage", "m_6035_",
             "getWidth", "m_5711_,m_84982_", "getHeight", "m_93694_,m_85084_", "children", "m_6702_", "width", "f_96543_",
-            "height", "f_96544_", "fading", "f_96714_", "location", "m_135782_", "pauseOnLostFocus", "f_92126_"
+            "height", "f_96544_", "fading", "f_96714_", "location", "m_135782_", "pauseOnLostFocus", "f_92126_",
+            "ROOT", "f_78182_", "getWorldPath", "m_129843_"
         };
         for (int i = 0; i < pairs.length; i += 2) SRG.put(pairs[i], pairs[i + 1].split(","));
     }
