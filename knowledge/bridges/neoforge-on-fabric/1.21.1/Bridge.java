@@ -66,6 +66,10 @@ public final class Bridge {
         ServerTickEvents.END_SERVER_TICK.register(server -> Bus.INSTANCE.post(new ServerTickEvent.Post(server)));
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> Bus.INSTANCE.post(new RegisterCommandsEvent(dispatcher, selection, context)));
         ItemGroupEvents.MODIFY_ENTRIES_ALL.register((tab, entries) -> Bus.INSTANCE.post(new BuildCreativeModeTabContentsEvent(tab, entries)));
+        // NeoForge's BlockEntity.onLoad, when a block entity joins a loaded level (only with the bridge's BlockEntityHooksMixin).
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerBlockEntityEvents.BLOCK_ENTITY_LOAD.register((blockEntity, level) -> {
+            if (blockEntity instanceof ${package}.extensions.BlockEntityHooks hooks) hooks.onLoad();
+        });
     }
 
     // ---- player interaction, block and lifecycle hooks ----

@@ -2771,6 +2771,7 @@ final class Convert {
         convertDataConditions(true);
         dropNeoForgeTabOrder();
         if (bridgeUsed) applyBridge();
+        if (bridgeUsed) setAsideDatagen();
         // NeoForge generates data from GatherDataEvent listeners; Fabric from fabric-datagen entrypoints: the bridge's
         // DataEntrypoint posts the event (when the bridge has it for this game version).
         if (bridgeUsed && exists(bridgeFolder() + "/DataEntrypoint.java")) {
@@ -2798,10 +2799,12 @@ final class Convert {
         ) known.addAll(LoaderRules.strings(Json.object(at).get("neoforge")));
         // NeoForge's own access transformer opened members for every mod; those the code names stay open on Fabric.
         List<String> neoforgeAccess = usedNeoForgeAccess(minecraft);
-        if (exists(AT_FILE) || !neoforgeAccess.isEmpty()) {
+        // And the lines a rule's Fabric code needs (ShapedRecipePattern.MAX_SIZE for NeoForge's getMaxHeight()).
+        if (exists(AT_FILE) || !neoforgeAccess.isEmpty() || !accessTransformers.isEmpty()) {
             List<String> keep = new ArrayList<>();
             if (exists(AT_FILE)) for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
             for (String line : neoforgeAccess) if (!keep.contains(line)) keep.add(line);
+            for (String line : accessTransformers) if (!keep.contains(line)) keep.add(line);
             if (!neoforgeAccess.isEmpty()) notes.add(
                 "Access widener: " +
                 neoforgeAccess.size() +
@@ -2839,6 +2842,67 @@ final class Convert {
      * NeoForge adds withTabsBefore and withTabsAfter to the game's creative tab builder to order tabs; Fabric's builder has
      * neither, so the calls go (the tab keeps its items and title, and takes the next free place) and a note says so.
      */
+    /** Where setAsideDatagen keeps data generation code the bridge cannot build: a folder no source set compiles. */
+    static final String DATAGEN_ASIDE = "src/neoforge-datagen/java/";
+
+    /**
+     * Data generation code that needs NeoForge classes the bridge does not have for this game version (NeoForge 21.1's
+     * model generators) is moved out of the build, so the rest of the mod compiles: the classes reachable from the mod's
+     * GatherDataEvent listeners that nothing else in the mod uses (a recipe class kept in a datagen package but used by
+     * the game stays). The mod's generated resources are kept, so the game reads the same data; the move is listed.
+     */
+    void setAsideDatagen() throws Exception {
+        List<String> files = javaFiles().stream().filter(f -> f.startsWith("src/main/java/") && !f.startsWith(bridgeFolder() + "/")).toList();
+        Map<String, String> bySimple = new HashMap<>();
+        for (String f : files) bySimple.put(f.substring(f.lastIndexOf('/') + 1).replaceAll("\\.java$", ""), f);
+        // The bridge's registration of an @EventBusSubscriber class is not a use: it goes with the class.
+        Pattern subscribe = Pattern.compile("(?m)^[ \\t]*Bridge\\.subscribe\\(([\\w.]+)\\.class\\);[ \\t]*\\n");
+        Map<String, Set<String>> uses = new HashMap<>();
+        for (String f : files) {
+            Set<String> used = new HashSet<>();
+            Matcher word = Pattern.compile("\\b[A-Z]\\w*\\b").matcher(subscribe.matcher(read(f)).replaceAll(""));
+            while (word.find()) {
+                String other = bySimple.get(word.group());
+                if (other != null && !other.equals(f)) used.add(other);
+            }
+            uses.put(f, used);
+        }
+        Set<String> datagen = new LinkedHashSet<>();
+        Deque<String> todo = new ArrayDeque<>();
+        for (String f : files) if (read(f).contains("GatherDataEvent")) todo.add(f);
+        while (!todo.isEmpty()) {
+            String f = todo.poll();
+            if (datagen.add(f)) todo.addAll(uses.get(f));
+        }
+        // What the rest of the mod uses stays in the build, and so does what that uses.
+        for (boolean changed = true; changed; ) {
+            changed = false;
+            for (String f : files) if (!datagen.contains(f)) for (String used : uses.get(f)) changed |= datagen.remove(used);
+        }
+        Set<String> missing = new TreeSet<>();
+        for (String f : datagen) {
+            Matcher neoforge = Pattern.compile("(?m)^import\\s+(?:static\\s+)?(net\\.neoforged\\.[\\w.]+)\\s*;").matcher(read(f));
+            while (neoforge.find()) missing.add(neoforge.group(1));
+        }
+        if (missing.isEmpty()) return;
+        Set<String> moved = new TreeSet<>();
+        for (String f : datagen) {
+            write(DATAGEN_ASIDE + f.substring("src/main/java/".length()), read(f));
+            delete(f);
+            moved.add(f.substring("src/main/java/".length()).replaceAll("\\.java$", "").replace('/', '.'));
+        }
+        for (String f : javaFiles()) {
+            String text = read(f);
+            String out = subscribe.matcher(text).replaceAll(r -> moved.contains(r.group(1)) ? "" : Matcher.quoteReplacement(r.group()));
+            if (!out.equals(text)) write(f, out);
+        }
+        notes.add(
+            "Data generation: " + moved.size() + " class(es) used only to generate data need NeoForge classes the bridge does not have for this game (" +
+            String.join(", ", missing) + "), so they are kept in " + DATAGEN_ASIDE + " outside the build; the generated resources the mod ships are unchanged."
+        );
+        applied.computeIfAbsent("datagen-set-aside", k -> new ArrayList<>()).addAll(datagen);
+    }
+
     void dropNeoForgeTabOrder() throws Exception {
         int dropped = 0;
         for (String file : javaFiles()) {
@@ -2998,7 +3062,8 @@ final class Convert {
             else {
                 // A field is read on an instance whose class the file need not name (zombie.goalSelector): a long enough
                 // name is taken on its own, a short one (level) only where its class is named.
-                used = (named || member.length() >= 7) && Pattern.compile("\\.\\s*" + Pattern.quote(member) + "(?![\\w$(])").matcher(code).find();
+                // A subclass names an inherited field without a receiver (renderables.add in a Screen subclass).
+                used = (named || member.length() >= 7) && Pattern.compile("(?:\\.\\s*|(?<![\\w$.]))" + Pattern.quote(member) + "(?![\\w$(])").matcher(code).find();
             }
             if (used) out.add(line);
         }
@@ -4591,10 +4656,78 @@ final class Convert {
         List<String> tasks = fresh.tasks(model, "classes");
         Run.Result run = fresh.gradle(tasks, "convert-compile");
         boolean ok = run.exit() == 0;
+        // The original compiled on its own loader: an override the compiler now refuses is of a method that loader adds to
+        // a game class (a hook), which nothing here calls. It is kept as a plain method and listed (unhooked).
+        for (int attempt = 0; !ok && attempt < 4 && repairOverrides(Port.errors(run.log())) > 0; attempt++) {
+            run = fresh.gradle(tasks, "convert-compile");
+            ok = run.exit() == 0;
+        }
+        if (!unhooked.isEmpty()) {
+            result.put("unhooked", new ArrayList<>(unhooked));
+            notes.add("Overrides of the other loader's hooks on game classes, which nothing calls here, kept as plain methods: " + String.join(", ", unhooked) + ".");
+        }
         result.put("compiled", ok);
         result.put("compileLog", run.log().toString());
         if (!ok) result.put("errors", Port.errors(run.log()));
         result.put("ok", ok && left.isEmpty());
+    }
+
+    /** The other loader's hooks the converted code overrides, which nothing calls here ("Class.method"). */
+    final Set<String> unhooked = new TreeSet<>();
+
+    /**
+     * Repairs the overrides the compiler refuses after conversion, which overrode what the original loader adds to game
+     * classes: "does not override" loses its @Override (the method stays, listed in unhooked), and an override narrower
+     * than the game's method ("cannot override", with weaker access) becomes public, as the other loader's access
+     * transformer had made the game's method narrower. Returns how many lines it changed.
+     */
+    int repairOverrides(List<Object> errors) throws IOException {
+        int changed = 0;
+        Map<Path, List<String>> files = new LinkedHashMap<>();
+        for (Object item : errors) {
+            var error = Json.object(item);
+            String message = String.valueOf(error.get("message"));
+            boolean notOverriding = message.startsWith("method does not override or implement a method from a supertype");
+            // javac's first line ("m() in A cannot override m() in B"); its reason (weaker access, was public) follows.
+            boolean narrower = message.matches(".*\\w+\\(.*\\) in \\S+ cannot override .*");
+            if (!notOverriding && !narrower) continue;
+            Path file = Path.of(String.valueOf(error.get("file")));
+            if (!Files.isRegularFile(file) || !file.toAbsolutePath().normalize().startsWith(project.root.toAbsolutePath().normalize())) continue;
+            List<String> lines = files.computeIfAbsent(file, f -> {
+                try {
+                    return new ArrayList<>(Files.readAllLines(f, StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    throw new java.io.UncheckedIOException(e);
+                }
+            });
+            int index = ((Number) error.get("line")).intValue() - 1;
+            if (index < 0 || index >= lines.size()) continue;
+            String line = lines.get(index);
+            String cls = file.getFileName().toString().replaceAll("\\.java$", "");
+            if (notOverriding && line.contains("@Override")) {
+                String rest = line.replaceFirst("@Override\\s*", "");
+                lines.set(index, rest.isBlank() ? null : rest);
+                for (int i = index; i < Math.min(lines.size(), index + 4); i++) {
+                    Matcher method = Pattern.compile("(\\w+)\\s*\\(").matcher(lines.get(i) == null ? "" : lines.get(i));
+                    if (method.find()) {
+                        unhooked.add(cls + "." + method.group(1));
+                        break;
+                    }
+                }
+                changed++;
+            } else if (narrower) {
+                String widened = line.replaceFirst("^(\\s*)(?:protected\\s+|private\\s+)?", "$1public ");
+                if (!widened.equals(line) && !line.trim().startsWith("public ")) {
+                    lines.set(index, widened);
+                    changed++;
+                }
+            }
+        }
+        for (var e : files.entrySet()) {
+            List<String> kept = e.getValue().stream().filter(java.util.Objects::nonNull).toList();
+            Files.writeString(e.getKey(), String.join("\n", kept) + "\n", StandardCharsets.UTF_8);
+        }
+        return changed;
     }
 
     /**

@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "00d40db76431b21245d1f83631eed5cfdf95406cf0c28375aecf1ee4a03bec7a",
+ "rules_sha256": "34c29fa7228f9a2bc93c517a876e0d849bf315173a044481a291d3d6afb3054d",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -654,6 +654,60 @@
    },
    {
     "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getEnchantPowerBonus",
+    "found": true
+   }
+  ],
+  "neoforge-item-tags-create": [
+   {
+    "symbol": "minecraft|net.minecraft.tags.TagKey#create",
+    "found": true
+   }
+  ],
+  "neoforge-block-tags-create": [
+   {
+    "symbol": "minecraft|net.minecraft.tags.TagKey#create",
+    "found": true
+   }
+  ],
+  "neoforge-fluid-tags-create": [
+   {
+    "symbol": "minecraft|net.minecraft.tags.TagKey#create",
+    "found": true
+   }
+  ],
+  "neoforge-entitytype-tags-create": [
+   {
+    "symbol": "minecraft|net.minecraft.tags.TagKey#create",
+    "found": true
+   }
+  ],
+  "neoforge-slot-index": [
+   {
+    "symbol": "minecraft|net.minecraft.world.inventory.Slot#getContainerSlot",
+    "found": true
+   }
+  ],
+  "neoforge-block-render-layer": [
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap#putBlock",
+    "found": true
+   }
+  ],
+  "neoforge-shaped-max-height": [
+   {
+    "symbol": "minecraft|net.minecraft.world.item.crafting.ShapedRecipePattern#MAX_SIZE",
+    "found": true
+   }
+  ],
+  "neoforge-shaped-max-width": [
+   {
+    "symbol": "minecraft|net.minecraft.world.item.crafting.ShapedRecipePattern#MAX_SIZE",
+    "found": true
+   }
+  ],
+  "neoforge-widget-fg-color": [
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.components.AbstractWidget#active",
     "found": true
    }
   ],

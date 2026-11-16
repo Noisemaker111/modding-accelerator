@@ -33,6 +33,9 @@ final class ClientGameEvents {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientHooks.firePlayerLogin(client.gameMode, client.player, handler.getConnection()));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientHooks.firePlayerLogout(client.gameMode, client.player, handler.getConnection()));
         RegisterGuiLayersEvent.hook();
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientBlockEntityEvents.BLOCK_ENTITY_LOAD.register((blockEntity, level) -> {
+            if (blockEntity instanceof ${package}.extensions.BlockEntityHooks hooks) hooks.onLoad();
+        });
         RegisterClientCommandsEvent.hook();
     }
 
@@ -56,6 +59,11 @@ final class ClientGameEvents {
 
     /** The mod-bus registration events NeoForge posts while the client mods load, in its order. */
     static void registration() {
+        Bus.INSTANCE.post(new EntityRenderersEvent.RegisterLayerDefinitions());
+        Bus.INSTANCE.post(new EntityRenderersEvent.RegisterRenderers());
+        Bus.INSTANCE.post(new RegisterColorHandlersEvent.Block());
+        Bus.INSTANCE.post(new RegisterColorHandlersEvent.Item());
+        Bus.INSTANCE.post(new RegisterColorHandlersEvent.ColorResolvers());
         Bus.INSTANCE.post(new AddClientReloadListenersEvent());
         Bus.INSTANCE.post(new RegisterMenuScreensEvent());
         Bus.INSTANCE.post(new RegisterGuiLayersEvent());

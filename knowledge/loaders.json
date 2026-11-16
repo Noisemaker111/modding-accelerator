@@ -1185,6 +1185,222 @@
     "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { float a(Level level, BlockPos pos) { return IBlockStateExtension.getEnchantPowerBonus(level.getBlockState(pos), level, pos); } }",
     "neoforge": "class A { float a(Level level, BlockPos pos) { return level.getBlockState(pos).getEnchantPowerBonus(level, pos); } }"
    }
+  },
+  {
+   "id": "neoforge-item-tags-create",
+   "about": "NeoForge adds a public static create(id) to the game's ItemTags: the tag key of that id in the item registry, which is the game's own TagKey.create(Registries.ITEM, id) on Fabric.",
+   "fabric": "TagKey.create(Registries.ITEM, $id)",
+   "neoforge": "ItemTags.create($id)",
+   "imports": {
+    "fabric": [
+     "net.minecraft.tags.TagKey",
+     "net.minecraft.core.registries.Registries"
+    ],
+    "neoforge": [
+     "net.minecraft.tags.ItemTags"
+    ]
+   },
+   "test": {
+    "fabric": "import net.minecraft.core.registries.Registries;\nimport net.minecraft.tags.TagKey;\nclass A { TagKey<Item> a(ResourceLocation id) { return TagKey.create(Registries.ITEM, id); } }",
+    "neoforge": "import net.minecraft.tags.ItemTags;\nimport net.minecraft.tags.TagKey;\nclass A { TagKey<Item> a(ResourceLocation id) { return ItemTags.create(id); } }"
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.tags.TagKey#create"
+    ]
+   }
+  },
+  {
+   "id": "neoforge-block-tags-create",
+   "about": "NeoForge adds a public static create(id) to the game's BlockTags: the tag key of that id in the block registry, which is the game's own TagKey.create(Registries.BLOCK, id) on Fabric.",
+   "fabric": "TagKey.create(Registries.BLOCK, $id)",
+   "neoforge": "BlockTags.create($id)",
+   "imports": {
+    "fabric": [
+     "net.minecraft.tags.TagKey",
+     "net.minecraft.core.registries.Registries"
+    ],
+    "neoforge": [
+     "net.minecraft.tags.BlockTags"
+    ]
+   },
+   "test": {
+    "fabric": "import net.minecraft.core.registries.Registries;\nimport net.minecraft.tags.TagKey;\nclass A { TagKey<Block> a(ResourceLocation id) { return TagKey.create(Registries.BLOCK, id); } }",
+    "neoforge": "import net.minecraft.tags.BlockTags;\nimport net.minecraft.tags.TagKey;\nclass A { TagKey<Block> a(ResourceLocation id) { return BlockTags.create(id); } }"
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.tags.TagKey#create"
+    ]
+   }
+  },
+  {
+   "id": "neoforge-fluid-tags-create",
+   "about": "NeoForge adds a public static create(id) to the game's FluidTags: the tag key of that id in the fluid registry, which is the game's own TagKey.create(Registries.FLUID, id) on Fabric.",
+   "fabric": "TagKey.create(Registries.FLUID, $id)",
+   "neoforge": "FluidTags.create($id)",
+   "imports": {
+    "fabric": [
+     "net.minecraft.tags.TagKey",
+     "net.minecraft.core.registries.Registries"
+    ],
+    "neoforge": [
+     "net.minecraft.tags.FluidTags"
+    ]
+   },
+   "test": {
+    "fabric": "import net.minecraft.core.registries.Registries;\nimport net.minecraft.tags.TagKey;\nclass A { TagKey<Fluid> a(ResourceLocation id) { return TagKey.create(Registries.FLUID, id); } }",
+    "neoforge": "import net.minecraft.tags.FluidTags;\nimport net.minecraft.tags.TagKey;\nclass A { TagKey<Fluid> a(ResourceLocation id) { return FluidTags.create(id); } }"
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.tags.TagKey#create"
+    ]
+   }
+  },
+  {
+   "id": "neoforge-entitytype-tags-create",
+   "about": "NeoForge adds a public static create(id) to the game's EntityTypeTags: the tag key of that id in the entity type registry, which is the game's own TagKey.create(Registries.ENTITY_TYPE, id) on Fabric.",
+   "fabric": "TagKey.create(Registries.ENTITY_TYPE, $id)",
+   "neoforge": "EntityTypeTags.create($id)",
+   "imports": {
+    "fabric": [
+     "net.minecraft.tags.TagKey",
+     "net.minecraft.core.registries.Registries"
+    ],
+    "neoforge": [
+     "net.minecraft.tags.EntityTypeTags"
+    ]
+   },
+   "test": {
+    "fabric": "import net.minecraft.core.registries.Registries;\nimport net.minecraft.tags.TagKey;\nclass A { TagKey<EntityType<?>> a(ResourceLocation id) { return TagKey.create(Registries.ENTITY_TYPE, id); } }",
+    "neoforge": "import net.minecraft.tags.EntityTypeTags;\nimport net.minecraft.tags.TagKey;\nclass A { TagKey<EntityType<?>> a(ResourceLocation id) { return EntityTypeTags.create(id); } }"
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.tags.TagKey#create"
+    ]
+   }
+  },
+  {
+   "id": "neoforge-slot-index",
+   "about": "NeoForge adds getSlotIndex() to Slot: the slot's index in its container, which is the game's own getContainerSlot().",
+   "fabric": "$slot.getContainerSlot()",
+   "neoforge": "$slot.getSlotIndex()",
+   "test": {
+    "fabric": "class A { int a(Slot slot) { return slot.getContainerSlot(); } }",
+    "neoforge": "class A { int a(Slot slot) { return slot.getSlotIndex(); } }"
+   },
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.world.inventory.Slot#getContainerSlot"
+    ]
+   }
+  },
+  {
+   "id": "neoforge-block-render-layer",
+   "about": "NeoForge 21.1 adds setRenderLayer(block, type) to the game's ItemBlockRenderTypes: the chunk layer a block draws in, which Fabric API's BlockRenderLayerMap.INSTANCE.putBlock sets on Fabric.",
+   "minecraft": {
+    "from": "1.20",
+    "below": "1.21.2"
+   },
+   "fabric": "BlockRenderLayerMap.INSTANCE.putBlock($block, $type)",
+   "neoforge": "ItemBlockRenderTypes.setRenderLayer($block, $type)",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap"
+    ],
+    "neoforge": [
+     "net.minecraft.client.renderer.ItemBlockRenderTypes"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api-1.21.1|net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap#putBlock"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;\nclass A { void a(Block block) { BlockRenderLayerMap.INSTANCE.putBlock(block, RenderType.cutout()); } }",
+    "neoforge": "import net.minecraft.client.renderer.ItemBlockRenderTypes;\nclass A { void a(Block block) { ItemBlockRenderTypes.setRenderLayer(block, RenderType.cutout()); } }",
+    "minecraft": "1.21.1"
+   }
+  },
+  {
+   "id": "neoforge-shaped-max-height",
+   "about": "NeoForge adds getMaxHeight() to the game's ShapedRecipePattern: the largest shaped recipe, 3 (the game's MAX_SIZE, opened by the converted mod's access widener).",
+   "fabric": "ShapedRecipePattern.MAX_SIZE",
+   "neoforge": "ShapedRecipePattern.getMaxHeight()",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "accessTransformers": {
+    "fabric": [
+     "public net.minecraft.world.item.crafting.ShapedRecipePattern MAX_SIZE"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.world.item.crafting.ShapedRecipePattern#MAX_SIZE"
+    ]
+   },
+   "test": {
+    "fabric": "class A { int a() { return ShapedRecipePattern.MAX_SIZE; } }",
+    "neoforge": "class A { int a() { return ShapedRecipePattern.getMaxHeight(); } }"
+   }
+  },
+  {
+   "id": "neoforge-shaped-max-width",
+   "about": "NeoForge adds getMaxWidth() to the game's ShapedRecipePattern: the largest shaped recipe, 3 (the game's MAX_SIZE, opened by the converted mod's access widener). Back to NeoForge, MAX_SIZE becomes getMaxHeight() (the same 3), so this rule is tested one way. Back to NeoForge, MAX_SIZE becomes getMaxHeight() (the same 3), so this rule is tested one way.",
+   "fabric": "ShapedRecipePattern.MAX_SIZE",
+   "neoforge": "ShapedRecipePattern.getMaxWidth()",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "accessTransformers": {
+    "fabric": [
+     "public net.minecraft.world.item.crafting.ShapedRecipePattern MAX_SIZE"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.world.item.crafting.ShapedRecipePattern#MAX_SIZE"
+    ]
+   },
+   "test": {
+    "fabric": "class A { int a() { return ShapedRecipePattern.getMaxWidth(); } }",
+    "neoforge": "class A { int a() { return ShapedRecipePattern.getMaxWidth(); } }",
+    "back": "class A { int a() { return ShapedRecipePattern.MAX_SIZE; } }"
+   }
+  },
+  {
+   "id": "neoforge-widget-fg-color",
+   "about": "NeoForge 21.1 adds the field packedFGColor (a widget's text colour, -1 when unset) to AbstractWidget. A field cannot be added to a game class for the compile, so on Fabric a read of it is the NeoForge bridge's WidgetHooks.neoforgeBridge$packedFGColor(), which the bridge's mixin keeps per widget.",
+   "minecraft": {
+    "from": "1.20",
+    "below": "1.21.2"
+   },
+   "fabric": "$widget.neoforgeBridge$packedFGColor()",
+   "neoforge": "$widget.packedFGColor",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft-1.21.1|net.minecraft.client.gui.components.AbstractWidget#active"
+    ]
+   },
+   "test": {
+    "fabric": "class A extends Button { int a() { return this.neoforgeBridge$packedFGColor(); } }",
+    "neoforge": "class A extends Button { int a() { return this.packedFGColor; } }",
+    "minecraft": "1.21.1"
+   }
   }
  ],
  "types": [
@@ -2419,7 +2635,10 @@
     "net.neoforged.neoforge.items.ComponentItemHandler": "items.ComponentItemHandler",
     "net.neoforged.neoforge.items.ItemHandlerCopySlot": "items.ItemHandlerCopySlot",
     "net.neoforged.neoforge.items.StackCopySlot": "items.StackCopySlot",
-    "net.neoforged.neoforge.common.util.INBTSerializable": "common.util.INBTSerializable"
+    "net.neoforged.neoforge.common.util.INBTSerializable": "common.util.INBTSerializable",
+    "net.neoforged.neoforge.client.gui.widget.ExtendedSlider": "ExtendedSlider",
+    "net.neoforged.neoforge.common.util.RecipeMatcher": "common.util.RecipeMatcher",
+    "net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions": "IClientFluidTypeExtensions"
    },
    "symbols": {
     "neoforge": [
@@ -4317,15 +4536,12 @@
       "FluidTintSources.java",
       "IItemExtension.java",
       "ItemTooltipHandler.java",
-      "ItemDecoratorHandler.java",
       "ClientTooltipFlag.java",
       "CanItemPerformAbility.java",
       "RenderTooltipEvent.java",
       "mixin/TooltipGatherMixin.java",
       "extensions/IDataComponentMapBuilderExtensions.java",
       "mixin/ComponentMapBuilderExtensionsMixin.java",
-      "EntityRenderersEvent.java",
-      "RegisterColorHandlersEvent.java",
       "RegisterRenderPipelinesEvent.java",
       "RegisterSpecialModelRendererEvent.java",
       "transfer/",
@@ -4333,7 +4549,8 @@
      ],
      "rewrites": {
       "org.jspecify.annotations.Nullable": "org.jetbrains.annotations.Nullable",
-      "Identifier": "ResourceLocation"
+      "Identifier": "ResourceLocation",
+      "GuiGraphicsExtractor": "GuiGraphics"
      },
      "mixins": [
       {
@@ -4643,6 +4860,158 @@
        "injects": {
         "net/minecraft/world/item/ItemStack": "capabilities.ItemStackCapabilities"
        }
+      },
+      {
+       "mixin": "ItemStackComponentsMixin",
+       "uses": [
+        [
+         "DataComponentType"
+        ],
+        [
+         "isComponentsPatchEmpty"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/item/ItemStack": "extensions.IItemStackComponentsExtension"
+       }
+      },
+      {
+       "mixin": "ContainerScreenMixin",
+       "client": true,
+       "uses": [
+        [
+         "\\b(getGuiLeft|getGuiTop|getXSize|getYSize|getSlotUnderMouse)\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/client/gui/screens/inventory/AbstractContainerScreen": "extensions.IContainerScreenExtension"
+       }
+      },
+      {
+       "mixin": "GuiGraphicsMixin",
+       "client": true,
+       "uses": [
+        [
+         "GuiGraphics"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/client/gui/GuiGraphics": "extensions.IGuiGraphicsExtension"
+       }
+      },
+      {
+       "mixin": "KeyMappingMixin",
+       "client": true,
+       "uses": [
+        [
+         "isActiveAndMatches"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/client/KeyMapping": "extensions.IKeyMappingExtension"
+       }
+      },
+      {
+       "mixin": "MenuProviderMixin",
+       "uses": [
+        [
+         "shouldTriggerClientSideContainerClosingOnOpen"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/MenuProvider": "extensions.IMenuProviderExtension"
+       }
+      },
+      {
+       "mixin": "MenuOpeningMixin",
+       "uses": [
+        [
+         "shouldTriggerClientSideContainerClosingOnOpen"
+        ]
+       ]
+      },
+      {
+       "mixin": "IngredientExtensionMixin",
+       "uses": [
+        [
+         "isSimple"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/item/crafting/Ingredient": "extensions.IIngredientExtension"
+       }
+      },
+      {
+       "mixin": "ItemHooksMixin",
+       "uses": [
+        [
+         "\\b(getCraftingRemainingItem|hasCraftingRemainingItem|shouldCauseReequipAnimation|getCreatorModId)\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/item/Item": "extensions.ItemHooks"
+       }
+      },
+      {
+       "mixin": "ItemStackHooksMixin",
+       "uses": [
+        [
+         "\\b(getCraftingRemainingItem|hasCraftingRemainingItem|shouldCauseReequipAnimation|getCreatorModId)\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/item/ItemStack": "extensions.ItemStackHooks"
+       }
+      },
+      {
+       "mixin": "BlockEntityHooksMixin",
+       "uses": [
+        [
+         "\\b(onDataPacket|handleUpdateTag|onLoad)\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/level/block/entity/BlockEntity": "extensions.BlockEntityHooks"
+       }
+      },
+      {
+       "mixin": "BlockEntityDataMixin",
+       "client": true,
+       "uses": [
+        [
+         "\\b(onDataPacket|handleUpdateTag|onLoad)\\s*\\("
+        ]
+       ]
+      },
+      {
+       "mixin": "BlockEntityChunkDataMixin",
+       "client": true,
+       "uses": [
+        [
+         "\\b(onDataPacket|handleUpdateTag|onLoad)\\s*\\("
+        ]
+       ]
+      },
+      {
+       "mixin": "WidgetHooksMixin",
+       "client": true,
+       "uses": [
+        [
+         "packedFGColor|FGColor\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/client/gui/components/AbstractWidget": "extensions.WidgetHooks"
+       }
+      },
+      {
+       "mixin": "ButtonColorMixin",
+       "client": true,
+       "uses": [
+        [
+         "packedFGColor|FGColor\\s*\\("
+        ]
+       ]
       }
      ]
     },
@@ -5299,6 +5668,51 @@
      "client": true,
      "for": [
       "RenderLevelStageEvent"
+     ]
+    },
+    {
+     "mixin": "ItemStackComponentsMixin",
+     "uses": [
+      [
+       "DataComponentType"
+      ],
+      [
+       "isComponentsPatchEmpty"
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/item/ItemStack": "extensions.IItemStackComponentsExtension"
+     }
+    },
+    {
+     "mixin": "ContainerScreenMixin",
+     "client": true,
+     "uses": [
+      [
+       "\\b(getGuiLeft|getGuiTop|getXSize|getYSize|getSlotUnderMouse)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/screens/inventory/AbstractContainerScreen": "extensions.IContainerScreenExtension"
+     }
+    },
+    {
+     "mixin": "MenuProviderMixin",
+     "uses": [
+      [
+       "shouldTriggerClientSideContainerClosingOnOpen"
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/MenuProvider": "extensions.IMenuProviderExtension"
+     }
+    },
+    {
+     "mixin": "MenuOpeningMixin",
+     "uses": [
+      [
+       "shouldTriggerClientSideContainerClosingOnOpen"
+      ]
      ]
     }
    ]
