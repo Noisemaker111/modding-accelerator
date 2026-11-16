@@ -204,6 +204,181 @@ final class Dependencies {
                 );
             }
         }
+        // The policy for a dependency with no target release: an optional one is disabled, a required one blocks the port.
+        for (var blocker : new ArrayList<>(setup.blockers)) if (disableOptional(setup, blocker)) setup.blockers.remove(blocker);
+    }
+
+    /**
+     * A dependency with no release for the target is disabled when the mod itself says it can run without it: it is run-time
+     * only (never compiled against, never shipped), or its jar's mod id is not a required dependency in the mod's own
+     * fabric.mod.json or neoforge.mods.toml. Its declaration is commented out, the sources that use it go with the port
+     * (and come back with its undo), and the receipt says why. A required one, a plain library (no mod id), a declaration
+     * the port cannot place, or one the mod's main or client entry class uses stays a blocker naming it. Never a guess.
+     */
+    static boolean disableOptional(Target.Setup setup, Map<String, Object> blocker) {
+        try {
+            String artifact = Json.text(blocker, "artifact", ""), version = Json.text(blocker, "version", "");
+            String configuration = Json.text(blocker, "configuration", ""), file = Json.text(blocker, "file", "");
+            if (artifact.isEmpty() || version.isEmpty() || setup.project.get("buildFile") == null) return false;
+            boolean runtimeOnly = configuration.matches("(?i)(mod)?(runtimeOnly|localRuntime)");
+            Path jar = file.isEmpty() ? cachedJar(artifact, version) : Path.of(file);
+            String modId = jar != null && Files.isRegularFile(jar) ? modId(jar) : null;
+            if (modId == null && artifact.matches(".*-api(?:-[\\w.]+)?")) {
+                // An API artifact carries no mod metadata; its mod is the same project's artifact without -api, same version.
+                Path mod = cachedJar(artifact.replaceFirst("-api(?=-[\\w.]+$|$)", ""), version);
+                if (mod != null) modId = modId(mod);
+            }
+            String why;
+            if (runtimeOnly) why = "a " + configuration + " dependency, never compiled against or shipped";
+            else if (modId == null) return false;
+            else if (requiredBy(setup, modId)) return false;
+            else why = "the mod's own metadata does not require " + modId;
+            Path script = Path.of(setup.project.get("buildFile").toString());
+            List<String> blocks = declarations(setup, script, artifact);
+            if (blocks.isEmpty()) return false;
+            Set<Path> importers = runtimeOnly || jar == null ? Set.of() : importers(setup.build.project, jar);
+            for (Path source : importers) {
+                String text = Files.readString(source);
+                if (text.contains("@Mod(") || text.contains("implements ModInitializer") || text.contains("implements ClientModInitializer")) return false;
+            }
+            for (String block : blocks) setup.replace(script, block, comment(block));
+            setup.excluded.addAll(importers);
+            List<String> removed = importers.isEmpty() ? List.of() : entrypoints(setup, importers);
+            setup.applied.add(
+                Json.map(
+                    "artifact",
+                    artifact,
+                    "from",
+                    version,
+                    "disabled",
+                    true,
+                    "reason",
+                    "no " + setup.to + " release (" + Json.text(blocker, "reason", "") + "), and it is optional: " + why,
+                    "removedSources",
+                    importers.stream().map(p -> setup.build.project.root.relativize(p).toString().replace('\\', '/')).sorted().toList(),
+                    "removedEntrypoints",
+                    removed
+                )
+            );
+            return true;
+        } catch (Exception unplaceable) {
+            return false;
+        }
+    }
+
+    /**
+     * The declaration of group:name in the build script: written literally, or with the game version in its name made from a
+     * property (jei-${minecraft_version}-neoforge), as the build resolved it.
+     */
+    static String declaration(Target.Setup setup, Path script, String artifact) throws IOException {
+        String text = setup.text(script);
+        try {
+            return statement(text, artifact + ":", script);
+        } catch (IOException notLiteral) {
+            Matcher game = Pattern.compile("(?<![0-9.])\\d+\\.\\d+(?:\\.\\d+)?(?![0-9.])").matcher(artifact.substring(artifact.indexOf(':') + 1));
+            if (!game.find()) throw notLiteral;
+            String name = artifact.substring(artifact.indexOf(':') + 1);
+            Matcher written = Pattern.compile(
+                Pattern.quote(artifact.substring(0, artifact.indexOf(':') + 1) + name.substring(0, game.start())) +
+                "\\$\\{?[\\w.]+\\}?" +
+                Pattern.quote(name.substring(game.end()) + ":")
+            ).matcher(text);
+            if (!written.find()) throw notLiteral;
+            return statement(text, written.group(), script);
+        }
+    }
+
+    /**
+     * Every active declaration of the artifact (Cyclic declares Curios compileOnly and localRuntime): one statement, or, when
+     * there are several, each single-line one. Empty when a declaration cannot be placed exactly.
+     */
+    static List<String> declarations(Target.Setup setup, Path script, String artifact) throws IOException {
+        try {
+            return List.of(declaration(setup, script, artifact));
+        } catch (IOException several) {
+            if (several.getMessage() == null || !several.getMessage().startsWith("Multiple active")) return List.of();
+            Matcher marker = Pattern.compile("Multiple active (.+) declarations in").matcher(several.getMessage());
+            if (!marker.find()) return List.of();
+            List<String> lines = new ArrayList<>();
+            for (String line : setup.text(script).split("\\r?\\n")) {
+                String trimmed = line.trim();
+                if (!line.contains(marker.group(1)) || trimmed.startsWith("//") || trimmed.startsWith("*")) continue;
+                if (line.chars().filter(c -> c == '(').count() != line.chars().filter(c -> c == ')').count() || line.contains("{")) return List.of();
+                if (!lines.contains(line)) lines.add(line);
+            }
+            return lines;
+        }
+    }
+
+    /** The jar Gradle downloaded for group:name:version, in its module cache, or null. */
+    static Path cachedJar(String artifact, String version) {
+        String[] parts = artifact.split(":");
+        if (parts.length != 2) return null;
+        Path home = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
+        Path dir = home.resolve("caches/modules-2/files-2.1").resolve(parts[0]).resolve(parts[1]).resolve(version);
+        if (!Files.isDirectory(dir)) return null;
+        try (var walk = Files.walk(dir, 2)) {
+            return walk.filter(p -> p.getFileName().toString().equals(parts[1] + "-" + version + ".jar")).findFirst().orElse(null);
+        } catch (IOException unreadable) {
+            return null;
+        }
+    }
+
+    /** The mod id a mod jar declares (fabric.mod.json id, or the first modId of its mods.toml), or null for a plain library. */
+    static String modId(Path jar) {
+        try (var zip = new ZipFile(jar.toFile())) {
+            var fabric = zip.getEntry("fabric.mod.json");
+            if (fabric != null) return Json.text(Json.object(Json.parse(new String(zip.getInputStream(fabric).readAllBytes(), StandardCharsets.UTF_8))), "id", null);
+            for (String name : List.of("META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
+                var toml = zip.getEntry(name);
+                if (toml == null) continue;
+                Matcher id = Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"").matcher(new String(zip.getInputStream(toml).readAllBytes(), StandardCharsets.UTF_8));
+                if (id.find()) return id.group(1);
+            }
+        } catch (Exception unreadable) {}
+        return null;
+    }
+
+    /** Whether the project's own fabric.mod.json "depends" or neoforge.mods.toml names modId as a required dependency. */
+    static boolean requiredBy(Target.Setup setup, String modId) throws IOException {
+        for (Object set : Json.array(setup.project.get("sourceSets"))) for (String resources : ProjectModel.strings(Json.object(set).get("resources"))) {
+            Path dir = Path.of(resources);
+            Path fabric = dir.resolve("fabric.mod.json");
+            if (Files.isRegularFile(fabric) && requiredInFabric(Files.readString(fabric), modId)) return true;
+            for (String name : List.of("META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
+                Path toml = dir.resolve(name);
+                if (Files.isRegularFile(toml) && requiredInToml(Files.readString(toml), modId)) return true;
+            }
+        }
+        Object dir = setup.project.get("directory");
+        Path root = dir == null ? setup.build.project.root : Path.of(dir.toString());
+        for (String name : List.of("src/main/templates/META-INF/neoforge.mods.toml", "src/main/templates/META-INF/mods.toml")) {
+            Path toml = root.resolve(name);
+            if (Files.isRegularFile(toml) && requiredInToml(Files.readString(toml), modId)) return true;
+        }
+        return false;
+    }
+
+    static boolean requiredInFabric(String json, String modId) {
+        try {
+            return Json.object(Json.object(Json.parse(json)).getOrDefault("depends", Map.of())).containsKey(modId);
+        } catch (RuntimeException unreadable) {
+            return true; // cannot tell: treat it as required, never guess
+        }
+    }
+
+    /** A [[dependencies.X]] block with modId=modId whose type is "required" (or mandatory=true). */
+    static boolean requiredInToml(String toml, String modId) {
+        for (String block : toml.split("(?m)^\\s*\\[\\[")) {
+            if (!block.startsWith("dependencies")) continue;
+            if (!Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"" + Pattern.quote(modId) + "\"").matcher(block).find()) continue;
+            Matcher type = Pattern.compile("(?m)^\\s*type\\s*=\\s*\"(\\w+)\"").matcher(block);
+            Matcher mandatory = Pattern.compile("(?m)^\\s*mandatory\\s*=\\s*(\\w+)").matcher(block);
+            if (type.find()) return type.group(1).equalsIgnoreCase("required");
+            if (mandatory.find()) return mandatory.group(1).equals("true");
+            return true;
+        }
+        return false;
     }
 
     /**

@@ -17,6 +17,15 @@ public final class DependenciesTest {
         var corelib = List.of("1.21.1-2.1.11", "1.21.2-2.1.9", "1.21.2-2.1.12", "1.21.2-2.1.13-beta", "1.21.10-2.1.20", "1.21.2-2.1.2");
         require("1.21.2-2.1.12".equals(Dependencies.chooseGameRelease(corelib, "1.21.1-2.1.11", "1.21.1", "1.21.2")), "newest same-shape release for the target game");
         require(Dependencies.chooseGameRelease(corelib, "1.21.1-2.1.11", "1.21.1", "1.21.6") == null, "no release for the target game is no choice");
+        // Whether a dependency with no target release may be disabled: only what the mod's own metadata does not require.
+        String toml = "modId=\"farmersdelight\"\n[[dependencies.${mod_id}]]\n    modId=\"jei\"\n    type=\"optional\"\n"
+            + "[[dependencies.${mod_id}]]\n    modId=\"curios\"\n    type=\"required\"\n[[dependencies.${mod_id}]]\n    modId=\"patchouli\"\n    mandatory=false\n";
+        require(!Dependencies.requiredInToml(toml, "jei"), "type=optional is optional");
+        require(Dependencies.requiredInToml(toml, "curios"), "type=required blocks");
+        require(!Dependencies.requiredInToml(toml, "patchouli"), "mandatory=false is optional");
+        require(!Dependencies.requiredInToml(toml, "geckolib"), "not named at all is optional");
+        require(Dependencies.requiredInFabric("{\"depends\": {\"minecraft\": \"*\", \"trinkets\": \"*\"}, \"suggests\": {\"modmenu\": \"*\"}}", "trinkets"), "fabric depends blocks");
+        require(!Dependencies.requiredInFabric("{\"depends\": {\"minecraft\": \"*\"}, \"suggests\": {\"modmenu\": \"*\"}}", "modmenu"), "fabric suggests is optional");
         require("1.4.0+1.21.6".equals(Dependencies.chooseGameRelease(List.of("1.3.0+1.21.1", "1.4.0+1.21.6", "1.3.2+1.21.6"), "1.3.0+1.21.1", "1.21.1", "1.21.6")), "game as a build suffix");
         var found = Dependencies.findPublishedProject(
             SOURCE,
