@@ -8,7 +8,8 @@ compiles inside a converted mod. This check makes that mod from a pinned NeoForg
   neoforge-on-fabric: the MDK converted to Fabric by mmt convert (which copies the bridge in), then every bridge file
                       and version-layer file, and a mixin config listing every bridge mixin, so the mixin processor sees them;
   fabric-on-neoforge: the MDK as it is (NeoForge), with every bridge file copied in under its package.
-and runs mmt compile on it, against the loaders' own published jars. Then the bridge's runtime tests, JUnit sources in
+and runs mmt compile on it, against the loaders' own published jars: first with none of the interfaces the bridge's
+mixins add to game classes injected (as most converted mods get it), then with all of them. Then the bridge's runtime tests, JUnit sources in
 knowledge/bridge-tests/ID (at the path of the package they test, ${package} as in the bridge; never copied into a
 converted mod), run there with mmt test: they exercise bridge code that needs no running game (transactions, packet
 contexts, entrypoints, network codecs). The work folder is .runs/bridge-check/; the result is printed as JSON (exit 0
@@ -67,6 +68,7 @@ def templates(b, layer):
     return out
 
 
+INJECTED = "fabricbridge-interfaces.json"  # Convert.INJECTED_INTERFACES
 TESTS = ROOT / "knowledge" / "bridge-tests"
 TEST_BUILD = """
 // bench/bridge_check.py: the bridge's runtime tests.
@@ -95,8 +97,11 @@ def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric):
     build = work / "build.gradle"
     text = build.read_text(encoding="utf-8")
     if "bench/bridge_check.py: the bridge's runtime tests" not in text:
-        # ModDevGradle gives the game to the main source set only; Loom gives it to the tests too.
-        extra = "" if to_fabric else "\nneoForge {\n    addModdingDependenciesTo(sourceSets.test)\n}\n"
+        # ModDevGradle gives the game to the main source set only; Loom gives it to the tests too. Its unit tests run inside
+        # FML with the host mod loaded, so the bridge's mixins apply as in the game (tests that use injected interfaces).
+        # NeoForge's test framework starts a server for a test that asks for one (tags and item components bound).
+        extra = "" if to_fabric else ("\nneoForge {\n    unitTest {\n        enable()\n        testedMod = mods.getByName(mod_id)\n    }\n}\n"
+                                      "dependencies {\n    testImplementation \"net.neoforged:testframework:${neo_version}\"\n}\n")
         build.write_text(text + TEST_BUILD + extra, encoding="utf-8")
     code, result, seconds = convert_sweep.mmt(["test", "--root", str(work), "--json"], 3600)
     out = {"ok": code == 0, "files": len(sources), "seconds": round(seconds, 1), "details": str(result.get("details", ""))[:300]}
@@ -106,6 +111,27 @@ def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric):
         text = log.read_text(encoding="utf-8", errors="replace") if log.is_file() else str(result)
         out["failed"] = [line.strip() for line in text.splitlines() if " FAILED" in line or re.match(r"\s+(?:Caused by: )?[\w.$]+(?:Exception|Error) at ", line)][:60]
     return out
+
+
+def inject(work, injected, to_fabric, on):
+    """Adds the interfaces to game classes for the compile (Loom's injected interfaces, ModDevGradle's data), or takes them out."""
+    if to_fabric:
+        meta_file = work / "src" / "main" / "resources" / "fabric.mod.json"
+        meta = json.loads(meta_file.read_text(encoding="utf-8"))
+        custom = meta.setdefault("custom", {})
+        if on and injected:
+            custom["loom:injected_interfaces"] = injected
+        else:
+            custom.pop("loom:injected_interfaces", None)
+        meta_file.write_text(json.dumps(meta, indent="\t"), encoding="utf-8")
+        return
+    build = work / "build.gradle"
+    block = f"\nneoForge {{\n    interfaceInjectionData {{\n        from(file('{INJECTED}'))\n    }}\n}}\n"
+    text = build.read_text(encoding="utf-8").replace(block, "")
+    if on and injected:
+        (work / INJECTED).write_text(json.dumps(injected, indent=1), encoding="utf-8")
+        text += block
+    build.write_text(text, encoding="utf-8")
 
 
 def main():
@@ -157,19 +183,19 @@ def main():
             meta_file = work / "src" / "main" / "resources" / "fabric.mod.json"
             meta = json.loads(meta_file.read_text(encoding="utf-8"))
             meta["mixins"] = [m for m in meta.get("mixins", []) if m != name] + [name]
-            # The interfaces the bridge's mixins add to game classes, injected by Loom for the compile (as convert writes them).
-            injected = {}
-            for m in mixins:
-                for target, interface in m.get("injects", {}).items():
-                    injected.setdefault(target, []).append((pkg + "." + interface).replace(".", "/"))
-            if injected:
-                meta.setdefault("custom", {})["loom:injected_interfaces"] = injected
             meta_file.write_text(json.dumps(meta, indent="\t"), encoding="utf-8")
         else:
             toml = next((work / "src" / "main").rglob("neoforge.mods.toml"))
             text = toml.read_text(encoding="utf-8")
             if name not in text:
                 toml.write_text(text + f'\n[[mixins]]\nconfig = "{name}"\n', encoding="utf-8")
+    # The interfaces the bridge's mixins add to game classes. A converted mod gets only those of the mixins it needs, most
+    # often none, so the bridge first compiles with none injected, then with all of them for its runtime tests.
+    injected = {}
+    for m in mixins:
+        for target, interface in m.get("injects", {}).items():
+            injected.setdefault(target, []).append((pkg + "." + interface).replace(".", "/"))
+    inject(work, injected, to_fabric, False)
     code, result, seconds = convert_sweep.mmt(["compile", "--root", str(work), "--json"], 3600)
     errors = []
     # javac's errors are in the compile log of this run (the receipt's folder), not in the JSON mmt prints.
@@ -181,6 +207,15 @@ def main():
            "files": len(files), "mixins": len(mixins), "seconds": round(seconds, 1), "work": str(work), "errors": errors[:200]}
     if code != 0 and not errors:
         out["result"] = {k: v for k, v in result.items() if k in ("error", "details", "log")} or str(result)[-3000:]
+    if code == 0 and injected:
+        inject(work, injected, to_fabric, True)
+        code, result, more = convert_sweep.mmt(["compile", "--root", str(work), "--json"], 3600)
+        out["seconds"] = round(seconds + more, 1)
+        if code != 0:
+            out["ok"] = False
+            logs = sorted((work / ".runs" / "portable").glob("*/*compile*.log"), key=lambda p: p.stat().st_mtime)
+            out["errors"] = ["with the interfaces injected: " + f"{Path(e['file']).name}:{e['line']}: {e['message']} {e['symbol']}".strip()
+                             for e in (convert_sweep.compile_errors(logs[-1].read_text(encoding="utf-8", errors="replace")) if logs else [])][:200]
     if code == 0:
         tests = run_tests(work, pkg_dir.relative_to(java), pkg, modid, args.bridge, to_fabric)
         if tests is not None:

@@ -22,6 +22,15 @@ public final class IBlockStateExtension {
 
     private IBlockStateExtension() {}
 
+    /**
+     * The enchanting power the state gives a nearby table: NeoForge's default is 1 for #minecraft:enchantment_power_provider
+     * and 0 otherwise; on Fabric a provider gives what Fabric API's getProvidedEnchantmentPower says (1 unless its block
+     * overrides it), which is what Fabric's table counts.
+     */
+    public static float getEnchantPowerBonus(BlockState state, LevelReader level, BlockPos pos) {
+        return state.is(BlockTags.ENCHANTMENT_POWER_PROVIDER) ? state.getProvidedEnchantmentPower(level, pos) : 0;
+    }
+
     /** The light the state gives off at a position: NeoForge's default is the state's own light emission. */
     public static int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
         return state.getLightEmission();
