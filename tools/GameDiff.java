@@ -55,6 +55,7 @@ public final class GameDiff {
 
     static final String MANIFEST = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     static final String NEOFORGE = "https://maven.neoforged.net/releases/net/neoforged/neoforge/";
+    static final int ACC_PUBLIC = 0x0001;
     static final int ACC_PRIVATE = 0x0002;
     static final int ACC_STATIC = 0x0008;
     static final int ACC_BRIDGE = 0x0040;
@@ -1953,6 +1954,77 @@ public final class GameDiff {
          * every user was redesigned, or the users disagree.
          */
         record Evidence(int sites, int kept, int aligned, String best, int votes, String template, int templateVotes, int templateSites) {}
+
+        /**
+         * Removed methods whose old code can go with the mod: every class, method and field the body uses is outside the
+         * game (the JDK, a library) or is still in b, linked and public, or is another removed method of the same class
+         * that passes the same test. Such a body, copied into the mod as a helper and renamed through the map, still
+         * compiles and does what it did. Keyed as Exposure keys them.
+         */
+        Set<String> portable() {
+            Set<String> out = new HashSet<>();
+            Map<Meth, Boolean> memo = new HashMap<>();
+            for (Cls c : a.classes.values()) {
+                for (Meth m : c.methods.values()) {
+                    if (!mAB.containsKey(m) && (m.flags & ACC_PUBLIC) != 0 && portable(m, memo, 0)) {
+                        out.add(m.owner.name.replace('/', '.') + "." + m.name + m.desc);
+                    }
+                }
+            }
+            return out;
+        }
+
+        boolean portable(Meth m, Map<Meth, Boolean> memo, int depth) {
+            Boolean known = memo.get(m);
+            if (known != null) {
+                return known;
+            }
+            if (!m.hasCode || depth > 4) {
+                return false;
+            }
+            memo.put(m, false); // a cycle is not portable
+            boolean ok = m.isStatic() || publicInB(cAB.get(m.owner));
+            for (Ref r : m.refs) {
+                if (!ok) {
+                    break;
+                }
+                Cls owner = a.classes.get(r.owner());
+                if (owner == null) {
+                    continue; // the JDK or a library
+                }
+                switch (r.kind()) {
+                    case 'm' -> {
+                        Meth x = null;
+                        for (Cls k = owner; k != null && x == null; k = k.sup == null ? null : a.classes.get(k.sup)) {
+                            x = k.methods.get(r.name() + r.desc());
+                        }
+                        if (x == null) {
+                            ok = false;
+                        } else if (mAB.containsKey(x)) {
+                            Meth y = mAB.get(x);
+                            ok = (y.flags & ACC_PUBLIC) != 0 && publicInB(y.owner);
+                        } else {
+                            ok = x.owner == m.owner && portable(x, memo, depth + 1);
+                        }
+                    }
+                    case 'f' -> {
+                        Fld x = null;
+                        for (Cls k = owner; k != null && x == null; k = k.sup == null ? null : a.classes.get(k.sup)) {
+                            x = k.fields.get(r.name());
+                        }
+                        Fld y = x == null ? null : fAB.get(x);
+                        ok = y != null && (y.flags & ACC_PUBLIC) != 0 && publicInB(y.owner);
+                    }
+                    default -> ok = publicInB(cAB.get(owner));
+                }
+            }
+            memo.put(m, ok);
+            return ok;
+        }
+
+        static boolean publicInB(Cls c) {
+            return c != null && (c.flags & ACC_PUBLIC) != 0;
+        }
 
         /** The references of b each template string stands for, and the reference of a each evidence key came from. */
         final Map<String, List<Ref>> templateRefs = new HashMap<>();

@@ -109,6 +109,7 @@ public final class Exposure {
         GameDiff.Hop hop = new GameDiff.Hop(a, b);
         hop.run();
         Map<String, GameDiff.Hop.Evidence> evidence = hop.evidence();
+        Set<String> portable = hop.portable();
         Map<String, int[]> bySource = new TreeMap<>();
         Map<String, Integer> byChange = new HashMap<>();
         List<Object> ranked = new ArrayList<>();
@@ -123,6 +124,7 @@ public final class Exposure {
                 String[] game = gameSays(evidence.get(e.getKey()));
                 row.put("game", game[0]);
                 row.put("gameDetail", game[1]);
+                row.put("portable", portable.contains(e.getKey()));
                 String why = brokenDetail.get(e.getKey());
                 if (why.startsWith("signature: ")) {
                     String kind = why.substring("signature: ".length()).replaceFirst("^overridden, ", "");
@@ -271,7 +273,19 @@ public final class Exposure {
                     names.add(m.name);
                 }
             }
-            for (String s : gameSupertypes(rc, a)) {
+            // The porter renames an override with the method it overrides: the mod has the new name too.
+            List<String> supers = gameSupertypes(rc, a);
+            for (GameDiff.RawCls c = rc; c != null; c = mod.get(c.sup)) {
+                for (GameDiff.RawMeth m : c.methods.values()) {
+                    for (String s : supers) {
+                        GameDiff.Cls decl = declaring(a, s, 'm', m.name, m.desc);
+                        if (decl != null) {
+                            names.add(route.method(decl.name, m.name, m.desc)[1]);
+                        }
+                    }
+                }
+            }
+            for (String s : supers) {
                 GameDiff.Cls target = b.classes.get(route.cls(s));
                 GameDiff.Cls old = a.classes.get(s);
                 if (target == null || old == null) {
