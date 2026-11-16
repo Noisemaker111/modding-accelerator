@@ -709,9 +709,12 @@ final class Port {
         return dropped;
     }
 
-    /** A build log as text: javac on Windows writes in the console's code page, so bytes that are not UTF-8 never stop a port. */
+    /**
+     * A build log as text: javac on Windows writes in the console's code page, so bytes that are not UTF-8 never stop a
+     * port, and ends lines with \r\n, which become \n: a rule's match spans lines with \n.
+     */
     static String logText(Path log) throws IOException {
-        return new String(Files.readAllBytes(log), StandardCharsets.UTF_8);
+        return new String(Files.readAllBytes(log), StandardCharsets.UTF_8).replace("\r\n", "\n");
     }
 
     static List<Path> sources(ProjectModel project) throws IOException {
@@ -2864,6 +2867,43 @@ final class Port {
      * ResourceKey: tag(T).add(BLOCK_A, BLOCK_B.get()) -> add(BLOCK_A.builtInRegistryHolder().key(), ...).
      */
     /**
+     * 1.21.2 split a toast's Visibility render(GuiGraphics, ToastComponent, long) into update(ToastManager, long),
+     * getWantedVisibility() and void render(GuiGraphics, Font, long); ToastComponent became ToastManager, with the same
+     * methods. Every toast in the file keeps its drawing code unchanged as mmtRender: update keeps the manager, render
+     * draws through mmtRender and keeps the visibility it answers, and getWantedVisibility hands that to the game, which
+     * asks after each update. A toast that already has getWantedVisibility is left alone.
+     */
+    static String toastVisibility(String text) {
+        Matcher old = Pattern.compile(
+            "(?:@Override\\s+)?public\\s+((?:[\\w.]*\\.)?Visibility)\\s+render\\s*\\(\\s*(?:final\\s+)?GuiGraphics\\s+(\\w+)\\s*,\\s*" +
+            "(?:final\\s+)?(?:[\\w.]*\\.)?(?:ToastComponent|ToastManager)\\s+(\\w+)\\s*,\\s*(?:final\\s+)?long\\s+(\\w+)\\s*\\)\\s*\\{"
+        ).matcher(text);
+        StringBuilder out = new StringBuilder();
+        int done = 0;
+        while (old.find()) {
+            int close = closingBrace(text, old.end() - 1);
+            int classOpen = text.lastIndexOf("class ", old.start());
+            if (close < 0 || classOpen < 0 || text.substring(classOpen, old.start()).contains("getWantedVisibility")) continue;
+            String manager = "net.minecraft.client.gui.components.toasts.ToastManager";
+            String visibility = "net.minecraft.client.gui.components.toasts.Toast.Visibility";
+            out.append(text, done, old.start())
+                .append("private ").append(visibility).append(" mmtRender(GuiGraphics ").append(old.group(2)).append(", ").append(manager)
+                .append(' ').append(old.group(3)).append(", long ").append(old.group(4)).append(") {")
+                .append(text, old.end(), close + 1)
+                .append("\n\n    private ").append(manager).append(" mmtToastManager;\n")
+                .append("    private ").append(visibility).append(" mmtVisibility = ").append(visibility).append(".SHOW;\n\n")
+                .append("    @Override\n    public void update(").append(manager).append(" manager, long time) {\n")
+                .append("        this.mmtToastManager = manager;\n    }\n\n")
+                .append("    @Override\n    public ").append(visibility).append(" getWantedVisibility() {\n")
+                .append("        return this.mmtVisibility;\n    }\n\n")
+                .append("    @Override\n    public void render(GuiGraphics graphics, net.minecraft.client.gui.Font font, long time) {\n")
+                .append("        this.mmtVisibility = mmtRender(graphics, this.mmtToastManager, time);\n    }");
+            done = close + 1;
+        }
+        return done == 0 ? text : out.append(text.substring(done)).toString();
+    }
+
+    /**
      * 1.21.2 split entity rendering into extracting a render state and drawing it: EntityRenderer<T> became
      * EntityRenderer<T, S extends EntityRenderState>, and render(T entity, float yaw, float partialTicks, PoseStack,
      * MultiBufferSource, int) became render(S state, PoseStack, MultiBufferSource, int). A renderer that extends
@@ -3210,6 +3250,7 @@ final class Port {
         if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
         else if ("call-arguments".equals(apply.get("transform"))) text = callArguments(text, apply);
         else if ("entity-render-state".equals(apply.get("transform"))) text = entityRenderState(text);
+        else if ("toast-visibility".equals(apply.get("transform"))) text = toastVisibility(text);
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(
             text,

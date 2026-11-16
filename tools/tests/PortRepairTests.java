@@ -109,8 +109,10 @@ public final class PortRepairTests {
             learned +
             " rules learned from Stonecutter switches name real switches in two or more mods, match their error, rewrite their example and run on their update"
         );
-        // Every other rule that carries a test is held to the same three facts.
+        // Every other rule that carries a test is held to the same three facts. Its error is read the way a port reads
+        // javac's log, written with Windows line ends, so a match that spans lines holds on every machine.
         int written = 0;
+        Path windowsLog = Files.createTempFile("rule-error", ".log");
         for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
             if ("stonecutter".equals(rule.get("source")) || !(rule.get("test") instanceof Map<?, ?>)) continue;
@@ -120,7 +122,7 @@ public final class PortRepairTests {
             if (
                 !rule.containsKey("silent") &&
                 !java.util.regex.Pattern.compile(rule.get("match").toString())
-                    .matcher(test.get("error").toString())
+                    .matcher(Port.logText(Files.writeString(windowsLog, test.get("error").toString().replace("\n", "\r\n"))))
                     .find()
             ) throw new AssertionError(id + ": match misses its test error");
             String after = "line".equals(rule.get("scope"))

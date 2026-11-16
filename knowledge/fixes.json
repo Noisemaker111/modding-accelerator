@@ -8095,6 +8095,91 @@
         "after": "class Warn {\n    void f(Entity entity) {\n        if (entity instanceof net.minecraft.world.entity.player.Player mmtPlayer) mmtPlayer.sendSystemMessage(Component.literal(\"hi\"));\n    }\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "recipe-result-item-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.item.crafting.Recipe.getResultItem"],
+      "match": "symbol:\\s+method getResultItem\\([\\w.$]+\\)\\n\\s*location: (?:variable \\w+ of type|class) (?:[\\w.]*\\.)?(?!(?:Recipe|CraftingRecipe)\\b)\\w+Recipe\\b",
+      "apply": {
+        "find": "\\.\\s*getResultItem\\s*\\(((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\))*)\\)",
+        "replace": ".display().stream().findFirst().map(mmtDisplay -> mmtDisplay.result().resolveForFirstStack(new net.minecraft.util.context.ContextMap.Builder().withParameter(net.minecraft.world.item.crafting.display.SlotDisplayContext.REGISTRIES, $1).create(net.minecraft.world.item.crafting.display.SlotDisplayContext.CONTEXT))).orElse(net.minecraft.world.item.ItemStack.EMPTY)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 recipes show their result through display(): the first display's result slot, resolved with the registries, is the stack getResultItem gave (empty for a recipe with nothing to show, as before). Only on the game's own recipe classes, which fill display(); a call through the Recipe interface may reach a mod's recipe, whose display() a port leaves empty, so it is left for javac.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Recipe.getResultItem(Provider), Recipe.getIngredients() and RecipeManager.getAllRecipesFor(RecipeType) removed; 1.21.2 Recipe.display() List<RecipeDisplay>, RecipeDisplay.result() SlotDisplay, SlotDisplay.resolveForFirstStack(ContextMap), SlotDisplayContext.REGISTRIES and CONTEXT (FUEL_VALUES and REGISTRIES both optional, from its bytecode), Recipe.placementInfo().ingredients(), RecipeManager.getRecipes(), public static RecipeMap.create(Iterable) and RecipeMap.byType(RecipeType)",
+      "test": {
+        "error": "Smoke.java:3: error: cannot find symbol\n        ItemStack out = recipe.get().value().getResultItem(context.getLevel().registryAccess()).copy();\n                                            ^\n  symbol:   method getResultItem(RegistryAccess)\n  location: class SmokingRecipe\n",
+        "before": "class Smoke {\n    void f() {\n        ItemStack out = recipe.get().value().getResultItem(context.getLevel().registryAccess()).copy();\n    }\n}\n",
+        "after": "class Smoke {\n    void f() {\n        ItemStack out = recipe.get().value().display().stream().findFirst().map(mmtDisplay -> mmtDisplay.result().resolveForFirstStack(new net.minecraft.util.context.ContextMap.Builder().withParameter(net.minecraft.world.item.crafting.display.SlotDisplayContext.REGISTRIES, context.getLevel().registryAccess()).create(net.minecraft.world.item.crafting.display.SlotDisplayContext.CONTEXT))).orElse(net.minecraft.world.item.ItemStack.EMPTY).copy();\n    }\n}\n",
+        "from": "written for this rule, from Farmer's Delight's SmokerCookFunction"
+      }
+    },
+    {
+      "id": "recipe-ingredients-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.item.crafting.Recipe.getIngredients"],
+      "match": "symbol:\\s+method getIngredients\\(\\)\\n\\s*location: (?:variable \\w+ of type|class) (?:[\\w.]*\\.)?(?!(?:Recipe|CraftingRecipe)\\b)\\w+Recipe\\b",
+      "apply": {
+        "find": "\\.\\s*getIngredients\\s*\\(\\s*\\)",
+        "replace": ".placementInfo().ingredients()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 recipes list what they take through placementInfo(). Only on the game's own recipe classes: a ported mod recipe is not placeable, and lists nothing there.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Recipe.getResultItem(Provider), Recipe.getIngredients() and RecipeManager.getAllRecipesFor(RecipeType) removed; 1.21.2 Recipe.display() List<RecipeDisplay>, RecipeDisplay.result() SlotDisplay, SlotDisplay.resolveForFirstStack(ContextMap), SlotDisplayContext.REGISTRIES and CONTEXT (FUEL_VALUES and REGISTRIES both optional, from its bytecode), Recipe.placementInfo().ingredients(), RecipeManager.getRecipes(), public static RecipeMap.create(Iterable) and RecipeMap.byType(RecipeType)",
+      "test": {
+        "error": "Smoke.java:3: error: cannot find symbol\n        boolean hit = r.value().getIngredients().get(0).test(stack);\n                               ^\n  symbol:   method getIngredients()\n  location: class SmokingRecipe\n",
+        "before": "class Smoke {\n    void f() {\n        boolean hit = r.value().getIngredients().get(0).test(stack);\n    }\n}\n",
+        "after": "class Smoke {\n    void f() {\n        boolean hit = r.value().placementInfo().ingredients().get(0).test(stack);\n    }\n}\n",
+        "from": "written for this rule, from Farmer's Delight's SmokerCookFunction"
+      }
+    },
+    {
+      "id": "recipe-manager-all-for-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.item.crafting.RecipeManager.getAllRecipesFor"],
+      "match": "symbol:\\s+method getAllRecipesFor\\([\\w.$<>]+\\)\\n\\s*location: (?:variable \\w+ of type|class) (?:[\\w.]*\\.)?RecipeManager\\b",
+      "apply": {
+        "find": "\\.\\s*getAllRecipesFor\\s*\\(((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\))*)\\)",
+        "replace": ".getRecipes().stream().collect(java.util.stream.Collectors.collectingAndThen(java.util.stream.Collectors.toList(), mmtRecipes -> java.util.List.copyOf(net.minecraft.world.item.crafting.RecipeMap.create(mmtRecipes).byType($1))))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's RecipeManager lists every recipe (getRecipes()); grouping them by type is what RecipeMap does, and its byType keeps the type's recipe class, so the list is typed as before.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: Recipe.getResultItem(Provider), Recipe.getIngredients() and RecipeManager.getAllRecipesFor(RecipeType) removed; 1.21.2 Recipe.display() List<RecipeDisplay>, RecipeDisplay.result() SlotDisplay, SlotDisplay.resolveForFirstStack(ContextMap), SlotDisplayContext.REGISTRIES and CONTEXT (FUEL_VALUES and REGISTRIES both optional, from its bytecode), Recipe.placementInfo().ingredients(), RecipeManager.getRecipes(), public static RecipeMap.create(Iterable) and RecipeMap.byType(RecipeType)",
+      "test": {
+        "error": "Recipes.java:3: error: cannot find symbol\n        return recipeManager.getAllRecipesFor(ModRecipeTypes.COOKING.get());\n                            ^\n  symbol:   method getAllRecipesFor(RecipeType<CookingPotRecipe>)\n  location: variable recipeManager of type RecipeManager\n",
+        "before": "class Recipes {\n    List<RecipeHolder<CookingPotRecipe>> f() {\n        return recipeManager.getAllRecipesFor(ModRecipeTypes.COOKING.get());\n    }\n}\n",
+        "after": "class Recipes {\n    List<RecipeHolder<CookingPotRecipe>> f() {\n        return recipeManager.getRecipes().stream().collect(java.util.stream.Collectors.collectingAndThen(java.util.stream.Collectors.toList(), mmtRecipes -> java.util.List.copyOf(net.minecraft.world.item.crafting.RecipeMap.create(mmtRecipes).byType(ModRecipeTypes.COOKING.get()))));\n    }\n}\n",
+        "from": "written for this rule, from Farmer's Delight's FDRecipes"
+      }
+    },
+    {
+      "id": "toast-visibility-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.client.gui.components.toasts.Toast.render",
+        "net.minecraft.client.gui.components.toasts.Toast.getWantedVisibility",
+        "net.minecraft.client.gui.components.toasts.Toast.update"],
+      "match": "does not override abstract method (?:getWantedVisibility\\(\\)|update\\(ToastManager,long\\)|render\\(GuiGraphics,Font,long\\)) in Toast",
+      "apply": {
+        "transform": "toast-visibility"
+      },
+      "scope": "log",
+      "when": "implements\\s+[^{]*\\bToast\\b",
+      "note": "1.21.2 split a toast's render, which drew it and answered whether to keep it, into update(ToastManager, long), getWantedVisibility() and a void render(GuiGraphics, Font, long). The toast keeps its drawing code unchanged: the new render runs it and keeps the answer, which the game asks for after each update.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: 1.21.1 Toast.render(GuiGraphics,ToastComponent,long) Visibility; 1.21.2 Toast.update(ToastManager,long), getWantedVisibility(), render(GuiGraphics,Font,long); ToastComponent -> ToastManager with getMinecraft() and getNotificationDisplayTimeMultiplier()",
+      "test": {
+        "error": "SaveToast.java:3: error: SaveToast is not abstract and does not override abstract method getWantedVisibility() in Toast\n",
+        "before": "package mod;\n\npublic class SaveToast implements Toast {\n    private final Component title;\n\n    @Override\n    public Visibility render(GuiGraphics graphics, ToastComponent component, long time) {\n        graphics.blitSprite(BACKGROUND, 0, 0, width(), height());\n        graphics.drawString(component.getMinecraft().font, title, 30, 7, -1, false);\n        return time >= 5000.0 * component.getNotificationDisplayTimeMultiplier() ? Visibility.HIDE : Visibility.SHOW;\n    }\n}\n",
+        "after": "package mod;\n\npublic class SaveToast implements Toast {\n    private final Component title;\n\n    private net.minecraft.client.gui.components.toasts.Toast.Visibility mmtRender(GuiGraphics graphics, net.minecraft.client.gui.components.toasts.ToastManager component, long time) {\n        graphics.blitSprite(BACKGROUND, 0, 0, width(), height());\n        graphics.drawString(component.getMinecraft().font, title, 30, 7, -1, false);\n        return time >= 5000.0 * component.getNotificationDisplayTimeMultiplier() ? Visibility.HIDE : Visibility.SHOW;\n    }\n\n    private net.minecraft.client.gui.components.toasts.ToastManager mmtToastManager;\n    private net.minecraft.client.gui.components.toasts.Toast.Visibility mmtVisibility = net.minecraft.client.gui.components.toasts.Toast.Visibility.SHOW;\n\n    @Override\n    public void update(net.minecraft.client.gui.components.toasts.ToastManager manager, long time) {\n        this.mmtToastManager = manager;\n    }\n\n    @Override\n    public net.minecraft.client.gui.components.toasts.Toast.Visibility getWantedVisibility() {\n        return this.mmtVisibility;\n    }\n\n    @Override\n    public void render(GuiGraphics graphics, net.minecraft.client.gui.Font font, long time) {\n        this.mmtVisibility = mmtRender(graphics, this.mmtToastManager, time);\n    }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }
