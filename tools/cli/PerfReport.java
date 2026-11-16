@@ -220,9 +220,15 @@ final class PerfReport {
         return method.getType().getName() + "." + method.getName() + method.getDescriptor();
     }
 
+    static final String PROFILER_SITE = "mmt's own profiler (its recording, not the game)";
+
     /** The first frame outside the JDK and its caller, with lines: who asked for the allocation, not Arrays.copyOf. */
     static String ownSite(RecordedEvent event) {
         List<RecordedFrame> frames = frames(event.getStackTrace());
+        // The capture's own buffers survive collections too; they are the profiler's cost, not the game's.
+        if (PerfAttribution.profiler(frames)) {
+            return PROFILER_SITE;
+        }
         for (int i = 0; i < frames.size(); i++) {
             String type = frames.get(i).getMethod().getType().getName();
             if (type.startsWith("java.") || type.startsWith("jdk.") || type.startsWith("sun.")) continue;

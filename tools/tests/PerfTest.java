@@ -249,7 +249,7 @@ public final class PerfTest {
             Map<String, Object> report = Json.read(out.resolve("report.json"));
             check(((Number) report.getOrDefault("youngCollections", 0)).longValue() > 0 && ((Number) report.getOrDefault("gcCopiedBytes", 0)).longValue() > 0,
                 "young collections and the bytes they copied are counted: " + report.get("youngCollections") + ", " + report.get("gcCopiedBytes"));
-            String survivor = Json.text(Json.object(Json.array(report.getOrDefault("survivingAllocationSites", List.of(Json.map("name", "none")))).get(0)), "name", "");
+            String survivor = Json.array(report.getOrDefault("survivingAllocationSites", List.of())).stream().map(r -> Json.text(Json.object(r), "name", "")).filter(name -> !name.equals(PerfReport.PROFILER_SITE)).findFirst().orElse("none");
             check(survivor.startsWith("Keeper.keep:"), "the site whose objects survive is charged with the copying, not the one that allocates most: " + survivor);
         } finally {
             process.destroy();
