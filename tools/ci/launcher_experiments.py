@@ -2,7 +2,7 @@
 
 Windows broke perf-optimize twice in ways only a verifier running it there saw (#76, 877ec25): this runs the real
 launcher from a checkout whose path has a space, with the experiment path in the system's own separators. Without the
-prepared worlds every experiment reports only its missing worldSource; any other problem fails.
+prepared worlds and modpacks every experiment reports only its missing worldSource or pack.input; any other problem fails.
 
     python tools/ci/launcher_experiments.py
 """
@@ -28,11 +28,12 @@ def main():
         if not isinstance(problems, list):
             failures.append(f"{path}: {answer.get('error') or answer}")
             continue
-        other = [p for p in problems if not str(p).startswith("worldSource ")]
+        # A save and a modpack are made once per machine (bench/MOD/README.md), never committed.
+        other = [p for p in problems if not str(p).startswith(("worldSource ", "pack.input "))]
         if other:
             failures.append(f"{path}: {other}")
         checked += 1
-    print("\n".join(failures) or f"{checked} experiments checked through {Path(launcher[0]).name}: only their unprepared worlds are missing")
+    print("\n".join(failures) or f"{checked} experiments checked through {Path(launcher[0]).name}: only their unprepared worlds and packs are missing")
     return 1 if failures or not checked else 0
 
 
