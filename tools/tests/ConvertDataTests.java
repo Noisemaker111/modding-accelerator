@@ -85,5 +85,17 @@ final class ConvertDataTests {
             unwired.equals(Map.of(":datagenClasses", "datagen")),
             "only a source set given neither the game nor main's classes is left out of the compile; a model without classpaths leaves none out: " + unwired
         );
+        String keys = "package demo;\n\nimport net.minecraft.client.KeyMapping;\n\nclass K {\n" +
+            "    KeyMapping a = new KeyMapping(\"a\", CONTEXT, key, CATEGORY);\n    KeyMapping b = new KeyMapping(\"b\", InputConstants.Type.KEYSYM, 71, CATEGORY);\n}\n";
+        String repairedKeys = Convert.contextKeyMappings(keys, Set.of(6, 99), "demo.loaderbridge");
+        ConvertTests.check(
+            repairedKeys.equals(keys.replace("import net.minecraft.client.KeyMapping;\n", "import net.minecraft.client.KeyMapping;\nimport demo.loaderbridge.KeyConflictContext;\n")
+                .replace("a = new KeyMapping(", "a = KeyConflictContext.keyMapping(")) &&
+            Convert.contextKeyMappings(keys.replace("package demo;", "package demo.loaderbridge;"), Set.of(6), "demo.loaderbridge").equals(
+                keys.replace("package demo;", "package demo.loaderbridge;").replace("a = new KeyMapping(", "a = KeyConflictContext.keyMapping(")
+            ) &&
+            Convert.contextKeyMappings(keys, Set.of(7 - 6), "demo.loaderbridge").equals(keys),
+            "a refused KeyMapping constructor with a conflict context is the bridge's KeyConflictContext.keyMapping, imported once; other lines stay: " + repairedKeys
+        );
     }
 }

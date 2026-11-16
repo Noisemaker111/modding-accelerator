@@ -1111,7 +1111,7 @@
    "id": "neoforge-fluid-model-tint",
    "about": "NeoForge replaces the game's FluidModel tint source with its FluidTintSource (fluidTintSource()); on Fabric the FluidModel keeps the game's BlockTintSource (tintSource()), which the NeoForge bridge's FluidTintSources.of reads as a fluid tint source exactly as NeoForge's deprecated constructor does (convert then points the import at the bridge).",
    "minecraft": {
-    "from": "26.2"
+    "from": "26.1"
    },
    "fabric": "FluidTintSources.of($model.tintSource())",
    "neoforge": "$model.fluidTintSource()",
@@ -2877,6 +2877,7 @@
     "net.neoforged.neoforge.items.StackCopySlot": "items.StackCopySlot",
     "net.neoforged.neoforge.common.util.INBTSerializable": "common.util.INBTSerializable",
     "net.neoforged.neoforge.client.gui.widget.ExtendedSlider": "ExtendedSlider",
+    "net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper": "VertexConsumerWrapper",
     "net.neoforged.neoforge.common.util.RecipeMatcher": "common.util.RecipeMatcher",
     "net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions": "IClientFluidTypeExtensions",
     "net.neoforged.neoforge.common.world.BiomeModifier": "world.BiomeModifier",
@@ -5142,6 +5143,18 @@
        }
       },
       {
+       "mixin": "ScreenMinecraftMixin",
+       "client": true,
+       "uses": [
+        [
+         "\\bgetMinecraft\\s*\\(\\s*\\)"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/client/gui/screens/Screen": "extensions.IScreenExtension"
+       }
+      },
+      {
        "mixin": "ContainerScreenMixin",
        "client": true,
        "uses": [
@@ -5492,8 +5505,6 @@
       ]
      },
      "drops": [
-      "FluidTintSource.java",
-      "FluidTintSources.java",
       "mixin/InventoryDropsMixin.java",
       "mixin/EquipmentDropsMixin.java"
      ]
@@ -6043,6 +6054,9 @@
       [
        "CustomPacketPayload",
        "\\.send\\s*\\("
+      ],
+      [
+       "\\bconnection\\s*\\.\\s*send\\s*\\(\\s*new\\s"
       ]
      ],
      "for": [
@@ -6146,6 +6160,30 @@
      ],
      "injects": {
       "net/minecraft/world/item/ItemStack": "extensions.IItemStackComponentsExtension"
+     }
+    },
+    {
+     "mixin": "KeyMappingMixin",
+     "client": true,
+     "uses": [
+      [
+       "\\b(getKeyModifier|getDefaultKeyModifier|getKeyConflictContext|setKeyConflictContext|setKeyModifierAndCode|isConflictContextAndModifierActive|isActiveAndMatches)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/KeyMapping": "extensions.IKeyMappingExtension"
+     }
+    },
+    {
+     "mixin": "ScreenMinecraftMixin",
+     "client": true,
+     "uses": [
+      [
+       "\\bgetMinecraft\\s*\\(\\s*\\)"
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/gui/screens/Screen": "extensions.IScreenExtension"
      }
     },
     {

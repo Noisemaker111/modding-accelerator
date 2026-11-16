@@ -4898,7 +4898,7 @@ final class Convert {
         boolean ok = run.exit() == 0;
         // The original compiled on its own loader: an override the compiler now refuses is of a method that loader adds to
         // a game class (a hook), which nothing here calls. It is kept as a plain method and listed (unhooked).
-        for (int attempt = 0; !ok && attempt < 4 && repairOverrides(Port.errors(run.log())) > 0; attempt++) {
+        for (int attempt = 0; !ok && attempt < 4 && repairOverrides(Port.errors(run.log())) + repairKeyMappings(Port.errors(run.log())) > 0; attempt++) {
             run = fresh.gradle(tasks, "convert-compile");
             ok = run.exit() == 0;
         }
@@ -5000,6 +5000,55 @@ final class Convert {
             Files.writeString(e.getKey(), String.join("\n", kept) + "\n", StandardCharsets.UTF_8);
         }
         return changed;
+    }
+
+    /**
+     * NeoForge's KeyMapping constructors that take a conflict context held in a variable (the rules match only a written
+     * KeyConflictContext.X): javac refuses them on Fabric, whose KeyMapping has none ("X cannot be converted to Type", or no
+     * suitable constructor), and the NeoForge bridge's static KeyConflictContext.keyMapping(name, context, ...) makes them.
+     * Returns how many calls it changed.
+     */
+    int repairKeyMappings(List<Object> errors) throws IOException {
+        if (!bridgeUsed || !Files.isRegularFile(project.root.resolve(bridgeFolder() + "/KeyConflictContext.java"))) return 0;
+        Map<Path, Set<Integer>> lines = new LinkedHashMap<>();
+        for (Object item : errors) {
+            var error = Json.object(item);
+            String message = String.valueOf(error.get("message"));
+            if (!message.matches("incompatible types: \\S+ cannot be converted to (?:Type|Key)") && !message.startsWith("no suitable constructor found for KeyMapping(")) continue;
+            Path file = Path.of(String.valueOf(error.get("file")));
+            if (!Files.isRegularFile(file) || !file.toAbsolutePath().normalize().startsWith(project.root.toAbsolutePath().normalize())) continue;
+            lines.computeIfAbsent(file, f -> new TreeSet<>()).add(((Number) error.get("line")).intValue());
+        }
+        int changed = 0;
+        for (var e : lines.entrySet()) {
+            String text = Files.readString(e.getKey(), StandardCharsets.UTF_8);
+            String out = contextKeyMappings(text, e.getValue(), bridgePackage);
+            if (out.equals(text)) continue;
+            Files.writeString(e.getKey(), out, StandardCharsets.UTF_8);
+            changed++;
+            applied.computeIfAbsent("neoforge-key-mapping-context-variable", k -> new ArrayList<>()).add(project.root.relativize(e.getKey()).toString().replace('\\', '/'));
+        }
+        return changed;
+    }
+
+    /** The text with new KeyMapping( on the given lines (1-based) made the bridge's KeyConflictContext.keyMapping(, imported. */
+    static String contextKeyMappings(String text, Set<Integer> lineNumbers, String bridgePackage) {
+        List<String> lines = new ArrayList<>(List.of(text.split("\n", -1)));
+        boolean changed = false;
+        for (int number : lineNumbers) {
+            if (number < 1 || number > lines.size() || !lines.get(number - 1).contains("new KeyMapping(")) continue;
+            lines.set(number - 1, lines.get(number - 1).replaceFirst("new KeyMapping\\(", "KeyConflictContext.keyMapping("));
+            changed = true;
+        }
+        if (!changed) return text;
+        String out = String.join("\n", lines);
+        String own = "import " + bridgePackage + ".KeyConflictContext;";
+        boolean samePackage = Pattern.compile("(?m)^package\\s+" + Pattern.quote(bridgePackage) + "\\s*;").matcher(out).find();
+        if (samePackage || out.contains(own)) return out;
+        Matcher anchor = Pattern.compile("(?m)^(?:import\\s[^;]+;|package\\s[^;]+;)[ \\t]*$").matcher(out);
+        int at = -1;
+        while (anchor.find()) at = anchor.end();
+        return at < 0 ? own + "\n" + out : out.substring(0, at) + "\n" + own + out.substring(at);
     }
 
     /**
