@@ -2690,6 +2690,25 @@ final class Port {
     }
 
     /** One knowledge rule on one source text: its `when` gate, the literal or regex rewrite, then any imports it needs. */
+    /**
+     * A rule's replacement for one match: $N is group N as usual, and $^N is group N in UPPER_SNAKE case, for a getter the
+     * game turned into a constant (1.21.2's GameRenderer::getPositionTexShader -> CoreShaders.POSITION_TEX). The result
+     * is still a Matcher replacement: replaceAll expands the plain $N itself.
+     */
+    static String expandReplacement(String replace, java.util.regex.MatchResult match) {
+        Matcher token = Pattern.compile("\\$\\^(\\d)").matcher(replace);
+        StringBuilder out = new StringBuilder();
+        while (token.find()) {
+            String group = match.group(Integer.parseInt(token.group(1)));
+            String upper = group == null
+                ? ""
+                : group.replaceAll("([a-z0-9])([A-Z])", "$1_$2").replaceAll("([A-Z])([A-Z][a-z])", "$1_$2").toUpperCase(Locale.ROOT);
+            // Quoted twice: once for this appendReplacement, once for the replaceAll that reads the result.
+            token.appendReplacement(out, Matcher.quoteReplacement(Matcher.quoteReplacement(upper)));
+        }
+        return token.appendTail(out).toString();
+    }
+
     static String rewrite(Map<String, Object> rule, String original) {
         var apply = Json.object(rule.get("apply"));
         String text = original;
@@ -2714,7 +2733,7 @@ final class Port {
         );
         else if (apply.containsKey("find")) text = Pattern.compile(apply.get("find").toString())
             .matcher(text)
-            .replaceAll(Json.text(apply, "replace", ""));
+            .replaceAll(match -> expandReplacement(Json.text(apply, "replace", ""), match));
         if (!text.equals(original)) for (String name : ProjectModel.strings(apply.get("ensureImports"))) text =
             addImport(text, name);
         return text;

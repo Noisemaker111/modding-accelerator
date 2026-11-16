@@ -115,6 +115,10 @@ public final class RulesTest {
                 } else if (Character.isDigit(next)) {
                     if (next - '0' > groups) return "uses $" + next + ", but the pattern has " + groups + " group(s)";
                     i++;
+                } else if (next == '^' && i + 2 < replace.length() && Character.isDigit(replace.charAt(i + 2))) {
+                    // $^N: group N in UPPER_SNAKE case (Port.expandReplacement).
+                    if (replace.charAt(i + 2) - '0' > groups) return "uses $^" + replace.charAt(i + 2) + ", but the pattern has " + groups + " group(s)";
+                    i += 2;
                 } else {
                     return "has a $ that is not a group ($" + next + "); write \\\\$ for a dollar sign";
                 }

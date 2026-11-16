@@ -7606,6 +7606,29 @@
         "after": "package mod;\nimport net.minecraft.core.registries.BuiltInRegistries;\n\nclass CookingRecipes {\n\tvoid build() {\n\t\tbuilder.addIngredient(Ingredient.of(BuiltInRegistries.ITEM.getOrThrow(Tags.Items.CROPS_WHEAT))).addIngredient(Ingredient.of(Items.MILK_BUCKET));\n\t\tfallback = Ingredient.of(BuiltInRegistries.ITEM.getOrThrow(fallbackTag));\n\t}\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "core-shaders-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method get\\w+Shader\\(\\)",
+      "apply": {
+        "find": "\\bGameRenderer::get(RendertypeEntityTranslucentEmissive|RendertypeItemEntityTranslucentCull|RendertypeEntityCutoutNoCullZOffset|RendertypeTextBackgroundSeeThrough|RendertypeTextIntensitySeeThrough|RendertypeTranslucentMovingBlock|RendertypeGuiGhostRecipeOverlay|RendertypeEntitySmoothCutout|RendertypeEntityCutoutNoCull|RendertypeEntityTranslucent|RendertypeArmorCutoutNoCull|RendertypeGlintTranslucent|RendertypeGuiTextHighlight|RendertypeArmorEntityGlint|RendertypeEntityNoOutline|RendertypeTextBackground|PositionColorTexLightmap|RendertypeTextSeeThrough|RendertypeTextIntensity|RendertypeCutoutMipped|RendertypeEntityCutout|RendertypeEntityShadow|RendertypeEntityAlpha|RendertypeEntityDecal|RendertypeEntityGlint|RendertypeEnergySwirl|PositionColorLightmap|RendertypeEntitySolid|RendertypeTranslucent|RendertypeBreezeWind|RendertypeEndGateway|RendertypeGuiOverlay|RendertypeBeaconBeam|RendertypeEndPortal|RendertypeLightning|RendertypeWaterMask|RendertypeCrumbling|RendertypeTripwire|RendertypeOutline|RendertypeClouds|PositionTexColor|RendertypeCutout|RendertypeGlint|RendertypeSolid|RendertypeLeash|RendertypeLines|RendertypeText|RendertypeEyes|PositionColor|RendertypeGui|PositionTex|Particle|Position)Shader\\b",
+        "replace": "CoreShaders.$^1",
+        "ensureImports": [
+          "net.minecraft.client.renderer.CoreShaders"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed GameRenderer's ShaderInstance getters; RenderSystem.setShader takes a ShaderProgram key from CoreShaders, one constant per old getter (getPositionTexShader -> POSITION_TEX). The name list is generated from Mojang's mappings: every 1.21.1 getter whose constant exists in 1.21.2 (53 of 57); the four with no constant (glint direct, armor glint, entity translucent cull) stay errors. Only method references change: a direct getter call returned a ShaderInstance, which has no one-to-one replacement.",
+      "verified": "Mojang's 1.21.1 mappings: GameRenderer.get*Shader()ShaderInstance (57); 1.21.2: GameRenderer has none, CoreShaders has 56 ShaderProgram constants; RenderSystem.setShader(ShaderProgram)",
+      "test": {
+        "error": "HudOverlay.java:6: error: invalid method reference\n\t\tRenderSystem.setShader(GameRenderer::getPositionTexShader);\n\t\t                       ^\n  cannot find symbol\n    symbol:   method getPositionTexShader()\n    location: class GameRenderer\n",
+        "before": "package mod;\n\nclass HudOverlay {\n\tvoid draw() {\n\t\tRenderSystem.setShader(GameRenderer::getPositionTexShader);\n\t\tRenderSystem.setShader(GameRenderer::getRendertypeEntityCutoutNoCullZOffsetShader);\n\t\tRenderSystem.setShader(GameRenderer::getRendertypeGlintDirectShader);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.client.renderer.CoreShaders;\n\nclass HudOverlay {\n\tvoid draw() {\n\t\tRenderSystem.setShader(CoreShaders.POSITION_TEX);\n\t\tRenderSystem.setShader(CoreShaders.RENDERTYPE_ENTITY_CUTOUT_NO_CULL_Z_OFFSET);\n\t\tRenderSystem.setShader(GameRenderer::getRendertypeGlintDirectShader);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }
