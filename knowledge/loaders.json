@@ -2407,7 +2407,8 @@
     "net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider": "data.DatapackBuiltinEntriesProvider",
     "net.neoforged.neoforge.common.data.ExistingFileHelper": "data.ExistingFileHelper",
     "net.neoforged.neoforge.common.data.SpriteSourceProvider": "data.SpriteSourceProvider",
-    "net.neoforged.neoforge.data.loading.DatagenModLoader": "data.DatagenModLoader"
+    "net.neoforged.neoforge.data.loading.DatagenModLoader": "data.DatagenModLoader",
+    "net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent": "RegisterParticleProvidersEvent"
    },
    "symbols": {
     "neoforge": [

@@ -18,6 +18,7 @@ public final class ClientBridge {
         Bus.INSTANCE.post(new RegisterClientPayloadHandlersEvent());
         for (var handler : PayloadRegistrar.CLIENT_HANDLERS.entrySet()) receive(handler.getKey(), handler.getValue());
         PayloadRegistrar.CLIENT_HANDLERS.clear();
+        Bus.INSTANCE.post(new RegisterParticleProvidersEvent());
         Bus.INSTANCE.post(new FMLClientSetupEvent(Bridge.container(modid)));
     }
 
