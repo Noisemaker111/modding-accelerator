@@ -2901,7 +2901,11 @@
     "net.neoforged.neoforge.common.BasicItemListing": "BasicItemListing",
     "net.neoforged.neoforge.event.village.VillagerTradesEvent": "VillagerTradesEvent",
     "net.neoforged.neoforge.event.village.WandererTradesEvent": "WandererTradesEvent",
-    "net.neoforged.neoforge.event.ModifyDefaultComponentsEvent": "ModifyDefaultComponentsEvent"
+    "net.neoforged.neoforge.event.ModifyDefaultComponentsEvent": "ModifyDefaultComponentsEvent",
+    "net.neoforged.neoforge.common.crafting.ICustomIngredient": "crafting.ICustomIngredient",
+    "net.neoforged.neoforge.common.crafting.IngredientType": "crafting.IngredientType",
+    "net.neoforged.neoforge.client.extensions.common.IClientItemExtensions": "IClientItemExtensions",
+    "net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent": "RegisterClientExtensionsEvent"
    },
    "symbols": {
     "neoforge": [

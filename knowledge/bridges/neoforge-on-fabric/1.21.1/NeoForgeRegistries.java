@@ -1,6 +1,7 @@
 package ${package};
 
 import ${package}.conditions.ICondition;
+import ${package}.crafting.IngredientType;
 import ${package}.loot.IGlobalLootModifier;
 import ${package}.world.BiomeModifier;
 import com.mojang.serialization.MapCodec;
@@ -28,11 +29,13 @@ public final class NeoForgeRegistries {
     public static final Registry<MapCodec<? extends BiomeModifier>> BIOME_MODIFIER_SERIALIZERS = create(Keys.BIOME_MODIFIER_SERIALIZERS);
     public static final Registry<MapCodec<? extends IGlobalLootModifier>> GLOBAL_LOOT_MODIFIER_SERIALIZERS = create(Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS);
     public static final Registry<MapCodec<? extends ICondition>> CONDITION_SERIALIZERS = create(Keys.CONDITION_SERIALIZERS);
+    public static final Registry<IngredientType<?>> INGREDIENT_TYPES = create(Keys.INGREDIENT_TYPES);
 
     static {
         ${package}.world.BiomeModifierBridge.start(BIOME_MODIFIER_SERIALIZERS);
         ${package}.loot.LootModifierManager.start(GLOBAL_LOOT_MODIFIER_SERIALIZERS);
         // A condition type a mod registers is one the bridge's condition codec reads.
+        ${package}.crafting.FabricIngredients.start(INGREDIENT_TYPES);
         net.fabricmc.fabric.api.event.registry.RegistryEntryAddedCallback.event(CONDITION_SERIALIZERS).register((rawId, id, codec) -> ICondition.register(id, codec));
     }
 
@@ -50,6 +53,7 @@ public final class NeoForgeRegistries {
         if (key.equals(Keys.BIOME_MODIFIER_SERIALIZERS)) return (Registry<T>) BIOME_MODIFIER_SERIALIZERS;
         if (key.equals(Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS)) return (Registry<T>) GLOBAL_LOOT_MODIFIER_SERIALIZERS;
         if (key.equals(Keys.CONDITION_SERIALIZERS)) return (Registry<T>) CONDITION_SERIALIZERS;
+        if (key.equals(Keys.INGREDIENT_TYPES)) return (Registry<T>) INGREDIENT_TYPES;
         return null;
     }
 
@@ -61,6 +65,7 @@ public final class NeoForgeRegistries {
         public static final ResourceKey<Registry<MapCodec<? extends BiomeModifier>>> BIOME_MODIFIER_SERIALIZERS = ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("neoforge", "biome_modifier_serializers"));
         public static final ResourceKey<Registry<MapCodec<? extends IGlobalLootModifier>>> GLOBAL_LOOT_MODIFIER_SERIALIZERS = ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("neoforge", "global_loot_modifier_serializers"));
         public static final ResourceKey<Registry<MapCodec<? extends ICondition>>> CONDITION_SERIALIZERS = ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("neoforge", "condition_codecs"));
+        public static final ResourceKey<Registry<IngredientType<?>>> INGREDIENT_TYPES = ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("neoforge", "ingredient_serializer"));
         public static final ResourceKey<Registry<BiomeModifier>> BIOME_MODIFIERS = ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("neoforge", "biome_modifier"));
     }
 }

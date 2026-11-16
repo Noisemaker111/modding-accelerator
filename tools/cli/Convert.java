@@ -918,6 +918,7 @@ final class Convert {
         if (Versions.compare(minecraft, ONLY_IN_ERROR) >= 0) dropSideOnly();
         rewriteSources("fabric", "neoforge");
         convertDataConditions(false);
+        convertDataIngredients(false);
         applyFabricBridge(meta, minecraft);
         Map<String, Object> entrypoints = new LinkedHashMap<>();
         if (meta.get("entrypoints") instanceof Map<?, ?>) for (var e : Json.object(meta.get("entrypoints")).entrySet()) {
@@ -2004,8 +2005,10 @@ final class Convert {
         );
         stable.sort((a, b) -> Versions.compare(b, a));
         String gradle = project.wrapperVersion(), newestNeeds = null;
+        boolean anyMetadata = false;
         for (String version : stable.subList(0, Math.min(12, stable.size()))) {
             String needs = null;
+            boolean metadata = true;
             try {
                 for (Object variant : Json.array(
                     Json.object(
@@ -2021,12 +2024,18 @@ final class Convert {
                     ) needs = String.valueOf(Json.object(attributes).get("org.gradle.plugin.api-version"));
                 }
             } catch (IOException | IllegalArgumentException noModule) {
-                // No Gradle module metadata: nothing says which Gradle it needs.
+                // No Gradle module metadata (yet: a release mid-publication has its jar before its .module): what it
+                // needs is unknown, so an older release that says is preferred.
+                metadata = false;
             }
+            if (!metadata) continue;
+            anyMetadata = true;
             if (needs == null || gradle == null || Versions.compare(gradle, needs) >= 0) return version;
             if (newestNeeds == null) newestNeeds = needs;
         }
         if (stable.isEmpty()) throw new IOException("No stable " + group + ":" + artifact + " release in " + repository + ".");
+        // No release says what it needs: the newest, as before.
+        if (!anyMetadata) return stable.get(0);
         // None runs on this Gradle: the newest release, and the wrapper moves to the Gradle its own metadata asks for.
         upgradeWrapper(newestNeeds, group + ":" + artifact + " " + stable.get(0));
         return stable.get(0);
@@ -2769,9 +2778,11 @@ final class Convert {
         }
         rewriteSources("neoforge", "fabric");
         convertDataConditions(true);
+        convertDataIngredients(true);
         dropNeoForgeTabOrder();
         if (bridgeUsed) applyBridge();
         if (bridgeUsed) setAsideDatagen();
+        neoforgeParametersOutOfMixins();
         // NeoForge generates data from GatherDataEvent listeners; Fabric from fabric-datagen entrypoints: the bridge's
         // DataEntrypoint posts the event (when the bridge has it for this game version).
         if (bridgeUsed && exists(bridgeFolder() + "/DataEntrypoint.java")) {
@@ -2864,6 +2875,43 @@ final class Convert {
         }
         wild.appendTail(out);
         return out.toString();
+    }
+
+    /**
+     * A mod mixin whose target is a game method NeoForge's patches give an extra parameter (BlockRenderDispatcher's
+     * renderBreakingTexture with NeoForge's ModelData): on Fabric the game's method has no such parameter, so the NeoForge
+     * types leave the target's descriptor and the handler's parameters, and the mixin targets the game's own method.
+     */
+    void neoforgeParametersOutOfMixins() throws Exception {
+        for (String file : javaFiles()) {
+            String text = read(file);
+            if (!text.contains("@Mixin") || !text.contains("net/neoforged/") && !text.contains("net.neoforged.")) continue;
+            String out = neoforgeParametersOutOfMixin(text);
+            if (out.equals(text)) continue;
+            write(file, out);
+            applied.computeIfAbsent("mixin-neoforge-parameters", k -> new ArrayList<>()).add(file);
+            notes.add(file + ": NeoForge's own parameter types left this mixin's target descriptors and handlers (the game's method on Fabric has none).");
+        }
+    }
+
+    static String neoforgeParametersOutOfMixin(String text) {
+        // In a descriptor string: (...Lnet/neoforged/...;...) loses that parameter.
+        Matcher strings = Pattern.compile("\"([^\"\\n]*\\([^\"\\n]*\\)[^\"\\n]*)\"").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (strings.find()) {
+            String descriptor = strings.group(1);
+            int open = descriptor.indexOf('(');
+            int close = descriptor.indexOf(')');
+            if (open < 0 || close < open || !descriptor.contains("Lnet/neoforged/")) {
+                strings.appendReplacement(out, Matcher.quoteReplacement(strings.group()));
+                continue;
+            }
+            String params = descriptor.substring(open + 1, close).replaceAll("Lnet/neoforged/[\\w/$]+;", "");
+            strings.appendReplacement(out, Matcher.quoteReplacement("\"" + descriptor.substring(0, open + 1) + params + descriptor.substring(close) + "\""));
+        }
+        strings.appendTail(out);
+        // A handler's parameter of a NeoForge type, written out in full.
+        return out.toString().replaceAll(",\\s*(?:final\\s+)?net\\.neoforged\\.[\\w.]+\\s+\\w+(?=\\s*[,)])", "");
     }
 
     /** Where setAsideDatagen keeps data generation code the bridge cannot build: a folder no source set compiles. */
@@ -3950,6 +3998,34 @@ final class Convert {
         }
         for (String l : conditions.left) leave(l.substring(0, l.indexOf(": ")), 0, l.substring(l.indexOf(": ") + 2), "the other loader reads only its own condition types");
         if (converted > 0) applied.computeIfAbsent("data-conditions", k -> new ArrayList<>()).add(converted + " data files");
+    }
+
+    /** Custom ingredients in the mod's recipe files, in the other loader's form (DataIngredients). */
+    void convertDataIngredients(boolean toFabric) throws Exception {
+        Path src = project.root.resolve("src");
+        if (!Files.isDirectory(src)) return;
+        List<Path> files;
+        try (var walk = Files.walk(src)) {
+            files = walk.filter(p -> p.toString().endsWith(".json") && p.toString().replace('\\', '/').matches(".*/resources/data/[^/]+/recipes?/.*")).toList();
+        }
+        int converted = 0;
+        for (Path p : files) {
+            String rel = project.root.relativize(p).toString().replace('\\', '/');
+            String text = read(rel);
+            if (!text.contains(toFabric ? "\"type\"" : "\"fabric:type\"")) continue;
+            Object parsed;
+            try {
+                parsed = Json.parse(text);
+            } catch (RuntimeException notJson) {
+                continue;
+            }
+            if (!(parsed instanceof Map<?, ?>)) continue;
+            Map<String, Object> out = DataIngredients.convert(Json.object(parsed), toFabric);
+            if (out == null) continue;
+            write(rel, pretty(out, "").replaceAll("\t", "  ") + "\n");
+            converted++;
+        }
+        if (converted > 0) applied.computeIfAbsent("data-ingredients", k -> new ArrayList<>()).add(converted + " recipe files");
     }
 
     /** JSON with one entry per line and tab indents, the way fabric.mod.json files are written. */
