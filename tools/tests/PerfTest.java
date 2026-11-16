@@ -204,10 +204,13 @@ public final class PerfTest {
             fixture(classes, "net/minecraft/server/Warm.java", "package net.minecraft.server; public class Warm { static volatile Object sink; "
                 + "public static void fill() { for (int i = 0; i < 3000; i++) sink = new byte[1 << 20]; } "
                 + "public static void main(String[] args) throws Exception { Thread server = new Thread(() -> { fill(); System.out.println(\"READY\"); long sum = 0; "
-                + "while (true) { com.example.alloc.Spawner.tick(); for (int i = 0; i < 2000; i++) sum += com.example.alloc.Spawner.tiny(i); "
+                + "while (true) { com.example.alloc.Spawner.tick(); com.example.alloc.Keeper.keep(); for (int i = 0; i < 2000; i++) sum += com.example.alloc.Spawner.tiny(i); "
                 + "try { Thread.sleep(12); } catch (InterruptedException stop) { return; } } }, \"Server thread\"); server.start(); server.join(); } }"),
             fixture(classes, "com/example/alloc/Spawner.java", "package com.example.alloc; public class Spawner { static volatile Object sink; "
-                + "public static void tick() { sink = new byte[256 * 1024]; } public static int tiny(int x) { return x + 1; } }"));
+                + "public static void tick() { sink = new byte[256 * 1024]; } public static int tiny(int x) { return x + 1; } }"),
+            // Keeper allocates a thirtieth of Spawner's bytes but keeps them for seconds: young collections copy its arrays, not Spawner's.
+            fixture(classes, "com/example/alloc/Keeper.java", "package com.example.alloc; public class Keeper { static final int[][] RING = new int[500][]; static int next; "
+                + "public static void keep() { RING[next] = new int[2048]; next = (next + 1) % RING.length; } }"));
         List<String> javac = new ArrayList<>(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
             "--release", "17", "-d", classes.toString()));
         for (Path file : sources) javac.add(file.toString());
@@ -217,7 +220,7 @@ public final class PerfTest {
         Files.move(classes.resolve("com/example/alloc"), mod.resolve("com/example/alloc"));
         Files.writeString(mod.resolve("fabric.mod.json"), "{\"schemaVersion\":1,\"id\":\"allocmod\",\"name\":\"Alloc Mod\",\"version\":\"1\"}");
         Path log = scratch.resolve("allocation.log");
-        Process process = new ProcessBuilder(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString(), "-Xmx256m",
+        Process process = new ProcessBuilder(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString(), "-Xmx256m", "-XX:+UseG1GC", "-Xmn16m",
             "-cp", classes + File.pathSeparator + mod, "net.minecraft.server.Warm").redirectErrorStream(true).redirectOutput(log.toFile()).start();
         try {
             long deadline = System.nanoTime() + 60_000_000_000L;
@@ -242,6 +245,12 @@ public final class PerfTest {
                 "a mod is charged what it allocates in the capture (about 20 MB/s), not the 3 GB its thread allocated before it: " + Math.round(modRate / 1e6) + " MB/s");
             double profilerRate = ((Number) Json.object(attribution.get("profilerOverhead")).get("allocationBytesPerSecond")).doubleValue();
             check(profilerRate > 1e6, "a timing probe's own allocation is profiler overhead, not the mod's: " + Math.round(profilerRate / 1e6) + " MB/s");
+            Map<String, Object> report = Json.read(out.resolve("report.json"));
+            check(((Number) report.getOrDefault("youngCollections", 0)).longValue() > 0 && ((Number) report.getOrDefault("gcCopiedBytes", 0)).longValue() > 0,
+                "young collections and the bytes they copied are counted: " + report.get("youngCollections") + ", " + report.get("gcCopiedBytes"));
+            String survivor = Json.text(Json.object(Json.array(report.getOrDefault("survivingAllocationSites", List.of(Json.map("name", "none")))).get(0)), "name", "");
+            check(survivor.startsWith("Keeper.keep:"),
+                "the site whose objects survive is charged with the copying, not the one that allocates most: " + survivor);
         } finally {
             process.destroy();
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
