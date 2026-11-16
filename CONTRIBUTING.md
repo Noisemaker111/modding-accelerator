@@ -62,6 +62,13 @@ only helps the mod it was made on is a partial result: say so, and say what woul
   forward, ends in one PR, not a string of PRs along the way. Open it as a draft when you start, push every step to
   it, and mark it ready when the goal is met and proven. Open a second PR only for a separate goal someone could
   merge or reject on its own. A tool you built along the way belongs in the same PR as the work that needed it.
+- **Title it like a line in the release notes, because it becomes one.** Say what a user can now do, in plain words,
+  under about 50 characters: "Diorama builds maps 2-3x faster", "Convert more Fabric mods to NeoForge".
+  - No round or batch numbers.
+  - No lists of internals.
+  - No tool or class names ("bridge mirrors", "store gate", "yarn").
+
+  Numbers and details go in the description.
 - Use the PR template, including its **Carries over** line: what the next mod gets for free from your work.
 - Prove it the way a user would see it, at the smallest real scope. `AGENTS.md` has the commands. A change that can't
   be run in the game says so plainly instead of claiming it works.
