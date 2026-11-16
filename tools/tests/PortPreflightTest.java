@@ -260,6 +260,28 @@ public final class PortPreflightTest {
         require(rewritten.contains("Profiler.get().push(\"x\");") && rewritten.contains("import net.minecraft.util.profiling.Profiler;"), "a receiver the game no longer needs is dropped");
         require(rewritten.contains("int n = VarInt.getByteSize(size(list.get(0)));"), "static -> static on another class, nested call arguments kept");
         require(rewritten.contains("graphics.blitSprite(SPRITE, x, y, 9, 9);"), "a new parameter nothing fills is left to the compiler");
+        // A link from the game's map carries no static-ness: a call on the old class's name is a static call, any other an
+        // instance call (a yarn route's PacketByteBuf.getVarIntLength -> VarInts.getSizeInBytes).
+        Path ys = Files.createDirectories(scratch.resolve("unknown-static"));
+        Path ysMap = scratch.resolve("unknown-static.json");
+        Files.writeString(ysMap, """
+            { "from": "1.20.1", "to": "1.20.2", "names": "yarn",
+              "rewrites": [
+                { "owner": "net.minecraft.network.PacketByteBuf", "from": "getVarIntLength", "desc": "(I)I", "toOwner": "net.minecraft.network.encoding.VarInts", "to": "getSizeInBytes", "newDesc": "(I)I" },
+                { "owner": "net.minecraft.server.world.ServerChunkLoadingManager", "from": "isWithinDistance", "desc": "(IIIII)Z", "toOwner": "net.minecraft.server.world.ServerChunkLoadingManager", "to": "isWithinViewDistance", "newDesc": "(IIIII)Z" }
+              ]
+            }
+            """);
+        String palette = "class Palette {\n  int size() {\n    return PacketByteBuf.getVarIntLength(this.size) + n;\n  }\n  boolean near() {\n    return this.manager.isWithinDistance(a, b, c, d, e);\n  }\n}\n";
+        Files.writeString(ys.resolve("Palette.java"), palette);
+        Path ysLog = scratch.resolve("unknown-static.log");
+        Files.writeString(ysLog, ys.resolve("Palette.java") + ":3: error: cannot find symbol\n    return PacketByteBuf.getVarIntLength(this.size) + n;\n                        ^\n  symbol:   method getVarIntLength(int)\n  location: class PacketByteBuf\n"
+            + ys.resolve("Palette.java") + ":6: error: cannot find symbol\n    return this.manager.isWithinDistance(a, b, c, d, e);\n                       ^\n  symbol:   method isWithinDistance(int,int,int,int,int)\n  location: variable manager of type ServerChunkLoadingManager\n");
+        VersionMap.Fix.run(ysMap, ysLog, ys, false, null);
+        String paletted = Files.readString(ys.resolve("Palette.java"));
+        require(paletted.contains("return VarInts.getSizeInBytes(this.size) + n;") && paletted.contains("import net.minecraft.network.encoding.VarInts;"), "a call on the class name is static: " + paletted);
+        require(paletted.contains("this.manager.isWithinViewDistance(a, b, c, d, e)"), "a call on a value stays an instance call");
+
         // A call the game deleted: a no-argument void call that is a whole statement goes; one with arguments, or used
         // inside an expression, stays for the compiler to name.
         Path del = Files.createDirectories(scratch.resolve("deleted"));

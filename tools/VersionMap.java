@@ -997,7 +997,7 @@ public final class VersionMap {
     }
 
     /** A call the game itself rewrote between two releases: owners dotted ($ for nested), descriptors as in the class files. */
-    record Rewrite(String owner, String name, String desc, boolean isStatic, String toOwner, String to, String newDesc, boolean newStatic) {}
+    record Rewrite(String owner, String name, String desc, boolean isStatic, String toOwner, String to, String newDesc, boolean newStatic, boolean knownStatic) {}
 
     /** A generated map, indexed the way compiler errors ask about it. */
     static final class Known {
@@ -1096,7 +1096,8 @@ public final class VersionMap {
                                 field(t, "toOwner"),
                                 to,
                                 field(t, "newDesc"),
-                                t.contains("\"newStatic\": true")
+                                t.contains("\"newStatic\": true"),
+                                t.contains("\"static\":")
                             )
                         );
                     default -> {}
@@ -1480,18 +1481,21 @@ public final class VersionMap {
                 String qualifier = r.toOwner().substring(r.toOwner().lastIndexOf('.') + 1).replace('$', '.');
                 String outer = r.toOwner().replaceAll("\\$.*", "");
                 String built = null;
-                if (!r.isStatic() && !r.newStatic()) {
+                // A link from the game's map records no static-ness: a call written on the old class's name is static.
+                boolean wasStatic = r.knownStatic() ? r.isStatic() : qualified && receiver != null && receiver.equals(simple(r.owner()));
+                boolean nowStatic = r.knownStatic() ? r.newStatic() : wasStatic;
+                if (!wasStatic && !nowStatic) {
                     List<String> mapped = mapArguments(old, neu, args);
                     if (mapped != null) {
                         built = (qualified ? receiver + "." : "") + r.to() + "(" + String.join(", ", mapped) + ")";
                     }
-                } else if (r.isStatic() && r.newStatic()) {
+                } else if (wasStatic && nowStatic) {
                     List<String> mapped = mapArguments(old, neu, args);
                     if (mapped != null) {
                         built = qualifier + "." + r.to() + "(" + String.join(", ", mapped) + ")";
                         imports.add(outer);
                     }
-                } else if (!r.isStatic() && r.newStatic()) {
+                } else if (!wasStatic && nowStatic) {
                     // The receiver becomes the first argument (its type leads the new parameters), or the game no longer needs it.
                     List<String> withReceiver = new ArrayList<>(List.of(oldOwner));
                     withReceiver.addAll(old);

@@ -338,10 +338,33 @@ final class Port {
                 tables.put(version, Json.read(table));
             }
             var gameMap = Json.read(game);
-            List<Object> rewrites = yarnRewrites(Json.array(gameMap.get("rewrites")), tables.get(from), tables.get(to));
-            List<Object> classRewrites = yarnClassRewrites(Json.array(gameMap.getOrDefault("classRewrites", List.of())), tables.get(from), tables.get(to));
-            if (rewrites.isEmpty() && classRewrites.isEmpty()) return;
             Map<String, Object> route = new LinkedHashMap<>(Json.read(map));
+            // What Fabric's tables call removed but the game's own map links (1.20.2: PacketByteBuf.getVarIntLength, Mojang's
+            // FriendlyByteBuf.getVarIntSize, moved to VarInt.getByteSize): those links are rewrites too, static-ness read
+            // from the call.
+            Set<String> removed = new HashSet<>();
+            for (Object o : Json.array(route.getOrDefault("methodsRemoved", List.of()))) {
+                var m = Json.object(o);
+                removed.add(Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""));
+            }
+            List<Object> linked = new ArrayList<>();
+            for (String list : List.of("methods", "methodsMoved", "signatures")) for (Object o : Json.array(gameMap.getOrDefault(list, List.of()))) {
+                var m = Json.object(o);
+                Map<String, Object> asRewrite = new LinkedHashMap<>();
+                asRewrite.put("owner", m.get("owner"));
+                asRewrite.put("from", m.get("from"));
+                asRewrite.put("desc", m.get("desc"));
+                asRewrite.put("toOwner", m.getOrDefault("newOwner", m.get("owner")));
+                asRewrite.put("to", m.get("to"));
+                asRewrite.put("newDesc", m.getOrDefault("newDesc", m.get("desc")));
+                linked.add(asRewrite);
+            }
+            List<Object> rewrites = yarnRewrites(Json.array(gameMap.get("rewrites")), tables.get(from), tables.get(to));
+            for (Object o : yarnRewrites(linked, tables.get(from), tables.get(to))) {
+                var r = Json.object(o);
+                if (removed.contains(Json.text(r, "owner", "") + "." + Json.text(r, "from", "") + Json.text(r, "desc", ""))) rewrites.add(r);
+            }
+            List<Object> classRewrites = yarnClassRewrites(Json.array(gameMap.getOrDefault("classRewrites", List.of())), tables.get(from), tables.get(to));
             route.put("rewrites", rewrites);
             route.put("classRewrites", classRewrites);
             saveMap(map, route);
@@ -933,6 +956,8 @@ final class Port {
                 );
                 if (!own && names.equals("yarn")) yarnRewrites(tools, chain, from, to, map);
             }
+            // A yarn route map made before the game's rewrites were added to it gets them now (once: the key marks it).
+            if (current && !own && !bridge && names.equals("yarn") && !Json.read(map).containsKey("rewrites")) yarnRewrites(tools, chain, from, to, map);
             build.report.stages.add(
                 Json.map("name", "route", "waypoints", route.waypoints, "mapped", chain, "cached", current)
             );
