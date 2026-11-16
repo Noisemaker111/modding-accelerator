@@ -2751,6 +2751,107 @@ final class Port {
      * rewritten by apply.wrap ($0 is the argument), unless it already matches apply.skip. 26.2's TagAppender.add takes a
      * ResourceKey: tag(T).add(BLOCK_A, BLOCK_B.get()) -> add(BLOCK_A.builtInRegistryHolder().key(), ...).
      */
+    /**
+     * 1.21.2 split entity rendering into extracting a render state and drawing it: EntityRenderer<T> became
+     * EntityRenderer<T, S extends EntityRenderState>, and render(T entity, float yaw, float partialTicks, PoseStack,
+     * MultiBufferSource, int) became render(S state, PoseStack, MultiBufferSource, int). A renderer that extends
+     * EntityRenderer<E> directly keeps its drawing code unchanged behind a state of its own that carries what the old
+     * method was given: the entity, the partial tick, and the yaw the 1.21.1 dispatcher computed
+     * (Mth.lerp(partialTick, yRotO, getYRot())). The old parameter names are read back from it at the top of render, and
+     * super.render passes the state. getTextureLocation(E) stays as a plain method: EntityRenderer has none any more.
+     * Another renderer's render(entity, yaw, partialTicks, ...) is drawn through createRenderState(entity, partialTicks).
+     * A generic renderer (class R<T> extends EntityRenderer<T>) is left to the compiler.
+     */
+    static String entityRenderState(String text) {
+        Matcher cls = Pattern.compile("\\bclass\\s+(\\w+)\\s+extends\\s+EntityRenderer\\s*<\\s*([\\w.]+)\\s*>").matcher(text);
+        if (!cls.find()) return text;
+        String renderer = cls.group(1), entity = cls.group(2);
+        int open = text.indexOf('{', cls.end());
+        int close = open < 0 ? -1 : closingBrace(text, open);
+        if (close < 0) return text;
+        String body = text.substring(open + 1, close);
+        Matcher render = Pattern.compile(
+            "((?:@Override\\s+)?public\\s+void\\s+render\\s*)\\(\\s*(?:final\\s+)?" + Pattern.quote(entity) +
+            "\\s+(\\w+)\\s*,\\s*(?:final\\s+)?float\\s+(\\w+)\\s*,\\s*(?:final\\s+)?float\\s+(\\w+)\\s*,\\s*" +
+            "((?:final\\s+)?PoseStack\\s+(\\w+)\\s*,\\s*(?:final\\s+)?MultiBufferSource\\s+(\\w+)\\s*,\\s*(?:final\\s+)?int\\s+(\\w+))\\s*\\)\\s*\\{"
+        ).matcher(body);
+        if (!render.find()) return text;
+        String entityName = render.group(2), yawName = render.group(3), tickName = render.group(4);
+        int renderClose = closingBrace(body, render.end() - 1);
+        if (renderClose < 0) return text;
+        String renderBody = body.substring(render.end(), renderClose);
+        // super.render(entity, yaw, partialTicks, poseStack, buffer, light) -> super.render(state, poseStack, buffer, light)
+        StringBuilder sb = new StringBuilder();
+        Matcher superRender = Pattern.compile("\\bsuper\\s*\\.\\s*render\\s*\\(").matcher(renderBody);
+        int done = 0;
+        while (superRender.find()) {
+            int callOpen = superRender.end() - 1, callClose = closingParen(renderBody, callOpen);
+            if (callClose < 0) break;
+            List<String> args = topLevelArguments(renderBody.substring(callOpen + 1, callClose));
+            if (args.size() != 6) continue;
+            sb.append(renderBody, done, callOpen + 1).append("state, ").append(args.get(3).strip()).append(", ").append(args.get(4).strip())
+                .append(", ").append(args.get(5).strip()).append(')');
+            done = callClose + 1;
+        }
+        sb.append(renderBody.substring(done));
+        String indent = "        ";
+        String newRender =
+            render.group(1) + "(MmtState state, " + render.group(5) + ") {\n" +
+            indent + entity + " " + entityName + " = state.mmtEntity;\n" +
+            indent + "float " + yawName + " = state.mmtYaw;\n" +
+            indent + "float " + tickName + " = state.mmtPartialTick;" +
+            sb;
+        String added =
+            "\n\n    @Override\n    public MmtState createRenderState() {\n        return new MmtState();\n    }\n\n" +
+            "    @Override\n    public void extractRenderState(" + entity + " entity, MmtState state, float partialTick) {\n" +
+            "        super.extractRenderState(entity, state, partialTick);\n" +
+            "        state.mmtEntity = entity;\n        state.mmtPartialTick = partialTick;\n" +
+            "        state.mmtYaw = net.minecraft.util.Mth.lerp(partialTick, entity.yRotO, entity.getYRot());\n    }\n\n" +
+            "    /** What render was given before 1.21.2 split it into extracting and drawing a render state. */\n" +
+            "    public static class MmtState extends EntityRenderState {\n        public " + entity + " mmtEntity;\n" +
+            "        public float mmtPartialTick;\n        public float mmtYaw;\n    }\n";
+        String newBody = body.substring(0, render.start()) + newRender + body.substring(renderClose) ;
+        // EntityRenderer no longer declares getTextureLocation: the mod's stays as a plain method.
+        newBody = newBody.replaceAll(
+            "(?m)^([ \\t]*)@Override\\s+(public\\s+[\\w.]+\\s+getTextureLocation\\s*\\(\\s*" + Pattern.quote(entity) + "\\b)",
+            "$1$2"
+        );
+        // Another renderer drawn with an entity: through its own render state.
+        Matcher delegate = Pattern.compile("([\\w.]+(?:\\([^()]*\\))?)\\s*\\.\\s*render\\s*\\(").matcher(newBody);
+        StringBuilder withDelegates = new StringBuilder();
+        done = 0;
+        while (delegate.find()) {
+            if (delegate.group(1).equals("super")) continue;
+            int callOpen = delegate.end() - 1, callClose = closingParen(newBody, callOpen);
+            if (callClose < 0) continue;
+            List<String> args = topLevelArguments(newBody.substring(callOpen + 1, callClose));
+            if (args.size() != 6) continue;
+            String target = delegate.group(1);
+            withDelegates.append(newBody, done, callOpen + 1).append(target).append(".createRenderState(").append(args.get(0).strip())
+                .append(", ").append(args.get(2).strip()).append("), ").append(args.get(3).strip()).append(", ").append(args.get(4).strip())
+                .append(", ").append(args.get(5).strip()).append(')');
+            done = callClose + 1;
+        }
+        withDelegates.append(newBody.substring(done));
+        String header = text.substring(0, cls.start()) + text.substring(cls.start(), cls.end()).replaceFirst(
+            "EntityRenderer\\s*<\\s*" + Pattern.quote(entity) + "\\s*>",
+            Matcher.quoteReplacement("EntityRenderer<" + entity + ", " + renderer + ".MmtState>")
+        );
+        String out = header + text.substring(cls.end(), open + 1) + withDelegates + added + text.substring(close);
+        return addImport(out, "net.minecraft.client.renderer.entity.state.EntityRenderState");
+    }
+
+    static int closingBrace(String text, int open) {
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"') i = stringEnd(text, i);
+            else if (ch == '{') depth++;
+            else if (ch == '}' && --depth == 0) return i;
+        }
+        return -1;
+    }
+
     static String callArguments(String text, Map<String, Object> apply) {
         Pattern statement = Pattern.compile(Json.text(apply, "statement", ""));
         Pattern call = Pattern.compile("\\.(?:" + String.join("|", ProjectModel.strings(apply.get("calls"))) + ")\\s*\\(");
@@ -2993,6 +3094,7 @@ final class Port {
         if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return original;
         if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
         else if ("call-arguments".equals(apply.get("transform"))) text = callArguments(text, apply);
+        else if ("entity-render-state".equals(apply.get("transform"))) text = entityRenderState(text);
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(
             text,

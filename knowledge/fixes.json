@@ -7655,6 +7655,25 @@
         "after": "package mod;\n\nclass IronChestsBlockTags {\n  protected void addTags(HolderLookup.Provider provider) {\n    tag(BlockTags.MINEABLE_WITH_SHOVEL).add(\n      IronChestsBlocks.DIRT_CHEST.get().builtInRegistryHolder().key(),\n      IronChestsBlocks.TRAPPED_DIRT_CHEST.get().builtInRegistryHolder().key()\n    );\n    this.tag(BlockTags.GUARDED_BY_PIGLINS).add(Blocks.CHEST.builtInRegistryHolder().key()).addTag(Tags.Blocks.CHESTS).addOptional(OTHER_CHEST_KEY);\n    builder.add(Blocks.STONE);\n  }\n}\n",
         "from": "written for this rule, from Iron Chests 26.1.2's IronChestsBlockTags"
       }
+    },
+    {
+      "id": "entity-render-state-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "wrong number of type arguments; required 2",
+      "apply": {
+        "transform": "entity-render-state"
+      },
+      "scope": "log",
+      "when": "extends\\s+EntityRenderer\\s*<\\s*[\\w.]+\\s*>",
+      "note": "1.21.2 split entity rendering into extracting a render state and drawing it (EntityRenderer<T, S extends EntityRenderState>, render(S, PoseStack, MultiBufferSource, int)). A renderer extending EntityRenderer<E> keeps its drawing code behind a state of its own that carries the entity, partial tick and the yaw the 1.21.1 dispatcher passed, read back into the old parameter names; super.render passes the state; another renderer is drawn through createRenderState(entity, partialTick). Behaviour is kept; the state holding the entity is what Mojang's own renderers avoid, so a mod author may later move fields into it.",
+      "verified": "Mojang's 1.21.2 mappings: EntityRenderer.render(EntityRenderState,PoseStack,MultiBufferSource,int), createRenderState(), createRenderState(Entity,float), extractRenderState(Entity,EntityRenderState,float); no getTextureLocation; 1.21.1 EntityRenderDispatcher passed Mth.lerp(partialTick, yRotO, getYRot()) as entityYaw",
+      "test": {
+        "error": "CorpseRenderer.java:5: error: wrong number of type arguments; required 2\npublic class CorpseRenderer extends EntityRenderer<CorpseEntity> {\n                                                  ^\n",
+        "before": "package mod;\n\nimport net.minecraft.client.renderer.entity.EntityRenderer;\n\npublic class CorpseRenderer extends EntityRenderer<CorpseEntity> {\n\n    public CorpseRenderer(EntityRendererProvider.Context context) {\n        super(context);\n    }\n\n    @Override\n    public ResourceLocation getTextureLocation(CorpseEntity entity) {\n        return TEXTURE;\n    }\n\n    @Override\n    public void render(CorpseEntity entity, float entityYaw, float partialTicks, PoseStack matrixStack, MultiBufferSource buffer, int packedLightIn) {\n        super.render(entity, entityYaw, partialTicks, matrixStack, buffer, packedLightIn);\n        matrixStack.pushPose();\n        getRenderer(skeleton).render(skeleton, entityYaw, 1F, matrixStack, buffer, packedLightIn);\n        matrixStack.popPose();\n    }\n}\n",
+        "after": "package mod;\nimport net.minecraft.client.renderer.entity.state.EntityRenderState;\n\nimport net.minecraft.client.renderer.entity.EntityRenderer;\n\npublic class CorpseRenderer extends EntityRenderer<CorpseEntity, CorpseRenderer.MmtState> {\n\n    public CorpseRenderer(EntityRendererProvider.Context context) {\n        super(context);\n    }\n\n    public ResourceLocation getTextureLocation(CorpseEntity entity) {\n        return TEXTURE;\n    }\n\n    @Override\n    public void render(MmtState state, PoseStack matrixStack, MultiBufferSource buffer, int packedLightIn) {\n        CorpseEntity entity = state.mmtEntity;\n        float entityYaw = state.mmtYaw;\n        float partialTicks = state.mmtPartialTick;\n        super.render(state, matrixStack, buffer, packedLightIn);\n        matrixStack.pushPose();\n        getRenderer(skeleton).render(getRenderer(skeleton).createRenderState(skeleton, 1F), matrixStack, buffer, packedLightIn);\n        matrixStack.popPose();\n    }\n\n\n    @Override\n    public MmtState createRenderState() {\n        return new MmtState();\n    }\n\n    @Override\n    public void extractRenderState(CorpseEntity entity, MmtState state, float partialTick) {\n        super.extractRenderState(entity, state, partialTick);\n        state.mmtEntity = entity;\n        state.mmtPartialTick = partialTick;\n        state.mmtYaw = net.minecraft.util.Mth.lerp(partialTick, entity.yRotO, entity.getYRot());\n    }\n\n    /** What render was given before 1.21.2 split it into extracting and drawing a render state. */\n    public static class MmtState extends EntityRenderState {\n        public CorpseEntity mmtEntity;\n        public float mmtPartialTick;\n        public float mmtYaw;\n    }\n}\n",
+        "from": "written for this rule, from Corpse 1.21.1's CorpseRenderer"
+      }
     }
   ]
 }
