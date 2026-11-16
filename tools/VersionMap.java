@@ -1729,7 +1729,27 @@ public final class VersionMap {
                     at[i] = i;
                 }
             } else {
-                return null;
+                // Parameters the game dropped (1.21.2: propagatesSkylightDown(BlockState, BlockGetter, BlockPos) ->
+                // (BlockState)): the declaration loses them only when the body never names them.
+                int[] kept = uniqueEmbedding(oldSimple, newSimple);
+                if (kept == null) {
+                    return null;
+                }
+                int bodyStart = text.indexOf('{', close), bodyEnd = bodyStart < 0 ? -1 : closingBrace(text, bodyStart);
+                String methodBody = bodyStart < 0 || bodyEnd < 0 ? "" : text.substring(bodyStart, bodyEnd + 1);
+                Set<Integer> keptOld = new HashSet<>();
+                for (int i : kept) {
+                    keptOld.add(i);
+                }
+                List<String> declaration = new ArrayList<>();
+                for (int i = 0; i < params.size(); i++) {
+                    if (keptOld.contains(i)) {
+                        declaration.add(params.get(i)[0] + " " + params.get(i)[1]);
+                    } else if (Pattern.compile("(?<![\\w$.])" + Pattern.quote(params.get(i)[1]) + "(?![\\w$])").matcher(methodBody).find()) {
+                        return null; // the body still uses what the game no longer passes
+                    }
+                }
+                return text.substring(0, open + 1) + String.join(", ", declaration) + text.substring(close);
             }
             String[] names = new String[neu.size()];
             String[] types = new String[neu.size()];

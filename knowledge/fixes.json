@@ -7674,6 +7674,69 @@
         "after": "package mod;\nimport net.minecraft.client.renderer.entity.state.EntityRenderState;\n\nimport net.minecraft.client.renderer.entity.EntityRenderer;\n\npublic class CorpseRenderer extends EntityRenderer<CorpseEntity, CorpseRenderer.MmtState> {\n\n    public CorpseRenderer(EntityRendererProvider.Context context) {\n        super(context);\n    }\n\n    public ResourceLocation getTextureLocation(CorpseEntity entity) {\n        return TEXTURE;\n    }\n\n    @Override\n    public void render(MmtState state, PoseStack matrixStack, MultiBufferSource buffer, int packedLightIn) {\n        CorpseEntity entity = state.mmtEntity;\n        float entityYaw = state.mmtYaw;\n        float partialTicks = state.mmtPartialTick;\n        super.render(state, matrixStack, buffer, packedLightIn);\n        matrixStack.pushPose();\n        getRenderer(skeleton).render(getRenderer(skeleton).createRenderState(skeleton, 1F), matrixStack, buffer, packedLightIn);\n        matrixStack.popPose();\n    }\n\n\n    @Override\n    public MmtState createRenderState() {\n        return new MmtState();\n    }\n\n    @Override\n    public void extractRenderState(CorpseEntity entity, MmtState state, float partialTick) {\n        super.extractRenderState(entity, state, partialTick);\n        state.mmtEntity = entity;\n        state.mmtPartialTick = partialTick;\n        state.mmtYaw = net.minecraft.util.Mth.lerp(partialTick, entity.yRotO, entity.getYRot());\n    }\n\n    /** What render was given before 1.21.2 split it into extracting and drawing a render state. */\n    public static class MmtState extends EntityRenderState {\n        public CorpseEntity mmtEntity;\n        public float mmtPartialTick;\n        public float mmtYaw;\n    }\n}\n",
         "from": "written for this rule, from Corpse 1.21.1's CorpseRenderer"
       }
+    },
+    {
+      "id": "hurt-server-override-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "does not override abstract method hurtServer|hurt\\(DamageSource,float\\) in \\w+ cannot override hurt",
+      "apply": {
+        "find": "(?m)^([ \\t]*)(@Override\\s+)?public\\s+boolean\\s+hurt\\s*\\(\\s*(?:final\\s+)?DamageSource\\s+(\\w+)\\s*,\\s*(?:final\\s+)?float\\s+(\\w+)\\s*\\)",
+        "replace": "$1$2public boolean hurtServer(ServerLevel serverLevel, DamageSource $3, float $4)",
+        "ensureImports": [
+          "net.minecraft.server.level.ServerLevel"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 split Entity.hurt: entities override hurtServer(ServerLevel, DamageSource, float), which runs on the server only (hurt on the client is hurtClient). An override of boolean hurt(DamageSource, float) becomes hurtServer with the level first; its body is unchanged.",
+      "verified": "Mojang's 1.21.1 mappings: Entity.hurt(DamageSource,float) boolean; 1.21.2: void hurt(DamageSource,float), boolean hurtOrSimulate(DamageSource,float), abstract boolean hurtServer(ServerLevel,DamageSource,float), boolean hurtClient(DamageSource)",
+      "test": {
+        "error": "CorpseEntity.java:3: error: CorpseEntity is not abstract and does not override abstract method hurtServer(ServerLevel,DamageSource,float) in Entity\n",
+        "before": "package mod;\n\nclass CorpseEntity extends Entity {\n    @Override\n    public boolean hurt(DamageSource source, float amount) {\n        if (isInvulnerableTo(source)) {\n            return false;\n        }\n        return super.hurt(source, amount);\n    }\n}\n",
+        "after": "package mod;\nimport net.minecraft.server.level.ServerLevel;\n\nclass CorpseEntity extends Entity {\n    @Override\n    public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount) {\n        if (isInvulnerableTo(source)) {\n            return false;\n        }\n        return super.hurt(source, amount);\n    }\n}\n",
+        "from": "written for this rule, from Corpse 1.21.1's CorpseEntity"
+      }
+    },
+    {
+      "id": "hurt-server-super-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "does not override abstract method hurtServer|hurt\\(DamageSource,float\\) in \\w+ cannot override hurt|incompatible types: void cannot be converted to boolean",
+      "apply": {
+        "find": "\\bsuper\\s*\\.\\s*hurt\\s*\\(",
+        "replace": "super.hurtServer(serverLevel, "
+      },
+      "scope": "log",
+      "when": "hurtServer\\(ServerLevel serverLevel,",
+      "note": "The super call inside an override hurt-server-override-1212 moved passes the server level on.",
+      "verified": "Mojang's 1.21.1 mappings: Entity.hurt(DamageSource,float) boolean; 1.21.2: void hurt(DamageSource,float), boolean hurtOrSimulate(DamageSource,float), abstract boolean hurtServer(ServerLevel,DamageSource,float), boolean hurtClient(DamageSource)",
+      "test": {
+        "error": "CorpseEntity.java:9: error: incompatible types: void cannot be converted to boolean\n",
+        "before": "package mod;\nimport net.minecraft.server.level.ServerLevel;\n\nclass CorpseEntity extends Entity {\n    @Override\n    public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount) {\n        if (isInvulnerableTo(source)) {\n            return false;\n        }\n        return super.hurt(source, amount);\n    }\n}\n",
+        "after": "package mod;\nimport net.minecraft.server.level.ServerLevel;\n\nclass CorpseEntity extends Entity {\n    @Override\n    public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount) {\n        if (isInvulnerableTo(source)) {\n            return false;\n        }\n        return super.hurtServer(serverLevel, source, amount);\n    }\n}\n",
+        "from": "written for this rule, after hurt-server-override-1212"
+      }
+    },
+    {
+      "id": "hurt-or-simulate-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "incompatible types: void cannot be converted to boolean",
+      "apply": {
+        "find": "\\.hurt\\s*\\(",
+        "replace": ".hurtOrSimulate("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's Entity.hurt returns nothing; the call that answers whether the damage was taken is hurtOrSimulate (the server applies it, the client simulates). Only calls whose result is used change, on the lines javac reports.",
+      "verified": "Mojang's 1.21.1 mappings: Entity.hurt(DamageSource,float) boolean; 1.21.2: void hurt(DamageSource,float), boolean hurtOrSimulate(DamageSource,float), abstract boolean hurtServer(ServerLevel,DamageSource,float), boolean hurtClient(DamageSource)",
+      "test": {
+        "error": "Trap.java:3: error: incompatible types: void cannot be converted to boolean\n",
+        "before": "class Trap {\n    void spring(Entity target) {\n        if (target.hurt(damageSources().generic(), 4.0F)) {\n            count++;\n        }\n        target.hurt(damageSources().generic(), 1.0F);\n    }\n}\n",
+        "after": "class Trap {\n    void spring(Entity target) {\n        if (target.hurtOrSimulate(damageSources().generic(), 4.0F)) {\n            count++;\n        }\n        target.hurt(damageSources().generic(), 1.0F);\n    }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }

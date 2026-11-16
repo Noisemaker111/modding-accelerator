@@ -342,6 +342,25 @@ public final class PortPreflightTest {
         require(ghosted.contains("import net.minecraft.server.level.ServerLevel;"), "the new parameter's type imported");
         require(ghosted.contains("public boolean hurt(DamageSource source, float amount)"), "a changed return type is left alone");
         require(stoned.contains("public void wasExploded(ServerLevel level, BlockPos pos, Explosion explosion)") && stoned.contains("super.wasExploded(level, pos, explosion)"), "a narrowed type keeps the mod's name: " + stoned);
+        // Parameters the game dropped go from the declaration only when the body never uses them.
+        Files.writeString(sigMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "signatures": [
+                { "owner": "net.minecraft.world.level.block.state.BlockBehaviour", "from": "propagatesSkylightDown", "desc": "(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Z", "to": "propagatesSkylightDown", "newDesc": "(Lnet/minecraft/world/level/block/state/BlockState;)Z" }
+              ]
+            }
+            """);
+        String lamp = "class Lamp extends Block {\n  @Override\n  public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {\n    return !state.getValue(LIT);\n  }\n}\n";
+        String glass = "class Glass extends Block {\n  @Override\n  public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {\n    return level.getBlockState(pos.above()).isAir();\n  }\n}\n";
+        Files.writeString(sig.resolve("Lamp.java"), lamp);
+        Files.writeString(sig.resolve("Glass.java"), glass);
+        Files.writeString(sigLog, sig.resolve("Lamp.java") + ":2" + err + sig.resolve("Glass.java") + ":2" + err);
+        VersionMap.SUPERS.put("Lamp", Set.of("Block", "BlockBehaviour"));
+        VersionMap.SUPERS.put("Glass", Set.of("Block", "BlockBehaviour"));
+        VersionMap.Fix.run(sigMap, sigLog, sig, false, null);
+        VersionMap.SUPERS.clear();
+        require(Files.readString(sig.resolve("Lamp.java")).contains("public boolean propagatesSkylightDown(BlockState state) {"), "unused dropped parameters go");
+        require(Files.readString(sig.resolve("Glass.java")).equals(glass), "a body that still uses a dropped parameter is left to the compiler");
 
         // A class that lost its type parameters: the arguments after it on the reported line go, nested ones included.
         Path tp = Files.createDirectories(scratch.resolve("type-params"));
