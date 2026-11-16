@@ -253,6 +253,7 @@ public final class Mmt {
         "world-check",
         "mp-check",
         "eval",
+        "game-test",
         "reload",
         "game-status",
         "game-stop",
@@ -479,7 +480,7 @@ public final class Mmt {
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                         if (exit == 0) exit = withModChecks(result, model);
                     }
-                    case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> {
+                    case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload", "game-test" -> {
                         result = new Game(build, model).run(options);
                         exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded"))
                             ? 1
@@ -965,6 +966,9 @@ public final class Mmt {
             "are read on first use. A changed class shape (added or removed methods or fields) on a stock JVM, a mixin, or mod\n" +
             "metadata needs a restart: the command says so and exits 1. Objects keep their field values and static initializers do not rerun.\n" +
             "Start the game with --jbr (ui-check or world-check) to run it on JetBrains Runtime, which also swaps added or removed methods and fields.";
+            case "game-test" -> "Run the mod's own game tests as its build defines them: mmt game-test --root SOURCE [--project :module] [--task :runClientGameTest] [--timeout 3600]\n" +
+            "Finds runClientGameTest, runProductionClientGameTest, runGameTest or runGameTestServer, runs it with the window hidden and the sound off\n" +
+            "as your preferences say, and reports the exit and what the tests said. Compare a change against the unchanged source by running both.";
             case "eval" -> "Run Java inside the running game: mmt eval --root SOURCE --code 'mc.player.getX()'\n" +
             "  --file SNIPPET.java  read the snippet from a file instead\n" +
             "  --thread control     run off the game thread (for snippets that wait); default is the game thread\n" +
