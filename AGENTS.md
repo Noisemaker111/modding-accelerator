@@ -10,7 +10,7 @@ JDK 17+ and Python 3.12+; no install step. Windows: `mmt.cmd` and `python` for `
 ```sh
 ./mmt help                    # every command
 python3 bench/run_tests.py         # every offline check, as CI runs them (--list, --only NAME)
-tools/cloud-run packs|ports|perf   # full sweeps on GitHub's runners (below)
+tools/cloud-run packs|ports|perf|convert   # full sweeps on GitHub's runners (below)
 ```
 
 Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
@@ -27,7 +27,7 @@ Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
   --changed`. Shut it down afterwards (`game-stop`). Local timing comparisons interleave A/B runs. "Not tested
   in-game" or "saved for the cloud" is never an acceptable PR result.
 - **Only full sweeps go to the cloud** (all packs, the whole port corpus, wide A/B timing): push, then
-  `tools/cloud-run packs|ports|perf [-f KEY=VALUE]`; it waits with a hard timeout and downloads to `.runs/cloud/`.
+  `tools/cloud-run packs|ports|perf|convert [-f KEY=VALUE]`; it waits with a hard timeout and downloads to `.runs/cloud/`.
 - **Tests: follow `~/.claude/skills/minimal-tests`.** A test proves something users depend on, fails on a wrong
   answer (vary inputs; change cached inputs mid-run), and runs against the packaged jar. Delete tests that can't
   fail. Budgets (enforced by `bench/test_budgets.py`): PR job under 3 min, no test file over 800 lines, this file

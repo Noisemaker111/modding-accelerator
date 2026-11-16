@@ -64,4 +64,17 @@ for module in (C, P):
 check(not P.records_coverage(argparse.Namespace(only="", record=True, focus="soulsweapons", corpus=P.CORPUS)), "a focused pack sweep never writes it")
 check(not P.records_coverage(argparse.Namespace(only="", record=True, focus="", corpus=P.CORPUS.with_name("repro.json"))), "nor one of another corpus")
 
+# A mod whose run raises has no record: the run reports it and main fails, instead of the table silently leaving it out.
+def boom(mod, args, concepts):
+    if mod["id"] == "bad":
+        raise RuntimeError("runner broke")
+    return {"outcome": "ok"}
+real = C.run_one
+C.run_one = boom
+try:
+    failed = C.run_all([{"id": "good"}, {"id": "bad"}], argparse.Namespace(jobs=2), {})
+finally:
+    C.run_one = real
+check(failed == ["bad"], f"a raising run is reported as failed: {failed}")
+
 print(f"{checks} sweep checks passed")
