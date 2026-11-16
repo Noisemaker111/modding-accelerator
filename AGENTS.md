@@ -28,6 +28,8 @@ Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
   in-game" or "saved for the cloud" is never an acceptable PR result.
 - **Only full sweeps go to the cloud** (all packs, the whole port corpus, wide A/B timing): push, then
   `tools/cloud-run packs|ports|perf|convert [-f KEY=VALUE]`; it waits with a hard timeout and downloads to `.runs/cloud/`.
+  One full sweep per PR, on its final commit; small local tests in between, and cancel a run a newer commit makes stale
+  (GitHub's terms forbid load "disproportionate to the benefits").
 - **Tests: follow `~/.claude/skills/minimal-tests`.** A test proves something users depend on, fails on a wrong
   answer (vary inputs; change cached inputs mid-run), and runs against the packaged jar. Delete tests that can't
   fail. Budgets (enforced by `bench/test_budgets.py`): PR job under 3 min, no test file over 800 lines, this file
