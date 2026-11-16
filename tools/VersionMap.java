@@ -1598,9 +1598,8 @@ public final class VersionMap {
         }
 
         /**
-         * Pair renamed classes on the SRG lane by shared member ids: each side's best match by
-         * Jaccard, kept when mutual and at least half shared. The index measures the same links;
-         * port follows them so a renamed class keeps its history.
+         * Pair renamed classes on the SRG lane by shared member ids. The index measures the same
+         * links; port follows them so a renamed class keeps its history.
          */
         static Map<String, String> linkSrgClasses(Table prev, Table cur) {
             Map<String, Set<String>> pIds = new HashMap<>(), cIds = new HashMap<>();
@@ -1623,15 +1622,32 @@ public final class VersionMap {
             Set<String> gone = new HashSet<>(prev.classes.keySet()), fresh = new HashSet<>(cur.classes.keySet());
             gone.removeAll(cur.classes.keySet());
             fresh.removeAll(prev.classes.keySet());
+            return linkBySharedIds(gone, fresh, pIds, cIds);
+        }
+
+        /**
+         * Mutual-best Jaccard matches need at least half shared. A class that grew or shrank around
+         * the Flattening can fall below that despite one obvious successor, so an unclaimed pair
+         * also links when its shared-id count is at least three and twice every rival's. Both
+         * directions must choose the same pair; a tie never resolves by iteration order.
+         */
+        static Map<String, String> linkBySharedIds(
+            Collection<String> gone,
+            Collection<String> fresh,
+            Map<String, Set<String>> goneIds,
+            Map<String, Set<String>> freshIds
+        ) {
             Map<String, String> best = new HashMap<>(), bestBack = new HashMap<>();
             Map<String, Double> score = new HashMap<>(), scoreBack = new HashMap<>();
+            Map<String, String> overlapBest = new HashMap<>(), overlapBack = new HashMap<>();
+            Map<String, Integer> overlapCount = new HashMap<>(), overlapSecond = new HashMap<>(), overlapBackCount = new HashMap<>();
             for (String g : gone) {
-                Set<String> gn = pIds.getOrDefault(g, Set.of());
+                Set<String> gn = goneIds.getOrDefault(g, Set.of());
                 if (gn.size() < 4) {
                     continue;
                 }
                 for (String f : fresh) {
-                    Set<String> fn = cIds.getOrDefault(f, Set.of());
+                    Set<String> fn = freshIds.getOrDefault(f, Set.of());
                     if (fn.size() < 4) {
                         continue;
                     }
@@ -1650,12 +1666,34 @@ public final class VersionMap {
                         scoreBack.put(f, j);
                         bestBack.put(f, g);
                     }
+                    if (common > overlapCount.getOrDefault(g, 0)) {
+                        overlapSecond.put(g, overlapCount.getOrDefault(g, 0));
+                        overlapCount.put(g, common);
+                        overlapBest.put(g, f);
+                    } else if (common > overlapSecond.getOrDefault(g, 0)) {
+                        overlapSecond.put(g, common);
+                    }
+                    if (common > overlapBackCount.getOrDefault(f, 0)) {
+                        overlapBackCount.put(f, common);
+                        overlapBack.put(f, g);
+                    }
                 }
             }
             Map<String, String> links = new HashMap<>();
+            Set<String> claimed = new HashSet<>();
             for (var e : best.entrySet()) {
                 if (score.get(e.getKey()) >= 0.5 && e.getKey().equals(bestBack.get(e.getValue()))) {
                     links.put(e.getKey(), e.getValue());
+                    claimed.add(e.getValue());
+                }
+            }
+            for (var e : overlapBest.entrySet()) {
+                String g = e.getKey(), f = e.getValue();
+                int n = overlapCount.getOrDefault(g, 0), second = overlapSecond.getOrDefault(g, 0);
+                boolean clearWinner = n >= 3 && (second == 0 || n >= 2 * second);
+                if (!links.containsKey(g) && !claimed.contains(f) && clearWinner && g.equals(overlapBack.get(f))) {
+                    links.put(g, f);
+                    claimed.add(f);
                 }
             }
             return links;

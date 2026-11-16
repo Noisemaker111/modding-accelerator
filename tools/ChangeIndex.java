@@ -437,35 +437,16 @@ public final class ChangeIndex {
 			Map<Cls, Cls> pairs = new LinkedHashMap<>();
 			for (var e : A.entrySet()) { Cls cb = B.get(e.getKey()); if (cb != null) { pairs.put(e.getValue(), cb); } }
 			if (d.linked.equals("srg")) {
-				// SRG has no class ids, so a renamed class reads as removed plus added. Link the
-				// rename back up when the two sides share most of their member keys: each side's best
-				// match by Jaccard over SRG ids and MCP names, kept when mutual and at least half
-				// shared. The same convention as the by-name hop's member-name pairing, keyed on the
-				// SRG lane's member keys instead of names.
+				// SRG has no class ids, so pair renamed classes by the member ids they share.
+				// The port path and this index use the same mutual-best and clear-winner rules.
 				Map<String, Set<String>> goneKeys = new HashMap<>(), freshKeys = new HashMap<>();
 				for (String k : gone) { goneKeys.put(k, memberKeys(A.get(k))); }
 				for (String k : fresh) { freshKeys.put(k, memberKeys(B.get(k))); }
-				Map<String, String> best = new HashMap<>(), bestBack = new HashMap<>();
-				Map<String, Double> score = new HashMap<>(), scoreBack = new HashMap<>();
-				for (String g : gone) {
-					Set<String> gn = goneKeys.get(g);
-					if (gn.size() < 4) { continue; }
-					for (String f : fresh) {
-						Set<String> fn = freshKeys.get(f);
-						if (fn.size() < 4) { continue; }
-						int common = 0;
-						for (String n : gn) { if (fn.contains(n)) { common++; } }
-						double j = (double) common / (gn.size() + fn.size() - common);
-						if (j > score.getOrDefault(g, 0.0)) { score.put(g, j); best.put(g, f); }
-						if (j > scoreBack.getOrDefault(f, 0.0)) { scoreBack.put(f, j); bestBack.put(f, g); }
-					}
-				}
-				for (var e : best.entrySet()) {
-					if (score.get(e.getKey()) >= 0.5 && e.getKey().equals(bestBack.get(e.getValue()))) {
-						pairs.put(A.get(e.getKey()), B.get(e.getValue()));
-						gone.remove(e.getKey());
-						fresh.remove(e.getValue());
-					}
+				Map<String, String> links = VersionMap.Chain.linkBySharedIds(gone, fresh, goneKeys, freshKeys);
+				for (var e : links.entrySet()) {
+					pairs.put(A.get(e.getKey()), B.get(e.getValue()));
+					gone.remove(e.getKey());
+					fresh.remove(e.getValue());
 				}
 			}
 			if (!d.exact) {

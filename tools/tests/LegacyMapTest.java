@@ -36,6 +36,15 @@ public final class LegacyMapTest {
         return VersionMap.Table.fromSrg(version, VersionMap.Srg.srg(srg), VersionMap.Srg.csv(fields, methods));
     }
 
+    static String srgClass(String obf, String named, int... ids) {
+        StringBuilder s = new StringBuilder("CL: " + obf + " " + named + "\n");
+        for (int id : ids) {
+            s.append("MD: ").append(obf).append("/m").append(id).append(" ()V ")
+                .append(named).append("/func_").append(id).append("_x ()V\n");
+        }
+        return s.toString();
+    }
+
     static final String SRG_B = """
 CL: bbb net/minecraft/block/Block
 MD: bbb/a ()V net/minecraft/block/Block/func_1_a ()V
@@ -118,6 +127,36 @@ FD: bbb/b net/minecraft/block/Block/field_5_b
         check(
             VersionMap.Chain.linkSrgClasses(oldT, tinyT).isEmpty(),
             "a class sharing too few member ids stays unlinked, honestly removed and added"
+        );
+        VersionMap.Table grownOld = table(
+            "1.7.10",
+            srgClass("aaa", "net/minecraft/block/Block", 1, 2, 3, 4, 5, 6, 7, 8),
+            METHODS,
+            FIELDS
+        );
+        VersionMap.Table grownNew = table(
+            "1.12.2",
+            srgClass("ccc", "net/minecraft/block/ShiftedBlock", 1, 2, 3, 4, 101, 102, 103, 104, 105, 106, 107, 108) +
+            srgClass("ddd", "net/minecraft/block/RivalBlock", 5, 6, 201, 202, 203, 204, 205, 206),
+            METHODS,
+            FIELDS
+        );
+        check(
+            VersionMap.Chain.linkSrgClasses(grownOld, grownNew).equals(
+                Map.of("net/minecraft/block/Block", "net/minecraft/block/ShiftedBlock")
+            ),
+            "a mutual match with twice the runner-up's shared ids links even when class growth drops Jaccard below half"
+        );
+        VersionMap.Table tiedNew = table(
+            "1.12.2",
+            srgClass("ccc", "net/minecraft/block/ShiftedBlock", 1, 2, 3, 101, 102, 103, 104, 105, 106, 107, 108, 109) +
+            srgClass("ddd", "net/minecraft/block/RivalBlock", 1, 2, 3, 201, 202, 203, 204, 205, 206, 207, 208, 209),
+            METHODS,
+            FIELDS
+        );
+        check(
+            VersionMap.Chain.linkSrgClasses(grownOld, tiedNew).isEmpty(),
+            "the clear-winner fallback never breaks a tied overlap by iteration order"
         );
         VersionMap.Chain chain = VersionMap.Chain.of(List.of("1.7.10", "1.12.2"), v ->
             v.equals("1.7.10") ? oldT : newT
