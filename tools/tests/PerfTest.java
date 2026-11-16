@@ -250,8 +250,7 @@ public final class PerfTest {
             check(((Number) report.getOrDefault("youngCollections", 0)).longValue() > 0 && ((Number) report.getOrDefault("gcCopiedBytes", 0)).longValue() > 0,
                 "young collections and the bytes they copied are counted: " + report.get("youngCollections") + ", " + report.get("gcCopiedBytes"));
             String survivor = Json.text(Json.object(Json.array(report.getOrDefault("survivingAllocationSites", List.of(Json.map("name", "none")))).get(0)), "name", "");
-            check(survivor.startsWith("Keeper.keep:"),
-                "the site whose objects survive is charged with the copying, not the one that allocates most: " + survivor);
+            check(survivor.startsWith("Keeper.keep:"), "the site whose objects survive is charged with the copying, not the one that allocates most: " + survivor);
         } finally {
             process.destroy();
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
@@ -283,11 +282,10 @@ public final class PerfTest {
                 Object snippet = compile.invoke(null, PerfToggle.snippet(switches, round, 1), PerfTest.class.getClassLoader());
                 java.lang.reflect.Method run = snippet.getClass().getDeclaredMethod("run");
                 run.setAccessible(true);
-                // As mmt eval --json hands it back: the snippet's answer under "result".
                 rounds.add(PerfToggle.settings(Json.map("ok", true, "result", run.invoke(snippet))));
             }
-            Map<String, Object> result = PerfToggle.summarize(switches, rounds);
-            double fast = ((Number) Json.object(Json.object(Json.array(result.get("settings")).get(1)).get("cpuSpeedup")).get("geometricMean")).doubleValue();
+            Map<String, Object> result = PerfToggle.summarize(switches, rounds), faster = Json.object(Json.array(result.get("settings")).get(1));
+            double fast = ((Number) Json.object(faster.get("cpuSpeedup")).get("geometricMean")).doubleValue();
             check(fast > 5 && !Toggled.FAST && !Toggled.WRONG, "perf-toggle times the faster setting faster (" + fast + ") and restores the switches");
             check(Boolean.TRUE.equals(result.get("ok")) == (switches.size() == 1), "perf-toggle fails exactly when a setting changes the result: " + result.get("differingRounds"));
         }

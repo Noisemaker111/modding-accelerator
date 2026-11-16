@@ -413,6 +413,29 @@ saturated machine, one pair of `bit-walk.patch` with the warmed experiment read 
 warm 1.26× before the run was stopped (`bit-walk-4`, not decided); its launches drew 57–59 frames a
 second, the minimap cost 0.71–0.93 ms a frame, and neither window traced on the CPU.
 
+### Round 5: the collector and the map screen
+
+Each candidate below was applied to the six accepted patches (`tint-carry-over` through `occlusion-rings`).
+`mmt perf-report` now says what young collections copy and which code allocated it
+(`gcCopiedBytes`, `survivingAllocationSites`). In the cumulative run's captures, unmodified Diorama's young
+collections copied 2.4 GB in a cold minute. The largest Diorama share was each job's decoded section ids
+(`VoxelReader$Decoded.ids`, 321 MB). The next two were Minecraft's own light storage copies.
+
+- `ids-pool.patch` (`VoxelReader.POOL_IDS`): a meshing job's decoded sections borrow their thread's spare
+  arrays and give them back when it ends. Copying of those arrays fell by about 60% in each of three pairs. Total
+  bytes copied and total pause did not change beyond noise, because the site is a tenth of what is copied. The
+  cold window was 0.982× (95% 0.969–0.994), so the run was rejected (`ids-pool` in `coverage/perf-runs.json`).
+  Bit-walk's longer mean young pause is fewer collections, not more copying: with the six patches, cold
+  windows ran 19.4 collections of 129 MB against 22.2 of 120 MB, 6% less in all.
+- The map screen costs 1.3–1.6 ms a frame in both builds; 34% of it is rebuilding the fog mask. Two
+  candidates were pre-screened with `mmt perf-toggle` (`play/mask-setup.java`: it rebuilds the screen's last
+  mask from the same inputs in the running game, 12 rounds). Both were dropped before a paired run.
+  - `mask-tiles.patch` (`MapViewport.PEEK_ONCE`): ask the level for each tile once per build. 1.02× (99%
+    0.92–1.14), 19% less allocated. The profile's `HashMap$TreeNode` frames under `MapLevel.peek` were
+    JFR misplacing inlined `getNode`, not tree bins: `TileKey`'s record hash puts at most two keys in a bucket.
+  - `mask-hoist.patch` (`MapViewport.HOIST`): work out each column's u and each row's v, with their tiles
+    and coverage cells, once per build. 1.08× (99% 0.89–1.31).
+
 ### What is left
 
 - Per mesh, after these: occlusion and colour of the faces the walk emits (`solidFace`), section
