@@ -996,6 +996,9 @@ public final class VersionMap {
         return m.find() ? m.group(1) : null;
     }
 
+    /** A call the game itself rewrote between two releases: owners dotted ($ for nested), descriptors as in the class files. */
+    record Rewrite(String owner, String name, String desc, boolean isStatic, String toOwner, String to, String newDesc, boolean newStatic) {}
+
     /** A generated map, indexed the way compiler errors ask about it. */
     static final class Known {
 
@@ -1007,6 +1010,8 @@ public final class VersionMap {
         final Map<String, Set<String>> sigTo = new HashMap<>();
         final Map<String, Set<String>> sigTransitions = new HashMap<>();
         final Set<String> methodGone = new HashSet<>(), fieldGone = new HashSet<>(), sigNames = new HashSet<>();
+        /** Call-site rewrites the game made (GameDiff's "rewrites"), by old owner (simple) and name. */
+        final Map<String, List<Rewrite>> rewrites = new HashMap<>();
 
         static Known load(Path mapFile) throws IOException {
             Known k = new Known();
@@ -1071,6 +1076,20 @@ public final class VersionMap {
                         .computeIfAbsent(from, x -> new HashSet<>())
                         .add(new String[] { ownerSimple, to, ownerSimple });
                     case "fieldsRemoved" -> k.fieldGone.add(from);
+                    case "rewrites" -> k.rewrites
+                        .computeIfAbsent(ownerSimple + "." + from, x -> new ArrayList<>())
+                        .add(
+                            new Rewrite(
+                                owner,
+                                from,
+                                field(t, "desc"),
+                                t.contains("\"static\": true"),
+                                field(t, "toOwner"),
+                                to,
+                                field(t, "newDesc"),
+                                t.contains("\"newStatic\": true")
+                            )
+                        );
                     default -> {}
                 }
             }
@@ -1376,6 +1395,212 @@ public final class VersionMap {
         }
 
         /** Whether the file declares TYPE as extending a class it imports from the game (net.minecraft or com.mojang). */
+        /**
+         * The call to name on the error's line rewritten to the game's own replacement, or null when no candidate fits
+         * exactly one way: its old parameter count must match the call, and every argument of the replacement must come
+         * from the call (the same types in order, some dropped, or the receiver passed in or taken out).
+         */
+        static String applyRewrite(String text, Err e, String name, List<Rewrite> candidates, Known k, Set<String> importsOut) {
+            int lineStart = 0;
+            for (int i = 1; i < e.line() && lineStart > -1; i++) {
+                int next = text.indexOf('\n', lineStart);
+                lineStart = next < 0 ? -1 : next + 1;
+            }
+            if (lineStart < 0) {
+                return null;
+            }
+            int lineEnd = text.indexOf('\n', lineStart);
+            lineEnd = lineEnd < 0 ? text.length() : lineEnd;
+            Matcher call = Pattern.compile("(?<![\\w$])" + Pattern.quote(name) + "\\s*\\(").matcher(text);
+            call.region(Math.min(lineEnd, lineStart + Math.max(0, e.caret())), lineEnd);
+            if (!call.find()) {
+                call.region(lineStart, lineEnd);
+                if (!call.find()) {
+                    return null;
+                }
+            }
+            int open = call.end() - 1;
+            int close = closingParen(text, open);
+            if (close < 0) {
+                return null;
+            }
+            List<String> args = new ArrayList<>();
+            for (String a : topLevelArguments(text.substring(open + 1, close))) {
+                args.add(a.strip());
+            }
+            int before = call.start() - 1;
+            while (before >= 0 && Character.isWhitespace(text.charAt(before))) {
+                before--;
+            }
+            boolean qualified = before >= 0 && text.charAt(before) == '.';
+            int start = qualified ? receiverStart(text, before) : call.start();
+            String receiver = qualified ? text.substring(start, before).strip() : null;
+            Set<String> replacements = new LinkedHashSet<>();
+            Set<String> imports = new LinkedHashSet<>();
+            for (Rewrite r : candidates) {
+                List<String> old = paramTypes(r.desc());
+                old.replaceAll(t -> k.classFqn.getOrDefault(t, t));
+                if (old.size() != args.size()) {
+                    continue;
+                }
+                List<String> neu = paramTypes(r.newDesc());
+                String oldOwner = k.classFqn.getOrDefault(r.owner(), r.owner());
+                String qualifier = r.toOwner().substring(r.toOwner().lastIndexOf('.') + 1).replace('$', '.');
+                String outer = r.toOwner().replaceAll("\\$.*", "");
+                String built = null;
+                if (!r.isStatic() && !r.newStatic()) {
+                    List<String> mapped = mapArguments(old, neu, args);
+                    if (mapped != null) {
+                        built = (qualified ? receiver + "." : "") + r.to() + "(" + String.join(", ", mapped) + ")";
+                    }
+                } else if (r.isStatic() && r.newStatic()) {
+                    List<String> mapped = mapArguments(old, neu, args);
+                    if (mapped != null) {
+                        built = qualifier + "." + r.to() + "(" + String.join(", ", mapped) + ")";
+                        imports.add(outer);
+                    }
+                } else if (!r.isStatic() && r.newStatic()) {
+                    // The receiver becomes the first argument (its type leads the new parameters), or the game no longer needs it.
+                    List<String> withReceiver = new ArrayList<>(List.of(oldOwner));
+                    withReceiver.addAll(old);
+                    List<String> callArgs = new ArrayList<>(List.of(receiver == null ? "this" : receiver));
+                    callArgs.addAll(args);
+                    List<String> mapped = !neu.isEmpty() && sameType(neu.get(0), oldOwner) ? mapArguments(withReceiver, neu, callArgs) : mapArguments(old, neu, args);
+                    if (mapped != null) {
+                        built = qualifier + "." + r.to() + "(" + String.join(", ", mapped) + ")";
+                        imports.add(outer);
+                    }
+                } else if (!old.isEmpty() && sameType(old.get(0), k.classFqn.getOrDefault(r.toOwner(), r.toOwner()))) {
+                    // A static helper became a method of its first argument's type.
+                    List<String> mapped = mapArguments(old.subList(1, old.size()), neu, args.subList(1, args.size()));
+                    if (mapped != null) {
+                        String self = args.get(0).matches("[\\w.$]+(\\(\\))?") ? args.get(0) : "(" + args.get(0) + ")";
+                        built = self + "." + r.to() + "(" + String.join(", ", mapped) + ")";
+                    }
+                }
+                if (built != null) {
+                    replacements.add(built);
+                }
+            }
+            if (replacements.size() != 1) {
+                return null;
+            }
+            // Imports wait until every error of the file is rewritten: an import line now would shift the lines below.
+            importsOut.addAll(imports);
+            return text.substring(0, start) + replacements.iterator().next() + text.substring(close + 1);
+        }
+
+        static boolean sameType(String a, String b) {
+            return a.equals(b) || simple(a).equals(simple(b));
+        }
+
+        /** The call's arguments for the new parameters: the same types, some dropped (one way only), or reordered (one way only). */
+        static List<String> mapArguments(List<String> old, List<String> neu, List<String> args) {
+            if (old.size() == neu.size()) {
+                boolean same = true;
+                for (int i = 0; i < old.size(); i++) {
+                    same &= sameType(old.get(i), neu.get(i));
+                }
+                if (same) {
+                    return new ArrayList<>(args);
+                }
+            }
+            if (neu.size() < old.size()) {
+                List<String> simpleOld = new ArrayList<>(), simpleNew = new ArrayList<>();
+                for (String t : old) {
+                    simpleOld.add(simple(t));
+                }
+                for (String t : neu) {
+                    simpleNew.add(simple(t));
+                }
+                int[] kept = uniqueEmbedding(simpleOld, simpleNew);
+                if (kept != null) {
+                    List<String> out = new ArrayList<>();
+                    for (int i : kept) {
+                        out.add(args.get(i));
+                    }
+                    return out;
+                }
+            }
+            return null;
+        }
+
+        /** Where the receiver expression ending just before the '.' at dot starts: names, calls and indexes chained with dots. */
+        static int receiverStart(String text, int dot) {
+            int i = dot - 1;
+            while (true) {
+                while (i >= 0 && Character.isWhitespace(text.charAt(i))) {
+                    i--;
+                }
+                if (i < 0) {
+                    return 0;
+                }
+                char ch = text.charAt(i);
+                if (ch == ')' || ch == ']') {
+                    char openCh = ch == ')' ? '(' : '[';
+                    int depth = 0;
+                    int o = i;
+                    for (; o >= 0; o--) {
+                        char c = text.charAt(o);
+                        if (c == ch) {
+                            depth++;
+                        } else if (c == openCh && --depth == 0) {
+                            break;
+                        }
+                    }
+                    if (o < 0) {
+                        return 0;
+                    }
+                    int p = o - 1;
+                    while (p >= 0 && Character.isWhitespace(text.charAt(p))) {
+                        p--;
+                    }
+                    if (p < 0 || !Character.isJavaIdentifierPart(text.charAt(p))) {
+                        return o; // a parenthesised expression starts the receiver
+                    }
+                    i = p; // the name of the call (or the array) before the brackets
+                }
+                while (i >= 0 && Character.isJavaIdentifierPart(text.charAt(i))) {
+                    i--;
+                }
+                int startOfName = i + 1;
+                int j = i;
+                while (j >= 0 && Character.isWhitespace(text.charAt(j))) {
+                    j--;
+                }
+                if (j >= 0 && text.charAt(j) == '.') {
+                    i = j - 1;
+                    continue;
+                }
+                return startOfName;
+            }
+        }
+
+        /** The source with an import of fqn (dotted), unless it already imports it or the class is in the file's own package. */
+        static String withImport(String text, String fqn) {
+            String pkg = fqn.contains(".") ? fqn.substring(0, fqn.lastIndexOf('.')) : "";
+            if (Pattern.compile("(?m)^import\\s+" + Pattern.quote(fqn) + "\\s*;").matcher(text).find()) {
+                return text;
+            }
+            if (Pattern.compile("(?m)^package\\s+" + Pattern.quote(pkg) + "\\s*;").matcher(text).find()) {
+                return text;
+            }
+            String nl = text.contains("\r\n") ? "\r\n" : "\n";
+            Matcher last = Pattern.compile("(?m)^import\\s+[\\w.]+(?:\\.\\*)?\\s*;[^\\n]*$").matcher(text);
+            int at = -1;
+            while (last.find()) {
+                at = last.end();
+            }
+            if (at < 0) {
+                Matcher p = Pattern.compile("(?m)^package\\s+[\\w.]+\\s*;[^\\n]*$").matcher(text);
+                if (!p.find()) {
+                    return "import " + fqn + ";" + nl + text;
+                }
+                at = p.end();
+            }
+            return text.substring(0, at) + nl + "import " + fqn + ";" + text.substring(at);
+        }
+
         /** A descriptor's parameter types: class names dotted ($ kept), primitives and arrays as written. */
         static List<String> paramTypes(String desc) {
             List<String> out = new ArrayList<>();
@@ -1803,6 +2028,50 @@ public final class VersionMap {
                 texts.put(f, text);
                 replacements++;
                 byKind.merge("dropped parameters", 1, Integer::sum);
+            }
+
+            // 2d. A call the game rewrote itself (GameDiff's call-site rewrites): the replacement its own code calls, with
+            // the arguments matched by type, the receiver kept, dropped or passed as the first argument.
+            Pattern missingMethod = Pattern.compile("^method (\\w+)\\(");
+            Map<Path, Set<String>> rewriteImports = new LinkedHashMap<>();
+            List<Err> rewriteOrder = new ArrayList<>(readErrors(log));
+            rewriteOrder.sort(Comparator.comparing(Err::file).thenComparing(Comparator.comparingInt(Err::line).reversed()));
+            for (Err e : rewriteOrder) {
+                String sym = e.symbol() == null ? "" : e.symbol();
+                Matcher mm = missingMethod.matcher(sym);
+                if (!e.message().equals("cannot find symbol") || !mm.find()) {
+                    continue;
+                }
+                String type = Known.locationType(e.location());
+                List<Rewrite> candidates = new ArrayList<>();
+                Set<String> owners = new HashSet<>();
+                if (type != null) {
+                    owners.add(type);
+                    owners.addAll(SUPERS.getOrDefault(type, Set.of()));
+                }
+                for (String owner : owners) {
+                    candidates.addAll(k.rewrites.getOrDefault(owner + "." + mm.group(1), List.of()));
+                }
+                Path f = sourcePath(e, repo);
+                if (candidates.isEmpty() || f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                Set<String> needed = new LinkedHashSet<>();
+                String rewritten = applyRewrite(text, e, mm.group(1), candidates, k, needed);
+                if (rewritten != null && !rewritten.equals(text)) {
+                    texts.put(f, rewritten);
+                    rewriteImports.computeIfAbsent(f, x -> new LinkedHashSet<>()).addAll(needed);
+                    replacements++;
+                    byKind.merge("game rewrite", 1, Integer::sum);
+                }
+            }
+            for (var entry : rewriteImports.entrySet()) {
+                String text = texts.get(entry.getKey());
+                for (String fqn : entry.getValue()) {
+                    text = withImport(text, fqn);
+                }
+                texts.put(entry.getKey(), text);
             }
 
             // 3. Learned rewrites (from other mods' real ports of this jump), on the reported lines only.

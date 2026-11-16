@@ -1845,6 +1845,68 @@ public final class GameDiff {
             }
         }
 
+        /** A call the game rewrote: what its own code called in a's release and calls at the same place in b's. */
+        record Rewrite(Meth from, Meth to, int votes, int total) {}
+
+        /**
+         * Call-site rewrites, read from the game's own code once linking is done. In every pair of linked methods the
+         * references are aligned (through the links, so what stayed the same lines up); where a method of a that has no
+         * link (removed, or its signature changed) sits opposite a method of b, that is a vote for b's method as its
+         * replacement (1.20.2: PacketByteBuf.getVarIntLength -> VarInt.getByteSize). Unlike a link, the replacement may
+         * have another owner, descriptor or static-ness: the porter maps the arguments. Kept when at least two call sites
+         * agree and 80% of the removed method's aligned call sites name the same replacement.
+         */
+        List<Rewrite> rewrites() {
+            Map<Meth, Map<Meth, Integer>> votes = new HashMap<>();
+            Map<Meth, Integer> totals = new HashMap<>();
+            for (var e : mAB.entrySet()) {
+                Meth x = e.getKey();
+                Meth y = e.getValue();
+                if (x.refs.length == 0 || y.refs.length == 0) {
+                    continue;
+                }
+                long[] ta = new long[x.refs.length];
+                long[] tb = new long[y.refs.length];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = fnv(token(x.refs[i], true));
+                }
+                for (int j = 0; j < tb.length; j++) {
+                    tb[j] = fnv(token(y.refs[j], false));
+                }
+                for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
+                    Ref ra = x.refs[p[0]];
+                    Ref rb = y.refs[p[1]];
+                    if (ra.kind() != 'm' || rb.kind() != 'm') {
+                        continue;
+                    }
+                    Meth ma = a.method(ra.owner(), ra.name(), ra.desc());
+                    Meth mb = b.method(rb.owner(), rb.name(), rb.desc());
+                    if (ma == null || mb == null || mAB.containsKey(ma) || ma.special() || mb.special()) {
+                        continue;
+                    }
+                    votes.computeIfAbsent(ma, k -> new HashMap<>()).merge(mb, 1, Integer::sum);
+                    totals.merge(ma, 1, Integer::sum);
+                }
+            }
+            List<Rewrite> out = new ArrayList<>();
+            for (var e : votes.entrySet()) {
+                Meth best = null;
+                int c1 = 0;
+                for (var f : e.getValue().entrySet()) {
+                    if (f.getValue() > c1) {
+                        c1 = f.getValue();
+                        best = f.getKey();
+                    }
+                }
+                int total = totals.get(e.getKey());
+                if (c1 >= 2 && c1 * 10 >= total * 8) {
+                    out.add(new Rewrite(e.getKey(), best, c1, total));
+                }
+            }
+            out.sort(Comparator.comparing((Rewrite r) -> r.from().sig()));
+            return out;
+        }
+
         boolean unlinkedRef(Meth m, boolean sideA) {
             for (Ref r : m.refs) {
                 if (target(r, sideA) != null) {
@@ -2099,6 +2161,8 @@ public final class GameDiff {
         final Map<String, String> loaderUsed = new LinkedHashMap<>();
         final List<String> loaderNotes = new ArrayList<>();
         final List<String> hops = new ArrayList<>();
+        /** Call-site rewrites of every hop, one JSON object each (Hop.rewrites). */
+        final List<String> rewrites = new ArrayList<>();
         Snap prev;
         Path prevLoaderJar;
         String prevLoaderVersion;
@@ -2179,6 +2243,20 @@ public final class GameDiff {
                 );
                 hops.add(line);
                 System.out.println("  " + line);
+                for (Hop.Rewrite r : h.rewrites()) {
+                    rewrites.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"owner\": " + VersionMap.Diff.q(r.from().owner.name.replace('/', '.')) +
+                        ", \"from\": " + VersionMap.Diff.q(r.from().name) +
+                        ", \"desc\": " + VersionMap.Diff.q(r.from().desc) +
+                        ", \"static\": " + r.from().isStatic() +
+                        ", \"toOwner\": " + VersionMap.Diff.q(r.to().owner.name.replace('/', '.')) +
+                        ", \"to\": " + VersionMap.Diff.q(r.to().name) +
+                        ", \"newDesc\": " + VersionMap.Diff.q(r.to().desc) +
+                        ", \"newStatic\": " + r.to().isStatic() +
+                        ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
+                    );
+                }
             }
             prev = s;
             prevLoaderJar = jar;
@@ -2241,6 +2319,12 @@ public final class GameDiff {
                 head.append(VersionMap.Diff.q(h.substring(h.indexOf(':') + 2)));
             }
             head.append("},\n");
+            // One per line, as the typed fixer reads the other lists (VersionMap.Known.load).
+            head.append("  \"rewrites\": [");
+            for (int i = 0; i < rewrites.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(rewrites.get(i));
+            }
+            head.append(rewrites.isEmpty() ? "],\n" : "\n  ],\n");
             if (loader != null) {
                 head.append("  \"loader\": { \"name\": \"neoforge\", \"source\": ").append(VersionMap.Diff.q(NEOFORGE)).append(", \"versions\": {");
                 int i = 0;

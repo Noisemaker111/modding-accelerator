@@ -227,6 +227,40 @@ public final class PortPreflightTest {
         VersionMap.Fix.run(dropMap, dropLog, drops, false, null);
         require(Files.readString(drops.resolve("Calls.java")).contains("renderer.markDirty(pos, 3);"), "a caret past the line's end still finds the call");
 
+        // Calls the game rewrote itself (GameDiff's call-site rewrites): instance -> instance on another owner, static ->
+        // static on another class (imported), instance -> static with the receiver dropped or passed in, and a rewrite
+        // whose new parameter no argument can fill left alone.
+        Path rw = Files.createDirectories(scratch.resolve("rewrites"));
+        Path rwMap = scratch.resolve("rewrites.json");
+        Files.writeString(rwMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "rewrites": [
+                { "step": "1.21.1 -> 1.21.2", "owner": "net.minecraft.core.Registry", "from": "getHolderOrThrow", "desc": "(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Holder$Reference;", "static": false, "toOwner": "net.minecraft.core.HolderGetter", "to": "getOrThrow", "newDesc": "(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Holder$Reference;", "newStatic": false, "votes": 22, "of": 22 },
+                { "step": "1.21.1 -> 1.21.2", "owner": "net.minecraft.client.model.HumanoidModel", "from": "rotlerpRad", "desc": "(FFF)F", "static": false, "toOwner": "net.minecraft.util.Mth", "to": "rotLerpRad", "newDesc": "(FFF)F", "newStatic": true, "votes": 11, "of": 11 },
+                { "step": "1.21.1 -> 1.21.2", "owner": "net.minecraft.server.MinecraftServer", "from": "getProfiler", "desc": "()Lnet/minecraft/util/profiling/ProfilerFiller;", "static": false, "toOwner": "net.minecraft.util.profiling.Profiler", "to": "get", "newDesc": "()Lnet/minecraft/util/profiling/ProfilerFiller;", "newStatic": true, "votes": 3, "of": 3 },
+                { "step": "1.20.1 -> 1.20.2", "owner": "net.minecraft.network.FriendlyByteBuf", "from": "getVarIntSize", "desc": "(I)I", "static": true, "toOwner": "net.minecraft.network.VarInt", "to": "getByteSize", "newDesc": "(I)I", "newStatic": true, "votes": 4, "of": 4 },
+                { "step": "1.21.1 -> 1.21.2", "owner": "net.minecraft.client.gui.GuiGraphics", "from": "blitSprite", "desc": "(Lnet/minecraft/resources/ResourceLocation;IIII)V", "static": false, "toOwner": "net.minecraft.client.gui.GuiGraphics", "to": "blitSprite", "newDesc": "(Ljava/util/function/Function;Lnet/minecraft/resources/ResourceLocation;IIII)V", "newStatic": false, "votes": 98, "of": 101 }
+              ]
+            }
+            """);
+        String uses = "package mod;\nimport net.minecraft.core.Registry;\n\nclass Uses {\n  void f() {\n    var h = BuiltInRegistries.BLOCK.getHolderOrThrow(key);\n    float r = this.model.rotlerpRad(a, b, c);\n    server.getProfiler().push(\"x\");\n    int n = FriendlyByteBuf.getVarIntSize(size(list.get(0)));\n    graphics.blitSprite(SPRITE, x, y, 9, 9);\n  }\n}\n";
+        Files.writeString(rw.resolve("Uses.java"), uses);
+        Path rwLog = scratch.resolve("rewrites.log");
+        String usesFile = rw.resolve("Uses.java").toString();
+        Files.writeString(rwLog,
+            usesFile + ":6: error: cannot find symbol\n    var h = BuiltInRegistries.BLOCK.getHolderOrThrow(key);\n                                   ^\n  symbol:   method getHolderOrThrow(ResourceKey<Block>)\n  location: variable BLOCK of type Registry<Block>\n"
+            + usesFile + ":7: error: cannot find symbol\n    float r = this.model.rotlerpRad(a, b, c);\n                        ^\n  symbol:   method rotlerpRad(float,float,float)\n  location: variable model of type HumanoidModel\n"
+            + usesFile + ":8: error: cannot find symbol\n    server.getProfiler().push(\"x\");\n          ^\n  symbol:   method getProfiler()\n  location: variable server of type MinecraftServer\n"
+            + usesFile + ":9: error: cannot find symbol\n    int n = FriendlyByteBuf.getVarIntSize(size(list.get(0)));\n                           ^\n  symbol:   method getVarIntSize(int)\n  location: class FriendlyByteBuf\n"
+            + usesFile + ":10: error: cannot find symbol\n    graphics.blitSprite(SPRITE, x, y, 9, 9);\n            ^\n  symbol:   method blitSprite(ResourceLocation,int,int,int,int)\n  location: variable graphics of type GuiGraphics\n");
+        VersionMap.Fix.run(rwMap, rwLog, rw, false, null);
+        String rewritten = Files.readString(rw.resolve("Uses.java"));
+        require(rewritten.contains("BuiltInRegistries.BLOCK.getOrThrow(key)"), "instance rewrite keeps the receiver: " + rewritten);
+        require(rewritten.contains("float r = Mth.rotLerpRad(a, b, c);") && rewritten.contains("import net.minecraft.util.Mth;"), "instance -> static helper, imported");
+        require(rewritten.contains("Profiler.get().push(\"x\");") && rewritten.contains("import net.minecraft.util.profiling.Profiler;"), "a receiver the game no longer needs is dropped");
+        require(rewritten.contains("int n = VarInt.getByteSize(size(list.get(0)));"), "static -> static on another class, nested call arguments kept");
+        require(rewritten.contains("graphics.blitSprite(SPRITE, x, y, 9, 9);"), "a new parameter nothing fills is left to the compiler");
+
         System.out.println("PASS: mapping-backed preflight and guarded lookalikes");
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }
