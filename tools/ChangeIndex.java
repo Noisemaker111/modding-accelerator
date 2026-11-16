@@ -20,10 +20,12 @@ import java.util.zip.*;
  *
  * A pair touching a release before 1.14.4 (the legacy hubs, named with --pair) is read through
  * Forge's SRG data instead: SRG member ids stay the same across versions, so members are linked,
- * not guessed ("srg"), and the readable names are MCP's. SRG has no class ids, so a renamed class
- * is linked back up when each side is the other's best match by shared member keys (the by-name
- * hop's convention, keyed on ids); what no other class claims still reads as a removal plus an
- * addition. 1.14.4 has SRG data too, so 1.12.2 -> 1.14.4 is one SRG step; its Mojang-named side is
+ * not guessed ("srg"), and the readable names are MCP's. SRG has no class ids, so a renamed
+ * class is linked back up when each side is the other's best match by shared member keys:
+ * Jaccard at least half, or a clear winner (three shared stable ids with two distinctive,
+ * twice every rival's distinctive count, or a strict win with five or more) for a class
+ * that grew or shrank around the rename. Ids used across the lane carry no weight, ties
+ * link nothing, and what no other class claims still reads as a removal plus an addition. 1.14.4 has SRG data too, so 1.12.2 -> 1.14.4 is one SRG step; its Mojang-named side is
  * the neighbouring 1.14.4 -> 1.15 step.
  *
  * Single file plus tools/VersionMap.java (mapping parsers and the cached downloader), JDK 25:
@@ -438,10 +440,13 @@ public final class ChangeIndex {
 			for (var e : A.entrySet()) { Cls cb = B.get(e.getKey()); if (cb != null) { pairs.put(e.getValue(), cb); } }
 			if (d.linked.equals("srg")) {
 				// SRG has no class ids, so pair renamed classes by the member ids they share.
-				// The port path and this index use the same mutual-best and clear-winner rules.
+				// The port path and this index use the same mutual-best and clear-winner rules,
+				// rarity-weighted: ids used across the lane carry no rename evidence either way.
+				// The key maps cover both lanes whole so ubiquity counts every class, not just
+				// the renamed and the new; the gone and fresh sets stay the link candidates.
 				Map<String, Set<String>> goneKeys = new HashMap<>(), freshKeys = new HashMap<>();
-				for (String k : gone) { goneKeys.put(k, memberKeys(A.get(k))); }
-				for (String k : fresh) { freshKeys.put(k, memberKeys(B.get(k))); }
+				for (String k : A.keySet()) { goneKeys.put(k, memberKeys(A.get(k))); }
+				for (String k : B.keySet()) { freshKeys.put(k, memberKeys(B.get(k))); }
 				Map<String, String> links = VersionMap.Chain.linkBySharedIds(gone, fresh, goneKeys, freshKeys);
 				for (var e : links.entrySet()) {
 					pairs.put(A.get(e.getKey()), B.get(e.getValue()));

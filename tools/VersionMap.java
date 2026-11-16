@@ -1628,19 +1628,40 @@ public final class VersionMap {
         /**
          * Mutual-best Jaccard matches need at least half shared. A class that grew or shrank around
          * the Flattening can fall below that despite one obvious successor, so an unclaimed pair
-         * also links when its shared-id count is at least three and twice every rival's. Both
-         * directions must choose the same pair; a tie never resolves by iteration order.
+         * also links when it shares at least three stable member ids, two of them distinctive,
+         * with twice every rival's distinctive count (or a strict win with five or more, since
+         * abundant evidence needs less margin). Both directions must choose the same pair; a tie on
+         * either side links nothing. Shared ids used by more than MAX_ID_USES classes carry no
+         * weight: base-class and packet API ids repeat across whole hierarchies, while a rename
+         * keeps its own members' ids. Jaccard ties break by distinctive-id count, then by shared
+         * name tokens, and an unbreakable tie links nothing, so no link depends on iteration order.
          */
+        static final int MAX_ID_USES = 12;
+
         static Map<String, String> linkBySharedIds(
             Collection<String> gone,
             Collection<String> fresh,
             Map<String, Set<String>> goneIds,
             Map<String, Set<String>> freshIds
         ) {
+            Map<String, Integer> idUses = new HashMap<>();
+            for (Map<String, Set<String>> ids : List.of(goneIds, freshIds)) {
+                for (Set<String> s : ids.values()) {
+                    for (String k : s) {
+                        if (stableSrgMember(k)) {
+                            idUses.merge(k, 1, Integer::sum);
+                        }
+                    }
+                }
+            }
             Map<String, String> best = new HashMap<>(), bestBack = new HashMap<>();
             Map<String, Double> score = new HashMap<>(), scoreBack = new HashMap<>();
+            Map<String, Integer> bestRare = new HashMap<>(), bestBackRare = new HashMap<>();
+            Map<String, Integer> bestName = new HashMap<>(), bestBackName = new HashMap<>();
+            Set<String> deadJ = new HashSet<>(), deadJBack = new HashSet<>();
             Map<String, String> overlapBest = new HashMap<>(), overlapBack = new HashMap<>();
             Map<String, Integer> overlapCount = new HashMap<>(), overlapSecond = new HashMap<>();
+            Map<String, Integer> overlapTotal = new HashMap<>();
             Map<String, Integer> overlapBackCount = new HashMap<>(), overlapBackSecond = new HashMap<>();
             Map<String, Integer> stableGone = stableSrgCounts(goneIds), stableFresh = stableSrgCounts(freshIds);
             for (String g : gone) {
@@ -1653,38 +1674,76 @@ public final class VersionMap {
                     if (fn.size() < 4) {
                         continue;
                     }
-                    int common = 0, sharedIds = 0;
+                    int common = 0, sharedIds = 0, rareIds = 0;
                     for (String n : gn) {
                         if (fn.contains(n)) {
                             common++;
                             if (stableSrgMember(n)) {
                                 sharedIds++;
+                                if (idUses.getOrDefault(n, 0) <= MAX_ID_USES) {
+                                    rareIds++;
+                                }
                             }
                         }
                     }
                     double j = (double) common / (gn.size() + fn.size() - common);
-                    if (j > score.getOrDefault(g, 0.0)) {
+                    double sg = score.getOrDefault(g, 0.0);
+                    int sr = bestRare.getOrDefault(g, -1);
+                    if (j > sg) {
                         score.put(g, j);
                         best.put(g, f);
+                        bestRare.put(g, rareIds);
+                        bestName.put(g, nameSim(g, f));
+                        deadJ.remove(g);
+                    } else if (j > 0.0 && j == sg) {
+                        int ns = nameSim(g, f);
+                        int bns = bestName.getOrDefault(g, -1);
+                        if (rareIds > sr || (rareIds == sr && ns > bns)) {
+                            score.put(g, j);
+                            best.put(g, f);
+                            bestRare.put(g, rareIds);
+                            bestName.put(g, ns);
+                            deadJ.remove(g);
+                        } else if (rareIds == sr && ns == bns) {
+                            deadJ.add(g);
+                        }
                     }
-                    if (j > scoreBack.getOrDefault(f, 0.0)) {
+                    double sf = scoreBack.getOrDefault(f, 0.0);
+                    int sbr = bestBackRare.getOrDefault(f, -1);
+                    if (j > sf) {
                         scoreBack.put(f, j);
                         bestBack.put(f, g);
+                        bestBackRare.put(f, rareIds);
+                        bestBackName.put(f, nameSim(g, f));
+                        deadJBack.remove(f);
+                    } else if (j > 0.0 && j == sf) {
+                        int sbn = nameSim(g, f);
+                        int bbn = bestBackName.getOrDefault(f, -1);
+                        if (rareIds > sbr || (rareIds == sbr && sbn > bbn)) {
+                            scoreBack.put(f, j);
+                            bestBack.put(f, g);
+                            bestBackRare.put(f, rareIds);
+                            bestBackName.put(f, sbn);
+                            deadJBack.remove(f);
+                        } else if (rareIds == sbr && sbn == bbn) {
+                            deadJBack.add(f);
+                        }
                     }
                     if (stableGone.getOrDefault(g, 0) >= 4 && stableFresh.getOrDefault(f, 0) >= 4) {
-                        if (sharedIds > overlapCount.getOrDefault(g, 0)) {
+                        if (rareIds > overlapCount.getOrDefault(g, 0)) {
                             overlapSecond.put(g, overlapCount.getOrDefault(g, 0));
-                            overlapCount.put(g, sharedIds);
+                            overlapCount.put(g, rareIds);
+                            overlapTotal.put(g, sharedIds);
                             overlapBest.put(g, f);
-                        } else if (sharedIds > overlapSecond.getOrDefault(g, 0)) {
-                            overlapSecond.put(g, sharedIds);
+                        } else if (rareIds > overlapSecond.getOrDefault(g, 0)) {
+                            overlapSecond.put(g, rareIds);
                         }
-                        if (sharedIds > overlapBackCount.getOrDefault(f, 0)) {
+                        if (rareIds > overlapBackCount.getOrDefault(f, 0)) {
                             overlapBackSecond.put(f, overlapBackCount.getOrDefault(f, 0));
-                            overlapBackCount.put(f, sharedIds);
+                            overlapBackCount.put(f, rareIds);
                             overlapBack.put(f, g);
-                        } else if (sharedIds > overlapBackSecond.getOrDefault(f, 0)) {
-                            overlapBackSecond.put(f, sharedIds);
+                        } else if (rareIds > overlapBackSecond.getOrDefault(f, 0)) {
+                            overlapBackSecond.put(f, rareIds);
                         }
                     }
                 }
@@ -1692,15 +1751,18 @@ public final class VersionMap {
             Map<String, String> links = new HashMap<>();
             Set<String> claimed = new HashSet<>();
             for (var e : best.entrySet()) {
-                if (score.get(e.getKey()) >= 0.5 && e.getKey().equals(bestBack.get(e.getValue()))) {
+                if (score.get(e.getKey()) >= 0.5 && e.getKey().equals(bestBack.get(e.getValue()))
+                    && !deadJ.contains(e.getKey()) && !deadJBack.contains(e.getValue())) {
                     links.put(e.getKey(), e.getValue());
                     claimed.add(e.getValue());
                 }
             }
             for (var e : overlapBest.entrySet()) {
                 String g = e.getKey(), f = e.getValue();
-                int n = overlapCount.getOrDefault(g, 0), second = overlapSecond.getOrDefault(g, 0);
-                boolean clearWinner = n >= 3 && (second == 0 || n >= 2 * second);
+                int n = overlapCount.getOrDefault(e.getKey(), 0), second = overlapSecond.getOrDefault(e.getKey(), 0);
+                int t = overlapTotal.getOrDefault(e.getKey(), 0);
+                boolean clearWinner = t >= 3 && n >= 2
+                    && (second == 0 || n >= 2 * second || (n >= 5 && n > second));
                 int backSecond = overlapBackSecond.getOrDefault(f, 0);
                 boolean reverseClear = overlapBackCount.getOrDefault(f, 0) > backSecond;
                 if (!links.containsKey(g) && !claimed.contains(f) && clearWinner && reverseClear && g.equals(overlapBack.get(f))) {
@@ -1713,6 +1775,35 @@ public final class VersionMap {
 
         static boolean stableSrgMember(String key) {
             return key.startsWith("mfunc_") || key.startsWith("ffield_");
+        }
+
+        /** Shared CamelCase tokens of two classes' simple names, plural-insensitive. */
+        static int nameSim(String g, String f) {
+            Set<String> gt = tokens(g), ft = tokens(f);
+            int common = 0;
+            for (String t : gt) {
+                if (ft.contains(t)) {
+                    common++;
+                }
+            }
+            return common;
+        }
+
+        static Set<String> tokens(String internal) {
+            String simple = internal.substring(internal.lastIndexOf('/') + 1).replace('$', ' ');
+            Set<String> out = new HashSet<>();
+            for (String part : simple.split("[^A-Za-z0-9]+")) {
+                for (String w : part.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[0-9])(?=[A-Za-z])|(?<=[A-Za-z])(?=[0-9])")) {
+                    String t = w.toLowerCase(Locale.ROOT);
+                    if (t.endsWith("s") && t.length() > 3 && !t.endsWith("ss")) {
+                        t = t.substring(0, t.length() - 1);
+                    }
+                    if (!t.isEmpty()) {
+                        out.add(t);
+                    }
+                }
+            }
+            return out;
         }
 
         static Map<String, Integer> stableSrgCounts(Map<String, Set<String>> ids) {

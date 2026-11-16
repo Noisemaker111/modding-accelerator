@@ -188,6 +188,137 @@ FD: bbb/b net/minecraft/block/Block/field_5_b
             ).isEmpty(),
             "name-only overlaps cannot satisfy the clear-winner rule's stable-id evidence"
         );
+        Set<String> freqOld = new HashSet<>(List.of(
+            "mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d", "mfunc_5_e", "mfunc_6_f"
+        ));
+        Set<String> freqNew = new HashSet<>(List.of("mfunc_1_a", "mfunc_2_b", "mfunc_3_c"));
+        for (int id = 101; id <= 113; id++) {
+            freqNew.add("mfunc_" + id + "_x");
+        }
+        Map<String, Set<String>> freqFresh = new HashMap<>();
+        freqFresh.put("new", freqNew);
+        for (int d = 0; d < 13; d++) {
+            freqFresh.put(
+                "decoy" + d,
+                new HashSet<>(List.of("mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_9" + d + "_q"))
+            );
+        }
+        check(
+            VersionMap.Chain.linkBySharedIds(
+                Set.of("old"), new HashSet<>(freqFresh.keySet()), Map.of("old", freqOld), freqFresh
+            ).isEmpty(),
+            "three shared ids used across the lane carry no rename weight even with no rival"
+        );
+        check(
+            VersionMap.Chain.linkBySharedIds(
+                Set.of("old"), Set.of("new"), Map.of("old", freqOld), Map.of("new", freqNew)
+            ).equals(Map.of("old", "new")),
+            "the same overlap links when its ids are distinctive"
+        );
+        Set<String> tieOld = new HashSet<>(List.of("mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d"));
+        Set<String> tieF1 = new HashSet<>(List.of(
+            "mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d", "mfunc_5_e", "mfunc_6_f", "mfunc_7_g", "mfunc_8_h"
+        ));
+        Set<String> tieF2 = new HashSet<>(List.of(
+            "mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_10_r", "mfunc_11_s"
+        ));
+        Map<String, Set<String>> tieFresh = new HashMap<>();
+        tieFresh.put("n1", tieF1);
+        tieFresh.put("n2", tieF2);
+        Map<String, String> tieFwd = VersionMap.Chain.linkBySharedIds(
+            new LinkedHashSet<>(List.of("old")),
+            new LinkedHashSet<>(List.of("n1", "n2")),
+            Map.of("old", tieOld),
+            tieFresh
+        );
+        Map<String, String> tieRev = VersionMap.Chain.linkBySharedIds(
+            new LinkedHashSet<>(List.of("old")),
+            new LinkedHashSet<>(List.of("n2", "n1")),
+            Map.of("old", tieOld),
+            tieFresh
+        );
+        check(
+            tieFwd.equals(Map.of("old", "n1")) && tieRev.equals(Map.of("old", "n1")),
+            "a Jaccard tie breaks by distinctive-id count, identically whatever order the classes arrive in"
+        );
+        Set<String> marginOld = new HashSet<>(List.of(
+            "mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d", "mfunc_5_e", "mfunc_6_f", "mfunc_7_g", "mfunc_8_h"
+        ));
+        Set<String> marginNew = new HashSet<>(List.of(
+            "mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d", "mfunc_5_e", "mfunc_9_x", "mfunc_10_y", "mfunc_11_z"
+        ));
+        Set<String> marginRival = new HashSet<>(List.of(
+            "mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_12_p", "mfunc_13_q", "mfunc_14_r", "mfunc_15_s", "mfunc_16_t"
+        ));
+        Map<String, Set<String>> marginFresh = new HashMap<>();
+        marginFresh.put("new", marginNew);
+        marginFresh.put("rival", marginRival);
+        Map<String, String> marginFwd = VersionMap.Chain.linkBySharedIds(
+            new LinkedHashSet<>(List.of("old")),
+            new LinkedHashSet<>(List.of("new", "rival")),
+            Map.of("old", marginOld),
+            marginFresh
+        );
+        Map<String, String> marginRev = VersionMap.Chain.linkBySharedIds(
+            new LinkedHashSet<>(List.of("old")),
+            new LinkedHashSet<>(List.of("rival", "new")),
+            Map.of("old", marginOld),
+            marginFresh
+        );
+        check(
+            marginFwd.equals(Map.of("old", "new")) && marginRev.equals(Map.of("old", "new")),
+            "five shared distinctive ids link on a strict win over a three-id rival, either arrival order"
+        );
+        Set<String> tieKeys = new HashSet<>(List.of("mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d"));
+        Map<String, Set<String>> twinFresh = Map.of("n1", tieKeys, "n2", new HashSet<>(tieKeys));
+        Map<String, String> twinFwd = VersionMap.Chain.linkBySharedIds(
+            new LinkedHashSet<>(List.of("old")),
+            new LinkedHashSet<>(List.of("n1", "n2")),
+            Map.of("old", tieKeys),
+            twinFresh
+        );
+        Map<String, String> twinRev = VersionMap.Chain.linkBySharedIds(
+            new LinkedHashSet<>(List.of("old")),
+            new LinkedHashSet<>(List.of("n2", "n1")),
+            Map.of("old", tieKeys),
+            twinFresh
+        );
+        check(
+            twinFwd.isEmpty() && twinRev.isEmpty(),
+            "a tie no evidence breaks links neither candidate, identically whatever order the classes arrive in"
+        );
+        check(
+            VersionMap.Chain.nameSim("net/m/RecipesArmorDyes", "net/m/BannerDuplicateRecipe") == 1
+                && VersionMap.Chain.nameSim("net/m/BlockDoor$EnumDoorHalf", "net/m/state/DoubleBlockHalf") == 2,
+            "shared name tokens count stemmed words, so recipes matches recipe and door-half matches"
+        );
+        Set<String> nameOld = new HashSet<>(List.of("mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d"));
+        Set<String> nameF1 = new HashSet<>(List.of(
+            "mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d", "mfunc_5_e", "mfunc_6_f", "mfunc_7_g", "mfunc_8_h"
+        ));
+        Set<String> nameF2 = new HashSet<>(List.of(
+            "mfunc_1_a", "mfunc_2_b", "mfunc_3_c", "mfunc_4_d", "mfunc_11_r", "mfunc_12_s", "mfunc_13_t", "mfunc_14_u"
+        ));
+        Map<String, Set<String>> nameFresh = new HashMap<>();
+        nameFresh.put("net/m/NewWidget", nameF1);
+        nameFresh.put("net/m/OtherGadget", nameF2);
+        Map<String, String> nameFwd = VersionMap.Chain.linkBySharedIds(
+            new LinkedHashSet<>(List.of("net/m/OldWidget")),
+            new LinkedHashSet<>(List.of("net/m/NewWidget", "net/m/OtherGadget")),
+            Map.of("net/m/OldWidget", nameOld),
+            nameFresh
+        );
+        Map<String, String> nameRev = VersionMap.Chain.linkBySharedIds(
+            new LinkedHashSet<>(List.of("net/m/OldWidget")),
+            new LinkedHashSet<>(List.of("net/m/OtherGadget", "net/m/NewWidget")),
+            Map.of("net/m/OldWidget", nameOld),
+            nameFresh
+        );
+        check(
+            nameFwd.equals(Map.of("net/m/OldWidget", "net/m/NewWidget"))
+                && nameRev.equals(Map.of("net/m/OldWidget", "net/m/NewWidget")),
+            "a tie on ids and counts breaks by shared name tokens, identically either arrival order"
+        );
         VersionMap.Chain chain = VersionMap.Chain.of(List.of("1.7.10", "1.12.2"), v ->
             v.equals("1.7.10") ? oldT : newT
         );
