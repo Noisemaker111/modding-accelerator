@@ -2638,7 +2638,12 @@
     "net.neoforged.neoforge.common.util.INBTSerializable": "common.util.INBTSerializable",
     "net.neoforged.neoforge.client.gui.widget.ExtendedSlider": "ExtendedSlider",
     "net.neoforged.neoforge.common.util.RecipeMatcher": "common.util.RecipeMatcher",
-    "net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions": "IClientFluidTypeExtensions"
+    "net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions": "IClientFluidTypeExtensions",
+    "net.neoforged.neoforge.common.world.BiomeModifier": "world.BiomeModifier",
+    "net.neoforged.neoforge.common.world.ModifiableBiomeInfo": "world.ModifiableBiomeInfo",
+    "net.neoforged.neoforge.common.world.BiomeGenerationSettingsBuilder": "world.BiomeGenerationSettingsBuilder",
+    "net.neoforged.neoforge.common.world.MobSpawnSettingsBuilder": "world.MobSpawnSettingsBuilder",
+    "net.neoforged.neoforge.common.world.BiomeModifiers": "world.BiomeModifiers"
    },
    "symbols": {
     "neoforge": [
