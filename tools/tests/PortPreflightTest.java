@@ -312,6 +312,37 @@ public final class PortPreflightTest {
         require(sounded.contains("Direction.getApproximateNearest(x, y, z)") && sounded.contains("Direction.getNearest(1, 2, 3)"), "the renamed overload, by its argument types: " + sounded);
         require(sounded.contains("ClonedLevelChunk.PackedTicks t"), "a nested class through the mod's subclass: " + sounded);
 
+        // An @Override whose method gained a parameter or narrowed one: the declaration and its super call follow; one whose
+        // return type changed is left to the compiler.
+        Path sig = Files.createDirectories(scratch.resolve("override-signatures"));
+        Path sigMap = scratch.resolve("override-signatures.json");
+        Files.writeString(sigMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "signatures": [
+                { "owner": "net.minecraft.world.entity.Mob", "from": "doHurtTarget", "desc": "(Lnet/minecraft/world/entity/Entity;)Z", "to": "doHurtTarget", "newDesc": "(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/Entity;)Z" },
+                { "owner": "net.minecraft.world.level.block.Block", "from": "wasExploded", "desc": "(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/Explosion;)V", "to": "wasExploded", "newDesc": "(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/Explosion;)V" },
+                { "owner": "net.minecraft.world.entity.Entity", "from": "hurt", "desc": "(Lnet/minecraft/world/damagesource/DamageSource;F)Z", "to": "hurt", "newDesc": "(Lnet/minecraft/world/damagesource/DamageSource;F)V" }
+              ]
+            }
+            """);
+        String ghost = "package mod;\n\nclass Ghost extends Monster {\n  @Override\n  public boolean doHurtTarget(Entity target) {\n    return super.doHurtTarget(target) && target.isAlive();\n  }\n"
+            + "  @Override\n  public boolean hurt(DamageSource source, float amount) {\n    return false;\n  }\n}\n";
+        String stone = "package mod;\n\nclass Stone extends Block {\n  @Override\n  public void wasExploded(Level level, BlockPos pos, Explosion explosion) {\n    super.wasExploded(level, pos, explosion);\n  }\n}\n";
+        Files.writeString(sig.resolve("Ghost.java"), ghost);
+        Files.writeString(sig.resolve("Stone.java"), stone);
+        Path sigLog = scratch.resolve("override-signatures.log");
+        String err = ": error: method does not override or implement a method from a supertype\n  @Override\n  ^\n";
+        Files.writeString(sigLog, sig.resolve("Ghost.java") + ":4" + err + sig.resolve("Ghost.java") + ":8" + err + sig.resolve("Stone.java") + ":4" + err);
+        VersionMap.SUPERS.put("Ghost", Set.of("Monster", "PathfinderMob", "Mob", "LivingEntity", "Entity"));
+        VersionMap.SUPERS.put("Stone", Set.of("Block", "BlockBehaviour"));
+        VersionMap.Fix.run(sigMap, sigLog, sig, false, null);
+        VersionMap.SUPERS.clear();
+        String ghosted = Files.readString(sig.resolve("Ghost.java")), stoned = Files.readString(sig.resolve("Stone.java"));
+        require(ghosted.contains("public boolean doHurtTarget(ServerLevel serverLevel, Entity target) {") && ghosted.contains("super.doHurtTarget(serverLevel, target)"), "an added parameter, passed on by super: " + ghosted);
+        require(ghosted.contains("import net.minecraft.server.level.ServerLevel;"), "the new parameter's type imported");
+        require(ghosted.contains("public boolean hurt(DamageSource source, float amount)"), "a changed return type is left alone");
+        require(stoned.contains("public void wasExploded(ServerLevel level, BlockPos pos, Explosion explosion)") && stoned.contains("super.wasExploded(level, pos, explosion)"), "a narrowed type keeps the mod's name: " + stoned);
+
         // A class the game replaced: the file that imports it switches import and uses; a mod's own class of that name stays.
         Path cr = Files.createDirectories(scratch.resolve("class-rewrites"));
         Path crMap = scratch.resolve("class-rewrites.json");

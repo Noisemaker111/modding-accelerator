@@ -1633,6 +1633,185 @@ public final class VersionMap {
             return text.substring(0, at) + nl + "import " + fqn + ";" + text.substring(at);
         }
 
+        /**
+         * The @Override declared at (or just below) the error's line with the parameter list of the supertype method's new
+         * signature, or null. The class is the nearest one declared above; its supertypes come from --supers.
+         */
+        static String overrideSignature(String text, Err e, Known k, Set<String> importsOut) {
+            String[] lines = text.split("\r?\n", -1);
+            String enclosing = null;
+            for (int back = Math.min(lines.length, e.line()) - 1; back >= 0 && enclosing == null; back--) {
+                Matcher type = Pattern.compile("\\b(?:class|enum|record)\\s+(\\w+)").matcher(lines[back]);
+                if (type.find()) {
+                    enclosing = type.group(1);
+                }
+            }
+            Set<String> supers = enclosing == null ? null : SUPERS.get(enclosing);
+            if (supers == null) {
+                return null;
+            }
+            int lineStart = 0;
+            for (int i = 1; i < e.line(); i++) {
+                lineStart = text.indexOf('\n', lineStart) + 1;
+            }
+            Matcher declared = Pattern.compile(
+                "(?:(?:public|protected|private|static|final|synchronized)\\s+)*([\\w.<>\\[\\], ?]+?)\\s+(\\w+)\\s*\\("
+            ).matcher(text);
+            declared.region(lineStart, Math.min(text.length(), lineStart + 600));
+            if (!declared.find() || text.substring(lineStart, declared.start()).contains(";")) {
+                return null;
+            }
+            String name = declared.group(2);
+            int open = declared.end() - 1;
+            int close = closingParen(text, open);
+            if (close < 0) {
+                return null;
+            }
+            List<String[]> params = new ArrayList<>(); // {type, name}
+            for (String p : topLevelArguments(text.substring(open + 1, close))) {
+                String[] words = p.strip().replaceAll("@\\w+(\\([^)]*\\))?\\s*", "").replaceAll("\\bfinal\\s+", "").split("\\s+");
+                if (words.length < 2) {
+                    return null;
+                }
+                params.add(new String[] { String.join(" ", Arrays.copyOf(words, words.length - 1)), words[words.length - 1] });
+            }
+            Set<String> fits = new LinkedHashSet<>();
+            String newDescKept = null;
+            for (String owner : supers) {
+                for (String transition : k.sigTransitions.getOrDefault(owner + "." + name, Set.of())) {
+                    String[] t = transition.split(" -> ");
+                    if (t.length != 2 || !t[0].startsWith("(") || !t[1].startsWith("(")) {
+                        continue;
+                    }
+                    if (!t[0].substring(t[0].indexOf(')')).equals(t[1].substring(t[1].indexOf(')')))) {
+                        continue; // the return type changed: not a parameter change alone
+                    }
+                    List<String> old = paramTypes(t[0]);
+                    if (old.size() != params.size()) {
+                        continue;
+                    }
+                    boolean same = true;
+                    for (int i = 0; i < old.size(); i++) {
+                        String declaredType = params.get(i)[0].replaceAll("<.*", "").replaceAll(".*\\.", "");
+                        String oldType = javaTypeName(k.classFqn.getOrDefault(old.get(i), old.get(i)));
+                        String oldOriginal = javaTypeName(old.get(i));
+                        same &= declaredType.equals(oldType) || declaredType.equals(oldOriginal);
+                    }
+                    if (same) {
+                        fits.add(t[0] + " -> " + t[1]);
+                        newDescKept = t[1];
+                    }
+                }
+            }
+            if (fits.size() != 1) {
+                return null;
+            }
+            List<String> old = paramTypes(fits.iterator().next().split(" -> ")[0]);
+            List<String> neu = paramTypes(newDescKept);
+            // Which new parameter each old one became: the same type (in order, one way), or, with as many parameters,
+            // the same place (a type that changed in place).
+            List<String> oldSimple = new ArrayList<>(), newSimple = new ArrayList<>();
+            for (String t : old) {
+                oldSimple.add(javaTypeName(k.classFqn.getOrDefault(t, t)));
+            }
+            for (String t : neu) {
+                newSimple.add(javaTypeName(t));
+            }
+            int[] at = new int[old.size()];
+            if (neu.size() > old.size()) {
+                int[] kept = uniqueEmbedding(newSimple, oldSimple);
+                if (kept == null) {
+                    return null;
+                }
+                at = kept;
+            } else if (neu.size() == old.size()) {
+                for (int i = 0; i < at.length; i++) {
+                    at[i] = i;
+                }
+            } else {
+                return null;
+            }
+            String[] names = new String[neu.size()];
+            String[] types = new String[neu.size()];
+            Set<String> used = new HashSet<>();
+            for (String[] p : params) {
+                used.add(p[1]);
+            }
+            for (int i = 0; i < old.size(); i++) {
+                names[at[i]] = params.get(i)[1];
+                boolean changed = !oldSimple.get(i).equals(newSimple.get(at[i]));
+                types[at[i]] = changed ? newSimple.get(at[i]) : params.get(i)[0];
+                if (changed && neu.get(at[i]).contains(".")) {
+                    importsOut.add(neu.get(at[i]).replaceAll("\\$.*", ""));
+                }
+            }
+            for (int j = 0; j < neu.size(); j++) {
+                if (names[j] != null) {
+                    continue;
+                }
+                String type = newSimple.get(j);
+                String fresh = Character.toLowerCase(type.charAt(0)) + type.substring(1).replaceAll("\\W", "");
+                while (used.contains(fresh)) {
+                    fresh = fresh + "2";
+                }
+                used.add(fresh);
+                names[j] = fresh;
+                types[j] = type;
+                if (neu.get(j).contains(".")) {
+                    importsOut.add(neu.get(j).replaceAll("\\$.*", ""));
+                }
+            }
+            List<String> declaration = new ArrayList<>();
+            for (int j = 0; j < neu.size(); j++) {
+                declaration.add(types[j] + " " + names[j]);
+            }
+            // super.name(...) inside the method passes the new parameters too.
+            int bodyOpen = text.indexOf('{', close);
+            int bodyClose = bodyOpen < 0 ? -1 : closingBrace(text, bodyOpen);
+            String body = bodyOpen < 0 || bodyClose < 0 ? "" : text.substring(bodyOpen, bodyClose + 1);
+            StringBuilder newBody = new StringBuilder();
+            Matcher superCall = Pattern.compile("\\bsuper\\s*\\.\\s*" + Pattern.quote(name) + "\\s*\\(").matcher(body);
+            int done = 0;
+            while (superCall.find()) {
+                int callOpen = superCall.end() - 1;
+                int callClose = closingParen(body, callOpen);
+                if (callClose < 0) {
+                    break;
+                }
+                List<String> args = new ArrayList<>();
+                for (String a : topLevelArguments(body.substring(callOpen + 1, callClose))) {
+                    args.add(a.strip());
+                }
+                if (args.size() != old.size()) {
+                    continue;
+                }
+                String[] passed = names.clone();
+                for (int i = 0; i < old.size(); i++) {
+                    passed[at[i]] = args.get(i);
+                }
+                newBody.append(body, done, callOpen + 1).append(String.join(", ", passed)).append(')');
+                done = callClose + 1;
+            }
+            newBody.append(body.substring(done));
+            String out = text.substring(0, open + 1) + String.join(", ", declaration) + text.substring(close, bodyOpen < 0 ? close : bodyOpen);
+            return bodyOpen < 0 ? out + text.substring(close) : out + newBody + text.substring(bodyClose + 1);
+        }
+
+        static int closingBrace(String text, int open) {
+            int depth = 0;
+            for (int i = open; i < text.length(); i++) {
+                char ch = text.charAt(i);
+                if (ch == '"') {
+                    i = stringEnd(text, i);
+                } else if (ch == '{') {
+                    depth++;
+                } else if (ch == '}' && --depth == 0) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
         /** A descriptor type as javac prints it in a message: double, Vec3, int[], Inner (nested classes by their own name). */
         static String javaTypeName(String descType) {
             String dims = "";
@@ -2065,6 +2244,40 @@ public final class VersionMap {
                     break;
                 }
             }
+            // 2b'. An @Override whose method the game gave new parameters with the same name and return type (1.21.2:
+            // Mob.doHurtTarget(Entity) -> doHurtTarget(ServerLevel, Entity); Block.wasExploded(Level, ...) -> (ServerLevel,
+            // ...)): the declaration takes the new parameter list (an added parameter gets a fresh name, a type that
+            // changed in place keeps the mod's name) and super calls inside pass the same. Read from the class's own
+            // supertypes (--supers); a return type that changed is left to the compiler.
+            Map<Path, Set<String>> overrideImports = new LinkedHashMap<>();
+            List<Err> overrideOrder = new ArrayList<>(readErrors(log));
+            overrideOrder.sort(Comparator.comparing(Err::file).thenComparing(Comparator.comparingInt(Err::line).reversed()));
+            for (Err e : overrideOrder) {
+                if (!e.message().startsWith("method does not override or implement a method from a supertype")) {
+                    continue;
+                }
+                Path f = sourcePath(e, repo);
+                if (f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                Set<String> needed = new LinkedHashSet<>();
+                String rewritten = overrideSignature(text, e, k, needed);
+                if (rewritten != null && !rewritten.equals(text)) {
+                    texts.put(f, rewritten);
+                    overrideImports.computeIfAbsent(f, x -> new LinkedHashSet<>()).addAll(needed);
+                    replacements++;
+                    byKind.merge("override signature", 1, Integer::sum);
+                }
+            }
+            for (var entry : overrideImports.entrySet()) {
+                String text = texts.get(entry.getKey());
+                for (String fqn : entry.getValue()) {
+                    text = withImport(text, fqn);
+                }
+                texts.put(entry.getKey(), text);
+            }
+
             // 2c. A call whose method only lost parameters (the game's new descriptor keeps some of the old parameter types,
             // in order, matched exactly one way): the arguments for the dropped parameters go, and a rename is applied.
             Pattern applied = Pattern.compile("^method (\\w+) in (?:class|interface) ([\\w.$]+)(?:<[^>]*>)? cannot be applied to given types");
