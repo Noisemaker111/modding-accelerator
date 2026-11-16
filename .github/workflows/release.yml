@@ -2,7 +2,8 @@ name: Release
 # One button: Actions > Release > Run workflow, on main. It numbers the release from the last one (0.MINOR.PATCH,
 # CONTRIBUTING.md says which to pick), builds the desktop app for Windows and Linux, packages it with the command
 # line into the portable ZIP, runs the self-test and the extracted-ZIP acceptance test on that exact build, then tags
-# the commit and publishes the release with notes from the PRs merged since the last one. Nothing is tagged or
+# the commit and publishes it. The notes are .github/whats-new.md, with the PRs merged since the last release folded
+# underneath; it refuses to publish when that file hasn't changed since the last release. Nothing is tagged or
 # published unless every step passes. Run on any other branch, it is a rehearsal: every step but tag and publish.
 on:
   workflow_dispatch:
@@ -12,10 +13,6 @@ on:
         type: choice
         options: [minor, patch]
         default: minor
-      highlights:
-        description: "Optional: a few lines for the top of the notes (what's new, in plain words)."
-        type: string
-        required: false
 permissions:
   contents: write
 concurrency:
@@ -98,6 +95,23 @@ jobs:
         run: java -jar build/distributions/mmt.jar self-test --root . --json
       - name: Extracted ZIP acceptance
         run: java tools/tests/PackageAcceptanceTest.java build/distributions/mmt-portable.zip build/distributions/mmt-portable.zip.sha256 "${{ runner.temp }}"
+      - name: Notes from what's new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$PREVIOUS" ] && git cat-file -e "$PREVIOUS:.github/whats-new.md" 2>/dev/null              && git diff --quiet "$PREVIOUS" HEAD -- .github/whats-new.md; then
+            echo ".github/whats-new.md is the same as in $PREVIOUS. Write what's new in this release there, merge, then release."
+            exit 1
+          fi
+          notes="${{ runner.temp }}/notes.md"
+          cp .github/whats-new.md "$notes"
+          args=(-f tag_name="v$VERSION" -f target_commitish="$GITHUB_SHA")
+          if [ -n "$PREVIOUS" ]; then args+=(-f previous_tag_name="$PREVIOUS"); fi
+          { echo; echo "<details><summary>Every change merged in this release</summary>"; echo
+            gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" "${args[@]}" --jq .body
+            echo; echo "</details>"; } >> "$notes"
+          echo "NOTES=$notes" >> "$GITHUB_ENV"
+          cat "$notes"
       - name: Rehearsal, not published
         if: github.ref != 'refs/heads/main'
         run: echo "Built and checked $VERSION from $GITHUB_REF_NAME; only a run on main tags and publishes."
@@ -105,14 +119,11 @@ jobs:
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-          HIGHLIGHTS: ${{ inputs.highlights }}
         run: |
           out="${{ runner.temp }}/assets"; mkdir -p "$out"
           cp build/distributions/mmt.jar "$out/mmt-$VERSION.jar"
           cp build/distributions/mmt-portable.zip "$out/mmt-$VERSION-portable.zip"
           cd "$out"
           for f in *.jar *.zip; do sha256sum "$f" > "$f.sha256"; done
-          start=()
-          if [ -n "$PREVIOUS" ]; then start=(--notes-start-tag "$PREVIOUS"); fi
           gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
-            --title "Minecraft Modding Tools $VERSION" --notes "$HIGHLIGHTS" --generate-notes "${start[@]}" *
+            --title "Minecraft Modding Tools $VERSION" --notes-file "$NOTES" *
