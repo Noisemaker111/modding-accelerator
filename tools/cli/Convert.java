@@ -4173,6 +4173,24 @@ final class Convert {
         return moved;
     }
 
+    /**
+     * A mod dependency held in a variable (def ctDep = "...:CraftTweaker-fabric-...") and named by it (compileOnly ctDep):
+     * the configurations that name a variable whose value convert moved to the Fabric build become Loom's remapping ones.
+     */
+    static String remapVariableDependencies(String body) {
+        Matcher def = Pattern.compile("(?m)^\\s*def\\s+(\\w+)\\s*=\\s*[\"']([^\"']+)[\"']").matcher(body);
+        String out = body;
+        while (def.find()) {
+            String coordinate = def.group(2);
+            // On the way to Fabric, a variable whose coordinate names a Fabric build holds a Fabric mod.
+            if (!coordinate.toLowerCase(Locale.ROOT).contains("fabric")) continue;
+            out = Pattern.compile("(?m)^(\\s*)(implementation|compileOnly|runtimeOnly|localRuntime|api)(\\s*\\(?\\s*" + Pattern.quote(def.group(1)) + "\\b)")
+                .matcher(out)
+                .replaceAll(m -> Matcher.quoteReplacement(m.group(1) + "mod" + Character.toUpperCase(m.group(2).charAt(0)) + m.group(2).substring(1) + m.group(3)));
+        }
+        return out;
+    }
+
     /** Loom's remapping configurations for a mod dependency (before 26.1): implementation becomes modImplementation and so on. */
     static String remapConfiguration(String line) {
         Matcher m = Pattern.compile("\\b(implementation|compileOnly|runtimeOnly|localRuntime|api)(?=\\s*[(\"'])").matcher(line);
@@ -4442,11 +4460,12 @@ final class Convert {
                 body.append(raw);
             }
             if (body.length() > 0 && body.charAt(body.length() - 1) != '\n') body.append('\n');
+            String converted = remap ? remapVariableDependencies(body.toString()) : body.toString();
             gradle =
                 gradle.substring(0, deps[2] + 1) +
                 "\n" +
                 add +
-                body.toString().replaceAll("^\\n+", "") +
+                converted.replaceAll("^\\n+", "") +
                 gradle.substring(deps[3] - 1);
         } else gradle += "\ndependencies {\n" + add + "}\n";
         if (!restored.isEmpty()) {

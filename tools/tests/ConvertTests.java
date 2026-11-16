@@ -247,6 +247,13 @@ public final class ConvertTests {
             wildcard.startsWith("import demo.bridge.RegisterMenuScreensEvent;\nimport demo.bridge.EntityRenderersEvent;\nimport java.util.*;\n") && !wildcard.contains("ScreenEvent;"),
             "a wildcard import of a NeoForge package imports each mirrored class of it the file names, and no other: " + wildcard
         );
+        String variables = Convert.remapVariableDependencies(
+            "    def ctDep = \"com.blamejared:CraftTweaker-fabric-1.21.1:1\"\n    compileOnly ctDep\n    runtimeOnly(ctDep)\n    def lib = \"a:b:1\"\n    implementation lib\n"
+        );
+        check(
+            variables.contains("    modCompileOnly ctDep\n") && variables.contains("    modRuntimeOnly(ctDep)\n") && variables.contains("    implementation lib\n"),
+            "a Fabric mod held in a variable is named in Loom's remapping configurations, another library is not: " + variables
+        );
         String neoData = "{\"type\":\"minecraft:crafting_shaped\",\"neoforge:conditions\":[{\"type\":\"neoforge:mod_loaded\",\"modid\":\"create\"}," +
             "{\"type\":\"neoforge:not\",\"value\":{\"type\":\"neoforge:mod_loaded\",\"modid\":\"jumbofurnace\"}},{\"type\":\"neoforge:tag_empty\",\"tag\":\"c:ingots/zinc\"}]}";
         DataConditions dataConditions = new DataConditions();
