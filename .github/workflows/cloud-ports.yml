@@ -5,8 +5,8 @@ name: Cloud port board
 # could not run, as port_board.py exits. Each uploads its board row, the port's receipt and mmt's logs; the
 # summary job joins the rows. No Gradle cache: every case has its own Gradle and game setup (about 1 GB each), and
 # the repository's caches are already past GitHub's 10 GB limit, so a case's setup is measured cold. No retries.
-# corpus=sweep runs the port sweep instead (python bench/sweep.py): one job per mod of bench/sweep/corpus.json, each
-# porting that mod over every jump of its plan and starting each port that builds in a hidden game on a virtual display
+# corpus=sweep runs the port sweep instead (python bench/sweep.py): one job per mod of bench/sweep/corpus.json and
+# jump of its plan (MOD@TO), each porting it and starting each port that builds in a hidden game on a virtual display
 # with software OpenGL; the summary job joins every run into the ranked tables (sweep.py summary).
 run-name: "Cloud ports (${{ inputs.corpus }}): ${{ inputs.cases }} ${{ inputs.request }}"
 on:
@@ -38,8 +38,11 @@ jobs:
         run: |
           python3 - <<'EOF' >> "$GITHUB_OUTPUT"
           import json, os
-          if os.environ["CORPUS"] == "sweep":
-              cases = [m["id"] for m in json.load(open("bench/sweep/corpus.json", encoding="utf-8"))["mods"]]
+          import sys
+          sweep = os.environ["CORPUS"] == "sweep"
+          if sweep:
+              mods = json.load(open("bench/sweep/corpus.json", encoding="utf-8"))["mods"]
+              cases = [m["id"] for m in mods]
           else:
               cases = [c["id"] for c in json.load(open("bench/port-cases.json", encoding="utf-8"))["cases"]]
           wanted = [x.strip() for x in os.environ["CASES"].split(",") if x.strip()]
@@ -48,6 +51,11 @@ jobs:
               if unknown:
                   raise SystemExit(f"No case {unknown} in the {os.environ['CORPUS']} corpus; it has {cases}")
               cases = wanted
+          if sweep:
+              # One job per mod and jump, so a big mod's jumps run side by side instead of one after another.
+              sys.path.insert(0, "bench")
+              import sweep as S
+              cases = [f"{m['id']}@{to}" for m in mods if m["id"] in cases for to, _ in S.plan(m)]
           print("cases=" + json.dumps(cases))
           EOF
   port:
@@ -102,10 +110,10 @@ jobs:
       matrix:
         mod: ${{ fromJSON(needs.plan.outputs.cases) }}
     runs-on: ubuntu-latest
-    # A mod has up to three jumps, each a fresh port; a cold NeoForge port to 26.3 can take most of an hour.
-    timeout-minutes: 240
+    # One jump of one mod (MOD@TO), a fresh port; a cold NeoForge port of a big mod to 26.3 can take over an hour.
+    timeout-minutes: 150
     env:
-      MOD: ${{ matrix.mod }}
+      CASE: ${{ matrix.mod }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -122,8 +130,8 @@ jobs:
           Xvfb :99 -screen 0 1280x720x24 -nolisten tcp &
           echo "DISPLAY=:99" >> "$GITHUB_ENV"
           ./mmt preferences --background on --quiet on
-      - name: Port the mod over every jump, and start each port that builds
-        run: python bench/sweep.py run --tag cloud --only "$MOD" --jobs 1 --timeout 4800
+      - name: Port the mod over this jump, and start the port if it builds
+        run: python bench/sweep.py run --tag cloud --only "${CASE%@*}" --to "${CASE#*@}" --jobs 1 --timeout 4800
       - name: Runs and logs
         if: always()
         uses: actions/upload-artifact@v4
