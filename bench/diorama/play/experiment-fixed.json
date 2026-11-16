@@ -31,11 +31,11 @@
   }
  ],
  "measure": {
-  "seconds": 30,
+  "seconds": 15,
   "warmup": 0,
   "probes": "scopes.json",
   "metric": {
-   "threadCpu": "^diorama-baker"
+   "threadCpu": "^diorama-baker-fixed$"
   },
   "scopes": [
    {
