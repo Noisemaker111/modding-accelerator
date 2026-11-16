@@ -2408,7 +2408,8 @@
     "net.neoforged.neoforge.common.data.ExistingFileHelper": "data.ExistingFileHelper",
     "net.neoforged.neoforge.common.data.SpriteSourceProvider": "data.SpriteSourceProvider",
     "net.neoforged.neoforge.data.loading.DatagenModLoader": "data.DatagenModLoader",
-    "net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent": "RegisterParticleProvidersEvent"
+    "net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent": "RegisterParticleProvidersEvent",
+    "net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent": "RegisterClientTooltipComponentFactoriesEvent"
    },
    "symbols": {
     "neoforge": [
