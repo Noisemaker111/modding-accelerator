@@ -986,6 +986,17 @@ public final class VersionMap {
             if (required != null && found != null) {
                 REQUIRED_FOUND.put(m.group(1) + ":" + m.group(2), new String[] { required, found });
             }
+            // "no suitable method found for NAME(found)": each candidate javac lists, as its parameter list.
+            List<String> candidates = new ArrayList<>();
+            for (int j = i + 1; j < lines.size() && !head.matcher(lines.get(j)).find(); j++) {
+                Matcher c = CANDIDATE.matcher(lines.get(j));
+                if (c.find()) {
+                    candidates.add(c.group(1));
+                }
+            }
+            if (!candidates.isEmpty()) {
+                CANDIDATES.put(m.group(1) + ":" + m.group(2), candidates);
+            }
             Err e = new Err(m.group(1), Integer.parseInt(m.group(2)), m.group(3), source, caret, symbol, location);
             seen.putIfAbsent(e.file() + ":" + e.line() + ":" + e.caret() + ":" + e.message() + ":" + symbol, e);
         }
@@ -994,6 +1005,26 @@ public final class VersionMap {
 
     /** javac's "required:" and "found:" argument types for a call it reports at file:line (one candidate only). */
     static final Map<String, String[]> REQUIRED_FOUND = new HashMap<>();
+
+    /** The parameter lists of the candidates javac names for a call it reports at file:line ("method X.of(A,B) is not applicable"). */
+    static final Map<String, List<String>> CANDIDATES = new HashMap<>();
+
+    static final Pattern CANDIDATE = Pattern.compile("^\\s+(?:method|constructor) [\\w.$<>]+\\((.*)\\) is not applicable\\s*$");
+
+    /**
+     * Registries the game builds in, by element type: in 1.21.2 a Registry is a HolderGetter, so BuiltInRegistries.ITEM is
+     * the HolderGetter<Item> that datagen builders now ask for (ShapedRecipeBuilder.shaped(items, category, result)).
+     * Data-driven registries (enchantments, biomes) are not here: their contents come from the world, not the game.
+     */
+    static final Map<String, String> BUILT_IN_REGISTRY = Map.of(
+        "Item", "ITEM",
+        "Block", "BLOCK",
+        "EntityType<?>", "ENTITY_TYPE",
+        "Fluid", "FLUID",
+        "MobEffect", "MOB_EFFECT",
+        "Potion", "POTION",
+        "BlockEntityType<?>", "BLOCK_ENTITY_TYPE"
+    );
 
     /** Supertypes of the receiver types a compiler log names (simple names), from --supers. */
     static final Map<String, Set<String>> SUPERS = new HashMap<>();
@@ -2501,12 +2532,111 @@ public final class VersionMap {
                 }
                 List<String> keep = new ArrayList<>();
                 for (int i : kept) {
-                    keep.add(args.get(i).strip());
+                    keep.add(args.get(i));
                 }
-                text = text.substring(0, open + 1) + String.join(", ", keep) + text.substring(close);
+                // The arguments keep their layout, and lines the dropped ones took stay, so javac's line numbers hold.
+                String keptText = String.join(",", keep).replaceFirst("^\\s+", "");
+                String was = text.substring(open + 1, close);
+                keptText += "\n".repeat(Math.max(0, (int) (was.chars().filter(c -> c == '\n').count() - keptText.chars().filter(c -> c == '\n').count())));
+                text = text.substring(0, open + 1) + keptText + text.substring(close);
                 texts.put(f, text);
                 replacements++;
                 byKind.merge("arguments javac no longer takes", 1, Integer::sum);
+            }
+
+            // 2c**. An argument the game added that has one value: every candidate javac names takes a HolderGetter of a
+            // built-in registry at the same place, and the call passes none there (1.21.2: ShapedRecipeBuilder.shaped(
+            // RecipeCategory, Item) -> shaped(HolderGetter<Item>, RecipeCategory, ItemLike)). The registry is passed.
+            Pattern noSuitableFor = Pattern.compile("^no suitable (?:method|constructor) found for (\\w+)\\((.*)\\)$");
+            List<Err> more = new ArrayList<>(readErrors(log));
+            more.sort(Comparator.comparing(Err::file).thenComparing(Comparator.comparingInt(Err::line).reversed()));
+            for (Err e : more) {
+                Matcher ns = noSuitableFor.matcher(e.message());
+                Matcher sm = single.matcher(e.message());
+                String key = e.file() + ":" + e.line();
+                List<String> lists = CANDIDATES.get(key);
+                String name, foundText;
+                if (ns.find() && lists != null) {
+                    name = ns.group(1);
+                    foundText = ns.group(2);
+                } else if (sm.find() && REQUIRED_FOUND.containsKey(key)) {
+                    name = sm.group(1);
+                    foundText = REQUIRED_FOUND.get(key)[1];
+                    lists = List.of(REQUIRED_FOUND.get(key)[0]);
+                } else {
+                    continue;
+                }
+                List<String> found = foundText.equals("no arguments") || foundText.isEmpty()
+                    ? List.of()
+                    : topLevelArguments(foundText.replace('<', '(').replace('>', ')'));
+                int at = -1;
+                String value = null;
+                for (String params : lists) {
+                    List<String> p = topLevelArguments(params.replace('<', '(').replace('>', ')'));
+                    int here = -1;
+                    String v = null;
+                    for (int ak = 0; ak < p.size() && here < 0; ak++) {
+                        Matcher hg = Pattern.compile("^(?:[\\w.]*\\.)?HolderGetter\\((.+)\\)$").matcher(p.get(ak).strip());
+                        String element = hg.find() ? hg.group(1).replace('(', '<').replace(')', '>') : "";
+                        if (BUILT_IN_REGISTRY.containsKey(element)) {
+                            here = ak;
+                            v = "net.minecraft.core.registries.BuiltInRegistries." + BUILT_IN_REGISTRY.get(element);
+                        }
+                    }
+                    if (here < 0 || (at >= 0 && at != here) || (value != null && !value.equals(v))) {
+                        at = -1;
+                        break;
+                    }
+                    at = here;
+                    value = v;
+                }
+                if (at < 0 || value == null || at > found.size() || (at < found.size() && found.get(at).strip().startsWith("HolderGetter"))) {
+                    continue;
+                }
+                Path f = sourcePath(e, repo);
+                if (f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                int lineStart = 0;
+                for (int i = 1; i < e.line() && lineStart > -1; i++) {
+                    int next = text.indexOf('\n', lineStart);
+                    lineStart = next < 0 ? -1 : next + 1;
+                }
+                if (lineStart < 0) {
+                    continue;
+                }
+                int lineEnd = text.indexOf('\n', lineStart);
+                lineEnd = lineEnd < 0 ? text.length() : lineEnd;
+                Matcher callAt = Pattern.compile("(?<![\\w$])" + Pattern.quote(name) + "\\s*\\(").matcher(text);
+                callAt.region(Math.min(lineEnd, lineStart + Math.max(0, e.caret())), lineEnd);
+                if (!callAt.find()) {
+                    callAt.region(lineStart, lineEnd);
+                    if (!callAt.find()) {
+                        continue;
+                    }
+                }
+                int open = callAt.end() - 1, close = closingParen(text, open);
+                if (close < 0) {
+                    continue;
+                }
+                List<String> args = topLevelArguments(text.substring(open + 1, close));
+                if (args.size() != found.size()) {
+                    continue;
+                }
+                // Inserted where the argument goes, the others untouched.
+                int insert = open + 1;
+                for (int ak = 0; ak < at; ak++) {
+                    insert += args.get(ak).length() + 1;
+                }
+                String piece = at == 0 ? value + (args.isEmpty() ? "" : ", ") : (at < args.size() ? " " + value + "," : ", " + value);
+                if (at > 0 && at == args.size()) {
+                    insert = close;
+                }
+                text = text.substring(0, insert) + piece + text.substring(insert);
+                texts.put(f, text);
+                replacements++;
+                byKind.merge("registry the game now asks for", 1, Integer::sum);
             }
 
             // 2c''. A class that lost its type parameters (1.21.2: PlayerModel<T> -> PlayerModel): javac names the type, and

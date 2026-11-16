@@ -292,7 +292,25 @@ public final class PortPreflightTest {
             + jr.resolve("Targets.java") + ":5: error: constructor Other in class Other cannot be applied to given types;\n    var u = new Other(\"a\", 1, 2, \"b\");\n            ^\n  required: String,int,String\n  found:    String,int,int,String\n  reason: actual and formal argument lists differ in length\n");
         VersionMap.Fix.run(map, jrLog, jr, false, null);
         String targeted = Files.readString(jr.resolve("Targets.java"));
-        require(targeted.contains("var t = new TextureTarget(w, h, true);"), "the argument javac no longer takes goes, over lines: " + targeted);
+        require(targeted.contains("var t = new TextureTarget(w, h,\n        true);\n"), "the argument javac no longer takes goes, its lines kept: " + targeted);
+
+        // A registry the game's builders now ask for is passed where every candidate javac names takes it, in a static
+        // helper with nothing else to give; a data-driven registry is the world's, and is left alone.
+        Path hg = Files.createDirectories(scratch.resolve("holder-getter"));
+        Files.writeString(hg.resolve("Crafting.java"), "class Crafting {\n  static void register(RecipeOutput output) {\n    ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS,\n        Items.LEAD).pattern(\"x\");\n    ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, Items.SCAFFOLDING, 6);\n    Enchants.of(RecipeCategory.TOOLS);\n  }\n}\n");
+        Path hgLog = scratch.resolve("holder-getter.log");
+        String crafting = hg.resolve("Crafting.java").toString();
+        Files.writeString(hgLog, crafting + ":3: error: no suitable method found for shaped(RecipeCategory,Item)\n    ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS,\n                       ^\n"
+            + "    method ShapedRecipeBuilder.shaped(HolderGetter<Item>,RecipeCategory,ItemLike) is not applicable\n      (actual and formal argument lists differ in length)\n"
+            + "    method ShapedRecipeBuilder.shaped(HolderGetter<Item>,RecipeCategory,ItemLike,int) is not applicable\n      (actual and formal argument lists differ in length)\n"
+            + crafting + ":5: error: no suitable method found for shaped(RecipeCategory,Item,int)\n    ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, Items.SCAFFOLDING, 6);\n                       ^\n"
+            + "    method ShapedRecipeBuilder.shaped(HolderGetter<Item>,RecipeCategory,ItemLike) is not applicable\n      (argument mismatch; RecipeCategory cannot be converted to HolderGetter<Item>)\n"
+            + crafting + ":6: error: method of in class Enchants cannot be applied to given types;\n    Enchants.of(RecipeCategory.TOOLS);\n            ^\n  required: HolderGetter<Enchantment>,RecipeCategory\n  found:    RecipeCategory\n  reason: actual and formal argument lists differ in length\n");
+        VersionMap.Fix.run(map, hgLog, hg, false, null);
+        String crafted = Files.readString(hg.resolve("Crafting.java"));
+        require(crafted.contains("shaped(net.minecraft.core.registries.BuiltInRegistries.ITEM, RecipeCategory.TOOLS,\n        Items.LEAD)"), "the item registry is passed, the call's lines kept: " + crafted);
+        require(crafted.contains("shaped(net.minecraft.core.registries.BuiltInRegistries.ITEM, RecipeCategory.DECORATIONS, Items.SCAFFOLDING, 6)"), "and where javac names only candidates of the same length");
+        require(crafted.contains("    Enchants.of(RecipeCategory.TOOLS);"), "a data-driven registry is not guessed");
         require(targeted.contains("var u = new Other(\"a\", 1, 2, \"b\");"), "which of two equal arguments goes is not guessed");
 
         // A call the game deleted: a no-argument void call that is a whole statement goes; one with arguments, or used
