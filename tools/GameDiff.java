@@ -1938,7 +1938,7 @@ public final class GameDiff {
                     }
                 }
                 int total = totals.get(e.getKey());
-                if (c1 >= 2 && c1 * 10 >= total * 8) {
+                if (c1 >= 2 && c1 * 10 >= total * 8 || c1 == 1 && total == 1 && typeSafe(e.getKey(), best)) {
                     out.add(new Rewrite(e.getKey(), best, c1, total));
                 }
             }
@@ -1976,7 +1976,8 @@ public final class GameDiff {
             for (var e : ev.entrySet()) {
                 Evidence x = e.getValue();
                 Ref old = unlinkedMember.get(e.getKey());
-                if (old == null || x.template() == null || x.templateVotes() < 2 || x.templateVotes() * 10 < x.templateSites() * 6) {
+                boolean agreed = x.templateVotes() >= 2 && x.templateVotes() * 10 >= x.templateSites() * 6 || x.templateSites() == 1;
+                if (old == null || x.template() == null || !agreed) {
                     continue;
                 }
                 String steps = chain(old, templateRefs.get(x.template()));
@@ -2200,6 +2201,43 @@ public final class GameDiff {
             return f == null || fAB.containsKey(f) ? null : f.owner.name.replace('/', '.') + "." + f.name;
         }
 
+        /**
+         * A replacement seen at a single call site is kept only when the types prove the porter can write it: it returns
+         * what the old method returned (after the map's renames), each of its parameters is filled by an old argument or
+         * the old receiver of the same type, and an instance replacement's receiver is the old receiver or an old argument.
+         */
+        boolean typeSafe(Meth from, Meth to) {
+            if (from.special() || to.special()) {
+                return false;
+            }
+            String oldRet = from.desc.substring(from.desc.indexOf(')') + 1);
+            String newRet = descBA(to.desc.substring(to.desc.indexOf(')') + 1));
+            if (!oldRet.equals(newRet)) {
+                return false;
+            }
+            List<String> have = new ArrayList<>(VersionMap.Fix.paramTypes(from.desc));
+            if (!from.isStatic()) {
+                have.add(from.owner.name.replace('/', '.'));
+            }
+            if (!to.isStatic()) {
+                Cls owner = cBA.get(to.owner);
+                String receiver = owner == null ? null : owner.name.replace('/', '.');
+                if (receiver == null || !have.remove(receiver)) {
+                    return false;
+                }
+            }
+            for (String p : VersionMap.Fix.paramTypes(descBA(to.desc))) {
+                if (!have.remove(p)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        static String simpleName(String internal) {
+            return internal.substring(Math.max(internal.lastIndexOf('/'), internal.lastIndexOf('$')) + 1);
+        }
+
         /** A class the game stopped using and what its own code uses in its place. */
         record ClassRewrite(Cls from, Cls to, int votes, int total) {}
 
@@ -2252,7 +2290,8 @@ public final class GameDiff {
                     }
                 }
                 int total = totals.get(e.getKey());
-                if (c1 >= 2 && c1 * 10 >= total * 8 && best.kind() == e.getKey().kind()) {
+                boolean moved = c1 == 1 && total == 1 && simpleName(best.name).equals(simpleName(e.getKey().name));
+                if ((c1 >= 2 && c1 * 10 >= total * 8 || moved) && best.kind() == e.getKey().kind()) {
                     out.add(new ClassRewrite(e.getKey(), best, c1, total));
                 }
             }

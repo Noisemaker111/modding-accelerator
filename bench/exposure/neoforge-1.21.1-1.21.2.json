@@ -7,28 +7,28 @@
  "usesCarried": 0.9865,
  "gameEvidence": {
   "linked": {
-   "modUses": 263,
-   "members": 110
+   "members": 110,
+   "modUses": 263
   },
   "redesigned": {
-   "modUses": 543,
-   "members": 273
+   "members": 273,
+   "modUses": 543
   },
   "replaced": {
-   "modUses": 134,
-   "members": 49
+   "members": 49,
+   "modUses": 134
   },
   "split": {
-   "modUses": 206,
-   "members": 78
+   "members": 75,
+   "modUses": 201
   },
   "template": {
-   "modUses": 65,
-   "members": 25
+   "members": 25,
+   "modUses": 65
   },
   "unused": {
-   "modUses": 206,
-   "members": 105
+   "members": 105,
+   "modUses": 206
   }
  },
  "signatureChanges": {

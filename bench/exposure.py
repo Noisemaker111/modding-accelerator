@@ -2,6 +2,7 @@
 
     python bench/exposure.py fetch --loader neoforge --version 1.21.1 [--count 200]
     python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 [--count 200] [--save NAME]
+    python bench/exposure.py steps [--from 1.14.4] [--to 26.3]
 
 fetch downloads the most downloaded mods of one loader and game version from Modrinth (the newest release of each
 for that version) into ~/.mmt/exposure/jars/LOADER-VERSION/. They are read, never built or shipped, and only to count
@@ -15,6 +16,12 @@ report to .runs/exposure/. --save NAME also keeps the summary in bench/exposure/
 how many mods it frees.
 
 Only jars in the old release's Mojang names are read: NeoForge from 1.20.5, and any loader from 26.1.
+
+steps measures the porter on every update at once, with no mods: GameDiff links each release to the next from the
+game's own code, and for every update it counts the classes, methods and fields with no counterpart in the next release (renames,
+moves and new signatures are linked and carried), and how many of them have a replacement learned from how the game's
+own code changed (call rewrites, call chains, class replacements). A new kind of change the learner understands shows up in every
+update here, not only in the one being worked on. Kept in bench/exposure/steps.json.
 """
 import argparse
 import json
@@ -169,6 +176,44 @@ def run(loader, frm, to, count, save):
     return summary
 
 
+HOP = re.compile(r"linked (\d+)/(\d+) classes, (\d+)/(\d+) methods, (\d+)/(\d+) fields")
+
+
+def steps(frm, to):
+    classes, tools_time = compile_tools()
+    versions = chain(frm, to)
+    target = ROOT / ".runs" / "exposure" / f"steps-{frm}-{to}.json"
+    if not target.is_file() or target.stat().st_mtime < tools_time:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run([java(), "-Xmx10g", "-cp", str(classes), "GameDiff", "--chain", ",".join(versions), "--out", str(target)], check=True)
+    route = json.loads(target.read_text(encoding="utf-8"))
+    learned = {}
+    for section in ("rewrites", "chains", "classRewrites"):
+        for r in route.get(section, []):
+            learned.setdefault(r["step"], {}).setdefault(section, 0)
+            learned[r["step"]][section] += 1
+    rows, gone, taught = [], 0, 0
+    for step, line in route.get("hops", {}).items():
+        m = HOP.search(line)
+        if not m:
+            continue
+        n = list(map(int, m.groups()))
+        unlinked = (n[1] - n[0]) + (n[3] - n[2]) + (n[5] - n[4])
+        learnt = sum(learned.get(step, {}).values())
+        if unlinked:
+            rows.append({"step": step, "gone": unlinked, "learned": learnt, **learned.get(step, {})})
+        gone, taught = gone + unlinked, taught + learnt
+    summary = {"from": frm, "to": to, "updates": len(route.get("hops", {})), "gone": gone, "learned": taught, "steps": rows}
+    for r in rows:
+        print(f"  {r['step']:<22} {r['gone']:>6} with no counterpart  {r['learned']:>4} replacements learned")
+    print(f"{summary['updates']} updates: {gone} classes, methods and fields have no counterpart in the next release; "
+          f"the game's own code gave {taught} of them a replacement the porter applies")
+    out = ROOT / "bench" / "exposure" / "steps.json"
+    out.write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
+    print(f"saved {out}")
+    return summary
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
@@ -182,8 +227,13 @@ def main():
     r.add_argument("--to", required=True)
     r.add_argument("--count", type=int, default=0)
     r.add_argument("--save")
+    st = sub.add_parser("steps")
+    st.add_argument("--from", dest="frm", default="1.14.4")
+    st.add_argument("--to", default="26.3")
     a = p.parse_args()
-    if a.command == "fetch":
+    if a.command == "steps":
+        steps(a.frm, a.to)
+    elif a.command == "fetch":
         fetch(a.loader, a.version, a.count)
     else:
         run(a.loader, a.frm, a.to, a.count, a.save)
