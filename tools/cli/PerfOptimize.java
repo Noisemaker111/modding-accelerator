@@ -551,6 +551,9 @@ final class PerfOptimize {
         return out;
     }
 
+    /** The coarsest step of a thread's CPU time among the systems mmt runs on: Windows' default 64 Hz clock. */
+    static final double CPU_CLOCK_TICK_MS = 15.625;
+
     static double metric(Map<String, Object> report, Map<String, Object> metric) {
         if (metric.containsKey("threadCpu")) {
             // The operating system's CPU time of the threads whose names match, over the window: exact, and a
@@ -575,6 +578,10 @@ final class PerfOptimize {
                 }
                 return total * seconds / n.doubleValue();
             }
+            // Thread CPU time advances in clock ticks (15.6 ms on Windows): below one tick per matched thread over the
+            // window a value is noise, and dividing by it gave spark's monitoring thread a "10^14x" speedup. Floored there.
+            double seconds = ((Number) report.getOrDefault("seconds", 0)).doubleValue();
+            if (statistic.equals("cpuMsPerSecond") && seconds > 0) total = Math.max(total, CPU_CLOCK_TICK_MS * matched / seconds);
             return total;
         }
         if (metric.containsKey("report")) {

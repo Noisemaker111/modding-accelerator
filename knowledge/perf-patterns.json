@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "note": "Optimizations mmt perf-optimize accepted, as reusable patterns. symptom.when is a condition over a perf report's attribution row for one mod: every clause must hold, and a clause holds when the samples of the entries in `in` (methods, features or threads) whose name matches the regex `matches` are at least `minShare` of the mod's samples. mmt perf lists the patterns a capture's hotspots match. change is what was changed; gain is the measured speedup with its 95% interval for cold and warm captures; gate is the equivalence gate that proved the output unchanged; provenIn names the mod, version, loader, scope and the kept run in coverage/perf-runs.json. test holds two attribution rows: fires must match the symptom and quiet must not (self-test runs both).",
+ "note": "Optimizations mmt perf-optimize accepted, as reusable patterns. symptom.when is a condition over a perf report's attribution row for one mod: every clause must hold, and a clause holds when the samples of the entries in `in` (methods, features or threads) whose name matches the regex `matches` are at least `minShare` of the mod's samples, or, for `in: threadCpu`, when the operating system's CPU time of the mod's threads whose names match is at least `minMsPerSecond` (time in native code, which samples barely see). mmt perf lists the patterns a capture's hotspots match. change is what was changed; gain is the measured speedup with its 95% interval for cold and warm captures; gate is the equivalence gate that proved the output unchanged; provenIn names the mod, version, loader, scope and the kept run in coverage/perf-runs.json. test holds two attribution rows: fires must match the symptom and quiet must not (self-test runs both).",
  "patterns": [
   {
    "id": "carry-derived-data-to-replacement-snapshots",
@@ -983,6 +983,85 @@
       {
        "name": "m.Mesher.build(I)V",
        "samples": 99
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "process-load-from-cpu-time",
+   "symptom": {
+    "text": "A mod's monitoring or statistics thread uses tens of milliseconds of CPU a second with almost no execution samples: its time is in native code. On Windows, OperatingSystemMXBean.getProcessCpuLoad() (and a JFR or JMX reading of it) queries a performance counter of every process on the machine, about 200 ms of CPU a call with a few hundred processes running.",
+    "when": [
+     {
+      "in": "threadCpu",
+      "matches": "(?i)monitor|metric|stat",
+      "minMsPerSecond": 50
+     }
+    ]
+   },
+   "change": "Compute the process load from the process's CPU time: (getProcessCpuTime() now - at the last reading) / (nanoTime now - at the last reading) / availableProcessors, clamped to [0, 1], negative before a first reading, as getProcessCpuLoad() measures it since its last call. getProcessCpuTime() is one system call. Keep getProcessCpuLoad() when CPU time is unavailable (-1). Read the system load as before (cheap there).",
+   "gain": {
+    "scope": "spark-monitoring-thread CPU ms a second (operating system's thread CPU time), All the Mods 9 1.1.1 client at the title screen, Windows 11, both arms at once",
+    "cold": {
+     "geometricMean": 97.9,
+     "low": 63.55,
+     "high": 123.05,
+     "pairs": 3
+    },
+    "warm": {
+     "geometricMean": 117.07,
+     "low": 106.99,
+     "high": 126.0,
+     "pairs": 3
+    },
+    "note": "the candidate is floored at one 15.6 ms CPU clock tick over the 20 s window (about 0.8 ms a second): the ratios are a lower bound"
+   },
+   "gate": {
+    "name": "monitoring + same-load",
+    "compare": "expect",
+    "detail": "spark's monitor runs and reports a fraction of the machine; spark's own 10-second process load average is within 5 points of the process's CPU time over the same 10 s, read without any load counter, in every launch of both arms. Same game before: 20 shared one-second windows averaged 7.65% (CPU time) and 7.55% (getProcessCpuLoad)"
+   },
+   "provenIn": {
+    "mod": "spark",
+    "version": "1.10.53",
+    "loader": "forge",
+    "scope": "spark-monitoring-thread",
+    "record": "2026-11-16T09-51-22.409782400Z-eb67dc2f",
+    "patch": "bench/spark/process-load-from-cpu-time.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 11,
+     "percentOfSamples": 0.7,
+     "methods": [
+      {
+       "name": "m.Monitor.poll()V",
+       "samples": 3
+      }
+     ],
+     "threadCpu": [
+      {
+       "name": "m-monitoring-thread",
+       "msPerSecond": 142.5
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 11,
+     "percentOfSamples": 0.7,
+     "methods": [
+      {
+       "name": "m.Monitor.poll()V",
+       "samples": 3
+      }
+     ],
+     "threadCpu": [
+      {
+       "name": "m-monitoring-thread",
+       "msPerSecond": 0.8
       }
      ]
     }

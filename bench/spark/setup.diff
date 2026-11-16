@@ -1,0 +1,56 @@
+commit 90acec5fe9913b73a62562afcb1ea654f762dfcf
+Author: mmt <mmt@localhost>
+Date:   Mon Nov 16 00:27:40 2026 -0800
+
+    Build only the Forge platform with a dev client run; bytesocks client snapshot that is still published (mmt setup, shared by both arms)
+
+diff --git a/settings.gradle b/settings.gradle
+index ffa36cd..915b29b 100644
+--- a/settings.gradle
++++ b/settings.gradle
+@@ -16,15 +16,5 @@ rootProject.name = 'spark'
+ include (
+         'spark-api',
+         'spark-common',
+-        'spark-bukkit',
+-        'spark-bungeecord',
+-        'spark-velocity',
+-        'spark-velocity4',
+-        'spark-sponge7',
+-        'spark-sponge8',
+         'spark-forge',
+-        'spark-fabric',
+-        'spark-nukkit',
+-        'spark-waterdog',
+-        //'spark-minestom', // disabled until minestom publish their maven artifacts to a proper repo
+ )
+diff --git a/spark-common/build.gradle b/spark-common/build.gradle
+index d619262..b4a8d20 100644
+--- a/spark-common/build.gradle
++++ b/spark-common/build.gradle
+@@ -21,7 +21,7 @@ dependencies {
+     implementation 'net.bytebuddy:byte-buddy-agent:1.11.0'
+     implementation 'com.google.protobuf:protobuf-javalite:3.21.11'
+ 
+-    implementation('me.lucko:bytesocks-java-client:1.0-20230828.145440-5') {
++    implementation('me.lucko:bytesocks-java-client:1.0-20260208.124123-2') {
+         exclude(module: 'slf4j-api')
+     }
+ 
+diff --git a/spark-forge/build.gradle b/spark-forge/build.gradle
+index 76e5054..7334a15 100644
+--- a/spark-forge/build.gradle
++++ b/spark-forge/build.gradle
+@@ -11,6 +11,12 @@ tasks.withType(JavaCompile) {
+ minecraft {
+     mappings channel: 'official', version: '1.20.1'
+     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
++    runs {
++        client {
++            workingDirectory project.file('run')
++            mods { spark { source sourceSets.main } }
++        }
++    }
+ }
+ 
+ configurations {

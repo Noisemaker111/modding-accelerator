@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  * the gate that proved it. Nothing here edits code; it only names what was proven elsewhere.
  */
 final class PerfPatterns {
-    static final Set<String> LISTS = Set.of("methods", "features", "threads");
+    static final Set<String> LISTS = Set.of("methods", "features", "threads", "threadCpu");
 
     static Path file(Path home) {
         return home.resolve("knowledge/perf-patterns.json");
@@ -41,11 +41,25 @@ final class PerfPatterns {
     static Map<String, Object> evidence(Map<String, Object> symptom, Map<String, Object> mod) {
         double total = ((Number) mod.getOrDefault("samples", 0)).doubleValue();
         double percent = ((Number) mod.getOrDefault("percentOfSamples", 100)).doubleValue();
-        if (total <= 0 || total < MIN_SAMPLES && percent < MIN_PERCENT) return null;
+        boolean enough = total > 0 && (total >= MIN_SAMPLES || percent >= MIN_PERCENT);
         List<Object> found = new ArrayList<>();
         for (Object item : Json.array(symptom.get("when"))) {
             Map<String, Object> clause = Json.object(item);
             Pattern pattern = Pattern.compile(clause.get("matches").toString());
+            // The operating system's CPU time of the mod's threads: time in native code, which execution samples
+            // barely see (spark's monitoring thread used 141 ms a second in All the Mods 9 and had 3 samples).
+            if ("threadCpu".equals(clause.get("in"))) {
+                double ms = 0;
+                for (Object entry : Json.array(mod.getOrDefault("threadCpu", List.of()))) {
+                    Map<String, Object> row = Json.object(entry);
+                    if (pattern.matcher(String.valueOf(row.get("name"))).find()) ms += ((Number) row.getOrDefault("msPerSecond", 0)).doubleValue();
+                }
+                double least = ((Number) clause.getOrDefault("minMsPerSecond", 0)).doubleValue();
+                if (ms <= 0 || ms < least) return null;
+                found.add(Json.map("in", "threadCpu", "matches", clause.get("matches"), "msPerSecond", ms, "minMsPerSecond", least));
+                continue;
+            }
+            if (!enough) return null;
             double samples = 0;
             for (Object entry : Json.array(mod.getOrDefault(clause.get("in").toString(), List.of()))) {
                 Map<String, Object> row = Json.object(entry);
@@ -102,14 +116,18 @@ final class PerfPatterns {
             if (clauses.isEmpty()) problems.add(where + "symptom.when needs at least one clause");
             for (Object c : clauses) {
                 Map<String, Object> clause = Json.object(c);
-                if (!LISTS.contains(Json.text(clause, "in", ""))) problems.add(where + "clause in must be methods, features or threads");
+                if (!LISTS.contains(Json.text(clause, "in", ""))) problems.add(where + "clause in must be methods, features, threads or threadCpu");
                 try {
                     Pattern.compile(Json.text(clause, "matches", ""));
                 } catch (RuntimeException bad) {
                     problems.add(where + "clause matches is not a regex: " + bad.getMessage());
                 }
                 if (Json.text(clause, "matches", "").isBlank()) problems.add(where + "clause needs matches");
-                if (!(clause.get("minShare") instanceof Number share) || share.doubleValue() <= 0 || share.doubleValue() > 1) problems.add(where + "clause minShare must be in (0, 1]");
+                if ("threadCpu".equals(clause.get("in"))) {
+                    if (!(clause.get("minMsPerSecond") instanceof Number ms) || ms.doubleValue() <= 0) problems.add(where + "a threadCpu clause needs minMsPerSecond above 0");
+                } else if (!(clause.get("minShare") instanceof Number share) || share.doubleValue() <= 0 || share.doubleValue() > 1) {
+                    problems.add(where + "clause minShare must be in (0, 1]");
+                }
             }
             if (Json.text(p, "change", "").isBlank()) problems.add(where + "change says what was changed");
             Map<String, Object> gain = p.get("gain") instanceof Map<?, ?> g ? Json.object(g) : Map.of();

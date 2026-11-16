@@ -460,6 +460,12 @@ final class PerfAttribution {
             if (!byThread.isEmpty()) row.put("threads", List.copyOf(byThread.getOrDefault(entry.getKey(), Map.of()).keySet()));
             exact.computeIfAbsent(key, k -> new ArrayList<>()).add(row);
         }
+        // The operating system's CPU time of each thread (threadCpuTime), for the threads a mod's samples are on.
+        Map<String, Double> osCpu = new HashMap<>();
+        for (Object item : Json.array(report.getOrDefault("threadCpuTime", List.of()))) {
+            Map<String, Object> thread = Json.object(item);
+            osCpu.merge(Json.text(thread, "thread", ""), ((Number) thread.getOrDefault("cpuMsPerSecond", 0)).doubleValue(), Double::sum);
+        }
         long serverSamples = threadSamples.getOrDefault("Server thread", 0L);
         long renderSamples = threadSamples.getOrDefault("Render thread", 0L);
         List<Object> rows = new ArrayList<>();
@@ -484,6 +490,12 @@ final class PerfAttribution {
                 row.put("heapClasses", top(unit.heapBytes, 20, "bytes"));
             }
             row.put("threads", top(unit.total.threads, 20, "samples"));
+            List<Object> ownCpu = new ArrayList<>();
+            for (String thread : unit.total.threads.keySet()) {
+                if (thread.equals("Server thread") || thread.equals("Render thread") || !osCpu.containsKey(thread)) continue;
+                ownCpu.add(Json.map("name", thread, "msPerSecond", osCpu.get(thread)));
+            }
+            row.put("threadCpu", ownCpu);
             row.put("methods", top(unit.total.methods, 30, "samples"));
             // Inclusive CPU per method, for timing a scope by samples rather than wall time, which
             // load on the machine stretches (perf-optimize scopes with "method").
