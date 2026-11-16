@@ -143,6 +143,11 @@ final class Convert {
             int paren = t[2].indexOf('(');
             if (paren < 0) {
                 String type = fieldTypes.apply(owner, t[2]);
+                if (type != null && type.isEmpty()) {
+                    // A line for a field the game no longer has opens nothing on NeoForge either.
+                    unconverted.add(line + " (the game has no such field, so the line opens nothing on either loader; dropped)");
+                    continue;
+                }
                 if (type == null) {
                     unconverted.add(line + " (an access widener names the field's type, which the transformer line does not)");
                     continue;
@@ -201,7 +206,8 @@ final class Convert {
                         else known.put(owner + " " + member.name(), member.descriptor());
                     }
                 }
-                return known.get(key);
+                // The class is read and has no such member: "" says the game lacks it (null is "not known").
+                return known.getOrDefault(key, "");
             } catch (Exception offline) {
                 return null;
             }
@@ -2559,7 +2565,10 @@ final class Convert {
                     unconverted,
                     gameFieldTypes(minecraft)
                 );
-                for (String u : unconverted) leave(AT_FILE, 0, u, "an access transformer line with no access widener counterpart");
+                for (String u : unconverted) {
+                    if (u.endsWith("; dropped)")) notes.add("Access widener: " + u + ".");
+                    else leave(AT_FILE, 0, u, "an access transformer line with no access widener counterpart");
+                }
                 fabricWidener = fabricId + ".accesswidener";
                 write("src/main/resources/" + fabricWidener, widener);
                 widenerConverted = true;

@@ -212,10 +212,10 @@ public final class ConvertTests {
         );
         List<String> typedLeft = new ArrayList<>();
         String typed = Convert.transformerToWidener(
-            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\npublic net.minecraft.A shut()V\npublic net.minecraft.A open()V\n",
+            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\npublic net.minecraft.A shut()V\npublic net.minecraft.A open()V\npublic net.minecraft.A gone\n",
             false,
             typedLeft,
-            (owner, field) -> field.equals("shut()V") ? "access 2" : field.equals("open()V") ? "access 4" : fieldTypes.get(owner + " " + field)
+            (owner, field) -> field.equals("shut()V") ? "access 2" : field.equals("open()V") ? "access 4" : field.equals("gone") ? "" : fieldTypes.get(owner + " " + field)
         );
         check(
             fieldTypes.get("net/minecraft/client/renderer/block/ModelBlockRenderer grid").equals("[[I") &&
@@ -225,8 +225,8 @@ public final class ConvertTests {
                 "mutable field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n" +
                 "accessible method net/minecraft/A shut ()V\nextendable method net/minecraft/A shut ()V\naccessible method net/minecraft/A open ()V\n"
             ) &&
-            typedLeft.size() == 1,
-            "an access transformer field line becomes an access widener field with its type from Mojang's mappings, and a private method stays overridable:\n" + typed + typedLeft
+            typedLeft.size() == 2 && typedLeft.get(1).startsWith("public net.minecraft.A gone (the game has no such field") && typedLeft.get(1).endsWith("; dropped)"),
+            "an access transformer field line becomes an access widener field with its type from Mojang's mappings, a private method stays overridable, and a field the game lacks is dropped:\n" + typed + typedLeft
         );
         String cleaned = Convert.dropUnusedImports(
             "import net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n",
