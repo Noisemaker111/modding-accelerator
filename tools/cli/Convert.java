@@ -4552,7 +4552,8 @@ final class Convert {
                 if (c == '}') depth--;
                 // A name that starts a line at depth 1: "client {" or a bare "codeGen".
                 if (depth == 1 && c == '\n') {
-                    Matcher name = Pattern.compile("^\\s*([A-Za-z_]\\w*)\\s*(\\{|\\r?$)").matcher(code.substring(lineStart, Math.min(code.length(), code.indexOf('\n', lineStart) < 0 ? code.length() : code.indexOf('\n', lineStart))));
+                    int lineEnd = code.indexOf('\n', lineStart) < 0 ? code.length() : code.indexOf('\n', lineStart);
+                    Matcher name = Pattern.compile("^\\s*([A-Za-z_]\\w*)\\s*(\\{|\\r?$)").matcher(code.substring(lineStart, lineEnd));
                     if (name.find() && !name.group(1).matches("java|resources|output|compileClasspath|runtimeClasspath")) out.add(name.group(1));
                 }
             }
