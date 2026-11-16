@@ -629,8 +629,8 @@ final class Port {
             !from.matches("[A-Za-z0-9._+\\-]+") ||
             !to.matches("[A-Za-z0-9._+\\-]+")
         ) throw new IllegalArgumentException("Invalid version or mapping namespace");
-        if (legacy && !mcp) throw new IllegalArgumentException(
-            "A port touching a release before " +
+        if (Route.legacy(from) && !mcp) throw new IllegalArgumentException(
+            "A port from a release before " +
             Route.FIRST_MAPPED +
             " reads its source in MCP names (Forge SRG ids), not " +
             names +
@@ -664,6 +664,10 @@ final class Port {
             Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0 &&
             Versions.compare(from, Route.FIRST_UNOBFUSCATED) < 0;
         List<String> chain = route == null ? List.of() : own || bridge ? route.versions : mcp ? route.srgChain() : route.mappedChain();
+        // A route reaching past 1.14.4 on both sides crosses the seam: the SRG run, the name
+        // translation at 1.14.4, then the intermediary run, in walking order either direction.
+        boolean seam = route != null && route.crossesSeam();
+        if (seam && !own && !bridge) chain = route.seamChain();
         boolean routed =
             chain.size() >= 2 && (bridge || !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0));
         // A generated map is named after the tools that made it, so a changed generator makes a new one.
@@ -720,6 +724,7 @@ final class Port {
                 List<String> arguments = new ArrayList<>(List.of("--chain", String.join(",", chain), "--out", map.toString()));
                 if (own && !loaderDiff.isEmpty()) arguments.addAll(List.of("--loader", loaderDiff));
                 if (!own) arguments.addAll(List.of("--names", names));
+                if (!own && seam) arguments.addAll(List.of("--to-names", targetNames()));
                 var mapped = tools.run(own ? "GameDiff" : "VersionMap", arguments, "mapping-route");
                 if (mapped.exit() != 0) throw new IOException(
                     "No verified mapping along the route " + String.join(" -> ", chain) + ". " + Run.tail(mapped.log())
@@ -778,9 +783,13 @@ final class Port {
                 " from the game itself: Mojang's jars and mappings linked release to release by their own bytecode" +
                 (loaderDiff.isEmpty() ? "" : ", with " + loaderDiff + "'s own published classes")
                 : routed && mcp
-                ? "one map joined across " +
-                String.join(" -> ", chain) +
-                " by Forge SRG ids (MCP names); classes have no SRG id, so a class rename on these steps reads as a removal and an addition"
+                ? seam
+                    ? "one map joined across " +
+                    String.join(" -> ", chain) +
+                    " by Forge SRG ids to 1.14.4 (MCP names), translated to Mojang's names at the seam through the obfuscated names both lanes share, then by Fabric intermediary ids"
+                    : "one map joined across " +
+                    String.join(" -> ", chain) +
+                    " by Forge SRG ids (MCP names); a class rename the links miss reads as a removal and an addition"
                 : routed
                 ? "one map joined across " +
                 String.join(" -> ", chain) +
@@ -1694,6 +1703,18 @@ final class Port {
         // already retargeted (and so reads as the target release); say so before the yarn pins.
         if (Route.legacy(from)) return "mcp";
         for (String version : versions(model)) if (Route.legacy(version)) return "mcp";
+        for (Object p : Json.array(model.get("projects"))) {
+            var pins = Json.object(Json.object(p).get("pins"));
+            if (pins.containsKey("yarn_mappings") || pins.containsKey("yarn_version")) return "yarn";
+        }
+        return "mojmap";
+    }
+
+    /**
+     * The namespace a seam-crossing port lands in: yarn when the retargeted build pins it, else
+     * Mojang's names. Only the modern leg reads it; the legacy leg is always MCP.
+     */
+    String targetNames() {
         for (Object p : Json.array(model.get("projects"))) {
             var pins = Json.object(Json.object(p).get("pins"));
             if (pins.containsKey("yarn_mappings") || pins.containsKey("yarn_version")) return "yarn";

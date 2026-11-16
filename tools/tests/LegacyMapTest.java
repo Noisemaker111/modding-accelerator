@@ -1,7 +1,8 @@
 import java.util.*;
 
 /**
- * The SRG lane: pre-1.14.4 tables keyed on Forge's stable ids, chained like intermediary tables.
+ * The SRG lane: pre-1.14.4 tables keyed on Forge's stable ids, chained like intermediary tables, linked
+ * across class renames by shared member ids, and bridged to Mojang's names at 1.14.4.
  * The first table's rows are verbatim from mcp 1.7.10's joined.srg and mcp_stable 12-1.7.10's
  * CSVs, trimmed to the members under test; the second table is a synthetic later name set, built
  * to exercise a rename plus a move through the same SRG id.
@@ -33,6 +34,100 @@ public final class LegacyMapTest {
 
     static VersionMap.Table table(String version, String srg, String methods, String fields) {
         return VersionMap.Table.fromSrg(version, VersionMap.Srg.srg(srg), VersionMap.Srg.csv(fields, methods));
+    }
+
+    static final String SRG_B = """
+CL: bbb net/minecraft/block/Block
+MD: bbb/a ()V net/minecraft/block/Block/func_1_a ()V
+MD: bbb/c ()V net/minecraft/block/Block/func_2_c ()V
+MD: bbb/d ()V net/minecraft/block/Block/func_3_d ()V
+MD: bbb/e ()V net/minecraft/block/Block/func_4_e ()V
+FD: bbb/b net/minecraft/block/Block/field_5_b
+""";
+    static final String INTER_B =
+        "c\tbbb\tnet/minecraft/class_7\n" +
+        "\tm\t()V\ta\tmethod_9\n" +
+        "\tm\t()V\tc\tmethod_10\n" +
+        "\tm\t()V\td\tmethod_11\n" +
+        "\tm\t()V\te\tmethod_12\n" +
+        "\tf\tI\tb\tfield_13\n";
+    static final String PG_B =
+        "net.minecraft.world.level.block.Block -> bbb:\n" +
+        "    void mappedOne() -> a\n" +
+        "    void mappedTwo() -> c\n" +
+        "    void mappedThree() -> d\n" +
+        "    void mappedFour() -> e\n" +
+        "    int mappedField -> b\n";
+    static final String PG_EMPTY = "net.minecraft.world.level.block.Block -> bbb:\n";
+
+    static void bridgeChecks() {
+        check(
+            Route.BRIDGE_STEP.equals(VersionMap.BRIDGE_STEP),
+            "the router and the mapper name the seam step identically"
+        );
+        VersionMap.Tiny srg = VersionMap.Srg.srg(SRG_B);
+        VersionMap.Tiny it = VersionMap.Tiny.parse(INTER_B);
+        VersionMap.Proguard client = VersionMap.Proguard.parse(PG_B);
+        VersionMap.Proguard server = VersionMap.Proguard.parse(PG_EMPTY);
+        VersionMap.Bridge b = VersionMap.Bridge.join(srg, it, client, server);
+        check(
+            "net/minecraft/class_7".equals(b.classes.get("net/minecraft/block/Block")) &&
+            "net/minecraft/class_7.method_9".equals(b.members.get("net/minecraft/block/Block.func_1_a")) &&
+            "net/minecraft/class_7.field_13".equals(b.members.get("net/minecraft/block/Block.field_5_b")),
+            "the bridge joins SRG keys to intermediary keys through the shared obfuscated names"
+        );
+        check(
+            "net/minecraft/world/level/block/Block\0mappedOne\0()V".equals(
+                b.membersOfficial.get("net/minecraft/block/Block.func_1_a")
+            ) &&
+            "net/minecraft/world/level/block/Block".equals(b.classesOfficial.get("net/minecraft/block/Block")) &&
+            "net/minecraft/block/Block.func_1_a".equals(
+                b.membersBackOfficial.get("net/minecraft/world/level/block/Block\0mappedOne\0()V")
+            ),
+            "every joined member also carries its official identity, both directions"
+        );
+        VersionMap.Proguard clash = VersionMap.Proguard.parse(
+            "net.minecraft.world.level.block.Block -> bbb:\n    void otherName() -> a\n"
+        );
+        VersionMap.Bridge guarded = VersionMap.Bridge.join(srg, it, client, clash);
+        check(
+            guarded.membersOfficial.get("net/minecraft/block/Block.func_1_a") == null,
+            "a notch name resolving differently on the client and server yields no fallback"
+        );
+    }
+
+    static void linkChecks() throws Exception {
+        VersionMap.Table oldT = table("1.7.10", SRG_B, METHODS, FIELDS);
+        String moved =
+            "CL: ccc net/minecraft/block/ShiftedBlock\n" +
+            "MD: ccc/a ()V net/minecraft/block/ShiftedBlock/func_1_a ()V\n" +
+            "MD: ccc/c ()V net/minecraft/block/ShiftedBlock/func_2_c ()V\n" +
+            "MD: ccc/d ()V net/minecraft/block/ShiftedBlock/func_3_d ()V\n" +
+            "MD: ccc/e ()V net/minecraft/block/ShiftedBlock/func_4_e ()V\n" +
+            "FD: ccc/b net/minecraft/block/ShiftedBlock/field_5_b\n";
+        VersionMap.Table newT = table("1.12.2", moved, METHODS, FIELDS);
+        Map<String, String> links = VersionMap.Chain.linkSrgClasses(oldT, newT);
+        check(
+            links.equals(Map.of("net/minecraft/block/Block", "net/minecraft/block/ShiftedBlock")),
+            "a renamed class links back up when each side is the other's best match by shared member ids"
+        );
+        String tiny =
+            "CL: ddd net/minecraft/block/TinyBlock\n" +
+            "MD: ddd/a ()V net/minecraft/block/TinyBlock/func_1_a ()V\n";
+        VersionMap.Table tinyT = table("1.12.2", tiny, METHODS, FIELDS);
+        check(
+            VersionMap.Chain.linkSrgClasses(oldT, tinyT).isEmpty(),
+            "a class sharing too few member ids stays unlinked, honestly removed and added"
+        );
+        VersionMap.Chain chain = VersionMap.Chain.of(List.of("1.7.10", "1.12.2"), v ->
+            v.equals("1.7.10") ? oldT : newT
+        );
+        check(
+            chain.diff.classRenamed.size() == 1 &&
+            chain.diff.classRenamed.get(0)[0].equals("net/minecraft/block/Block") &&
+            chain.diff.classRenamed.get(0)[1].equals("net/minecraft/block/ShiftedBlock"),
+            "a chain across the rename records the class rename so port follows it"
+        );
     }
 
     public static void main(String[] args) throws Exception {
@@ -91,6 +186,8 @@ public final class LegacyMapTest {
                         && map.contains("\"newOwner\": \"net.minecraft.block.Block\"")
                         && map.contains("\"chain\": [\"1.7.10\", \"1.12.2\"]"),
                 "the chain map port hands the typed fixer keeps its MCP identity and the moved member, pinned channel included");
+        bridgeChecks();
+        linkChecks();
         System.out.println(count + " legacy map checks passed");
     }
 }

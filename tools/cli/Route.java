@@ -12,6 +12,9 @@ final class Route {
 
     static final String FIRST_MAPPED = "1.14.4", FIRST_UNOBFUSCATED = "26.1";
 
+    /** The pseudo-step a seam-crossing chain records the MCP to Mojang key translation under. Kept equal to VersionMap.BRIDGE_STEP. */
+    static final String BRIDGE_STEP = FIRST_MAPPED + " -> " + FIRST_MAPPED;
+
     record Hop(String from, String to, List<String> steps) {}
 
     final String from, to;
@@ -33,46 +36,9 @@ final class Route {
         return version.matches("\\d+(\\.\\d+)*") && Versions.compare(version, FIRST_MAPPED) < 0;
     }
 
-    /** A precise refusal for releases no indexed step touches or jumps port cannot join yet, or null when portable. */
+    /** A precise refusal for releases no indexed step touches, or null when portable. */
     static Map<String, Object> blocked(Path harness, String from, String to) throws IOException {
         if (from.isBlank() || to.isBlank()) return null;
-        // Within the SRG world (either endpoint at or before 1.14.4, the other before it) one SRG
-        // chain joins the route. Crossing past 1.14.4 leaves MCP names for Mojang's, which needs a
-        // name bridge at the seam release that port does not build yet.
-        boolean seam =
-            (legacy(from) && Versions.compare(to, FIRST_MAPPED) > 0) ||
-            (legacy(to) && Versions.compare(from, FIRST_MAPPED) > 0);
-        if (seam) {
-            String old = legacy(from) ? from : to, modern = old.equals(from) ? to : from;
-            String reason =
-                "A port between " +
-                old +
-                " (MCP names, joined through Forge SRG ids) and " +
-                modern +
-                " crosses " +
-                FIRST_MAPPED +
-                " into Mojang's names. Crossing that seam needs an MCP to Mojang name bridge at " +
-                FIRST_MAPPED +
-                ", which port does not build yet; ports from a pre-" +
-                FIRST_MAPPED +
-                " release run to " +
-                FIRST_MAPPED +
-                " at the newest for now.";
-            return Json.map(
-                "ok",
-                false,
-                "tier",
-                "blocked",
-                "sourcesChanged",
-                false,
-                "gameVerified",
-                false,
-                "blocked",
-                List.of(Json.map("version", old, "reason", reason)),
-                "details",
-                "Blocked: " + reason + " Nothing was changed."
-            );
-        }
         for (String version : List.of(from, to)) {
             String reason = blockedReason(harness, version);
             if (reason != null) return Json.map(
@@ -202,6 +168,19 @@ final class Route {
             for (int k = a; k < b; k++) steps.add(route.versions.get(k) + " -> " + route.versions.get(k + 1));
             route.hops.add(new Hop(route.waypoints.get(w), route.waypoints.get(w + 1), steps));
         }
+        if (route.crossesSeam()) {
+            // The lane change records under its own pseudo-step, so history and hop records name it.
+            for (Hop hop : route.hops) {
+                List<String> steps = hop.steps();
+                for (int s = 0; s < steps.size(); s++) {
+                    String[] p = steps.get(s).split(" -> ");
+                    if (p[0].equals(FIRST_MAPPED) != p[1].equals(FIRST_MAPPED)) {
+                        steps.add(p[0].equals(FIRST_MAPPED) ? s : s + 1, BRIDGE_STEP);
+                        break;
+                    }
+                }
+            }
+        }
         return route;
     }
 
@@ -234,9 +213,34 @@ final class Route {
     List<String> srgChain() {
         List<String> chain = new ArrayList<>();
         for (String version : versions) {
-            if (Versions.compare(version, FIRST_MAPPED) > 0) break;
-            chain.add(version);
+            if (Versions.compare(version, FIRST_MAPPED) > 0) {
+                if (!chain.isEmpty()) {
+                    break;
+                }
+            } else {
+                chain.add(version);
+            }
         }
+        return chain;
+    }
+
+    /** Whether the route leaves the SRG world: releases on both sides of the first Mojang-mapped one. */
+    boolean crossesSeam() {
+        boolean below = false, above = false;
+        for (String version : versions) {
+            if (Versions.compare(version, FIRST_MAPPED) > 0) {
+                above = true;
+            } else {
+                below = true;
+            }
+        }
+        return below && above;
+    }
+
+    /** Every release a rename map can be joined across, in walking order: the SRG run to 1.14.4, then the intermediary run. */
+    List<String> seamChain() {
+        List<String> chain = new ArrayList<>();
+        for (String version : versions) if (Versions.compare(version, FIRST_UNOBFUSCATED) < 0) chain.add(version);
         return chain;
     }
 
