@@ -836,8 +836,32 @@ final class Port {
             );
         }
         if (options.has("dry-run")) {
-            if (!options.values.containsKey("log")) throw new IllegalArgumentException(
-                "A dry-run needs --log <compiler log>; no sources were changed."
+            // The preflight needs no compiler log: it reports what the map knows from the source
+            // alone, so an uncompilable tree still gets checked. The fix preview additionally needs
+            // the log to place each remaining error.
+            var lint = tools.run(
+                "VersionMap",
+                List.of(
+                    "--map",
+                    map.toString(),
+                    "--preflight",
+                    "--repo",
+                    build.project.root.toString(),
+                    "--dry-run"
+                ),
+                "port-preview"
+            );
+            if (!options.values.containsKey("log")) return Json.map(
+                "ok",
+                lint.exit() == 0,
+                "tier",
+                "preview",
+                "details",
+                Run.tail(lint.log()),
+                "sourcesChanged",
+                false,
+                "gameVerified",
+                false
             );
             var preview = tools.run(
                 "VersionMap",

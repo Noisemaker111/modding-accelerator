@@ -1940,6 +1940,7 @@ public final class VersionMap {
         final Map<String, Set<String>> sigTo = new HashMap<>();
         final Map<String, Set<String>> sigTransitions = new HashMap<>();
         final Set<String> methodGone = new HashSet<>(), fieldGone = new HashSet<>(), sigNames = new HashSet<>();
+        final List<Map<String, String>> history = new ArrayList<>(); // kind, name, what, was, to, step, in map order
 
         static Known load(Path mapFile) throws IOException {
             Known k = new Known();
@@ -1959,6 +1960,17 @@ public final class VersionMap {
                     continue;
                 }
                 String t = line.trim();
+                if (t.contains("\"step\":")) {
+                    Map<String, String> event = new HashMap<>();
+                    event.put("kind", field(t, "kind"));
+                    event.put("name", field(t, "name"));
+                    event.put("what", field(t, "what"));
+                    event.put("was", field(t, "was"));
+                    event.put("to", field(t, "to"));
+                    event.put("step", field(t, "step"));
+                    k.history.add(event);
+                    continue;
+                }
                 if (section.equals("classesRemoved")) {
                     if (t.startsWith("\"")) {
                         String c = t.replaceAll("[\",]", "");
@@ -2587,23 +2599,55 @@ public final class VersionMap {
 
         static int run(Path mapFile, Path repo, boolean dryRun) throws IOException {
             Known known = Known.load(mapFile);
-            if (!"yarn".equals(known.names)) {
-                System.out.println("map-preflight: no reviewed recipes for " + known.names);
-                return 0;
+            if ("yarn".equals(known.names)) {
+                int files = 0;
+                for (Path file : Fix.sourceFiles(repo)) {
+                    String before = Files.readString(file, StandardCharsets.UTF_8);
+                    String after = ApiFix.preflight(known, file, before);
+                    if (after.equals(before)) {
+                        continue;
+                    }
+                    files++;
+                    if (!dryRun) {
+                        Files.writeString(file, after, StandardCharsets.UTF_8);
+                    }
+                }
+                System.out.println("map-preflight: " + files + " file(s)" + (dryRun ? " (dry run)" : ""));
+                return files;
             }
-            int files = 0;
+            // Map-driven lint for MCP and Mojang names: every method call and dotted field read
+            // whose name the map renamed, moved or removed is reported with the update that changed
+            // it. Unanimous renames on provably game-owned receivers are rewritten; everything else
+            // (ambiguous renames, removals, unknown receivers, mod-owned or self-declared names) is
+            // reported for a human. Parse only: no build, no game.
+            int files = 0, auto = 0, review = 0;
             for (Path file : Fix.sourceFiles(repo)) {
                 String before = Files.readString(file, StandardCharsets.UTF_8);
-                String after = ApiFix.preflight(known, file, before);
-                if (after.equals(before)) {
+                ApiFix.Lint lint;
+                try {
+                    lint = ApiFix.lintKnown(known, file, before);
+                } catch (RuntimeException failure) {
+                    System.out.println(repo.relativize(file) + ": skipped, could not parse (" + failure.getMessage() + ")");
                     continue;
                 }
-                files++;
-                if (!dryRun) {
-                    Files.writeString(file, after, StandardCharsets.UTF_8);
+                for (ApiFix.LintHit hit : lint.hits) {
+                    System.out.println(repo.relativize(file) + ":" + hit.line() + ": " + hit.detail());
+                    if (hit.auto()) {
+                        auto++;
+                    } else {
+                        review++;
+                    }
+                }
+                if (!lint.fixed.equals(before)) {
+                    files++;
+                    if (!dryRun) {
+                        Files.writeString(file, lint.fixed, StandardCharsets.UTF_8);
+                    }
                 }
             }
-            System.out.println("map-preflight: " + files + " file(s)" + (dryRun ? " (dry run)" : ""));
+            System.out.println(
+                "map-preflight: " + files + " file(s), " + auto + " auto-fix(es), " + review + " to review" + (dryRun ? " (dry run)" : "")
+            );
             return files;
         }
     }
@@ -2846,6 +2890,353 @@ public final class VersionMap {
                 }
             }
             return a.withEdits();
+        }
+
+        /** One lint finding: a call site the map knows, with its rewrite when it is unambiguous. */
+        record LintHit(int line, String oldName, String detail, boolean auto) {}
+
+        /** The lint result: findings for the report, and the source with unanimous renames applied. */
+        static final class Lint {
+            final List<LintHit> hits = new ArrayList<>();
+            String fixed;
+        }
+
+        static int lineOf(String source, int offset) {
+            int line = 1;
+            for (int i = 0; i < offset && i < source.length(); i++) {
+                if (source.charAt(i) == 10) {
+                    line++;
+                }
+            }
+            return line;
+        }
+
+        /** The source's own declarations and imports, for telling game members from the mod's own. */
+        static final class Scope {
+            final Set<String> methods = new HashSet<>(), vars = new HashSet<>(), types = new HashSet<>();
+            final Map<String, String> varTypes = new HashMap<>(), imports = new HashMap<>();
+        }
+
+        static String simpleTypeName(String type) {
+            String t = type.replaceAll("<.*", "").replace("[]", "").trim();
+            int dot = t.lastIndexOf('.');
+            return dot >= 0 ? t.substring(dot + 1) : t;
+        }
+
+        static Scope scopeOf(CompilationUnitTree unit, List<TreePath> paths) {
+            Scope s = new Scope();
+            for (TreePath p : paths) {
+                if (p.getLeaf() instanceof MethodTree m) {
+                    s.methods.add(m.getName().toString());
+                } else if (p.getLeaf() instanceof VariableTree v) {
+                    String name = v.getName().toString();
+                    s.vars.add(name);
+                    if (v.getType() != null) {
+                        s.varTypes.put(name, simpleTypeName(v.getType().toString()));
+                    }
+                } else if (p.getLeaf() instanceof ClassTree c) {
+                    s.types.add(c.getSimpleName().toString());
+                }
+            }
+            for (ImportTree i : unit.getImports()) {
+                if (!i.isStatic()) {
+                    String fqn = i.getQualifiedIdentifier().toString();
+                    int dot = fqn.lastIndexOf('.');
+                    if (dot > 0) {
+                        s.imports.put(fqn.substring(dot + 1), fqn);
+                    }
+                }
+            }
+            return s;
+        }
+
+        static boolean gameImport(Scope scope, String simple) {
+            String fqn = scope.imports.get(simple);
+            return fqn != null && !scope.types.contains(simple) &&
+                (fqn.startsWith("net.minecraft.") || fqn.startsWith("com.mojang."));
+        }
+
+        /** The leftmost name of a receiver expression, or null when it is not a plain name. */
+        static String receiverRoot(ExpressionTree receiver) {
+            Tree r = receiver;
+            while (r instanceof MemberSelectTree m) {
+                r = m.getExpression();
+            }
+            return r instanceof IdentifierTree id ? id.getName().toString() : null;
+        }
+
+        /** The simple type behind a call receiver, or null when the source cannot prove it. */
+        static String receiverType(Scope scope, ExpressionTree receiver) {
+            if (receiver instanceof NewClassTree n && n.getIdentifier() instanceof IdentifierTree id) {
+                String name = id.getName().toString();
+                return scope.imports.containsKey(name) ? simpleTypeName(scope.imports.get(name)) : name;
+            }
+            String root = receiverRoot(receiver);
+            if (root == null || root.equals("this") || root.equals("super")) {
+                return null;
+            }
+            if (scope.varTypes.containsKey(root)) {
+                return scope.varTypes.get(root);
+            }
+            if (scope.imports.containsKey(root)) {
+                return simpleTypeName(scope.imports.get(root));
+            }
+            return null;
+        }
+
+        /** A member select that names a type or a package, not a member access. */
+        static boolean qualifiedContext(TreePath p) {
+            TreePath parent = p.getParentPath();
+            if (parent == null) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof MemberSelectTree) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof ImportTree) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof VariableTree v && v.getType() == p.getLeaf()) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof MethodTree m && m.getReturnType() == p.getLeaf()) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof NewClassTree n && n.getIdentifier() == p.getLeaf()) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof ClassTree) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof InstanceOfTree io && io.getType() == p.getLeaf()) {
+                return true;
+            }
+            for (TreePath q = p; q != null; q = q.getParentPath()) {
+                if (q.getLeaf() instanceof ImportTree) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static int callArity(String desc) {
+            int depth = desc.indexOf('('), end = desc.indexOf(')');
+            if (depth < 0 || end < 0) {
+                return -1;
+            }
+            int count = 0, i = depth + 1;
+            while (i < end) {
+                char c = desc.charAt(i);
+                if (c == '[') {
+                    i++;
+                } else if (c == 'L') {
+                    int semi = desc.indexOf(';', i);
+                    if (semi < 0 || semi > end) {
+                        return -1;
+                    }
+                    i = semi + 1;
+                    count++;
+                } else {
+                    i++;
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        static String stepsFor(Known k, String kind, String name, Set<String> whats) {
+            String key = k.names + "\0" + k.fromVersion + "\0" + k.toVersion + "\0" + kind + "\0" + name + "\0" + String.join(",", new TreeSet<>(whats));
+            return stepsForCache.computeIfAbsent(key, x -> {
+                List<String> steps = new ArrayList<>();
+                for (Map<String, String> e : k.history) {
+                    if (kind.equals(e.get("kind")) && name.equals(e.get("name")) && whats.contains(e.get("what"))) {
+                        steps.add(e.get("step"));
+                    }
+                }
+                return String.join(", ", new LinkedHashSet<>(steps));
+            });
+        }
+
+        static final Map<String, String> stepsForCache = new HashMap<>();
+
+        static String candidatesDetail(Set<String[]> candidates) {
+            Set<String> names = new TreeSet<>();
+            for (String[] c : candidates) {
+                names.add(c[1]);
+            }
+            return String.join("|", names);
+        }
+
+        /**
+         * Map-driven lint for any namespace: parse only, no build. Every method call and dotted
+         * field read whose name the map renamed, moved or removed is reported with the update that
+         * changed it. A rename is rewritten only when it is unanimous (one new name everywhere),
+         * the file does not declare the name itself, and the receiver provably names a game type;
+         * everything else is reported for a human. Unqualified calls are reported, never rewritten;
+         * constructors ride along with class renames, which stay the fixer's textual job.
+         */
+        static Lint lintKnown(Known k, Path file, String source) throws IOException {
+            ApiFix a = new ApiFix(file, source);
+            Lint out = new Lint();
+            out.fixed = source;
+            List<String> lines = Arrays.asList(source.split("\\R", -1));
+            Scope scope = scopeOf(a.unit, a.paths);
+            for (TreePath p : a.paths) {
+                if (p.getLeaf() instanceof MethodInvocationTree call && call.getMethodSelect() instanceof MemberSelectTree member) {
+                    String name = member.getIdentifier().toString();
+                    int line = lineOf(source, a.start(member));
+                    if (scope.methods.contains(name)) {
+                        if (k.methodTo.containsKey(name) || k.methodGone.contains(name) || k.sigNames.contains(name)) {
+                            out.hits.add(new LintHit(line, name, name + " declared here; skipped [self-declared]", false));
+                        }
+                        continue;
+                    }
+                    Set<String[]> candidates = k.methodTo.get(name);
+                    if (candidates == null || candidates.isEmpty()) {
+                        if (k.methodGone.contains(name)) {
+                            out.hits.add(
+                                new LintHit(line, name, name + " removed (" + stepsFor(k, "method", name, Set.of("removed")) + ") [hand-fix]", false)
+                            );
+                        } else if (k.sigNames.contains(name)) {
+                            boolean any = false;
+                            for (Map.Entry<String, Set<String>> e : k.sigTo.entrySet()) {
+                                if (!e.getKey().endsWith("." + name)) {
+                                    continue;
+                                }
+                                for (String desc : e.getValue()) {
+                                    if (callArity(desc) == call.getArguments().size()) {
+                                        any = true;
+                                    }
+                                }
+                            }
+                            if (!any) {
+                                out.hits.add(
+                                    new LintHit(line, name, name + " signature changed (" + stepsFor(k, "method", name, Set.of("signature")) + ") [review args]", false)
+                                );
+                            }
+                        }
+                        continue;
+                    }
+                    String steps = stepsFor(k, "method", name, Set.of("renamed", "moved"));
+                    String type = receiverType(scope, member.getExpression());
+                    boolean game = type != null && gameImport(scope, type);
+                    Set<String[]> relevant = candidates;
+                    if (game) {
+                        List<String[]> owned = new ArrayList<>();
+                        for (String[] c : candidates) {
+                            if (c[0].equals(type)) {
+                                owned.add(c);
+                            }
+                        }
+                        if (!owned.isEmpty()) {
+                            relevant = new HashSet<>(owned);
+                        }
+                    }
+                    String to = game ? Known.unanimous(relevant) : null;
+                    boolean applied = false;
+                    if (to != null) {
+                        String next = replaceCall(out.fixed, line, name, to);
+                        applied = !next.equals(out.fixed);
+                        out.fixed = next;
+                    }
+                    String where = member.getExpression() + "." + name;
+                    if (applied) {
+                        out.hits.add(new LintHit(line, name, where + " -> " + to + " (" + steps + ") [auto]", true));
+                    } else {
+                        out.hits.add(
+                            new LintHit(line, name, where + " -> " + candidatesDetail(candidates) + " (" + steps + ") [review]", false)
+                        );
+                    }
+                } else if (p.getLeaf() instanceof MemberSelectTree member && !qualifiedContext(p)) {
+                    String name = member.getIdentifier().toString();
+                    int line = lineOf(source, a.start(member));
+                    if (scope.vars.contains(name)) {
+                        if (k.fieldTo.containsKey(name) || k.fieldGone.contains(name)) {
+                            out.hits.add(new LintHit(line, name, name + " declared here; skipped [self-declared]", false));
+                        }
+                        continue;
+                    }
+                    String lineText = line >= 1 && line <= lines.size() ? lines.get(line - 1) : "";
+                    Set<String[]> candidates = k.fieldTo.get(name);
+                    if (candidates == null || candidates.isEmpty()) {
+                        if (k.fieldGone.contains(name)) {
+                            out.hits.add(
+                                new LintHit(line, name, name + " removed (" + stepsFor(k, "field", name, Set.of("removed")) + ") [hand-fix]", false)
+                            );
+                        }
+                        continue;
+                    }
+                    if (lineText.matches(".*\\b" + Pattern.quote(name) + "\\s*\\(.*")) {
+                        out.hits.add(new LintHit(line, name, name + " -> " + candidatesDetail(candidates) + " [review: call-shaped]", false));
+                        continue;
+                    }
+                    String steps = stepsFor(k, "field", name, Set.of("renamed", "moved"));
+                    String type = receiverType(scope, member.getExpression());
+                    boolean game = type != null && gameImport(scope, type);
+                    Set<String[]> relevant = candidates;
+                    if (game) {
+                        List<String[]> owned = new ArrayList<>();
+                        for (String[] c : candidates) {
+                            if (c[0].equals(type)) {
+                                owned.add(c);
+                            }
+                        }
+                        if (!owned.isEmpty()) {
+                            relevant = new HashSet<>(owned);
+                        }
+                    }
+                    String to = game ? Known.unanimous(relevant) : null;
+                    boolean applied = false;
+                    if (to != null) {
+                        String next = replaceField(out.fixed, line, name, to);
+                        applied = !next.equals(out.fixed);
+                        out.fixed = next;
+                    }
+                    String where = member.getExpression() + "." + name;
+                    if (applied) {
+                        out.hits.add(new LintHit(line, name, where + " -> " + to + " (" + steps + ") [auto]", true));
+                    } else {
+                        out.hits.add(new LintHit(line, name, where + " -> " + candidatesDetail(candidates) + " (" + steps + ") [review]", false));
+                    }
+                } else if (
+                    p.getLeaf() instanceof MethodInvocationTree call &&
+                    call.getMethodSelect() instanceof IdentifierTree id &&
+                    !(call.getMethodSelect() instanceof MemberSelectTree)
+                ) {
+                    String name = id.getName().toString();
+                    if (scope.methods.contains(name) || !k.methodTo.containsKey(name)) {
+                        continue;
+                    }
+                    int line = lineOf(source, a.start(call));
+                    out.hits.add(
+                        new LintHit(
+                            line,
+                            name,
+                            name + " -> " + candidatesDetail(k.methodTo.get(name)) + " (" + stepsFor(k, "method", name, Set.of("renamed", "moved")) + ") [review: unqualified call]",
+                            false
+                        )
+                    );
+                }
+            }
+            return out;
+        }
+
+        static String replaceCall(String source, int line, String from, String to) {
+            return replaceOnLine(source, line, "\\b" + Pattern.quote(from) + "(?=\\s*\\()", Matcher.quoteReplacement(to));
+        }
+
+        static String replaceField(String source, int line, String from, String to) {
+            return replaceOnLine(source, line, "\\b" + Pattern.quote(from) + "\\b(?![\\w$])", Matcher.quoteReplacement(to));
+        }
+
+        static String replaceOnLine(String source, int line, String pattern, String replacement) {
+            String nl = source.contains("\r\n") ? "\r\n" : "\n";
+            String[] lines = source.split("\r\n|\n", -1);
+            if (line < 1 || line > lines.length) {
+                return source;
+            }
+            lines[line - 1] = Pattern.compile(pattern).matcher(lines[line - 1]).replaceAll(replacement);
+            return String.join(nl, lines);
         }
 
         String opaqueTextColor(ExpressionTree color) {
