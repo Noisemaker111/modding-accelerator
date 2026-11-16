@@ -7088,6 +7088,524 @@
         "after": "package mod;\n\nimport net.minecraft.world.entity.EntityType;\n\nclass Spawns {\n\tboolean pig(Entity e) { return e.getType() == EntityType.PIG; }\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "block-entity-save-value-output-1216",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "method does not override or implement a method from a supertype|method saveAdditional in class \\w+ cannot be applied",
+      "apply": {
+        "find": "(\\bvoid\\s+saveAdditional\\s*\\()\\s*(?:final\\s+)?CompoundTag\\s+(\\w+)\\s*,\\s*(?:final\\s+)?HolderLookup\\.Provider\\s+\\w+\\s*\\)",
+        "replace": "$1ValueOutput $2)",
+        "ensureImports": [
+          "net.minecraft.world.level.storage.ValueOutput"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 saves a block entity through a ValueOutput, which has the same put methods as CompoundTag. The parameter keeps its name; the registries parameter is gone (a use of it stays a reported error).",
+      "verified": "Mojang's 1.21.5 mappings: BlockEntity.saveAdditional/loadAdditional(CompoundTag, HolderLookup$Provider), Entity.addAdditionalSaveData/readAdditionalSaveData(CompoundTag), ContainerHelper.saveAllItems(CompoundTag, NonNullList[, boolean], Provider) and loadAllItems(CompoundTag, NonNullList, Provider); 1.21.6: saveAdditional(ValueOutput), loadAdditional(ValueInput), addAdditionalSaveData(ValueOutput), readAdditionalSaveData(ValueInput), saveAllItems(ValueOutput, NonNullList[, boolean]), loadAllItems(ValueInput, NonNullList); ValueOutput has putInt/putString/putBoolean/...; ValueInput has getIntOr/getStringOr/..., getInt -> Optional and lookup() -> Provider (26.1 jar)",
+      "test": {
+        "error": "StoveBlockEntity.java:4: error: method does not override or implement a method from a supertype\n",
+        "before": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.level.storage.ValueOutput;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(ValueOutput tag) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "block-entity-load-value-input-1216",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "method does not override or implement a method from a supertype|method loadAdditional in class \\w+ cannot be applied",
+      "apply": {
+        "find": "(\\bvoid\\s+loadAdditional\\s*\\()\\s*(?:final\\s+)?CompoundTag\\s+(\\w+)\\s*,\\s*(?:final\\s+)?HolderLookup\\.Provider\\s+(\\w+)\\s*\\)(\\s*\\{)",
+        "replace": "$1ValueInput $2)$4 HolderLookup.Provider $3 = $2.lookup();",
+        "ensureImports": [
+          "net.minecraft.world.level.storage.ValueInput"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 loads a block entity from a ValueInput, whose lookup() is the registries the method used to be given, so the body keeps them.",
+      "verified": "Mojang's 1.21.5 mappings: BlockEntity.saveAdditional/loadAdditional(CompoundTag, HolderLookup$Provider), Entity.addAdditionalSaveData/readAdditionalSaveData(CompoundTag), ContainerHelper.saveAllItems(CompoundTag, NonNullList[, boolean], Provider) and loadAllItems(CompoundTag, NonNullList, Provider); 1.21.6: saveAdditional(ValueOutput), loadAdditional(ValueInput), addAdditionalSaveData(ValueOutput), readAdditionalSaveData(ValueInput), saveAllItems(ValueOutput, NonNullList[, boolean]), loadAllItems(ValueInput, NonNullList); ValueOutput has putInt/putString/putBoolean/...; ValueInput has getIntOr/getStringOr/..., getInt -> Optional and lookup() -> Provider (26.1 jar)",
+      "test": {
+        "error": "StoveBlockEntity.java:11: error: method does not override or implement a method from a supertype\n",
+        "before": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.level.storage.ValueInput;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(ValueInput tag) { HolderLookup.Provider registries = tag.lookup();\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "block-entity-save-super-1216",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "method saveAdditional in class \\w+ cannot be applied to given types",
+      "apply": {
+        "find": "\\bsuper\\.saveAdditional\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "super.saveAdditional($1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "The super call passes only the ValueOutput.",
+      "verified": "Mojang's 1.21.5 mappings: BlockEntity.saveAdditional/loadAdditional(CompoundTag, HolderLookup$Provider), Entity.addAdditionalSaveData/readAdditionalSaveData(CompoundTag), ContainerHelper.saveAllItems(CompoundTag, NonNullList[, boolean], Provider) and loadAllItems(CompoundTag, NonNullList, Provider); 1.21.6: saveAdditional(ValueOutput), loadAdditional(ValueInput), addAdditionalSaveData(ValueOutput), readAdditionalSaveData(ValueInput), saveAllItems(ValueOutput, NonNullList[, boolean]), loadAllItems(ValueInput, NonNullList); ValueOutput has putInt/putString/putBoolean/...; ValueInput has getIntOr/getStringOr/..., getInt -> Optional and lookup() -> Provider (26.1 jar)",
+      "test": {
+        "error": "StoveBlockEntity.java:6: error: method saveAdditional in class BlockEntity cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "after": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "block-entity-load-super-1216",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "method loadAdditional in class \\w+ cannot be applied to given types",
+      "apply": {
+        "find": "\\bsuper\\.loadAdditional\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "super.loadAdditional($1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "The super call passes only the ValueInput.",
+      "verified": "Mojang's 1.21.5 mappings: BlockEntity.saveAdditional/loadAdditional(CompoundTag, HolderLookup$Provider), Entity.addAdditionalSaveData/readAdditionalSaveData(CompoundTag), ContainerHelper.saveAllItems(CompoundTag, NonNullList[, boolean], Provider) and loadAllItems(CompoundTag, NonNullList, Provider); 1.21.6: saveAdditional(ValueOutput), loadAdditional(ValueInput), addAdditionalSaveData(ValueOutput), readAdditionalSaveData(ValueInput), saveAllItems(ValueOutput, NonNullList[, boolean]), loadAllItems(ValueInput, NonNullList); ValueOutput has putInt/putString/putBoolean/...; ValueInput has getIntOr/getStringOr/..., getInt -> Optional and lookup() -> Provider (26.1 jar)",
+      "test": {
+        "error": "StoveBlockEntity.java:13: error: method loadAdditional in class BlockEntity cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "after": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "container-helper-save-1216",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "(?:method saveAllItems in class ContainerHelper cannot be applied|no suitable method found for saveAllItems\\()",
+      "apply": {
+        "find": "\\bContainerHelper\\.saveAllItems\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)(?:,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+))?,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "ContainerHelper.saveAllItems($1,$2)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6's saveAllItems writes to the ValueOutput and takes no registries; the optional always-save flag is dropped with them (empty lists are then not written, which is how the default always read).",
+      "verified": "Mojang's 1.21.5 mappings: BlockEntity.saveAdditional/loadAdditional(CompoundTag, HolderLookup$Provider), Entity.addAdditionalSaveData/readAdditionalSaveData(CompoundTag), ContainerHelper.saveAllItems(CompoundTag, NonNullList[, boolean], Provider) and loadAllItems(CompoundTag, NonNullList, Provider); 1.21.6: saveAdditional(ValueOutput), loadAdditional(ValueInput), addAdditionalSaveData(ValueOutput), readAdditionalSaveData(ValueInput), saveAllItems(ValueOutput, NonNullList[, boolean]), loadAllItems(ValueInput, NonNullList); ValueOutput has putInt/putString/putBoolean/...; ValueInput has getIntOr/getStringOr/..., getInt -> Optional and lookup() -> Provider (26.1 jar)",
+      "test": {
+        "error": "StoveBlockEntity.java:8: error: method saveAllItems in class ContainerHelper cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "after": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "container-helper-load-1216",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "(?:method loadAllItems in class ContainerHelper cannot be applied|no suitable method found for loadAllItems\\()",
+      "apply": {
+        "find": "\\bContainerHelper\\.loadAllItems\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "ContainerHelper.loadAllItems($1,$2)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.6's loadAllItems reads from the ValueInput and takes no registries.",
+      "verified": "Mojang's 1.21.5 mappings: BlockEntity.saveAdditional/loadAdditional(CompoundTag, HolderLookup$Provider), Entity.addAdditionalSaveData/readAdditionalSaveData(CompoundTag), ContainerHelper.saveAllItems(CompoundTag, NonNullList[, boolean], Provider) and loadAllItems(CompoundTag, NonNullList, Provider); 1.21.6: saveAdditional(ValueOutput), loadAdditional(ValueInput), addAdditionalSaveData(ValueOutput), readAdditionalSaveData(ValueInput), saveAllItems(ValueOutput, NonNullList[, boolean]), loadAllItems(ValueInput, NonNullList); ValueOutput has putInt/putString/putBoolean/...; ValueInput has getIntOr/getStringOr/..., getInt -> Optional and lookup() -> Provider (26.1 jar)",
+      "test": {
+        "error": "StoveBlockEntity.java:15: error: method loadAllItems in class ContainerHelper cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items, registries);\n\t}\n}\n",
+        "after": "package mod;\n\nclass StoveBlockEntity extends BlockEntity {\n\t@Override\n\tprotected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.saveAdditional(tag, registries);\n\t\ttag.putInt(\"CookTime\", cookTime);\n\t\tContainerHelper.saveAllItems(tag, items, registries);\n\t}\n\n\t@Override\n\tprotected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {\n\t\tsuper.loadAdditional(tag, registries);\n\t\tcookTime = tag.getIntOr(\"CookTime\", 0);\n\t\tContainerHelper.loadAllItems(tag, items);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "entity-save-value-output-1216",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "method does not override or implement a method from a supertype|method addAdditionalSaveData in class \\w+ cannot be applied",
+      "apply": {
+        "find": "(\\bvoid\\s+addAdditionalSaveData\\s*\\()\\s*(?:final\\s+)?CompoundTag\\s+(\\w+)\\s*\\)",
+        "replace": "$1ValueOutput $2)",
+        "ensureImports": [
+          "net.minecraft.world.level.storage.ValueOutput"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 saves an entity's own data through a ValueOutput.",
+      "verified": "Mojang's 1.21.5 mappings: BlockEntity.saveAdditional/loadAdditional(CompoundTag, HolderLookup$Provider), Entity.addAdditionalSaveData/readAdditionalSaveData(CompoundTag), ContainerHelper.saveAllItems(CompoundTag, NonNullList[, boolean], Provider) and loadAllItems(CompoundTag, NonNullList, Provider); 1.21.6: saveAdditional(ValueOutput), loadAdditional(ValueInput), addAdditionalSaveData(ValueOutput), readAdditionalSaveData(ValueInput), saveAllItems(ValueOutput, NonNullList[, boolean]), loadAllItems(ValueInput, NonNullList); ValueOutput has putInt/putString/putBoolean/...; ValueInput has getIntOr/getStringOr/..., getInt -> Optional and lookup() -> Provider (26.1 jar)",
+      "test": {
+        "error": "CorpseEntity.java:5: error: method does not override or implement a method from a supertype\n",
+        "before": "package mod;\n\nclass CorpseEntity extends Entity {\n\t@Override\n\tpublic void addAdditionalSaveData(CompoundTag compound) {\n\t\tcompound.putInt(\"Age\", age);\n\t}\n\n\t@Override\n\tpublic void readAdditionalSaveData(final CompoundTag compound) {\n\t\tage = compound.getIntOr(\"Age\", 0);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.level.storage.ValueOutput;\n\nclass CorpseEntity extends Entity {\n\t@Override\n\tpublic void addAdditionalSaveData(ValueOutput compound) {\n\t\tcompound.putInt(\"Age\", age);\n\t}\n\n\t@Override\n\tpublic void readAdditionalSaveData(final CompoundTag compound) {\n\t\tage = compound.getIntOr(\"Age\", 0);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "entity-load-value-input-1216",
+      "provenance": "hand",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "method does not override or implement a method from a supertype|method readAdditionalSaveData in class \\w+ cannot be applied",
+      "apply": {
+        "find": "(\\bvoid\\s+readAdditionalSaveData\\s*\\()\\s*(?:final\\s+)?CompoundTag\\s+(\\w+)\\s*\\)",
+        "replace": "$1ValueInput $2)",
+        "ensureImports": [
+          "net.minecraft.world.level.storage.ValueInput"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 loads an entity's own data from a ValueInput.",
+      "verified": "Mojang's 1.21.5 mappings: BlockEntity.saveAdditional/loadAdditional(CompoundTag, HolderLookup$Provider), Entity.addAdditionalSaveData/readAdditionalSaveData(CompoundTag), ContainerHelper.saveAllItems(CompoundTag, NonNullList[, boolean], Provider) and loadAllItems(CompoundTag, NonNullList, Provider); 1.21.6: saveAdditional(ValueOutput), loadAdditional(ValueInput), addAdditionalSaveData(ValueOutput), readAdditionalSaveData(ValueInput), saveAllItems(ValueOutput, NonNullList[, boolean]), loadAllItems(ValueInput, NonNullList); ValueOutput has putInt/putString/putBoolean/...; ValueInput has getIntOr/getStringOr/..., getInt -> Optional and lookup() -> Provider (26.1 jar)",
+      "test": {
+        "error": "CorpseEntity.java:10: error: method does not override or implement a method from a supertype\n",
+        "before": "package mod;\n\nclass CorpseEntity extends Entity {\n\t@Override\n\tpublic void addAdditionalSaveData(CompoundTag compound) {\n\t\tcompound.putInt(\"Age\", age);\n\t}\n\n\t@Override\n\tpublic void readAdditionalSaveData(final CompoundTag compound) {\n\t\tage = compound.getIntOr(\"Age\", 0);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.level.storage.ValueInput;\n\nclass CorpseEntity extends Entity {\n\t@Override\n\tpublic void addAdditionalSaveData(CompoundTag compound) {\n\t\tcompound.putInt(\"Age\", age);\n\t}\n\n\t@Override\n\tpublic void readAdditionalSaveData(ValueInput compound) {\n\t\tage = compound.getIntOr(\"Age\", 0);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "click-event-run-command-1215",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "ClickEvent is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+ClickEvent\\(\\s*ClickEvent\\.Action\\.RUN_COMMAND\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "new ClickEvent.RunCommand($1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made ClickEvent a sealed interface; the RUN_COMMAND action is the ClickEvent.RunCommand record.",
+      "verified": "Mojang's 1.21.4 mappings: ClickEvent(ClickEvent$Action, String) and HoverEvent(HoverEvent$Action, Object); 1.21.5: both are sealed interfaces with records ClickEvent$RunCommand(String), $SuggestCommand(String), $CopyToClipboard(String), $OpenFile(String), $OpenUrl(URI), $ChangePage(int) and HoverEvent$ShowText(Component)",
+      "test": {
+        "error": "Messages.java:6: error: ClickEvent is abstract; cannot be instantiated\n",
+        "before": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "after": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent.RunCommand( \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "click-event-suggest-command-1215",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "ClickEvent is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+ClickEvent\\(\\s*ClickEvent\\.Action\\.SUGGEST_COMMAND\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "new ClickEvent.SuggestCommand($1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made ClickEvent a sealed interface; the SUGGEST_COMMAND action is the ClickEvent.SuggestCommand record.",
+      "verified": "Mojang's 1.21.4 mappings: ClickEvent(ClickEvent$Action, String) and HoverEvent(HoverEvent$Action, Object); 1.21.5: both are sealed interfaces with records ClickEvent$RunCommand(String), $SuggestCommand(String), $CopyToClipboard(String), $OpenFile(String), $OpenUrl(URI), $ChangePage(int) and HoverEvent$ShowText(Component)",
+      "test": {
+        "error": "Messages.java:6: error: ClickEvent is abstract; cannot be instantiated\n",
+        "before": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "after": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent.SuggestCommand( \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "click-event-copy-to-clipboard-1215",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "ClickEvent is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+ClickEvent\\(\\s*ClickEvent\\.Action\\.COPY_TO_CLIPBOARD\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "new ClickEvent.CopyToClipboard($1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made ClickEvent a sealed interface; the COPY_TO_CLIPBOARD action is the ClickEvent.CopyToClipboard record.",
+      "verified": "Mojang's 1.21.4 mappings: ClickEvent(ClickEvent$Action, String) and HoverEvent(HoverEvent$Action, Object); 1.21.5: both are sealed interfaces with records ClickEvent$RunCommand(String), $SuggestCommand(String), $CopyToClipboard(String), $OpenFile(String), $OpenUrl(URI), $ChangePage(int) and HoverEvent$ShowText(Component)",
+      "test": {
+        "error": "Messages.java:6: error: ClickEvent is abstract; cannot be instantiated\n",
+        "before": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "after": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent.CopyToClipboard( \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "click-event-open-file-1215",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "ClickEvent is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+ClickEvent\\(\\s*ClickEvent\\.Action\\.OPEN_FILE\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "new ClickEvent.OpenFile($1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made ClickEvent a sealed interface; the OPEN_FILE action is the ClickEvent.OpenFile record.",
+      "verified": "Mojang's 1.21.4 mappings: ClickEvent(ClickEvent$Action, String) and HoverEvent(HoverEvent$Action, Object); 1.21.5: both are sealed interfaces with records ClickEvent$RunCommand(String), $SuggestCommand(String), $CopyToClipboard(String), $OpenFile(String), $OpenUrl(URI), $ChangePage(int) and HoverEvent$ShowText(Component)",
+      "test": {
+        "error": "Messages.java:6: error: ClickEvent is abstract; cannot be instantiated\n",
+        "before": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "after": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent.OpenFile( \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "click-event-open-url-1215",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "ClickEvent is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+ClickEvent\\(\\s*ClickEvent\\.Action\\.OPEN_URL\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "new ClickEvent.OpenUrl(java.net.URI.create($1))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made ClickEvent a sealed interface; the OPEN_URL action is the ClickEvent.OpenUrl record (it takes a URI).",
+      "verified": "Mojang's 1.21.4 mappings: ClickEvent(ClickEvent$Action, String) and HoverEvent(HoverEvent$Action, Object); 1.21.5: both are sealed interfaces with records ClickEvent$RunCommand(String), $SuggestCommand(String), $CopyToClipboard(String), $OpenFile(String), $OpenUrl(URI), $ChangePage(int) and HoverEvent$ShowText(Component)",
+      "test": {
+        "error": "Messages.java:6: error: ClickEvent is abstract; cannot be instantiated\n",
+        "before": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "after": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent.OpenUrl(java.net.URI.create( \"/restore \" + command)))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "click-event-change-page-1215",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "ClickEvent is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+ClickEvent\\(\\s*ClickEvent\\.Action\\.CHANGE_PAGE\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "new ClickEvent.ChangePage(Integer.parseInt($1))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made ClickEvent a sealed interface; the CHANGE_PAGE action is the ClickEvent.ChangePage record (it takes the page number).",
+      "verified": "Mojang's 1.21.4 mappings: ClickEvent(ClickEvent$Action, String) and HoverEvent(HoverEvent$Action, Object); 1.21.5: both are sealed interfaces with records ClickEvent$RunCommand(String), $SuggestCommand(String), $CopyToClipboard(String), $OpenFile(String), $OpenUrl(URI), $ChangePage(int) and HoverEvent$ShowText(Component)",
+      "test": {
+        "error": "Messages.java:6: error: ClickEvent is abstract; cannot be instantiated\n",
+        "before": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent(ClickEvent.Action.CHANGE_PAGE, \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "after": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent.ChangePage(Integer.parseInt( \"/restore \" + command)))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "hover-event-show-text-1215",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "HoverEvent is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+HoverEvent\\(\\s*HoverEvent\\.Action\\.SHOW_TEXT\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "new HoverEvent.ShowText($1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.5 made HoverEvent a sealed interface; showing text is the HoverEvent.ShowText record.",
+      "verified": "Mojang's 1.21.4 mappings: ClickEvent(ClickEvent$Action, String) and HoverEvent(HoverEvent$Action, Object); 1.21.5: both are sealed interfaces with records ClickEvent$RunCommand(String), $SuggestCommand(String), $CopyToClipboard(String), $OpenFile(String), $OpenUrl(URI), $ChangePage(int) and HoverEvent$ShowText(Component)",
+      "test": {
+        "error": "Messages.java:7: error: HoverEvent is abstract; cannot be instantiated\n",
+        "before": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "after": "package mod;\n\nclass Messages {\n\tStyle style(String command) {\n\t\treturn Style.EMPTY\n\t\t\t.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, \"/restore \" + command))\n\t\t\t.withHoverEvent(new HoverEvent.ShowText( Component.translatable(\"restore.hover\", command)));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "fast-color-argb32-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) FastColor\\b|package FastColor does not exist|cannot find symbol\\s+import net\\.minecraft\\.util\\.FastColor",
+      "apply": {
+        "find": "\\bFastColor\\.ARGB32\\.",
+        "replace": "ARGB.",
+        "ensureImports": [
+          "net.minecraft.util.ARGB"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 moved FastColor.ARGB32's methods to net.minecraft.util.ARGB, unchanged.",
+      "verified": "Mojang's 1.21.1 mappings: FastColor$ARGB32 alpha/red/green/blue(int), color(int,int,int,int), color(int,int,int), color(int,int), multiply, lerp, opaque, colorFromFloat, average; 1.21.2: no FastColor, and net.minecraft.util.ARGB has each with the same signature",
+      "test": {
+        "error": "Tint.java:6: error: cannot find symbol\n  symbol:   variable FastColor\n",
+        "before": "package mod;\n\nimport net.minecraft.util.FastColor;\n\nclass Tint {\n\tint shade(int c) { return FastColor.ARGB32.color(255, FastColor.ARGB32.red(c) / 2, FastColor.ARGB32.green(c) / 2, FastColor.ARGB32.blue(c) / 2); }\n}\n",
+        "after": "package mod;\nimport net.minecraft.util.ARGB;\n\nimport net.minecraft.util.FastColor;\n\nclass Tint {\n\tint shade(int c) { return ARGB.color(255, ARGB.red(c) / 2, ARGB.green(c) / 2, ARGB.blue(c) / 2); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "fast-color-import-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) FastColor\\b|package FastColor does not exist|cannot find symbol\\s+import net\\.minecraft\\.util\\.FastColor",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.util\\.FastColor;[ \\t]*\\r?\\n(?![\\s\\S]*\\bFastColor\\b)",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The FastColor import goes once nothing in the file names FastColor (ABGR32 users keep it, and their error).",
+      "verified": "Mojang's 1.21.1 mappings: FastColor$ARGB32 alpha/red/green/blue(int), color(int,int,int,int), color(int,int,int), color(int,int), multiply, lerp, opaque, colorFromFloat, average; 1.21.2: no FastColor, and net.minecraft.util.ARGB has each with the same signature",
+      "test": {
+        "error": "Tint.java:3: error: cannot find symbol\nimport net.minecraft.util.FastColor;\n",
+        "before": "package mod;\n\nimport net.minecraft.util.FastColor;\n\nclass Tint {\n\tint shade(int c) { return ARGB.color(255, ARGB.red(c) / 2, ARGB.green(c) / 2, ARGB.blue(c) / 2); }\n}\n",
+        "after": "package mod;\n\n\nclass Tint {\n\tint shade(int c) { return ARGB.color(255, ARGB.red(c) / 2, ARGB.green(c) / 2, ARGB.blue(c) / 2); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "minecraft-set-screen-gui-262",
+      "provenance": "hand",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method setScreen\\([^)]*\\)\\s*\\n\\s*location: (?:variable \\w+ of type|class) Minecraft\\b",
+      "apply": {
+        "find": "\\.setScreen\\(",
+        "replace": ".gui.setScreen("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.2 moved the screen, overlay and toasts from Minecraft to its Gui, and the main render target to the GameRenderer. Only the lines javac reports on a Minecraft receiver change.",
+      "verified": "Mojang's 26.1.2 jar: Minecraft.screen (public field), setScreen(Screen), getOverlay(), getToastManager(), getMainRenderTarget(); 26.2 jar: none of them on Minecraft; Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(), GameRenderer.mainRenderTarget()",
+      "test": {
+        "error": "Hud.java:5: error: cannot find symbol\n  symbol:   method setScreen(Hello)\n  location: variable mc of type Minecraft\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.gui.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "minecraft-screen-gui-262",
+      "provenance": "hand",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+variable screen\\s*\\n\\s*location: (?:variable \\w+ of type|class) Minecraft\\b",
+      "apply": {
+        "find": "\\.screen\\b(?!\\s*(?:\\(|=[^=]))",
+        "replace": ".gui.screen()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.2 moved the screen, overlay and toasts from Minecraft to its Gui, and the main render target to the GameRenderer. Only the lines javac reports on a Minecraft receiver change.",
+      "verified": "Mojang's 26.1.2 jar: Minecraft.screen (public field), setScreen(Screen), getOverlay(), getToastManager(), getMainRenderTarget(); 26.2 jar: none of them on Minecraft; Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(), GameRenderer.mainRenderTarget()",
+      "test": {
+        "error": "Hud.java:5: error: cannot find symbol\n  symbol:   variable screen\n  location: variable mc of type Minecraft\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.gui.screen() == null) mc.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "minecraft-toast-manager-gui-262",
+      "provenance": "hand",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method getToastManager\\(\\)\\s*\\n\\s*location: (?:variable \\w+ of type|class) Minecraft\\b",
+      "apply": {
+        "find": "\\.getToastManager\\(\\)",
+        "replace": ".gui.toastManager()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.2 moved the screen, overlay and toasts from Minecraft to its Gui, and the main render target to the GameRenderer. Only the lines javac reports on a Minecraft receiver change.",
+      "verified": "Mojang's 26.1.2 jar: Minecraft.screen (public field), setScreen(Screen), getOverlay(), getToastManager(), getMainRenderTarget(); 26.2 jar: none of them on Minecraft; Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(), GameRenderer.mainRenderTarget()",
+      "test": {
+        "error": "Hud.java:6: error: cannot find symbol\n  symbol:   method getToastManager()\n  location: variable mc of type Minecraft\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.setScreen(new Hello());\n\t\tmc.gui.toastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "minecraft-overlay-gui-262",
+      "provenance": "hand",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method getOverlay\\(\\)\\s*\\n\\s*location: (?:variable \\w+ of type|class) Minecraft\\b",
+      "apply": {
+        "find": "\\.getOverlay\\(\\)",
+        "replace": ".gui.overlay()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.2 moved the screen, overlay and toasts from Minecraft to its Gui, and the main render target to the GameRenderer. Only the lines javac reports on a Minecraft receiver change.",
+      "verified": "Mojang's 26.1.2 jar: Minecraft.screen (public field), setScreen(Screen), getOverlay(), getToastManager(), getMainRenderTarget(); 26.2 jar: none of them on Minecraft; Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(), GameRenderer.mainRenderTarget()",
+      "test": {
+        "error": "Hud.java:7: error: cannot find symbol\n  symbol:   method getOverlay()\n  location: variable mc of type Minecraft\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.gui.overlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "minecraft-main-render-target-262",
+      "provenance": "hand",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method getMainRenderTarget\\(\\)\\s*\\n\\s*location: (?:variable \\w+ of type|class) Minecraft\\b",
+      "apply": {
+        "find": "\\.getMainRenderTarget\\(\\)",
+        "replace": ".gameRenderer.mainRenderTarget()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.2 moved the screen, overlay and toasts from Minecraft to its Gui, and the main render target to the GameRenderer. Only the lines javac reports on a Minecraft receiver change.",
+      "verified": "Mojang's 26.1.2 jar: Minecraft.screen (public field), setScreen(Screen), getOverlay(), getToastManager(), getMainRenderTarget(); 26.2 jar: none of them on Minecraft; Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(), GameRenderer.mainRenderTarget()",
+      "test": {
+        "error": "Hud.java:8: error: cannot find symbol\n  symbol:   method getMainRenderTarget()\n  location: variable mc of type Minecraft\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().getMainRenderTarget();\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t\tRenderTarget main = Minecraft.getInstance().gameRenderer.mainRenderTarget();\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "main-render-target-back-262",
+      "provenance": "hand",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method mainRenderTarget\\(\\)",
+      "apply": {
+        "find": "\\.gameRenderer\\.mainRenderTarget\\(\\)",
+        "replace": ".getMainRenderTarget()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Backport: on 26.1.2 the main render target is Minecraft's own getMainRenderTarget().",
+      "verified": "Mojang's 26.1.2 jar: Minecraft.screen (public field), setScreen(Screen), getOverlay(), getToastManager(), getMainRenderTarget(); 26.2 jar: none of them on Minecraft; Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(), GameRenderer.mainRenderTarget()",
+      "test": {
+        "error": "Hud.java:4: error: cannot find symbol\n  symbol:   method mainRenderTarget()\n",
+        "before": "package mod;\n\nclass Hud {\n\tRenderTarget t() { return Minecraft.getInstance().gameRenderer.mainRenderTarget(); }\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tRenderTarget t() { return Minecraft.getInstance().getMainRenderTarget(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "sign-item-arguments-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "incompatible types: Properties cannot be converted to Block",
+      "apply": {
+        "find": "\\bnew\\s+SignItem\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "new SignItem($2,$3,$1)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 moved SignItem's Item.Properties from the first argument to the last, as HangingSignItem already had it.",
+      "verified": "Mojang's 1.21.1 mappings: SignItem(Item$Properties, Block, Block); 1.21.2: SignItem(Block, Block, Item$Properties)",
+      "test": {
+        "error": "ModItems.java:5: error: incompatible types: Properties cannot be converted to Block\n",
+        "before": "package mod;\n\nclass ModItems {\n\tstatic final Supplier<Item> CANVAS_SIGN = ITEMS.register(\"canvas_sign\",\n\t\t\t() -> new SignItem(basicItem().stacksTo(16), ModBlocks.CANVAS_SIGN.get(), ModBlocks.CANVAS_WALL_SIGN.get()));\n}\n",
+        "after": "package mod;\n\nclass ModItems {\n\tstatic final Supplier<Item> CANVAS_SIGN = ITEMS.register(\"canvas_sign\",\n\t\t\t() -> new SignItem( ModBlocks.CANVAS_SIGN.get(), ModBlocks.CANVAS_WALL_SIGN.get(),basicItem().stacksTo(16)));\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "ingredient-of-item-tag-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "no suitable method found for of\\(TagKey<Item>\\)",
+      "apply": {
+        "find": "\\bIngredient\\.of\\(\\s*((?:\\w+\\.)*(?:Tags\\.Items|ItemTags)\\.[A-Z][A-Z0-9_]*|\\w*[Tt]ag\\w*)\\s*\\)",
+        "replace": "Ingredient.of(BuiltInRegistries.ITEM.getOrThrow($1))",
+        "ensureImports": [
+          "net.minecraft.core.registries.BuiltInRegistries"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's Ingredient.of takes a HolderSet, not a TagKey; an item tag is looked up in the item registry. Only an argument that is a tag constant or a variable named for a tag changes, so Ingredient.of(Items.X) on the same line stays.",
+      "verified": "Mojang's 1.21.1 mappings: Ingredient.of(TagKey); 1.21.2: Ingredient.of(ItemLike), of(ItemLike[]), of(Stream), of(HolderSet); HolderGetter.getOrThrow(TagKey) -> HolderSet$Named, which the item registry implements",
+      "test": {
+        "error": "CookingRecipes.java:5: error: no suitable method found for of(TagKey<Item>)\nCookingRecipes.java:6: error: no suitable method found for of(TagKey<Item>)\n",
+        "before": "package mod;\n\nclass CookingRecipes {\n\tvoid build() {\n\t\tbuilder.addIngredient(Ingredient.of(Tags.Items.CROPS_WHEAT)).addIngredient(Ingredient.of(Items.MILK_BUCKET));\n\t\tfallback = Ingredient.of(fallbackTag);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.core.registries.BuiltInRegistries;\n\nclass CookingRecipes {\n\tvoid build() {\n\t\tbuilder.addIngredient(Ingredient.of(BuiltInRegistries.ITEM.getOrThrow(Tags.Items.CROPS_WHEAT))).addIngredient(Ingredient.of(Items.MILK_BUCKET));\n\t\tfallback = Ingredient.of(BuiltInRegistries.ITEM.getOrThrow(fallbackTag));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }

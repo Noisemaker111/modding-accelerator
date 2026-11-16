@@ -150,7 +150,7 @@ jobs:
       - name: Join every run into the ranked tables
         run: |
           mkdir -p .runs/sweep/runs/cloud
-          find artifacts -path '*runs/sweep/runs/cloud/*.json' -exec cp {} .runs/sweep/runs/cloud/ \;
+          find artifacts -path '*/runs/cloud/*.json' -exec cp {} .runs/sweep/runs/cloud/ \;
           python3 bench/sweep.py summary --tag cloud --save | tee summary.md >> "$GITHUB_STEP_SUMMARY"
           cp bench/sweep/results/cloud.json sweep.json
       - uses: actions/upload-artifact@v4
