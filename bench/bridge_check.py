@@ -99,7 +99,9 @@ def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric, drops=(), layer_n
     if layer_name and (folder / layer_name).is_dir():
         for f in sorted((folder / layer_name).rglob("*.java")):
             by_path[f.relative_to(folder / layer_name).as_posix()] = f
-    sources = [f for rel, f in sorted(by_path.items()) if not any(rel.startswith(d) for d in drops)]
+    # A test of a class the layer drops (FooTest.java for Foo.java) goes with it.
+    sources = [f for rel, f in sorted(by_path.items())
+               if not any(rel.startswith(d) or rel.removesuffix("Test.java") + ".java" == d for d in drops)]
     test_root = {f: rel for rel, f in by_path.items()}
     if not sources:
         return None

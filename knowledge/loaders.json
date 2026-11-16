@@ -2410,7 +2410,8 @@
     "net.neoforged.neoforge.data.loading.DatagenModLoader": "data.DatagenModLoader",
     "net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent": "RegisterParticleProvidersEvent",
     "net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent": "RegisterClientTooltipComponentFactoriesEvent",
-    "net.neoforged.neoforge.client.event.RenderLevelStageEvent": "RenderLevelStageEvent"
+    "net.neoforged.neoforge.client.event.RenderLevelStageEvent": "RenderLevelStageEvent",
+    "net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent": "RegisterRenderPipelinesEvent"
    },
    "symbols": {
     "neoforge": [
@@ -4325,7 +4326,8 @@
       "extensions/IDataComponentMapBuilderExtensions.java",
       "mixin/ComponentMapBuilderExtensionsMixin.java",
       "EntityRenderersEvent.java",
-      "RegisterColorHandlersEvent.java"
+      "RegisterColorHandlersEvent.java",
+      "RegisterRenderPipelinesEvent.java"
      ],
      "mixins": [
       {
