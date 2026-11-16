@@ -1821,8 +1821,9 @@ public final class VersionMap {
                     if (t.length != 2 || !t[0].startsWith("(") || !t[1].startsWith("(")) {
                         continue;
                     }
-                    if (!t[0].substring(t[0].indexOf(')')).equals(t[1].substring(t[1].indexOf(')')))) {
-                        continue; // the return type changed: not a parameter change alone
+                    String oldRet = returnType(t[0]);
+                    if (!k.classFqn.getOrDefault(oldRet, oldRet).equals(returnType(t[1]))) {
+                        continue; // the return type changed beyond the map's rename: not a parameter change alone
                     }
                     List<String> old = paramTypes(t[0]);
                     if (old.size() != params.size()) {
@@ -1909,6 +1910,9 @@ public final class VersionMap {
                 }
                 String type = newSimple.get(j);
                 String fresh = Character.toLowerCase(type.charAt(0)) + type.substring(1).replaceAll("\\W", "");
+                if (javax.lang.model.SourceVersion.isKeyword(fresh)) {
+                    fresh = "mmt" + Character.toUpperCase(fresh.charAt(0)) + fresh.substring(1); // long -> mmtLong
+                }
                 while (used.contains(fresh)) {
                     fresh = fresh + "2";
                 }
@@ -1992,6 +1996,12 @@ public final class VersionMap {
         }
 
         /** A descriptor's parameter types: class names dotted ($ kept), primitives and arrays as written. */
+        /** A descriptor's return type, dotted with $ for nested classes, or its primitive letter. */
+        static String returnType(String desc) {
+            String r = desc.substring(desc.indexOf(')') + 1);
+            return r.startsWith("L") ? r.substring(1, r.length() - 1).replace('/', '.') : r;
+        }
+
         static List<String> paramTypes(String desc) {
             List<String> out = new ArrayList<>();
             int open = desc.indexOf('('), close = desc.indexOf(')');
@@ -2490,6 +2500,48 @@ public final class VersionMap {
                     break;
                 }
             }
+            // 2b*. A class that no longer implements an abstract method of its supertype because the game renamed it and the
+            // mod's method has no @Override for javac to point at (1.21.2: LevelHeightAccessor.getMinBuildHeight -> getMinY):
+            // the one method the class declares under a name the map renames to the missing one on that supertype, with the
+            // same number of parameters, takes the new name.
+            Pattern notAbstract = Pattern.compile("^(\\w+) is not abstract and does not override abstract method (\\w+)\\(([^)]*)\\) in ([\\w.$]+)");
+            for (Err e : readErrors(log)) {
+                Matcher na = notAbstract.matcher(e.message());
+                Path f = sourcePath(e, repo);
+                if (!na.find() || f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String missing = na.group(2), owner = simple(na.group(4));
+                int arity = na.group(3).isBlank() ? 0 : na.group(3).split(",").length;
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                List<int[]> found = new ArrayList<>();
+                for (var entry : k.methodTo.entrySet()) {
+                    boolean renamesHere = false;
+                    for (String[] to : entry.getValue()) {
+                        renamesHere |= to[1].equals(missing) && (to[0].equals(owner) || to[2].equals(owner));
+                    }
+                    if (!renamesHere || entry.getKey().equals(missing)) {
+                        continue;
+                    }
+                    Matcher decl = Pattern.compile(
+                        "(?m)^\\s*(?:(?:public|protected|private|static|final|synchronized|default)\\s+)*[\\w.<>\\[\\], ?]+\\s+(" + Pattern.quote(entry.getKey()) + ")\\s*\\(([^)]*)\\)"
+                    ).matcher(text);
+                    while (decl.find()) {
+                        int params = decl.group(2).isBlank() ? 0 : topLevelArguments(decl.group(2)).size();
+                        if (params == arity) {
+                            found.add(new int[] { decl.start(1), decl.end(1) });
+                        }
+                    }
+                }
+                if (found.size() != 1) {
+                    continue; // none, or more than one method could be meant
+                }
+                int[] at = found.get(0);
+                texts.put(f, text.substring(0, at[0]) + missing + text.substring(at[1]));
+                replacements++;
+                byKind.merge("override", 1, Integer::sum);
+            }
+
             // 2b''. An @Override of a method the game removed from the class's supertype, with no rename or new signature
             // (1.21.2: Recipe.getResultItem, canCraftInDimensions, getIngredients): nothing is left to override, so the
             // annotation goes and the method stays as the mod's own (its own callers keep working). The game no longer

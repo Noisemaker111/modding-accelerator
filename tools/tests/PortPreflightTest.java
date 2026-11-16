@@ -383,6 +383,26 @@ public final class PortPreflightTest {
         require(chained.contains("    input.up = true;"), "an assigned field is not turned into a call");
         require(chained.contains("items.getOrThrow(ModTags.FOOD)"), "a call keeps its arguments on the last step");
 
+        // A method the game renamed, implemented without @Override: javac only says the class misses the new name, and the
+        // one declaration the map renames to it on that supertype takes it; a same-name method with other arity stays.
+        Path ab = Files.createDirectories(scratch.resolve("abstract"));
+        Path abMap = scratch.resolve("abstract.json");
+        Files.writeString(abMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "methods": [
+                { "owner": "net.minecraft.world.level.LevelHeightAccessor", "from": "getMinBuildHeight", "desc": "()I", "to": "getMinY", "newDesc": "()I" }
+              ]
+            }
+            """);
+        Files.writeString(ab.resolve("Heights.java"), "public class Heights implements LevelHeightAccessor {\n  public int getHeight() { return 1; }\n\n  public int getMinBuildHeight() {\n    return 0;\n  }\n\n  int getMinBuildHeight(int y) { return y; }\n}\n");
+        String heights = ab.resolve("Heights.java").toString();
+        Files.writeString(scratch.resolve("abstract.log"), heights + ":1: error: Heights is not abstract and does not override abstract method getMinY() in LevelHeightAccessor\n"
+            + "public class Heights implements LevelHeightAccessor {\n       ^\n");
+        VersionMap.Fix.run(abMap, scratch.resolve("abstract.log"), ab, false, null);
+        String heighted = Files.readString(ab.resolve("Heights.java"));
+        require(heighted.contains("  public int getMinY() {"), "the renamed method takes the name the supertype asks for: " + heighted);
+        require(heighted.contains("int getMinBuildHeight(int y)"), "a same-name method with other parameters keeps its name");
+
         // A call the game deleted: a no-argument void call that is a whole statement goes; one with arguments, or used
         // inside an expression, stays for the compiler to name.
         Path del = Files.createDirectories(scratch.resolve("deleted"));
@@ -444,10 +464,15 @@ public final class PortPreflightTest {
               "signatures": [
                 { "owner": "net.minecraft.world.entity.Mob", "from": "doHurtTarget", "desc": "(Lnet/minecraft/world/entity/Entity;)Z", "to": "doHurtTarget", "newDesc": "(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/Entity;)Z" },
                 { "owner": "net.minecraft.world.level.block.Block", "from": "wasExploded", "desc": "(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/Explosion;)V", "to": "wasExploded", "newDesc": "(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/Explosion;)V" },
-                { "owner": "net.minecraft.world.entity.Entity", "from": "hurt", "desc": "(Lnet/minecraft/world/damagesource/DamageSource;F)Z", "to": "hurt", "newDesc": "(Lnet/minecraft/world/damagesource/DamageSource;F)V" }
+                { "owner": "net.minecraft.world.entity.Entity", "from": "hurt", "desc": "(Lnet/minecraft/world/damagesource/DamageSource;F)Z", "to": "hurt", "newDesc": "(Lnet/minecraft/world/damagesource/DamageSource;F)V" },
+                { "owner": "net.minecraft.world.level.chunk.ChunkAccess", "from": "getTicksForSerialization", "desc": "()Lnet/minecraft/world/level/chunk/ChunkAccess$TicksToSave;", "to": "getTicksForSerialization", "newDesc": "(J)Lnet/minecraft/world/level/chunk/ChunkAccess$PackedTicks;" }
+              ],
+              "classes": [
+                { "from": "net.minecraft.world.level.chunk.ChunkAccess$TicksToSave", "to": "net.minecraft.world.level.chunk.ChunkAccess$PackedTicks" }
               ]
             }
             """);
+        Files.writeString(sig.resolve("Chunk.java"), "package mod;\n\nclass Chunk extends ChunkAccess {\n  @Override\n  public PackedTicks getTicksForSerialization() {\n    return null;\n  }\n}\n");
         String ghost = "package mod;\n\nclass Ghost extends Monster {\n  @Override\n  public boolean doHurtTarget(Entity target) {\n    return super.doHurtTarget(target) && target.isAlive();\n  }\n"
             + "  @Override\n  public boolean hurt(DamageSource source, float amount) {\n    return false;\n  }\n}\n";
         String stone = "package mod;\n\nclass Stone extends Block {\n  @Override\n  public void wasExploded(Level level, BlockPos pos, Explosion explosion) {\n    super.wasExploded(level, pos, explosion);\n  }\n}\n";
@@ -455,9 +480,10 @@ public final class PortPreflightTest {
         Files.writeString(sig.resolve("Stone.java"), stone);
         Path sigLog = scratch.resolve("override-signatures.log");
         String err = ": error: method does not override or implement a method from a supertype\n  @Override\n  ^\n";
-        Files.writeString(sigLog, sig.resolve("Ghost.java") + ":4" + err + sig.resolve("Ghost.java") + ":8" + err + sig.resolve("Stone.java") + ":4" + err);
+        Files.writeString(sigLog, sig.resolve("Ghost.java") + ":4" + err + sig.resolve("Ghost.java") + ":8" + err + sig.resolve("Stone.java") + ":4" + err + sig.resolve("Chunk.java") + ":4" + err);
         VersionMap.SUPERS.put("Ghost", Set.of("Monster", "PathfinderMob", "Mob", "LivingEntity", "Entity"));
         VersionMap.SUPERS.put("Stone", Set.of("Block", "BlockBehaviour"));
+        VersionMap.SUPERS.put("Chunk", Set.of("ChunkAccess"));
         VersionMap.Fix.run(sigMap, sigLog, sig, false, null);
         VersionMap.SUPERS.clear();
         String ghosted = Files.readString(sig.resolve("Ghost.java")), stoned = Files.readString(sig.resolve("Stone.java"));
@@ -465,6 +491,9 @@ public final class PortPreflightTest {
         require(ghosted.contains("import net.minecraft.server.level.ServerLevel;"), "the new parameter's type imported");
         require(ghosted.contains("public boolean hurt(DamageSource source, float amount)"), "a changed return type is left alone");
         require(stoned.contains("public void wasExploded(ServerLevel level, BlockPos pos, Explosion explosion)") && stoned.contains("super.wasExploded(level, pos, explosion)"), "a narrowed type keeps the mod's name: " + stoned);
+        String chunked = Files.readString(sig.resolve("Chunk.java"));
+        require(chunked.contains("public PackedTicks getTicksForSerialization(long mmtLong) {"),
+            "a return type the map only renamed still counts as the same, and a primitive parameter gets a legal name: " + chunked);
         // An override of a method the game removed (no rename, no new signature) loses the annotation and stays a method.
         Files.writeString(sigMap, """
             { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
