@@ -31,7 +31,7 @@ gradle.rootProject { root ->
             def parts = targetPaths.collect { partFile(state, it) }
             def model = [schema: 1, mode: planning ? 'plan' : 'full', root: root.projectDir.absolutePath, gradle: gradle.gradleVersion,
                          java: System.getProperty('java.home'), projects: parts.collect { new JsonSlurper().parse(it) }]
-            def output = new File(state, planning ? 'plan-model.json' : 'model.json')
+            def output = new File(state, System.getProperty('mmt.modelFile', planning ? 'plan-model.json' : 'model.json'))
             output.text = JsonOutput.toJson(model)
             println 'MMT_MODEL ' + output.absolutePath
         }

@@ -350,9 +350,9 @@ final class Build {
                 return Json.read(model);
             }
         }
-        List<String> task = planning
-            ? List.of("-Dmmt.metadataMode=plan", ":mmtMetadata")
-            : List.of(":mmtMetadata");
+        List<String> task = new ArrayList<>(planning ? List.of("-Dmmt.metadataMode=plan", ":mmtMetadata") : List.of(":mmtMetadata"));
+        // The init script writes the model under this name, so an every-project read never replaces the selected one's.
+        task.add(0, "-Dmmt.modelFile=" + model.getFileName());
         String stage = planning ? "metadata-plan" : "metadata";
         Run.Result result = gradle(task, stage);
         // The first read downloads Gradle and the build's dependencies, and the wrapper gives up after one 10 s try:
