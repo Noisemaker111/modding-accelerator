@@ -2785,6 +2785,7 @@ final class Convert {
         neoforgeParametersOutOfMixins();
         lambdaMixinTargets(minecraft);
         enumExtensionLookups();
+        superHookCalls();
         // NeoForge generates data from GatherDataEvent listeners; Fabric from fabric-datagen entrypoints: the bridge's
         // DataEntrypoint posts the event (when the bridge has it for this game version).
         if (bridgeUsed && exists(bridgeFolder() + "/DataEntrypoint.java")) {
@@ -2978,6 +2979,61 @@ final class Convert {
             applied.computeIfAbsent("enum-extension-lookups", k -> new ArrayList<>()).add(file);
         }
         notes.add("Enum constants the mod adds (META-INF/enumextensions.json) cannot be added on Fabric: lookups of them by name are the game's stand-in constant (EnumProxy.fallback).");
+    }
+
+    /**
+     * A rule that makes a NeoForge hook call a bridge helper (block.getLightEmission(...) to
+     * IBlockExtension.getLightEmission(block, ...)) has made super.hook(...) Helper.hook(super, ...), which is no Java. When
+     * the class's superclass is the mod's own and it (or a mod ancestor) declares the hook, the call stays super.hook(...);
+     * otherwise the superclass is the game's, whose hook is NeoForge's default, the helper's: Helper.hook(this, ...).
+     */
+    void superHookCalls() throws Exception {
+        if (bridgePackage == null) return;
+        Map<String, String> classes = new HashMap<>();
+        List<String> files = javaFiles().stream().filter(f -> !f.startsWith(bridgeFolder() + "/")).toList();
+        for (String file : files) classes.put(file.substring(file.lastIndexOf('/') + 1).replaceAll("\\.java$", ""), read(file));
+        Set<String> helpers = new HashSet<>();
+        for (String file : javaFiles()) if (file.startsWith(bridgeFolder() + "/")) helpers.add(file.substring(file.lastIndexOf('/') + 1).replaceAll("\\.java$", ""));
+        for (String file : files) {
+            String text = classes.get(file.substring(file.lastIndexOf('/') + 1).replaceAll("\\.java$", ""));
+            String out = superHookCalls(text, classes, helpers);
+            if (out.equals(text)) continue;
+            write(file, out);
+            applied.computeIfAbsent("neoforge-hook-super-calls", k -> new ArrayList<>()).add(file);
+        }
+    }
+
+    static String superHookCalls(String text, Map<String, String> modClasses, Set<String> helpers) {
+        Matcher call = Pattern.compile("\\b([A-Z]\\w*)\\.(\\w+)\\(\\s*super\\s*(,\\s*|(?=\\)))").matcher(text);
+        StringBuilder out = new StringBuilder();
+        boolean any = false;
+        while (call.find()) {
+            if (!helpers.contains(call.group(1))) continue;
+            any = true;
+            String method = call.group(2);
+            String replacement = declaresUpward(superclassOf(text), method, modClasses, new HashSet<>())
+                ? "super." + method + "("
+                : call.group(1) + "." + method + "(this" + call.group(3);
+            call.appendReplacement(out, Matcher.quoteReplacement(replacement));
+        }
+        if (!any) return text;
+        call.appendTail(out);
+        return out.toString();
+    }
+
+    /** The simple name of the first class's superclass in the text, or null. */
+    static String superclassOf(String text) {
+        Matcher m = Pattern.compile("\\bclass\\s+\\w+\\s*(?:<[^{]*?>)?\\s*extends\\s+([\\w.]+)").matcher(text);
+        return m.find() ? m.group(1).substring(m.group(1).lastIndexOf('.') + 1) : null;
+    }
+
+    /** Whether the mod's class of that simple name, or a mod ancestor of it, declares a method of that name. */
+    static boolean declaresUpward(String simple, String method, Map<String, String> modClasses, Set<String> seen) {
+        if (simple == null || !seen.add(simple)) return false;
+        String source = modClasses.get(simple);
+        if (source == null) return false;
+        if (Pattern.compile("(?m)^\\s*(?:@\\w+(?:\\([^)]*\\))?\\s+)*(?:public|protected)\\s[^;=(]*\\b" + Pattern.quote(method) + "\\s*\\(").matcher(source).find()) return true;
+        return declaresUpward(superclassOf(source), method, modClasses, seen);
     }
 
     static String enumExtensionLookups(String text, List<String[]> entries, String bridgePackage) {
@@ -4877,7 +4933,7 @@ final class Convert {
             } catch (IOException failure) {
                 Matcher log = Pattern.compile("\\nLog: (.+)$").matcher(failure.getMessage());
                 String gradle = log.find() && Files.isRegularFile(Path.of(log.group(1).strip())) ? Files.readString(Path.of(log.group(1).strip())) : "";
-                if (attempt >= 8 || !disableLoomOnlyStatement(gradle)) {
+                if (attempt >= 8 || !(nonTransitiveCompileOnly(gradle) || disableLoomOnlyStatement(gradle))) {
                     result.put("compiled", false);
                     result.put("ok", false);
                     result.put("compileError", failure.getMessage());
@@ -5103,6 +5159,52 @@ final class Convert {
     boolean repairedBuild;
 
     static final String LOOM_ONLY ="// mmt convert: needs Fabric's Loom, which a NeoForge build does not have: ";
+
+    /**
+     * A compile-only dependency whose own dependencies Gradle cannot find (the other loader's build of an integration mod,
+     * which needs libraries from a repository the build does not list): compiling against it needs only its own classes,
+     * so it is made non-transitive and listed. False when the failure names no compile-only dependency of build.gradle.
+     */
+    boolean nonTransitiveCompileOnly(String gradle) throws Exception {
+        if (!exists("build.gradle")) return false;
+        String text = read("build.gradle");
+        String out = nonTransitiveCompileOnly(gradle, text, properties(exists("gradle.properties") ? read("gradle.properties") : ""));
+        if (out == null) return false;
+        write("build.gradle", out);
+        repairedBuild = true;
+        applied.computeIfAbsent("compile-only-non-transitive", k -> new ArrayList<>()).add("build.gradle");
+        notes.add("Build: compile-only dependencies whose own dependencies Gradle could not find are compiled against without them (transitive = false).");
+        return true;
+    }
+
+    /** The build with each compile-only dependency a "Could not find ... Required by: root project ... > G:A:V" names made non-transitive, or null. */
+    static String nonTransitiveCompileOnly(String gradle, String build, Map<String, String> properties) {
+        Set<String> requirers = new LinkedHashSet<>();
+        Matcher by = Pattern.compile("root project '[^']*' > ([\\w.\\-]+):([\\w.\\-]+):").matcher(gradle);
+        while (by.find()) requirers.add(by.group(1) + ":" + by.group(2) + ":");
+        if (requirers.isEmpty()) return null;
+        Pattern call = Pattern.compile("^(\\s*)(\\w*[cC]ompileOnly\\w*)\\s*(?:\\(\\s*(([\"'])[^\"']+\\4)\\s*\\)|(([\"'])[^\"']+\\6))\\s*$");
+        String[] lines = build.split("\n", -1);
+        boolean changed = false;
+        for (int i = 0; i < lines.length; i++) {
+            Matcher m = call.matcher(lines[i].replaceAll("\\r$", ""));
+            if (!m.matches()) continue;
+            String quoted = m.group(3) != null ? m.group(3) : m.group(5);
+            String coordinate = quoted.substring(1, quoted.length() - 1);
+            Matcher variable = Pattern.compile("\\$\\{(\\w+)}|\\$(\\w+)").matcher(coordinate);
+            StringBuilder expanded = new StringBuilder();
+            while (variable.find()) {
+                String key = variable.group(1) != null ? variable.group(1) : variable.group(2);
+                variable.appendReplacement(expanded, Matcher.quoteReplacement(properties.getOrDefault(key, variable.group())));
+            }
+            variable.appendTail(expanded);
+            String resolved = expanded.toString();
+            if (requirers.stream().noneMatch(resolved::startsWith)) continue;
+            lines[i] = m.group(1) + m.group(2) + "(" + quoted + ") { transitive = false }";
+            changed = true;
+        }
+        return changed ? String.join("\n", lines) : null;
+    }
 
     /**
      * The statement of the build's own files at which Gradle stopped loading the converted build (its "* Where:" file and

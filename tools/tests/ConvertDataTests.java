@@ -97,5 +97,28 @@ final class ConvertDataTests {
             Convert.contextKeyMappings(keys, Set.of(7 - 6), "demo.loaderbridge").equals(keys),
             "a refused KeyMapping constructor with a conflict context is the bridge's KeyConflictContext.keyMapping, imported once; other lines stay: " + repairedKeys
         );
+        String failure = "> Could not find lib:base:3.\n     Required by:\n         root project 'demo' > net.demo:Ponder-Fabric-1.21.1:1.0.44\n" +
+            "         root project 'demo' > net.demo:Ponder-Fabric-1.21.1:1.0.44 > net.demo:Ponder-Common-1.21.1:1.0.44\n";
+        String depsBuild = "dependencies {\n    compileOnly(\"net.demo:Ponder-Fabric-${mc}:${ponder}\")\n    modCompileOnly 'net.demo:Ponder-Fabric-$mc:2'\n" +
+            "    compileOnly(\"net.demo:Other:1\")\n    implementation(\"net.demo:Ponder-Fabric-1.21.1:1.0.44\")\n}\n";
+        String nonTransitive = Convert.nonTransitiveCompileOnly(failure, depsBuild, Map.of("mc", "1.21.1", "ponder", "1.0.44"));
+        ConvertTests.check(
+            depsBuild.replace("    compileOnly(\"net.demo:Ponder-Fabric-${mc}:${ponder}\")", "    compileOnly(\"net.demo:Ponder-Fabric-${mc}:${ponder}\") { transitive = false }")
+                .replace("    modCompileOnly 'net.demo:Ponder-Fabric-$mc:2'", "    modCompileOnly('net.demo:Ponder-Fabric-$mc:2') { transitive = false }").equals(nonTransitive) &&
+            Convert.nonTransitiveCompileOnly(failure, depsBuild, Map.of("mc", "26.1", "ponder", "1")) == null &&
+            Convert.nonTransitiveCompileOnly("> Could not find a:b:1.", depsBuild, Map.of()) == null,
+            "a compile-only dependency whose own dependencies cannot be found is made non-transitive, matched with the build's properties; others stay: " + nonTransitive
+        );
+        Map<String, String> mod = Map.of(
+            "FramedBlock", "public class FramedBlock extends Block {\n    @Override\n    public ItemStack getCloneItemStack(LevelReader l) { return null; }\n}",
+            "FramedMiddle", "public class FramedMiddle extends FramedBlock {}"
+        );
+        String overMod = "class Frame extends FramedMiddle { ItemStack c() { return IBlockExtension.getCloneItemStack(super, level, pos); } }";
+        String overGame = "class Torch extends net.minecraft.world.level.block.TorchBlock { int l() { return Math.max(1, IBlockExtension.getLightEmission(super, state)); } int m() { return Other.x(super, 1); } }";
+        ConvertTests.check(
+            Convert.superHookCalls(overMod, mod, Set.of("IBlockExtension")).equals(overMod.replace("IBlockExtension.getCloneItemStack(super, ", "super.getCloneItemStack(")) &&
+            Convert.superHookCalls(overGame, mod, Set.of("IBlockExtension")).equals(overGame.replace("getLightEmission(super, ", "getLightEmission(this, ")),
+            "a bridge hook helper given super is super's own method when a mod ancestor declares it, else the helper given this: " + Convert.superHookCalls(overGame, mod, Set.of("IBlockExtension"))
+        );
     }
 }
