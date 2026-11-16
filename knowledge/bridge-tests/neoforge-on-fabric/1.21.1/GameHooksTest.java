@@ -65,6 +65,16 @@ class GameHooksTest {
     }
 
     @Test
+    void lootTablesReadNeoForgesAbilityCondition() {
+        CanItemPerformAbility.register();
+        var condition = net.minecraft.world.level.storage.loot.predicates.LootItemCondition.DIRECT_CODEC.parse(
+            com.mojang.serialization.JsonOps.INSTANCE,
+            com.google.gson.JsonParser.parseString("{\"condition\": \"neoforge:can_item_perform_ability\", \"ability\": \"shears_harvest\"}")
+        ).getOrThrow();
+        assertEquals(new CanItemPerformAbility(ItemAbilities.SHEARS_HARVEST), condition);
+    }
+
+    @Test
     void toolsCanDoTheirAbilities() {
         assertTrue(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_AXE).canPerformAction(ItemAbilities.AXE_STRIP));
         assertFalse(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_AXE).canPerformAction(ItemAbilities.HOE_TILL));

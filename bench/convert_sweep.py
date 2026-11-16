@@ -557,7 +557,17 @@ def run_mod(mod, args, concepts, started):
             namespace = mod_namespace(work, to) or mod_namespace(src, mod["loader"])
             record["namespace"] = namespace
             packages = own_packages(src)
+            # Both games run the mod without the build's runtime-only mods (other mods a dev run loads to test integrations,
+            # which the converted build may name in versions the game rejects), unless one cannot start without them.
+            converted_left_out = without_runtime_mods(work)
             record["game"] = game_registries(work, namespace, packages)
+            if converted_left_out and not record["game"].get("loaded"):
+                first_error = record["game"].get("loadError", "")
+                restore_runtime_mods(work, converted_left_out)
+                record["game"] = game_registries(work, namespace, packages)
+                record["game"]["loadErrorWithoutRuntimeMods"] = first_error[:3000]
+                converted_left_out = []
+            record["game"]["runtimeModsLeftOut"] = converted_left_out
             if record["game"].get("loaded"):
                 original = fresh_copy(src, f"{mod['id']}-original")
                 started.append(original)

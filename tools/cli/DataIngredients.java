@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Custom ingredients in a mod's recipe files, between NeoForge's form and Fabric API's: NeoForge names an ingredient's type
  * with "type" ({"type": "farmersdelight:item_ability", ...}), Fabric with "fabric:type"; NeoForge's own compound,
- * intersection and difference ingredients are Fabric's any_of, all_of and difference (a list of "children" being Fabric's
+ * intersection and difference ingredients are Fabric's any, all and difference (a list of "children" being Fabric's
  * "ingredients"). The recipe's own "type" (the top level) is the game's and stays. A NeoForge ingredient type Fabric has
  * no counterpart for (neoforge:components ...) keeps NeoForge's form.
  */
@@ -14,12 +14,32 @@ final class DataIngredients {
 
     private DataIngredients() {}
 
+    /** The keys of recipes whose arrays are lists of things, not one ingredient's alternatives. */
+    static final java.util.Set<String> LISTS = java.util.Set.of("ingredients", "results", "result", "pattern", "children", "values", "entries");
+
     /** The recipe with its custom ingredients in the other loader's form, or null when it has none. */
     static Map<String, Object> convert(Map<String, Object> recipe, boolean toFabric) {
         boolean[] changed = { false };
         Map<String, Object> out = new LinkedHashMap<>();
-        for (var e : recipe.entrySet()) out.put(e.getKey(), walk(e.getValue(), toFabric, changed));
+        for (var e : recipe.entrySet()) out.put(e.getKey(), member(e.getKey(), e.getValue(), toFabric, changed));
         return changed[0] ? out : null;
+    }
+
+    /**
+     * An object's member in the other form. A single ingredient written as an array of alternatives (NeoForge reads any
+     * ingredient there; Fabric's array takes only items and tags) with a custom ingredient in it is Fabric's any; a
+     * list of ingredients ("ingredients") and results stay lists.
+     */
+    private static Object member(String key, Object value, boolean toFabric, boolean[] changed) {
+        Object walked = walk(value, toFabric, changed);
+        if (toFabric && walked instanceof List<?> alternatives && !LISTS.contains(key) && alternatives.stream().anyMatch(a -> a instanceof Map<?, ?> m && m.containsKey("fabric:type"))) {
+            Map<String, Object> anyOf = new LinkedHashMap<>();
+            anyOf.put("fabric:type", "fabric:any");
+            anyOf.put("ingredients", walked);
+            changed[0] = true;
+            return anyOf;
+        }
+        return walked;
     }
 
     @SuppressWarnings("unchecked")
@@ -31,15 +51,15 @@ final class DataIngredients {
         }
         if (!(value instanceof Map<?, ?> map)) return value;
         Map<String, Object> object = new LinkedHashMap<>();
-        for (var e : ((Map<String, Object>) map).entrySet()) object.put(e.getKey(), walk(e.getValue(), toFabric, changed));
+        for (var e : ((Map<String, Object>) map).entrySet()) object.put(e.getKey(), member(e.getKey(), e.getValue(), toFabric, changed));
         return toFabric ? toFabric(object, changed) : toNeoForge(object, changed);
     }
 
     private static Map<String, Object> toFabric(Map<String, Object> object, boolean[] changed) {
         if (!(object.get("type") instanceof String type) || object.containsKey("id") || type.startsWith("minecraft:")) return object;
         String fabric = switch (type) {
-            case "neoforge:compound" -> "fabric:any_of";
-            case "neoforge:intersection" -> "fabric:all_of";
+            case "neoforge:compound" -> "fabric:any";
+            case "neoforge:intersection" -> "fabric:all";
             case "neoforge:difference" -> "fabric:difference";
             default -> type.startsWith("neoforge:") ? null : type;
         };
@@ -56,8 +76,8 @@ final class DataIngredients {
     private static Map<String, Object> toNeoForge(Map<String, Object> object, boolean[] changed) {
         if (!(object.get("fabric:type") instanceof String type)) return object;
         String neoforge = switch (type) {
-            case "fabric:any_of" -> "neoforge:compound";
-            case "fabric:all_of" -> "neoforge:intersection";
+            case "fabric:any" -> "neoforge:compound";
+            case "fabric:all" -> "neoforge:intersection";
             case "fabric:difference" -> "neoforge:difference";
             default -> type.startsWith("fabric:") ? null : type;
         };

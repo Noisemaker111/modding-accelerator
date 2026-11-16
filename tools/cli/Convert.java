@@ -2783,6 +2783,8 @@ final class Convert {
         if (bridgeUsed) applyBridge();
         if (bridgeUsed) setAsideDatagen();
         neoforgeParametersOutOfMixins();
+        lambdaMixinTargets(minecraft);
+        enumExtensionLookups();
         // NeoForge generates data from GatherDataEvent listeners; Fabric from fabric-datagen entrypoints: the bridge's
         // DataEntrypoint posts the event (when the bridge has it for this game version).
         if (bridgeUsed && exists(bridgeFolder() + "/DataEntrypoint.java")) {
@@ -2912,6 +2914,111 @@ final class Convert {
         strings.appendTail(out);
         // A handler's parameter of a NeoForge type, written out in full.
         return out.toString().replaceAll(",\\s*(?:final\\s+)?net\\.neoforged\\.[\\w.]+\\s+\\w+(?=\\s*[,)])", "");
+    }
+
+    /**
+     * A mod mixin that targets a game lambda by the compiler's name (method = "lambda$registerTypes$0", the name NeoForge's
+     * development game keeps) targets it by Loom's name for it, the intermediary one (LambdaTargets): Mojang's mappings
+     * leave the game's lambdas out of Loom's names. Only for a game still shipped obfuscated (before 26.1).
+     */
+    void lambdaMixinTargets(String minecraft) throws Exception {
+        if (Versions.compare(minecraft, Route.FIRST_UNOBFUSCATED) >= 0) return;
+        String[] mappings = null;
+        for (String file : javaFiles()) {
+            String text = read(file);
+            if (!text.contains("@Mixin") || !text.contains("\"lambda$")) continue;
+            String owner = mixinOwner(text);
+            if (owner == null || !owner.startsWith("net.minecraft.")) continue;
+            if (mappings == null) mappings = gameAndIntermediaryMappings(minecraft);
+            String[] names = mappings;
+            Matcher lambda = Pattern.compile("\"(lambda\\$[\\w$]+?)(?=[\"(])").matcher(text);
+            StringBuilder out = new StringBuilder();
+            List<String> moved = new ArrayList<>();
+            while (lambda.find()) {
+                String name = LambdaTargets.intermediary(names[0], names[1], owner, lambda.group(1));
+                if (name != null) moved.add(lambda.group(1) + " -> " + name);
+                lambda.appendReplacement(out, Matcher.quoteReplacement("\"" + (name == null ? lambda.group(1) : name)));
+            }
+            lambda.appendTail(out);
+            if (moved.isEmpty()) continue;
+            write(file, out.toString());
+            applied.computeIfAbsent("mixin-lambda-targets", k -> new ArrayList<>()).add(file);
+            notes.add(file + ": mixin targets of the game's lambdas by Loom's names (" + String.join(", ", moved) + ").");
+        }
+    }
+
+    /**
+     * The constants a mod adds to the game's enums (its META-INF/enumextensions.json, which NeoForge builds into the enums
+     * at start) do not exist on Fabric: a lookup of one by name (RecipeBookCategories.valueOf("MOD_TAB")) becomes the
+     * bridge's EnumProxy.fallback, the game's constant that stands in for it, as the mod's EnumProxy fields give.
+     */
+    void enumExtensionLookups() throws Exception {
+        if (bridgePackage == null || !exists(bridgeFolder() + "/EnumProxy.java")) return;
+        List<String[]> entries = new ArrayList<>();
+        for (String file : List.of("src/main/resources/META-INF/enumextensions.json", "src/client/resources/META-INF/enumextensions.json")) {
+            if (!exists(file)) continue;
+            for (Object item : Json.array(Json.object(Json.parse(read(file))).get("entries"))) {
+                var entry = Json.object(item);
+                String type = Json.text(entry, "enum", "");
+                entries.add(new String[] { type.substring(type.lastIndexOf('/') + 1).replace('$', '.'), Json.text(entry, "name", "") });
+            }
+        }
+        if (entries.isEmpty()) return;
+        for (String file : javaFiles()) {
+            String text = read(file);
+            String out = enumExtensionLookups(text, entries, bridgePackage);
+            if (out.equals(text)) continue;
+            write(file, out);
+            applied.computeIfAbsent("enum-extension-lookups", k -> new ArrayList<>()).add(file);
+        }
+        notes.add("Enum constants the mod adds (META-INF/enumextensions.json) cannot be added on Fabric: lookups of them by name are the game's stand-in constant (EnumProxy.fallback).");
+    }
+
+    static String enumExtensionLookups(String text, List<String[]> entries, String bridgePackage) {
+        String out = text;
+        for (String[] entry : entries) {
+            String simple = entry[0].substring(entry[0].lastIndexOf('.') + 1);
+            out = out.replaceAll(
+                "(?<![\\w.])((?:[\\w]+\\.)*" + Pattern.quote(simple) + ")\\.valueOf\\(\\s*\"" + Pattern.quote(entry[1]) + "\"\\s*\\)",
+                Matcher.quoteReplacement(bridgePackage) + ".EnumProxy.fallback($1.class)"
+            );
+        }
+        return out;
+    }
+
+    /** The class a mixin source targets (@Mixin(X.class), X resolved by its imports; or @Mixin(targets = "...")), in dots. */
+    static String mixinOwner(String text) {
+        Matcher named = Pattern.compile("@Mixin\\(\\s*(?:value\\s*=\\s*)?\\{?\\s*([\\w.]+)\\.class").matcher(text);
+        if (named.find()) {
+            String simple = named.group(1);
+            if (simple.contains(".")) return simple;
+            Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+\\." + Pattern.quote(simple) + ")\\s*;").matcher(text);
+            return imported.find() ? imported.group(1) : null;
+        }
+        Matcher targets = Pattern.compile("@Mixin\\(\\s*targets\\s*=\\s*\\{?\\s*\"([\\w.$/]+)\"").matcher(text);
+        return targets.find() ? targets.group(1).replace('/', '.') : null;
+    }
+
+    /** Mojang's client mappings and Fabric's intermediary mappings (tiny v2) of a game version, as text. */
+    String[] gameAndIntermediaryMappings(String minecraft) throws Exception {
+        var version = Json.object(Json.parse(Target.fetch(build, gameVersionUrl(minecraft))));
+        var downloads = Json.object(version.get("downloads"));
+        String mojang = Target.fetch(build, Json.text(Json.object(downloads.get("client_mappings")), "url", ""));
+        Path dir = Path.of(System.getProperty("user.home"), ".mmt", "minecraft", minecraft);
+        Path tiny = dir.resolve("intermediary.tiny");
+        if (!Files.isRegularFile(tiny)) {
+            Files.createDirectories(dir);
+            Path jar = dir.resolve("intermediary-v2.jar");
+            PackCheck.download("https://maven.fabricmc.net/net/fabricmc/intermediary/" + minecraft + "/intermediary-" + minecraft + "-v2.jar", jar, null);
+            try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+                var entry = zip.getEntry("mappings/mappings.tiny");
+                if (entry == null) throw new IOException(jar + " has no mappings/mappings.tiny");
+                try (var in = zip.getInputStream(entry)) {
+                    Files.write(tiny, in.readAllBytes());
+                }
+            }
+        }
+        return new String[] { mojang, Files.readString(tiny) };
     }
 
     /** Where setAsideDatagen keeps data generation code the bridge cannot build: a folder no source set compiles. */

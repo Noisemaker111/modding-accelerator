@@ -57,6 +57,7 @@ public final class Bridge {
         hooked = true;
         GameEvents.hook();
         TradeEvents.hook();
+        CanItemPerformAbility.register();
         ModifyDefaultComponentsEvent.hook();
         ServerLifecycleEvents.SERVER_STARTING.register(started -> server = started);
         ServerLifecycleEvents.SERVER_STOPPED.register(stopped -> server = null);

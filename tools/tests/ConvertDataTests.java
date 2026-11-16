@@ -28,10 +28,10 @@ final class ConvertDataTests {
         Map<String, Object> fabricRecipe = DataIngredients.convert(Json.object(Json.parse(neoRecipe)), true);
         ConvertTests.check(
             Json.write(fabricRecipe).equals("{\"type\":\"demo:cutting\",\"ingredients\":[{\"item\":\"minecraft:apple\"}],\"tool\":{\"fabric:type\":\"demo:item_ability\",\"action\":\"axe_dig\"}," +
-                "\"extra\":{\"fabric:type\":\"fabric:any_of\",\"ingredients\":[{\"tag\":\"c:crops\"}]},\"result\":{\"id\":\"minecraft:stick\",\"type\":\"demo:not_an_ingredient\"}}") &&
+                "\"extra\":{\"fabric:type\":\"fabric:any\",\"ingredients\":[{\"tag\":\"c:crops\"}]},\"result\":{\"id\":\"minecraft:stick\",\"type\":\"demo:not_an_ingredient\"}}") &&
                 Json.write(DataIngredients.convert(fabricRecipe, false)).equals(neoRecipe) &&
                 DataIngredients.convert(Json.object(Json.parse("{\"type\":\"minecraft:smelting\",\"ingredient\":{\"item\":\"minecraft:apple\"}}")), true) == null,
-            "a recipe's custom ingredients move between NeoForge's type and Fabric's fabric:type (NeoForge's compound is Fabric's any_of), the recipe's own type and a stack stay: " + Json.write(fabricRecipe)
+            "a recipe's custom ingredients move between NeoForge's type and Fabric's fabric:type (NeoForge's compound is Fabric's any), the recipe's own type and a stack stay: " + Json.write(fabricRecipe)
         );
     
         String mixin = Convert.neoforgeParametersOutOfMixin(
@@ -42,6 +42,36 @@ final class ConvertDataTests {
             mixin.contains("\"renderBreakingTexture(Lnet/minecraft/world/level/block/state/BlockState;Lcom/mojang/blaze3d/vertex/VertexConsumer;)V\"") &&
                 mixin.contains("void hide(BlockState state, VertexConsumer consumer, CallbackInfo info)") && mixin.contains("@At(\"HEAD\")"),
             "a mixin of a method NeoForge gives an extra parameter targets the game's own method, its handler without that parameter: " + mixin
+        );
+    
+        String mojang = "net.minecraft.util.datafix.schemas.V3818_3 -> bla:\n    29:37:com.mojang.datafixers.types.templates.TypeTemplate lambda$registerTypes$0(com.mojang.datafixers.schemas.Schema) -> a\n" +
+            "    45:45:com.mojang.datafixers.types.templates.TypeTemplate lambda$registerTypes$2(com.mojang.datafixers.schemas.Schema) -> a\nnet.minecraft.Other -> blb:\n";
+        String tiny = "tiny\t2\t0\tofficial\tintermediary\nc\tbla\tnet/minecraft/class_9354\n" +
+            "\tm\t(Lcom/mojang/datafixers/schemas/Schema;)Lcom/mojang/datafixers/types/templates/TypeTemplate;\ta\tmethod_58010\nc\tblb\tnet/minecraft/class_1\n";
+        ConvertTests.check(
+            "method_58010".equals(LambdaTargets.intermediary(mojang, tiny, "net.minecraft.util.datafix.schemas.V3818_3", "lambda$registerTypes$0")) &&
+                LambdaTargets.intermediary(mojang, tiny, "net.minecraft.Other", "lambda$registerTypes$0") == null &&
+                "net.minecraft.util.datafix.schemas.V3818_3".equals(Convert.mixinOwner("import net.minecraft.util.datafix.schemas.V3818_3;\n@Mixin(V3818_3.class)\nclass M {}")),
+            "a mixin's game lambda target by the compiler's name has Loom's intermediary name, through Mojang's and intermediary's mappings"
+        );
+    
+        String lookups = Convert.enumExtensionLookups(
+            "A a = RecipeBookCategories.valueOf(\"MOD_TAB\"); B b = RecipeBookCategories.valueOf(\"CRAFTING_MISC\"); C c = HumanoidModel.ArmPose.valueOf(\"MOD_POSE\");",
+            List.of(new String[] { "RecipeBookCategories", "MOD_TAB" }, new String[] { "HumanoidModel.ArmPose", "MOD_POSE" }),
+            "demo.bridge"
+        );
+        ConvertTests.check(
+            lookups.equals("A a = demo.bridge.EnumProxy.fallback(RecipeBookCategories.class); B b = RecipeBookCategories.valueOf(\"CRAFTING_MISC\"); C c = demo.bridge.EnumProxy.fallback(HumanoidModel.ArmPose.class);"),
+            "a lookup of an enum constant the mod adds is the bridge's stand-in, of one the game has stays: " + lookups
+        );
+    
+        Map<String, Object> alternatives = DataIngredients.convert(Json.object(Json.parse(
+            "{\"type\":\"demo:cutting\",\"ingredients\":[{\"type\":\"demo:a\"},{\"item\":\"minecraft:apple\"}],\"tool\":[{\"type\":\"demo:item_ability\"},{\"tag\":\"c:tools/knife\"}]}"
+        )), true);
+        ConvertTests.check(
+            Json.write(alternatives).equals("{\"type\":\"demo:cutting\",\"ingredients\":[{\"fabric:type\":\"demo:a\"},{\"item\":\"minecraft:apple\"}]," +
+                "\"tool\":{\"fabric:type\":\"fabric:any\",\"ingredients\":[{\"fabric:type\":\"demo:item_ability\"},{\"tag\":\"c:tools/knife\"}]}}"),
+            "an ingredient's alternatives holding a custom ingredient are Fabric's any; a list of ingredients stays a list: " + Json.write(alternatives)
         );
     }
 }

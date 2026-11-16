@@ -4804,7 +4804,6 @@
       "IItemExtension.java",
       "ItemTooltipHandler.java",
       "ClientTooltipFlag.java",
-      "CanItemPerformAbility.java",
       "RenderTooltipEvent.java",
       "mixin/TooltipGatherMixin.java",
       "extensions/IDataComponentMapBuilderExtensions.java",

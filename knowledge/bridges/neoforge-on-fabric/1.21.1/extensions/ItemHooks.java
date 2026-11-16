@@ -63,7 +63,11 @@ public interface ItemHooks {
 
     /** Whether the stack can do the ability: NeoForge's defaults for the game's tools (an item can override this, as on NeoForge). */
     default boolean canPerformAction(ItemStack stack, ItemAbility ability) {
-        Item item = self();
+        return defaultCanPerformAction(self(), ability);
+    }
+
+    /** NeoForge's ability sets of the game's tools. */
+    static boolean defaultCanPerformAction(Item item, ItemAbility ability) {
         if (item instanceof AxeItem) return ItemAbilities.DEFAULT_AXE_ACTIONS.contains(ability);
         if (item instanceof HoeItem) return ItemAbilities.DEFAULT_HOE_ACTIONS.contains(ability);
         if (item instanceof ShovelItem) return ItemAbilities.DEFAULT_SHOVEL_ACTIONS.contains(ability);
