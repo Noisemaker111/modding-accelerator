@@ -10,6 +10,15 @@ final class Build {
     final Mmt.Report report;
     Runtimes.Jdk jdk;
 
+    /** A pack client's instance (pack-run): no Gradle build, so no build Java; eval, game-status and game-stop only. */
+    Build(ProjectModel project, Path harness, Mmt.Report report) {
+        this.project = project;
+        this.harness = harness;
+        this.selected = "";
+        this.report = report;
+        init = harness.resolve("tools/cli/gradle.init.gradle");
+    }
+
     Build(ProjectModel project, Path harness, String selected, Mmt.Report report) throws Exception {
         this.project = project;
         this.harness = harness;

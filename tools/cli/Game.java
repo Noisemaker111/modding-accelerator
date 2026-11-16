@@ -1396,13 +1396,18 @@ final class Game {
         if (asm == null) throw new IOException(
             "No ASM library in the actual build classpath; this client cannot use the portable agent yet."
         );
-        Path source = build.harness.resolve("tools/agent/PortableAgent.java"), background = build.harness.resolve(
+        return agent(build.harness, asm, build.project.state(), build.report);
+    }
+
+    /** The control agent, compiled once per source and ASM version into the state folder; pack-run uses it too. */
+    static Path agent(Path harness, Path asm, Path state, Mmt.Report report) throws Exception {
+        Path source = harness.resolve("tools/agent/PortableAgent.java"), background = harness.resolve(
             "tools/agent/BackgroundWindows.java"
-        ), legacy = build.harness.resolve("tools/agent/GameLaunchAgent.java"), console = build.harness.resolve(
+        ), legacy = harness.resolve("tools/agent/GameLaunchAgent.java"), console = harness.resolve(
             "tools/agent/Console.java"
-        ), reload = build.harness.resolve("tools/agent/HotReload.java"), json = build.harness.resolve(
+        ), reload = harness.resolve("tools/agent/HotReload.java"), json = harness.resolve(
             "tools/cli/Json.java"
-        ), quiet = build.harness.resolve("tools/cli/QuietOptions.java");
+        ), quiet = harness.resolve("tools/cli/QuietOptions.java");
         String key =
             Fingerprints.files(
                 List.of(
@@ -1414,11 +1419,11 @@ final class Game {
                     json,
                     quiet,
                     asm,
-                    build.harness.resolve("tools/cli/Relocate.java")
+                    harness.resolve("tools/cli/Relocate.java")
                 )
             ) +
             "-private-asm-redefine";
-        Path dir = build.project.state().resolve("agent/" + key);
+        Path dir = state.resolve("agent/" + key);
         Files.createDirectories(dir);
         Path jar = dir.resolve("mmt-agent.jar");
         if (Files.exists(jar)) return jar;
@@ -1426,7 +1431,7 @@ final class Game {
         Files.createDirectories(classes);
         var result = Run.command(
             List.of(
-                Runtimes.ensureAtLeast(build.harness, 17)
+                Runtimes.ensureAtLeast(harness, 17)
                     .home()
                     .resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac"))
                     .toString(),
@@ -1444,12 +1449,12 @@ final class Game {
                 json.toString(),
                 quiet.toString()
             ),
-            build.project.root,
+            state,
             Map.of(),
-            build.report.log("agent-compile"),
+            report.log("agent-compile"),
             120
         );
-        build.report.stage("agent-compile", result, Map.of());
+        report.stage("agent-compile", result, Map.of());
         if (result.exit() != 0) throw new IOException("Could not build client control: " + Run.tail(result.log()));
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
