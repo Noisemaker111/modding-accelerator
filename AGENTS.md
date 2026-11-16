@@ -17,12 +17,9 @@ Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
 
 ## Rules
 
-- **Compounding tooling: every change makes the next mod faster to improve, whatever kind of mod it is.** Leave
-  behind a general pattern, tool, generator or skill, not a one-mod fix; the PR's "Carries over" line says what.
 - **Before contributing or asking, read `CONTRIBUTING.md`,** then check the code, issues and PRs.
   Unwritten choices are yours; third-party files (game jars, mappings, mods) are downloaded at run time, not added to the repo.
-- **One feature = one branch = one PR**, titled by what works now, never "round/batch/part N" (a hook in
-  `.claude/settings.json` refuses those). Commit after each passing step; push to the same PR. Use
+- **One feature = one branch = one PR.** Commit after each passing step; push to the same PR. Use
   `.github/pull_request_template.md`. Merge (`gh pr merge --squash`) only when every check is green; CI is the gate,
   and a PR's claims ("tests pass", numbers) must be ones CI, a linked cloud run or the local in-game run's receipt shows.
 - **Prove every change in-game locally before merge, at the smallest real scope:** `pack-check --focus MODID`, one
