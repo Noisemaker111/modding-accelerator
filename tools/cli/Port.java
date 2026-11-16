@@ -2657,6 +2657,25 @@ final class Port {
                 ) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
                 continue;
             }
+            if ("food-consumable".equals(transform)) {
+                // The foods are built in one class, and every item made from one, anywhere in the mod, eats as it said.
+                Pattern when = Pattern.compile(Json.text(rule, "when", "."));
+                for (Path file : logged) {
+                    if (!all.contains(file)) continue;
+                    String original = Files.readString(file);
+                    if (!when.matcher(original).find()) continue;
+                    String built = foodConsumables(original);
+                    if (built.equals(original)) continue;
+                    Files.writeString(file, built);
+                    String owner = foodOwner(built);
+                    for (Path user : all) {
+                        String text = Files.readString(user), used = foodUses(text, owner);
+                        if (!used.equals(text)) Files.writeString(user, used);
+                    }
+                    rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
+                }
+                continue;
+            }
             if ("line".equals(rule.get("scope"))) {
                 for (Path file : logged) {
                     if (!all.contains(file)) continue;
@@ -2866,6 +2885,100 @@ final class Port {
      * rewritten by apply.wrap ($0 is the argument), unless it already matches apply.skip. 26.2's TagAppender.add takes a
      * ResourceKey: tag(T).add(BLOCK_A, BLOCK_B.get()) -> add(BLOCK_A.builtInRegistryHolder().key(), ...).
      */
+    /**
+     * 1.21.2 took eating from FoodProperties: its builder lost effect(effect, chance) and fast(), which now describe the
+     * item's consumable (Consumables.defaultFood().consumeSeconds(0.8F).onConsume(new ApplyStatusEffectsConsumeEffect(
+     * effect, chance))), set with Item.Properties.food(food, consumable). Each builder chain that used them keeps the rest
+     * and is passed through mmtFood, which remembers that food's consumable by identity; foodUses makes every
+     * Item.Properties.food(food) in the mod set it, so a food handed through the mod's own helpers keeps its effects.
+     * Lines are kept: the helpers go at the end of the class.
+     */
+    static String foodConsumables(String text) {
+        Matcher chain = Pattern.compile("(\\(\\s*)?new\\s+(?:net\\.minecraft\\.world\\.food\\.)?FoodProperties\\s*\\.\\s*Builder\\s*\\(\\s*\\)(\\s*\\))?").matcher(text);
+        StringBuilder out = new StringBuilder();
+        int done = 0;
+        while (chain.find()) {
+            if (chain.start() < done) continue;
+            // (new FoodProperties.Builder()) is the chain's start; a lone '(' or ')' belongs to the code around it.
+            boolean wrapped = chain.group(1) != null && chain.group(2) != null;
+            int start = chain.group(1) != null && !wrapped ? chain.start() + chain.group(1).length() : chain.start();
+            int at = chain.group(2) != null && !wrapped ? chain.end() - chain.group(2).length() : chain.end();
+            StringBuilder kept = new StringBuilder(text.substring(start, at));
+            StringBuilder consumable = new StringBuilder("net.minecraft.world.item.component.Consumables.defaultFood()");
+            boolean changed = false, built = false;
+            Matcher call = Pattern.compile("\\G(\\s*)\\.\\s*(\\w+)\\s*\\(").matcher(text);
+            while (!built && call.find(at)) {
+                int open = call.end() - 1, close = closingParen(text, open);
+                if (close < 0) break;
+                String name = call.group(2), args = text.substring(open + 1, close);
+                at = close + 1;
+                List<String> parts = topLevelArguments(args);
+                // A dropped call keeps its line breaks, so javac's line numbers hold.
+                String breaks = call.group(1).replaceAll("[^\\n]", "") + args.replaceAll("[^\\n]", "");
+                if (name.equals("fast") && args.isBlank()) {
+                    consumable.append(".consumeSeconds(0.8F)");
+                    kept.append(breaks);
+                    changed = true;
+                } else if (name.equals("effect") && parts.size() == 2) {
+                    consumable.append(".onConsume(new net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect(mmtEffect(")
+                        .append(parts.get(0).strip()).append("), ").append(parts.get(1).strip()).append("))");
+                    kept.append(breaks);
+                    changed = true;
+                } else {
+                    kept.append(text, call.start(), at);
+                    built = name.equals("build");
+                }
+            }
+            if (!changed || !built) continue;
+            out.append(text, done, start).append("mmtFood(").append(kept).append(", ").append(consumable).append(".build())");
+            done = at;
+        }
+        if (done == 0) return text;
+        String result = out.append(text.substring(done)).toString();
+        Matcher owner = Pattern.compile("\\b(?:class|interface|enum|record)\\s+\\w+[^{]*\\{").matcher(result);
+        if (!owner.find()) return text;
+        int close = closingBrace(result, owner.end() - 1);
+        if (close < 0) return text;
+        String food = "net.minecraft.world.food.FoodProperties", item = "net.minecraft.world.item.component.Consumable",
+            effect = "net.minecraft.world.effect.MobEffectInstance";
+        String helpers =
+            "\n    /** Written by mmt port: how each food was eaten before 1.21.2 moved eating to the item's consumable. */\n" +
+            "    private static " + food + " mmtFood(" + food + " food, " + item + " consumable) {\n" +
+            "        MmtFoods.CONSUMABLES.put(food, consumable);\n        return food;\n    }\n\n" +
+            "    public static " + item + " mmtConsumable(" + food + " food) {\n" +
+            "        return MmtFoods.CONSUMABLES.getOrDefault(food, net.minecraft.world.item.component.Consumables.DEFAULT_FOOD);\n    }\n\n" +
+            "    private static " + effect + " mmtEffect(" + effect + " effect) {\n        return effect;\n    }\n\n" +
+            "    private static " + effect + " mmtEffect(java.util.function.Supplier<" + effect + "> effect) {\n        return effect.get();\n    }\n\n" +
+            "    private static final class MmtFoods {\n" +
+            "        static final java.util.Map<" + food + ", " + item + "> CONSUMABLES = new java.util.IdentityHashMap<>();\n    }\n";
+        return result.substring(0, close) + helpers + result.substring(close);
+    }
+
+    /** The qualified name of the class foodConsumables gave its helpers. */
+    static String foodOwner(String text) {
+        Matcher pkg = Pattern.compile("(?m)^\\s*package\\s+([\\w.]+)\\s*;").matcher(text);
+        Matcher owner = Pattern.compile("\\b(?:class|interface|enum|record)\\s+(\\w+)").matcher(text);
+        return (pkg.find() ? pkg.group(1) + "." : "") + (owner.find() ? owner.group(1) : "");
+    }
+
+    /** Item.Properties.food(food) also sets the consumable that food's builder described (Consumables.DEFAULT_FOOD otherwise, as food(food) does). */
+    static String foodUses(String text, String owner) {
+        if (!text.contains("Properties")) return text;
+        Matcher use = Pattern.compile("\\.\\s*food\\s*\\(").matcher(text);
+        StringBuilder out = new StringBuilder();
+        int done = 0;
+        while (use.find()) {
+            int open = use.end() - 1, close = closingParen(text, open);
+            if (close < 0 || open < done) continue;
+            List<String> args = topLevelArguments(text.substring(open + 1, close));
+            if (args.size() != 1 || args.get(0).isBlank() || text.startsWith(".component(net.minecraft.core.component.DataComponents.CONSUMABLE", close + 1)) continue;
+            out.append(text, done, close + 1).append(".component(net.minecraft.core.component.DataComponents.CONSUMABLE, ").append(owner)
+                .append(".mmtConsumable(").append(args.get(0).strip()).append("))");
+            done = close + 1;
+        }
+        return done == 0 ? text : out.append(text.substring(done)).toString();
+    }
+
     /**
      * 1.21.2 moved a food's eating effects from FoodProperties.effects() (PossibleEffect: effect(), probability()) to the
      * stack's consumable component (ApplyStatusEffectsConsumeEffect: effects(), probability()). The old list is rebuilt
@@ -3298,6 +3411,7 @@ final class Port {
         else if ("entity-render-state".equals(apply.get("transform"))) text = entityRenderState(text);
         else if ("toast-visibility".equals(apply.get("transform"))) text = toastVisibility(text);
         else if ("food-effects".equals(apply.get("transform"))) text = foodEffects(text);
+        else if ("food-consumable".equals(apply.get("transform"))) text = foodConsumables(text);
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(
             text,

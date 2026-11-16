@@ -198,8 +198,19 @@ public final class PortTests {
         );
     }
 
+    /** Every item made from a food, through the mod's own helpers too, sets the consumable that food's builder described. */
+    static void foodUses() {
+        String items = "class ModItems {\n    static Item.Properties foodItem(FoodProperties food) {\n        return new Item.Properties().food(food);\n    }\n"
+            + "    static Item.Properties bowl() {\n        return new Item.Properties().stacksTo(16).food(FoodValues.STEW).food(a, b);\n    }\n}\n";
+        String used = Port.foodUses(items, "mod.FoodValues");
+        check(used.contains("new Item.Properties().food(food).component(net.minecraft.core.component.DataComponents.CONSUMABLE, mod.FoodValues.mmtConsumable(food));"), "a helper's food sets its consumable: " + used);
+        check(used.contains(".food(FoodValues.STEW).component(net.minecraft.core.component.DataComponents.CONSUMABLE, mod.FoodValues.mmtConsumable(FoodValues.STEW)).food(a, b);"), "one food each, and food(food, consumable) is left as it is");
+        check(used.split("\n", -1).length == items.split("\n", -1).length && Port.foodUses(used, "mod.FoodValues").equals(used), "lines kept, and a second round adds nothing");
+    }
+
     public static void main(String[] args) throws Exception {
         mixinPlaceholders();
+        foodUses();
         bridgeRewrites();
         yarnRouteRewrites();
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
