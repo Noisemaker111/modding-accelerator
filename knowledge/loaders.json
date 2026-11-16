@@ -2382,7 +2382,13 @@
     "net.neoforged.neoforge.common.extensions.IClientCommonPacketListenerExtension": "extensions.IClientCommonPacketListenerExtension",
     "net.neoforged.neoforge.common.extensions.IDataComponentMapBuilderExtensions": "extensions.IDataComponentMapBuilderExtensions",
     "net.neoforged.neoforge.client.event.EntityRenderersEvent": "EntityRenderersEvent",
-    "net.neoforged.neoforge.client.event.RegisterColorHandlersEvent": "RegisterColorHandlersEvent"
+    "net.neoforged.neoforge.client.event.RegisterColorHandlersEvent": "RegisterColorHandlersEvent",
+    "net.neoforged.neoforge.data.event.GatherDataEvent": "data.GatherDataEvent",
+    "net.neoforged.neoforge.common.data.BlockTagsProvider": "data.BlockTagsProvider",
+    "net.neoforged.neoforge.common.data.ItemTagsProvider": "data.ItemTagsProvider",
+    "net.neoforged.neoforge.common.data.LanguageProvider": "data.LanguageProvider",
+    "net.neoforged.neoforge.common.data.SoundDefinitionsProvider": "data.SoundDefinitionsProvider",
+    "net.neoforged.neoforge.common.data.SoundDefinition": "data.SoundDefinition"
    },
    "symbols": {
     "neoforge": [
@@ -4297,7 +4303,11 @@
       "extensions/IDataComponentMapBuilderExtensions.java",
       "mixin/ComponentMapBuilderExtensionsMixin.java",
       "EntityRenderersEvent.java",
-      "RegisterColorHandlersEvent.java"
+      "RegisterColorHandlersEvent.java",
+      "data/",
+      "DataEntrypoint.java",
+      "extensions/IDataGeneratorExtension.java",
+      "mixin/DataGeneratorExtensionMixin.java"
      ],
      "mixins": [
       {
@@ -5151,6 +5161,15 @@
      "for": [
       "RenderTooltipEvent"
      ]
+    },
+    {
+     "mixin": "DataGeneratorExtensionMixin",
+     "for": [
+      "data.GatherDataEvent"
+     ],
+     "injects": {
+      "net/minecraft/data/DataGenerator": "extensions.IDataGeneratorExtension"
+     }
     }
    ]
   },

@@ -2769,6 +2769,13 @@ final class Convert {
         rewriteSources("neoforge", "fabric");
         dropNeoForgeTabOrder();
         if (bridgeUsed) applyBridge();
+        // NeoForge generates data from GatherDataEvent listeners; Fabric from fabric-datagen entrypoints: the bridge's
+        // DataEntrypoint posts the event (when the bridge has it for this game version).
+        if (bridgeUsed && exists(bridgeFolder() + "/DataEntrypoint.java")) {
+            boolean generates = false;
+            for (String file : javaFiles()) if (!file.startsWith(bridgeFolder() + "/")) generates |= read(file).contains("GatherDataEvent");
+            if (generates) entrypoints.computeIfAbsent("fabric-datagen", k -> new ArrayList<>()).add(bridgePackage + ".DataEntrypoint");
+        }
         if (menu != null) {
             String file = classFile(menu);
             if (file != null) {
