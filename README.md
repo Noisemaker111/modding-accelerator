@@ -117,8 +117,9 @@ and line, never dropped. `convert --undo` restores every file.
   Fabric API adds to game classes), and capabilities ↔ Transfer API for items, fluids and energy both ways
   (81 droplets per millibucket; semantics in each bridge's `about`). `python bench/bridge_check.py` compiles a whole
   bridge inside a real MDK; each bridge's before/after tests run both ways in `self-test`.
-- **Across a corpus** of 35 pinned mods (`coverage/sweeps/convert.json`): 28 convert without a refusal, 5 compile,
-  5 load in the game with the same behaviour as the original, and 5 convert back and compile.
+- **Across a corpus** of 35 pinned mods (`coverage/sweeps/convert.json`, the cloud sweep `tools/cloud-run convert`):
+  28 convert without a refusal, 10 compile and load in the game, 9 with the same behaviour as the original (the
+  tenth registers nothing to compare), and 10 convert back and compile.
 
 ## Make a modpack work
 
