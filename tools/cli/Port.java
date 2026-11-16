@@ -281,6 +281,35 @@ final class Port {
             rewrites.add(yarnKeyed);
         }
         out.put("rewrites", rewrites);
+        List<Object> classRewrites = new ArrayList<>();
+        for (Object o : Json.array(route.getOrDefault("classRewrites", List.of()))) {
+            var r = Json.object(o);
+            classRewrites.add(r);
+            String yarnName = fromMojang.get(Json.text(r, "from", ""));
+            if (yarnName == null) continue;
+            Map<String, Object> yarnKeyed = new LinkedHashMap<>(r);
+            yarnKeyed.put("from", yarnName);
+            classRewrites.add(yarnKeyed);
+        }
+        out.put("classRewrites", classRewrites);
+        return out;
+    }
+
+    /** The game's class rewrites (Mojang names) in yarn: the removed class as the source names it, its replacement as the target. */
+    static List<Object> yarnClassRewrites(List<Object> game, Map<String, Object> source, Map<String, Object> target) {
+        Map<String, String> sourceYarn = new HashMap<>(), targetYarn = new HashMap<>();
+        for (Object o : Json.array(source.get("classes"))) sourceYarn.put(Json.text(Json.object(o), "to", ""), Json.text(Json.object(o), "from", ""));
+        for (Object o : Json.array(target.get("classes"))) targetYarn.put(Json.text(Json.object(o), "to", ""), Json.text(Json.object(o), "from", ""));
+        List<Object> out = new ArrayList<>();
+        for (Object o : game) {
+            var r = Json.object(o);
+            String from = sourceYarn.get(Json.text(r, "from", "")), to = targetYarn.get(Json.text(r, "to", ""));
+            if (from == null || to == null) continue;
+            Map<String, Object> yarn = new LinkedHashMap<>(r);
+            yarn.put("from", from);
+            yarn.put("to", to);
+            out.add(yarn);
+        }
         return out;
     }
 
@@ -308,10 +337,13 @@ final class Port {
                 }
                 tables.put(version, Json.read(table));
             }
-            List<Object> rewrites = yarnRewrites(Json.array(Json.read(game).get("rewrites")), tables.get(from), tables.get(to));
-            if (rewrites.isEmpty()) return;
+            var gameMap = Json.read(game);
+            List<Object> rewrites = yarnRewrites(Json.array(gameMap.get("rewrites")), tables.get(from), tables.get(to));
+            List<Object> classRewrites = yarnClassRewrites(Json.array(gameMap.getOrDefault("classRewrites", List.of())), tables.get(from), tables.get(to));
+            if (rewrites.isEmpty() && classRewrites.isEmpty()) return;
             Map<String, Object> route = new LinkedHashMap<>(Json.read(map));
             route.put("rewrites", rewrites);
+            route.put("classRewrites", classRewrites);
             saveMap(map, route);
         } catch (Exception unavailable) {
             System.err.println("Warning: the game's call-site rewrites are not in this yarn route: " + unavailable.getMessage());

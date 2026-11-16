@@ -261,6 +261,30 @@ public final class PortPreflightTest {
         require(rewritten.contains("int n = VarInt.getByteSize(size(list.get(0)));"), "static -> static on another class, nested call arguments kept");
         require(rewritten.contains("graphics.blitSprite(SPRITE, x, y, 9, 9);"), "a new parameter nothing fills is left to the compiler");
 
+        // A class the game replaced: the file that imports it switches import and uses; a mod's own class of that name stays.
+        Path cr = Files.createDirectories(scratch.resolve("class-rewrites"));
+        Path crMap = scratch.resolve("class-rewrites.json");
+        Files.writeString(crMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "classRewrites": [
+                { "step": "1.21.1 -> 1.21.2", "from": "net.minecraft.world.level.block.state.properties.DirectionProperty", "to": "net.minecraft.world.level.block.state.properties.EnumProperty", "votes": 4, "of": 4 },
+                { "step": "1.21.1 -> 1.21.2", "from": "net.minecraft.world.level.storage.loot.LootContext$EntityTarget", "to": "net.minecraft.util.context.ContextKey$Target", "votes": 2, "of": 2 }
+              ]
+            }
+            """);
+        String block = "package mod;\nimport net.minecraft.world.level.block.state.properties.DirectionProperty;\n\nclass FacingBlock {\n  static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;\n  DirectionPropertyHelper helper;\n}\n";
+        String own = "package mod;\n\nclass Other {\n  DirectionProperty mine;\n}\n";
+        Files.writeString(cr.resolve("FacingBlock.java"), block);
+        Files.writeString(cr.resolve("Other.java"), own);
+        Path crLog = scratch.resolve("class-rewrites.log");
+        Files.writeString(crLog, cr.resolve("FacingBlock.java") + ":2: error: cannot find symbol\nimport net.minecraft.world.level.block.state.properties.DirectionProperty;\n                                                          ^\n  symbol:   class DirectionProperty\n  location: package net.minecraft.world.level.block.state.properties\n"
+            + cr.resolve("Other.java") + ":4: error: cannot find symbol\n  DirectionProperty mine;\n  ^\n  symbol:   class DirectionProperty\n  location: class Other\n");
+        VersionMap.Fix.run(crMap, crLog, cr, false, null);
+        String replaced = Files.readString(cr.resolve("FacingBlock.java"));
+        require(replaced.contains("import net.minecraft.world.level.block.state.properties.EnumProperty;") && replaced.contains("static final EnumProperty FACING"), "import and uses switched: " + replaced);
+        require(replaced.contains("DirectionPropertyHelper helper;"), "a longer name is untouched");
+        require(Files.readString(cr.resolve("Other.java")).equals(own), "a file that does not import the game's class is untouched");
+
         System.out.println("PASS: mapping-backed preflight and guarded lookalikes");
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }

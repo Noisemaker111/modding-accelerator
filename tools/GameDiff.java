@@ -1907,6 +1907,66 @@ public final class GameDiff {
             return out;
         }
 
+        /** A class the game stopped using and what its own code uses in its place. */
+        record ClassRewrite(Cls from, Cls to, int votes, int total) {}
+
+        /**
+         * Removed classes and their replacements, read the same way as method rewrites: where an unlinked class of a is
+         * referenced (a type, a cast, a new instance, the owner of a call) and the aligned reference of b names another
+         * class, that is a vote (1.21.2: DirectionProperty -> EnumProperty, LootContextParam -> ContextKey). Kept with two
+         * agreeing votes and 80% agreement.
+         */
+        List<ClassRewrite> classRewrites() {
+            Map<Cls, Map<Cls, Integer>> votes = new HashMap<>();
+            Map<Cls, Integer> totals = new HashMap<>();
+            for (var e : mAB.entrySet()) {
+                Meth x = e.getKey();
+                Meth y = e.getValue();
+                if (x.refs.length == 0 || y.refs.length == 0) {
+                    continue;
+                }
+                long[] ta = new long[x.refs.length];
+                long[] tb = new long[y.refs.length];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = fnv(token(x.refs[i], true));
+                }
+                for (int j = 0; j < tb.length; j++) {
+                    tb[j] = fnv(token(y.refs[j], false));
+                }
+                for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
+                    Ref ra = x.refs[p[0]];
+                    Ref rb = y.refs[p[1]];
+                    if (ra.kind() == 'k' || rb.kind() == 'k') {
+                        continue;
+                    }
+                    Cls ca = a.classes.get(ra.owner());
+                    Cls cb = b.classes.get(rb.owner());
+                    if (ca == null || cb == null || cAB.containsKey(ca) || anonymous(ca.name)) {
+                        continue;
+                    }
+                    votes.computeIfAbsent(ca, k -> new HashMap<>()).merge(cb, 1, Integer::sum);
+                    totals.merge(ca, 1, Integer::sum);
+                }
+            }
+            List<ClassRewrite> out = new ArrayList<>();
+            for (var e : votes.entrySet()) {
+                Cls best = null;
+                int c1 = 0;
+                for (var f : e.getValue().entrySet()) {
+                    if (f.getValue() > c1) {
+                        c1 = f.getValue();
+                        best = f.getKey();
+                    }
+                }
+                int total = totals.get(e.getKey());
+                if (c1 >= 2 && c1 * 10 >= total * 8 && best.kind() == e.getKey().kind()) {
+                    out.add(new ClassRewrite(e.getKey(), best, c1, total));
+                }
+            }
+            out.sort(Comparator.comparing((ClassRewrite r) -> r.from().name));
+            return out;
+        }
+
         boolean unlinkedRef(Meth m, boolean sideA) {
             for (Ref r : m.refs) {
                 if (target(r, sideA) != null) {
@@ -2163,6 +2223,8 @@ public final class GameDiff {
         final List<String> hops = new ArrayList<>();
         /** Call-site rewrites of every hop, one JSON object each (Hop.rewrites). */
         final List<String> rewrites = new ArrayList<>();
+        /** Removed classes and the class the game's code uses in their place (Hop.classRewrites). */
+        final List<String> classRewrites = new ArrayList<>();
         Snap prev;
         Path prevLoaderJar;
         String prevLoaderVersion;
@@ -2257,6 +2319,14 @@ public final class GameDiff {
                         ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
                     );
                 }
+                for (Hop.ClassRewrite r : h.classRewrites()) {
+                    classRewrites.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"from\": " + VersionMap.Diff.q(r.from().name.replace('/', '.')) +
+                        ", \"to\": " + VersionMap.Diff.q(r.to().name.replace('/', '.')) +
+                        ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
+                    );
+                }
             }
             prev = s;
             prevLoaderJar = jar;
@@ -2325,6 +2395,11 @@ public final class GameDiff {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(rewrites.get(i));
             }
             head.append(rewrites.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"classRewrites\": [");
+            for (int i = 0; i < classRewrites.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(classRewrites.get(i));
+            }
+            head.append(classRewrites.isEmpty() ? "],\n" : "\n  ],\n");
             if (loader != null) {
                 head.append("  \"loader\": { \"name\": \"neoforge\", \"source\": ").append(VersionMap.Diff.q(NEOFORGE)).append(", \"versions\": {");
                 int i = 0;

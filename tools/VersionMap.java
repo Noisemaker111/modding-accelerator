@@ -1012,6 +1012,8 @@ public final class VersionMap {
         final Set<String> methodGone = new HashSet<>(), fieldGone = new HashSet<>(), sigNames = new HashSet<>();
         /** Call-site rewrites the game made (GameDiff's "rewrites"), by old owner (simple) and name. */
         final Map<String, List<Rewrite>> rewrites = new HashMap<>();
+        /** Removed classes and the class the game's own code uses in their place (GameDiff's "classRewrites"), dotted, $ nested. */
+        final Map<String, String> classRewrites = new HashMap<>();
 
         static Known load(Path mapFile) throws IOException {
             Known k = new Known();
@@ -1076,6 +1078,7 @@ public final class VersionMap {
                         .computeIfAbsent(from, x -> new HashSet<>())
                         .add(new String[] { ownerSimple, to, ownerSimple });
                     case "fieldsRemoved" -> k.fieldGone.add(from);
+                    case "classRewrites" -> k.classRewrites.put(from, to);
                     case "rewrites" -> k.rewrites
                         .computeIfAbsent(ownerSimple + "." + from, x -> new ArrayList<>())
                         .add(
@@ -1842,6 +1845,52 @@ public final class VersionMap {
                 texts.put(f, updated);
                 replacements += hits;
                 byKind.merge("on-demand import", hits, Integer::sum);
+            }
+
+            // 1c. A class the game removed and replaced (its own code uses the replacement where it used the class): a file
+            // that imports it and has an error naming it switches the import and its uses (1.21.2: DirectionProperty ->
+            // EnumProperty). The import proves the name is the game's class, not one of the mod's own.
+            if (!k.classRewrites.isEmpty()) {
+                Map<Path, Set<String>> named = new LinkedHashMap<>();
+                for (Err e : readErrors(log)) {
+                    Path f = sourcePath(e, repo);
+                    String sym = e.symbol() == null ? "" : e.symbol();
+                    Matcher cls = Pattern.compile("^class (\\w+)").matcher(sym);
+                    Matcher pkg = Pattern.compile("^package ([\\w.]+) does not exist").matcher(e.message());
+                    String simpleName = cls.find() ? cls.group(1) : pkg.find() ? pkg.group(1).substring(pkg.group(1).lastIndexOf('.') + 1) : null;
+                    if (f != null && simpleName != null) {
+                        named.computeIfAbsent(f, x -> new LinkedHashSet<>()).add(simpleName);
+                    }
+                }
+                for (var entry : named.entrySet()) {
+                    Path f = entry.getKey();
+                    if (!Files.isRegularFile(f)) {
+                        continue;
+                    }
+                    String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                    String updated = text;
+                    for (var rw : k.classRewrites.entrySet()) {
+                        String old = rw.getKey().replace('$', '.'), oldSimple = old.substring(old.lastIndexOf('.') + 1);
+                        if (!entry.getValue().contains(oldSimple)) {
+                            continue;
+                        }
+                        Matcher imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(old) + "\\s*;").matcher(updated);
+                        if (!imported.find()) {
+                            continue;
+                        }
+                        String neu = rw.getValue();
+                        String outer = neu.replaceAll("\\$.*", "");
+                        String written = neu.substring(outer.lastIndexOf('.') + 1).replace('$', '.');
+                        updated = updated.substring(0, imported.start()) + "import " + outer + ";" + updated.substring(imported.end());
+                        int at = updated.indexOf('\n', updated.lastIndexOf("\nimport "));
+                        updated = updated.substring(0, at) + updated.substring(at).replaceAll("(?<![\\w$.])" + Pattern.quote(oldSimple) + "(?![\\w$])", Matcher.quoteReplacement(written));
+                    }
+                    if (!updated.equals(text)) {
+                        texts.put(f, updated);
+                        replacements++;
+                        byKind.merge("game class rewrite", 1, Integer::sum);
+                    }
+                }
             }
 
             // 2. Renamed methods and fields at the reported line and column.
