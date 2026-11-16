@@ -1,0 +1,34 @@
+From a528d4d1a826e3bef85854b2568cb682cb20b7d4 Mon Sep 17 00:00:00 2001
+From: mmt <mmt@localhost>
+Date: Mon, 16 Nov 2026 08:04:18 -0800
+Subject: [PATCH] Version 2.7, as All the Mods 9 ships; compileJava never from
+ the build cache (mmt setup, shared by both arms)
+
+---
+ build.gradle | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/build.gradle b/build.gradle
+index af1c4ef..76d3c68 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -38,7 +38,7 @@ repositories{
+ 
+ }
+ 
+-version = '2.6'
++version = '2.7'
+ group = 'com.github.L_Ender' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+ archivesBaseName = 'lionfishapi'
+ 
+@@ -155,3 +155,7 @@ publishing {
+ }
+ 
+ 
++
++// mmt setup: the mixin refmap is written by javac's annotation processor and is not a declared output, so a compile
++// restored from Gradle's build cache leaves the jar without it (and the mixin cannot find its target). Always compile.
++tasks.named('compileJava') { outputs.cacheIf { false } }
+-- 
+2.56.0.windows.4
+

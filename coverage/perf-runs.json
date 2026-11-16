@@ -70782,6 +70782,1647 @@
    "wallSeconds": 1521.8455121,
    "finished": "2026-11-16T11:59:36.248101300Z",
    "seconds": 1733.213378597
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-16T18-36-39.784348200Z-bd57704f",
+   "kind": "perf-optimize",
+   "session": "",
+   "started": "2026-11-16T18:36:39.785364Z",
+   "mod": {
+    "id": "",
+    "version": "",
+    "loader": "",
+    "project": ""
+   },
+   "phases": {
+    "setup": 376.09735340000003,
+    "build": 1.5700189500000001,
+    "launch": 551.3271384500001,
+    "warmup": 40.0,
+    "measure": 360.5419247,
+    "gates": 44.40458799999999,
+    "other": 640.2260244999998
+   },
+   "steps": [
+    {
+     "phase": "other",
+     "name": "baseline-jar",
+     "seconds": 80.426821
+    },
+    {
+     "phase": "other",
+     "name": "candidate-jar",
+     "seconds": 73.8304703
+    },
+    {
+     "phase": "setup",
+     "name": "pack-jars",
+     "seconds": 154.3257305
+    },
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 154.8324046
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 1.5604917,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 143.2613623,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 1.5795462,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 143.2424988,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.9811952,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 1.2464915,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 93.8840447,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 95.4579978,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 1.3774912,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 1.7221837,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.4205537,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3778748,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.5151949,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.4458634,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.4244363,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.4774955,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3670336,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3654071,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.397276,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2984329,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3468449,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2698073,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2691469,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2360953,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2747189,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3309115,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2661361,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2839472,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2999561,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3149884,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3132339,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3469048,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.375831,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3945863,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3661534,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3657937,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3628109,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2733101,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2855646,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3645807,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 1.457652,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.7096541,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2497711,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2917083,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2506068,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2514223,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2684524,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2494172,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.235207,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2382785,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.8150328,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 2.1687518,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 16.2341221,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 15.5975079,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 45.4694734,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 45.4128186,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 45.5644131,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 44.9212672,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-standing",
+     "seconds": 11.9623706,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-standing",
+     "seconds": 11.6432613,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 34.0568805,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 37.4478373,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 147.5895787,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 147.7577152,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 1.2489191,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 1.1590167,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 86.1450353,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 88.0566729,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 1.7209992,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 1.0944418,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3490249,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.302899,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3000826,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2994994,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.4102204,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2788335,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2680129,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2520548,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2844421,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2999677,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2778582,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.5927808,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3140771,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2489182,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3118,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2953616,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3438943,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2476874,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3793431,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3771217,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3607813,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2908428,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2658447,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2678929,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3463557,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.4919488,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.473472,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.29711,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2832641,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3486055,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.4603239,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2648242,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2486571,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3020461,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 1.7249437,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 1.9000043,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 16.4421985,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 16.4791216,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 47.307815,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 46.7205287,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 42.7141645,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 43.479731,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-standing",
+     "seconds": 11.3287643,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-standing",
+     "seconds": 11.4060905,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 30.4285958,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 29.6800872,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 126.0564179,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 126.717675,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.6914148,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.8229553,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 75.977797,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 77.8003446,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 2.5035807,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 1.8229417,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3626253,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3606408,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.4776968,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.4437044,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3959224,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3762045,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2340875,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.25026,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2702844,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3010821,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2453186,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2644099,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2661362,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2665869,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.264155,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2516556,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2685997,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2845915,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3636636,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.4270257,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3814806,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.6108966,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2999528,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3283586,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.433958,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.4075789,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3439809,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2775996,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2626731,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2638037,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2994317,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2994811,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3125475,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3127533,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3326647,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3332649,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 8.5007328,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 9.1261756,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 18.1951596,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 18.2074442,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 47.568926,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 48.4900459,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 43.8340591,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 44.6478022,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-standing",
+     "seconds": 10.5608215,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-standing",
+     "seconds": 10.4641357,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 5.8162782,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 7.0517048,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 133.986334,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 134.042695,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.7672721,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.7395849,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 73.6142935,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 75.8323779,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 1.3452187,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.6551826,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3128156,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3937513,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.4891889,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3799591,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2791719,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2812734,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.4557541,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2512298,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2490579,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2772385,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2970852,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2498441,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2497943,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3167746,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.3319188,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2986786,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.7001153,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.294755,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2808842,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3507753,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2980022,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3695232,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2998512,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2503561,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.7358635,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.3780023,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.7172845,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.6114664,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2659924,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2649401,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2506944,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2676542,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2597913,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2688776,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.2546288,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 0.2767172,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-joined",
+     "seconds": 0.5982376,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-joined",
+     "seconds": 1.4487184,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 16.4330529,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 16.2898298,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 44.4541537,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 44.9008096,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 43.1012897,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 10.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 42.4965517,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-fluid-standing",
+     "seconds": 10.6674058,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-fluid-standing",
+     "seconds": 10.7763263,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 30.0609011,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 33.4840013,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 0.2053719
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 0.1983448
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "pair 0 before launch",
+      "at": "2026-11-16T18:39:16.699232600Z",
+      "systemCpu": 0.4577681158935185,
+      "javaProcesses": 19
+     },
+     {
+      "when": "pair 1 before launch",
+      "at": "2026-11-16T18:47:02.129368600Z",
+      "systemCpu": 0.7515108469108004,
+      "javaProcesses": 24
+     },
+     {
+      "when": "pair 2 before launch",
+      "at": "2026-11-16T18:54:28.045433400Z",
+      "systemCpu": 0.400139225095516,
+      "javaProcesses": 18
+     },
+     {
+      "when": "pair 3 before launch",
+      "at": "2026-11-16T19:03:16.577415300Z",
+      "systemCpu": 0.3987060628598226,
+      "javaProcesses": 21
+     }
+    ],
+    "meanSystemCpu": 0.5020310626899144,
+    "maxSystemCpu": 0.7515108469108004,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "distinct-blocks",
+    "diffSha256": "60e2879f0e8be432b0728197bd6599a16900bce7cafb23940e222b62cd551c1d",
+    "changedFiles": [
+     "src/main/java/com/github/L_Ender/lionfishapi/mixin/EntityMixin.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "fluid-standing",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 2.6629849431599366,
+     "low": 2.158029866163445,
+     "high": 3.2860939131040903,
+     "pairs": 4,
+     "baselineMean": 9.65381707911233,
+     "candidateMean": 3.6804174975179498
+    },
+    "warm": {
+     "geometricMean": 2.3556886799489174,
+     "low": 1.9139965730737711,
+     "high": 2.939926562089164,
+     "pairs": 4,
+     "baselineMean": 13.747819594983817,
+     "candidateMean": 6.166011020341431
+    },
+    "scopes": {
+     "lionfish-allocation": {
+      "cold": {
+       "geometricMean": 4.969615281353331,
+       "low": 3.9982922783346804,
+       "high": 7.11784888291307,
+       "pairs": 4,
+       "baselineMean": 13045875.967969218,
+       "candidateMean": 2683597.4940426378
+      },
+      "warm": {
+       "geometricMean": 6.091806381607234,
+       "low": 4.55430214139231,
+       "high": 8.14836254575889,
+       "pairs": 4,
+       "baselineMean": 21573016.11997879,
+       "candidateMean": 3598718.4604204823
+      }
+     },
+     "tick-ms": {
+      "cold": {
+       "geometricMean": 0.981479742082727,
+       "low": 0.946403227803271,
+       "high": 1.0082130685251203,
+       "pairs": 4,
+       "baselineMean": 95.38747787932911,
+       "candidateMean": 97.62895049572332
+      },
+      "warm": {
+       "geometricMean": 0.9843918488485522,
+       "low": 0.9803793351114999,
+       "high": 0.9884207850722007,
+       "pairs": 4,
+       "baselineMean": 127.05566024584891,
+       "candidateMean": 129.09361701316516
+      }
+     }
+    }
+   },
+   "verdict": "accepted",
+   "rejection": null,
+   "metric": {
+    "mod": "lionfishapi",
+    "method": "fluidCollision"
+   },
+   "source": ".\\.runs\\performance\\2026-11-16T18-36-39.782724500Z-df45b0b7",
+   "arms": "parallel",
+   "stopped": {
+    "afterPairs": 4,
+    "decided": "faster",
+    "intervals": {
+     "cold": {
+      "geometricMean": 2.6629849431599366,
+      "low": 1.269555236450035,
+      "high": 5.585805645862203,
+      "pairs": 4
+     },
+     "warm": {
+      "geometricMean": 2.3556886799489174,
+      "low": 1.0725326189097173,
+      "high": 5.173986374867162,
+      "pairs": 4
+     }
+    },
+    "reason": "cold and warm 99% t intervals both lie above 1 after 4 pairs"
+   },
+   "wallSeconds": 2017.4114913,
+   "finished": "2026-11-16T19:10:17.246901400Z",
+   "seconds": 2014.1670479999998
   }
  ]
 }

@@ -296,6 +296,23 @@ final class PerfOptimize {
     /** Pack mode: each arm's jar of the mod, built in its worktree, and the pack instance that arm's games run in. */
     final Map<Path, Path> packJars = new HashMap<>(), packRoots = new HashMap<>();
 
+    /** A refmap a jar's mixin configs (MixinConfigs in its manifest) name and the jar does not have, else null. */
+    static String missingRefmap(Path jar) throws IOException {
+        try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+            var manifest = zip.getEntry("META-INF/MANIFEST.MF");
+            if (manifest == null) return null;
+            String configs = new java.util.jar.Manifest(zip.getInputStream(manifest)).getMainAttributes().getValue("MixinConfigs");
+            if (configs == null) return null;
+            for (String config : configs.split(",")) {
+                var entry = zip.getEntry(config.strip());
+                if (entry == null) continue;
+                Object refmap = Json.parse(new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8)) instanceof Map<?, ?> m ? m.get("refmap") : null;
+                if (refmap != null && zip.getEntry(refmap.toString()) == null) return refmap.toString();
+            }
+        }
+        return null;
+    }
+
     void buildPackJars(Map<String, Object> pack, Map<String, Path> arms) throws Exception {
         long start = System.nanoTime();
         for (var arm : arms.entrySet()) {
@@ -313,6 +330,10 @@ final class PerfOptimize {
             Path kept = out.resolve("jars").resolve(arm.getKey()).resolve(jar.getFileName().toString());
             Files.createDirectories(kept.getParent());
             Files.copy(jar, kept, StandardCopyOption.REPLACE_EXISTING);
+            String missing = missingRefmap(kept);
+            if (missing != null) throw new IOException(arm.getKey() + "'s jar " + kept.getFileName() + " lacks " + missing +
+                ", which its mixin config names: its mixins cannot find their targets in the game. A compile restored from Gradle's" +
+                " build cache skips the annotation processor that writes it; see KNOWN_ISSUES.md.");
             packJars.put(tree, kept);
             packRoots.put(tree, out.resolve("instances").resolve(arm.getKey()));
         }
@@ -430,7 +451,17 @@ final class PerfOptimize {
         // pack-run returns once the client is up; its save opens after (quick play). Setup waits until the player is in it.
         if (inPack && !world.isBlank()) {
             long joinBy = System.nanoTime() + TimeUnit.MINUTES.toNanos(10);
-            while (!Boolean.TRUE.equals(Json.object(mmt(tree, arm + "-joined", List.of("game-status"), 120).get("result")).get("inWorld"))) {
+            while (true) {
+                // A status request waits on the render thread, which a big pack holds while the world loads: a slow answer
+                // is "not yet", and only the 10 minutes decide.
+                boolean in;
+                try {
+                    in = Boolean.TRUE.equals(Json.object(mmt(tree, arm + "-joined", List.of("game-status"), 120).get("result")).get("inWorld"));
+                } catch (IOException slow) {
+                    if (!slow.getMessage().contains("timed out")) throw slow;
+                    in = false;
+                }
+                if (in) break;
                 if (System.nanoTime() > joinBy) throw new IOException(arm + " run " + run + ": the player was not in " + world + " 10 minutes after the client started");
                 Thread.sleep(2000);
             }
@@ -462,7 +493,12 @@ final class PerfOptimize {
             Map<String, Object> measure = Json.object(experiment.get("measure"));
             Map<String, Object> captures = new LinkedHashMap<>();
             // Launches follow the user's window and sound preferences, so the game may be hidden; attach by PID.
-            Object pid = Json.object(mmt(tree, arm + "-status", List.of("game-status"), 120).get("result")).get("pid");
+            // A pack client's process is recorded on disk by pack-run; asking the game waits on its render thread, which
+            // a big pack holds for minutes after a setup spawns a farm.
+            Path session = gameRoot(tree).resolve(".mmt/portable/agent.json");
+            Object pid = inPack && Files.isRegularFile(session)
+                ? Json.read(session).get("pid")
+                : Json.object(mmt(tree, arm + "-status", List.of("game-status"), 120).get("result")).get("pid");
             if (pid == null) throw new IOException(arm + " run " + run + ": no running game to measure");
             for (String phase : List.of("cold", "warm")) {
                 Path capture = dir.resolve(phase);

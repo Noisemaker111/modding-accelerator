@@ -155,7 +155,7 @@ final class PackClient {
         process.getOutputStream().close();
         Map<String, Object> session;
         try {
-            session = awaitReady(process, state, token, log, Integer.parseInt(options.get("timeout", "600")));
+            session = awaitReady(process, state, token, log, Integer.parseInt(options.get("timeout", "600")), java);
         } catch (Exception failed) {
             process.descendants().forEach(ProcessHandle::destroyForcibly);
             process.destroyForcibly();
@@ -546,7 +546,7 @@ final class PackClient {
      * The agent writes agent.json at the first rendered frame. A big pack's client loads for many minutes, logging as it
      * goes: it has failed when its process ends, or its log has said nothing new for --timeout seconds.
      */
-    static Map<String, Object> awaitReady(Process process, Path state, String token, Path log, int quietSeconds) throws Exception {
+    static Map<String, Object> awaitReady(Process process, Path state, String token, Path log, int quietSeconds, Runtimes.Jdk java) throws Exception {
         long last = System.nanoTime(), size = -1;
         long ceiling = System.nanoTime() + TimeUnit.MINUTES.toNanos(45);
         Path file = state.resolve("agent.json");
@@ -562,9 +562,29 @@ final class PackClient {
                 last = System.nanoTime();
             }
             boolean silent = System.nanoTime() - last > TimeUnit.SECONDS.toNanos(quietSeconds);
-            if (silent) throw new IOException("The client's log said nothing for " + quietSeconds + " s before its first frame. Log: " + log);
+            if (silent) throw new IOException("The client's log said nothing for " + quietSeconds + " s before its first frame. Log: " + log + stuck(java, process, log));
             if (System.nanoTime() > ceiling) throw new IOException("The client showed no frame in 45 minutes. Log: " + log);
             Thread.sleep(1000);
+        }
+    }
+
+    /** A stalled start's thread dump, saved beside its log, and where its render (main) thread is. */
+    static String stuck(Runtimes.Jdk java, Process process, Path log) {
+        try {
+            Path jcmd = java.home().resolve("bin").resolve(Runtimes.WINDOWS ? "jcmd.exe" : "jcmd");
+            if (!Files.isRegularFile(jcmd)) return "";
+            Process dump = new ProcessBuilder(jcmd.toString(), String.valueOf(process.pid()), "Thread.print").redirectErrorStream(true).start();
+            dump.getOutputStream().close();
+            String text = new String(dump.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            dump.waitFor(30, TimeUnit.SECONDS);
+            Path file = log.resolveSibling(log.getFileName() + ".stuck.txt");
+            Files.writeString(file, text);
+            int at = text.indexOf("\"Render thread\"");
+            if (at < 0) at = text.indexOf("\"main\"");
+            String thread = at < 0 ? "" : String.join("\n", text.substring(at).lines().limit(16).toList());
+            return "\nThread dump: " + file + (thread.isEmpty() ? "" : "\n" + thread);
+        } catch (Exception unavailable) {
+            return "";
         }
     }
 

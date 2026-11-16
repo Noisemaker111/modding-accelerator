@@ -1,0 +1,84 @@
+diff --git a/src/main/java/com/github/L_Ender/lionfishapi/mixin/EntityMixin.java b/src/main/java/com/github/L_Ender/lionfishapi/mixin/EntityMixin.java
+index 6232da0..b0f7985 100644
+--- a/src/main/java/com/github/L_Ender/lionfishapi/mixin/EntityMixin.java
++++ b/src/main/java/com/github/L_Ender/lionfishapi/mixin/EntityMixin.java
+@@ -1,6 +1,7 @@
+ package com.github.L_Ender.lionfishapi.mixin;
+ 
+ 
++import com.github.L_Ender.lionfishapi.server.FluidStanding;
+ import com.github.L_Ender.lionfishapi.server.event.StandOnFluidEvent;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+@@ -35,6 +36,8 @@ public class EntityMixin{
+             return original;
+ 
+         Level level = entity.getCommandSenderWorld();
++        if (FluidStanding.DISTINCT_BLOCKS)
++            return lionfishapi$standOnFluid(entity, level, original);
+ 
+         double[][] offsets = {
+                 {0.5, 0, 0.5}, {0.5, 0, 0}, {0.5, -1, 0}, {0.5, 0, -0.5},
+@@ -82,5 +85,47 @@ public class EntityMixin{
+ 
+         return original;
+     }
+-}
+ 
++    /**
++     * The 12 offsets above, added to the entity's block position and floored, land on 6 blocks: x and z offsets of 0 and
++     * 0.5 stay in the block, -0.5 is the block before. Visiting each block once, in the order the offsets first reach it,
++     * finds the same highest fluid (a repeat never wins a strict comparison) with half the fluid lookups and no arrays.
++     */
++    @Unique
++    private static final int[] lionfishapi$BLOCKS = { 0, 0, 0, 0, -1, 0, 0, 0, -1, -1, 0, 0, -1, -1, 0, -1, 0, -1 };
++
++    @Unique
++    private static Vec3 lionfishapi$standOnFluid(LivingEntity entity, Level level, Vec3 original) {
++        double highestValue = original.y;
++        FluidState highestFluid = null;
++        BlockPos sourcePos = entity.blockPosition();
++        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
++        VoxelShape box = null;
++        for (int i = 0; i < lionfishapi$BLOCKS.length; i += 3) {
++            pos.set(sourcePos.getX() + lionfishapi$BLOCKS[i], sourcePos.getY() + lionfishapi$BLOCKS[i + 1], sourcePos.getZ() + lionfishapi$BLOCKS[i + 2]);
++            FluidState fluidState = level.getFluidState(pos);
++            if (fluidState.isEmpty())
++                continue;
++            VoxelShape shape = Shapes.block().move(pos.getX(), pos.getY() + fluidState.getOwnHeight(), pos.getZ());
++            if (box == null)
++                box = Shapes.create(entity.getBoundingBox().inflate(0.5));
++            if (Shapes.joinIsNotEmpty(shape, box, BooleanOp.AND)) {
++                double height = shape.max(Direction.Axis.Y) - entity.getY() - 1;
++                if (highestValue < height) {
++                    highestValue = height;
++                    highestFluid = fluidState;
++                }
++            }
++        }
++        if (highestFluid == null)
++            return original;
++        StandOnFluidEvent event = new StandOnFluidEvent(entity, highestFluid);
++        MinecraftForge.EVENT_BUS.post(event);
++        if (event.isCanceled()) {
++            entity.fallDistance = 0F;
++            entity.setOnGround(true);
++            return new Vec3(original.x, highestValue, original.z);
++        }
++        return original;
++    }
++}
+diff --git a/src/main/java/com/github/L_Ender/lionfishapi/server/FluidStanding.java b/src/main/java/com/github/L_Ender/lionfishapi/server/FluidStanding.java
+new file mode 100644
+index 0000000..3cb3ff3
+--- /dev/null
++++ b/src/main/java/com/github/L_Ender/lionfishapi/server/FluidStanding.java
+@@ -0,0 +1,8 @@
++package com.github.L_Ender.lionfishapi.server;
++
++/** Switch for the fluid-standing check in EntityMixin: each distinct block once (true), or every offset as before. */
++public final class FluidStanding {
++    public static boolean DISTINCT_BLOCKS = true;
++
++    private FluidStanding() {}
++}

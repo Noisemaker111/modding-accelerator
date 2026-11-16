@@ -1135,6 +1135,75 @@
      ]
     }
    }
+  },
+  {
+   "id": "probe-each-block-once",
+   "symptom": {
+    "text": "A per-entity, per-tick check (a mixin on Entity.move, a living-tick handler) probes the blocks around the entity through a list of fractional offsets added to its block position: offsets that floor to the same block look it up again (Lionfish API's fluid standing: 12 offsets, 6 distinct blocks, a fluid lookup each), and the offset table and BlockPos objects are allocated every call. Cost grows with the mob count: 4.4 ms of each server tick with four players' farms in All the Mods 9.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "(?i)\\.\\w*(fluidCollision|standOnFluid|StandOnFluid|fluidStanding)\\w*\\(",
+      "minShare": 0.05
+     }
+    ]
+   },
+   "change": "Floor the offsets once by hand and keep the distinct block offsets, in the order the original first reaches them, in a static table; walk it with one MutableBlockPos and build any per-entity shape (the inflated bounding box) lazily, only when a block qualifies. A repeat of an already-visited block never wins a strict comparison, so the result is the same.",
+   "gain": {
+    "scope": "CPU of Lionfish API's Entity.move handler with it on the stack (cpuMsPerSecond), All the Mods 9 1.1.1 client with 900 cows penned beside the player, both arms at once",
+    "cold": {
+     "geometricMean": 2.66,
+     "low": 2.16,
+     "high": 3.29,
+     "pairs": 4
+    },
+    "warm": {
+     "geometricMean": 2.36,
+     "low": 1.91,
+     "high": 2.94,
+     "pairs": 4
+    },
+    "note": "9.65 to 3.68 ms/s cold; the mod's allocation 4.97x (cold) and 6.09x (warm) less; the whole integrated-server tick 0.98x (95% 0.95-1.01), within launch-to-launch spread. Pre-screen (perf-toggle, 1,008 armor stand spots, whole Entity.move): 1.20x (99% 1.05-1.37), same results"
+   },
+   "gate": {
+    "name": "fluid-standing",
+    "compare": "exact",
+    "detail": "a fixed rig 300 high over the player (a lava pool, still water, a flowing slope, stone) built on the server thread; armor stands at whole, half and odd spots over it, bare and in Cataclysm's Ignitium Boots (the one listener, which lets its wearer stand on lava), each moved down once through Entity.move; heights, ground flags and fall distances are the same text in every launch of both arms"
+   },
+   "provenIn": {
+    "mod": "lionfishapi",
+    "version": "2.7",
+    "loader": "forge",
+    "scope": "cpuMsPerSecond",
+    "record": "2026-11-16T18-36-39.784348200Z-bd57704f",
+    "patch": "bench/lionfish/distinct-blocks.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.mixin.EntityMixin.fluidCollision(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/Vec3;",
+       "samples": 30
+      },
+      {
+       "name": "m.MobEntity.tick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.MobEntity.tick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
   }
  ]
 }
