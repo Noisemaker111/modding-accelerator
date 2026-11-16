@@ -158,6 +158,36 @@ FD: bbb/b net/minecraft/block/Block/field_5_b
             VersionMap.Chain.linkSrgClasses(grownOld, tiedNew).isEmpty(),
             "the clear-winner fallback never breaks a tied overlap by iteration order"
         );
+        Set<String> reverseTieIds = Set.of("mfunc_1_x", "mfunc_2_x", "mfunc_3_x", "mfunc_4_x");
+        Set<String> reverseTieTarget = new HashSet<>(reverseTieIds);
+        for (int id = 101; id <= 108; id++) {
+            reverseTieTarget.add("mfunc_" + id + "_x");
+        }
+        check(
+            VersionMap.Chain.linkBySharedIds(
+                Set.of("oldA", "oldB"),
+                Set.of("new"),
+                Map.of("oldA", reverseTieIds, "oldB", reverseTieIds),
+                Map.of("new", reverseTieTarget)
+            ).isEmpty(),
+            "a reverse-side tie cannot claim one old class by hash iteration order"
+        );
+        Set<String> mixedOld = new HashSet<>(List.of(
+            "mfunc_1_x", "mfunc_2_x", "malpha", "mbeta", "mgamma", "mdelta", "mepsilon", "mzeta"
+        ));
+        Set<String> mixedNew = new HashSet<>(mixedOld);
+        for (int id = 101; id <= 112; id++) {
+            mixedNew.add("mfunc_" + id + "_x");
+        }
+        check(
+            VersionMap.Chain.linkBySharedIds(
+                Set.of("old"),
+                Set.of("new"),
+                Map.of("old", mixedOld),
+                Map.of("new", mixedNew)
+            ).isEmpty(),
+            "name-only overlaps cannot satisfy the clear-winner rule's stable-id evidence"
+        );
         VersionMap.Chain chain = VersionMap.Chain.of(List.of("1.7.10", "1.12.2"), v ->
             v.equals("1.7.10") ? oldT : newT
         );

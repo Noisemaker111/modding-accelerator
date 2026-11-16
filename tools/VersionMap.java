@@ -1640,7 +1640,9 @@ public final class VersionMap {
             Map<String, String> best = new HashMap<>(), bestBack = new HashMap<>();
             Map<String, Double> score = new HashMap<>(), scoreBack = new HashMap<>();
             Map<String, String> overlapBest = new HashMap<>(), overlapBack = new HashMap<>();
-            Map<String, Integer> overlapCount = new HashMap<>(), overlapSecond = new HashMap<>(), overlapBackCount = new HashMap<>();
+            Map<String, Integer> overlapCount = new HashMap<>(), overlapSecond = new HashMap<>();
+            Map<String, Integer> overlapBackCount = new HashMap<>(), overlapBackSecond = new HashMap<>();
+            Map<String, Integer> stableGone = stableSrgCounts(goneIds), stableFresh = stableSrgCounts(freshIds);
             for (String g : gone) {
                 Set<String> gn = goneIds.getOrDefault(g, Set.of());
                 if (gn.size() < 4) {
@@ -1651,10 +1653,13 @@ public final class VersionMap {
                     if (fn.size() < 4) {
                         continue;
                     }
-                    int common = 0;
+                    int common = 0, sharedIds = 0;
                     for (String n : gn) {
                         if (fn.contains(n)) {
                             common++;
+                            if (stableSrgMember(n)) {
+                                sharedIds++;
+                            }
                         }
                     }
                     double j = (double) common / (gn.size() + fn.size() - common);
@@ -1666,16 +1671,21 @@ public final class VersionMap {
                         scoreBack.put(f, j);
                         bestBack.put(f, g);
                     }
-                    if (common > overlapCount.getOrDefault(g, 0)) {
-                        overlapSecond.put(g, overlapCount.getOrDefault(g, 0));
-                        overlapCount.put(g, common);
-                        overlapBest.put(g, f);
-                    } else if (common > overlapSecond.getOrDefault(g, 0)) {
-                        overlapSecond.put(g, common);
-                    }
-                    if (common > overlapBackCount.getOrDefault(f, 0)) {
-                        overlapBackCount.put(f, common);
-                        overlapBack.put(f, g);
+                    if (stableGone.getOrDefault(g, 0) >= 4 && stableFresh.getOrDefault(f, 0) >= 4) {
+                        if (sharedIds > overlapCount.getOrDefault(g, 0)) {
+                            overlapSecond.put(g, overlapCount.getOrDefault(g, 0));
+                            overlapCount.put(g, sharedIds);
+                            overlapBest.put(g, f);
+                        } else if (sharedIds > overlapSecond.getOrDefault(g, 0)) {
+                            overlapSecond.put(g, sharedIds);
+                        }
+                        if (sharedIds > overlapBackCount.getOrDefault(f, 0)) {
+                            overlapBackSecond.put(f, overlapBackCount.getOrDefault(f, 0));
+                            overlapBackCount.put(f, sharedIds);
+                            overlapBack.put(f, g);
+                        } else if (sharedIds > overlapBackSecond.getOrDefault(f, 0)) {
+                            overlapBackSecond.put(f, sharedIds);
+                        }
                     }
                 }
             }
@@ -1691,12 +1701,32 @@ public final class VersionMap {
                 String g = e.getKey(), f = e.getValue();
                 int n = overlapCount.getOrDefault(g, 0), second = overlapSecond.getOrDefault(g, 0);
                 boolean clearWinner = n >= 3 && (second == 0 || n >= 2 * second);
-                if (!links.containsKey(g) && !claimed.contains(f) && clearWinner && g.equals(overlapBack.get(f))) {
+                int backSecond = overlapBackSecond.getOrDefault(f, 0);
+                boolean reverseClear = overlapBackCount.getOrDefault(f, 0) > backSecond;
+                if (!links.containsKey(g) && !claimed.contains(f) && clearWinner && reverseClear && g.equals(overlapBack.get(f))) {
                     links.put(g, f);
                     claimed.add(f);
                 }
             }
             return links;
+        }
+
+        static boolean stableSrgMember(String key) {
+            return key.startsWith("mfunc_") || key.startsWith("ffield_");
+        }
+
+        static Map<String, Integer> stableSrgCounts(Map<String, Set<String>> ids) {
+            Map<String, Integer> counts = new HashMap<>();
+            for (var e : ids.entrySet()) {
+                int count = 0;
+                for (String key : e.getValue()) {
+                    if (stableSrgMember(key)) {
+                        count++;
+                    }
+                }
+                counts.put(e.getKey(), count);
+            }
+            return counts;
         }
 
         static String ownerOf(String key) {
