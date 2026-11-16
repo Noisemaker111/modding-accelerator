@@ -15,8 +15,8 @@ final class PerfToggle {
     static Map<String, Object> run(Path home, Mmt.Options options) throws Exception {
         List<String> switches = Arrays.stream(options.get("switch", "").split(",")).map(String::strip).filter(s -> !s.isEmpty()).toList();
         if (switches.isEmpty() || switches.size() > 3) throw new IllegalArgumentException("perf-toggle needs --switch pkg.Class.FIELD[,...]: one to three static boolean fields");
-        Path setup = Path.of(options.get("setup", "")).toAbsolutePath();
-        if (!Files.isRegularFile(setup)) throw new IllegalArgumentException("perf-toggle needs --setup SNIPPET.java, which puts the work in vars as \"" + WORK + "\"");
+        Path setup = Path.of(options.get("file", "")).toAbsolutePath();
+        if (!Files.isRegularFile(setup)) throw new IllegalArgumentException("perf-toggle needs --file SETUP.java, which puts the work in vars as \"" + WORK + "\"");
         int rounds = Performance.integer(options, "rounds", 8, 3, 200);
         int warmup = Performance.integer(options, "warmup", 2, 0, 50);
         String thread = options.get("thread", "control");
@@ -28,20 +28,41 @@ final class PerfToggle {
         }
         eval(base, out, "setup", List.of("--file", setup.toString(), "--thread", thread));
         List<List<Map<String, Object>>> measured = new ArrayList<>();
+        // Thread CPU time ticks every 15.6 ms on Windows: work shorter than that is repeated, the same
+        // count in every setting, until the slowest setting of a first round takes about 200 ms.
+        int reps = 1;
+        Path file = out.resolve("round.java");
+        Files.writeString(file, snippet(switches, 999L, 1));
+        double slowest = 0;
+        for (Map<String, Object> s : round(base, out, "calibration", file, thread)) {
+            slowest = Math.max(slowest, ((Number) s.get("wallMs")).doubleValue());
+        }
+        reps = (int) Math.max(1, Math.min(100_000, Math.ceil(200 / Math.max(slowest, 0.001))));
         for (int round = -warmup; round < rounds; round++) {
-            Path file = out.resolve("round.java");
-            Files.writeString(file, snippet(switches, 1000L + round));
-            Map<String, Object> answer = eval(base, out, "round " + round, List.of("--file", file.toString(), "--thread", thread));
-            List<Map<String, Object>> settings = Json.array(Json.parse(Json.text(answer, "value", "[]"))).stream().map(Json::object).toList();
+            Files.writeString(file, snippet(switches, 1000L + round, reps));
+            List<Map<String, Object>> settings = round(base, out, "round " + round, file, thread);
             if (round >= 0) measured.add(settings);
         }
         Map<String, Object> result = summarize(switches, measured);
         result.put("setup", setup.toString());
+        result.put("repetitions", reps);
         result.put("rounds", rounds);
         result.put("warmup", warmup);
         Json.save(out.resolve("toggle.json"), result);
         result.put("details", details(result) + "\nEvidence: " + out.resolve("toggle.json"));
         return result;
+    }
+
+    static List<Map<String, Object>> round(List<String> base, Path out, String name, Path file, String thread) throws Exception {
+        return settings(eval(base, out, name, List.of("--file", file.toString(), "--thread", thread)));
+    }
+
+    /** The settings a round measured, from eval's --json receipt, which holds the snippet's answer under "result". */
+    static List<Map<String, Object>> settings(Map<String, Object> receipt) {
+        Map<String, Object> result = receipt.get("result") instanceof Map<?, ?> r ? Json.object(r) : Map.of();
+        List<Map<String, Object>> settings = Json.array(Json.parse(Json.text(result, "value", "[]"))).stream().map(Json::object).toList();
+        if (settings.isEmpty()) throw new IllegalStateException("eval returned no measurements: " + Json.write(receipt));
+        return settings;
     }
 
     static Map<String, Object> eval(List<String> base, Path out, String name, List<String> args) throws Exception {
@@ -137,7 +158,7 @@ final class PerfToggle {
     }
 
     /** One round, as an eval snippet: every setting once in an order the seed shuffles; switches restored after. */
-    static String snippet(List<String> switches, long seed) {
+    static String snippet(List<String> switches, long seed, int reps) {
         StringBuilder names = new StringBuilder();
         for (String s : switches) names.append(names.length() == 0 ? "" : ", ").append('"').append(s).append('"');
         return """
@@ -196,7 +217,10 @@ final class PerfToggle {
                     long a0 = bean.getThreadAllocatedBytes(id);
                     long c0 = bean.getCurrentThreadCpuTime();
                     long w0 = System.nanoTime();
-                    Object result = work instanceof java.util.function.Supplier ? ((java.util.function.Supplier<?>) work).get() : ((java.util.concurrent.Callable<?>) work).call();
+                    Object result = null;
+                    for (int rep = 0; rep < %d; rep++) {
+                        result = work instanceof java.util.function.Supplier ? ((java.util.function.Supplier<?>) work).get() : ((java.util.concurrent.Callable<?>) work).call();
+                    }
                     long w1 = System.nanoTime();
                     long c1 = bean.getCurrentThreadCpuTime();
                     long a1 = bean.getThreadAllocatedBytes(id);
@@ -204,12 +228,12 @@ final class PerfToggle {
                     deep.of(result);
                     if (json.length() > 1) json.append(',');
                     json.append(String.format(Locale.ROOT, "{\\"setting\\":%%d,\\"cpuMs\\":%%.4f,\\"wallMs\\":%%.4f,\\"allocatedBytes\\":%%d,\\"hash\\":\\"%%x\\"}",
-                        setting, (c1 - c0) / 1e6, (w1 - w0) / 1e6, a1 - a0, deep.h));
+                        setting, (c1 - c0) / 1e6 / %d, (w1 - w0) / 1e6 / %d, (a1 - a0) / %d, deep.h));
                 }
             } finally {
                 for (int i = 0; i < names.length; i++) fields[i].setBoolean(null, was[i]);
             }
             return json.append("]").toString();
-            """.formatted(WORK, WORK, names, seed);
+            """.formatted(WORK, WORK, names, seed, reps, reps, reps, reps);
     }
 }

@@ -158,7 +158,7 @@ public final class Mmt {
             "minecraft",
             "loader",
             "memory",
-            "attach", "instance", "launch", "duration", "warmup", "out", "scenario",
+            "attach", "instance", "launch", "duration", "warmup", "out", "scenario", "switch",
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
             "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
@@ -895,7 +895,7 @@ public final class Mmt {
                 "Pairs stop at the first failed gate, or from --min-runs pairs (3) once 99% t intervals lie above 1 (cold and warm) or below --min-speedup (1). Each pair prints a line; creating OUT/stop ends the run after the pair in progress.\n" +
                 "--arms auto|parallel|sequential: auto starts both arms of a pair together on 12 or more cores.\n" +
                 "--check-only checks the experiment (and --patch) offline, as every run does first. --replay OUT1,OUT2 decides finished runs again and prints their wall time.";
-            case "perf-toggle" -> "Pre-screen a candidate in the running game, in minutes: mmt perf-toggle --root SOURCE --setup SETUP.java --switch pkg.Class.FIELD[,...] [--rounds 8] [--warmup 2] [--thread control|game]\n" +
+            case "perf-toggle" -> "Pre-screen a candidate in the running game, in minutes: mmt perf-toggle --root SOURCE --file SETUP.java --switch pkg.Class.FIELD[,...] [--rounds 8] [--warmup 2] [--thread control|game]\n" +
             "SETUP.java is an eval snippet that freezes an input and puts the work in vars as \"perf.work\" (a Supplier or Callable). Each round runs it once\n" +
             "per setting of the static boolean switches (one to three), in shuffled order, and records CPU time, allocated bytes and a hash of what it returned.\n" +
             "Fails when settings return different results. Descriptive: send a setting that gains ~10% on its scope, or allocates much less, to perf-optimize.";

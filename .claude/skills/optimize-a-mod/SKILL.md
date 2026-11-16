@@ -24,7 +24,7 @@ change; mmt only profiles, measures and gates. Reference: PERFORMANCE.md.
    `sabotage-*.diff`. `perf-optimize --check-only --experiment E --root R --patch P` checks it all offline.
 6. Write one idea per candidate diff (`git -C R diff > .runs/<mod>-cands/NAME.diff`), behind a static boolean
    switch (default on). Pre-screen it in one running game before any paired run: a setup snippet freezes an input
-   and puts the work in `vars` as `perf.work`, then `perf-toggle --root R --setup S --switch pkg.Class.FIELD`
+   and puts the work in `vars` as `perf.work`, then `perf-toggle --root R --file S --switch pkg.Class.FIELD`
    (minutes; fails if outputs differ). Only a candidate gaining ~10% on its own scope, or cutting allocation / GC
    copying, goes on to step 7; stop a paired run as soon as it is decided (`stop` file).
 7. Measure locally: `perf-optimize --root R --experiment E --patch P --dry-run --out .runs/<mod>-opt/NAME` (it

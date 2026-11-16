@@ -7,7 +7,7 @@ import dev.diorama.data.*;
 // copy of the save, the flight's tiles), and as the work, a first mesh of each tile plus its spawn
 // spots whole and over saved spots. The work returns each mesh's face counts and every spot array,
 // so a switch that changes them fails the screen. Switches are the candidate's own static booleans:
-//   mmt perf-toggle --root DIORAMA --project :1.21.1 --setup bench/diorama/play/toggle-setup.java \
+//   mmt perf-toggle --root DIORAMA --project :1.21.1 --file bench/diorama/play/toggle-setup.java \
 //     --switch dev.diorama.bake.VoxelReader.POOL_IDS
 class SaveOnly implements ChunkSource {
     final int min, max, top;

@@ -271,10 +271,11 @@ public final class PerfTest {
         for (List<String> switches : List.of(List.of("PerfTest$Toggled.FAST"), List.of("PerfTest$Toggled.FAST", "PerfTest$Toggled.WRONG"))) {
             List<List<Map<String, Object>>> rounds = new ArrayList<>();
             for (int round = 0; round < 4; round++) {
-                Object snippet = compile.invoke(null, PerfToggle.snippet(switches, round), PerfTest.class.getClassLoader());
+                Object snippet = compile.invoke(null, PerfToggle.snippet(switches, round, 1), PerfTest.class.getClassLoader());
                 java.lang.reflect.Method run = snippet.getClass().getDeclaredMethod("run");
                 run.setAccessible(true);
-                rounds.add(Json.array(Json.parse(Json.text(Json.object(run.invoke(snippet)), "value", "[]"))).stream().map(Json::object).toList());
+                // As mmt eval --json hands it back: the snippet's answer under "result".
+                rounds.add(PerfToggle.settings(Json.map("ok", true, "result", run.invoke(snippet))));
             }
             Map<String, Object> result = PerfToggle.summarize(switches, rounds);
             double fast = ((Number) Json.object(Json.object(Json.array(result.get("settings")).get(1)).get("cpuSpeedup")).get("geometricMean")).doubleValue();
