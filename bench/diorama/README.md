@@ -413,39 +413,29 @@ saturated machine, one pair of `bit-walk.patch` with the warmed experiment read 
 warm 1.26× before the run was stopped (`bit-walk-4`, not decided); its launches drew 57–59 frames a
 second, the minimap cost 0.71–0.93 ms a frame, and neither window traced on the CPU.
 
-### Round 5: the collector and the map screen
+### After the six: what didn't pay
 
-Each candidate below was applied to the six accepted patches (`tint-carry-over` through `occlusion-rings`).
-`mmt perf-report` now says what young collections copy and which code allocated it
-(`gcCopiedBytes`, `survivingAllocationSites`). In the cumulative run's captures, unmodified Diorama's young
-collections copied 2.4 GB in a cold minute. The largest Diorama share was each job's decoded section ids
-(`VoxelReader$Decoded.ids`, 321 MB). The next two were Minecraft's own light storage copies.
+The six accepted patches are proposed to Diorama itself as
+[SunkenInTime/diorama#409](https://github.com/SunkenInTime/diorama/pull/409). Its description tables every attempt,
+kept and rejected, with numbers. Re-measured on Diorama's current master, they read 1.98x cold and 3.18x warm
+(`faster-maps-on-main` in `coverage/perf-runs.json`), with every gate exact. Every candidate tried after them was
+exact but didn't pay in play. The rejected runs are kept. Three things carry over:
 
-- `ids-pool.patch` (`VoxelReader.POOL_IDS`): a meshing job's decoded sections borrow their thread's spare
-  arrays and give them back when it ends. Copying of those arrays fell by about 60% in each of three pairs. Total
-  bytes copied and total pause did not change beyond noise, because the site is a tenth of what is copied. The
-  cold window was 0.982× (95% 0.969–0.994), so the run was rejected (`ids-pool` in `coverage/perf-runs.json`).
-  Bit-walk's longer mean young pause is fewer collections, not more copying: with the six patches, cold
-  windows ran 19.4 collections of 129 MB against 22.2 of 120 MB, 6% less in all.
-- The map screen costs 1.3–1.6 ms a frame in both builds; 34% of it is rebuilding the fog mask. Two
-  candidates were pre-screened with `mmt perf-toggle` (`play/mask-setup.java`: it rebuilds the screen's last
-  mask from the same inputs in the running game, 12 rounds). Both were dropped before a paired run.
-  - `mask-tiles.patch` (`MapViewport.PEEK_ONCE`): ask the level for each tile once per build. 1.02× (99%
-    0.92–1.14), 19% less allocated. The profile's `HashMap$TreeNode` frames under `MapLevel.peek` were
-    JFR misplacing inlined `getNode`, not tree bins: `TileKey`'s record hash puts at most two keys in a bucket.
-  - `mask-hoist.patch` (`MapViewport.HOIST`): work out each column's u and each row's v, with their tiles
-    and coverage cells, once per build. 1.08× (99% 0.89–1.31).
+- Separate launches of the same build differ by up to 14%, even on identical work on one thread: each
+  launch compiles differently. Paired launches only decide effects of about 15% or more. Decide smaller ones with
+  `mmt perf-toggle` in one game (`play/toggle-setup.java` is the input), and use launches for the gates.
+- A per-call saving pays only as often as the call runs. The fog mask's texel loop got 1.4x faster and changed
+  no frame: rebuilds are rare.
+- Profiles misplace inlined code. `HashMap$TreeNode` frames under `MapLevel.peek` were inlined `getNode`,
+  not tree bins.
 
 ### What is left
 
-- Per mesh, after these: occlusion and colour of the faces the walk emits (`solidFace`), section
-  decoding per job (`VoxelReader$Decoded.ids`, 8% of a first mesh's samples and the largest Diorama allocation),
-  shadow casters (15%); in a same-JVM profile of first meshes with the bit walk, faces' `solidFace`
-  was 47% and the walk itself 9%.
-- The saved-chunk import: 561 ms a tile in one launch's log, on its own thread.
-- The render thread: the minimap and the full map screen at 60 frames a second
-  (`experiment-screen.json`), and the session tick and map update per call.
-- Reuse that tolerates a chunk's sky light (`sky-free.patch`), to retry with the warmed cold window.
+- Picking spawn spots is about a third of a bake now, as rays traced again after the mesher's walk. Taking spots
+  from the walk itself is the one large change left.
+- Tint blends that keep two heights per block: exact, 1.15x on first meshes in `perf-toggle`, a few percent of
+  the bakers.
+- The saved-chunk import runs the same bake on its own thread, so it gains with every bake change.
 
 ### Time to safepoint on a busy machine
 
