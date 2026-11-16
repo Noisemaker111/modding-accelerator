@@ -12,8 +12,9 @@ and runs mmt compile on it, against the loaders' own published jars: first with 
 mixins add to game classes injected (as most converted mods get it), then with all of them. Then the bridge's runtime tests, JUnit sources in
 knowledge/bridge-tests/ID (at the path of the package they test, ${package} as in the bridge; never copied into a
 converted mod), run there with mmt test: they exercise bridge code that needs no running game (transactions, packet
-contexts, entrypoints, network codecs). The work folder is .runs/bridge-check/; the result is printed as JSON (exit 0
-when it compiled and every test passed). Launches no game.
+contexts, entrypoints, network codecs). Last, mmt mixin-check lets Mixin apply every bridge mixin to that game's classes.
+The work folder is .runs/bridge-check/; the result is printed as JSON (exit 0 when it compiled, every test passed and
+every mixin applied). Launches no game.
 """
 import argparse
 import json
@@ -163,6 +164,9 @@ def main():
     work = WORK / f"{args.bridge}-{args.minecraft}"
     to_fabric = b["to"] == "fabric"
     if not (args.keep and work.is_dir()):
+        # A mixin-check on the last host leaves its Gradle daemon holding the host's folder.
+        if work.is_dir():
+            convert_sweep.mmt(["game-stop", "--root", str(work), "--json"], 120)
         convert_sweep.rmtree(work)
         shutil.copytree(convert_sweep.extended(src), convert_sweep.extended(work),
                         ignore=shutil.ignore_patterns(".git", ".gradle", "build", ".mmt-sweep-commit"))
@@ -240,6 +244,14 @@ def main():
         if tests is not None:
             out["tests"] = tests
             out["ok"] = tests["ok"]
+    if code == 0 and mixins:
+        # Compiling proves no injection point: Mixin itself applies every bridge mixin to this game's classes.
+        _, checked, _ = convert_sweep.mmt(["mixin-check", "--root", str(work), "--json"], 1800)
+        found = checked or {}
+        out["mixinCheck"] = {"ok": bool(found.get("ok")), "mixins": found.get("mixins"),
+                             "failures": [f"{(f.get('mixin') or f.get('target') or '').split('.')[-1]}: {(f.get('message') or '')[:400]}"
+                                          for f in found.get("failures", []) + found.get("dead", [])]}
+        out["ok"] = out["ok"] and out["mixinCheck"]["ok"]
     convert_sweep.mmt(["game-stop", "--root", str(work), "--json"], 300)
     print(json.dumps(out, indent=1))
     return 0 if out["ok"] else 1

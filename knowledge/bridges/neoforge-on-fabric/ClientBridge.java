@@ -35,6 +35,7 @@ public final class ClientBridge {
         if (hooked) return;
         hooked = true;
         ClientGameEvents.hook();
+        LevelStages.hook();
         ClientTickEvents.START_CLIENT_TICK.register(client -> Bus.INSTANCE.post(new ClientTickEvent.Pre()));
         ClientTickEvents.END_CLIENT_TICK.register(client -> Bus.INSTANCE.post(new ClientTickEvent.Post()));
     }

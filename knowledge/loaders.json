@@ -2409,7 +2409,8 @@
     "net.neoforged.neoforge.common.data.SpriteSourceProvider": "data.SpriteSourceProvider",
     "net.neoforged.neoforge.data.loading.DatagenModLoader": "data.DatagenModLoader",
     "net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent": "RegisterParticleProvidersEvent",
-    "net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent": "RegisterClientTooltipComponentFactoriesEvent"
+    "net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent": "RegisterClientTooltipComponentFactoriesEvent",
+    "net.neoforged.neoforge.client.event.RenderLevelStageEvent": "RenderLevelStageEvent"
    },
    "symbols": {
     "neoforge": [
@@ -4597,6 +4598,13 @@
        "injects": {
         "net/minecraft/core/Holder": "extensions.IHolderExtension<TT;>"
        }
+      },
+      {
+       "mixin": "LevelStageMixin",
+       "client": true,
+       "for": [
+        "RenderLevelStageEvent"
+       ]
       }
      ]
     },
@@ -4614,7 +4622,9 @@
      },
      "drops": [
       "FluidTintSource.java",
-      "FluidTintSources.java"
+      "FluidTintSources.java",
+      "mixin/InventoryDropsMixin.java",
+      "mixin/EquipmentDropsMixin.java"
      ]
     }
    ],
@@ -5244,6 +5254,13 @@
      "for": [
       "datamaps.builtin.NeoForgeDataMaps",
       "datamaps.builtin.FurnaceFuel"
+     ]
+    },
+    {
+     "mixin": "LevelStageMixin",
+     "client": true,
+     "for": [
+      "RenderLevelStageEvent"
      ]
     }
    ]
