@@ -28,7 +28,8 @@ import org.objectweb.asm.Type;
  * from the mod's file with ASM while it loads mods. Here ASM reads them from the class files under the mod's root paths
  * when first asked: annotations on classes (memberName is the class name), fields (the field's name) and methods (name
  * and descriptor), visible or not, as NeoForge's scan. Values are as NeoForge gives them (constants, strings, classes as
- * ASM Types, arrays as lists, nested annotations as maps), except an enum constant, which is its name here.
+ * ASM Types, arrays of primitives as arrays, other arrays as lists, nested annotations as maps), except an enum constant,
+ * which is its name here (NeoForge's ModAnnotation.EnumHolder is not an API class).
  */
 public class ModFileScanData {
 

@@ -5,7 +5,7 @@ import net.minecraft.world.item.TooltipFlag;
 
 /**
  * NeoForge's net.neoforged.neoforge.client.ClientTooltipFlag: a tooltip flag that also tells which modifier keys are
- * down, read from the client as NeoForge reads them.
+ * down, read from the client as NeoForge reads them (the game's TooltipFlag has no such methods without NeoForge).
  */
 public record ClientTooltipFlag(boolean advanced, boolean creative, boolean shiftDown, boolean controlDown, boolean altDown) implements TooltipFlag {
 
@@ -19,17 +19,14 @@ public record ClientTooltipFlag(boolean advanced, boolean creative, boolean shif
         return creative;
     }
 
-    @Override
     public boolean hasShiftDown() {
         return shiftDown;
     }
 
-    @Override
     public boolean hasControlDown() {
         return controlDown;
     }
 
-    @Override
     public boolean hasAltDown() {
         return altDown;
     }
