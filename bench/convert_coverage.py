@@ -176,6 +176,15 @@ def bridge_provides(rules, frm, minecraft):
                     seen.add(s)
                     out[cls] |= out[s]
                     todo.extend(supers.get(s, ()))
+        # A bridge file NeoForge has under two names (a class it moved between versions) provides both.
+        if frm == "neoforge":
+            for full, simple in b.get("classes", {}).items():
+                main = names.get(simple.replace(".", "/"))
+                cls = full.replace(".", "/")
+                if main and main != cls and main in out:
+                    out[cls] = out[main]
+                    for nested in [c for c in out if c.startswith(main + "$")]:
+                        out[cls + nested[len(main):]] = out[nested]
         return out
     return None
 
