@@ -1,0 +1,167 @@
+diff --git a/src/main/java/dev/diorama/render/MapViewport.java b/src/main/java/dev/diorama/render/MapViewport.java
+index b4819299..c8ef8219 100644
+--- a/src/main/java/dev/diorama/render/MapViewport.java
++++ b/src/main/java/dev/diorama/render/MapViewport.java
+@@ -138,6 +138,30 @@ public final class MapViewport {
+ 	/** Where in a coarse mask texel the map is read: four spots, so ground a texel's middle misses still counts. */
+ 	private static final double[] COARSE_SPOTS = {0.25, 0.25, 0.75, 0.25, 0.25, 0.75, 0.75, 0.75};
+ 	private static final double[] MIDDLE = {0.5, 0.5};
++	/**
++	 * Whether a mask build asks the level for each tile once ({@link #peekOnce}): a 256 by 256 mask
++	 * crosses the same few tiles row after row, and where the map has none it also asks every level
++	 * above. The level's tiles only change on the render thread, which builds the mask, so what it
++	 * answered once holds for the whole build. Only for checking that masks come out the same either way.
++	 */
++	public static boolean PEEK_ONCE = true;
++	private static final Object NO_TILE = new Object();
++	/** Per level of detail, what this build's level answered, keyed by tile u and v. */
++	@SuppressWarnings("unchecked")
++	private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Object>[] peeked = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap[TileKey.MAX_LOD + 1];
++	/**
++	 * Whether a mask build works out each spot's map u, tile and coverage column once per mask column,
++	 * and its v, tile and coverage row once per mask row, with the same arithmetic the texel loop had:
++	 * they depend on one of the two only. Only for checking that masks come out the same either way.
++	 */
++	public static boolean HOIST = true;
++	/** Per spot and mask column (spot * MASK + i): u, its tile and coverage column; likewise per row for v. */
++	private final double[] spotU = new double[4 * MASK];
++	private final int[] spotTu = new int[4 * MASK];
++	private final int[] spotCellX = new int[4 * MASK];
++	private final double[] spotV = new double[4 * MASK];
++	private final int[] spotTv = new int[4 * MASK];
++	private final int[] spotCellY = new int[4 * MASK];
+ 
+ 	/** The most the fog shader's opacity code can say: it has five spare bits. */
+ 	private static final int OPACITY_CODES = 31;
+@@ -624,6 +648,26 @@ public final class MapViewport {
+ 	/** Goes up whenever the mask or detail textures change. */
+ 	private long fogSerial;
+ 
++	/** {@code level.peek} of the tile, asked once per mask build. */
++	private @Nullable MapTile peekOnce(MapLevel level, int layer, int tu, int tv, int lod) {
++		if (!PEEK_ONCE) {
++			return level.peek(new TileKey(layer, tu, tv, lod));
++		}
++		it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Object> memo = this.peeked[lod];
++		if (memo == null) {
++			memo = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
++			this.peeked[lod] = memo;
++		}
++		long key = ((long) tu << 32) | (tv & 0xFFFFFFFFL);
++		Object found = memo.get(key);
++		if (found == null) {
++			MapTile tile = level.peek(new TileKey(layer, tu, tv, lod));
++			memo.put(key, tile == null ? NO_TILE : tile);
++			return tile;
++		}
++		return found == NO_TILE ? null : (MapTile) found;
++	}
++
+ 	private void buildMask(MapLevel level, View view, double originU, double originV, double texel, int scaleSteps, int fraction, boolean fast) {
+ 		if (this.maskTexture == null) {
+ 			this.maskTexture = MapTexture.create("diorama fog mask", MASK, 1);
+@@ -658,6 +702,11 @@ public final class MapViewport {
+ 		}
+ 		this.maskInputs = inputs;
+ 		this.maskLevel = new WeakReference<>(level);
++		for (it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Object> memo : this.peeked) {
++			if (memo != null) {
++				memo.clear();
++			}
++		}
+ 		double units = (double) Projection.TILE_UNITS * (1 << lod);
+ 		double cellUnits = units / Projection.COVERAGE_CELLS;
+ 		int lastTu = Integer.MIN_VALUE;
+@@ -678,17 +727,37 @@ public final class MapViewport {
+ 		// fog doesn't close over a trail or a small map that fills only part of it.
+ 		boolean coarse = view.layer() == TileKey.SURFACE && texel >= COARSE_TEXEL;
+ 		double[] spots = coarse ? COARSE_SPOTS : MIDDLE;
++		boolean hoist = HOIST;
++		if (hoist) {
++			for (int spot = 0; spot < spots.length; spot += 2) {
++				int at = (spot >> 1) * MASK;
++				for (int n = 0; n < MASK; n++) {
++					double u = originU + (n + spots[spot]) * texel;
++					int tu = (int) Math.floor(u / units);
++					this.spotU[at + n] = u;
++					this.spotTu[at + n] = tu;
++					this.spotCellX[at + n] = Math.min(Projection.COVERAGE_CELLS - 1, (int) ((u - tu * units) / cellUnits));
++					double v = originV + (n + spots[spot + 1]) * texel;
++					int tv = (int) Math.floor(v / units);
++					this.spotV[at + n] = v;
++					this.spotTv[at + n] = tv;
++					this.spotCellY[at + n] = Math.min(Projection.COVERAGE_CELLS - 1, (int) ((v - tv * units) / cellUnits));
++				}
++			}
++		}
+ 		for (int j = 0; j < MASK; j++) {
+ 			for (int i = 0; i < MASK; i++) {
+ 				float most = 0;
+ 				for (int spot = 0; spot < spots.length && most < 1; spot += 2) {
+-					double u = originU + (i + spots[spot]) * texel;
+-					double v = originV + (j + spots[spot + 1]) * texel;
+-					int tv = (int) Math.floor(v / units);
+-					int cellY = Math.min(Projection.COVERAGE_CELLS - 1, (int) ((v - tv * units) / cellUnits));
+-					int tu = (int) Math.floor(u / units);
++					int column = (spot >> 1) * MASK + i;
++					int row = (spot >> 1) * MASK + j;
++					double u = hoist ? this.spotU[column] : originU + (i + spots[spot]) * texel;
++					double v = hoist ? this.spotV[row] : originV + (j + spots[spot + 1]) * texel;
++					int tv = hoist ? this.spotTv[row] : (int) Math.floor(v / units);
++					int cellY = hoist ? this.spotCellY[row] : Math.min(Projection.COVERAGE_CELLS - 1, (int) ((v - tv * units) / cellUnits));
++					int tu = hoist ? this.spotTu[column] : (int) Math.floor(u / units);
+ 					if (tu != lastTu || tv != lastTv) {
+-						tile = level.peek(new TileKey(view.layer(), tu, tv, lod));
++						tile = this.peekOnce(level, view.layer(), tu, tv, lod);
+ 						lastTu = tu;
+ 						lastTv = tv;
+ 						above = null;
+@@ -698,7 +767,7 @@ public final class MapViewport {
+ 							TileKey up = new TileKey(view.layer(), tu, tv, lod);
+ 							for (int l = lod + 1; l <= TileKey.MAX_LOD && above == null; l++) {
+ 								up = up.parent();
+-								MapTile candidate = level.peek(up);
++								MapTile candidate = this.peekOnce(level, up.layer(), up.tileU(), up.tileV(), up.lod());
+ 								if (candidate != null && candidate.hasCoverage()) {
+ 									above = candidate;
+ 									aboveKey = up;
+@@ -708,7 +777,7 @@ public final class MapViewport {
+ 					}
+ 					float known = 0;
+ 					if (tile != null && tile.hasCoverage()) {
+-						int cellX = Math.min(Projection.COVERAGE_CELLS - 1, (int) ((u - tu * units) / cellUnits));
++						int cellX = hoist ? this.spotCellX[column] : Math.min(Projection.COVERAGE_CELLS - 1, (int) ((u - tu * units) / cellUnits));
+ 						known = tile.coverage(cellX, cellY);
+ 					} else if (above != null) {
+ 						double aboveSpan = aboveKey.units();
+@@ -724,7 +793,7 @@ public final class MapViewport {
+ 							int finerTu = (int) Math.floor(u / span);
+ 							int finerTv = (int) Math.floor(v / span);
+ 							if (finerTu != lastFinerTu[down - 1] || finerTv != lastFinerTv[down - 1]) {
+-								finer[down - 1] = level.peek(new TileKey(view.layer(), finerTu, finerTv, lod - down));
++								finer[down - 1] = this.peekOnce(level, view.layer(), finerTu, finerTv, lod - down);
+ 								lastFinerTu[down - 1] = finerTu;
+ 								lastFinerTv[down - 1] = finerTv;
+ 							}
+@@ -746,7 +815,7 @@ public final class MapViewport {
+ 						int nearTv = (int) Math.floor(v / Projection.TILE_UNITS);
+ 						if (Math.abs(nearTu - nearU) <= NEAR_TILES && Math.abs(nearTv - nearV) <= NEAR_TILES) {
+ 							if (nearTu != lastNearTu || nearTv != lastNearTv) {
+-								nearTile = level.peek(new TileKey(view.layer(), nearTu, nearTv, 0));
++								nearTile = this.peekOnce(level, view.layer(), nearTu, nearTv, 0);
+ 								lastNearTu = nearTu;
+ 								lastNearTv = nearTv;
+ 							}
+@@ -766,6 +835,12 @@ public final class MapViewport {
+ 				this.maskPixels[j * MASK + i] = 0xFF000000 | Math.round(most * 255);
+ 			}
+ 		}
++		// Holds no tile past the build: the level may drop them.
++		for (it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Object> memo : this.peeked) {
++			if (memo != null) {
++				memo.clear();
++			}
++		}
+ 		boolean surface = view.layer() == TileKey.SURFACE;
+ 		if (surface) {
+ 			if (memory != null) {

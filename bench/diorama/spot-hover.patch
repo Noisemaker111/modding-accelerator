@@ -1,0 +1,45 @@
+diff --git a/src/main/java/dev/diorama/MapScreen.java b/src/main/java/dev/diorama/MapScreen.java
+index b1b09c1d..32f47cb4 100644
+--- a/src/main/java/dev/diorama/MapScreen.java
++++ b/src/main/java/dev/diorama/MapScreen.java
+@@ -160,6 +160,16 @@ public final class MapScreen extends Screen {
+ 	private int spotLayer;
+ 	private int spotAge;
+ 	private @Nullable BlockPos spot;
++	/**
++	 * Whether the spot's tooltip is laid out again only when something it shows changes: the spot,
++	 * its distance, biome, claim, the claims setting or the translations (a new Language on every reload). Laying it out (bidi ordering
++	 * every line) was most of its cost, every frame the mouse rested. Only for checking that tooltips
++	 * come out the same either way.
++	 */
++	public static boolean KEEP_SPOT_LINES = true;
++	/** What the last spot tooltip showed, and its lines. */
++	private @Nullable List<Object> spotLinesFor;
++	private @Nullable List<FormattedCharSequence> spotLines;
+ 	/** The latest look-up of {@link #spot} from a saved tile; an older one's answer is dropped. */
+ 	private @Nullable Object spotRequest;
+ 	/** The dimension whose saved map is shown, or null for the one the player is in. */
+@@ -1567,10 +1577,22 @@ public final class MapScreen extends Screen {
+ 		}
+ 		long distance = Math.round(Math.sqrt(viewer.distanceToSqr(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5)));
+ 		Component biome = this.biomeAt(spot);
++		List<Object> shows = null;
++		if (KEEP_SPOT_LINES) {
++			Settings.ClaimsShown claims = Settings.get().claims;
++			Claims.Claim claim = claims == Settings.ClaimsShown.OFF ? null : Claims.get().at(spot.getX() >> 4, spot.getZ() >> 4);
++			shows = java.util.Arrays.asList(spot, distance, biome, claims, claim, net.minecraft.locale.Language.getInstance());
++			if (shows.equals(this.spotLinesFor) && this.spotLines != null) {
++				return this.spotLines;
++			}
++		}
+ 		Component detail = biome != null
+ 			? Component.translatable("diorama.map.spot_detail", biome, distance)
+ 			: Component.translatable("diorama.map.distance", distance);
+-		return withClaim(lines(Component.translatable("diorama.map.spot", spot.getX(), spot.getY(), spot.getZ()), detail), spot.getX(), spot.getZ());
++		List<FormattedCharSequence> laid = withClaim(lines(Component.translatable("diorama.map.spot", spot.getX(), spot.getY(), spot.getZ()), detail), spot.getX(), spot.getZ());
++		this.spotLinesFor = shows;
++		this.spotLines = laid;
++		return laid;
+ 	}
+ 
+ 	/**

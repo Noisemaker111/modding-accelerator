@@ -29,15 +29,24 @@ final class PerfToggle {
         eval(base, out, "setup", List.of("--file", setup.toString(), "--thread", thread));
         List<List<Map<String, Object>>> measured = new ArrayList<>();
         // Thread CPU time ticks every 15.6 ms on Windows: work shorter than that is repeated, the same
-        // count in every setting, until the slowest setting of a first round takes about 200 ms.
+        // count in every setting, until the slowest setting uses about 300 ms of CPU (wall time where the
+        // clock hasn't ticked yet: work that waits on another thread uses far less CPU than wall time).
+        // A first call can be far slower than the rest (class loading, a cache filling), so the count
+        // grows until it holds.
         int reps = 1;
         Path file = out.resolve("round.java");
-        Files.writeString(file, snippet(switches, 999L, 1));
-        double slowest = 0;
-        for (Map<String, Object> s : round(base, out, "calibration", file, thread)) {
-            slowest = Math.max(slowest, ((Number) s.get("wallMs")).doubleValue());
+        for (int tries = 0; tries < 8; tries++) {
+            Files.writeString(file, snippet(switches, 999L - tries, reps));
+            double slowest = 0;
+            for (Map<String, Object> s : round(base, out, "calibration", file, thread)) {
+                double cpu = ((Number) s.get("cpuMs")).doubleValue();
+                slowest = Math.max(slowest, (cpu > 0 ? cpu : ((Number) s.get("wallMs")).doubleValue()) * reps);
+            }
+            if (slowest >= 200 || reps >= 1_000_000) {
+                break;
+            }
+            reps = (int) Math.min(1_000_000, Math.max(reps * 2L, (long) Math.ceil(reps * 300 / Math.max(slowest, 0.001))));
         }
-        reps = (int) Math.max(1, Math.min(100_000, Math.ceil(200 / Math.max(slowest, 0.001))));
         for (int round = -warmup; round < rounds; round++) {
             Files.writeString(file, snippet(switches, 1000L + round, reps));
             List<Map<String, Object>> settings = round(base, out, "round " + round, file, thread);
@@ -143,7 +152,7 @@ final class PerfToggle {
             : result.get("differingRounds") + " round(s) returned different results between settings: the candidate is not exact.");
         for (Object entry : Json.array(result.get("settings"))) {
             Map<String, Object> row = Json.object(entry);
-            text.append(String.format(Locale.ROOT, "%n  on %s: CPU %.1f ms", row.get("on"), ((Number) row.get("cpuMsMedian")).doubleValue()));
+            text.append(String.format(Locale.ROOT, "%n  on %s: CPU %.4g ms", row.get("on"), ((Number) row.get("cpuMsMedian")).doubleValue()));
             if (row.containsKey("cpuSpeedup")) {
                 Map<String, Object> s = Json.object(row.get("cpuSpeedup")), a = Json.object(row.get("allocationRatio"));
                 text.append(String.format(Locale.ROOT, ", speedup %.3fx (99%% %.3f-%.3f), allocation %.2fx less",
