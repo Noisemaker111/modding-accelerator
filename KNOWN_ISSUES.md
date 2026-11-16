@@ -25,6 +25,13 @@ minutes; delete it when the cause is gone.
   not listed is missing from `~/.mmt/packages/<hash>`.
 - Fix: list it in `RESOURCES`; run `python bench/run_tests.py --only self-test`, which tests the packaged jar.
 
+## perf-optimize stops at once: "The fingerprint gate could not read the mod's Minecraft version"
+- Cause: the built-in fingerprint gate reads the version from `ProjectModel.discover()`, which only looks at
+  `build.gradle(.kts)` files. A Stonecutter build (Diorama: `build.forge.gradle.kts`, the version in
+  `versions/1.21.1/gradle.properties`) gives it none, whatever the experiment's `project`.
+- Fix: until it reads the project's own `gradle.properties`, set `"fingerprint": false` in the experiment. A client-only
+  mod that changes no world state (a map) gains nothing from the gate anyway.
+
 ## `gh: command not found` on Windows
 - Fix: `export PATH="/c/Program Files/GitHub CLI:$PATH"`.
 

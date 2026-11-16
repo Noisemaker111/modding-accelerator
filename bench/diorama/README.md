@@ -57,8 +57,8 @@ python bench/diorama/play/prepare_world.py --root .runs/diorama
   with GPU-baked tiles; `reuse-live.java` requires everything a build carries between bakes to
   change nothing (below); `slabs-ring.java` requires a build that keeps those in a ring of arrays
   to have gone round it during the flight and to read nothing stale once it goes round again.
-- `bake-bench.java` times those functions in one client (descriptive), and `toggle-bench.java`
-  compares switchable variants of one build in the same JVM with randomized order.
+- `bake-bench.java` times those functions in one client (descriptive), and `toggle-setup.java`
+  is the input `mmt perf-toggle` compares switchable variants of one build on, in the same JVM.
 
 ### Exact optimizations for ordinary play
 
@@ -413,16 +413,29 @@ saturated machine, one pair of `bit-walk.patch` with the warmed experiment read 
 warm 1.26× before the run was stopped (`bit-walk-4`, not decided); its launches drew 57–59 frames a
 second, the minimap cost 0.71–0.93 ms a frame, and neither window traced on the CPU.
 
+### After the six: what didn't pay
+
+The six accepted patches are proposed to Diorama itself as
+[SunkenInTime/diorama#409](https://github.com/SunkenInTime/diorama/pull/409). Its description tables every attempt,
+kept and rejected, with numbers. Re-measured on Diorama's current master, they read 1.98x cold and 3.18x warm
+(`faster-maps-on-main` in `coverage/perf-runs.json`), with every gate exact. Every candidate tried after them was
+exact but didn't pay in play. The rejected runs are kept. Three things carry over:
+
+- Separate launches of the same build differ by up to 14%, even on identical work on one thread: each
+  launch compiles differently. Paired launches only decide effects of about 15% or more. Decide smaller ones with
+  `mmt perf-toggle` in one game (`play/toggle-setup.java` is the input), and use launches for the gates.
+- A per-call saving pays only as often as the call runs. The fog mask's texel loop got 1.4x faster and changed
+  no frame: rebuilds are rare.
+- Profiles misplace inlined code. `HashMap$TreeNode` frames under `MapLevel.peek` were inlined `getNode`,
+  not tree bins.
+
 ### What is left
 
-- Per mesh, after these: occlusion and colour of the faces the walk emits (`solidFace`), section
-  decoding per job (`VoxelReader$Decoded.ids`, 8% of a first mesh's samples and the largest Diorama allocation),
-  shadow casters (15%); in a same-JVM profile of first meshes with the bit walk, faces' `solidFace`
-  was 47% and the walk itself 9%.
-- The saved-chunk import: 561 ms a tile in one launch's log, on its own thread.
-- The render thread: the minimap and the full map screen at 60 frames a second
-  (`experiment-screen.json`), and the session tick and map update per call.
-- Reuse that tolerates a chunk's sky light (`sky-free.patch`), to retry with the warmed cold window.
+- Picking spawn spots is about a third of a bake now, as rays traced again after the mesher's walk. Taking spots
+  from the walk itself is the one large change left.
+- Tint blends that keep two heights per block: exact, 1.15x on first meshes in `perf-toggle`, a few percent of
+  the bakers.
+- The saved-chunk import runs the same bake on its own thread, so it gains with every bake change.
 
 ### Time to safepoint on a busy machine
 

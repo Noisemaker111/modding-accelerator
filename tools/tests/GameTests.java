@@ -35,6 +35,15 @@ public final class GameTests {
             "@literal",
             "spaces and slash\\"
         );
+        // Fabric's client test runner logged this, then exited 0: the suite failed all the same.
+        List<String> failure = Game.gameTestFailure(List.of("[22:25:16] [diorama-baker-2/INFO] (diorama) Re-baked 1600 partial tiles",
+            "[22:25:19] [Test thread/ERROR] (fabric-client-gametest-api-v1) Client gametests failed with an exception", "",
+            "java.lang.IllegalStateException: runOnClient called when no client is running",
+            "	at knot//com.google.common.base.Preconditions.checkState(Preconditions.java:513)",
+            "	at knot//dev.diorama.test.DioramaClientTest.overlays(DioramaClientTest.java:6462)"));
+        check(failure.size() == 3 && failure.get(1).startsWith("java.lang.IllegalStateException") && failure.get(2).contains("DioramaClientTest.overlays"),
+            "a game test run whose log says the suite failed is a failure, with its exception and the test's own frame: " + failure);
+        check(Game.gameTestFailure(List.of("[Test thread/INFO] (diorama) Map warm-up done", "Stopping!")).isEmpty(), "a clean game test log is no failure");
         List<String> saved = Game.savedCommand(launch, scratch.resolve("saved classpath.args"));
         Process child = new ProcessBuilder(saved).redirectErrorStream(true).start();
         String output = new String(child.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
