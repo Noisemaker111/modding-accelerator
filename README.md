@@ -105,13 +105,16 @@ and line, never dropped. `convert --undo` restores every file.
   NeoForge's 26.3 and 1.21.1 MDKs run on Fabric through the NeoForge bridge, register what their NeoForge builds do,
   and convert back. The One Probe (26.3) converts Fabric → NeoForge and NeoForge → Fabric, loads on the other loader
   with the same 8 registry entries as its original (items, creative tab, data attachment), and converts back and
-  compiles. Zombie Apocalypse (NeoForge 1.21.1) loads on Fabric with its 12 bridge mixins applied, and its own 141
-  unit tests pass there as on NeoForge.
+  compiles. Jade (26.3) converts both ways too: its Fabric build loads on NeoForge and its NeoForge build on Fabric,
+  each with its mixins applied and the same registry entries as the original, and each converts back and compiles.
+  Zombie Apocalypse (NeoForge 1.21.1) loads on Fabric with its 12 bridge mixins applied, and its own 141 unit tests
+  pass there as on NeoForge.
 - **Bridges** carry what has no one-call rule, written on the other loader's API and copied into the mod
   (`knowledge/bridges/`): NeoForge on Fabric (registration, event bus, config, payloads, events with no Fabric API
   callback fired by mixins at the point NeoForge's own patches fire them, extension methods, client events, data
-  attachments, `Tags`), Fabric on NeoForge (Fabric's events, Fabric Loader, networking, client commands, HUD, Team
-  Reborn Energy, Forge Config API Port), and capabilities ↔ Transfer API for items, fluids and energy both ways
+  attachments, `Tags`, mod list and annotation scan, renderer and colour registration), Fabric on NeoForge (Fabric's
+  events, Fabric Loader, networking, client commands, HUD, Team Reborn Energy, Forge Config API Port, the interfaces
+  Fabric API adds to game classes), and capabilities ↔ Transfer API for items, fluids and energy both ways
   (81 droplets per millibucket; semantics in each bridge's `about`). `python bench/bridge_check.py` compiles a whole
   bridge inside a real MDK; each bridge's before/after tests run both ways in `self-test`.
 - **Across a corpus** of 35 pinned mods (`coverage/sweeps/convert.json`): 28 convert without a refusal, 5 compile,
