@@ -12,6 +12,34 @@ import org.objectweb.asm.*;
  */
 final class GameLaunchAgent {
     private GameLaunchAgent() {}
+
+    /** AL_GAIN on the listener (alListenerf(0x100A, gain)) is set to 0 on entry. */
+    static byte[] silence(byte[] bytes) {
+        ClassReader reader = new ClassReader(bytes);
+        ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        final int[] hooks = {0};
+        reader.accept(new ClassVisitor(Opcodes.ASM9, writer) {
+            @Override public MethodVisitor visitMethod(int access, String method, String descriptor, String signature, String[] exceptions) {
+                MethodVisitor delegate = super.visitMethod(access, method, descriptor, signature, exceptions);
+                if (!method.equals("alListenerf") || !descriptor.equals("(IF)V")) return delegate;
+                hooks[0]++;
+                return new MethodVisitor(Opcodes.ASM9, delegate) {
+                    @Override public void visitCode() {
+                        super.visitCode();
+                        Label keep = new Label();
+                        super.visitVarInsn(Opcodes.ILOAD, 0);
+                        super.visitLdcInsn(0x100A);
+                        super.visitJumpInsn(Opcodes.IF_ICMPNE, keep);
+                        super.visitInsn(Opcodes.FCONST_0);
+                        super.visitVarInsn(Opcodes.FSTORE, 1);
+                        super.visitLabel(keep);
+                    }
+                };
+            }
+        }, ClassReader.EXPAND_FRAMES);
+        if (hooks[0] == 0) throw new IllegalStateException("no alListenerf in OpenAL");
+        return writer.toByteArray();
+    }
     private static boolean installed;
     static synchronized void install(Instrumentation instrumentation) {
         // Installed once per JVM: a second transformer would see the first one's output.
@@ -33,6 +61,16 @@ final class GameLaunchAgent {
                         System.setProperty("mmt.background.error", (earlier.isEmpty() ? "" : earlier + "; ") + error.getMessage());
                         return null;
                     }
+                }
+                // Quiet at the sound card: the listener's gain, which is the master volume, stays 0 whatever options.txt
+                // says. A pack's own options file (DefaultSettings in All the Mods 9) replaced the seeded volume of 0.
+                if (Boolean.getBoolean("mmt.quiet") && "org/lwjgl/openal/AL10".equals(name)) try {
+                    byte[] silent = silence(bytes);
+                    System.setProperty("mmt.quiet.applied", "openal listener gain");
+                    return silent;
+                } catch (Throwable error) {
+                    System.err.println("MMT_QUIET_ERROR " + error);
+                    return null;
                 }
                 try {
                     // Every launch, so one that is not quiet restores the options a quiet one replaced.

@@ -117,6 +117,23 @@ final class PackClient {
             "-Dmmt.background=" + preferences.get("background"),
             "-Dmmt.quiet=" + preferences.get("quiet")
         ));
+        // eval compiles against the game as it runs: the loader's patched game and the mods, which load off the class path.
+        List<String> compile = new ArrayList<>();
+        try (var walk = Files.walk(profile.libraries)) {
+            for (Path jar : walk.filter(p -> p.toString().endsWith(".jar")).sorted().toList()) {
+                String path = profile.libraries.relativize(jar).toString().replace(File.separatorChar, '/');
+                boolean game = path.startsWith("net/minecraft/client/") && (path.endsWith("-srg.jar") || path.endsWith("-extra.jar"));
+                boolean patched = (path.startsWith("net/minecraftforge/forge/") || path.startsWith("net/neoforged/")) && (path.endsWith("-client.jar") || path.endsWith("-universal.jar"));
+                if (patched) compile.add(0, jar.toString());
+                else if (game) compile.add(jar.toString());
+            }
+        }
+        try (var list = Files.list(modsFolder)) {
+            for (Path jar : list.filter(p -> p.toString().endsWith(".jar")).sorted().toList()) compile.add(jar.toString());
+        }
+        Path compileList = state.resolve("compile-classpath.txt");
+        Files.writeString(compileList, String.join(File.pathSeparator, compile));
+        command.add(main + 7, "-Dmmt.compileClasspath=" + compileList);
         Json.save(state.resolve(MARKER), Json.map(
             "pack", (pack.name() + " " + pack.version()).strip(), "input", input.toString(), "minecraft", pack.minecraft(),
             "loader", pack.loader() + " " + pack.loaderVersion(), "mods", kept, "leftOut", leftOut, "command", command
@@ -127,6 +144,7 @@ final class PackClient {
         );
         Files.deleteIfExists(state.resolve("agent.json"));
         Path log = report.log("client");
+        Files.createDirectories(log.getParent());
         long launched = System.nanoTime();
         Process process = new ProcessBuilder(command).directory(instance.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
         process.getOutputStream().close();
@@ -137,6 +155,28 @@ final class PackClient {
             process.descendants().forEach(ProcessHandle::destroyForcibly);
             process.destroyForcibly();
             throw failed;
+        }
+        // A game asked to be hidden or quiet that is not would be on the user's screen or speakers: it is stopped.
+        String unwanted = "";
+        try {
+            // A big pack draws its first frame while mods still load; the sound engine starts when loading ends.
+            var status = Game.request(session, Json.map("command", "status"));
+            long loading = System.nanoTime() + TimeUnit.MINUTES.toNanos(30);
+            while (Boolean.TRUE.equals(preferences.get("quiet")) && Json.text(status, "quietApplied", "").isEmpty() && System.nanoTime() < loading) {
+                String text = Files.readString(log, StandardCharsets.ISO_8859_1);
+                if (text.contains("MMT_QUIET_ERROR") || !process.isAlive()) break;
+                Thread.sleep(1000);
+                status = Game.request(session, Json.map("command", "status"));
+            }
+            if (Boolean.TRUE.equals(preferences.get("background")) && Json.text(status, "backgroundApplied", "").isEmpty()) unwanted += " its window could not be hidden (" + Json.text(status, "backgroundError", "no window library rewritten") + ");";
+            if (Boolean.TRUE.equals(preferences.get("quiet")) && Json.text(status, "quietApplied", "").isEmpty()) unwanted += " its sound could not be muted;";
+        } catch (Exception unanswered) {
+            unwanted += " it did not answer mmt (" + unanswered.getMessage() + ");";
+        }
+        if (!unwanted.isEmpty()) {
+            process.descendants().forEach(ProcessHandle::destroyForcibly);
+            process.destroyForcibly();
+            throw new IOException("Stopped the client:" + unwanted + " Log: " + log);
         }
         session.put("processStart", process.toHandle().info().startInstant().map(Instant::toString).orElse(""));
         session.put("log", log.toString());

@@ -174,9 +174,13 @@ final class Console {
                 return source;
             }
         };
+        // A launcher's game (pack-run) loads the game and mods outside the class path; mmt lists their jars in a file.
+        String classpath = System.getProperty("java.class.path");
+        String listed = System.getProperty("mmt.compileClasspath", "");
+        if (!listed.isEmpty()) classpath = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(listed)), "UTF-8").trim() + File.pathSeparator + classpath;
         List<String> options = Arrays.asList(
             "-classpath",
-            System.getProperty("java.class.path"),
+            classpath,
             "-proc:none",
             "-g",
             "-nowarn"
