@@ -2643,7 +2643,11 @@
     "net.neoforged.neoforge.common.world.ModifiableBiomeInfo": "world.ModifiableBiomeInfo",
     "net.neoforged.neoforge.common.world.BiomeGenerationSettingsBuilder": "world.BiomeGenerationSettingsBuilder",
     "net.neoforged.neoforge.common.world.MobSpawnSettingsBuilder": "world.MobSpawnSettingsBuilder",
-    "net.neoforged.neoforge.common.world.BiomeModifiers": "world.BiomeModifiers"
+    "net.neoforged.neoforge.common.world.BiomeModifiers": "world.BiomeModifiers",
+    "net.neoforged.neoforge.common.loot.IGlobalLootModifier": "loot.IGlobalLootModifier",
+    "net.neoforged.neoforge.common.loot.LootModifier": "loot.LootModifier",
+    "net.neoforged.neoforge.common.loot.AddTableLootModifier": "loot.AddTableLootModifier",
+    "net.neoforged.neoforge.common.loot.LootTableIdCondition": "loot.LootTableIdCondition"
    },
    "symbols": {
     "neoforge": [
@@ -5016,6 +5020,15 @@
         [
          "packedFGColor|FGColor\\s*\\("
         ]
+       ]
+      },
+      {
+       "mixin": "LootModifiersMixin",
+       "for": [
+        "loot.IGlobalLootModifier",
+        "loot.LootModifier",
+        "loot.AddTableLootModifier",
+        "loot.LootTableIdCondition"
        ]
       }
      ]
