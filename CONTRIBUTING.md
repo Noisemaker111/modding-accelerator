@@ -1,7 +1,8 @@
 # Contributing to mmt
 
 **TL;DR: vibe away.** Use a strong, close-to-frontier model (not a weak one), check the code, issues and PRs first,
-pick the best implementation you can, and open a PR. Don't ask permission.
+pick the best implementation you can, and open a PR. Don't ask permission. Whatever you fix, leave something the
+next mod can reuse (below).
 
 Help is wanted, from people and from agents. You don't need permission to start: open a pull request, and if it needs
 changing, it will be changed with you. The project is still finding its place, so most of it is open for you to shape.
@@ -42,9 +43,33 @@ Do whatever the licences and terms of service allow, and nothing past them.
 - **Contributions are under this repo's MIT licence.**
 - **When unsure, don't commit it.** Derive it at run time, or open an issue.
 
+## What every change is for: compounding tooling
+
+Whatever mod you work on, the real product is making the *next* mod better, even a totally different kind of mod.
+A speedup to one mod, a port or a loader conversion is only half done until it leaves something behind for every
+other mod:
+- a general pattern in `knowledge/`;
+- a tool, generator or script in `mmt`;
+- a faster test loop;
+- an update to a skill.
+
+The aim is that any mod that has ever existed can be tested, measured and improved quickly and exactly. A fix that
+only helps the mod it was made on is a partial result: say so, and say what would make it general.
+
 ## Making a change
 
-- One feature, one branch, one PR. Commit as you go; push follow-ups to the same PR. Use the PR template.
+- **One goal, one PR, however long the work takes.** A session spent making one mod faster, or moving porting
+  forward, ends in one PR, not a string of PRs along the way. Open it as a draft when you start, push every step to
+  it, and mark it ready when the goal is met and proven. Open a second PR only for a separate goal someone could
+  merge or reject on its own. A tool you built along the way belongs in the same PR as the work that needed it.
+- **Title it like a line in the release notes, because it becomes one.** Say what a user can now do, in plain words,
+  under about 50 characters: "Diorama builds maps 2-3x faster", "Convert more Fabric mods to NeoForge".
+  - No round or batch numbers.
+  - No lists of internals.
+  - No tool or class names ("bridge mirrors", "store gate", "yarn").
+
+  Numbers and details go in the description.
+- Use the PR template, including its **Carries over** line: what the next mod gets for free from your work.
 - Prove it the way a user would see it, at the smallest real scope. `AGENTS.md` has the commands. A change that can't
   be run in the game says so plainly instead of claiming it works.
 - Keep tests few and meaningful: each proves something users depend on and fails on a wrong answer.
@@ -58,8 +83,10 @@ handing to people, usually every few weeks: a goal that landed and was proven, o
 
 - **One button:** Actions → Release → Run workflow, on `main`. It numbers the release, builds the command line and
   the desktop app (Windows and Linux) into one portable ZIP, tests that exact ZIP, tags the commit and publishes.
-  Notes come from the PR titles merged since the last release, so PR titles should read well to users. Run it on any
-  other branch to rehearse: everything but the tag and publish.
+  Run it on any other branch to rehearse: everything but the tag and publish.
+- **Notes are `.github/whats-new.md`:** a short, plain list of what people can now do. A PR that adds something users
+  will notice adds a line there. The full list of merged PRs is folded underneath. The release refuses to publish
+  when the file hasn't changed since the last release.
 - **Version numbers are `0.MINOR.PATCH`.** Pick `minor` when people can do something new, `patch` for fixes only.
   A checkout says `dev`; only the Release workflow stamps a number. `1.0` is the maker's call.
 - **Publishing is the maker's decision:** agents can rehearse a release but don't run it on `main` unasked.
