@@ -311,6 +311,41 @@ public final class PortPreflightTest {
         require(crafted.contains("shaped(net.minecraft.core.registries.BuiltInRegistries.ITEM, RecipeCategory.TOOLS,\n        Items.LEAD)"), "the item registry is passed, the call's lines kept: " + crafted);
         require(crafted.contains("shaped(net.minecraft.core.registries.BuiltInRegistries.ITEM, RecipeCategory.DECORATIONS, Items.SCAFFOLDING, 6)"), "and where javac names only candidates of the same length");
         require(crafted.contains("    Enchants.of(RecipeCategory.TOOLS);"), "a data-driven registry is not guessed");
+
+        // A value whose type the game changed is converted where javac's caret is: an initializer, an argument, a call's
+        // argument found by its place when javac names candidates, and a getter put before a block; an unknown type stays.
+        Path cv = Files.createDirectories(scratch.resolve("convert"));
+        String[] lines = {
+            "class Ids {",
+            "  void f(ResourceKey<Recipe<?>> id) {",
+            "    ResourceLocation recipeId = id;",
+            "    manager.byKey(entry.getKey()).ifPresent(r -> {});",
+            "    save(output, ResourceLocation.fromNamespaceAndPath(a, b).withPrefix(\"cooking/\"));",
+            "    BlockPredicate.Builder.block().of(ModBlocks.CROP.get()).build();",
+            "    Widget w = id;",
+            "  }",
+            "}",
+        };
+        Files.writeString(cv.resolve("Ids.java"), String.join("\n", lines) + "\n");
+        String ids = cv.resolve("Ids.java").toString();
+        java.util.function.BiFunction<Integer, String, String> at = (line, token) -> ids + ":" + line + ": error: ";
+        java.util.function.BiFunction<Integer, String, String> caret = (line, token) -> "\n" + lines[line - 1] + "\n" + " ".repeat(lines[line - 1].indexOf(token)) + "^\n";
+        Path cvLog = scratch.resolve("convert.log");
+        Files.writeString(cvLog,
+            at.apply(3, "") + "incompatible types: ResourceKey<Recipe<?>> cannot be converted to ResourceLocation" + caret.apply(3, "id;")
+            + at.apply(4, "") + "incompatible types: ResourceLocation cannot be converted to ResourceKey<Recipe<?>>" + caret.apply(4, "())")
+            + at.apply(5, "") + "no suitable method found for save(RecipeOutput,ResourceLocation)" + caret.apply(5, "save")
+            + "    method RecipeBuilder.save(RecipeOutput,String) is not applicable\n      (argument mismatch; ResourceLocation cannot be converted to String)\n"
+            + "    method CookingPotRecipeBuilder.save(RecipeOutput,ResourceKey) is not applicable\n      (argument mismatch; ResourceLocation cannot be converted to ResourceKey)\n"
+            + at.apply(6, "") + "incompatible types: CropBlock cannot be converted to HolderGetter<Block>" + caret.apply(6, "()).")
+            + at.apply(7, "") + "incompatible types: ResourceKey<Recipe<?>> cannot be converted to Widget" + caret.apply(7, "id;"));
+        VersionMap.Fix.run(map, cvLog, cv, false, null);
+        String converted = Files.readString(cv.resolve("Ids.java"));
+        require(converted.contains("ResourceLocation recipeId = id.location();"), "a key gives its location: " + converted);
+        require(converted.contains("byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, entry.getKey()))"), "an id becomes its recipe key");
+        require(converted.contains("save(output, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, ResourceLocation.fromNamespaceAndPath(a, b).withPrefix(\"cooking/\")));"), "the argument of the one candidate that takes a key");
+        require(converted.contains(".of(net.minecraft.core.registries.BuiltInRegistries.BLOCK, ModBlocks.CROP.get())"), "the block registry goes before the block");
+        require(converted.contains("    Widget w = id;"), "a type with no known conversion is left alone");
         require(targeted.contains("var u = new Other(\"a\", 1, 2, \"b\");"), "which of two equal arguments goes is not guessed");
 
         // A call the game deleted: a no-argument void call that is a whole statement goes; one with arguments, or used

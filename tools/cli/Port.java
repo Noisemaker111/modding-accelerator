@@ -2867,6 +2867,52 @@ final class Port {
      * ResourceKey: tag(T).add(BLOCK_A, BLOCK_B.get()) -> add(BLOCK_A.builtInRegistryHolder().key(), ...).
      */
     /**
+     * 1.21.2 moved a food's eating effects from FoodProperties.effects() (PossibleEffect: effect(), probability()) to the
+     * stack's consumable component (ApplyStatusEffectsConsumeEffect: effects(), probability()). The old list is rebuilt
+     * from the stack the food came from: stack.get(DataComponents.FOOD).effects(), stack.getFoodProperties(e).effects(),
+     * and a FoodProperties variable declared from either. PossibleEffect becomes the class's own record with the same
+     * accessors, so loops over the list read as before. A food not traced to its stack is left to the compiler.
+     */
+    static String foodEffects(String text) {
+        String stackExpr = "([\\w$]+(?:\\.[\\w$]+(?:\\(\\))?)*)";
+        String fromStack = "\\.(?:get\\s*\\(\\s*(?:net\\.minecraft\\.core\\.component\\.)?DataComponents\\.FOOD\\s*\\)|getFoodProperties\\s*\\([^()]*\\))";
+        String out = text.replaceAll(stackExpr + fromStack + "\\s*\\.\\s*effects\\s*\\(\\s*\\)", "mmtFoodEffects($1)");
+        Matcher declared = Pattern.compile("\\bFoodProperties\\s+(\\w+)\\s*=\\s*" + stackExpr + fromStack + "\\s*;").matcher(out);
+        StringBuilder sb = new StringBuilder();
+        int done = 0;
+        while (declared.find()) {
+            // The variable's uses up to the end of the block it is declared in.
+            int depth = 0, end = declared.end();
+            while (end < out.length() && depth >= 0) {
+                char ch = out.charAt(end);
+                depth += ch == '{' ? 1 : ch == '}' ? -1 : 0;
+                end++;
+            }
+            if (declared.end() < done) continue;
+            sb.append(out, done, declared.end());
+            sb.append(out.substring(declared.end(), end).replaceAll("\\b" + declared.group(1) + "\\s*\\.\\s*effects\\s*\\(\\s*\\)", "mmtFoodEffects(" + Matcher.quoteReplacement(declared.group(2)) + ")"));
+            done = end;
+        }
+        out = sb.append(out.substring(done)).toString();
+        if (out.equals(text)) return text;
+        out = out.replaceAll("\\b(?:net\\.minecraft\\.world\\.food\\.)?FoodProperties\\s*\\.\\s*PossibleEffect\\b", "MmtPossibleEffect");
+        int close = out.lastIndexOf('}');
+        String helper =
+            "\n    /** Written by mmt port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n" +
+            "    private static java.util.List<MmtPossibleEffect> mmtFoodEffects(net.minecraft.world.item.ItemStack stack) {\n" +
+            "        java.util.List<MmtPossibleEffect> effects = new java.util.ArrayList<>();\n" +
+            "        net.minecraft.world.item.component.Consumable consumable = stack.get(net.minecraft.core.component.DataComponents.CONSUMABLE);\n" +
+            "        if (consumable == null) return effects;\n" +
+            "        for (net.minecraft.world.item.consume_effects.ConsumeEffect effect : consumable.onConsumeEffects())\n" +
+            "            if (effect instanceof net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect apply)\n" +
+            "                for (net.minecraft.world.effect.MobEffectInstance instance : apply.effects()) effects.add(new MmtPossibleEffect(instance, apply.probability()));\n" +
+            "        return effects;\n    }\n\n" +
+            "    /** What FoodProperties.PossibleEffect was before 1.21.2: an effect and its chance. */\n" +
+            "    private record MmtPossibleEffect(net.minecraft.world.effect.MobEffectInstance effect, float probability) {}\n";
+        return out.substring(0, close) + helper + out.substring(close);
+    }
+
+    /**
      * 1.21.2 split a toast's Visibility render(GuiGraphics, ToastComponent, long) into update(ToastManager, long),
      * getWantedVisibility() and void render(GuiGraphics, Font, long); ToastComponent became ToastManager, with the same
      * methods. Every toast in the file keeps its drawing code unchanged as mmtRender: update keeps the manager, render
@@ -3251,6 +3297,7 @@ final class Port {
         else if ("call-arguments".equals(apply.get("transform"))) text = callArguments(text, apply);
         else if ("entity-render-state".equals(apply.get("transform"))) text = entityRenderState(text);
         else if ("toast-visibility".equals(apply.get("transform"))) text = toastVisibility(text);
+        else if ("food-effects".equals(apply.get("transform"))) text = foodEffects(text);
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(
             text,

@@ -8180,6 +8180,27 @@
         "after": "package mod;\n\npublic class SaveToast implements Toast {\n    private final Component title;\n\n    private net.minecraft.client.gui.components.toasts.Toast.Visibility mmtRender(GuiGraphics graphics, net.minecraft.client.gui.components.toasts.ToastManager component, long time) {\n        graphics.blitSprite(BACKGROUND, 0, 0, width(), height());\n        graphics.drawString(component.getMinecraft().font, title, 30, 7, -1, false);\n        return time >= 5000.0 * component.getNotificationDisplayTimeMultiplier() ? Visibility.HIDE : Visibility.SHOW;\n    }\n\n    private net.minecraft.client.gui.components.toasts.ToastManager mmtToastManager;\n    private net.minecraft.client.gui.components.toasts.Toast.Visibility mmtVisibility = net.minecraft.client.gui.components.toasts.Toast.Visibility.SHOW;\n\n    @Override\n    public void update(net.minecraft.client.gui.components.toasts.ToastManager manager, long time) {\n        this.mmtToastManager = manager;\n    }\n\n    @Override\n    public net.minecraft.client.gui.components.toasts.Toast.Visibility getWantedVisibility() {\n        return this.mmtVisibility;\n    }\n\n    @Override\n    public void render(GuiGraphics graphics, net.minecraft.client.gui.Font font, long time) {\n        this.mmtVisibility = mmtRender(graphics, this.mmtToastManager, time);\n    }\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "food-effects-from-consumable-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": ["net.minecraft.world.food.FoodProperties.effects",
+        "net.minecraft.world.food.FoodProperties$PossibleEffect"],
+      "match": "symbol:\\s+(?:method effects\\(\\)|class PossibleEffect)\\n\\s*location: (?:variable \\w+ of type|class|interface) (?:[\\w.]*\\.)?FoodProperties\\b",
+      "apply": {
+        "transform": "food-effects"
+      },
+      "scope": "log",
+      "when": "\\bFoodProperties\\b",
+      "note": "1.21.2 moved a food's eating effects to the stack's consumable component (ApplyStatusEffectsConsumeEffect). The old list of effects with their chances is rebuilt from the stack the food came from, and PossibleEffect becomes a record of the class with the same accessors, so loops over it read as before.",
+      "verified": "Mojang's 1.21.1 and 1.21.2 mappings: FoodProperties.effects() and FoodProperties$PossibleEffect removed; 1.21.2 DataComponents.CONSUMABLE, Consumable.onConsumeEffects(), ApplyStatusEffectsConsumeEffect(List<MobEffectInstance>, float)",
+      "test": {
+        "error": "Tooltip.java:7: error: cannot find symbol\n        for (FoodProperties.PossibleEffect effect : food.effects())\n                           ^\n  symbol:   class PossibleEffect\n  location: class FoodProperties\n",
+        "before": "package mod;\n\npublic class Tooltip {\n    static boolean harmful(ItemStack stack, Player player) {\n        FoodProperties food = stack.getFoodProperties(player);\n        if (food == null) return false;\n        for (FoodProperties.PossibleEffect effect : food.effects())\n            if (effect.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL && effect.probability() > 0) return true;\n        return held.get(DataComponents.FOOD).effects().isEmpty();\n    }\n}\n",
+        "after": "package mod;\n\npublic class Tooltip {\n    static boolean harmful(ItemStack stack, Player player) {\n        FoodProperties food = stack.getFoodProperties(player);\n        if (food == null) return false;\n        for (MmtPossibleEffect effect : mmtFoodEffects(stack))\n            if (effect.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL && effect.probability() > 0) return true;\n        return mmtFoodEffects(held).isEmpty();\n    }\n\n    /** Written by mmt port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n    private static java.util.List<MmtPossibleEffect> mmtFoodEffects(net.minecraft.world.item.ItemStack stack) {\n        java.util.List<MmtPossibleEffect> effects = new java.util.ArrayList<>();\n        net.minecraft.world.item.component.Consumable consumable = stack.get(net.minecraft.core.component.DataComponents.CONSUMABLE);\n        if (consumable == null) return effects;\n        for (net.minecraft.world.item.consume_effects.ConsumeEffect effect : consumable.onConsumeEffects())\n            if (effect instanceof net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect apply)\n                for (net.minecraft.world.effect.MobEffectInstance instance : apply.effects()) effects.add(new MmtPossibleEffect(instance, apply.probability()));\n        return effects;\n    }\n\n    /** What FoodProperties.PossibleEffect was before 1.21.2: an effect and its chance. */\n    private record MmtPossibleEffect(net.minecraft.world.effect.MobEffectInstance effect, float probability) {}\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }

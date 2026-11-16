@@ -997,6 +997,37 @@ public final class VersionMap {
             if (!candidates.isEmpty()) {
                 CANDIDATES.put(m.group(1) + ":" + m.group(2), candidates);
             }
+            // The one candidate whose only mismatch is a value the porter converts: its argument's place and types.
+            Matcher noSuitable = Pattern.compile("^no suitable method found for (\\w+)\\((.*)\\)$").matcher(m.group(3));
+            if (noSuitable.find()) {
+                List<String> foundTypes = Fix.topLevelArguments(noSuitable.group(2).replace('<', '(').replace('>', ')'));
+                List<String[]> fits = new ArrayList<>();
+                for (int j = i + 1; j + 1 < lines.size() && !head.matcher(lines.get(j)).find(); j++) {
+                    Matcher c = CANDIDATE.matcher(lines.get(j));
+                    Matcher why = Pattern.compile("\\(argument mismatch; (.+) cannot be converted to (.+)\\)").matcher(lines.get(j + 1));
+                    if (!c.find() || !why.find()) {
+                        continue;
+                    }
+                    List<String> params = Fix.topLevelArguments(c.group(1).replace('<', '(').replace('>', ')'));
+                    String to = why.group(2).strip();
+                    // A recipe builder's save takes its recipe's key; javac prints it raw in a candidate list.
+                    if (to.equals("ResourceKey") && noSuitable.group(1).equals("save")) {
+                        to = "ResourceKey<Recipe<?>>";
+                    }
+                    int index = -1;
+                    for (int k = 0; k < Math.min(foundTypes.size(), params.size()) && params.size() == foundTypes.size(); k++) {
+                        if (!foundTypes.get(k).strip().equals(params.get(k).strip())) {
+                            index = index == -1 && foundTypes.get(k).strip().equals(why.group(1).strip()) ? k : -2;
+                        }
+                    }
+                    if (index >= 0 && Fix.convert("x", why.group(1).strip(), to, true) != null) {
+                        fits.add(new String[] { why.group(1).strip(), to, noSuitable.group(1), String.valueOf(index) });
+                    }
+                }
+                if (fits.size() == 1) {
+                    CONVERSION_MISMATCH.put(m.group(1) + ":" + m.group(2), fits.get(0));
+                }
+            }
             Err e = new Err(m.group(1), Integer.parseInt(m.group(2)), m.group(3), source, caret, symbol, location);
             seen.putIfAbsent(e.file() + ":" + e.line() + ":" + e.caret() + ":" + e.message() + ":" + symbol, e);
         }
@@ -1008,6 +1039,9 @@ public final class VersionMap {
 
     /** The parameter lists of the candidates javac names for a call it reports at file:line ("method X.of(A,B) is not applicable"). */
     static final Map<String, List<String>> CANDIDATES = new HashMap<>();
+
+    /** For a "no suitable method" call at file:line: from, to, the method's name and the argument's index to convert. */
+    static final Map<String, String[]> CONVERSION_MISMATCH = new HashMap<>();
 
     static final Pattern CANDIDATE = Pattern.compile("^\\s+(?:method|constructor) [\\w.$<>]+\\((.*)\\) is not applicable\\s*$");
 
@@ -1945,6 +1979,94 @@ public final class VersionMap {
             }
         }
 
+        /** Registries by element type, as javac prints it, for ResourceKey.create(Registries.X, id). */
+        static final Map<String, String> REGISTRY_OF = Map.ofEntries(
+            Map.entry("Recipe<?>", "RECIPE"),
+            Map.entry("Item", "ITEM"),
+            Map.entry("Block", "BLOCK"),
+            Map.entry("LootTable", "LOOT_TABLE"),
+            Map.entry("Level", "DIMENSION"),
+            Map.entry("Biome", "BIOME"),
+            Map.entry("EntityType<?>", "ENTITY_TYPE"),
+            Map.entry("Enchantment", "ENCHANTMENT"),
+            Map.entry("DamageType", "DAMAGE_TYPE"),
+            Map.entry("Structure", "STRUCTURE"),
+            Map.entry("PlacedFeature", "PLACED_FEATURE"),
+            Map.entry("ConfiguredFeature<?,?>", "CONFIGURED_FEATURE"),
+            Map.entry("MobEffect", "MOB_EFFECT"),
+            Map.entry("SoundEvent", "SOUND_EVENT"),
+            Map.entry("Fluid", "FLUID")
+        );
+
+        /**
+         * The value written for a type the game changed, when there is one way to get it: a ResourceLocation becomes the
+         * key of that registry, a key gives its location, and a value where a built-in registry's getter now comes first
+         * gets the registry before it (an argument only). Null when none applies.
+         */
+        static String convert(String value, String from, String to, boolean argument) {
+            String plain = value.matches("[\\w$.]+(?:\\([^()]*\\))*(?:\\.[\\w$]+(?:\\([^()]*\\))*)*") ? value : "(" + value + ")";
+            Matcher key = Pattern.compile("^ResourceKey<(.+)>$").matcher(to);
+            if (from.equals("ResourceLocation") && key.find() && REGISTRY_OF.containsKey(key.group(1))) {
+                return "net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries." + REGISTRY_OF.get(key.group(1)) + ", " + value + ")";
+            }
+            if (from.matches("ResourceKey(?:<.*>)?") && to.equals("ResourceLocation")) {
+                return plain + ".location()";
+            }
+            Matcher getter = Pattern.compile("^HolderGetter<(.+)>$").matcher(to);
+            if (argument && getter.find() && BUILT_IN_REGISTRY.containsKey(getter.group(1)) && !from.startsWith("HolderGetter")) {
+                return "net.minecraft.core.registries.BuiltInRegistries." + BUILT_IN_REGISTRY.get(getter.group(1)) + ", " + value;
+            }
+            return null;
+        }
+
+        /**
+         * The expression around offset at: an initializer, argument or returned value, bounded by the '(' ',' '=' or
+         * "return" before it and the ',' ')' or ';' after it at the same depth. Null when there is no such bound.
+         */
+        static int[] valueAt(String text, int at) {
+            int depth = 0, start = -1;
+            for (int i = at - 1; i >= 0 && start < 0; i--) {
+                char ch = text.charAt(i);
+                if (ch == ')' || ch == ']' || ch == '}') {
+                    depth++;
+                } else if (ch == '(' || ch == '[' || ch == '{') {
+                    if (depth == 0) {
+                        start = ch == '(' ? i + 1 : -2;
+                    }
+                    depth--;
+                } else if (depth == 0 && ch == ',') {
+                    start = i + 1;
+                } else if (depth == 0 && ch == '=' && "=!<>+-*/%&|^".indexOf(text.charAt(i - 1)) < 0 && text.charAt(i + 1) != '=') {
+                    start = i + 1;
+                } else if (depth == 0 && ch == ';') {
+                    start = -2;
+                } else if (depth == 0 && text.startsWith("return", i) && (i == 0 || !Character.isJavaIdentifierPart(text.charAt(i - 1)))
+                    && !Character.isJavaIdentifierPart(text.charAt(i + 6))) {
+                    start = i + 6;
+                }
+            }
+            if (start < 0) {
+                return null;
+            }
+            depth = 0;
+            for (int i = start; i < text.length(); i++) {
+                char ch = text.charAt(i);
+                if (ch == '"') {
+                    i = stringEnd(text, i);
+                } else if (ch == '(' || ch == '[' || ch == '{') {
+                    depth++;
+                } else if (ch == ')' || ch == ']' || ch == '}') {
+                    if (depth == 0) {
+                        return i > at ? new int[] { start, i } : null;
+                    }
+                    depth--;
+                } else if (depth == 0 && (ch == ',' || ch == ';')) {
+                    return i > at ? new int[] { start, i } : null;
+                }
+            }
+            return null;
+        }
+
         static int closingParen(String text, int open) {
             int depth = 0;
             for (int i = open; i < text.length(); i++) {
@@ -2637,6 +2759,76 @@ public final class VersionMap {
                 texts.put(f, text);
                 replacements++;
                 byKind.merge("registry the game now asks for", 1, Integer::sum);
+            }
+
+            // 2c***. A value whose type the game changed to one it converts to in one known way, where javac's caret is:
+            // the initializer, argument or returned value (1.21.2 recipe ids: ResourceLocation -> ResourceKey<Recipe<?>>).
+            // "no suitable method" counts when one candidate's mismatch is such a conversion.
+            Pattern incompatible = Pattern.compile("^incompatible types: (.+) cannot be converted to (.+)$");
+            List<Err> typedErrs = new ArrayList<>(readErrors(log));
+            typedErrs.sort(Comparator.comparing(Err::file).thenComparing(Comparator.comparingInt(Err::line).reversed())
+                .thenComparing(Comparator.comparingInt(Err::caret).reversed()));
+            Set<String> convertedAt = new HashSet<>();
+            for (Err e : typedErrs) {
+                Matcher it = incompatible.matcher(e.message());
+                String from, to;
+                String[] one = CONVERSION_MISMATCH.get(e.file() + ":" + e.line());
+                if (it.find()) {
+                    from = it.group(1).strip();
+                    to = it.group(2).strip();
+                    one = null;
+                } else if (one != null) {
+                    from = one[0];
+                    to = one[1];
+                } else {
+                    continue;
+                }
+                Path f = sourcePath(e, repo);
+                if (f == null || !Files.isRegularFile(f) || e.caret() < 0 || !convertedAt.add(e.file() + ":" + e.line() + ":" + e.caret())) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                int lineStart = 0;
+                for (int i = 1; i < e.line() && lineStart > -1; i++) {
+                    int next = text.indexOf('\n', lineStart);
+                    lineStart = next < 0 ? -1 : next + 1;
+                }
+                int lineEnd = lineStart < 0 ? -1 : text.indexOf('\n', lineStart);
+                if (lineStart < 0 || lineStart + e.caret() >= (lineEnd < 0 ? text.length() : lineEnd)) {
+                    continue;
+                }
+                int[] span = null;
+                if (one == null) {
+                    span = valueAt(text, lineStart + e.caret());
+                } else {
+                    // javac points at the call: the argument is found by its place.
+                    Matcher call = Pattern.compile("(?<![\\w$])" + Pattern.quote(one[2]) + "\\s*\\(").matcher(text);
+                    call.region(lineStart + e.caret(), lineEnd < 0 ? text.length() : lineEnd);
+                    int open = call.find() ? call.end() - 1 : -1;
+                    int close = open < 0 ? -1 : closingParen(text, open);
+                    if (close > 0) {
+                        List<String> args = topLevelArguments(text.substring(open + 1, close));
+                        int index = Integer.parseInt(one[3]);
+                        int from0 = open + 1;
+                        for (int ai = 0; ai < index && ai < args.size(); ai++) {
+                            from0 += args.get(ai).length() + 1;
+                        }
+                        span = index < args.size() ? new int[] { from0, from0 + args.get(index).length() } : null;
+                    }
+                }
+                if (span == null || span[0] == span[1]) {
+                    continue;
+                }
+                String value = text.substring(span[0], span[1]).strip();
+                int start = span[0] + text.substring(span[0], span[1]).indexOf(value);
+                String converted = convert(value, from, to, text.charAt(span[0] - 1) == '(' || text.charAt(span[0] - 1) == ',');
+                if (converted == null) {
+                    continue;
+                }
+                text = text.substring(0, start) + converted + text.substring(start + value.length());
+                texts.put(f, text);
+                replacements++;
+                byKind.merge("value the game now types differently", 1, Integer::sum);
             }
 
             // 2c''. A class that lost its type parameters (1.21.2: PlayerModel<T> -> PlayerModel): javac names the type, and
