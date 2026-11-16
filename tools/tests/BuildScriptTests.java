@@ -42,6 +42,18 @@ public final class BuildScriptTests {
             "a Loom build rewritten for the unobfuscated game: " + unobfuscated
         );
         check(Target.unobfuscatedLoom("plugins { id 'java' }\nmappings x\n", 25).equals("plugins { id 'java' }\nmappings x\n"), "a build without Loom is left alone");
+        // Architectury Loom on the unobfuscated game: its no-remap plugin, no layered Yarn mappings, plain configurations.
+        String architectury = Target.unobfuscatedLoom(
+            "plugins {\n    id \"dev.architectury.loom\" version \"1.10-SNAPSHOT\" apply false\n}\nsubprojects {\n    apply plugin: \"dev.architectury.loom\"\n" +
+            "    dependencies {\n        minecraft \"com.mojang:minecraft:1\"\n        mappings loom.layered {\n            it.mappings(\"net.fabricmc:yarn:1:v2\")\n        }\n" +
+            "        modImplementation \"x:y:1\"\n    }\n}\n", 25);
+        check(
+            architectury.equals(
+                "plugins {\n    id \"dev.architectury.loom-no-remap\" version \"1.10-SNAPSHOT\" apply false\n}\nsubprojects {\n    apply plugin: \"dev.architectury.loom-no-remap\"\n" +
+                "    dependencies {\n        minecraft \"com.mojang:minecraft:1\"\n        implementation \"x:y:1\"\n    }\n}\n"
+            ),
+            "an Architectury Loom build rewritten for the unobfuscated game: " + architectury
+        );
         // A script applied by a Loom script (Waystones' fabric/dependencies.gradle) names no plugin but drops remapping too.
         check(
             Target.plainConfigurations("dependencies {\n    modImplementation(\"net.blay09.mods:balm-fabric:1\") { changing = true }\n    modCompileOnly x\n    myModImplementationHelper()\n}\n")
@@ -55,6 +67,9 @@ public final class BuildScriptTests {
                 .equals("filter {\n    includeGroupAndSubgroups('net.fabricmc')\n    includeGroup('fabric-loom')\n    includeGroup(\"net.fabricmc.unpick\")\n}\n"),
             "includeGroup('net.fabricmc') widened to its subgroups, other groups untouched"
         );
+        check(Target.removedDsl("def main = jar.archivePath\ndef n = jar.archiveName\ninto jar.destinationDir\njar.archivePathname = 1\n", true, false)
+            .equals("def main = jar.archiveFile.get().asFile\ndef n = jar.archiveFileName.get()\ninto jar.destinationDirectory.get().asFile\njar.archivePathname = 1\n"), "Gradle 8's removed archive properties -> their Provider forms");
+        check(Target.removedDsl("def main = jar.archivePath\n", false, false).equals("def main = jar.archivePath\n"), "archivePath stays on Gradle 7");
         check(Target.remapTasks("def main = name == 'Fabric' ? remapJar.archivePath : jar.archivePath\ntasks.remapSourcesJar { }\nmyRemapJarTask()\n")
             .equals("def main = name == 'Fabric' ? jar.archivePath : jar.archivePath\ntasks.sourcesJar { }\nmyRemapJarTask()\n"), "a convention script's remap tasks become the plain ones");
         check(Target.withoutAdditionalRuntimeClasspath("additionalRuntimeClasspath(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n").equals("runtimeOnly(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n"), "NeoForge's removed additional classpath -> runtimeOnly");

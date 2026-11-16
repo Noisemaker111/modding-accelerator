@@ -191,6 +191,18 @@ final class Target {
      */
     static void siblingDependencies(Setup setup, Build build, List<Object> modProjects, Map<String, Object> selected, String to,
         List<Dependencies.Selection> selections) throws Exception {
+        // A port selected to one project read only that project; the others are read once from a model of every project.
+        if (modProjects.size() <= 1 && !build.selected.isBlank()) {
+            try {
+                modProjects = Json.array(build.allProjects().model(false, true).get("projects"))
+                    .stream()
+                    .filter(p -> !Support.loaders(Json.object(p)).isEmpty())
+                    .toList();
+            } catch (Exception unreadable) {
+                setup.unchecked.add(Json.map("artifact", "the other loaders' projects", "version", to, "reason", "the build could not be read with every project: " + unreadable.getMessage()));
+                return;
+            }
+        }
         for (Object item : modProjects) {
             var sibling = Json.object(item);
             if (sibling == selected || Objects.equals(sibling.get("path"), selected.get("path"))) continue;
@@ -298,7 +310,7 @@ final class Target {
             setup.applied.add(Json.map("file", script.toString(), "change", "remapping configurations -> plain ones for " + to + " (applied by a Loom script)"));
         }
         fabricMavenFilter(setup, build);
-        String newestLoom = null;
+        String newestLoom = null, newestArchitectury = null;
         for (Path file : files) {
             if (!Files.isRegularFile(file)) continue;
             String before = setup.text(file), text = unobfuscatedLoom(before, javaFor(to));
@@ -315,6 +327,17 @@ final class Target {
                 old.appendReplacement(raised, Matcher.quoteReplacement(old.group(1) + newestLoom + old.group(3)));
             }
             text = old.appendTail(raised).toString();
+            Matcher arch = Pattern.compile(
+                "(id\\s*\\(?\\s*[\"']dev\\.architectury\\.loom-no-remap[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"'])([^\"'$]+)([\"'])"
+            ).matcher(text);
+            StringBuilder archRaised = new StringBuilder();
+            while (arch.find()) {
+                String declared = arch.group(2).replace("-SNAPSHOT", "");
+                if (Versions.compare(declared, FIRST_UNOBFUSCATED_LOOM) >= 0) continue;
+                if (newestArchitectury == null) newestArchitectury = newestArchitecturyLoom(build);
+                arch.appendReplacement(archRaised, Matcher.quoteReplacement(arch.group(1) + newestArchitectury + arch.group(3)));
+            }
+            text = arch.appendTail(archRaised).toString();
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(file, before);
             setup.texts.put(file, text);
@@ -329,6 +352,13 @@ final class Target {
                 )
             );
         }
+        if (newestArchitectury != null) gradleFollows(
+            setup,
+            build,
+            "https://maven.architectury.dev/dev/architectury/architectury-loom/" + newestArchitectury + "/architectury-loom-" + newestArchitectury + ".module",
+            "Architectury Loom " + newestArchitectury,
+            "architectury-loom " + newestArchitectury
+        );
         if (newestLoom != null) {
             loomInRoot(setup, build, newestLoom);
             gradleFollows(
@@ -445,7 +475,9 @@ final class Target {
     static final String FIRST_UNOBFUSCATED_LOOM = "1.14";
 
     static boolean appliesLoom(String text) {
-        return Pattern.compile("[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)[\"']").matcher(text).find();
+        return Pattern.compile(
+            "[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?|dev\\.architectury\\.loom(?:-remap|-no-remap)?)[\"']"
+        ).matcher(text).find();
     }
 
     /** The newest Loom minor line Fabric publishes (1.19 when this was written). */
@@ -481,6 +513,8 @@ final class Target {
     static String unobfuscatedLoom(String text, int java) {
         if (!appliesLoom(text)) return text;
         text = text.replaceAll("([\"'])(?:fabric-loom|net\\.fabricmc\\.fabric-loom-remap)([\"'])", "$1net.fabricmc.fabric-loom$2");
+        // Architectury's fork splits the same way: dev.architectury.loom-no-remap is its plugin for the unobfuscated game.
+        text = text.replaceAll("([\"'])dev\\.architectury\\.loom(?:-remap)?([\"'])", "$1dev.architectury.loom-no-remap$2");
         text = removeStatements(text, Pattern.compile("(?m)^[ \\t]*mappings\\b"));
         Map<String, String> configurations = new LinkedHashMap<>();
         configurations.put("modImplementation", "implementation");
@@ -921,7 +955,13 @@ final class Target {
             text = text.replaceAll("(?m)^([ \\t]*)archivesBaseName([ \\t]*=)", "$1base.archivesName$2");
             text = text.replaceAll("(?<![\\w.$])(?:project\\.)?archivesBaseName(?![\\w(])", "project.base.archivesName.get()");
         }
-        if (gradle8) text = text.replaceAll("(?m)^([ \\t]*)classifier(\\s*=\\s*|\\s+)([\"'])", "$1archiveClassifier = $3");
+        if (gradle8) {
+            text = text.replaceAll("(?m)^([ \\t]*)classifier(\\s*=\\s*|\\s+)([\"'])", "$1archiveClassifier = $3");
+            // Gradle 8 removed the archive task's file properties for their Provider forms (FerriteCore: jar.archivePath).
+            text = text.replaceAll("\\.archivePath(?![\\w$])", ".archiveFile.get().asFile");
+            text = text.replaceAll("\\.archiveName(?![\\w$(])", ".archiveFileName.get()");
+            text = text.replaceAll("\\.destinationDir(?![\\w$])", ".destinationDirectory.get().asFile");
+        }
         return text.replaceAll("(?m)^[ \\t]*shareCaches\\(\\)[ \\t]*\\r?\\n", "");
     }
 
@@ -993,6 +1033,17 @@ final class Target {
      * the build would not load. The plugin's version moves to that line's newest release on maven.architectury.dev, and
      * Gradle to what its own bootstrap class asks. Returns the new version, or null when the build applies no such plugin.
      */
+    /** Architectury Loom's newest release on maven.architectury.dev. */
+    static String newestArchitecturyLoom(Build build) throws Exception {
+        Matcher version = Pattern.compile("<version>([0-9]+\\.[0-9]+\\.[0-9]+)</version>").matcher(
+            fetch(build, "https://maven.architectury.dev/dev/architectury/architectury-loom/maven-metadata.xml")
+        );
+        String newest = null;
+        while (version.find()) if (newest == null || Versions.compare(version.group(1), newest) > 0) newest = version.group(1);
+        if (newest == null) throw new IOException("No published Architectury Loom release");
+        return newest;
+    }
+
     static String architecturyLoomFollows(Setup setup, Build build, String line) throws Exception {
         Pattern plugin = Pattern.compile(
             "(id\\s*\\(?\\s*[\"']dev\\.architectury\\.loom[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"'])([^\"']+)([\"'])"

@@ -322,9 +322,23 @@ final class Build {
         return model(refresh, false);
     }
 
+    /** Kept beside the selected project's model files, so an every-project read does not replace them. */
+    String cacheSuffix = "";
+
+    /**
+     * The same build with no project selected: its planning model lists every project, which a multi-loader port uses to
+     * move the other loaders' libraries too. Cached in files of its own.
+     */
+    Build allProjects() throws Exception {
+        Build all = new Build(project, harness, "", report);
+        all.cacheSuffix = "-all";
+        all.jdk = jdk;
+        return all;
+    }
+
     Map<String, Object> model(boolean refresh, boolean planning) throws Exception {
-        Path model = project.state().resolve(planning ? "plan-model.json" : "model.json");
-        Path stamp = project.state().resolve(planning ? "plan-model-stamp.json" : "model-stamp.json");
+        Path model = project.state().resolve((planning ? "plan-model" : "model") + cacheSuffix + ".json");
+        Path stamp = project.state().resolve((planning ? "plan-model-stamp" : "model-stamp") + cacheSuffix + ".json");
         String key =
             project.configurationHash(init) + "|" + selected + "|" + jdk.home() + "|" + (planning ? "plan" : "full");
         if (!refresh && Files.isRegularFile(model) && Files.isRegularFile(stamp)) {
