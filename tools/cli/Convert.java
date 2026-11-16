@@ -287,7 +287,10 @@ final class Convert {
         if (!Set.of("fabric", "neoforge").contains(to)) throw new IllegalArgumentException(
             "convert needs --to fabric or --to neoforge. Forge, Quilt and Paper are not converted yet; see mmt help convert."
         );
-        if (to.equals(from)) throw new IllegalArgumentException("This project is already a " + from + " mod.");
+        // --names mojang on a yarn-named Fabric mod: only its names move (yarn is not published past 1.21.11).
+        boolean namesOnly = to.equals(from) && options.get("names", "").equalsIgnoreCase("mojang");
+        if (to.equals(from) && !namesOnly) throw new IllegalArgumentException("This project is already a " + from + " mod.");
+        if (namesOnly && !from.equals("fabric")) throw new IllegalArgumentException("--names mojang renames a yarn-named Fabric mod; NeoForge mods are in Mojang's names already.");
         if (
             Files.isRegularFile(project.root.resolve("build.gradle.kts")) ||
             !Files.isRegularFile(project.root.resolve("build.gradle"))
@@ -320,7 +323,10 @@ final class Convert {
             Files.createDirectories(transaction.resolve("before"));
             saveInProgress();
         }
-        if (from.equals("fabric")) toNeoForge(minecraft);
+        if (namesOnly) {
+            if (!yarnNames()) throw new IllegalArgumentException("This Fabric mod's build does not map the game with net.fabricmc:yarn; it is in Mojang's names already.");
+            yarnToMojang(minecraft);
+        } else if (from.equals("fabric")) toNeoForge(minecraft);
         else toFabric(minecraft);
         if (!neutralDependencies.isEmpty()) notes.add(
             "Dependencies kept as they are, since they name no loader (libraries, or a mod's loader-neutral API): " +
@@ -677,6 +683,166 @@ final class Convert {
         return out.toString();
     }
 
+    // ---- yarn's names to Mojang's ---------------------------------------------------------------------
+
+    /** Whether the mod is written in Fabric's yarn names: its build maps the game with net.fabricmc:yarn (a yarn_mappings property alone may be left over). */
+    boolean yarnNames() throws IOException {
+        for (String file : List.of("build.gradle", "build.gradle.kts")) if (read(file).contains("net.fabricmc:yarn:")) return true;
+        return false;
+    }
+
+    /** Set once yarnToMojang has renamed the mod: its access widener is in Mojang's names from then on. */
+    boolean renamedFromYarn;
+
+    /**
+     * A mod in yarn's names moves to Mojang's names first, on its own game version, since NeoForge (and the other
+     * loader's bridge) is written in Mojang's names. The Java sources go through Loom's own migrateMappings to
+     * net.minecraft:mappings (Mojang's official names), which renames every Java reference with the compiler's
+     * types; what Mixin reads by name (targets, method = "...", @At targets, @Accessor, @Shadow), which migrateMappings
+     * leaves, and the access widener, which these Loom versions do not migrate, through the yarn -> Mojang table port
+     * uses (VersionMap --from-names yarn --to-names mojmap, MixinNames); and the build maps the game with
+     * loom.officialMojangMappings().
+     */
+    void yarnToMojang(String minecraft) throws Exception {
+        // Every source set (main, client, test, testmod, gametest ...): each is compiled against the same game.
+        List<String> roots = new ArrayList<>();
+        if (Files.isDirectory(project.root.resolve("src"))) try (var sets = Files.list(project.root.resolve("src"))) {
+            for (Path set : sets.sorted().toList()) if (Files.isDirectory(set.resolve("java"))) roots.add("src/" + set.getFileName() + "/java");
+        }
+        // migrateMappings resolves types from the sources it is given: a testmod's classes extend main's, so every set is
+        // renamed in one run over their files together (each set alone when two sets hold a file at the same path).
+        Map<String, String> origin = new HashMap<>();
+        boolean together = true;
+        for (String root : roots) try (var walk = Files.walk(project.root.resolve(root))) {
+            for (Path file : walk.filter(p -> p.toString().endsWith(".java")).toList()) {
+                String rel = project.root.resolve(root).relativize(file).toString().replace('\\', '/');
+                if (origin.putIfAbsent(rel, root) != null) together = false;
+            }
+        }
+        List<List<String>> runs = together ? List.of(roots) : roots.stream().map(List::of).toList();
+        for (List<String> group : runs) {
+            if (group.isEmpty()) continue;
+            Path input = project.state().resolve("yarn-to-mojang/in");
+            Path output = project.state().resolve("yarn-to-mojang/out");
+            OwnCompile.deleteTree(input);
+            OwnCompile.deleteTree(output);
+            Map<String, String> from = new HashMap<>();
+            for (String root : group) try (var walk = Files.walk(project.root.resolve(root))) {
+                for (Path file : walk.filter(p -> p.toString().endsWith(".java")).toList()) {
+                    String rel = project.root.resolve(root).relativize(file).toString().replace('\\', '/');
+                    Files.createDirectories(input.resolve(rel).getParent());
+                    Files.copy(file, input.resolve(rel));
+                    from.put(rel, root);
+                }
+            }
+            var run = build.gradle(
+                List.of("migrateMappings", "--mappings", "net.minecraft:mappings:" + minecraft, "--input", input.toString(), "--output", output.toString()),
+                "convert-yarn-to-mojang"
+            );
+            if (run.exit() != 0) throw new IOException(
+                "Loom's migrateMappings could not move " + group + " from yarn's names to Mojang's: " + Run.tail(run.log())
+            );
+            Map<String, Integer> renamed = new TreeMap<>();
+            try (var walk = Files.walk(output)) {
+                for (Path file : walk.filter(p -> p.toString().endsWith(".java")).toList()) {
+                    String rel = output.relativize(file).toString().replace('\\', '/');
+                    if (!from.containsKey(rel)) continue;
+                    String target = from.get(rel) + "/" + rel;
+                    String text = Files.readString(file, StandardCharsets.UTF_8);
+                    if (!text.equals(read(target))) {
+                        write(target, text);
+                        renamed.merge(from.get(rel), 1, Integer::sum);
+                    }
+                }
+            }
+            for (var e : renamed.entrySet()) applied.computeIfAbsent("yarn-to-mojang", k -> new ArrayList<>()).add(e.getKey() + " (" + e.getValue() + " files)");
+        }
+        Path tableFile = project.state().resolve("yarn-to-mojang/names-" + minecraft + ".json");
+        var names = new JavaTools(build).run(
+            "VersionMap",
+            List.of(minecraft, minecraft, "--from-names", "yarn", "--to-names", "mojmap", "--names", "yarn", "--hierarchy", "--out", tableFile.toString()),
+            "convert-yarn-names"
+        );
+        if (names.exit() != 0) throw new IOException("No yarn -> Mojang table for " + minecraft + ": " + Run.tail(names.log()));
+        Map<String, Object> table = Json.read(tableFile);
+        // What Mixin reads by name when the game runs, which migrateMappings leaves in yarn's names.
+        MixinNames mixins = new MixinNames(table);
+        int mixinFiles = 0;
+        for (String file : javaFiles()) {
+            String text = read(file), out = mixins.remap(text);
+            if (!out.equals(text)) {
+                write(file, out);
+                mixinFiles++;
+            }
+        }
+        for (String l : mixins.left) leave("mixins", 0, l, "a mixin names a member whose overloads Mojang names differently, with no descriptor to choose");
+        if (mixinFiles > 0) applied.computeIfAbsent("yarn-to-mojang", k -> new ArrayList<>()).add("mixin names (" + mixinFiles + " files)");
+        for (String widener : accessWideners()) {
+            String text = read(widener), out = widenerToMojang(text, table);
+            if (!out.equals(text)) {
+                write(widener, out);
+                applied.computeIfAbsent("yarn-to-mojang", k -> new ArrayList<>()).add(widener);
+            }
+        }
+        String gradle = read("build.gradle");
+        String mojang = gradle.replaceAll("(?m)^([ \\t]*)mappings\\s*\\(?\\s*[\"']net\\.fabricmc:yarn:[^\"']*[\"']\\s*\\)?[ \\t]*$", "$1mappings loom.officialMojangMappings()");
+        if (!mojang.equals(gradle)) write("build.gradle", mojang);
+        renamedFromYarn = true;
+        notes.add(
+            "Names: the mod was in yarn's names; Loom's migrateMappings moved its sources to Mojang's names (" + minecraft +
+            ") and the yarn -> Mojang table its access widener, before the loader moved."
+        );
+    }
+
+    /** The access wideners fabric.mod.json names, under src/main/resources. */
+    List<String> accessWideners() throws IOException {
+        List<String> out = new ArrayList<>();
+        String meta = read("src/main/resources/fabric.mod.json");
+        if (meta.isEmpty()) return out;
+        if (Json.object(Json.parse(meta)).get("accessWidener") instanceof String widener && exists("src/main/resources/" + widener)) out.add("src/main/resources/" + widener);
+        return out;
+    }
+
+    /**
+     * An access widener in yarn's names written in Mojang's (classes, members and descriptors), from the yarn -> Mojang
+     * table (classes, methods and fields by owner, name and descriptor). A name the table leaves out is the same in both.
+     */
+    static String widenerToMojang(String text, Map<String, Object> table) {
+        Map<String, String> classes = new HashMap<>(), members = new HashMap<>();
+        for (Object o : Json.array(table.get("classes"))) {
+            var c = Json.object(o);
+            classes.put(Json.text(c, "from", "").replace('.', '/'), Json.text(c, "to", "").replace('.', '/'));
+        }
+        for (String kind : List.of("methods", "fields")) for (Object o : Json.array(table.get(kind))) {
+            var m = Json.object(o);
+            members.put(Json.text(m, "owner", "").replace('.', '/') + " " + Json.text(m, "from", "") + " " + Json.text(m, "desc", ""), Json.text(m, "to", ""));
+        }
+        java.util.function.UnaryOperator<String> type = name -> classes.getOrDefault(name, name);
+        java.util.function.UnaryOperator<String> desc = d -> Pattern.compile("L([^;]+);").matcher(d).replaceAll(r -> Matcher.quoteReplacement("L" + type.apply(r.group(1)) + ";"));
+        StringBuilder out = new StringBuilder();
+        for (String line : text.split("\n", -1)) {
+            String body = line.replaceAll("#.*$", "").strip();
+            String[] t = body.split("\\s+");
+            if (body.isEmpty() || t[0].equals("accessWidener") || t.length < 3) {
+                out.append(line).append('\n');
+                continue;
+            }
+            if (t[1].equals("class")) {
+                out.append(t[0]).append(" class ").append(type.apply(t[2])).append('\n');
+                continue;
+            }
+            if (t.length < 5) {
+                out.append(line).append('\n');
+                continue;
+            }
+            // The table names only what yarn and Mojang name differently: a member it leaves out keeps its name.
+            String name = members.getOrDefault(t[2] + " " + t[3] + " " + t[4], t[3]);
+            out.append(t[0]).append(' ').append(t[1]).append(' ').append(type.apply(t[2])).append(' ').append(name).append(' ').append(desc.apply(t[4])).append('\n');
+        }
+        // split keeps a last empty piece, so one line end too many was written.
+        return out.substring(0, out.length() - 1);
+    }
+
     // ---- Fabric to NeoForge ----------------------------------------------------------------------------
 
     void toNeoForge(String minecraft) throws Exception {
@@ -689,6 +855,8 @@ final class Convert {
             "NeoForge mod ids allow only a-z, 0-9 and _, so " + fabricId + " is " + modid + " on NeoForge; " +
             "its resources and registry ids keep the " + fabricId + " namespace, and neoforge.mods.toml keeps the Fabric id for the way back."
         );
+        // NeoForge is in Mojang's names: a yarn-named mod is renamed first, while its build is still Loom's.
+        if (yarnNames()) yarnToMojang(minecraft);
         Set<String> unbridged = unbridge();
         if (Versions.compare(minecraft, ONLY_IN_ERROR) >= 0) dropSideOnly();
         rewriteSources("fabric", "neoforge");
@@ -777,7 +945,7 @@ final class Convert {
             if (text.isEmpty()) leave(metaFile, 0, "accessWidener " + widener, "the file is not in src/main/resources");
             else {
                 // An access widener in yarn's names cannot become a transformer in Mojang's names.
-                boolean yarn = properties(read("gradle.properties")).keySet().stream().anyMatch(k -> k.startsWith("yarn_"));
+                boolean yarn = !renamedFromYarn && properties(read("gradle.properties")).keySet().stream().anyMatch(k -> k.startsWith("yarn_"));
                 List<String> unconverted = new ArrayList<>();
                 List<String> lines = widenerToTransformer(text, !yarn, unconverted);
                 // Members NeoForge's own access transformer opens need no line of the mod's (the way back from Fabric).

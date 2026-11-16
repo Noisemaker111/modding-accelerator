@@ -40,6 +40,7 @@ public final class VersionMap {
         List<String> learn = new ArrayList<>();
         boolean dryRun = false;
         boolean preflight = false;
+        boolean hierarchy = false;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--names" -> names = args[++i];
@@ -53,6 +54,7 @@ public final class VersionMap {
                 case "--repo" -> repo = args[++i];
                 case "--dry-run" -> dryRun = true;
                 case "--preflight" -> preflight = true;
+                case "--hierarchy" -> hierarchy = true;
                 case "--rules" -> rules = args[++i];
                 case "--learn" -> learn.add(args[++i]);
                 case "--chain" -> chain = args[++i];
@@ -145,7 +147,25 @@ public final class VersionMap {
             ? Path.of(out)
             : cache.resolve("map-" + names + "-" + pos.get(0) + "-to-" + pos.get(1) + ".json");
         Files.createDirectories(target.toAbsolutePath().getParent());
-        Files.writeString(target, d.json(pos.get(0), pos.get(1), names), StandardCharsets.UTF_8);
+        String json = d.json(pos.get(0), pos.get(1), names);
+        // --hierarchy: each game class's supertypes in the target's names (Mojang's), read from the game jar itself
+        // (GameDiff), so a member a class inherits or overrides is found on the supertype the mappings declare it on.
+        if (hierarchy && bNames.equals("mojmap")) {
+            GameDiff.Snap game = GameDiff.load(pos.get(1), null, null);
+            StringBuilder supers = new StringBuilder(",\n  \"supers\": {");
+            boolean first = true;
+            for (GameDiff.Cls c : game.classes.values()) {
+                List<String> up = GameDiff.supertypes(c);
+                if (up.isEmpty()) continue;
+                supers.append(first ? "\n    " : ",\n    ").append(Diff.q(c.name)).append(": [");
+                for (int i = 0; i < up.size(); i++) supers.append(i == 0 ? "" : ", ").append(Diff.q(up.get(i)));
+                supers.append("]");
+                first = false;
+            }
+            supers.append("\n  }");
+            json = json.substring(0, json.lastIndexOf("\n}")) + supers + "\n}\n";
+        }
+        Files.writeString(target, json, StandardCharsets.UTF_8);
         System.out.printf(
             "map %s -> %s (%s): classes %d renamed or moved, %d removed; methods %d renamed, %d moved, " +
             "%d signature changes, %d removed; fields %d renamed, %d removed (%.1fs)%n",

@@ -402,7 +402,10 @@ def run_one(mod, args, concepts):
 
 
 def run_mod(mod, args, concepts, started):
-    to = OTHER[mod["loader"]]
+    # --names mojang: a yarn-named Fabric mod stays on Fabric and only its names move; the game check then proves
+    # the renamed mixins apply to the same game classes and the mod registers what it did.
+    names = getattr(args, "names", "")
+    to = mod["loader"] if names else OTHER[mod["loader"]]
     record = {"id": mod["id"], "name": mod["name"], "label": args.label, "from": mod["loader"], "to": to, "commit": mod["commit"],
               "features": mod["features"], "started": datetime.datetime.now().isoformat(timespec="seconds")}
     try:
@@ -410,15 +413,19 @@ def run_mod(mod, args, concepts, started):
     except Exception as e:
         record.update(stage="clone", error=str(e), concepts={"clone failed": 1})
         return record
-    work = fresh_copy(src, f"{mod['id']}-to-{to}")
+    work = fresh_copy(src, f"{mod['id']}-to-{to}" + (f"-{names}" if names else ""))
     started.append(work)
     props = (work / "gradle.properties").read_text(encoding="utf-8", errors="replace") if (work / "gradle.properties").is_file() else ""
     yarn = bool(re.search(r"(?m)^\s*yarn_(?:mappings|version)\s*=", props)) and mod["loader"] == "fabric"
     record["yarn"] = yarn
-    convert_args = ["convert", "--root", str(work), "--to", to, "--json"] + (["--no-compile"] if args.no_compile else [])
+    convert_args = ["convert", "--root", str(work), "--to", to, "--json"] + (["--names", names] if names else []) + (["--no-compile"] if args.no_compile else [])
     code, result, seconds = mmt(convert_args, TIMEOUT["convert"])
     record["convertSeconds"] = round(seconds, 1)
     record["exit"] = code
+    # convert renames a yarn-named mod to Mojang's names first; its compiler errors are then not about yarn's names.
+    if yarn and "yarn-to-mojang" in (result.get("rulesApplied") or {}):
+        yarn = False
+        record["renamedFromYarn"] = True
     concepts_hit, items = {}, []
 
     def hit(concept, item):
@@ -474,7 +481,7 @@ def run_mod(mod, args, concepts, started):
                     record["fingerprint"] = fingerprint_behaviour(work, original, mod["id"])
             else:
                 hit("game load failed after a clean compile", {"kind": "game", "text": record["game"].get("loadError", "")[:1500]})
-        if result.get("compiled") and not args.no_back:
+        if result.get("compiled") and not args.no_back and not names:
             code2, back, seconds2 = mmt(["convert", "--root", str(work), "--to", mod["loader"], "--json"], TIMEOUT["convert"])
             entry = {"exit": code2, "seconds": round(seconds2, 1)}
             if "error" in back and "from" not in back:
@@ -499,7 +506,7 @@ def run_mod(mod, args, concepts, started):
     record["outcome"] = outcome(record)
     runs = WORK / "runs"
     runs.mkdir(parents=True, exist_ok=True)
-    (runs / f"{mod['id']}-to-{to}.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
+    (runs / f"{mod['id']}-to-{to}{'-' + names if names else ''}.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
     return record
 
 
@@ -633,6 +640,7 @@ def main():
     run.add_argument("--no-compile", action="store_true", help="convert without compiling")
     run.add_argument("--no-game", action="store_true")
     run.add_argument("--no-back", action="store_true")
+    run.add_argument("--names", default="", help="mojang: rename yarn-named Fabric mods to Mojang's names, staying on Fabric, instead of converting")
     run.add_argument("--no-fingerprint", action="store_true", help="skip the behaviour fingerprints of the original and the converted mod")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
