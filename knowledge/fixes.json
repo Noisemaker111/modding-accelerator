@@ -6477,6 +6477,617 @@
         "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { matrices.drawCenteredTextWithShadow(textRenderer, title, width / 2, 10, 0xFFFFFF); }\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "block-update-shape-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "method does not override or implement a method from a supertype|method updateShape in class \\w+ cannot be applied",
+      "apply": {
+        "find": "(\\bupdateShape\\s*\\()\\s*(?:final\\s+)?BlockState\\s+(\\w+)\\s*,\\s*(?:final\\s+)?Direction\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockState\\s+(\\w+)\\s*,\\s*(?:final\\s+)?LevelAccessor\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockPos\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockPos\\s+(\\w+)\\s*\\)",
+        "replace": "$1BlockState $2, LevelReader $5, ScheduledTickAccess scheduledTickAccess, BlockPos $6, Direction $3, BlockPos $7, BlockState $4, RandomSource randomSource)",
+        "ensureImports": [
+          "net.minecraft.world.level.LevelReader",
+          "net.minecraft.world.level.ScheduledTickAccess",
+          "net.minecraft.util.RandomSource"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 reordered BlockBehaviour.updateShape and split its LevelAccessor into a LevelReader and a ScheduledTickAccess, adding a RandomSource. Each parameter keeps its name; the two new ones are scheduledTickAccess and randomSource, which the super-call and scheduleTick rules use.",
+      "verified": "Mojang's 1.21.1 mappings: BlockBehaviour.updateShape(BlockState, Direction, BlockState, LevelAccessor, BlockPos, BlockPos); 1.21.2: updateShape(BlockState, LevelReader, ScheduledTickAccess, BlockPos, Direction, BlockPos, BlockState, RandomSource); ScheduledTickAccess has scheduleTick(BlockPos, Block|Fluid, int) (26.1 jar)",
+      "test": {
+        "error": "PieBlock.java:4: error: method does not override or implement a method from a supertype\n",
+        "before": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState updateShape(BlockState state, Direction facing, BlockState facingState,\n\t\t\tLevelAccessor level, BlockPos pos, BlockPos facingPos) {\n\t\tif (state.getValue(WATERLOGGED)) {\n\t\t\tlevel.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));\n\t\t}\n\t\treturn super.updateShape(state, facing, facingState, level, pos, facingPos);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.util.RandomSource;\nimport net.minecraft.world.level.ScheduledTickAccess;\nimport net.minecraft.world.level.LevelReader;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess scheduledTickAccess, BlockPos pos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource randomSource) {\n\t\tif (state.getValue(WATERLOGGED)) {\n\t\t\tlevel.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));\n\t\t}\n\t\treturn super.updateShape(state, facing, facingState, level, pos, facingPos);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "block-update-shape-super-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "method updateShape in class \\w+ cannot be applied to given types",
+      "apply": {
+        "find": "\\bsuper\\.updateShape\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "super.updateShape($1,$4, scheduledTickAccess,$5,$2,$6,$3, randomSource)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "The super call inside an updateShape override takes the 1.21.2 order; scheduledTickAccess and randomSource are the parameters block-update-shape-1212 adds.",
+      "verified": "Mojang's 1.21.1 mappings: BlockBehaviour.updateShape(BlockState, Direction, BlockState, LevelAccessor, BlockPos, BlockPos); 1.21.2: updateShape(BlockState, LevelReader, ScheduledTickAccess, BlockPos, Direction, BlockPos, BlockState, RandomSource); ScheduledTickAccess has scheduleTick(BlockPos, Block|Fluid, int) (26.1 jar)",
+      "test": {
+        "error": "PieBlock.java:10: error: method updateShape in class Block cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState updateShape(BlockState state, Direction facing, BlockState facingState,\n\t\t\tLevelAccessor level, BlockPos pos, BlockPos facingPos) {\n\t\tif (state.getValue(WATERLOGGED)) {\n\t\t\tlevel.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));\n\t\t}\n\t\treturn super.updateShape(state, facing, facingState, level, pos, facingPos);\n\t}\n}\n",
+        "after": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState updateShape(BlockState state, Direction facing, BlockState facingState,\n\t\t\tLevelAccessor level, BlockPos pos, BlockPos facingPos) {\n\t\tif (state.getValue(WATERLOGGED)) {\n\t\t\tlevel.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));\n\t\t}\n\t\treturn super.updateShape(state, level, scheduledTickAccess, pos, facing, facingPos, facingState, randomSource);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "update-shape-schedule-tick-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method scheduleTick\\([^)]*\\)\\s*\\n\\s*location: variable \\w+ of type LevelReader",
+      "apply": {
+        "find": "\\b\\w+\\.scheduleTick\\(",
+        "replace": "scheduledTickAccess.scheduleTick("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Inside a 1.21.2 updateShape the level is a LevelReader, which schedules nothing; ticks go through the ScheduledTickAccess parameter.",
+      "verified": "Mojang's 1.21.1 mappings: BlockBehaviour.updateShape(BlockState, Direction, BlockState, LevelAccessor, BlockPos, BlockPos); 1.21.2: updateShape(BlockState, LevelReader, ScheduledTickAccess, BlockPos, Direction, BlockPos, BlockState, RandomSource); ScheduledTickAccess has scheduleTick(BlockPos, Block|Fluid, int) (26.1 jar)",
+      "test": {
+        "error": "PieBlock.java:8: error: cannot find symbol\n  symbol:   method scheduleTick(BlockPos,FlowingFluid,int)\n  location: variable level of type LevelReader\n",
+        "before": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState updateShape(BlockState state, Direction facing, BlockState facingState,\n\t\t\tLevelAccessor level, BlockPos pos, BlockPos facingPos) {\n\t\tif (state.getValue(WATERLOGGED)) {\n\t\t\tlevel.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));\n\t\t}\n\t\treturn super.updateShape(state, facing, facingState, level, pos, facingPos);\n\t}\n}\n",
+        "after": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState updateShape(BlockState state, Direction facing, BlockState facingState,\n\t\t\tLevelAccessor level, BlockPos pos, BlockPos facingPos) {\n\t\tif (state.getValue(WATERLOGGED)) {\n\t\t\tscheduledTickAccess.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));\n\t\t}\n\t\treturn super.updateShape(state, facing, facingState, level, pos, facingPos);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "block-neighbor-update-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "method does not override or implement a method from a supertype|method getStateForNeighborUpdate in class \\w+ cannot be applied",
+      "apply": {
+        "find": "(\\bgetStateForNeighborUpdate\\s*\\()\\s*(?:final\\s+)?BlockState\\s+(\\w+)\\s*,\\s*(?:final\\s+)?Direction\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockState\\s+(\\w+)\\s*,\\s*(?:final\\s+)?WorldAccess\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockPos\\s+(\\w+)\\s*,\\s*(?:final\\s+)?BlockPos\\s+(\\w+)\\s*\\)",
+        "replace": "$1BlockState $2, WorldView $5, ScheduledTickView tickView, BlockPos $6, Direction $3, BlockPos $7, BlockState $4, net.minecraft.util.math.random.Random random)",
+        "ensureImports": [
+          "net.minecraft.world.WorldView",
+          "net.minecraft.world.tick.ScheduledTickView"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn's names for 1.21.2's updateShape change. Random is written in full so it never clashes with an imported java.util.Random.",
+      "verified": "Fabric's yarn 1.21.2+build.1: AbstractBlock.getStateForNeighborUpdate(BlockState, WorldView, ScheduledTickView, BlockPos, Direction, BlockPos, BlockState, Random), where 1.21.1 took (BlockState, Direction, BlockState, WorldAccess, BlockPos, BlockPos); ScheduledTickView has scheduleBlockTick and scheduleFluidTick",
+      "test": {
+        "error": "PieBlock.java:4: error: method does not override or implement a method from a supertype\n",
+        "before": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighborState, WorldAccess world, BlockPos pos, BlockPos neighborPos) {\n\t\tworld.scheduleFluidTick(pos, Fluids.WATER, Fluids.WATER.getTickRate(world));\n\t\treturn super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.tick.ScheduledTickView;\nimport net.minecraft.world.WorldView;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState getStateForNeighborUpdate(BlockState state, WorldView world, ScheduledTickView tickView, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, net.minecraft.util.math.random.Random random) {\n\t\tworld.scheduleFluidTick(pos, Fluids.WATER, Fluids.WATER.getTickRate(world));\n\t\treturn super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "block-neighbor-update-super-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "method getStateForNeighborUpdate in class \\w+ cannot be applied to given types",
+      "apply": {
+        "find": "\\bsuper\\.getStateForNeighborUpdate\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "super.getStateForNeighborUpdate($1,$4, tickView,$5,$2,$6,$3, random)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "The super call in yarn's 1.21.2 order; tickView and random are the parameters block-neighbor-update-1212-yarn adds.",
+      "verified": "Fabric's yarn 1.21.2+build.1: AbstractBlock.getStateForNeighborUpdate(BlockState, WorldView, ScheduledTickView, BlockPos, Direction, BlockPos, BlockState, Random), where 1.21.1 took (BlockState, Direction, BlockState, WorldAccess, BlockPos, BlockPos); ScheduledTickView has scheduleBlockTick and scheduleFluidTick",
+      "test": {
+        "error": "PieBlock.java:7: error: method getStateForNeighborUpdate in class Block cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighborState, WorldAccess world, BlockPos pos, BlockPos neighborPos) {\n\t\tworld.scheduleFluidTick(pos, Fluids.WATER, Fluids.WATER.getTickRate(world));\n\t\treturn super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);\n\t}\n}\n",
+        "after": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighborState, WorldAccess world, BlockPos pos, BlockPos neighborPos) {\n\t\tworld.scheduleFluidTick(pos, Fluids.WATER, Fluids.WATER.getTickRate(world));\n\t\treturn super.getStateForNeighborUpdate(state, world, tickView, pos, direction, neighborPos, neighborState, random);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "neighbor-update-schedule-tick-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+method schedule(?:Block|Fluid)Tick\\([^)]*\\)\\s*\\n\\s*location: variable \\w+ of type WorldView",
+      "apply": {
+        "find": "\\b\\w+\\.schedule(Block|Fluid)Tick\\(",
+        "replace": "tickView.schedule$1Tick("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Inside a 1.21.2 getStateForNeighborUpdate the world is a WorldView; ticks go through the ScheduledTickView parameter.",
+      "verified": "Fabric's yarn 1.21.2+build.1: AbstractBlock.getStateForNeighborUpdate(BlockState, WorldView, ScheduledTickView, BlockPos, Direction, BlockPos, BlockState, Random), where 1.21.1 took (BlockState, Direction, BlockState, WorldAccess, BlockPos, BlockPos); ScheduledTickView has scheduleBlockTick and scheduleFluidTick",
+      "test": {
+        "error": "PieBlock.java:6: error: cannot find symbol\n  symbol:   method scheduleFluidTick(BlockPos,FlowableFluid,int)\n  location: variable world of type WorldView\n",
+        "before": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighborState, WorldAccess world, BlockPos pos, BlockPos neighborPos) {\n\t\tworld.scheduleFluidTick(pos, Fluids.WATER, Fluids.WATER.getTickRate(world));\n\t\treturn super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);\n\t}\n}\n",
+        "after": "package mod;\n\nclass PieBlock extends Block {\n\t@Override\n\tpublic BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighborState, WorldAccess world, BlockPos pos, BlockPos neighborPos) {\n\t\ttickView.scheduleFluidTick(pos, Fluids.WATER, Fluids.WATER.getTickRate(world));\n\t\treturn super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-holder-success-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bInteractionResultHolder\\.(?:sidedSuccess|success)\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)(?:,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+))?\\)",
+        "replace": "InteractionResult.SUCCESS.heldItemTransformedTo($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed InteractionResultHolder. success(stack) and sidedSuccess(stack, client) are SUCCESS with the held stack.",
+      "verified": "Mojang's 1.21.2 mappings: no InteractionResultHolder; Item.use returns InteractionResult; InteractionResult.SUCCESS and CONSUME are InteractionResult$Success, which has heldItemTransformedTo(ItemStack); PASS and FAIL take no stack",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class InteractionResultHolder\n",
+        "before": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResult.SUCCESS.heldItemTransformedTo(new ItemStack(Items.BOWL));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-holder-consume-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bInteractionResultHolder\\.consume\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "InteractionResult.CONSUME.heldItemTransformedTo($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed InteractionResultHolder. consume(stack) is CONSUME with the held stack.",
+      "verified": "Mojang's 1.21.2 mappings: no InteractionResultHolder; Item.use returns InteractionResult; InteractionResult.SUCCESS and CONSUME are InteractionResult$Success, which has heldItemTransformedTo(ItemStack); PASS and FAIL take no stack",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class InteractionResultHolder\n",
+        "before": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResult.CONSUME.heldItemTransformedTo(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-holder-pass-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bInteractionResultHolder\\.pass\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "InteractionResult.PASS"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed InteractionResultHolder. pass(stack) is PASS; the stack it named was the one already held.",
+      "verified": "Mojang's 1.21.2 mappings: no InteractionResultHolder; Item.use returns InteractionResult; InteractionResult.SUCCESS and CONSUME are InteractionResult$Success, which has heldItemTransformedTo(ItemStack); PASS and FAIL take no stack",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class InteractionResultHolder\n",
+        "before": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResult.PASS;\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-holder-fail-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bInteractionResultHolder\\.fail\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "InteractionResult.FAIL"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed InteractionResultHolder. fail(stack) is FAIL; the stack it named was the one already held.",
+      "verified": "Mojang's 1.21.2 mappings: no InteractionResultHolder; Item.use returns InteractionResult; InteractionResult.SUCCESS and CONSUME are InteractionResult$Success, which has heldItemTransformedTo(ItemStack); PASS and FAIL take no stack",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class InteractionResultHolder\n",
+        "before": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResult.FAIL;\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-holder-new-success-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+InteractionResultHolder\\s*<[^<>;]*(?:<[^<>;]*>[^<>;]*)?>\\s*\\(\\s*InteractionResult\\.(SUCCESS|CONSUME|SUCCESS_NO_ITEM_USED|CONSUME_PARTIAL)\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "InteractionResult.SUCCESS.heldItemTransformedTo($2)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed InteractionResultHolder. new InteractionResultHolder<>(SUCCESS|CONSUME..., stack) is SUCCESS with that stack.",
+      "verified": "Mojang's 1.21.2 mappings: no InteractionResultHolder; Item.use returns InteractionResult; InteractionResult.SUCCESS and CONSUME are InteractionResult$Success, which has heldItemTransformedTo(ItemStack); PASS and FAIL take no stack",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class InteractionResultHolder\n",
+        "before": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResult.SUCCESS.heldItemTransformedTo( stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-holder-new-other-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bnew\\s+InteractionResultHolder\\s*<[^<>;]*(?:<[^<>;]*>[^<>;]*)?>\\s*\\(\\s*InteractionResult\\.(PASS|FAIL)\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "InteractionResult.$1"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed InteractionResultHolder. new InteractionResultHolder<>(PASS|FAIL, stack) is PASS or FAIL.",
+      "verified": "Mojang's 1.21.2 mappings: no InteractionResultHolder; Item.use returns InteractionResult; InteractionResult.SUCCESS and CONSUME are InteractionResult$Success, which has heldItemTransformedTo(ItemStack); PASS and FAIL take no stack",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class InteractionResultHolder\n",
+        "before": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return new InteractionResultHolder<>(InteractionResult.PASS, stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResult.PASS;\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-holder-type-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
+      "apply": {
+        "find": "\\bInteractionResultHolder\\s*<[^<>;]*(?:<[^<>;]*>[^<>;]*)?>",
+        "replace": "InteractionResult"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed InteractionResultHolder. The return type InteractionResultHolder<ItemStack> is InteractionResult; runs after the factory rules.",
+      "verified": "Mojang's 1.21.2 mappings: no InteractionResultHolder; Item.use returns InteractionResult; InteractionResult.SUCCESS and CONSUME are InteractionResult$Success, which has heldItemTransformedTo(ItemStack); PASS and FAIL take no stack",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class InteractionResultHolder\n",
+        "before": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResult use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-holder-import-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.world\\.InteractionResultHolder;",
+        "replace": "import net.minecraft.world.InteractionResult;"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed InteractionResultHolder. Its import becomes InteractionResult's.",
+      "verified": "Mojang's 1.21.2 mappings: no InteractionResultHolder; Item.use returns InteractionResult; InteractionResult.SUCCESS and CONSUME are InteractionResult$Success, which has heldItemTransformedTo(ItemStack); PASS and FAIL take no stack",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class InteractionResultHolder\n",
+        "before": "package mod;\n\nimport net.minecraft.world.InteractionResultHolder;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResult;\n\nclass KnifeItem extends Item {\n\tpublic InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {\n\t\tItemStack stack = player.getItemInHand(hand);\n\t\tif (stack.isEmpty()) return InteractionResultHolder.pass(stack);\n\t\tif (level.isClientSide) return InteractionResultHolder.fail(stack);\n\t\tif (player.isCrouching()) return InteractionResultHolder.consume(stack);\n\t\treturn InteractionResultHolder.sidedSuccess(new ItemStack(Items.BOWL), level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "typed-result-success-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+(?:class|variable) TypedActionResult\\b",
+      "apply": {
+        "find": "\\bTypedActionResult\\.success\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)(?:,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+))?\\)",
+        "replace": "ActionResult.SUCCESS.withNewHandStack($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn: 1.21.2 removed TypedActionResult. success(stack[, swing]) is SUCCESS with the new hand stack.",
+      "verified": "Fabric's yarn 1.21.1: TypedActionResult.success(T), success(T, boolean), consume(T), pass(T), fail(T); yarn 1.21.2: no TypedActionResult, ActionResult.SUCCESS and CONSUME are ActionResult$Success with withNewHandStack(ItemStack)",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class TypedActionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn ActionResult.SUCCESS.withNewHandStack(new ItemStack(Items.BOWL));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "typed-result-consume-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+(?:class|variable) TypedActionResult\\b",
+      "apply": {
+        "find": "\\bTypedActionResult\\.consume\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "ActionResult.CONSUME.withNewHandStack($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn: 1.21.2 removed TypedActionResult. consume(stack) is CONSUME with the new hand stack.",
+      "verified": "Fabric's yarn 1.21.1: TypedActionResult.success(T), success(T, boolean), consume(T), pass(T), fail(T); yarn 1.21.2: no TypedActionResult, ActionResult.SUCCESS and CONSUME are ActionResult$Success with withNewHandStack(ItemStack)",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class TypedActionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return ActionResult.CONSUME.withNewHandStack(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "typed-result-pass-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+(?:class|variable) TypedActionResult\\b",
+      "apply": {
+        "find": "\\bTypedActionResult\\.pass\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "ActionResult.PASS"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn: 1.21.2 removed TypedActionResult. pass(stack) is PASS.",
+      "verified": "Fabric's yarn 1.21.1: TypedActionResult.success(T), success(T, boolean), consume(T), pass(T), fail(T); yarn 1.21.2: no TypedActionResult, ActionResult.SUCCESS and CONSUME are ActionResult$Success with withNewHandStack(ItemStack)",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class TypedActionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return ActionResult.PASS;\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "typed-result-fail-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+(?:class|variable) TypedActionResult\\b",
+      "apply": {
+        "find": "\\bTypedActionResult\\.fail\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "ActionResult.FAIL"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn: 1.21.2 removed TypedActionResult. fail(stack) is FAIL.",
+      "verified": "Fabric's yarn 1.21.1: TypedActionResult.success(T), success(T, boolean), consume(T), pass(T), fail(T); yarn 1.21.2: no TypedActionResult, ActionResult.SUCCESS and CONSUME are ActionResult$Success with withNewHandStack(ItemStack)",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class TypedActionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return ActionResult.FAIL;\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "typed-result-type-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+(?:class|variable) TypedActionResult\\b",
+      "apply": {
+        "find": "\\bTypedActionResult\\s*<[^<>;]*(?:<[^<>;]*>[^<>;]*)?>",
+        "replace": "ActionResult"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn: 1.21.2 removed TypedActionResult. The return type TypedActionResult<ItemStack> is ActionResult.",
+      "verified": "Fabric's yarn 1.21.1: TypedActionResult.success(T), success(T, boolean), consume(T), pass(T), fail(T); yarn 1.21.2: no TypedActionResult, ActionResult.SUCCESS and CONSUME are ActionResult$Success with withNewHandStack(ItemStack)",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class TypedActionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic ActionResult use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "typed-result-import-1212-yarn",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+(?:class|variable) TypedActionResult\\b",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.util\\.TypedActionResult;",
+        "replace": "import net.minecraft.util.ActionResult;"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn: 1.21.2 removed TypedActionResult. Its import becomes ActionResult's.",
+      "verified": "Fabric's yarn 1.21.1: TypedActionResult.success(T), success(T, boolean), consume(T), pass(T), fail(T); yarn 1.21.2: no TypedActionResult, ActionResult.SUCCESS and CONSUME are ActionResult$Success with withNewHandStack(ItemStack)",
+      "test": {
+        "error": "KnifeItem.java:5: error: cannot find symbol\n  symbol:   class TypedActionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.util.TypedActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.util.ActionResult;\n\nclass KnifeItem extends Item {\n\tpublic TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {\n\t\tItemStack stack = user.getStackInHand(hand);\n\t\tif (stack.isEmpty()) return TypedActionResult.pass(stack);\n\t\tif (world.isClient) return TypedActionResult.fail(stack);\n\t\tif (user.isSneaking()) return TypedActionResult.consume(stack);\n\t\treturn TypedActionResult.success(new ItemStack(Items.BOWL), world.isClient());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-result-sided-success-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:method sidedSuccess\\(boolean\\)|variable (?:CONSUME_PARTIAL|SUCCESS_NO_ITEM_USED))\\s*\\n\\s*location: (?:class|interface) InteractionResult",
+      "apply": {
+        "find": "\\bInteractionResult\\.sidedSuccess\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "InteractionResult.SUCCESS"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 reworked InteractionResult. sidedSuccess(client) is SUCCESS on both sides.",
+      "verified": "Mojang's 1.21.1 mappings: InteractionResult has sidedSuccess(boolean), CONSUME_PARTIAL and SUCCESS_NO_ITEM_USED; 1.21.2: none of them, and InteractionResult$Success has withoutItem()",
+      "test": {
+        "error": "StoveBlock.java:4: error: cannot find symbol\n  symbol:   method sidedSuccess(boolean)\n  location: class InteractionResult\n",
+        "before": "package mod;\n\nclass StoveBlock {\n\tInteractionResult a(Level level) { return InteractionResult.sidedSuccess(level.isClientSide); }\n\tInteractionResult b() { return InteractionResult.CONSUME_PARTIAL; }\n\tInteractionResult c() { return InteractionResult.SUCCESS_NO_ITEM_USED; }\n}\n",
+        "after": "package mod;\n\nclass StoveBlock {\n\tInteractionResult a(Level level) { return InteractionResult.SUCCESS; }\n\tInteractionResult b() { return InteractionResult.CONSUME_PARTIAL; }\n\tInteractionResult c() { return InteractionResult.SUCCESS_NO_ITEM_USED; }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-result-consume-partial-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:method sidedSuccess\\(boolean\\)|variable (?:CONSUME_PARTIAL|SUCCESS_NO_ITEM_USED))\\s*\\n\\s*location: (?:class|interface) InteractionResult",
+      "apply": {
+        "find": "\\bInteractionResult\\.CONSUME_PARTIAL\\b",
+        "replace": "InteractionResult.CONSUME"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 reworked InteractionResult. CONSUME_PARTIAL is CONSUME.",
+      "verified": "Mojang's 1.21.1 mappings: InteractionResult has sidedSuccess(boolean), CONSUME_PARTIAL and SUCCESS_NO_ITEM_USED; 1.21.2: none of them, and InteractionResult$Success has withoutItem()",
+      "test": {
+        "error": "StoveBlock.java:4: error: cannot find symbol\n  symbol:   method sidedSuccess(boolean)\n  location: class InteractionResult\n",
+        "before": "package mod;\n\nclass StoveBlock {\n\tInteractionResult a(Level level) { return InteractionResult.sidedSuccess(level.isClientSide); }\n\tInteractionResult b() { return InteractionResult.CONSUME_PARTIAL; }\n\tInteractionResult c() { return InteractionResult.SUCCESS_NO_ITEM_USED; }\n}\n",
+        "after": "package mod;\n\nclass StoveBlock {\n\tInteractionResult a(Level level) { return InteractionResult.sidedSuccess(level.isClientSide); }\n\tInteractionResult b() { return InteractionResult.CONSUME; }\n\tInteractionResult c() { return InteractionResult.SUCCESS_NO_ITEM_USED; }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "interaction-result-no-item-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:method sidedSuccess\\(boolean\\)|variable (?:CONSUME_PARTIAL|SUCCESS_NO_ITEM_USED))\\s*\\n\\s*location: (?:class|interface) InteractionResult",
+      "apply": {
+        "find": "\\bInteractionResult\\.SUCCESS_NO_ITEM_USED\\b",
+        "replace": "InteractionResult.SUCCESS.withoutItem()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 reworked InteractionResult. SUCCESS_NO_ITEM_USED is SUCCESS.withoutItem() (no item-used stat).",
+      "verified": "Mojang's 1.21.1 mappings: InteractionResult has sidedSuccess(boolean), CONSUME_PARTIAL and SUCCESS_NO_ITEM_USED; 1.21.2: none of them, and InteractionResult$Success has withoutItem()",
+      "test": {
+        "error": "StoveBlock.java:4: error: cannot find symbol\n  symbol:   method sidedSuccess(boolean)\n  location: class InteractionResult\n",
+        "before": "package mod;\n\nclass StoveBlock {\n\tInteractionResult a(Level level) { return InteractionResult.sidedSuccess(level.isClientSide); }\n\tInteractionResult b() { return InteractionResult.CONSUME_PARTIAL; }\n\tInteractionResult c() { return InteractionResult.SUCCESS_NO_ITEM_USED; }\n}\n",
+        "after": "package mod;\n\nclass StoveBlock {\n\tInteractionResult a(Level level) { return InteractionResult.sidedSuccess(level.isClientSide); }\n\tInteractionResult b() { return InteractionResult.CONSUME_PARTIAL; }\n\tInteractionResult c() { return InteractionResult.SUCCESS.withoutItem(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "block-entity-type-builder-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|method) (?:Builder|of)\\b[^\\n]*\\n\\s*location: class BlockEntityType|symbol:\\s+class Builder\\b",
+      "apply": {
+        "find": "\\bBlockEntityType\\.Builder\\.of\\(\\s*((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+(?:,(?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)*)\\)\\s*\\.build\\(\\s*(?:null|[^()]*(?:\\([^()]*\\))?[^()]*)\\)",
+        "replace": "new BlockEntityType<>($1, java.util.Set.of($2))"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed BlockEntityType.Builder; a type is built from its factory and the set of valid blocks. NeoForge makes that constructor public (its access transformer); the data-fixer type build(null) took is gone.",
+      "verified": "Mojang's 1.21.2 mappings: BlockEntityType.<init>(BlockEntitySupplier, Set) and no BlockEntityType$Builder; NeoForge 21.2.1-beta's accesstransformer.cfg: public net.minecraft.world.level.block.entity.BlockEntityType <init>(BlockEntitySupplier;Set)V",
+      "test": {
+        "error": "ModBlockEntityTypes.java:5: error: cannot find symbol\n  symbol:   class Builder\n  location: class BlockEntityType\n",
+        "before": "package mod;\n\nclass ModBlockEntityTypes {\n\tstatic final Supplier<BlockEntityType<StoveBlockEntity>> STOVE = TILES.register(\"stove\",\n\t\t\t() -> BlockEntityType.Builder.of(StoveBlockEntity::new, ModBlocks.STOVE.get(), ModBlocks.OVEN.get()).build(null));\n}\n",
+        "after": "package mod;\n\nclass ModBlockEntityTypes {\n\tstatic final Supplier<BlockEntityType<StoveBlockEntity>> STOVE = TILES.register(\"stove\",\n\t\t\t() -> new BlockEntityType<>(StoveBlockEntity::new, java.util.Set.of( ModBlocks.STOVE.get(), ModBlocks.OVEN.get())));\n}\n",
+        "from": "written for this rule"
+      },
+      "loader": "neoforge"
+    },
+    {
+      "id": "properties-loot-from-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method lootFrom\\(",
+      "apply": {
+        "find": "\\.lootFrom\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".overrideLootTable(($1).get().getLootTable())"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed NeoForge's Properties.lootFrom(Supplier<Block>); a block that drops another's loot overrides its loot table with that block's, as vanilla's wall signs do with overrideLootTable(SIGN.getLootTable()). The other block is registered first, as lootFrom required.",
+      "verified": "Mojang's 1.21.2 mappings: BlockBehaviour$Properties.overrideLootTable(Optional) and Block.getLootTable() -> Optional<ResourceKey<LootTable>>; no lootFrom or dropsLike",
+      "test": {
+        "error": "ModBlocks.java:5: error: cannot find symbol\n  symbol:   method lootFrom(DeferredBlock<Block>)\n",
+        "before": "package mod;\n\nclass ModBlocks {\n\tstatic final DeferredBlock<Block> WALL_SIGN = BLOCKS.register(\"wall_sign\",\n\t\t\t() -> new WallSignBlock(Block.Properties.ofFullCopy(Blocks.SPRUCE_SIGN).lootFrom(SIGN), WoodType.SPRUCE));\n}\n",
+        "after": "package mod;\n\nclass ModBlocks {\n\tstatic final DeferredBlock<Block> WALL_SIGN = BLOCKS.register(\"wall_sign\",\n\t\t\t() -> new WallSignBlock(Block.Properties.ofFullCopy(Blocks.SPRUCE_SIGN).overrideLootTable((SIGN).get().getLootTable()), WoodType.SPRUCE));\n}\n",
+        "from": "written for this rule"
+      },
+      "loader": "neoforge"
+    },
+    {
+      "id": "gui-screen-back-262",
+      "provenance": "hand",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method (?:screen|setScreen|toastManager|overlay)\\([^)]*\\)\\s*\\n\\s*location: (?:variable|class) [\\w ]*Gui\\b",
+      "apply": {
+        "find": "\\.gui\\.screen\\(\\)",
+        "replace": ".screen"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport: 26.2 moved the screen, overlay and toasts from Minecraft to its Gui; on 26.1.2 they are Minecraft's own.",
+      "verified": "Mojang's 26.2 jar: Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(); 26.1.2 jar: Minecraft.screen (public field), Minecraft.setScreen(Screen), getOverlay(), getToastManager()",
+      "test": {
+        "error": "Hud.java:5: error: cannot find symbol\n  symbol:   method screen()\n  location: variable gui of type Gui\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.gui.screen() == null) mc.gui.setScreen(new Hello());\n\t\tmc.gui.toastManager().clear();\n\t\tboolean busy = mc.gui.overlay() != null;\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.screen == null) mc.gui.setScreen(new Hello());\n\t\tmc.gui.toastManager().clear();\n\t\tboolean busy = mc.gui.overlay() != null;\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "gui-set-screen-back-262",
+      "provenance": "hand",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method (?:screen|setScreen|toastManager|overlay)\\([^)]*\\)\\s*\\n\\s*location: (?:variable|class) [\\w ]*Gui\\b",
+      "apply": {
+        "find": "\\.gui\\.setScreen\\(",
+        "replace": ".setScreen("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport: 26.2 moved the screen, overlay and toasts from Minecraft to its Gui; on 26.1.2 they are Minecraft's own.",
+      "verified": "Mojang's 26.2 jar: Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(); 26.1.2 jar: Minecraft.screen (public field), Minecraft.setScreen(Screen), getOverlay(), getToastManager()",
+      "test": {
+        "error": "Hud.java:5: error: cannot find symbol\n  symbol:   method setScreen(Hello)\n  location: variable gui of type Gui\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.gui.screen() == null) mc.gui.setScreen(new Hello());\n\t\tmc.gui.toastManager().clear();\n\t\tboolean busy = mc.gui.overlay() != null;\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.gui.screen() == null) mc.setScreen(new Hello());\n\t\tmc.gui.toastManager().clear();\n\t\tboolean busy = mc.gui.overlay() != null;\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "gui-toast-manager-back-262",
+      "provenance": "hand",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method (?:screen|setScreen|toastManager|overlay)\\([^)]*\\)\\s*\\n\\s*location: (?:variable|class) [\\w ]*Gui\\b",
+      "apply": {
+        "find": "\\.gui\\.toastManager\\(\\)",
+        "replace": ".getToastManager()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport: 26.2 moved the screen, overlay and toasts from Minecraft to its Gui; on 26.1.2 they are Minecraft's own.",
+      "verified": "Mojang's 26.2 jar: Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(); 26.1.2 jar: Minecraft.screen (public field), Minecraft.setScreen(Screen), getOverlay(), getToastManager()",
+      "test": {
+        "error": "Hud.java:5: error: cannot find symbol\n  symbol:   method toastManager()\n  location: variable gui of type Gui\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.gui.screen() == null) mc.gui.setScreen(new Hello());\n\t\tmc.gui.toastManager().clear();\n\t\tboolean busy = mc.gui.overlay() != null;\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.gui.screen() == null) mc.gui.setScreen(new Hello());\n\t\tmc.getToastManager().clear();\n\t\tboolean busy = mc.gui.overlay() != null;\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "gui-overlay-back-262",
+      "provenance": "hand",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method (?:screen|setScreen|toastManager|overlay)\\([^)]*\\)\\s*\\n\\s*location: (?:variable|class) [\\w ]*Gui\\b",
+      "apply": {
+        "find": "\\.gui\\.overlay\\(\\)",
+        "replace": ".getOverlay()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport: 26.2 moved the screen, overlay and toasts from Minecraft to its Gui; on 26.1.2 they are Minecraft's own.",
+      "verified": "Mojang's 26.2 jar: Gui.screen(), Gui.setScreen(Screen), Gui.overlay(), Gui.toastManager(); 26.1.2 jar: Minecraft.screen (public field), Minecraft.setScreen(Screen), getOverlay(), getToastManager()",
+      "test": {
+        "error": "Hud.java:5: error: cannot find symbol\n  symbol:   method overlay()\n  location: variable gui of type Gui\n",
+        "before": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.gui.screen() == null) mc.gui.setScreen(new Hello());\n\t\tmc.gui.toastManager().clear();\n\t\tboolean busy = mc.gui.overlay() != null;\n\t}\n}\n",
+        "after": "package mod;\n\nclass Hud {\n\tvoid show(Minecraft mc) {\n\t\tif (mc.gui.screen() == null) mc.gui.setScreen(new Hello());\n\t\tmc.gui.toastManager().clear();\n\t\tboolean busy = mc.getOverlay() != null;\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "entity-types-constants-back-262",
+      "provenance": "hand",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) EntityTypes\\b|import net\\.minecraft\\.world\\.entity\\.EntityTypes",
+      "apply": {
+        "find": "\\bEntityTypes\\b(?=\\s*[.;])",
+        "replace": "EntityType"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport: 26.2 moved the vanilla entity type constants from EntityType into EntityTypes; on 26.1.2 they are EntityType's (the import line too).",
+      "verified": "Mojang's 26.2 jar: net.minecraft.world.entity.EntityTypes declares PIG, ALLAY, ...; 26.1.2 jar: no EntityTypes, EntityType declares them",
+      "test": {
+        "error": "Spawns.java:3: error: cannot find symbol\n  symbol:   class EntityTypes\n",
+        "before": "package mod;\n\nimport net.minecraft.world.entity.EntityTypes;\n\nclass Spawns {\n\tboolean pig(Entity e) { return e.getType() == EntityTypes.PIG; }\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.entity.EntityType;\n\nclass Spawns {\n\tboolean pig(Entity e) { return e.getType() == EntityType.PIG; }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }

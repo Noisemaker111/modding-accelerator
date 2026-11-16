@@ -936,6 +936,7 @@ final class Port {
                 roundsTried = round + 1;
                 applyRules(log);
                 importMissingClasses(log);
+                restoreAnnotationLibraries(log);
                 // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
                 if (!corpusLoaded && options.has("learn-from-mods")) {
                     learned = Corpus.rules(build, model, tools, map, from, to, names);
@@ -2193,6 +2194,53 @@ final class Port {
         }
         Path fallback = build.project.root.resolve("src/main/resources/META-INF/accesstransformer.cfg");
         return Files.isRegularFile(fallback) ? fallback : null;
+    }
+
+    /**
+     * Annotation-only libraries an older game or loader brought along and a newer one does not (Trinkets 1.20.1 -> 1.21.1
+     * lost javax.annotation): only nullness annotations, never read at run time, so compileOnly is safe.
+     */
+    static final Map<String, String> ANNOTATION_LIBRARIES = Map.of(
+        "javax.annotation",
+        "com.google.code.findbugs:jsr305:3.0.2",
+        "org.jetbrains.annotations",
+        "org.jetbrains:annotations:26.0.2",
+        "org.jspecify.annotations",
+        "org.jspecify:jspecify:1.0.0"
+    );
+
+    /** Adds the compileOnly annotation libraries the log says are missing to the selected project's build script. */
+    void restoreAnnotationLibraries(Path log) throws Exception {
+        String errors = logText(log);
+        List<String> wanted = new ArrayList<>();
+        for (var library : ANNOTATION_LIBRARIES.entrySet()) if (
+            errors.contains("package " + library.getKey() + " does not exist")
+        ) wanted.add(library.getValue());
+        if (wanted.isEmpty()) return;
+        for (Object p : Json.array(model.get("projects"))) {
+            Object script = Json.object(p).get("buildFile");
+            if (script == null || !Files.isRegularFile(Path.of(script.toString()))) continue;
+            Path file = Path.of(script.toString());
+            String text = Files.readString(file), after = withCompileOnly(text, wanted, file.toString().endsWith(".kts"));
+            if (after.equals(text)) continue;
+            track(file);
+            Files.writeString(file, after);
+            rulesApplied.putIfAbsent("annotation-library-compile-only", List.of());
+        }
+    }
+
+    /** A build script with each coordinate added as compileOnly to its top-level dependencies block (not twice). */
+    static String withCompileOnly(String text, List<String> coordinates, boolean kotlin) {
+        Matcher block = Pattern.compile("(?m)^dependencies\\s*\\{[ \\t]*\\r?\\n").matcher(text);
+        if (!block.find()) return text;
+        StringBuilder lines = new StringBuilder();
+        for (String coordinate : coordinates) {
+            String name = coordinate.substring(0, coordinate.lastIndexOf(':'));
+            if (text.contains(name)) continue;
+            lines.append(kotlin ? "    compileOnly(\"" + coordinate + "\")\n" : "    compileOnly \"" + coordinate + "\"\n");
+        }
+        if (lines.length() == 0) return text;
+        return text.substring(0, block.end()) + "    // mmt port: annotation-only library the target no longer brings along\n" + lines + text.substring(block.end());
     }
 
     void applyRules(Path log) throws Exception {

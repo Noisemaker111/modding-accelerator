@@ -135,6 +135,12 @@ public final class BuildScriptTests {
             "Forge leaves a longer include list"
         );
         check(Target.withoutForgeInclude("include 'Forge', 'Fabric'\n").equals("include 'Fabric'\n"), "Forge first in the list");
+        // A lost annotation library comes back compileOnly, once, in the script's own dialect.
+        String groovy = "plugins { id 'java' }\ndependencies {\n    implementation 'a:b:1'\n}\n";
+        String restored = Port.withCompileOnly(groovy, List.of("com.google.code.findbugs:jsr305:3.0.2"), false);
+        check(restored.contains("    compileOnly \"com.google.code.findbugs:jsr305:3.0.2\"\n    implementation"), "jsr305 added to dependencies");
+        check(Port.withCompileOnly(restored, List.of("com.google.code.findbugs:jsr305:3.0.2"), false).equals(restored), "not added twice");
+        check(Port.withCompileOnly("dependencies {\n}\n", List.of("org.jspecify:jspecify:1.0.0"), true).contains("compileOnly(\"org.jspecify:jspecify:1.0.0\")"), "Kotlin form");
         // A rename that changes what the member returns (getMaxBuildHeight -> getMaxY is one lower) leaves the map; the rest stays.
         {
             Path meaningMap = scratch.resolve("meaning-map.json");

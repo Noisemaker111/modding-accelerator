@@ -433,6 +433,9 @@ final class Target {
             // The unobfuscated game (26.1+) needs ModDevGradle 2: 1.x cannot set up its game artifacts (a NeoForge port 1.21.3 -> 26.3).
             String current = pin.group(2), line = current.substring(0, current.indexOf('.'));
             if (Versions.compare(to, "26.1") >= 0 && Integer.parseInt(line) < 2) line = "2";
+            // 0.1.x was ModDevGradle's preview line, with 1.0 its stable continuation and the same DSL; 0.1.131 cannot set up
+            // 1.21.2's game (TorchMaster: com.mojang:jtracy unresolved), 1.0.x can.
+            if (line.equals("0")) line = "1";
             String newest = newestInLine(
                 fetch(build, "https://maven.neoforged.net/releases/net/neoforged/moddev-gradle/maven-metadata.xml"),
                 line
@@ -536,9 +539,10 @@ final class Target {
         if (!Files.isRegularFile(properties)) return;
         String text = setup.text(properties);
         Matcher pin = Pattern.compile(
-            "(?m)^([ \\t]*(neoform_version|neoFormVersion|neoform_timestamp|neoformTimestamp|neoFormTimestamp)[ \\t]*=[ \\t]*)(\\S+)[ \\t]*$"
+            "(?m)^([ \\t]*((?i:neo_?form_?(?:version|timestamp)))[ \\t]*=[ \\t]*)(\\S+)[ \\t]*$"
         ).matcher(text);
         if (!pin.find()) return;
+        // TorchMaster: neo_form_version=1.21-20240613.152323 (a full version names its own game, which may lag the mod's).
         String newest = null;
         Matcher version = Pattern.compile("<version>(" + Pattern.quote(to) + "-(\\d{8}\\.\\d{6}))</version>").matcher(
             fetch(build, "https://maven.neoforged.net/releases/net/neoforged/neoform/maven-metadata.xml")

@@ -1453,6 +1453,16 @@ public final class VersionMap {
                     // same way on every owner is the one it means (getMaxScroll -> maxScrollAmount on a list widget).
                     to = Known.unanimous(k.methodTo.get(from));
                 }
+                if (to == null && !method && from.matches("[A-Z][A-Z0-9_]*")) {
+                    // An enum constant in a case label is written unqualified, so javac names the enclosing class, not the
+                    // enum (TorchMaster: case SPAWN_EGG on 1.21.2's EntitySpawnReason, where it is SPAWN_ITEM_USE).
+                    String[] all = text.split("\r?\n", -1);
+                    if (
+                        e.line() >= 1 &&
+                        e.line() <= all.length &&
+                        Pattern.compile("\\bcase\\b[^:>]*\\b" + Pattern.quote(from) + "\\b").matcher(all[e.line() - 1]).find()
+                    ) to = Known.unanimous(k.fieldTo.get(from));
+                }
                 if (to == null) {
                     continue;
                 }
