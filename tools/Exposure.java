@@ -105,11 +105,32 @@ public final class Exposure {
             row.put("broken", broken);
             perMod.add(row);
         }
+        // Why the game's own code gave no replacement for each, so the miner is fixed for a kind of change, not a member.
+        GameDiff.Hop hop = new GameDiff.Hop(a, b);
+        hop.run();
+        Map<String, GameDiff.Hop.Evidence> evidence = hop.evidence();
+        Map<String, int[]> bySource = new TreeMap<>();
         List<Object> ranked = new ArrayList<>();
         brokenBy.entrySet()
             .stream()
             .sorted((x, y) -> y.getValue().size() != x.getValue().size() ? y.getValue().size() - x.getValue().size() : x.getKey().compareTo(y.getKey()))
-            .forEach(e -> ranked.add(Map.of("member", e.getKey(), "mods", e.getValue().size(), "why", brokenDetail.get(e.getKey()), "examples", List.copyOf(e.getValue()).subList(0, Math.min(5, e.getValue().size())))));
+            .forEach(e -> {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("member", e.getKey());
+                row.put("mods", e.getValue().size());
+                row.put("why", brokenDetail.get(e.getKey()));
+                String[] game = gameSays(evidence.get(e.getKey()));
+                row.put("game", game[0]);
+                row.put("gameDetail", game[1]);
+                int[] n = bySource.computeIfAbsent(game[0], k -> new int[2]);
+                n[0]++;
+                n[1] += e.getValue().size();
+                row.put("examples", List.copyOf(e.getValue()).subList(0, Math.min(5, e.getValue().size())));
+                ranked.add(row);
+            });
+        Map<String, Object> sources = new LinkedHashMap<>();
+        bySource.forEach((k, n) -> sources.put(k, Map.of("members", n[0], "modUses", n[1])));
+        report.put("gameEvidence", sources);
         report.put("modsRead", read);
         report.put("modsWithNothingBroken", clean);
         report.put("mods", perMod);
@@ -119,8 +140,9 @@ public final class Exposure {
         System.out.printf("%s -> %s: %d mods read, %d with nothing broken, %d distinct broken members%n", from, to, read, clean, ranked.size());
         for (int i = 0; i < Math.min(15, ranked.size()); i++) {
             Map<?, ?> r = (Map<?, ?>) ranked.get(i);
-            System.out.printf("  %3d mods  %s  (%s)%n", (Integer) r.get("mods"), r.get("member"), r.get("why"));
+            System.out.printf("  %3d mods  %s  (%s; game: %s)%n", (Integer) r.get("mods"), r.get("member"), r.get("why"), r.get("game"));
         }
+        System.out.println("what the game's own code says about them (members, mod uses): " + sources);
     }
 
     /** One release of the game in Mojang names, with NeoForge's own classes when asked. */
@@ -482,6 +504,24 @@ public final class Exposure {
             }
         }
         return 0;
+    }
+
+    /**
+     * What the game's own code says about a member a port cannot carry yet: "linked" (the map follows it to a new
+     * signature), "unused" (the game never used it), "redesigned" (every place that used it was rewritten beyond lining
+     * up), or "replaced" (places line up with what b uses instead: the miner's threshold or kind kept it out).
+     */
+    static String[] gameSays(GameDiff.Hop.Evidence e) {
+        if (e == null) {
+            return new String[] {"linked", "the map follows it; the new signature differs"};
+        }
+        if (e.sites() == 0) {
+            return new String[] {"unused", "the game never uses it"};
+        }
+        if (e.aligned() == 0) {
+            return new String[] {"redesigned", e.sites() + " uses, " + e.kept() + " in methods b kept, none line up"};
+        }
+        return new String[] {"replaced", e.best() + " at " + e.votes() + " of " + e.aligned() + " aligned uses (" + e.sites() + " uses)"};
     }
 
     static String dotted(String internal) {

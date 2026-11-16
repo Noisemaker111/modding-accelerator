@@ -1946,6 +1946,111 @@ public final class GameDiff {
             return out;
         }
 
+        /**
+         * What the game's own code says about one member of a that has no link: how many places in a use it, how many of
+         * those sit in methods that b still has (linked), how many of those line up with something in b, and the
+         * reference of b most of them line up with. Says why the miner gave no replacement: nothing in the game used it,
+         * every user was redesigned, or the users disagree.
+         */
+        record Evidence(int sites, int kept, int aligned, String best, int votes) {}
+
+        /** Evidence for every unlinked class, method and field of a, keyed as Exposure keys them (dotted owner, name, desc). */
+        Map<String, Evidence> evidence() {
+            Map<String, int[]> counts = new HashMap<>();
+            Map<String, Map<String, Integer>> votes = new HashMap<>();
+            for (Cls c : a.classes.values()) {
+                for (Meth x : c.methods.values()) {
+                    Meth y = mAB.get(x);
+                    long[] ta = new long[x.refs.length];
+                    for (int i = 0; i < ta.length; i++) {
+                        ta[i] = fnv(token(x.refs[i], true));
+                    }
+                    Map<Integer, Ref> opposite = new HashMap<>();
+                    if (y != null && y.refs.length > 0) {
+                        long[] tb = new long[y.refs.length];
+                        for (int j = 0; j < tb.length; j++) {
+                            tb[j] = fnv(token(y.refs[j], false));
+                        }
+                        for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
+                            opposite.put(p[0], y.refs[p[1]]);
+                        }
+                    }
+                    for (int i = 0; i < x.refs.length; i++) {
+                        String key = unlinkedKey(x.refs[i]);
+                        if (key == null) {
+                            continue;
+                        }
+                        int[] n = counts.computeIfAbsent(key, k -> new int[3]);
+                        n[0]++;
+                        if (y != null) {
+                            n[1]++;
+                        }
+                        Ref rb = opposite.get(i);
+                        if (rb != null) {
+                            n[2]++;
+                            String to = rb.kind() == 'm' ? rb.owner() + "." + rb.name() + rb.desc() : rb.kind() == 'c' ? rb.owner() : rb.owner() + "." + rb.name();
+                            votes.computeIfAbsent(key, k -> new HashMap<>()).merge(to.replace('/', '.'), 1, Integer::sum);
+                        }
+                    }
+                }
+            }
+            Map<String, Evidence> out = new HashMap<>();
+            for (var e : counts.entrySet()) {
+                String best = null;
+                int top = 0;
+                for (var v : votes.getOrDefault(e.getKey(), Map.of()).entrySet()) {
+                    if (v.getValue() > top) {
+                        top = v.getValue();
+                        best = v.getKey();
+                    }
+                }
+                int[] n = e.getValue();
+                out.put(e.getKey(), new Evidence(n[0], n[1], n[2], best, top));
+            }
+            Evidence none = new Evidence(0, 0, 0, null, 0);
+            for (Cls c : a.classes.values()) {
+                if (!cAB.containsKey(c)) {
+                    out.putIfAbsent(c.name.replace('/', '.'), none);
+                }
+                for (Meth m : c.methods.values()) {
+                    if (!mAB.containsKey(m)) {
+                        out.putIfAbsent(m.owner.name.replace('/', '.') + "." + m.name + m.desc, none);
+                    }
+                }
+                for (Fld f : c.fields.values()) {
+                    if (!fAB.containsKey(f)) {
+                        out.putIfAbsent(f.owner.name.replace('/', '.') + "." + f.name, none);
+                    }
+                }
+            }
+            return out;
+        }
+
+        /** The Exposure key of what a reference names, when that is a class, method or field of a with no link to b. */
+        String unlinkedKey(Ref r) {
+            if (r.kind() == 'k') {
+                return null;
+            }
+            if (r.kind() == 'c') {
+                Cls c = a.classes.get(r.owner());
+                return c == null || cAB.containsKey(c) ? null : c.name.replace('/', '.');
+            }
+            Meth m = null;
+            Fld f = null;
+            // A reference names the class it was compiled against; the member may be declared by a supertype.
+            for (Cls c = a.classes.get(r.owner()); c != null && m == null && f == null; c = c.sup == null ? null : a.classes.get(c.sup)) {
+                if (r.kind() == 'm') {
+                    m = c.methods.get(r.name() + r.desc());
+                } else {
+                    f = c.fields.get(r.name());
+                }
+            }
+            if (m != null) {
+                return mAB.containsKey(m) ? null : m.owner.name.replace('/', '.') + "." + m.name + m.desc;
+            }
+            return f == null || fAB.containsKey(f) ? null : f.owner.name.replace('/', '.') + "." + f.name;
+        }
+
         /** A class the game stopped using and what its own code uses in its place. */
         record ClassRewrite(Cls from, Cls to, int votes, int total) {}
 
