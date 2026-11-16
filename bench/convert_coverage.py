@@ -18,6 +18,7 @@ Covered is a prediction, not a result: on the round-5 corpus, 9 of the 10 mods w
 compiled after conversion. The game check (convert_sweep) remains the proof.
 """
 import argparse
+import io
 import json
 import re
 import struct
@@ -185,12 +186,121 @@ def rule_provides(rules, frm):
     return out
 
 
+# ---- what the game itself declares ------------------------------------------------------------------
+
+def class_header(data):
+    """(name, [superclass, interfaces...], {member names}) of one class file."""
+    name, members = loader_api.class_members(data)
+    count = struct.unpack(">H", data[8:10])[0]
+    pool, i, index = {}, 10, 1
+    while index < count:
+        tag = data[i]
+        if tag == 1:
+            size = struct.unpack(">H", data[i + 1:i + 3])[0]
+            pool[index] = data[i + 3:i + 3 + size].decode("utf-8", "replace")
+            i += 3 + size
+        elif tag == 7:
+            pool[index] = ("class", struct.unpack(">H", data[i + 1:i + 3])[0])
+            i += 3
+        elif tag in (8, 16, 19, 20):
+            i += 3
+        elif tag == 15:
+            i += 4
+        elif tag in (3, 4, 9, 10, 11, 12, 17, 18):
+            i += 5
+        elif tag in (5, 6):
+            i += 9
+            index += 1
+        index += 1
+    cls = lambda ref: pool[pool[ref][1]] if ref else None
+    sup = struct.unpack(">H", data[i + 4:i + 6])[0]
+    n = struct.unpack(">H", data[i + 6:i + 8])[0]
+    ifaces = [cls(struct.unpack(">H", data[i + 8 + 2 * k:i + 10 + 2 * k])[0]) for k in range(n)]
+    return name.replace(".", "/"), [s for s in [cls(sup)] + ifaces if s], members
+
+
+def vanilla(minecraft):
+    """{class: [supertypes, member names]} of the game release, cached under .runs/loader-api. From 26.1 the client jar
+    is unobfuscated, so it is read as it is; an older release has only its member names (Mojang's client mappings),
+    without supertypes. None when the release cannot be read."""
+    # Mojang names a release 26.2, never 26.2.0.
+    minecraft = re.sub(r"^(\d+\.\d+)\.0$", r"\1", minecraft)
+    cache = loader_api.CACHE / f"vanilla-{minecraft}.json"
+    if cache.is_file():
+        return json.loads(cache.read_text(encoding="utf-8"))
+    out = {}
+    try:
+        if version(minecraft) >= (26,):
+            _, _, data = loader_api.fetch(f"minecraft-{minecraft}", {"manifest": True, "version": minecraft})
+            with zipfile.ZipFile(io.BytesIO(data)) as jar:
+                for e in jar.namelist():
+                    if e.endswith(".class") and e.startswith(GAME):
+                        name, supers, members = class_header(jar.read(e))
+                        out[name] = [supers, sorted(members)]
+        else:
+            _, _, data = loader_api.fetch(f"minecraft-{minecraft}", {"manifest": True, "version": minecraft, "mojangMappings": True})
+            for name, members in loader_api.index_mappings(data, {}).items():
+                out[name.replace(".", "/")] = [None, sorted(members)]
+    except Exception as e:  # noqa: BLE001 (an unreachable release reads as unknown, never as covered)
+        print(f"no game index for {minecraft}: {e}", file=sys.stderr)
+        return None
+    loader_api.CACHE.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(out), encoding="utf-8")
+    return out
+
+
+def declared_by_game(game, owner, name):
+    """Whether the game declares name on owner or a supertype (with no supertypes known, on any game class)."""
+    if game is None:
+        return True
+    seen, todo = set(), [owner]
+    while todo:
+        c = todo.pop()
+        if c in seen or c not in game:
+            continue
+        seen.add(c)
+        supers, members = game[c]
+        if name in members:
+            return True
+        if supers is None:
+            return any(name in m for _, m in game.values())
+        todo.extend(supers)
+    if not seen or name in OBJECT_METHODS:
+        return True
+    # A supertype outside the game other than Java's base classes (a library, a JDK interface) may declare it.
+    outside = {s for c in seen for s in (game[c][0] or []) if s and not s.startswith(GAME)}
+    return bool(outside - {"java/lang/Object", "java/lang/Enum", "java/lang/Record"})
+
+
+OBJECT_METHODS = {"equals", "hashCode", "toString", "getClass", "clone", "values", "valueOf", "ordinal", "name", "compareTo", "<init>", "<clinit>"}
+
+
+def extension_names(rules, frm, minecraft):
+    """Method names the bridge adds to game classes: NeoForge's I...Extension interfaces, Fabric's injected Fabric... ones."""
+    provided = bridge_provides(rules, frm, minecraft) or {}
+    pattern = re.compile(r"(^I\w+Extension$)" if frm == "neoforge" else r"(^Fabric\w+$)")
+    return {m for c, members in provided.items() if pattern.match(c.rsplit("/", 1)[-1].split("$")[-1]) for m in members}
+
+
 # ---- coverage ---------------------------------------------------------------------------------------
 
-def coverage(refs, rules, corpus):
+def proven(refs, sweep):
+    """Everything a mod used whose conversion compiled (coverage/sweeps/convert.json): convert handles it, whether by a
+    rule, a bridge class or its own code (it drops withTabsBefore, moves getData to attachments ...)."""
+    out = set()
+    for run in (sweep or {}).get("runs", []):
+        if str(run.get("outcome", "")).startswith(("compiles", "loads")) and run["id"] in refs["mods"]:
+            r = refs["mods"][run["id"]]
+            out |= {c.replace("/", ".") for c in r["classes"]}
+            out |= {m.split(":")[0].replace("/", ".") for m in r["members"]}
+    return out
+
+
+def coverage(refs, rules, corpus, sweep=None):
     mods = {m["id"]: m for m in corpus["mods"]}
     rows, need = [], defaultdict(set)
     rewritten = {side: rule_provides(rules, side) for side in LOADER}
+    handled = proven(refs, sweep)
     for mod_id, r in sorted(refs["mods"].items()):
         mod = mods.get(mod_id)
         if not mod:
@@ -218,9 +328,22 @@ def coverage(refs, rules, corpus):
             declared = (bridge or {}).get(owner)
             if declared is not None and declared and "*" not in declared and name not in declared and name not in ("<init>", "<clinit>", "values", "valueOf"):
                 missing.append(f"{owner}#{name}")
+        # Methods the loader adds to game classes: called on a game class that does not declare them.
+        game = vanilla(r.get("minecraft", "")) if r.get("minecraft") else None
+        added = extension_names(rules, frm, r.get("minecraft", "")) if game is not None else set()
+        extensions = 0
+        for m in r["members"]:
+            owner, rest = m.split("#", 1)
+            name, kind = rest.split(":")
+            if kind != "m" or not owner.startswith(GAME) or game is None or declared_by_game(game, owner, name):
+                continue
+            extensions += 1
+            if name not in added:
+                missing.append(f"{owner}#{name} (added by {frm})")
+        missing = [x for x in missing if x.split(" (added by")[0].replace("/", ".") not in handled]
         for x in missing:
             need[x].add(mod_id)
-        total = len(used) + sum(1 for m in r["members"] if m.startswith(prefixes))
+        total = len(used) + sum(1 for m in r["members"] if m.startswith(prefixes)) + extensions
         rows.append({"mod": mod_id, "from": frm, "minecraft": r.get("minecraft"), "bridge": bridge is not None,
                      "used": total, "missing": len(missing), "covered": round(100 * (total - len(missing)) / total) if total else 100})
     ranked = sorted(((x, sorted(m)) for x, m in need.items()), key=lambda e: (-len(e[1]), e[0]))
@@ -256,7 +379,9 @@ def main(argv=None):
         print(f"{added} mods' references written to {REFERENCES.relative_to(ROOT)} ({len(refs['mods'])} in all)")
         return 0
     refs = json.loads(REFERENCES.read_text(encoding="utf-8"))
-    result = coverage(refs, loader_api.load_rules(), json.loads(CORPUS.read_text(encoding="utf-8")))
+    sweep_file = ROOT / "coverage" / "sweeps" / "convert.json"
+    sweep = json.loads(sweep_file.read_text(encoding="utf-8")) if sweep_file.is_file() else None
+    result = coverage(refs, loader_api.load_rules(), json.loads(CORPUS.read_text(encoding="utf-8")), sweep)
     if a.json:
         print(json.dumps(result, indent=1))
         return 0

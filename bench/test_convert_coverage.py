@@ -70,4 +70,11 @@ check(rows["demo"]["bridge"] and not rows["old"]["bridge"] and rows["old"]["cove
       "a mod on a game version with no bridge layer has nothing covered: " + str(rows))
 provides = C.bridge_provides(rules, "neoforge", "26.3")
 check("get" in provides.get("net/neoforged/neoforge/registries/DeferredItem", set()), "a bridge class has the members of the bridge classes it extends (DeferredItem's get is DeferredHolder's)")
+game = {"net/minecraft/A": [["net/minecraft/B"], ["own"]], "net/minecraft/B": [["java/lang/Object"], ["inherited"]]}
+check(C.declared_by_game(game, "net/minecraft/A", "inherited") and C.declared_by_game(game, "net/minecraft/A", "hashCode"),
+      "a method the game declares on a supertype, or Object's, is the game's")
+check(not C.declared_by_game(game, "net/minecraft/A", "getCapability"), "a method no game class in the chain declares was added by the loader")
+sweep = {"runs": [{"id": "demo", "outcome": "loads, registers what the original does"}, {"id": "old", "outcome": "converted, does not compile"}]}
+check("net.fabricmc.fabric.api.nothing.v1.Gone" in C.proven(refs, sweep) and not C.proven(refs, {"runs": [sweep["runs"][1]]}),
+      "what a mod whose conversion compiled uses is handled; a failed one proves nothing")
 print(f"{checks} convert coverage checks passed")
