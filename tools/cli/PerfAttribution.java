@@ -26,6 +26,8 @@ final class PerfAttribution {
     static final Set<String> PLATFORM = Set.of("minecraft", "java", "fabricloader", "neoforge", "forge", "mixinextras", "fml");
 
     final Properties classes, features;
+    /** Mixin handlers merged into game classes, by "class.handler", with the location of the mixin's own class (mixins.properties). */
+    Properties mixins = new Properties();
     final Path root;
     final List<String> ownPackages;
     final Map<String, Origin> byLocation = new HashMap<>();
@@ -81,6 +83,11 @@ final class PerfAttribution {
         if (type.startsWith("net.minecraft.") || type.startsWith("com.mojang.")) {
             Matcher named = NAMED_MIXIN.matcher(method);
             if (named.matches() && byId.containsKey(named.group(1))) return byId.get(named.group(1));
+            String merged = mixins.getProperty(type + "." + method);
+            if (merged != null && MIXIN.matcher(method).matches()) {
+                Origin from = located(merged);
+                if (from != null && from.mod) return from;
+            }
             if (MIXIN.matcher(method).matches()) return byId.computeIfAbsent("[mixin]", k -> new Origin(k, "Mixin handlers (mod not named in method)", true, ""));
             return null;
         }
@@ -99,6 +106,15 @@ final class PerfAttribution {
         if (location == null || location.equals("ambiguous")) {
             return own ? byId.computeIfAbsent("[your mod]", k -> new Origin(k, "Your mod (" + String.join(", ", ownPackages) + ")", true, "")) : null;
         }
+        return located(location, own);
+    }
+
+    Origin located(String location) {
+        return located(location, false);
+    }
+
+    /** The origin of a class location, resolved once per location. */
+    Origin located(String location, boolean own) {
         String known = location;
         Origin cached = byLocation.get(known);
         if (cached != null || byLocation.containsKey(known)) return cached;
@@ -120,7 +136,9 @@ final class PerfAttribution {
 
     Origin resolve(String location, boolean own) {
         // Minecraft Modding Tools' own control and profiling agents are never the mod being measured.
-        if (location.contains("/.mmt/") || location.contains("mmt-agent") || location.contains("mmt-perf-agent")) return null;
+        // A pack instance mmt made (pack-run) is under ~/.mmt too: the jars in its mods folder are the pack's, but its probe.
+        boolean packMod = location.contains("/mods/") && !location.contains("mmt-pack-probe");
+        if (location.contains("/.mmt/") && !packMod || location.contains("mmt-agent") || location.contains("mmt-perf-agent")) return null;
         Path path = path(location);
         String[] metadata = path == null ? null : metadata(path);
         boolean underRoot = underRoot(path, root);

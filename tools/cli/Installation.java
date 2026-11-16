@@ -27,6 +27,7 @@ final class Installation {
         "tools/packcheck/MmtPackProbe.java",
         "tools/packcheck/MmtPackProbeFabric.java",
         "tools/packcheck/MmtPackOpener.java",
+        "tools/packcheck/MmtCrowd.java",
         "tools/packcheck/stubs/net/minecraftforge/fml/common/Mod.java",
         "tools/packcheck/stubs/net/neoforged/fml/common/Mod.java",
         "tools/packcheck/stubs/net/fabricmc/api/DedicatedServerModInitializer.java",

@@ -616,6 +616,7 @@ final class PackLoaders {
     static final List<String> PROBE = List.of(
         "tools/packcheck/MmtPackProbe.java",
         "tools/packcheck/MmtPackProbeFabric.java",
+        "tools/packcheck/MmtCrowd.java",
         "tools/packcheck/stubs/net/minecraftforge/fml/common/Mod.java",
         "tools/packcheck/stubs/net/neoforged/fml/common/Mod.java",
         "tools/packcheck/stubs/net/fabricmc/api/DedicatedServerModInitializer.java",
@@ -682,18 +683,29 @@ final class PackLoaders {
                 layer.toString()
             )
         );
-        List<String> withFingerprint = new ArrayList<>(compileProbe);
-        withFingerprint.addAll(fingerprint);
-        if (fingerprint.isEmpty()) step(context, "probe-compile", compileProbe, dir);
-        else {
-            var result = Run.command(withFingerprint, dir, Map.of(), context.report().log("probe-compile"), 600);
-            context.report().stage("probe-compile", result, Map.of("fingerprint", result.exit() == 0));
-            // A fingerprint layer that does not compile for this exact version leaves pack-check's own probe as it was.
-            if (result.exit() != 0) {
-                PackCheck.deleteTree(classes);
-                Files.createDirectories(classes);
-                step(context, "probe-compile-without-fingerprint", compileProbe, dir);
+        // Optional parts, each left out when it does not compile for this exact version: the behaviour fingerprint
+        // (MmtFingerprint) and the stand-in players of pack-run --server (MmtCrowd). pack-check's own probe stays as it was.
+        String crowd = context.harness().resolve("tools/packcheck/MmtCrowd.java").toString();
+        List<List<String>> tries = new ArrayList<>();
+        if (!fingerprint.isEmpty()) {
+            List<String> all = new ArrayList<>(fingerprint);
+            all.add(crowd);
+            tries.add(all);
+        }
+        tries.add(List.of(crowd));
+        tries.add(List.of());
+        for (int t = 0; t < tries.size(); t++) {
+            List<String> attempt = new ArrayList<>(compileProbe);
+            attempt.addAll(tries.get(t));
+            if (t == tries.size() - 1) {
+                step(context, t == 0 ? "probe-compile" : "probe-compile-plain", attempt, dir);
+                break;
             }
+            var result = Run.command(attempt, dir, Map.of(), context.report().log("probe-compile" + (t == 0 ? "" : "-" + t)), 600);
+            context.report().stage("probe-compile" + (t == 0 ? "" : "-" + t), result, Map.of("parts", tries.get(t).size()));
+            if (result.exit() == 0) break;
+            PackCheck.deleteTree(classes);
+            Files.createDirectories(classes);
         }
         // Only the metadata this loader reads goes in, so no loader sees a file meant for another and warns about it.
         // Quilt reads fabric.mod.json too, so a loader is served by the first of its files the probe has.

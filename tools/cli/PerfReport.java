@@ -52,8 +52,9 @@ final class PerfReport {
         String rootText = request.getProperty("attributionRoot", "");
         Path root = rootText.isBlank() ? null : Path.of(rootText).toAbsolutePath().normalize();
         List<String> own = Arrays.stream(request.getProperty("modPackages", "").split(",")).map(String::strip).filter(v -> !v.isEmpty()).toList();
-        PerfReport report = new PerfReport(classes, new PerfAttribution(classes,
-            Performance.properties(directory.resolve("features.properties")), root, own));
+        PerfAttribution attribution = new PerfAttribution(classes, Performance.properties(directory.resolve("features.properties")), root, own);
+        attribution.mixins = Performance.properties(directory.resolve("mixins.properties"));
+        PerfReport report = new PerfReport(classes, attribution);
         try (RecordingFile stream = new RecordingFile(recording)) {
             while (stream.hasMoreEvents()) report.accept(stream.readEvent());
         }

@@ -57,17 +57,7 @@ final class PackClient {
         List<PackCheck.Mod> mods = PackCheck.sides(pack.mods(), scan);
         List<String> without = Arrays.stream(options.get("without", "").split(",")).map(String::strip).filter(s -> !s.isEmpty()).toList();
         Map<String, String> leftOut = leftOut(mods, scan, without);
-        // --mod JAR: a build of one of the pack's mods (a candidate change) in place of the pack's jar with the same mod id.
-        Map<String, Path> replaced = new LinkedHashMap<>();
-        for (String given : Arrays.stream(options.get("mod", "").split(",")).map(String::strip).filter(s -> !s.isEmpty()).toList()) {
-            Path jar = Path.of(given).toAbsolutePath().normalize();
-            if (!Files.isRegularFile(jar)) throw new IllegalArgumentException("--mod names no jar: " + jar);
-            PackMods.Scan own = PackMods.scan(List.of(new PackCheck.Mod(jar.getFileName().toString(), jar, "both", "--mod")), loader.metadata(pack.minecraft()));
-            String file = null;
-            for (String id : own.idsOf(jar.getFileName().toString())) for (PackMods.Provider p : scan.providers.getOrDefault(id, List.of())) if (!p.bundled()) file = PackCheck.top(p.jar());
-            if (file == null) throw new IllegalArgumentException("--mod " + jar.getFileName() + " provides no mod id a jar of the pack provides: " + own.idsOf(jar.getFileName().toString()));
-            replaced.put(file, jar);
-        }
+        Map<String, Path> replaced = replacements(options, scan, loader, pack.minecraft());
         report.stages.add(Json.map("name", "read", "seconds", (System.nanoTime() - started) / 1e9));
 
         started = System.nanoTime();
@@ -218,6 +208,21 @@ final class PackClient {
                 (pack.name() + " " + pack.version()).strip(), session.get("pid"), kept, seconds,
                 leftOut.isEmpty() ? "" : "; left out: " + String.join(", ", leftOut.keySet()), instance, instance, instance, instance)
         );
+    }
+
+    /** --mod JAR: a build of one of the pack's mods (a candidate change) in place of the pack's jar with the same mod id. */
+    static Map<String, Path> replacements(Mmt.Options options, PackMods.Scan scan, PackLoaders.Loader loader, String minecraft) throws Exception {
+        Map<String, Path> replaced = new LinkedHashMap<>();
+        for (String given : Arrays.stream(options.get("mod", "").split(",")).map(String::strip).filter(s -> !s.isEmpty()).toList()) {
+            Path jar = Path.of(given).toAbsolutePath().normalize();
+            if (!Files.isRegularFile(jar)) throw new IllegalArgumentException("--mod names no jar: " + jar);
+            PackMods.Scan own = PackMods.scan(List.of(new PackCheck.Mod(jar.getFileName().toString(), jar, "both", "--mod")), loader.metadata(minecraft));
+            String file = null;
+            for (String id : own.idsOf(jar.getFileName().toString())) for (PackMods.Provider p : scan.providers.getOrDefault(id, List.of())) if (!p.bundled()) file = PackCheck.top(p.jar());
+            if (file == null) throw new IllegalArgumentException("--mod " + jar.getFileName() + " provides no mod id a jar of the pack provides: " + own.idsOf(jar.getFileName().toString()));
+            replaced.put(file, jar);
+        }
+        return replaced;
     }
 
     /** --without ID,ID: the jars providing those ids, and every jar that requires one of them, through theirs. */
