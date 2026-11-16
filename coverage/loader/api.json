@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "b60bfe76b077a331319e9a085bcf1f9dbf674528f9f7c90977bf4fe60e1565ff",
+ "rules_sha256": "cf66352a6aeabf23783c7df4a397d7f0538c61926877adaf01b89b2c7234e246",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -2544,6 +2544,26 @@
    },
    {
     "symbol": "minecraft|net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket#<init>",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry#registerModelLayer",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry#register",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry#register",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.BlockColorRegistry#register",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.ColorResolverRegistry#register",
     "found": true
    },
    {
@@ -6360,6 +6380,26 @@
    },
    {
     "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#getTooltipLines",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.EntityRenderersEvent$RegisterLayerDefinitions#registerLayerDefinition",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.EntityRenderersEvent$RegisterRenderers#registerEntityRenderer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.EntityRenderersEvent$RegisterRenderers#registerBlockEntityRenderer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterColorHandlersEvent$BlockTintSources#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterColorHandlersEvent$ColorResolvers#register",
     "found": true
    }
   ],

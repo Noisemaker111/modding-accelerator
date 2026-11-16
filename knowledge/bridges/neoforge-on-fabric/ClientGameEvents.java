@@ -37,6 +37,10 @@ final class ClientGameEvents {
 
     /** The mod-bus registration events NeoForge posts while the client mods load, in its order. */
     static void registration() {
+        Bus.INSTANCE.post(new EntityRenderersEvent.RegisterLayerDefinitions());
+        Bus.INSTANCE.post(new EntityRenderersEvent.RegisterRenderers());
+        Bus.INSTANCE.post(new RegisterColorHandlersEvent.BlockTintSources());
+        Bus.INSTANCE.post(new RegisterColorHandlersEvent.ColorResolvers());
         Bus.INSTANCE.post(new AddClientReloadListenersEvent());
         Bus.INSTANCE.post(new RegisterMenuScreensEvent());
         Bus.INSTANCE.post(new RegisterGuiLayersEvent());
