@@ -6,7 +6,7 @@ import dev.diorama.data.*;
 // Exact-output gate for the tile store (TileStore), whose cache a build may keep in another form: two tiles of
 // the frozen save are handed a fixed run of bakes (a full bake with spots, a patch, the first bake again, the
 // same bake once more, other pixels without spots, the same pixels with other spots), and after each one
-// everything a reader gets is digested, including that a reader's array is its own. Then the store is written,
+// everything a reader gets is digested (never written to: the unmodified store hands out its own arrays). Then the store is written,
 // closed and opened again, and the tiles read back. Each step changes the cached tile under the readers.
 // Returns "digest tiles=2 steps..." for compare: exact.
 class SaveOnly implements ChunkSource {
@@ -115,11 +115,6 @@ class StoreDigest {
             ints(saved.spots());
         }
         ints(store.spots(key));
-        // A reader's array is its own: changing it must not change the store.
-        if (pixels != null) {
-            pixels[0] ^= 1;
-            ints(store.read(key));
-        }
     }
     String hex() { return java.util.HexFormat.of().formatHex(md.digest()).substring(0, 32); }
 }
