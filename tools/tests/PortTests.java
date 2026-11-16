@@ -145,7 +145,29 @@ public final class PortTests {
         );
     }
 
+    /** A yarn source bridged to the game's names keeps the game's call-site rewrites, also keyed by its own yarn names. */
+    static void bridgeRewrites() {
+        Map<String, Object> names = Json.map(
+            "from", "1.21.1",
+            "classes", List.of(Json.map("from", "net.minecraft.registry.Registry", "to", "net.minecraft.core.Registry")),
+            "methods", List.of(Json.map("owner", "net.minecraft.registry.Registry", "from", "entryOf", "desc", "(Lnet/minecraft/registry/RegistryKey;)Lnet/minecraft/registry/entry/RegistryEntry$Reference;",
+                "to", "getHolderOrThrow", "newDesc", "(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Holder$Reference;"))
+        );
+        Map<String, Object> rewrite = Json.map("step", "1.21.1 -> 1.21.2", "owner", "net.minecraft.core.Registry", "from", "getHolderOrThrow",
+            "desc", "(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Holder$Reference;", "static", false,
+            "toOwner", "net.minecraft.core.HolderGetter", "to", "getOrThrow", "newDesc", "(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Holder$Reference;", "newStatic", false);
+        Map<String, Object> route = new LinkedHashMap<>(Json.map("to", "26.3", "classes", List.of(), "rewrites", List.of(rewrite)));
+        for (String list : List.of("classesRemoved", "methods", "methodsMoved", "signatures", "methodsRemoved", "fields", "fieldsRemoved")) route.put(list, List.of());
+        names = new LinkedHashMap<>(names);
+        names.put("fields", List.of());
+        List<Object> composed = Json.array(Port.composeMaps(names, route).get("rewrites"));
+        check(composed.size() == 2, "the rewrite is kept as it is and keyed by its yarn name: " + composed);
+        var yarn = Json.object(composed.get(1));
+        check("entryOf".equals(yarn.get("from")) && "net.minecraft.registry.Registry".equals(yarn.get("owner")) && "getOrThrow".equals(yarn.get("to")), "yarn key, game replacement");
+    }
+
     public static void main(String[] args) throws Exception {
+        bridgeRewrites();
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
             Files.createDirectories(Path.of(args[1])),

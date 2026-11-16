@@ -260,6 +260,27 @@ final class Port {
             out.put(kind + "Removed", removed);
         }
         out.put("history", route.getOrDefault("history", List.of()));
+        // The game's call-site rewrites, as they are (for code the map has already moved to Mojang's names) and, where the
+        // removed member is one of the source release's, keyed by its yarn name too (what javac reports before then).
+        Map<String, Map<String, Object>> yarnOf = new HashMap<>();
+        for (Object o : Json.array(names.get("methods"))) {
+            var m = Json.object(o);
+            String owner = Json.text(m, "owner", ""), mojangOwner = Json.text(m, "newOwner", mojang.apply(owner));
+            yarnOf.put(mojangOwner + "." + Json.text(m, "to", "") + Json.text(m, "newDesc", ""), m);
+        }
+        List<Object> rewrites = new ArrayList<>();
+        for (Object o : Json.array(route.get("rewrites"))) {
+            var r = Json.object(o);
+            rewrites.add(r);
+            var y = yarnOf.get(Json.text(r, "owner", "") + "." + Json.text(r, "from", "") + Json.text(r, "desc", ""));
+            if (y == null) continue;
+            Map<String, Object> yarnKeyed = new LinkedHashMap<>(r);
+            yarnKeyed.put("owner", y.get("owner"));
+            yarnKeyed.put("from", y.get("from"));
+            yarnKeyed.put("desc", y.get("desc"));
+            rewrites.add(yarnKeyed);
+        }
+        out.put("rewrites", rewrites);
         return out;
     }
 
