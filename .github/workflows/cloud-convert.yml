@@ -1,7 +1,8 @@
 name: Cloud convert sweep
 # The convert sweep (python bench/convert_sweep.py) on GitHub's runners: one ubuntu-latest job per mod in
 # bench/convert-sweep/corpus.json, at most 12 at once. Each converts its pinned clone to the other loader, compiles it,
-# starts it and the untouched original in a hidden client on a virtual display (Xvfb, Mesa's software OpenGL) to compare
+# starts it and the untouched original in a hidden client with no screen (SDL's offscreen video driver on Mesa's software
+# EGL: 26.x's SDL window finds no matching GLX visual on Xvfb, so a client there never starts) to compare
 # registry entries or applied mixins, converts it back and compiles again. Dispatch with tools/cloud-run
 # (python tools/cloud-run.py convert -f label=NAME). Each job uploads its record; the summary job ranks the gaps with
 # convert_sweep.py table and uploads coverage/sweeps/convert.json and the table. A job fails only when the runner could
@@ -70,9 +71,11 @@ jobs:
       - name: Virtual display with software OpenGL
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 >/dev/null
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 >/dev/null
           Xvfb :99 -screen 0 1280x720x24 -nolisten tcp &
           echo "DISPLAY=:99" >> "$GITHUB_ENV"
+          echo "SDL_VIDEO_DRIVER=offscreen" >> "$GITHUB_ENV"
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
           ./mmt preferences --background on --quiet on
       - name: Convert, compile, start, convert back
         run: |
