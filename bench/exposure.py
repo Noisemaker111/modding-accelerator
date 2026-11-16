@@ -156,6 +156,7 @@ def run(loader, frm, to, count, save):
         "modsRead": report["modsRead"], "modsWithNothingBroken": report["modsWithNothingBroken"],
         "usesCarried": round(carried / total, 4) if total else 1.0,
         "gameEvidence": report.get("gameEvidence", {}),
+        "signatureChanges": dict(list(report.get("signatureChanges", {}).items())[:30]),
         "top": report["brokenByMods"][:40],
     }
     print(f"{summary['modsWithNothingBroken']}/{summary['modsRead']} mods have nothing left to carry; "

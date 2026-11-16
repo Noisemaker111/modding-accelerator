@@ -110,6 +110,7 @@ public final class Exposure {
         hop.run();
         Map<String, GameDiff.Hop.Evidence> evidence = hop.evidence();
         Map<String, int[]> bySource = new TreeMap<>();
+        Map<String, Integer> byChange = new HashMap<>();
         List<Object> ranked = new ArrayList<>();
         brokenBy.entrySet()
             .stream()
@@ -122,6 +123,11 @@ public final class Exposure {
                 String[] game = gameSays(evidence.get(e.getKey()));
                 row.put("game", game[0]);
                 row.put("gameDetail", game[1]);
+                String why = brokenDetail.get(e.getKey());
+                if (why.startsWith("signature: ")) {
+                    String kind = why.substring("signature: ".length()).replaceFirst("^overridden, ", "");
+                    byChange.merge(kind, e.getValue().size(), Integer::sum);
+                }
                 int[] n = bySource.computeIfAbsent(game[0], k -> new int[2]);
                 n[0]++;
                 n[1] += e.getValue().size();
@@ -131,6 +137,9 @@ public final class Exposure {
         Map<String, Object> sources = new LinkedHashMap<>();
         bySource.forEach((k, n) -> sources.put(k, Map.of("members", n[0], "modUses", n[1])));
         report.put("gameEvidence", sources);
+        Map<String, Object> changes = new LinkedHashMap<>();
+        byChange.entrySet().stream().sorted((x, y) -> y.getValue() - x.getValue()).forEach(e -> changes.put(e.getKey(), e.getValue()));
+        report.put("signatureChanges", changes);
         report.put("modsRead", read);
         report.put("modsWithNothingBroken", clean);
         report.put("mods", perMod);
@@ -441,7 +450,129 @@ public final class Exposure {
             // The porter drops what javac says the one candidate no longer takes (VersionMap.Fix 2c*).
             return new Verdict("rewritten", key, "arguments dropped");
         }
-        return new Verdict(sameName ? "signature" : "removed", key, u.kind() == 'o' ? "overridden" : "");
+        if (u.kind() == 'm' && widened(b, target, newName, route.desc(u.desc()))) {
+            // Each parameter is now a supertype of what was passed (1.21.2: NonNullList -> List): the call compiles as written.
+            return new Verdict("ok", key, "");
+        }
+        String change = sameName ? change(target, newName, route.desc(u.desc())) : "";
+        if (u.kind() == 'm' && (change.equals("swap ResourceLocation->ResourceKey") || change.equals("swap ResourceKey->ResourceLocation")
+            || change.equals("added HolderGetter"))) {
+            // The porter converts ids and keys, and passes a built-in registry, where javac says so (VersionMap.Fix 2c**, 2c***).
+            return new Verdict("rewritten", key, change);
+        }
+        String detail = u.kind() == 'o' ? "overridden" : "";
+        return new Verdict(sameName ? "signature" : "removed", key, change.isEmpty() ? detail : (detail.isEmpty() ? change : detail + ", " + change));
+    }
+
+    /**
+     * How a method's parameters changed, in simple class names, against the same-name method of the new release closest
+     * to the old one: "fewer", "added A,B", "swap A->B;C->D" or "return". The kinds, counted over every mod, are the
+     * porter's to-do list by kind of change rather than by member.
+     */
+    static String change(GameDiff.Cls target, String name, String oldDesc) {
+        List<String> before = simple(VersionMap.Fix.paramTypes(oldDesc));
+        String best = "";
+        int bestCost = Integer.MAX_VALUE;
+        if (target != null) {
+            for (String m : target.methods.keySet()) {
+                if (!m.startsWith(name + "(")) {
+                    continue;
+                }
+                List<String> after = simple(VersionMap.Fix.paramTypes(m));
+                String kind;
+                int cost;
+                if (after.equals(before)) {
+                    kind = "return";
+                    cost = 0;
+                } else if (after.size() < before.size()) {
+                    kind = "fewer";
+                    cost = before.size() - after.size();
+                } else if (after.size() == before.size()) {
+                    List<String> swaps = new ArrayList<>();
+                    for (int i = 0; i < before.size(); i++) {
+                        if (!before.get(i).equals(after.get(i))) {
+                            swaps.add(before.get(i) + "->" + after.get(i));
+                        }
+                    }
+                    kind = "swap " + String.join(";", swaps);
+                    cost = swaps.size();
+                } else {
+                    List<String> added = new ArrayList<>(after);
+                    for (String p : before) {
+                        added.remove(p);
+                    }
+                    kind = "added " + String.join(",", added);
+                    cost = added.size() + (after.size() - before.size() == added.size() ? 0 : 10);
+                }
+                if (cost < bestCost) {
+                    bestCost = cost;
+                    best = kind;
+                }
+            }
+        }
+        return best;
+    }
+
+    /** The class has a same-name method whose every parameter accepts what the old one took (the same type or a supertype). */
+    static boolean widened(GameDiff.Snap b, GameDiff.Cls target, String name, String oldDesc) {
+        if (target == null) {
+            return false;
+        }
+        List<String> before = VersionMap.Fix.paramTypes(oldDesc);
+        for (String m : target.methods.keySet()) {
+            if (!m.startsWith(name + "(")) {
+                continue;
+            }
+            List<String> after = VersionMap.Fix.paramTypes(m);
+            boolean all = after.size() == before.size();
+            for (int i = 0; all && i < after.size(); i++) {
+                all = assignable(b, before.get(i), after.get(i));
+            }
+            if (all) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** from can be passed where to is asked, through the new release's hierarchy and then the JDK's. */
+    static boolean assignable(GameDiff.Snap b, String from, String to) {
+        if (from.equals(to) || to.equals("java.lang.Object") && !from.matches("[ZBCSIJFD]")) {
+            return true;
+        }
+        Deque<String> todo = new ArrayDeque<>(List.of(from));
+        Set<String> seen = new HashSet<>();
+        while (!todo.isEmpty()) {
+            String c = todo.pop();
+            if (!seen.add(c)) {
+                continue;
+            }
+            if (c.equals(to)) {
+                return true;
+            }
+            GameDiff.Cls k = b.classes.get(c.replace('.', '/'));
+            if (k != null) {
+                if (k.sup != null) {
+                    todo.push(k.sup.replace('/', '.'));
+                }
+                k.ifaces.forEach(i -> todo.push(i.replace('/', '.')));
+            } else if (c.startsWith("java.")) {
+                try {
+                    return Class.forName(to, false, null).isAssignableFrom(Class.forName(c, false, null));
+                } catch (ClassNotFoundException | LinkageError notJdk) {
+                    // to is the game's: a JDK class never extends it
+                }
+            }
+        }
+        return false;
+    }
+
+    static List<String> simple(List<String> types) {
+        List<String> out = new ArrayList<>();
+        for (String t : types) {
+            out.add(t.substring(t.lastIndexOf('.') + 1).replace('$', '.'));
+        }
+        return out;
     }
 
     /** The class has one method of that name, and its parameters are the old ones with trailing ones, or one choice, left out. */

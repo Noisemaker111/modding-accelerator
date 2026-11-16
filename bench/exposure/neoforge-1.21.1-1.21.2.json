@@ -4,24 +4,56 @@
  "to": "1.21.2",
  "modsRead": 150,
  "modsWithNothingBroken": 57,
- "usesCarried": 0.9857,
+ "usesCarried": 0.986,
  "gameEvidence": {
   "linked": {
-   "members": 114,
-   "modUses": 286
+   "modUses": 263,
+   "members": 110
   },
   "redesigned": {
-   "members": 362,
-   "modUses": 792
+   "modUses": 786,
+   "members": 360
   },
   "replaced": {
-   "members": 73,
-   "modUses": 220
+   "modUses": 213,
+   "members": 72
   },
   "unused": {
-   "members": 105,
-   "modUses": 206
+   "modUses": 206,
+   "members": 105
   }
+ },
+ "signatureChanges": {
+  "fewer": 52,
+  "added ToolMaterial,F,F": 19,
+  "swap Supplier->ShaderProgram": 11,
+  "swap PackOutput->HolderLookup.Provider;CompletableFuture->RecipeOutput": 9,
+  "swap LootContextParamSet->ContextKeySet": 8,
+  "added I,TagKey,ResourceLocation": 7,
+  "swap Vector3f->I": 6,
+  "added ModelPart": 6,
+  "swap VertexBuffer.Usage->BufferUsage": 5,
+  "swap Holder->ArmorMaterial": 5,
+  "swap ItemInHandRenderer->ItemRenderer": 5,
+  "overridden": 4,
+  "added RecipeBookMenu,List": 4,
+  "added I": 4,
+  "added ItemStack": 4,
+  "added Set,Z": 4,
+  "swap Ingredient->Optional;Ingredient->Optional;Ingredient->Optional": 4,
+  "swap Predicate->TargetingConditions.Selector": 4,
+  "added FeatureFlagSet": 4,
+  "swap Item.Properties->Direction;Direction->Item.Properties": 3,
+  "swap LivingEntity->LivingEntityRenderState": 2,
+  "added String,Optional": 2,
+  "added ServerPlaceRecipe.CraftingMenuAccess,Inventory,Z,I,I,List,List": 2,
+  "added Function": 2,
+  "added I,I,F": 2,
+  "added Optional,Optional": 2,
+  "swap Z->ModelLayerLocation": 2,
+  "swap RecipeCategory->HolderGetter;ItemLike->RecipeCategory;I->ItemStack": 2,
+  "added HolderLookup.Provider": 2,
+  "added ItemCombinerMenuSlotDefinition": 1
  },
  "top": [
   {
@@ -69,7 +101,7 @@
   {
    "member": "net.minecraft.client.renderer.RenderStateShard$ShaderStateShard.<init>(Ljava/util/function/Supplier;)V",
    "mods": 11,
-   "why": "signature",
+   "why": "signature: swap Supplier->ShaderProgram",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
    "examples": [
@@ -111,7 +143,7 @@
   {
    "member": "net.minecraft.data.recipes.RecipeProvider.<init>(Lnet/minecraft/data/PackOutput;Ljava/util/concurrent/CompletableFuture;)V",
    "mods": 9,
-   "why": "signature",
+   "why": "signature: swap PackOutput->HolderLookup.Provider;CompletableFuture->RecipeOutput",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
    "examples": [
@@ -146,34 +178,6 @@
     "create--create-1.21.1-6.0.10.jar",
     "dynamiccrosshair--dynamiccrosshair-9.11+1.21.1-neoforge.jar",
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
-    "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
-    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
-   ]
-  },
-  {
-   "member": "net.minecraft.world.item.crafting.RecipeHolder.<init>(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/world/item/crafting/Recipe;)V",
-   "mods": 9,
-   "why": "signature",
-   "game": "linked",
-   "gameDetail": "the map follows it; the new signature differs",
-   "examples": [
-    "create--create-1.21.1-6.0.10.jar",
-    "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
-    "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
-    "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
-    "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar"
-   ]
-  },
-  {
-   "member": "net.minecraft.world.item.crafting.ShapelessRecipe.<init>(Ljava/lang/String;Lnet/minecraft/world/item/crafting/CraftingBookCategory;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/core/NonNullList;)V",
-   "mods": 9,
-   "why": "signature",
-   "game": "linked",
-   "gameDetail": "the map follows it; the new signature differs",
-   "examples": [
-    "create--create-1.21.1-6.0.10.jar",
-    "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
-    "jei--jei-1.21.1-neoforge-19.70.0.469.jar",
     "kiwi--Kiwi-1.21.1-NeoForge-15.8.7.jar",
     "kubejs--kubejs-neoforge-2101.7.2-build.381.jar"
    ]
@@ -321,7 +325,7 @@
   {
    "member": "net.minecraft.client.renderer.PostChain.<init>(Lnet/minecraft/client/renderer/texture/TextureManager;Lnet/minecraft/server/packs/resources/ResourceProvider;Lcom/mojang/blaze3d/pipeline/RenderTarget;Lnet/minecraft/resources/ResourceLocation;)V",
    "mods": 7,
-   "why": "signature",
+   "why": "signature: fewer",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
    "examples": [
@@ -377,7 +381,7 @@
   {
    "member": "net.minecraft.data.loot.LootTableProvider$SubProviderEntry.<init>(Ljava/util/function/Function;Lnet/minecraft/world/level/storage/loot/parameters/LootContextParamSet;)V",
    "mods": 7,
-   "why": "signature",
+   "why": "signature: swap LootContextParamSet->ContextKeySet",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
    "examples": [
@@ -386,20 +390,6 @@
     "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
     "lootr--lootr-neoforge-1.21.1-1.11.38.127.jar",
     "quark--Quark-4.1-488.jar"
-   ]
-  },
-  {
-   "member": "net.minecraft.data.recipes.ShapelessRecipeBuilder.shapeless(Lnet/minecraft/data/recipes/RecipeCategory;Lnet/minecraft/world/level/ItemLike;)Lnet/minecraft/data/recipes/ShapelessRecipeBuilder;",
-   "mods": 7,
-   "why": "signature",
-   "game": "replaced",
-   "gameDetail": "net.minecraft.data.recipes.RecipeProvider.shapeless(Lnet.minecraft.data.recipes.RecipeCategory;Lnet.minecraft.world.level.ItemLike;)Lnet.minecraft.data.recipes.ShapelessRecipeBuilder; at 1 of 1 aligned uses (38 uses)",
-   "examples": [
-    "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
-    "comforts--comforts-neoforge-9.0.5+1.21.1.jar",
-    "create--create-1.21.1-6.0.10.jar",
-    "farmers-delight--FarmersDelight-1.21.1-1.3.4.jar",
-    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar"
    ]
   },
   {
@@ -419,7 +409,7 @@
   {
    "member": "net.minecraft.world.item.ArmorMaterial.<init>(Ljava/util/Map;ILnet/minecraft/core/Holder;Ljava/util/function/Supplier;Ljava/util/List;FF)V",
    "mods": 7,
-   "why": "signature",
+   "why": "signature: added I,TagKey,ResourceLocation",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
    "examples": [
@@ -582,6 +572,48 @@
     "modern-ui--ModernUI-NeoForge-1.21.1-3.13.0.1-universal.jar",
     "moonlight--moonlight-1.21.1-3.8.3-neoforge.jar",
     "polytone--polytone-1.21-5.3.8-neoforge.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.core.particles.DustParticleOptions.<init>(Lorg/joml/Vector3f;F)V",
+   "mods": 6,
+   "why": "signature: swap Vector3f->I",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "examples": [
+    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
+    "create--create-1.21.1-6.0.10.jar",
+    "kubejs--kubejs-neoforge-2101.7.2-build.381.jar",
+    "quark--Quark-4.1-488.jar",
+    "supplementaries--supplementaries-1.21.1-4.1.1-neoforge.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.entity.vehicle.ContainerEntity.getContainerLootTable()Lnet/minecraft/resources/ResourceKey;",
+   "mods": 6,
+   "why": "removed: new abstract method to implement",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "examples": [
+    "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
+    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
+    "lootr--lootr-neoforge-1.21.1-1.11.38.127.jar",
+    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
+    "quark--Quark-4.1-488.jar"
+   ]
+  },
+  {
+   "member": "net.minecraft.world.entity.vehicle.ContainerEntity.getContainerLootTableSeed()J",
+   "mods": 6,
+   "why": "removed: new abstract method to implement",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "examples": [
+    "biomes-o-plenty--BiomesOPlenty-neoforge-1.21.1-21.1.0.14.jar",
+    "cobblemon--Cobblemon-neoforge-1.8.4+1.21.1.jar",
+    "lootr--lootr-neoforge-1.21.1-1.11.38.127.jar",
+    "puzzles-lib--puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
+    "quark--Quark-4.1-488.jar"
    ]
   }
  ]
