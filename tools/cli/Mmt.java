@@ -1057,6 +1057,7 @@ public final class Mmt {
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
             "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
+            "  game-test              run the mod's own game tests hidden and muted, and read whether they passed\n" +
             "  perf-toggle            pre-screen a candidate's switches in the running game, same JVM, before perf-optimize\n" +
             "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
             "  fingerprint            what a mod does in a seeded frozen world, recorded the same way for every mod\n" +

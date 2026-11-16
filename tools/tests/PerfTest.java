@@ -209,9 +209,9 @@ public final class PerfTest {
                 + "try { Thread.sleep(12); } catch (InterruptedException stop) { return; } } }, \"Server thread\"); server.start(); server.join(); } }"),
             fixture(classes, "com/example/alloc/Spawner.java", "package com.example.alloc; public class Spawner { static volatile Object sink; "
                 + "public static void tick() { sink = new byte[256 * 1024]; } public static int tiny(int x) { return x + 1; } }"),
-            // Keeper allocates a thirtieth of Spawner's bytes but keeps them for seconds: young collections copy its arrays, not Spawner's.
-            fixture(classes, "com/example/alloc/Keeper.java", "package com.example.alloc; public class Keeper { static final int[][] RING = new int[500][]; static int next; "
-                + "public static void keep() { RING[next] = new int[2048]; next = (next + 1) % RING.length; } }"));
+            // Keeper allocates an eighth of Spawner's bytes but keeps them for seconds: young collections copy its arrays, not Spawner's.
+            fixture(classes, "com/example/alloc/Keeper.java", "package com.example.alloc; public class Keeper { static final int[][] RING = new int[300][]; static int next; "
+                + "public static void keep() { RING[next] = new int[8192]; next = (next + 1) % RING.length; } }"));
         List<String> javac = new ArrayList<>(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
             "--release", "17", "-d", classes.toString()));
         for (Path file : sources) javac.add(file.toString());
