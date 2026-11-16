@@ -1042,7 +1042,9 @@ final class Convert {
         write("src/main/resources/META-INF/neoforge.mods.toml", modsToml(meta, minecraft));
         delete(metaFile);
         buildToNeoForge(minecraft);
-        leftovers(List.of("net.fabricmc.", "com.terraformersmc.modmenu."));
+        // Fabric's loader and API packages: net.fabricmc's libraries (mapping-io, tiny-remapper) are plain dependencies
+        // the build keeps, which compile on any loader.
+        leftovers(List.of("net.fabricmc.api.", "net.fabricmc.loader.", "net.fabricmc.fabric.", "com.terraformersmc.modmenu."));
     }
 
     // ---- the Fabric bridge on NeoForge ------------------------------------------------------------------------
