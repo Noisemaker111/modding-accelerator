@@ -212,6 +212,12 @@ final class Target {
             view.texts.putAll(setup.texts);
             view.originals.putAll(setup.originals);
             view.pins.putAll(setup.pins);
+            // The sibling's own properties (Waystones' journeymap_api_version), so a version it moves can be written where
+            // it is defined.
+            for (var pin : Json.object(sibling.get("pins")).entrySet()) if (pin.getValue() != null) {
+                view.pins.putIfAbsent(pin.getKey(), pin.getValue().toString());
+                setup.pins.putIfAbsent(pin.getKey(), pin.getValue().toString());
+            }
             view.replacements.putAll(setup.replacements);
             try {
                 Dependencies.resolve(view, loaders.iterator().next());
@@ -221,7 +227,10 @@ final class Target {
             }
             setup.texts.putAll(view.texts);
             for (var original : view.originals.entrySet()) setup.originals.putIfAbsent(original.getKey(), original.getValue());
-            for (var r : view.replacements.entrySet()) setup.replacements.putIfAbsent(r.getKey(), r.getValue());
+            for (var r : view.replacements.entrySet()) {
+                if (setup.pins.containsKey(r.getKey())) setup.replacements.putIfAbsent(r.getKey(), r.getValue());
+                else setup.unchecked.add(Json.map("artifact", r.getKey(), "version", r.getValue(), "reason", "a library of project " + sibling.get("path") + " moves, but its property has no gradle.properties owner mmt can find"));
+            }
             setup.applied.addAll(view.applied);
             setup.blockers.addAll(view.blockers);
             setup.unchecked.addAll(view.unchecked);
