@@ -51,6 +51,19 @@ Do whatever the licences and terms of service allow, and nothing past them.
 - Merge only when every required check is green.
 - A setup or tooling trap you solved goes in `KNOWN_ISSUES.md`.
 
+## Releases
+
+Merging to `main` doesn't release anything. A release is a deliberate step, taken when there's something worth
+handing to people, usually every few weeks: a goal that landed and was proven, or fixes users are waiting for.
+
+- **One button:** Actions → Release → Run workflow, on `main`. It numbers the release, builds the command line and
+  the desktop app (Windows and Linux) into one portable ZIP, tests that exact ZIP, tags the commit and publishes.
+  Notes come from the PR titles merged since the last release, so PR titles should read well to users. Run it on any
+  other branch to rehearse: everything but the tag and publish.
+- **Version numbers are `0.MINOR.PATCH`.** Pick `minor` when people can do something new, `patch` for fixes only.
+  A checkout says `dev`; only the Release workflow stamps a number. `1.0` is the maker's call.
+- **Publishing is the maker's decision:** agents can rehearse a release but don't run it on `main` unasked.
+
 ## What to bring to the maker
 
 Almost nothing. Bring only what you can't settle from the code, docs, issues and PRs: legal or terms doubt,
