@@ -239,7 +239,9 @@ gradle.afterProject { p ->
             def jvmExtra = []
             if (t.hasProperty('jvmArguments')) jvmExtra.addAll(t.jvmArguments.getOrElse([]))
             t.jvmArgumentProviders.each { jvmExtra.addAll(it.asArguments()) }
-            jvmExtra.each { if (!arguments.contains(it)) arguments.add(it) }
+            // Added unless they are there already as a run: one by one would drop a repeated flag
+            // (NeoGradle's second --add-opens), leaving its value to be read as the main class.
+            if (!jvmExtra.empty && Collections.indexOfSubList(arguments, jvmExtra) < 0) arguments.addAll(jvmExtra)
             def effectiveClasspath = p.files(t.classpath)
             // ModDevGradle also assigns these inside exec(), after doFirst.
             if (t.hasProperty('classpathProvider')) effectiveClasspath.from(t.classpathProvider)

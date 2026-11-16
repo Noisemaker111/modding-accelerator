@@ -348,6 +348,28 @@ def game_registries(work, namespace, packages=(), yarn=False):
     return record
 
 
+RUNTIME_MOD = re.compile(r"(?m)^([ \t]*)(runtimeOnly|localRuntime|modRuntimeOnly|modLocalRuntime)(\b.*)$")
+
+
+def without_runtime_mods(work):
+    """Comments out the build's runtime-only dependencies (other mods a dev run loads for testing integrations) in an
+    original's copy; returns the lines it changed, for restore_runtime_mods."""
+    build = Path(work) / "build.gradle"
+    if not build.is_file():
+        return []
+    text = build.read_text(encoding="utf-8", errors="replace")
+    lines = [m.group(0) for m in RUNTIME_MOD.finditer(text)]
+    if lines:
+        build.write_text(RUNTIME_MOD.sub(lambda m: m.group(1) + "// left out for the behaviour check: " + m.group(2) + m.group(3), text), encoding="utf-8")
+    return lines
+
+
+def restore_runtime_mods(work, lines):
+    build = Path(work) / "build.gradle"
+    text = build.read_text(encoding="utf-8", errors="replace")
+    build.write_text(re.sub(r"(?m)^([ \t]*)// left out for the behaviour check: ", r"\1", text), encoding="utf-8")
+
+
 def behaviour(converted, original):
     """
     The behaviour check of one conversion from both games' records. Registry entries in the mod's namespace are compared
@@ -540,7 +562,16 @@ def run_mod(mod, args, concepts, started):
                 original = fresh_copy(src, f"{mod['id']}-original")
                 started.append(original)
                 renamed = record.get("renamedFromYarn", False)
+                # The same other mods on both sides: the converted game loads none of the original loader's runtime-only
+                # mods (Mekanism for a NeoForge mod on Fabric), so the original runs without them too, unless it
+                # cannot start without them.
+                runtime_only = without_runtime_mods(original)
                 record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages, yarn=renamed)
+                if runtime_only and not record["originalGame"].get("loaded"):
+                    restore_runtime_mods(original, runtime_only)
+                    record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages, yarn=renamed)
+                    runtime_only = []
+                record["originalGame"]["runtimeModsLeftOut"] = runtime_only
                 if renamed:
                     tables = sorted((work / ".mmt" / "portable" / "yarn-to-mojang").glob("names-*.json"))
                     if tables:
