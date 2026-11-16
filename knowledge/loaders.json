@@ -2738,6 +2738,10 @@
     "net.neoforged.neoforge.transfer.access.ItemAccess": "transfer.access.ItemAccess",
     "net.neoforged.neoforge.transfer.energy.EnergyHandler": "transfer.energy.EnergyHandler",
     "net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler": "transfer.energy.SimpleEnergyHandler",
+    "net.neoforged.neoforge.transfer.energy.ItemAccessEnergyHandler": "transfer.energy.ItemAccessEnergyHandler",
+    "net.neoforged.neoforge.transfer.item.ResourceHandlerSlot": "transfer.item.ResourceHandlerSlot",
+    "net.neoforged.neoforge.transfer.TransferPreconditions": "transfer.TransferPreconditions",
+    "net.neoforged.neoforge.world.inventory.StackCopySlot": "inventory.StackCopySlot",
     "net.neoforged.neoforge.transfer.fluid.FluidResource": "transfer.fluid.FluidResource",
     "net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler": "transfer.fluid.FluidStacksResourceHandler",
     "net.neoforged.neoforge.transfer.item.ItemResource": "transfer.item.ItemResource",
@@ -4812,6 +4816,7 @@
       "RegisterRenderPipelinesEvent.java",
       "RegisterSpecialModelRendererEvent.java",
       "transfer/",
+      "inventory/",
       "common/util/ValueIOSerializable.java"
      ],
      "rewrites": {
@@ -6191,7 +6196,7 @@
      "client": true,
      "uses": [
       [
-       "\\b(getGuiLeft|getGuiTop|getXSize|getYSize|getSlotUnderMouse)\\s*\\("
+       "\\b(getGuiLeft|getGuiTop|getXSize|getYSize|getSlotUnderMouse|getLeftPos|getTopPos|getImageWidth|getImageHeight|getHoveredSlot)\\s*\\("
       ]
      ],
      "injects": {
