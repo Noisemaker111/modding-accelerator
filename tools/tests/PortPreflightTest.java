@@ -223,6 +223,21 @@ public final class PortPreflightTest {
             """;
         VersionMap.ApiFix.Lint back = VersionMap.ApiFix.lintKnown(VersionMap.Known.load(backMap), scratch.resolve("Modern.java"), modern);
         require(back.hits.size() == 1 && back.hits.get(0).auto() && back.fixed.contains("block.getBlockState()"), "backports lint the same way, Mojang names to MCP");
+        VersionMap.Known other = new VersionMap.Known();
+        other.fromVersion = "9";
+        other.toVersion = "9";
+        other.names = "mcp";
+        java.util.Map<String, String> row = new java.util.HashMap<>();
+        row.put("kind", "method");
+        row.put("name", "getBlockState");
+        row.put("what", "renamed");
+        row.put("step", "9 -> 9");
+        other.history.add(row);
+        require(
+            VersionMap.ApiFix.stepsFor(other, "method", "getBlockState", java.util.Set.of("renamed")).equals("9 -> 9") &&
+            VersionMap.ApiFix.stepsFor(known, "method", "getBlockState", java.util.Set.of("renamed")).contains("1.12.2 -> 1.14.4"),
+            "step lookup is per-map; cached steps never leak across maps"
+        );
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }
 }

@@ -786,7 +786,10 @@ final class Port {
                 ? seam
                     ? "one map joined across " +
                     String.join(" -> ", chain) +
-                    " by Forge SRG ids to 1.14.4 (MCP names), translated to Mojang's names at the seam through the obfuscated names both lanes share, then by Fabric intermediary ids"
+                    " by Forge SRG ids to 1.14.4 (MCP names), translated to Mojang's names at the seam through the obfuscated names both lanes share, then by Fabric intermediary ids" +
+                    (chain.size() < route.versions.size()
+                            ? "; updates past " + chain.get(chain.size() - 1) + " have no shared ids and are left to the compiler and rules"
+                            : "")
                     : "one map joined across " +
                     String.join(" -> ", chain) +
                     " by Forge SRG ids (MCP names); a class rename the links miss reads as a removal and an addition"
