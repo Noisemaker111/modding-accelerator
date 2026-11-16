@@ -1852,6 +1852,29 @@ final class Port {
         return loaderFits(rule, loaders);
     }
 
+    static final Pattern GAME_CLASS = Pattern.compile(
+        "\\b(?:net\\.minecraft|com\\.mojang|net\\.neoforged|net\\.fabricmc)(?:\\.[a-z]\\w*)+\\.[A-Z]\\w*"
+    );
+
+    /**
+     * Whether every game class a rule writes (its ensureImports, and a qualified name in its replacement) is in the target
+     * game. A rule from an earlier update can write a class a later one removed again (1.21.2's CoreShaders, gone in
+     * 1.21.5): on a longer jump it would only trade one error for another, so it is skipped and the error stays named
+     * by the later update. True when the target's classpath cannot be read.
+     */
+    boolean targetHas(Map<String, Object> rule) throws IOException {
+        var apply = Json.object(rule.get("apply"));
+        Set<String> written = new TreeSet<>(ProjectModel.strings(apply.get("ensureImports")));
+        Matcher named = GAME_CLASS.matcher(Json.text(apply, "replace", ""));
+        while (named.find()) written.add(named.group());
+        written.removeIf(name -> !GAME_CLASS.matcher(name).matches());
+        if (written.isEmpty()) return true;
+        if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+        if (supertypeIndex.bySimple.getOrDefault("Minecraft", List.of()).isEmpty()) return true;
+        for (String name : written) if (supertypeIndex.qualified(name) == null) return false;
+        return true;
+    }
+
     static boolean loaderFits(Map<String, Object> rule, Set<String> loaders) {
         String loader = Json.text(rule, "loader", "");
         return loader.isEmpty() || loaders.contains(loader);
@@ -1966,6 +1989,7 @@ final class Port {
                 ? List.of()
                 : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null ? covered.isEmpty() : !crosses(Json.text(rule, "jump", ""), from, to)) continue;
+            if (!targetHas(rule)) continue;
             for (Path file : all) {
                 String original = Files.readString(file), text = rewrite(rule, original);
                 if (!text.equals(original)) {
@@ -2352,6 +2376,7 @@ final class Port {
                 ? List.of()
                 : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null && covered.isEmpty()) continue;
+            if (!targetHas(rule)) continue;
             Object transform = Json.object(rule.get("apply")).get("transform");
             if ("accessor".equals(transform) || "payload-bytes".equals(transform)) {
                 if (
