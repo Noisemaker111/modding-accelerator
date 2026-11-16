@@ -2865,6 +2865,12 @@ final class Convert {
         StringBuilder out = new StringBuilder();
         while (wild.find()) {
             StringBuilder imports = new StringBuilder();
+            // import ...ModConfigSpec.*; names a mirrored class's nested types: the bridge class's own.
+            Object mirrored = classes.get(wild.group(1));
+            if (mirrored != null && !dropped(drops, String.valueOf(mirrored).replace('.', '/') + ".java")) {
+                wild.appendReplacement(out, Matcher.quoteReplacement("import " + bridgePackage + "." + mirrored + ".*;\n"));
+                continue;
+            }
             for (var c : classes.entrySet()) {
                 String name = c.getKey();
                 int dot = name.lastIndexOf('.');

@@ -238,14 +238,14 @@ public final class ConvertTests {
             "a version layer's rewrites rename whole words only, dotted names included: " + renamed
         );
         String wildcard = Convert.wildcardBridgeImports(
-            "import net.neoforged.neoforge.client.event.*;\nimport java.util.*;\nclass A { void a(RegisterMenuScreensEvent e, EntityRenderersEvent.RegisterRenderers r) {} }",
+            "import net.neoforged.neoforge.client.event.*;\nimport net.neoforged.neoforge.client.event.ScreenEvent.*;\nimport java.util.*;\nclass A { void a(RegisterMenuScreensEvent e, EntityRenderersEvent.RegisterRenderers r) {} }",
             Json.object(Json.parse("{\"net.neoforged.neoforge.client.event.RegisterMenuScreensEvent\":\"RegisterMenuScreensEvent\",\"net.neoforged.neoforge.client.event.EntityRenderersEvent\":\"EntityRenderersEvent\",\"net.neoforged.neoforge.client.event.ScreenEvent\":\"ScreenEvent\",\"net.neoforged.neoforge.client.event.RenderGuiEvent\":\"RenderGuiEvent\"}")),
             List.of("RenderGuiEvent.java"),
             "demo.bridge"
         );
         check(
-            wildcard.startsWith("import demo.bridge.RegisterMenuScreensEvent;\nimport demo.bridge.EntityRenderersEvent;\nimport java.util.*;\n") && !wildcard.contains("ScreenEvent;"),
-            "a wildcard import of a NeoForge package imports each mirrored class of it the file names, and no other: " + wildcard
+            wildcard.startsWith("import demo.bridge.RegisterMenuScreensEvent;\nimport demo.bridge.EntityRenderersEvent;\nimport demo.bridge.ScreenEvent.*;\nimport java.util.*;\n") && !wildcard.contains("ScreenEvent;"),
+            "a wildcard import of a NeoForge package imports each mirrored class of it the file names, and no other; of a mirrored class, its nested types: " + wildcard
         );
         String variables = Convert.remapVariableDependencies(
             "    def ctDep = \"com.blamejared:CraftTweaker-fabric-1.21.1:1\"\n    compileOnly ctDep\n    runtimeOnly(ctDep)\n    def lib = \"a:b:1\"\n    implementation lib\n"
