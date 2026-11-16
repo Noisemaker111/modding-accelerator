@@ -53,10 +53,20 @@ final class PerfAttribution {
         /** Samples with each of this mod's methods anywhere on the stack: CPU spent in it and what it called. */
         final Map<String, Long> inclusiveMethods = new HashMap<>();
         long inclusive;
+        /** Samples in game calls this mod's redirect or wrapper only passed through: shown, never charged. */
+        long passedThrough;
         Unit(Origin origin) { this.origin = origin; }
     }
 
-    record Hit(Unit unit, String feature, String kind, String method) { }
+    /** through: the innermost mod frame only passes a game call through (PASS_THROUGH), and the sample is in that call. */
+    record Hit(Unit unit, String feature, String kind, String method, boolean through) { }
+
+    /**
+     * Mixin handlers that stand in for one game call and normally make it: a redirect or a wrapped operation. Work the
+     * game does inside that call is not the mod's (Observable's redirect around every entity tick was charged 6 ms a tick
+     * in All the Mods 9 while its own code was on top of 2 samples in 1,499); work the handler itself does still is.
+     */
+    static final Pattern PASS_THROUGH = Pattern.compile("^(?:redirect|wrapOperation|wrapWithCondition)\\$");
 
     PerfAttribution(Properties classes, Properties features, Path root, List<String> ownPackages) {
         this.classes = classes;
@@ -237,7 +247,8 @@ final class PerfAttribution {
             kind = "other code";
             label = simple(entered.getType().getName()) + "." + entered.getName();
         }
-        return new Hit(unit, kind + " · " + label, kind, methodName(frames.get(top)));
+        boolean through = top > 0 && PASS_THROUGH.matcher(frames.get(top).getMethod().getName()).find();
+        return new Hit(unit, kind + " · " + label, kind, methodName(frames.get(top)), through);
     }
 
     /**
@@ -307,6 +318,10 @@ final class PerfAttribution {
             if (unit != null) unit.inclusive++;
         }
         if (hit == null) return;
+        if (hit.through()) {
+            hit.unit().passedThrough++;
+            return;
+        }
         attributedSamples++;
         boolean self = owner(typeName(frames.get(0)), frames.get(0).getMethod().getName()) != null;
         for (Tally tally : List.of(hit.unit.total, feature(hit))) {
@@ -360,7 +375,8 @@ final class PerfAttribution {
     Hit stack(RecordedEvent event) {
         RecordedStackTrace trace = event.getStackTrace();
         List<RecordedFrame> frames = PerfReport.frames(trace);
-        return frames.isEmpty() ? null : hit(frames);
+        Hit hit = frames.isEmpty() ? null : hit(frames);
+        return hit == null || hit.through() ? null : hit;
     }
 
     /** Shallow live bytes of each mod's own classes from the post-capture class histogram. */
@@ -454,6 +470,7 @@ final class PerfAttribution {
             row.put("samples", unit.total.samples);
             row.put("selfSamples", unit.total.self);
             row.put("inclusiveSamples", unit.inclusive);
+            row.put("passedThroughSamples", unit.passedThrough);
             row.put("percentOfSamples", samples == 0 ? 0 : 100.0 * unit.total.samples / samples);
             if (period > 0) row.put("sampledCpuMsPerSecond", unit.total.samples * period / seconds);
             share(row, "perTick", busiest(unit.total.threads, "Server thread"), serverSamples, ticks);
@@ -508,7 +525,8 @@ final class PerfAttribution {
             "unattributed", exact.getOrDefault("[unattributed]", List.of()),
             "basis", Json.map(
                 "sampled", "Execution samples, allocation samples, lock and I/O events are charged to the innermost mod frame on their stack; "
-                    + "game, JVM, loader and library frames above it count as that mod's work. Feature = how the game entered that mod "
+                    + "game, JVM, loader and library frames above it count as that mod's work, except inside a game call the mod's redirect or "
+                    + "wrapped operation only passes through (passedThroughSamples, never charged). Feature = how the game entered that mod "
                     + "(event bus → event handler, mixin handler name, or the block/entity/renderer/goal/screen class on the stack). Sampled values are estimates.",
                 "perTick", "Share of server-thread samples × mean measured tick duration. Interval is a binomial 95% range on that share; "
                     + "samples are autocorrelated, so treat it as approximate. Waits inside a tick are not sampled.",

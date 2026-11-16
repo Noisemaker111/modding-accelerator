@@ -30,9 +30,18 @@ final class PerfPatterns {
      * of the entries in {@code in} (methods, features or threads) whose name matches the regex and
      * compares that with the mod's own samples.
      */
+    /**
+     * The fewest samples a mod needs before a share of them means anything (at a 10 ms period, a second of CPU): in All the
+     * Mods 9 a mod with 21 samples (1.8% of the capture) matched a cable-network pattern on 9 of them.
+     */
+    static final int MIN_SAMPLES = 100;
+    /** ... unless it is this much of the whole capture (a short or quiet capture has few samples in all). */
+    static final double MIN_PERCENT = 10;
+
     static Map<String, Object> evidence(Map<String, Object> symptom, Map<String, Object> mod) {
         double total = ((Number) mod.getOrDefault("samples", 0)).doubleValue();
-        if (total <= 0) return null;
+        double percent = ((Number) mod.getOrDefault("percentOfSamples", 100)).doubleValue();
+        if (total <= 0 || total < MIN_SAMPLES && percent < MIN_PERCENT) return null;
         List<Object> found = new ArrayList<>();
         for (Object item : Json.array(symptom.get("when"))) {
             Map<String, Object> clause = Json.object(item);

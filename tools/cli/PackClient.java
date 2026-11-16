@@ -57,6 +57,17 @@ final class PackClient {
         List<PackCheck.Mod> mods = PackCheck.sides(pack.mods(), scan);
         List<String> without = Arrays.stream(options.get("without", "").split(",")).map(String::strip).filter(s -> !s.isEmpty()).toList();
         Map<String, String> leftOut = leftOut(mods, scan, without);
+        // --mod JAR: a build of one of the pack's mods (a candidate change) in place of the pack's jar with the same mod id.
+        Map<String, Path> replaced = new LinkedHashMap<>();
+        for (String given : Arrays.stream(options.get("mod", "").split(",")).map(String::strip).filter(s -> !s.isEmpty()).toList()) {
+            Path jar = Path.of(given).toAbsolutePath().normalize();
+            if (!Files.isRegularFile(jar)) throw new IllegalArgumentException("--mod names no jar: " + jar);
+            PackMods.Scan own = PackMods.scan(List.of(new PackCheck.Mod(jar.getFileName().toString(), jar, "both", "--mod")), loader.metadata(pack.minecraft()));
+            String file = null;
+            for (String id : own.idsOf(jar.getFileName().toString())) for (PackMods.Provider p : scan.providers.getOrDefault(id, List.of())) if (!p.bundled()) file = PackCheck.top(p.jar());
+            if (file == null) throw new IllegalArgumentException("--mod " + jar.getFileName() + " provides no mod id a jar of the pack provides: " + own.idsOf(jar.getFileName().toString()));
+            replaced.put(file, jar);
+        }
         report.stages.add(Json.map("name", "read", "seconds", (System.nanoTime() - started) / 1e9));
 
         started = System.nanoTime();
@@ -67,6 +78,7 @@ final class PackClient {
         Path instance = options.values.containsKey("dir")
             ? Path.of(options.get("dir", "")).toAbsolutePath().normalize()
             : cache.resolve("clients").resolve(key(input, without));
+        if (!replaced.isEmpty()) report.stages.add(Json.map("name", "replaced", "jars", replaced.entrySet().stream().map(e -> e.getKey() + " <- " + e.getValue()).toList()));
         Path state = instance.resolve(".mmt/portable");
         Map<String, Object> running = Files.isRegularFile(state.resolve("agent.json")) ? Json.read(state.resolve("agent.json")) : null;
         if (running != null && Game.alive(running)) throw new IllegalStateException(
@@ -90,7 +102,8 @@ final class PackClient {
         int kept = 0;
         for (PackCheck.Mod mod : mods) {
             if (mod.jar() == null || leftOut.containsKey(mod.file()) || !mod.file().endsWith(".jar")) continue;
-            PackCheck.link(mod.jar(), modsFolder.resolve(mod.file()));
+            if (replaced.containsKey(mod.file())) Files.copy(replaced.get(mod.file()), modsFolder.resolve(mod.file()));
+            else PackCheck.link(mod.jar(), modsFolder.resolve(mod.file()));
             kept++;
         }
         // A pack that carries jars itself (an instance's or export's mods folder) has them in its first layer.
@@ -131,6 +144,8 @@ final class PackClient {
         try (var list = Files.list(modsFolder)) {
             for (Path jar : list.filter(p -> p.toString().endsWith(".jar")).sorted().toList()) compile.add(jar.toString());
         }
+        // The launch class path too, but not the obfuscated game jar the loader ignores (its classes are named a, b, com).
+        for (Path jar : profile.classpath) if (!jar.getFileName().toString().equals(profile.id + ".jar") && !compile.contains(jar.toString())) compile.add(jar.toString());
         Path compileList = state.resolve("compile-classpath.txt");
         Files.writeString(compileList, String.join(File.pathSeparator, compile));
         command.add(main + 7, "-Dmmt.compileClasspath=" + compileList);
@@ -168,7 +183,9 @@ final class PackClient {
                 Thread.sleep(1000);
                 status = Game.request(session, Json.map("command", "status"));
             }
-            if (Boolean.TRUE.equals(preferences.get("background")) && Json.text(status, "backgroundApplied", "").isEmpty()) unwanted += " its window could not be hidden (" + Json.text(status, "backgroundError", "no window library rewritten") + ");";
+            boolean hidden = !Json.text(status, "backgroundApplied", "").isEmpty();
+            String why = Json.text(status, "backgroundError", "no window library rewritten");
+            if (Boolean.TRUE.equals(preferences.get("background")) && !hidden) unwanted += " its window could not be hidden (" + why + ");";
             if (Boolean.TRUE.equals(preferences.get("quiet")) && Json.text(status, "quietApplied", "").isEmpty()) unwanted += " its sound could not be muted;";
         } catch (Exception unanswered) {
             unwanted += " it did not answer mmt (" + unanswered.getMessage() + ");";
@@ -314,7 +331,9 @@ final class PackClient {
         // The game jar, named as the loader's profile (its ignore list names ${version_name}.jar), as a launcher copies it.
         var client = Json.object(Json.object(parent.get("downloads")).get("client"));
         Path gameJar = versions.resolve(minecraft).resolve(minecraft + ".jar");
-        if (!Files.isRegularFile(gameJar) || !sha1(gameJar).equals(Json.text(client, "sha1", ""))) downloads.add(Json.map("url", Json.text(client, "url", ""), "path", gameJar.toString(), "sha1", Json.text(client, "sha1", "")));
+        String clientSha1 = Json.text(client, "sha1", "");
+        boolean haveGame = Files.isRegularFile(gameJar) && sha1(gameJar).equals(clientSha1);
+        if (!haveGame) downloads.add(Json.map("url", Json.text(client, "url", ""), "path", gameJar.toString(), "sha1", clientSha1));
         // Assets: the index, then every object it names, shared by every pack of any version.
         var index = Json.object(parent.get("assetIndex"));
         profile.assetIndex = Json.text(index, "id", minecraft);
@@ -537,7 +556,8 @@ final class PackClient {
                 size = now;
                 last = System.nanoTime();
             }
-            if (System.nanoTime() - last > TimeUnit.SECONDS.toNanos(quietSeconds)) throw new IOException("The client's log said nothing for " + quietSeconds + " s before its first frame. Log: " + log);
+            boolean silent = System.nanoTime() - last > TimeUnit.SECONDS.toNanos(quietSeconds);
+            if (silent) throw new IOException("The client's log said nothing for " + quietSeconds + " s before its first frame. Log: " + log);
             if (System.nanoTime() > ceiling) throw new IOException("The client showed no frame in 45 minutes. Log: " + log);
             Thread.sleep(1000);
         }

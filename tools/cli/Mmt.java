@@ -163,7 +163,7 @@ public final class Mmt {
             "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
             "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick",
-            "jar", "ticks", "every", "namespaces", "radius", "a", "b", "without", "dir"
+            "jar", "ticks", "every", "namespaces", "radius", "a", "b", "without", "dir", "mod"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -1038,10 +1038,11 @@ public final class Mmt {
             "compared, after the game's renames (knowledge/fingerprint-normalise.json, or --map). Prints each differing section and the first leaves.\n" +
             "--baseline B1.json,B2.json --candidate C1.json,C2.json decides perf-optimize's fingerprint gate on recorded launches: leaves the baselines\n" +
             "disagree on are left out and named, and every other leaf of each candidate must equal its paired baseline's.";
-            case "pack-run" -> "Start a modpack's game client the way a player's launcher does, and leave it running: mmt pack-run --pack PACK [--without MODID,MODID] [--world SAVE] [--memory 10G] [--dir FOLDER] [--json]\n" +
+            case "pack-run" -> "Start a modpack's game client the way a player's launcher does, and leave it running: mmt pack-run --pack PACK [--without MODID,MODID] [--mod JAR,JAR] [--world SAVE] [--memory 10G] [--dir FOLDER] [--json]\n" +
                 "PACK is anything pack-check reads. The loader's installer installs its client once; the game's libraries, natives and assets come from\n" +
                 "Mojang's version file; the pack's mods (every jar, as a launcher installs them) and configs go into an instance folder that keeps its saves.\n" +
-                "--without leaves out the jars providing those mod ids and every mod that requires them. --world SAVE opens that save of the instance\n" +
+                "--without leaves out the jars providing those mod ids and every mod that requires them. --mod JAR starts that build of a mod (a\n" +
+                "candidate change) in place of the pack's jar with the same mod id. --world SAVE opens that save of the instance\n" +
                 "at start (quick play). The client is offline, with the official launcher's JVM options, hidden and muted as mmt preferences say.\n" +
                 "Then eval, game-status, perf-toggle and game-stop take --root INSTANCE, and perf --instance INSTANCE --allow-hidden profiles it.\n" +
                 "A pack with files its host no longer serves needs pack-check --fix first; start the fixed copy.";
@@ -1078,6 +1079,7 @@ public final class Mmt {
             "  plugin-check           Paper/Bukkit plugin on a fake Paper server (MockBukkit), no real server\n" +
             "  server-check           plugin on a real Paper server with a bot player and a scenario\n" +
             "  pack-check             a modpack on its real Forge/NeoForge/Fabric/Quilt server: crashes, conflicts, worlds that will not reopen\n" +
+            "  pack-run               a modpack's game client, started as a launcher does and left running for eval and perf\n" +
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
             "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
