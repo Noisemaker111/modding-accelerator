@@ -2404,7 +2404,10 @@
     "net.neoforged.neoforge.common.data.JsonCodecProvider": "data.JsonCodecProvider",
     "net.neoforged.neoforge.client.data.SpriteSourceProvider": "data.SpriteSourceProvider",
     "net.neoforged.neoforge.common.data.BlockTagCopyingItemTagProvider": "data.BlockTagCopyingItemTagProvider",
-    "net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider": "data.DatapackBuiltinEntriesProvider"
+    "net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider": "data.DatapackBuiltinEntriesProvider",
+    "net.neoforged.neoforge.common.data.ExistingFileHelper": "data.ExistingFileHelper",
+    "net.neoforged.neoforge.common.data.SpriteSourceProvider": "data.SpriteSourceProvider",
+    "net.neoforged.neoforge.data.loading.DatagenModLoader": "data.DatagenModLoader"
    },
    "symbols": {
     "neoforge": [
@@ -4319,17 +4322,7 @@
       "extensions/IDataComponentMapBuilderExtensions.java",
       "mixin/ComponentMapBuilderExtensionsMixin.java",
       "EntityRenderersEvent.java",
-      "RegisterColorHandlersEvent.java",
-      "data/",
-      "DataEntrypoint.java",
-      "extensions/IDataGeneratorExtension.java",
-      "mixin/DataGeneratorExtensionMixin.java",
-      "conditions/",
-      "extensions/IRecipeOutputExtension.java",
-      "mixin/RecipeOutputExtensionMixin.java",
-      "datamaps/",
-      "extensions/IHolderExtension.java",
-      "mixin/HolderExtensionMixin.java"
+      "RegisterColorHandlersEvent.java"
      ],
      "mixins": [
       {
@@ -4572,6 +4565,36 @@
        "for": [
         "CustomizeGuiOverlayEvent"
        ]
+      },
+      {
+       "mixin": "DataGeneratorExtensionMixin",
+       "for": [
+        "data.GatherDataEvent"
+       ],
+       "injects": {
+        "net/minecraft/data/DataGenerator": "extensions.IDataGeneratorExtension"
+       }
+      },
+      {
+       "mixin": "RecipeOutputExtensionMixin",
+       "for": [
+        "conditions.ICondition",
+        "conditions.ModLoadedCondition",
+        "conditions.NeoForgeConditions"
+       ],
+       "injects": {
+        "net/minecraft/data/recipes/RecipeOutput": "extensions.IRecipeOutputExtension"
+       }
+      },
+      {
+       "mixin": "HolderExtensionMixin",
+       "for": [
+        "datamaps.DataMapType",
+        "datamaps.builtin.NeoForgeDataMaps"
+       ],
+       "injects": {
+        "net/minecraft/core/Holder": "extensions.IHolderExtension<TT;>"
+       }
       }
      ]
     },
