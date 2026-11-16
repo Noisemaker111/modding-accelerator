@@ -58,10 +58,11 @@ only helps the mod it was made on is a partial result: say so, and say what woul
 
 ## Making a change
 
-- One feature, one branch, one PR. Commit as you go; push follow-ups to the same PR. Use the PR template, including
-  its **Carries over** line: what the next mod gets for free from your work.
-- Name the PR by what works now, not by attempt ("round 5", "batch 3", "part 2"). If the goal isn't met yet, keep
-  working in the same PR instead of opening the next round.
+- **One goal, one PR, however long the work takes.** A session spent making one mod faster, or moving porting
+  forward, ends in one PR, not a string of PRs along the way. Open it as a draft when you start, push every step to
+  it, and mark it ready when the goal is met and proven. Open a second PR only for a separate goal someone could
+  merge or reject on its own. A tool you built along the way belongs in the same PR as the work that needed it.
+- Use the PR template, including its **Carries over** line: what the next mod gets for free from your work.
 - Prove it the way a user would see it, at the smallest real scope. `AGENTS.md` has the commands. A change that can't
   be run in the game says so plainly instead of claiming it works.
 - Keep tests few and meaningful: each proves something users depend on and fails on a wrong answer.

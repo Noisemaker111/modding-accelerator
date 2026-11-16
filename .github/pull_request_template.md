@@ -8,4 +8,4 @@ generator, a faster loop, or a skill update. A win that only helps the mod it wa
 
 **Not covered:** what this doesn't handle or wasn't checked.
 
-<!-- One feature, one PR: push follow-ups here. Merge only with every check green. Fits on one screen. -->
+<!-- One goal, one PR, however long it takes: push every step here, no follow-up PRs. Merge only with every check green. Fits on one screen. -->
