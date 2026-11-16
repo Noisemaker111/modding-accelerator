@@ -2349,6 +2349,45 @@ public final class VersionMap {
                 byKind.merge("dropped parameters", 1, Integer::sum);
             }
 
+            // 2c''. A class that lost its type parameters (1.21.2: PlayerModel<T> -> PlayerModel): javac names the type, and
+            // the type arguments written after it on that line go.
+            Pattern noParameters = Pattern.compile("^type (\\w+) does not take parameters");
+            for (Err e : readErrors(log)) {
+                Matcher np = noParameters.matcher(e.message());
+                Path f = sourcePath(e, repo);
+                if (!np.find() || f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                String[] lines = text.split("\r?\n", -1);
+                if (e.line() < 1 || e.line() > lines.length) {
+                    continue;
+                }
+                String line = lines[e.line() - 1];
+                Matcher type = Pattern.compile("(?<![\\w$])" + Pattern.quote(np.group(1)) + "\\s*<").matcher(line);
+                int from = Math.max(0, Math.min(line.length(), e.caret()));
+                if (!type.find(from) && !type.find(0)) {
+                    continue;
+                }
+                int open = type.end() - 1, depth = 0, close = -1;
+                for (int i = open; i < line.length(); i++) {
+                    if (line.charAt(i) == '<') {
+                        depth++;
+                    } else if (line.charAt(i) == '>' && --depth == 0) {
+                        close = i;
+                        break;
+                    }
+                }
+                if (close < 0) {
+                    continue;
+                }
+                int nameEnd = type.start() + np.group(1).length();
+                lines[e.line() - 1] = line.substring(0, nameEnd) + line.substring(close + 1);
+                texts.put(f, String.join(text.contains("\r\n") ? "\r\n" : "\n", lines));
+                replacements++;
+                byKind.merge("type arguments dropped", 1, Integer::sum);
+            }
+
             // 2c'. One overload renamed while another keeps the name (1.21.2: Direction.getNearest(double,double,double) ->
             // getApproximateNearest, getNearest(int,int,int) stays): javac finds no suitable method; the overload whose
             // parameters are the argument types javac lists, on the class the call names, gives the new name.

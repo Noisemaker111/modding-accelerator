@@ -343,6 +343,17 @@ public final class PortPreflightTest {
         require(ghosted.contains("public boolean hurt(DamageSource source, float amount)"), "a changed return type is left alone");
         require(stoned.contains("public void wasExploded(ServerLevel level, BlockPos pos, Explosion explosion)") && stoned.contains("super.wasExploded(level, pos, explosion)"), "a narrowed type keeps the mod's name: " + stoned);
 
+        // A class that lost its type parameters: the arguments after it on the reported line go, nested ones included.
+        Path tp = Files.createDirectories(scratch.resolve("type-params"));
+        String ghostModel = "class GhostRenderer {\n  PlayerModel<AbstractClientPlayer> model;\n  Map<String, PlayerModel<Map<String, Integer>>> byName;\n}\n";
+        Files.writeString(tp.resolve("GhostRenderer.java"), ghostModel);
+        Path tpLog = scratch.resolve("type-params.log");
+        Files.writeString(tpLog, tp.resolve("GhostRenderer.java") + ":2: error: type PlayerModel does not take parameters\n  PlayerModel<AbstractClientPlayer> model;\n             ^\n"
+            + tp.resolve("GhostRenderer.java") + ":3: error: type PlayerModel does not take parameters\n  Map<String, PlayerModel<Map<String, Integer>>> byName;\n                         ^\n");
+        VersionMap.Fix.run(map, tpLog, tp, false, null);
+        String typed = Files.readString(tp.resolve("GhostRenderer.java"));
+        require(typed.contains("  PlayerModel model;") && typed.contains("Map<String, PlayerModel> byName;"), "type arguments of a class that lost them: " + typed);
+
         // A class the game replaced: the file that imports it switches import and uses; a mod's own class of that name stays.
         Path cr = Files.createDirectories(scratch.resolve("class-rewrites"));
         Path crMap = scratch.resolve("class-rewrites.json");
