@@ -1401,6 +1401,136 @@
     "neoforge": "class A extends Button { int a() { return this.packedFGColor; } }",
     "minecraft": "1.21.1"
    }
+  },
+  {
+   "id": "neoforge-gui-left-height-instance",
+   "about": "Gui.leftHeight read through the game's own Gui (Minecraft.getInstance().gui), the form the NeoForge bridge's VanillaGuiLayers.leftHeight goes back to on NeoForge.",
+   "minecraft": {
+    "from": "1.20",
+    "below": "1.21.2"
+   },
+   "fabric": "VanillaGuiLayers.leftHeight",
+   "neoforge": "Minecraft.getInstance().gui.leftHeight",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.client.gui.VanillaGuiLayers"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "import net.neoforged.neoforge.client.gui.VanillaGuiLayers;\nclass A { int a() { return VanillaGuiLayers.leftHeight; } }",
+    "neoforge": "class A { int a() { return Minecraft.getInstance().gui.leftHeight; } }"
+   }
+  },
+  {
+   "id": "neoforge-gui-left-height",
+   "about": "NeoForge 21.1 adds the field leftHeight to the game's Gui (how far up the HUD's left bars reach). A field cannot be added to a game class for the compile, so on Fabric the NeoForge bridge keeps it as VanillaGuiLayers.leftHeight, reset each HUD frame. Back to NeoForge it is Minecraft.getInstance().gui (the rule before this one), so this one is tested one way. Back to NeoForge it is Minecraft.getInstance().gui (the rule before this one), so this one is tested one way.",
+   "minecraft": {
+    "from": "1.20",
+    "below": "1.21.2"
+   },
+   "fabric": "VanillaGuiLayers.leftHeight",
+   "neoforge": "$gui.leftHeight",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.client.gui.VanillaGuiLayers"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "class A { int a(Gui gui) { return gui.leftHeight; } }",
+    "neoforge": "class A { int a(Gui gui) { return gui.leftHeight; } }",
+    "back": "import net.neoforged.neoforge.client.gui.VanillaGuiLayers;\nclass A { int a(Gui gui) { return VanillaGuiLayers.leftHeight; } }"
+   }
+  },
+  {
+   "id": "neoforge-gui-right-height-instance",
+   "about": "Gui.rightHeight read through the game's own Gui (Minecraft.getInstance().gui), the form the NeoForge bridge's VanillaGuiLayers.rightHeight goes back to on NeoForge.",
+   "minecraft": {
+    "from": "1.20",
+    "below": "1.21.2"
+   },
+   "fabric": "VanillaGuiLayers.rightHeight",
+   "neoforge": "Minecraft.getInstance().gui.rightHeight",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.client.gui.VanillaGuiLayers"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "import net.neoforged.neoforge.client.gui.VanillaGuiLayers;\nclass A { int a() { return VanillaGuiLayers.rightHeight; } }",
+    "neoforge": "class A { int a() { return Minecraft.getInstance().gui.rightHeight; } }"
+   }
+  },
+  {
+   "id": "neoforge-gui-right-height",
+   "about": "NeoForge 21.1 adds the field rightHeight to the game's Gui (how far up the HUD's right bars reach). A field cannot be added to a game class for the compile, so on Fabric the NeoForge bridge keeps it as VanillaGuiLayers.rightHeight, reset each HUD frame. Back to NeoForge it is Minecraft.getInstance().gui (the rule before this one), so this one is tested one way. Back to NeoForge it is Minecraft.getInstance().gui (the rule before this one), so this one is tested one way.",
+   "minecraft": {
+    "from": "1.20",
+    "below": "1.21.2"
+   },
+   "fabric": "VanillaGuiLayers.rightHeight",
+   "neoforge": "$gui.rightHeight",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.client.gui.VanillaGuiLayers"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "class A { int a(Gui gui) { return gui.rightHeight; } }",
+    "neoforge": "class A { int a(Gui gui) { return gui.rightHeight; } }",
+    "back": "import net.neoforged.neoforge.client.gui.VanillaGuiLayers;\nclass A { int a(Gui gui) { return VanillaGuiLayers.rightHeight; } }"
+   }
+  },
+  {
+   "id": "neoforge-ingredient-list-codec-nonempty",
+   "about": "NeoForge 21.1 adds Ingredient.LIST_CODEC_NONEMPTY: a list of at least one non-empty ingredient, which is the game's own CODEC_NONEMPTY as a list of one or more on Fabric.",
+   "minecraft": {
+    "from": "1.20.5",
+    "below": "1.21.2"
+   },
+   "fabric": "Ingredient.CODEC_NONEMPTY.listOf(1, Integer.MAX_VALUE)",
+   "neoforge": "Ingredient.LIST_CODEC_NONEMPTY",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft-1.21.1|net.minecraft.world.item.crafting.Ingredient#CODEC_NONEMPTY"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "class A { Object a() { return Ingredient.CODEC_NONEMPTY.listOf(1, Integer.MAX_VALUE); } }",
+    "neoforge": "class A { Object a() { return Ingredient.LIST_CODEC_NONEMPTY; } }"
+   }
   }
  ],
  "types": [
@@ -2647,7 +2777,8 @@
     "net.neoforged.neoforge.common.loot.IGlobalLootModifier": "loot.IGlobalLootModifier",
     "net.neoforged.neoforge.common.loot.LootModifier": "loot.LootModifier",
     "net.neoforged.neoforge.common.loot.AddTableLootModifier": "loot.AddTableLootModifier",
-    "net.neoforged.neoforge.common.loot.LootTableIdCondition": "loot.LootTableIdCondition"
+    "net.neoforged.neoforge.common.loot.LootTableIdCondition": "loot.LootTableIdCondition",
+    "net.neoforged.neoforge.event.level.block.CropGrowEvent": "CropGrowEvent"
    },
    "symbols": {
     "neoforge": [
@@ -5030,6 +5161,75 @@
         "loot.AddTableLootModifier",
         "loot.LootTableIdCondition"
        ]
+      },
+      {
+       "mixin": "FoodBuilderHooksMixin",
+       "uses": [
+        [
+         "\\.effect\\s*\\(\\s*\\(\\)\\s*->"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/food/FoodProperties$Builder": "extensions.GameHooks$FoodBuilder"
+       }
+      },
+      {
+       "mixin": "ComponentInputHooksMixin",
+       "uses": [
+        [
+         "applyImplicitComponents"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/level/block/entity/BlockEntity$DataComponentInput": "extensions.GameHooks$ComponentInput"
+       }
+      },
+      {
+       "mixin": "ComponentMapBuilderHooksMixin",
+       "uses": [
+        [
+         "collectImplicitComponents"
+        ],
+        [
+         "DataComponentMap\\.builder"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/core/component/DataComponentMap$Builder": "extensions.GameHooks$ComponentMapBuilder"
+       }
+      },
+      {
+       "mixin": "RarityHooksMixin",
+       "uses": [
+        [
+         "getStyleModifier"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/item/Rarity": "extensions.GameHooks$RarityStyle"
+       }
+      },
+      {
+       "mixin": "AreaLoadedHooksMixin",
+       "uses": [
+        [
+         "isAreaLoaded"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/level/LevelReader": "extensions.GameHooks$AreaLoaded"
+       }
+      },
+      {
+       "mixin": "StackDamageHooksMixin",
+       "uses": [
+        [
+         "hurtAndBreak"
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/item/ItemStack": "extensions.GameHooks$StackDamage"
+       }
       }
      ]
     },

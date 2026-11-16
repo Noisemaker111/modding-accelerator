@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "e0701cb474ccc9d83d4296e48f4563e01b613a52abb74b0b51e0832f125bea66",
+ "rules_sha256": "7c0ea74ff2ed17c99562168becce6be85014e14aa0059c034cde5ad4de36414c",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -708,6 +708,36 @@
   "neoforge-widget-fg-color": [
    {
     "symbol": "minecraft-1.21.1|net.minecraft.client.gui.components.AbstractWidget#active",
+    "found": true
+   }
+  ],
+  "neoforge-gui-left-height-instance": [
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers",
+    "found": true
+   }
+  ],
+  "neoforge-gui-left-height": [
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers",
+    "found": true
+   }
+  ],
+  "neoforge-gui-right-height-instance": [
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers",
+    "found": true
+   }
+  ],
+  "neoforge-gui-right-height": [
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers",
+    "found": true
+   }
+  ],
+  "neoforge-ingredient-list-codec-nonempty": [
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.item.crafting.Ingredient#CODEC_NONEMPTY",
     "found": true
    }
   ],
