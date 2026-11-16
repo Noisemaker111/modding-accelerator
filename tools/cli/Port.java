@@ -439,7 +439,25 @@ final class Port {
         StringBuilder out = new StringBuilder();
         for (String type : types) {
             List<String> found = supertypeIndex.resolve(type, List.of());
-            if (found.isEmpty()) continue;
+            if (found.isEmpty()) {
+                // A class of the mod itself: its game supertypes, read through its own source.
+                String simple = simpleName(type.replace('/', '.'));
+                Set<String> parents = new LinkedHashSet<>();
+                for (Path file : sources(build.project)) if (file.getFileName().toString().equals(simple + ".java")) {
+                    sourceParents(Files.readString(file), simple, parents, 0);
+                    break;
+                }
+                Set<String> supers = new LinkedHashSet<>();
+                for (String parent : parents) {
+                    supers.add(parent);
+                    supers.addAll(gameSupertypes(parent));
+                }
+                if (supers.isEmpty()) continue;
+                out.append(simple);
+                for (String parent : supers) out.append(' ').append(simpleName(parent.replace('/', '.')));
+                out.append('\n');
+                continue;
+            }
             Set<String> supers = gameSupertypes(found.get(0));
             if (supers.isEmpty()) continue;
             out.append(simpleName(type.replace('/', '.')));

@@ -1007,6 +1007,8 @@ public final class VersionMap {
         final Map<String, Set<String>> classBySimple = new HashMap<>(), removedClassBySimple = new HashMap<>();
         final Map<String, Set<String>> packages = new HashMap<>();
         final Map<String, Set<String[]>> methodTo = new HashMap<>(), fieldTo = new HashMap<>(); // old name -> {owner simple, new name}
+        /** Renamed methods by old name, with the descriptor of the overload that was renamed: {owner simple, old desc, new name}. */
+        final Map<String, List<String[]>> renamedOverloads = new HashMap<>();
         final Map<String, Set<String>> sigTo = new HashMap<>();
         final Map<String, Set<String>> sigTransitions = new HashMap<>();
         final Set<String> methodGone = new HashSet<>(), fieldGone = new HashSet<>(), sigNames = new HashSet<>();
@@ -1062,6 +1064,10 @@ public final class VersionMap {
                                 .add(
                                     new String[] { ownerSimple, to, newOwner == null ? ownerSimple : simple(newOwner) }
                                 );
+                            String oldDesc = field(t, "desc");
+                            if (oldDesc != null) k.renamedOverloads
+                                .computeIfAbsent(from, x -> new ArrayList<>())
+                                .add(new String[] { ownerSimple, oldDesc, to });
                         }
                     }
                     case "signatures" -> {
@@ -1604,6 +1610,27 @@ public final class VersionMap {
             return text.substring(0, at) + nl + "import " + fqn + ";" + text.substring(at);
         }
 
+        /** A descriptor type as javac prints it in a message: double, Vec3, int[], Inner (nested classes by their own name). */
+        static String javaTypeName(String descType) {
+            String dims = "";
+            while (descType.startsWith("[")) {
+                dims += "[]";
+                descType = descType.substring(1);
+            }
+            String base = switch (descType) {
+                case "Z" -> "boolean";
+                case "B" -> "byte";
+                case "C" -> "char";
+                case "S" -> "short";
+                case "I" -> "int";
+                case "J" -> "long";
+                case "F" -> "float";
+                case "D" -> "double";
+                default -> simple(descType);
+            };
+            return base + dims;
+        }
+
         /** A descriptor's parameter types: class names dotted ($ kept), primitives and arrays as written. */
         static List<String> paramTypes(String desc) {
             List<String> out = new ArrayList<>();
@@ -1916,7 +1943,14 @@ public final class VersionMap {
                 if (to == null && !method && from.matches("[A-Z]\\w*")) {
                     // A nested class written through its outer class (Capabilities.ItemHandler): javac looks it up in the
                     // outer one, and the map renamed it there (NeoForge 26.x: Capabilities$ItemHandler -> Capabilities$Item).
-                    to = k.nestedRename(Known.locationType(e.location()), from);
+                    String where = Known.locationType(e.location());
+                    to = k.nestedRename(where, from);
+                    // Written through a subclass (Sound Physics: ClonedLevelChunk.TicksToSave, declared in ChunkAccess).
+                    for (String parent : where == null ? Set.<String>of() : SUPERS.getOrDefault(where, Set.of())) {
+                        if (to == null) {
+                            to = k.nestedRename(parent, from);
+                        }
+                    }
                 }
                 Path f = sourcePath(e, repo);
                 if (f == null || !Files.isRegularFile(f)) {
@@ -2077,6 +2111,61 @@ public final class VersionMap {
                 texts.put(f, text);
                 replacements++;
                 byKind.merge("dropped parameters", 1, Integer::sum);
+            }
+
+            // 2c'. One overload renamed while another keeps the name (1.21.2: Direction.getNearest(double,double,double) ->
+            // getApproximateNearest, getNearest(int,int,int) stays): javac finds no suitable method; the overload whose
+            // parameters are the argument types javac lists, on the class the call names, gives the new name.
+            Pattern noSuitable = Pattern.compile("^no suitable method found for (\\w+)\\(([^)]*)\\)");
+            for (Err e : readErrors(log)) {
+                Matcher ns = noSuitable.matcher(e.message());
+                if (!ns.find() || !k.renamedOverloads.containsKey(ns.group(1))) {
+                    continue;
+                }
+                Path f = sourcePath(e, repo);
+                if (f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String name = ns.group(1);
+                List<String> argTypes = new ArrayList<>();
+                for (String t : ns.group(2).split(",")) {
+                    if (!t.isBlank()) {
+                        argTypes.add(t.trim().replaceAll("<.*", ""));
+                    }
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                String[] lines = text.split("\r?\n", -1);
+                if (e.line() < 1 || e.line() > lines.length) {
+                    continue;
+                }
+                String line = lines[e.line() - 1];
+                Matcher qualified = Pattern.compile("(\\w+)\\s*\\.\\s*" + Pattern.quote(name) + "\\s*\\(").matcher(line);
+                Set<String> owners = new HashSet<>();
+                while (qualified.find()) {
+                    owners.add(qualified.group(1));
+                    owners.addAll(SUPERS.getOrDefault(qualified.group(1), Set.of()));
+                }
+                Set<String> to = new HashSet<>();
+                for (String[] overload : k.renamedOverloads.get(name)) {
+                    List<String> params = new ArrayList<>();
+                    for (String p : paramTypes(overload[1])) {
+                        params.add(javaTypeName(p));
+                    }
+                    if ((owners.isEmpty() || owners.contains(overload[0])) && params.equals(argTypes)) {
+                        to.add(overload[2]);
+                    }
+                }
+                if (to.size() != 1) {
+                    continue;
+                }
+                Matcher call = Pattern.compile("(?<![\\w$])" + Pattern.quote(name) + "(\\s*\\()").matcher(line);
+                if (!call.find()) {
+                    continue;
+                }
+                lines[e.line() - 1] = line.substring(0, call.start()) + to.iterator().next() + line.substring(call.start() + name.length());
+                texts.put(f, String.join(text.contains("\r\n") ? "\r\n" : "\n", lines));
+                replacements++;
+                byKind.merge("renamed overload", 1, Integer::sum);
             }
 
             // 2d. A call the game rewrote itself (GameDiff's call-site rewrites): the replacement its own code calls, with

@@ -261,6 +261,33 @@ public final class PortPreflightTest {
         require(rewritten.contains("int n = VarInt.getByteSize(size(list.get(0)));"), "static -> static on another class, nested call arguments kept");
         require(rewritten.contains("graphics.blitSprite(SPRITE, x, y, 9, 9);"), "a new parameter nothing fills is left to the compiler");
 
+        // One overload renamed while another keeps the name: the overload with the call's argument types gives the name.
+        // A nested class written through the mod's own subclass is renamed as its declaring class's.
+        Path ov = Files.createDirectories(scratch.resolve("overloads"));
+        Path ovMap = scratch.resolve("overloads.json");
+        Files.writeString(ovMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "classes": [
+                { "from": "net.minecraft.world.level.chunk.ChunkAccess$TicksToSave", "to": "net.minecraft.world.level.chunk.ChunkAccess$PackedTicks" }
+              ],
+              "methods": [
+                { "owner": "net.minecraft.core.Direction", "from": "getNearest", "desc": "(DDD)Lnet/minecraft/core/Direction;", "to": "getApproximateNearest", "newDesc": "(DDD)Lnet/minecraft/core/Direction;" },
+                { "owner": "net.minecraft.core.Direction", "from": "getNearest", "desc": "(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/core/Direction;", "to": "getApproximateNearest", "newDesc": "(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/core/Direction;" }
+              ]
+            }
+            """);
+        String sound = "class Sound {\n  void f() {\n    var a = Direction.getNearest(x, y, z);\n    var b = Direction.getNearest(1, 2, 3);\n    ClonedLevelChunk.TicksToSave t = null;\n  }\n}\n";
+        Files.writeString(ov.resolve("Sound.java"), sound);
+        Path ovLog = scratch.resolve("overloads.log");
+        Files.writeString(ovLog, ov.resolve("Sound.java") + ":3: error: no suitable method found for getNearest(double,double,double)\n    var a = Direction.getNearest(x, y, z);\n                     ^\n"
+            + ov.resolve("Sound.java") + ":5: error: cannot find symbol\n    ClonedLevelChunk.TicksToSave t = null;\n                    ^\n  symbol:   class TicksToSave\n  location: class ClonedLevelChunk\n");
+        VersionMap.SUPERS.put("ClonedLevelChunk", Set.of("ChunkAccess", "BlockGetter"));
+        VersionMap.Fix.run(ovMap, ovLog, ov, false, null);
+        VersionMap.SUPERS.clear();
+        String sounded = Files.readString(ov.resolve("Sound.java"));
+        require(sounded.contains("Direction.getApproximateNearest(x, y, z)") && sounded.contains("Direction.getNearest(1, 2, 3)"), "the renamed overload, by its argument types: " + sounded);
+        require(sounded.contains("ClonedLevelChunk.PackedTicks t"), "a nested class through the mod's subclass: " + sounded);
+
         // A class the game replaced: the file that imports it switches import and uses; a mod's own class of that name stays.
         Path cr = Files.createDirectories(scratch.resolve("class-rewrites"));
         Path crMap = scratch.resolve("class-rewrites.json");
