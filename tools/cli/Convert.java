@@ -2496,9 +2496,7 @@ final class Convert {
             .append("'\n")
             .append(unit)
             .append("exclude '.cache'\n}\n");
-        if (split) neoForge.append(
-            "\n// NeoForge has no split client source set: the client sources build with the rest.\nsourceSets.main.java.srcDir 'src/client/java'\nsourceSets.main.resources.srcDir 'src/client/resources'\n"
-        );
+        splitClient = split;
         gradle =
             gradle.substring(0, insertAt) +
             neoForge +
@@ -2576,6 +2574,24 @@ final class Convert {
         for (Matcher named = Pattern.compile("(?m)^.*fabricmc.*$").matcher(gradle); named.find(); ) {
             int at = gradle.indexOf("fabricmc", named.start());
             if (gradleCode[at]) leave("build.gradle", 0, named.group().strip(), "still names Fabric; no rule changes it");
+        }
+        // Loom puts the game on every source set, ModDevGradle on main only: each other set the build declares gets it,
+        // at the end of the build, where every set exists (a build may declare its sets after the neoForge block).
+        List<String> sets = declaredSourceSets(gradle);
+        sets.removeAll(List.of("main", "test"));
+        // NeoForge has no split client source set: the client set's sources (wherever the build put them) build with
+        // main, at the end of the build, where the build's own source set settings are final.
+        if (splitClient) {
+            sets.remove("client");
+            // What used the client classes uses main's now, which holds them.
+            gradle = gradle.replaceAll("(?<![\\w.])(sourceSets\\.)?client\\.output\\b", "$1main.output /* client.output on Fabric */");
+            gradle = gradle.stripTrailing() + "\n" + SPLIT_CLIENT;
+        }
+        if (!sets.isEmpty()) {
+            StringBuilder extra = new StringBuilder("\n// Loom gave every source set the game's classes; ModDevGradle gives them to main, and to these as asked.\nneoForge {\n");
+            for (String set : sets) extra.append("    addModdingDependenciesTo(sourceSets.").append(set).append(")\n");
+            gradle = gradle.stripTrailing() + "\n" + extra + "}\n";
+            notes.add("Build: the source sets " + String.join(", ", sets) + " get the game's classes from ModDevGradle (addModdingDependenciesTo), as Loom gave them.");
         }
         write("build.gradle", gradle.replaceAll("\\n{3,}", "\n\n"));
         Map<String, String> props = new LinkedHashMap<>();
@@ -4235,7 +4251,12 @@ final class Convert {
                 "\")\n}\n\n" +
                 gradle.substring(at);
         }
-        gradle = gradle.replaceAll("(?m)^// NeoForge has no split client source set[^\\n]*\\n", "");
+        // The way to NeoForge built the client sources with main (SPLIT_CLIENT, or the two srcDir lines before it).
+        gradle = gradle.replaceAll("(?s)\\n?// NeoForge has no split client source set[^\\n]*\\n.*?// End of the client sources\\.\\n", "\n");
+        gradle = gradle.replaceAll("(?m)^// NeoForge has no split client source set[^\\n]*\\n(sourceSets\\.main\\.(java|resources)\\.srcDir 'src/client/(java|resources)'\\n)*", "");
+        gradle = gradle.replace("main.output /* client.output on Fabric */", "client.output");
+        // ModDevGradle's game classes for the sets Loom gave them to anyway.
+        gradle = gradle.replaceAll("(?s)\\n?// Loom gave every source set the game's classes;[^\\n]*\\nneoForge \\{\\n(\\s*addModdingDependenciesTo\\([^)]*\\)\\n)*\\}\\n", "\n");
         int[] deps = block(gradle, "dependencies");
         String add =
             unit +
@@ -4511,6 +4532,53 @@ final class Convert {
         if (!ok) result.put("errors", Port.errors(run.log()));
         result.put("ok", ok && left.isEmpty());
     }
+
+    /**
+     * The source sets a Gradle build declares: each name at the top level of a sourceSets { } block, and each
+     * sourceSets.create / register / maybeCreate. In the order declared.
+     */
+    static List<String> declaredSourceSets(String gradle) {
+        Set<String> out = new LinkedHashSet<>();
+        String code = gradle.replaceAll("(?m)//.*$", "");
+        Matcher block = Pattern.compile("(?m)^\\s*sourceSets\\s*\\{").matcher(code);
+        while (block.find()) {
+            int depth = 1;
+            int i = block.end();
+            int lineStart = i;
+            for (; i < code.length() && depth > 0; i++) {
+                char c = code.charAt(i);
+                if (c == '\n') lineStart = i + 1;
+                if (c == '{') depth++;
+                if (c == '}') depth--;
+                // A name that starts a line at depth 1: "client {" or a bare "codeGen".
+                if (depth == 1 && c == '\n') {
+                    Matcher name = Pattern.compile("^\\s*([A-Za-z_]\\w*)\\s*(\\{|\\r?$)").matcher(code.substring(lineStart, Math.min(code.length(), code.indexOf('\n', lineStart) < 0 ? code.length() : code.indexOf('\n', lineStart))));
+                    if (name.find() && !name.group(1).matches("java|resources|output|compileClasspath|runtimeClasspath")) out.add(name.group(1));
+                }
+            }
+        }
+        Matcher made = Pattern.compile("sourceSets\\.(?:create|register|maybeCreate)\\(\\s*['\"](\\w+)['\"]").matcher(code);
+        while (made.find()) out.add(made.group(1));
+        return new ArrayList<>(out);
+    }
+
+    /** Whether the Fabric build split its client sources off (Loom's splitEnvironmentSourceSets). */
+    boolean splitClient;
+
+    static final String SPLIT_CLIENT =
+        "\n// NeoForge has no split client source set: the client sources build with the rest.\n" +
+        "if (sourceSets.findByName('client') != null) {\n" +
+        "    sourceSets.main.java.srcDirs += sourceSets.client.java.srcDirs\n" +
+        "    sourceSets.main.resources.srcDirs += sourceSets.client.resources.srcDirs\n" +
+        "    sourceSets.client.java.srcDirs = []\n" +
+        "    sourceSets.client.resources.srcDirs = []\n" +
+        "    configurations.implementation.extendsFrom(configurations.clientImplementation)\n" +
+        "    configurations.compileOnly.extendsFrom(configurations.clientCompileOnly)\n" +
+        "    configurations.runtimeOnly.extendsFrom(configurations.clientRuntimeOnly)\n" +
+        "} else {\n" +
+        "    sourceSets.main.java.srcDir 'src/client/java'\n" +
+        "    sourceSets.main.resources.srcDir 'src/client/resources'\n" +
+        "}\n// End of the client sources.\n";
 
     /** Set when the compile step commented out a statement of the build that needs Loom. */
     boolean repairedBuild;

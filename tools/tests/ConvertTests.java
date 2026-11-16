@@ -229,6 +229,11 @@ public final class ConvertTests {
             "an access transformer field line becomes an access widener field with its type from Mojang's mappings, a private method stays overridable, and a field the game lacks is dropped:\n" + typed + typedLeft
         );
         ConvertNamesTests.run();
+        List<String> sets = Convert.declaredSourceSets(
+            "sourceSets {\n\tmain {\n\t\tjava.srcDirs = ['src/common/java']\n\t}\n\tclient {\n\t\tjava.srcDirs = ['src/main/java']\n\t}\n\tcodeGen\n\t// gone {\n\toldServerGametest {\n\t\tcompileClasspath += main.output\n\t}\n}\n" +
+            "sourceSets.create('extra')\n"
+        );
+        check(sets.equals(List.of("main", "client", "codeGen", "oldServerGametest", "extra")), "every source set a build declares is found (blocks, bare names, create), and nothing inside them: " + sets);
         Path loomOnly = scratch.resolve("loom-only");
         String loomGradle = "plugins {\n    id 'net.neoforged.moddev' version '2.0.148'\n    id 'io.github.ladysnake.chenille' version '0.13.0'\n}\n" +
             "apply from: 'https://example.org/scripts/3.2/ferry.gradle'\n" +
