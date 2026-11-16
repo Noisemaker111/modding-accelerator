@@ -1444,9 +1444,32 @@ public final class VersionMap {
             boolean qualified = before >= 0 && text.charAt(before) == '.';
             int start = qualified ? receiverStart(text, before) : call.start();
             String receiver = qualified ? text.substring(start, before).strip() : null;
+            // A call the game deleted (no replacement): only a no-argument void call that is a whole statement goes, so
+            // nothing a mod passed in is lost (1.21.2: RenderSystem.applyModelViewMatrix();).
+            for (Rewrite r : candidates) {
+                if (!r.to().isEmpty() || !"()V".equals(r.desc()) || !args.isEmpty()) {
+                    continue;
+                }
+                int before2 = start - 1;
+                while (before2 >= 0 && (text.charAt(before2) == ' ' || text.charAt(before2) == '\t')) {
+                    before2--;
+                }
+                int after = close + 1;
+                while (after < text.length() && Character.isWhitespace(text.charAt(after)) && text.charAt(after) != '\n') {
+                    after++;
+                }
+                boolean statementStart = before2 < 0 || "\n;{}".indexOf(text.charAt(before2)) >= 0;
+                if (statementStart && after < text.length() && text.charAt(after) == ';') {
+                    return text.substring(0, start) + text.substring(after + 1);
+                }
+                return null;
+            }
             Set<String> replacements = new LinkedHashSet<>();
             Set<String> imports = new LinkedHashSet<>();
             for (Rewrite r : candidates) {
+                if (r.to().isEmpty()) {
+                    continue;
+                }
                 List<String> old = paramTypes(r.desc());
                 old.replaceAll(t -> k.classFqn.getOrDefault(t, t));
                 if (old.size() != args.size()) {

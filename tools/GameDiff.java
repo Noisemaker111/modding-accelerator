@@ -1888,7 +1888,46 @@ public final class GameDiff {
                     totals.merge(ma, 1, Integer::sum);
                 }
             }
+            // Calls the game deleted: a removed void method whose call sites in linked methods lost the call while what was
+            // around it stayed (1.21.2: RenderSystem.applyModelViewMatrix()). Counted against every call site seen.
+            Map<Meth, Integer> dropped = new HashMap<>(), seen = new HashMap<>();
+            for (var e : mAB.entrySet()) {
+                Meth x = e.getKey();
+                Meth y = e.getValue();
+                if (x.refs.length == 0) {
+                    continue;
+                }
+                long[] ta = new long[x.refs.length];
+                long[] tb = new long[y.refs.length];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = fnv(token(x.refs[i], true));
+                }
+                for (int j = 0; j < tb.length; j++) {
+                    tb[j] = fnv(token(y.refs[j], false));
+                }
+                Set<Integer> gone = droppedIndices(ta, tb);
+                for (int i = 0; i < x.refs.length; i++) {
+                    Ref ra = x.refs[i];
+                    if (ra.kind() != 'm' || !ra.desc().endsWith(")V")) {
+                        continue;
+                    }
+                    Meth ma = a.method(ra.owner(), ra.name(), ra.desc());
+                    if (ma == null || mAB.containsKey(ma) || ma.special()) {
+                        continue;
+                    }
+                    seen.merge(ma, 1, Integer::sum);
+                    if (gone.contains(i)) {
+                        dropped.merge(ma, 1, Integer::sum);
+                    }
+                }
+            }
             List<Rewrite> out = new ArrayList<>();
+            for (var e : dropped.entrySet()) {
+                int all = seen.get(e.getKey());
+                if (e.getValue() >= 2 && e.getValue() * 10 >= all * 8 && !votes.containsKey(e.getKey())) {
+                    out.add(new Rewrite(e.getKey(), null, e.getValue(), all));
+                }
+            }
             for (var e : votes.entrySet()) {
                 Meth best = null;
                 int c1 = 0;
@@ -2063,6 +2102,49 @@ public final class GameDiff {
                 }
             }
             gap(gi, n, gj, m, out);
+            return out;
+        }
+
+        /** Indices of ta that the longest common subsequence leaves out where tb has nothing in their place (pure deletions). */
+        static Set<Integer> droppedIndices(long[] ta, long[] tb) {
+            Set<Integer> out = new HashSet<>();
+            int n = ta.length;
+            int m = tb.length;
+            if ((long) n * m > 250_000) {
+                return out;
+            }
+            int[][] l = new int[n + 1][m + 1];
+            for (int i = n - 1; i >= 0; i--) {
+                for (int j = m - 1; j >= 0; j--) {
+                    l[i][j] = ta[i] == tb[j] ? l[i + 1][j + 1] + 1 : Math.max(l[i + 1][j], l[i][j + 1]);
+                }
+            }
+            int i = 0;
+            int j = 0;
+            int gi = 0;
+            int gj = 0;
+            while (i < n && j < m) {
+                if (ta[i] == tb[j]) {
+                    if (j == gj) {
+                        for (int k = gi; k < i; k++) {
+                            out.add(k);
+                        }
+                    }
+                    i++;
+                    j++;
+                    gi = i;
+                    gj = j;
+                } else if (l[i + 1][j] >= l[i][j + 1]) {
+                    i++;
+                } else {
+                    j++;
+                }
+            }
+            if (j == gj && m == gj) {
+                for (int k = gi; k < n; k++) {
+                    out.add(k);
+                }
+            }
             return out;
         }
 
@@ -2312,10 +2394,11 @@ public final class GameDiff {
                         ", \"from\": " + VersionMap.Diff.q(r.from().name) +
                         ", \"desc\": " + VersionMap.Diff.q(r.from().desc) +
                         ", \"static\": " + r.from().isStatic() +
-                        ", \"toOwner\": " + VersionMap.Diff.q(r.to().owner.name.replace('/', '.')) +
-                        ", \"to\": " + VersionMap.Diff.q(r.to().name) +
-                        ", \"newDesc\": " + VersionMap.Diff.q(r.to().desc) +
-                        ", \"newStatic\": " + r.to().isStatic() +
+                        // A call the game deleted has no replacement: an empty "to".
+                        ", \"toOwner\": " + VersionMap.Diff.q(r.to() == null ? "" : r.to().owner.name.replace('/', '.')) +
+                        ", \"to\": " + VersionMap.Diff.q(r.to() == null ? "" : r.to().name) +
+                        ", \"newDesc\": " + VersionMap.Diff.q(r.to() == null ? "" : r.to().desc) +
+                        ", \"newStatic\": " + (r.to() != null && r.to().isStatic()) +
                         ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
                     );
                 }

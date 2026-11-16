@@ -371,11 +371,16 @@ final class Port {
             var r = Json.object(o);
             var old = sourceMember.get(Json.text(r, "owner", "") + "." + Json.text(r, "from", "") + Json.text(r, "desc", ""));
             var neu = targetMember.get(Json.text(r, "toOwner", "") + "." + Json.text(r, "to", "") + Json.text(r, "newDesc", ""));
-            if (old == null || neu == null) continue;
+            boolean deleted = Json.text(r, "to", "").isEmpty();
+            if (old == null || (neu == null && !deleted)) continue;
             Map<String, Object> yarn = new LinkedHashMap<>(r);
             yarn.put("owner", old.get("owner"));
             yarn.put("from", old.get("from"));
             yarn.put("desc", old.get("desc"));
+            if (deleted) {
+                out.add(yarn); // a call the game deleted has nothing to name on the target side
+                continue;
+            }
             yarn.put("toOwner", neu.get("owner"));
             yarn.put("to", neu.get("from"));
             yarn.put("newDesc", neu.get("desc"));

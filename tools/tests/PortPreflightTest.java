@@ -260,6 +260,30 @@ public final class PortPreflightTest {
         require(rewritten.contains("Profiler.get().push(\"x\");") && rewritten.contains("import net.minecraft.util.profiling.Profiler;"), "a receiver the game no longer needs is dropped");
         require(rewritten.contains("int n = VarInt.getByteSize(size(list.get(0)));"), "static -> static on another class, nested call arguments kept");
         require(rewritten.contains("graphics.blitSprite(SPRITE, x, y, 9, 9);"), "a new parameter nothing fills is left to the compiler");
+        // A call the game deleted: a no-argument void call that is a whole statement goes; one with arguments, or used
+        // inside an expression, stays for the compiler to name.
+        Path del = Files.createDirectories(scratch.resolve("deleted"));
+        Path delMap = scratch.resolve("deleted.json");
+        Files.writeString(delMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "rewrites": [
+                { "step": "1.21.1 -> 1.21.2", "owner": "com.mojang.blaze3d.systems.RenderSystem", "from": "applyModelViewMatrix", "desc": "()V", "static": true, "toOwner": "", "to": "", "newDesc": "", "newStatic": false, "votes": 8, "of": 10 },
+                { "step": "1.21.1 -> 1.21.2", "owner": "net.minecraft.data.worldgen.BiomeDefaultFeatures", "from": "addDefaultSeagrass", "desc": "(Lnet/minecraft/world/level/biome/BiomeGenerationSettings$Builder;)V", "static": true, "toOwner": "", "to": "", "newDesc": "", "newStatic": false, "votes": 3, "of": 3 }
+              ]
+            }
+            """);
+        String render = "class Render {\n  void f() {\n    RenderSystem.applyModelViewMatrix();\n    BiomeDefaultFeatures.addDefaultSeagrass(builder);\n    run(() -> RenderSystem.applyModelViewMatrix());\n  }\n}\n";
+        Files.writeString(del.resolve("Render.java"), render);
+        Path delLog = scratch.resolve("deleted.log");
+        String renderFile = del.resolve("Render.java").toString();
+        Files.writeString(delLog,
+            renderFile + ":3: error: cannot find symbol\n    RenderSystem.applyModelViewMatrix();\n                ^\n  symbol:   method applyModelViewMatrix()\n  location: class RenderSystem\n"
+            + renderFile + ":4: error: cannot find symbol\n    BiomeDefaultFeatures.addDefaultSeagrass(builder);\n                        ^\n  symbol:   method addDefaultSeagrass(Builder)\n  location: class BiomeDefaultFeatures\n"
+            + renderFile + ":5: error: cannot find symbol\n    run(() -> RenderSystem.applyModelViewMatrix());\n                          ^\n  symbol:   method applyModelViewMatrix()\n  location: class RenderSystem\n");
+        VersionMap.Fix.run(delMap, delLog, del, false, null);
+        String rendered = Files.readString(del.resolve("Render.java"));
+        require(rendered.contains("  void f() {\n    \n    BiomeDefaultFeatures.addDefaultSeagrass(builder);"), "the deleted no-argument call goes, line kept: " + rendered);
+        require(rendered.contains("run(() -> RenderSystem.applyModelViewMatrix());"), "a deleted call inside an expression is left alone");
 
         // One overload renamed while another keeps the name: the overload with the call's argument types gives the name.
         // A nested class written through the mod's own subclass is renamed as its declaring class's.
