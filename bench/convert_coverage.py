@@ -123,7 +123,7 @@ def version(v):
 # A member declaration: modifiers (interface members need none), type parameters, a type, the name, then ( = or ;.
 DECLARED = re.compile(
     r"(?m)^\s*(?:@\w+(?:\([^)]*\))?\s*)*(?:(?:public|protected|static|final|abstract|default|synchronized|native)\s+)*"
-    r"(?:<[^;{}()]*?>\s+)?(?!return\b|new\b|throw\b|else\b|case\b)[\w.$]+(?:<[^;{}()]*?>)?(?:\[\])*\s+(\w+)\s*(?:\(|=|;)"
+    r"(?:<[^;{}()]*?>\s+)?(?:@[\w.]+\s+)*(?!return\b|new\b|throw\b|else\b|case\b)[\w.$]+(?:<[^;{}()]*?>)?(?:\[\])*\s+(\w+)\s*(?:\(|=|;)"
 )
 # Java's own supertypes a bridge class may extend or implement: their members are the JDK's, so any name counts.
 JDK = {"Iterable", "Comparable", "Runnable", "Supplier", "Consumer", "Function", "Predicate", "AutoCloseable", "Closeable", "Collection", "List", "Map", "Set", "Record", "Enum"}
@@ -152,9 +152,8 @@ def bridge_provides(rules, frm, minecraft):
                 if frm == "fabric":
                     cls = ("net/fabricmc/" + rel) if rel.split("/")[0] in ("fabric", "loader", "api") else rel
                 else:
-                    cls = names.get(rel.replace("/", "."), names.get(rel)) or names.get(rel.rsplit("/", 1)[-1])
-                    if cls is None:
-                        continue
+                    # A class of the bridge's own (an injected interface, a helper) keeps its path in the bridge.
+                    cls = names.get(rel.replace("/", "."), names.get(rel)) or names.get(rel.rsplit("/", 1)[-1]) or "bridge/" + rel
                 text = p.read_text(encoding="utf-8", errors="replace")
                 out.setdefault(cls, set()).update(DECLARED.findall(text))
                 header = re.search(r"\b(?:class|interface|record|enum)\s+\w+[^{]*\{", text)
@@ -279,7 +278,14 @@ def extension_names(rules, frm, minecraft):
     """Method names the bridge adds to game classes: NeoForge's I...Extension interfaces, Fabric's injected Fabric... ones."""
     provided = bridge_provides(rules, frm, minecraft) or {}
     pattern = re.compile(r"(^I\w+Extension$)" if frm == "neoforge" else r"(^Fabric\w+$)")
-    return {m for c, members in provided.items() if pattern.match(c.rsplit("/", 1)[-1].split("$")[-1]) for m in members}
+    # The interfaces the bridge's mixins inject into game classes (bridges[].mixins[].injects).
+    injected = set()
+    for b in rules["bridges"]:
+        if b["from"] == frm:
+            for mixin in b.get("mixins", []):
+                injected |= {v.rsplit(".", 1)[-1] for v in (mixin.get("injects") or {}).values()}
+    return {m for c, members in provided.items()
+            if pattern.match(c.rsplit("/", 1)[-1].split("$")[-1]) or c.rsplit("/", 1)[-1].split("$")[-1] in injected for m in members}
 
 
 # ---- coverage ---------------------------------------------------------------------------------------
