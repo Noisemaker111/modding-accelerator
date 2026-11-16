@@ -1,0 +1,126 @@
+name: Cloud convert sweep
+# The convert sweep (python bench/convert_sweep.py) on GitHub's runners: one ubuntu-latest job per mod in
+# bench/convert-sweep/corpus.json, at most 12 at once. Each converts its pinned clone to the other loader, compiles it,
+# starts it and the untouched original in a hidden client with no screen (SDL's offscreen video driver on Mesa's software
+# EGL: 26.x's SDL window finds no matching GLX visual on Xvfb, so a client there never starts) to compare
+# registry entries or applied mixins, converts it back and compiles again. Dispatch with tools/cloud-run
+# (python tools/cloud-run.py convert -f label=NAME). Each job uploads its record; the summary job ranks the gaps with
+# convert_sweep.py table and uploads coverage/sweeps/convert.json and the table. A job fails only when the runner could
+# not run its mod; a mod that does not convert is a result, not a failure. No Gradle cache, no retries.
+run-name: "Cloud convert sweep: ${{ inputs.mods }} ${{ inputs.label }} ${{ inputs.request }}"
+on:
+  workflow_dispatch:
+    inputs:
+      mods:
+        description: Mod ids from bench/convert-sweep/corpus.json, comma-separated, or all
+        default: all
+      label:
+        description: The sweep's label in coverage/sweeps/convert.json's history
+        default: cloud
+      request:
+        description: Set by tools/cloud-run to find the run it started
+        default: ''
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mods: ${{ steps.plan.outputs.mods }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          MODS: ${{ inputs.mods }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os
+          mods = [m["id"] for m in json.load(open("bench/convert-sweep/corpus.json", encoding="utf-8"))["mods"]]
+          wanted = [x.strip() for x in os.environ["MODS"].split(",") if x.strip()]
+          if wanted != ["all"]:
+              unknown = [x for x in wanted if x not in mods]
+              if unknown:
+                  raise SystemExit(f"No mod {unknown} in bench/convert-sweep/corpus.json; it has {mods}")
+              mods = wanted
+          print("mods=" + json.dumps(mods))
+          EOF
+  convert:
+    needs: plan
+    name: ${{ matrix.mod }}
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        mod: ${{ fromJSON(needs.plan.outputs.mods) }}
+    runs-on: ubuntu-latest
+    # Cold: the loaders' setup for both builds, two compiles, two client starts on software OpenGL.
+    timeout-minutes: 90
+    env:
+      MOD: ${{ matrix.mod }}
+      LABEL: ${{ inputs.label }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Virtual display with software OpenGL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 >/dev/null
+          Xvfb :99 -screen 0 1280x720x24 -nolisten tcp &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+          echo "SDL_VIDEO_DRIVER=offscreen" >> "$GITHUB_ENV"
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
+          ./mmt preferences --background on --quiet on
+      - name: Convert, compile, start, convert back
+        run: |
+          set -o pipefail
+          python bench/convert_sweep.py run --only "$MOD" --jobs 1 --label "$LABEL" | tee sweep.txt
+          { echo '```'; head -n 1 sweep.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Stop the games
+        if: always()
+        run: for d in .runs/convert-sweep/work/*/; do ./mmt game-stop --root "$d" || true; done
+      - name: Record and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: convert-${{ matrix.mod }}
+          path: |
+            sweep.txt
+            .runs/convert-sweep/runs/*.json
+            .runs/convert-sweep/work/*/.runs/portable/*/*.log
+            .runs/convert-sweep/work/*/.runs/portable/*/result.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
+  summary:
+    needs: convert
+    if: always() && needs.convert.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      LABEL: ${{ inputs.label }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: convert-*
+          path: artifacts
+      - name: Rank the gaps
+        run: |
+          mkdir -p .runs/convert-sweep/runs
+          find artifacts -path '*/.runs/convert-sweep/runs/*.json' -exec cp {} .runs/convert-sweep/runs/ \;
+          python bench/convert_sweep.py table --label "$LABEL" | tee summary.md
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: summary
+          path: |
+            summary.md
+            coverage/sweeps/convert.json
+          retention-days: 14

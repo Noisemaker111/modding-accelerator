@@ -3,12 +3,14 @@
 
     python tools/cloud-run.py packs [--ref BRANCH] [-f packs=atm10-neoforge-1.21.1] [-f focus=MODID] [-f fix=true]
     python tools/cloud-run.py ports [-f cases=jade-neoforge-1.21.1-1.21.6]
+    python tools/cloud-run.py convert [-f mods=theoneprobe-fabric] [-f label=round-4]
     python tools/cloud-run.py perf  [-f patch=bench/diorama/column-reuse.patch] [-f runs=4]
     python tools/cloud-run.py --run RUN_ID        wait for and download a run already started
     tools/cloud-run ... (POSIX) and tools\\cloud-run.cmd ... (Windows) are the same
 
 packs is .github/workflows/cloud-packs.yml (pack-check, one job per pack), ports is cloud-ports.yml (the port board,
-one job per case), perf is cloud-perf.yml (perf-optimize, baseline and candidate in turn on one runner); any other
+one job per case), perf is cloud-perf.yml (perf-optimize, baseline and candidate in turn on one runner), convert is
+cloud-convert.yml (the convert sweep, one job per mod, in the game and back); any other
 name is taken as a workflow file. The workflow runs the commit the branch (--ref, default the current one) has on
 GitHub, so push first: a branch whose local commit is not on origin is refused (--allow-unpushed runs origin's).
 
@@ -28,7 +30,7 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-WORKFLOWS = {"packs": "cloud-packs.yml", "ports": "cloud-ports.yml", "perf": "cloud-perf.yml"}
+WORKFLOWS = {"packs": "cloud-packs.yml", "ports": "cloud-ports.yml", "perf": "cloud-perf.yml", "convert": "cloud-convert.yml"}
 
 
 def gh_path():

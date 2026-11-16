@@ -40,4 +40,9 @@ public final class FMLLoader {
     public static Path getGamePath() {
         return FabricLoader.getInstance().getGameDir();
     }
+
+    /** The mods being loaded, which on Fabric are the mods Fabric Loader loaded (FML 12's instance method, FML 4's static one). */
+    public static LoadingModList getLoadingModList() {
+        return LoadingModList.get();
+    }
 }

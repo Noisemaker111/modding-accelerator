@@ -656,6 +656,24 @@ def main():
         mods = [m for m in mods if m["id"] not in done]
     concepts = load_concepts()
     WORK.mkdir(parents=True, exist_ok=True)
+    failed = run_all(mods, args, concepts)
+    records = load_records()
+    if records_coverage(args):
+        ranked, rates = write(records, args.label)
+    else:
+        ranked, rates = summarize(records, args.label)
+        print(f"Partial run (--only): {OUT.relative_to(ROOT)} is left as it is; pass --record to write it.")
+    print(table(ranked, rates))
+    if failed:
+        # A mod whose run raised has no record, so the table would silently leave it out: fail the run instead.
+        print(f"Runner errors (no record written): {', '.join(failed)}", flush=True)
+        return 1
+    return 0
+
+
+def run_all(mods, args, concepts):
+    """Runs each mod; returns the ids whose run raised (they have no record)."""
+    failed = []
     with concurrent.futures.ThreadPoolExecutor(max(1, min(2, args.jobs))) as pool:
         futures = {pool.submit(run_one, m, args, concepts): m for m in mods}
         for f in concurrent.futures.as_completed(futures):
@@ -664,15 +682,9 @@ def main():
                 r = f.result()
                 print(f"{m['id']}: {r['outcome']} {json.dumps(r.get('concepts', {}))[:300]}", flush=True)
             except Exception as e:
+                failed.append(m["id"])
                 print(f"{m['id']}: runner error {e!r}", flush=True)
-    records = load_records()
-    if records_coverage(args):
-        ranked, rates = write(records, args.label)
-    else:
-        ranked, rates = summarize(records, args.label)
-        print(f"Partial run (--only): {OUT.relative_to(ROOT)} is left as it is; pass --record to write it.")
-    print(table(ranked, rates))
-    return 0
+    return sorted(failed)
 
 
 def records_coverage(args):
