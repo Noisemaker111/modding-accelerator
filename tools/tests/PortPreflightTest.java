@@ -218,6 +218,14 @@ public final class PortPreflightTest {
         String dropped = Files.readString(drops.resolve("Calls.java"));
         require(dropped.contains("renderer.markDirty(pos, 3);"), "dropped parameter's argument removed and the call renamed: " + dropped);
         require(dropped.contains("window.resize(w, h);"), "an ambiguous drop is left alone");
+        // A caret column past the end of the line as it is now, and a line the file no longer has, never stop the repair
+        // (Farmer's Delight 1.21.1 -> 1.21.6 crashed the whole port on it).
+        Files.writeString(drops.resolve("Calls.java"), calls);
+        Files.writeString(dropLog, drops.resolve("Calls.java") + ":7: error: method resize in class Window cannot be applied to given types;\n    window.resize(w, h);\n" + " ".repeat(120) + "^\n"
+            + drops.resolve("Calls.java") + ":3: error: method setSectionDirty in class LevelRenderer cannot be applied to given types;\n    renderer.setSectionDirty(\n" + " ".repeat(200) + "^\n"
+            + drops.resolve("Calls.java") + ":400: error: method setSectionDirty in class LevelRenderer cannot be applied to given types;\n    renderer.setSectionDirty(\n            ^\n");
+        VersionMap.Fix.run(dropMap, dropLog, drops, false, null);
+        require(Files.readString(drops.resolve("Calls.java")).contains("renderer.markDirty(pos, 3);"), "a caret past the line's end still finds the call");
 
         System.out.println("PASS: mapping-backed preflight and guarded lookalikes");
     }

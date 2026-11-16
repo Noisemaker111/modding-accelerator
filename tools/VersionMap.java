@@ -1769,14 +1769,20 @@ public final class VersionMap {
                 }
                 String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
                 int lineStart = 0;
-                for (int i = 1; i < e.line() && lineStart >= 0; i++) {
-                    lineStart = text.indexOf('\n', lineStart) + 1;
+                for (int i = 1; i < e.line() && lineStart > -1; i++) {
+                    int next = text.indexOf('\n', lineStart);
+                    lineStart = next < 0 ? -1 : next + 1;
+                }
+                if (lineStart < 0) {
+                    continue; // the file changed under the log: the reported line is gone
                 }
                 int lineEnd = text.indexOf('\n', lineStart);
+                lineEnd = lineEnd < 0 ? text.length() : lineEnd;
                 Matcher callAt = Pattern.compile("\\b" + Pattern.quote(name) + "\\s*\\(").matcher(text);
-                callAt.region(lineStart + Math.max(0, e.caret()), lineEnd < 0 ? text.length() : lineEnd);
+                // javac's caret column can be past the end of the line as it is now (tabs, an earlier rewrite).
+                callAt.region(Math.min(lineEnd, lineStart + Math.max(0, e.caret())), lineEnd);
                 if (!callAt.find()) {
-                    callAt.region(lineStart, lineEnd < 0 ? text.length() : lineEnd);
+                    callAt.region(lineStart, lineEnd);
                     if (!callAt.find()) {
                         continue;
                     }
