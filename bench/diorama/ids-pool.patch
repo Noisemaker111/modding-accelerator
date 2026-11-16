@@ -1,0 +1,160 @@
+diff --git a/src/main/java/dev/diorama/bake/GpuMesher.java b/src/main/java/dev/diorama/bake/GpuMesher.java
+index 5316eda4..ca0e2c03 100644
+--- a/src/main/java/dev/diorama/bake/GpuMesher.java
++++ b/src/main/java/dev/diorama/bake/GpuMesher.java
+@@ -441,6 +441,16 @@ public final class GpuMesher {
+ 	public static Mesh build(TileKey key, ChunkSource source, BlockLooks looks, boolean fogOfWar, @Nullable Overlays overlays, int @Nullable [] savedSpots) {
+ 		long start = System.nanoTime();
+ 		TileBaker helper = TileBaker.forMeshing(key, source, looks, fogOfWar, savedSpots);
++		// The job's decoded sections borrow this thread's spare arrays, given back when it ends.
++		helper.reader.pooled();
++		try {
++			return build(start, helper, key, source, looks, fogOfWar, overlays);
++		} finally {
++			helper.reader.release();
++		}
++	}
++
++	private static Mesh build(long start, TileBaker helper, TileKey key, ChunkSource source, BlockLooks looks, boolean fogOfWar, @Nullable Overlays overlays) {
+ 		VoxelReader reader = helper.reader;
+ 		MapStyle style = MapStyle.get();
+ 		double sin = Projection.sin();
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index f315dcaf..dd064209 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -89,6 +89,20 @@ public final class VoxelReader {
+ 	/** A section's palette indices, unpacked while reading it. */
+ 	private final int[] unpacked = new int[4096];
+ 
++	/**
++	 * Whether a meshing job's decoded sections take their arrays from its thread's spares and give
++	 * them back when the job ends ({@link #release}). A job holds a few megabytes of them, and when it
++	 * was still running at a young collection the collector copied all of them; spares live in the old
++	 * generation and are never copied. Every array taken is written whole before it is read. Only for
++	 * checking that bakes come out the same either way.
++	 */
++	public static boolean POOL_IDS = true;
++	/** Spare section arrays per thread; at most {@link #SPARES} are kept. */
++	private static final ThreadLocal<java.util.ArrayDeque<int[]>> SPARE = ThreadLocal.withInitial(java.util.ArrayDeque::new);
++	private static final int SPARES = 512;
++	/** Arrays this reader took from its thread's spares, given back by {@link #release}; null when it doesn't pool. */
++	private java.util.@Nullable ArrayList<int[]> lent;
++
+ 	VoxelReader(ChunkSource source) {
+ 		this(source, null);
+ 	}
+@@ -109,6 +123,49 @@ public final class VoxelReader {
+ 		Arrays.fill(this.tableX, Integer.MIN_VALUE);
+ 	}
+ 
++	/** Makes this reader's decoded sections use its thread's spare arrays until {@link #release}; call on the thread that reads. */
++	VoxelReader pooled() {
++		if (POOL_IDS) {
++			this.lent = new java.util.ArrayList<>();
++		}
++		return this;
++	}
++
++	/** A section's worth of ids to write whole: a spare when this reader pools, otherwise a new array. */
++	private int[] section() {
++		java.util.ArrayList<int[]> lent = this.lent;
++		if (lent == null) {
++			return new int[4096];
++		}
++		int[] ids = SPARE.get().pollFirst();
++		if (ids == null) {
++			ids = new int[4096];
++		}
++		lent.add(ids);
++		return ids;
++	}
++
++	/** Ends the job: gives the arrays back and forgets every chunk, so nothing here is read again. */
++	void release() {
++		java.util.ArrayList<int[]> lent = this.lent;
++		if (lent == null) {
++			return;
++		}
++		this.lent = null;
++		this.cache.clear();
++		Arrays.fill(this.tableX, Integer.MIN_VALUE);
++		Arrays.fill(this.tableChunk, null);
++		this.sectionX = Integer.MIN_VALUE;
++		this.sectionIds = null;
++		java.util.ArrayDeque<int[]> spare = SPARE.get();
++		for (int[] ids : lent) {
++			if (spare.size() >= SPARES) {
++				break;
++			}
++			spare.addFirst(ids);
++		}
++	}
++
+ 	static final boolean DEBUG = dev.diorama.Diorama.DEBUG;
+ 	final java.util.Set<Long> missing = DEBUG ? new java.util.HashSet<>() : null;
+ 
+@@ -135,7 +192,7 @@ public final class VoxelReader {
+ 			}
+ 			this.sectionIds = null;
+ 		} else {
+-			this.sectionIds = chunk.ids(sy - chunk.snapshot.minSectionY, this.unpacked);
++			this.sectionIds = chunk.ids(sy - chunk.snapshot.minSectionY, this);
+ 		}
+ 		this.sectionX = sx;
+ 		this.sectionY = sy;
+@@ -461,7 +518,7 @@ public final class VoxelReader {
+ 					continue;
+ 				}
+ 				int y0 = (chunk.snapshot.minSectionY + index) << 4;
+-				int[] ids = chunk.ids(index, this.unpacked);
++				int[] ids = chunk.ids(index, this);
+ 				for (int column = 0; column < 256; column++) {
+ 					if (open[column] != Integer.MIN_VALUE) {
+ 						continue;
+@@ -766,7 +823,8 @@ public final class VoxelReader {
+ 		 * The section's ids, decoded once for this job: a ray stays in a section for many steps, and
+ 		 * an array read is the fastest lookup.
+ 		 */
+-		int[] ids(int index, int[] unpacked) {
++		int[] ids(int index, VoxelReader owner) {
++			int[] unpacked = owner.unpacked;
+ 			if (index < 0 || index >= this.ids.length) {
+ 				return AIR_IDS;
+ 			}
+@@ -778,12 +836,12 @@ public final class VoxelReader {
+ 				} else if (section.ids != null) {
+ 					ids = section.ids;
+ 				} else if (section == BY_BLOCK) {
+-					ids = this.byBlock(index);
++					ids = this.byBlock(index, owner.section());
+ 				} else if (section.single >= 0) {
+-					ids = new int[4096];
++					ids = owner.section();
+ 					Arrays.fill(ids, section.single);
+ 				} else {
+-					ids = new int[4096];
++					ids = owner.section();
+ 					int[] palette = section.palette;
+ 					int[] columns = section.columns;
+ 					if (columns == null) {
+@@ -843,7 +901,7 @@ public final class VoxelReader {
+ 				ids = new int[4096];
+ 				Arrays.fill(ids, this.id(this.snapshot.turned(uniform)));
+ 			} else {
+-				ids = this.byBlock(index);
++				ids = this.byBlock(index, new int[4096]);
+ 			}
+ 			for (int i = 0; i < copycats.at().length; i++) {
+ 				int at = copycats.at()[i];
+@@ -853,9 +911,8 @@ public final class VoxelReader {
+ 		}
+ 
+ 		/** Every block's id in a section with a container, looked up block by block. */
+-		private int[] byBlock(int index) {
++		private int[] byBlock(int index, int[] ids) {
+ 			PalettedContainer<BlockState> states = this.snapshot.section(index);
+-			int[] ids = new int[4096];
+ 			BlockState lastState = null;
+ 			int lastId = 0;
+ 			for (int y = 0; y < 16; y++) {
