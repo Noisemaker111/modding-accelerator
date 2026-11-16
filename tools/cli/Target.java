@@ -323,7 +323,7 @@ final class Target {
         fabricMavenFilter(setup, build);
         boolean anyLoom = false;
         for (Path file : files) if (Files.isRegularFile(file) && appliesLoom(setup.text(file))) anyLoom = true;
-        String newestLoom = null, newestArchitectury = null;
+        String newestLoom = null, newestArchitectury = null, newestArchitecturyPlugin = null;
         for (Path file : files) {
             if (!Files.isRegularFile(file)) continue;
             String before = setup.text(file), text = unobfuscatedLoom(before, javaFor(to));
@@ -354,6 +354,15 @@ final class Target {
                 arch.appendReplacement(archRaised, Matcher.quoteReplacement(arch.group(1) + newestArchitectury + arch.group(3)));
             }
             text = arch.appendTail(archRaised).toString();
+            // The Architectury plugin configures every platform from the common project and, before its newest line,
+            // expects Loom's remap tasks there (MidnightLib: "Task with name 'remapJar' not found in project ':common'").
+            Matcher plugin = Pattern.compile(
+                "(id\\s*\\(?\\s*[\"']architectury-plugin[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"'])([^\"'$]+)([\"'])"
+            ).matcher(text);
+            if (plugin.find()) {
+                if (newestArchitecturyPlugin == null) newestArchitecturyPlugin = newestArchitecturyPlugin(build);
+                if (!plugin.group(2).equals(newestArchitecturyPlugin)) text = text.substring(0, plugin.start()) + plugin.group(1) + newestArchitecturyPlugin + plugin.group(3) + text.substring(plugin.end());
+            }
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(file, before);
             setup.texts.put(file, text);
@@ -1049,6 +1058,15 @@ final class Target {
      * the build would not load. The plugin's version moves to that line's newest release on maven.architectury.dev, and
      * Gradle to what its own bootstrap class asks. Returns the new version, or null when the build applies no such plugin.
      */
+    /** The Architectury plugin's newest version line on maven.architectury.dev (its marker's "latest", e.g. 3.5-SNAPSHOT). */
+    static String newestArchitecturyPlugin(Build build) throws Exception {
+        Matcher latest = Pattern.compile("<latest>([^<]+)</latest>").matcher(
+            fetch(build, "https://maven.architectury.dev/architectury-plugin/architectury-plugin.gradle.plugin/maven-metadata.xml")
+        );
+        if (!latest.find()) throw new IOException("No published Architectury plugin");
+        return latest.group(1);
+    }
+
     /** Architectury Loom's newest release on maven.architectury.dev. */
     static String newestArchitecturyLoom(Build build) throws Exception {
         Matcher version = Pattern.compile("<version>([0-9]+\\.[0-9]+\\.[0-9]+)</version>").matcher(
