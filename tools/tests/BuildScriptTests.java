@@ -135,6 +135,10 @@ public final class BuildScriptTests {
             "Forge leaves a longer include list"
         );
         check(Target.withoutForgeInclude("include 'Forge', 'Fabric'\n").equals("include 'Fabric'\n"), "Forge first in the list");
+        check(
+            Target.withoutForgeInclude("rootProject.name = 'ncr'\ninclude('forge')\nproject(\":forge\").name = \"Forge\"").equals("rootProject.name = 'ncr'\n"),
+            "the line naming the Forge project goes with its include"
+        );
         // A lost annotation library comes back compileOnly, once, in the script's own dialect.
         String groovy = "plugins { id 'java' }\ndependencies {\n    implementation 'a:b:1'\n}\n";
         String restored = Port.withCompileOnly(groovy, List.of("com.google.code.findbugs:jsr305:3.0.2"), false);

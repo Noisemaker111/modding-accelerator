@@ -131,6 +131,7 @@ final class Target {
                 fabricPins(setup, build, pins, to);
                 // The Fabric project's Loom follows the jars its Fabric API was built with, as in a Fabric port.
                 if (!setup.loomBuilt.isEmpty()) loomFollows(setup, build, to);
+                unobfuscatedFabric(setup, build, to);
             } catch (IOException sibling) {
                 setup.unchecked.add(Json.map("artifact", "Fabric (sibling project)", "version", to, "reason", sibling.getMessage()));
             }
@@ -196,9 +197,18 @@ final class Target {
         Object own = setup.project.get("buildFile");
         if (own != null) files.add(Path.of(own.toString()));
         for (String name : List.of("build.gradle", "build.gradle.kts")) files.add(build.project.root.resolve(name));
+        // Every module's own script: a multi-loader build ported through its NeoForge project still configures its Fabric
+        // one (Waystones, Carry On), which must stop remapping too. Scripts that apply no Loom are left unchanged.
+        Set<String> resourceDirs = new LinkedHashSet<>();
+        for (Path input : build.project.inputs()) if (
+            input.getFileName().toString().matches("build\\.gradle(\\.kts)?") &&
+            !build.project.root.relativize(input).toString().replace('\\', '/').startsWith("buildSrc/")
+        ) {
+            files.add(input);
+            resourceDirs.add(input.resolveSibling("src").toString());
+        }
         // An access widener names the namespace its entries are in; on the unobfuscated game that is "official". The planning
         // model may list no resource folders (Origins), so the project's src folder is searched too.
-        Set<String> resourceDirs = new LinkedHashSet<>();
         for (Object set : Json.array(setup.project.get("sourceSets"))) resourceDirs.addAll(
             ProjectModel.strings(Json.object(set).get("resources"))
         );
@@ -483,6 +493,16 @@ final class Target {
      * other loaders still build. The game version ranges the build keeps for each loader's metadata follow the target.
      */
     static void forgeSibling(Setup setup, Build build, Map<String, Object> pins, String to) throws Exception {
+        // port moves Fabric and NeoForge projects, never Forge ones, and a Forge project left in breaks the whole build's
+        // configuration once Gradle moves past what ForgeGradle supports (No Chat Reports, Sound Physics, Carry On). So a
+        // Forge project included by name leaves the build (undo puts it back); the version pins are retargeted otherwise.
+        if (dropForgeProject(setup, build, to, "mmt port moves only the Fabric and NeoForge projects; a Forge project left in stops the build's configuration")) {
+            if (pins.containsKey("enabled_platforms") && String.valueOf(pins.get("enabled_platforms")).contains("forge")) setup.replacements.put(
+                "enabled_platforms",
+                String.join(",", Arrays.stream(String.valueOf(pins.get("enabled_platforms")).split(",")).map(String::trim).filter(p -> !p.equals("forge")).toList())
+            );
+            return;
+        }
         for (String key : List.of("forge_version", "forgeVersion", "minecraft_forge_version")) if (pins.containsKey(key)) {
             String old = String.valueOf(pins.get(key)), release;
             try {
@@ -505,7 +525,7 @@ final class Target {
                 setup.applied.add(
                     Json.map("change", "enabled_platforms drops forge for " + to, "evidence", "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)")
                 );
-            } else if (!dropForgeProject(setup, build, to)) setup.unchecked.add(
+            } else if (!dropForgeProject(setup, build, to, "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)")) setup.unchecked.add(
                 Json.map("artifact", "net.minecraftforge:forge (sibling project)", "version", to, "reason", "Forge publishes no release for Minecraft " + to)
             );
         }
@@ -689,7 +709,7 @@ final class Target {
      * cannot configure it for a game Forge publishes nothing for, and Gradle configures every included project. The Forge
      * project leaves the include list, so the other loaders build; port does not port Forge projects in any case.
      */
-    static boolean dropForgeProject(Setup setup, Build build, String to) throws IOException {
+    static boolean dropForgeProject(Setup setup, Build build, String to, String evidence) throws IOException {
         boolean dropped = false;
         for (String name : List.of("settings.gradle", "settings.gradle.kts")) {
             Path settings = build.project.root.resolve(name);
@@ -705,7 +725,7 @@ final class Target {
                     "change",
                     "Forge project left out of the build for " + to,
                     "evidence",
-                    "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)"
+                    evidence
                 )
             );
             dropped = true;
@@ -716,9 +736,11 @@ final class Target {
     /** A settings script without its Forge project: a one-name include line goes, a name in a longer list leaves it. */
     static String withoutForgeInclude(String text) {
         String forge = "[\"']:?[Ff]orge[\"']";
-        text = text.replaceAll("(?m)^[ \\t]*include\\s*\\(?\\s*" + forge + "\\s*\\)?[ \\t]*\\r?\\n", "");
+        text = text.replaceAll("(?m)^[ \\t]*include\\s*\\(?\\s*" + forge + "\\s*\\)?[ \\t]*(?:\\r?\\n|\\z)", "");
         text = text.replaceAll("(?m)^([ \\t]*include\\b[^\\n]*?),\\s*" + forge, "$1");
-        return text.replaceAll("(?m)^([ \\t]*include\\s*\\(?\\s*)" + forge + "\\s*,\\s*", "$1");
+        text = text.replaceAll("(?m)^([ \\t]*include\\s*\\(?\\s*)" + forge + "\\s*,\\s*", "$1");
+        // A line that configures the Forge project by path (No Chat Reports: project(":forge").name = "Forge") goes with it.
+        return text.replaceAll("(?m)^[ \\t]*project\\s*\\(\\s*" + forge + "\\s*\\)[^\\n]*(?:\\r?\\n|\\z)", "");
     }
 
     /**
@@ -814,8 +836,12 @@ final class Target {
         Path loomScript = null;
         Matcher loom = null;
         for (Path script : scripts) {
-            Matcher found = layered.matcher(setup.text(script));
-            if (found.find()) {
+            String scriptText = setup.text(script);
+            Matcher found = layered.matcher(scriptText);
+            boolean active = false;
+            // A commented-out layer (FerriteCore: //parchment(...)) is not in the build.
+            while (!active && found.find()) active = !scriptText.substring(scriptText.lastIndexOf('\n', found.start()) + 1, found.start()).trim().startsWith("//");
+            if (active) {
                 loomScript = script;
                 loom = found;
                 break;
