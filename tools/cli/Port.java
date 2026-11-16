@@ -3003,7 +3003,9 @@ final class Port {
             }
             if (declared.end() < done) continue;
             sb.append(out, done, declared.end());
-            sb.append(out.substring(declared.end(), end).replaceAll("\\b" + declared.group(1) + "\\s*\\.\\s*effects\\s*\\(\\s*\\)", "mmtFoodEffects(" + Matcher.quoteReplacement(declared.group(2)) + ")"));
+            String uses = "\\b" + declared.group(1) + "\\s*\\.\\s*effects\\s*\\(\\s*\\)";
+            String stack = Matcher.quoteReplacement(declared.group(2));
+            sb.append(out.substring(declared.end(), end).replaceAll(uses, "mmtFoodEffects(" + stack + ")"));
             done = end;
         }
         out = sb.append(out.substring(done)).toString();
