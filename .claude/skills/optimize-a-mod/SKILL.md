@@ -15,6 +15,9 @@ change; mmt only profiles, measures and gates. Reference: PERFORMANCE.md.
    run continuously. Scale it until the mod costs ~0.5 ms a tick; if it never does, pick another mod.
 3. Profile: `world-check --world NAME --jit full`, then `perf --root R --duration 30 --warmup 5`. Read your mod's row
    in `report.html`/`report.json` and its **Known patterns**: a matching pattern is the first candidate.
+   Young GC pauses: read `survivingAllocationSites` (who allocates what the collector copies) and judge by
+   `gcCopiedBytes` and `gcPauseTotalMs`, not the mean pause: a change that allocates less makes fewer, longer
+   collections. Per-job scratch alive across a collection (decode buffers, readbacks) is the usual survivor.
 4. `perf --probes CAPTURE/probes.suggested.json`, then `perf-template --family experiment --from CAPTURE --root R`.
    Use `serverInclusiveMsPerTick` (server thread) or `threadCpu` (the mod's own threads) as the metric.
 5. Fill the gates. `exact` gates hash frozen inputs ticked by hand (reseed randomness, no clocks); `expect` gates
@@ -22,7 +25,15 @@ change; mmt only profiles, measures and gates. Reference: PERFORMANCE.md.
    cable, replace a barrel) so a stale cache fails; keep `chunks.java` for any cached lookup (chunk tickets are
    behaviour). Run the exact gate in two launches (same text), then prove it fails on a deliberately wrong
    `sabotage-*.diff`. `perf-optimize --check-only --experiment E --root R --patch P` checks it all offline.
-6. Write one idea per candidate diff (`git -C R diff > .runs/<mod>-cands/NAME.diff`).
+6. Write one idea per candidate diff (`git -C R diff > .runs/<mod>-cands/NAME.diff`), behind a static boolean
+   switch (default on). Pre-screen it in one running game before any paired run: a setup snippet freezes an input
+   and puts the work in `vars` as `perf.work`, then `perf-toggle --root R --file S --switch pkg.Class.FIELD`
+   (minutes; fails if outputs differ). Time the part on the thread players feel: where the mod hands work to a
+   worker, the work waits for it outside the measure (blocked time isn't CPU). Only a candidate gaining ~10% on
+   that scope, or cutting allocation / GC copying, goes on to step 7; stop a paired run once decided (`stop` file).
+   Profiles mislead on inlined code: a frame JFR names can be one it never ran; trust the pre-screen.
+   A per-call saving pays only as often as the call runs: multiply it by the calls a second in a perf capture
+   (probe counts) before a paired run. A fast path for something done a few times a minute moves no frame.
 7. Measure locally: `perf-optimize --root R --experiment E --patch P --dry-run --out .runs/<mod>-opt/NAME` (it
    interleaves baseline and candidate runs), then `game-stop`. A wide A/B sweep goes to
    `tools/cloud-run perf -f repo=URL -f commit=SHA -f experiment=E -f patch=P`.

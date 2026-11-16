@@ -1,5 +1,6 @@
 {
  "schema": 1,
+ "fingerprint": false,
  "project": ":1.21.1",
  "gameDirectory": "versions/1.21.1/run",
  "world": "diorama-play",
@@ -204,6 +205,12 @@
   {
    "name": "bakes",
    "file": "bake-digest.java",
+   "thread": "control",
+   "compare": "exact"
+  },
+  {
+   "name": "store",
+   "file": "store-merge.java",
    "thread": "control",
    "compare": "exact"
   },

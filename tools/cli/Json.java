@@ -128,10 +128,27 @@ public final class Json {
         Files.createDirectories(path.toAbsolutePath().getParent());
         Path temporary = Files.createTempFile(path.getParent(), "json-", ".tmp");
         Files.write(temporary, (write(value) + "\n").getBytes(StandardCharsets.UTF_8));
-        try {
-            Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-        } catch (AtomicMoveNotSupportedException unsupported) {
-            Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
+        // On Windows a rename fails while another program (antivirus scanning the new file, a reader of
+        // the old one) briefly has either open: a forty-minute run died on one. Try again for a second.
+        for (int attempt = 0; ; attempt++) {
+            try {
+                try {
+                    Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException unsupported) {
+                    Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
+                }
+                return;
+            } catch (AccessDeniedException busy) {
+                if (attempt >= 20) {
+                    throw busy;
+                }
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw busy;
+                }
+            }
         }
     }
 
