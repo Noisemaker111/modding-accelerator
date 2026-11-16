@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "77919680fae1b6490f8aff0024ad1a2c8243a942084f4d8e7019ab09ee44a934",
+ "rules_sha256": "81120411fa9ea5257c2b67b9dec28b7839851330d714233f132be82c7088b9c4",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -756,6 +756,12 @@
   "neoforge-state-can-be-hydrated": [
    {
     "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension",
+    "found": true
+   }
+  ],
+  "neoforge-fence-gate-sounds": [
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.block.state.properties.WoodType#<init>",
     "found": true
    }
   ],

@@ -1609,6 +1609,38 @@
     "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { boolean a(BlockState soil, BlockGetter level, BlockPos pos, FluidState fluid, BlockPos fluidPos) { return IBlockStateExtension.canBeHydrated(soil, level, pos, fluid, fluidPos); } }",
     "neoforge": "class A { boolean a(BlockState soil, BlockGetter level, BlockPos pos, FluidState fluid, BlockPos fluidPos) { return soil.canBeHydrated(level, pos, fluid, fluidPos); } }"
    }
+  },
+  {
+   "id": "neoforge-fence-gate-sounds",
+   "about": "NeoForge 21.1 adds FenceGateBlock(properties, openSound, closeSound); the game's own constructor takes a wood type, which on Fabric is one of oak's kind carrying the two sounds (a fence gate only uses its wood type's sounds). Only in a file that imports FenceGateBlock. The way back keeps the game's own constructor (it is NeoForge's too), so the rule is tested one way.",
+   "minecraft": {
+    "from": "1.20",
+    "below": "1.21.2"
+   },
+   "fabric": "super(new WoodType(\"minecraft:oak\", BlockSetType.OAK, SoundType.WOOD, SoundType.HANGING_SIGN, $close, $open), $properties)",
+   "neoforge": "super($properties, $open, $close)",
+   "imports": {
+    "fabric": [
+     "net.minecraft.world.level.block.FenceGateBlock",
+     "net.minecraft.world.level.block.state.properties.WoodType",
+     "net.minecraft.world.level.block.state.properties.BlockSetType",
+     "net.minecraft.world.level.block.SoundType"
+    ],
+    "neoforge": [
+     "net.minecraft.world.level.block.FenceGateBlock"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft-1.21.1|net.minecraft.world.level.block.state.properties.WoodType#<init>"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "import net.minecraft.world.level.block.FenceGateBlock;\nclass A extends FenceGateBlock { A(Properties p) { super(p, S.OPEN, S.CLOSE); } }",
+    "neoforge": "import net.minecraft.world.level.block.FenceGateBlock;\nclass A extends FenceGateBlock { A(Properties p) { super(p, S.OPEN, S.CLOSE); } }",
+    "back": "import net.minecraft.world.level.block.FenceGateBlock;\nimport net.minecraft.world.level.block.SoundType;\nimport net.minecraft.world.level.block.state.properties.BlockSetType;\nimport net.minecraft.world.level.block.state.properties.WoodType;\nclass A extends FenceGateBlock { A(Properties p) { super(new WoodType(\"minecraft:oak\", BlockSetType.OAK, SoundType.WOOD, SoundType.HANGING_SIGN, S.CLOSE, S.OPEN), p); } }"
+   }
   }
  ],
  "types": [
@@ -2863,7 +2895,13 @@
     "net.neoforged.neoforge.client.IArmPoseTransformer": "IArmPoseTransformer",
     "net.neoforged.neoforge.client.event.RegisterRecipeBookCategoriesEvent": "RegisterRecipeBookCategoriesEvent",
     "net.neoforged.neoforge.common.EffectCure": "EffectCure",
-    "net.neoforged.neoforge.common.EffectCures": "EffectCures"
+    "net.neoforged.neoforge.common.EffectCures": "EffectCures",
+    "net.neoforged.neoforge.event.entity.living.LivingDamageEvent": "LivingDamageEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent": "LivingKnockBackEvent",
+    "net.neoforged.neoforge.common.BasicItemListing": "BasicItemListing",
+    "net.neoforged.neoforge.event.village.VillagerTradesEvent": "VillagerTradesEvent",
+    "net.neoforged.neoforge.event.village.WandererTradesEvent": "WandererTradesEvent",
+    "net.neoforged.neoforge.event.ModifyDefaultComponentsEvent": "ModifyDefaultComponentsEvent"
    },
    "symbols": {
     "neoforge": [
@@ -5416,6 +5454,24 @@
         [
          "EffectCure"
         ]
+       ]
+      },
+      {
+       "mixin": "IncomingDamageMixin",
+       "for": [
+        "LivingIncomingDamageEvent"
+       ]
+      },
+      {
+       "mixin": "ActualDamageMixin",
+       "for": [
+        "LivingDamageEvent"
+       ]
+      },
+      {
+       "mixin": "KnockBackMixin",
+       "for": [
+        "LivingKnockBackEvent"
        ]
       }
      ]

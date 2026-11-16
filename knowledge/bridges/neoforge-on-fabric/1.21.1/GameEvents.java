@@ -26,7 +26,7 @@ final class GameEvents {
         ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> Bus.INSTANCE.post(new PlayerEvent.Clone(newPlayer, oldPlayer, !alive)));
         ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> Bus.INSTANCE.post(new PlayerEvent.PlayerChangedDimensionEvent(player, origin.dimension(), destination.dimension())));
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> !Bus.INSTANCE.post(new LivingDeathEvent(entity, source)).canceled);
-        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> !Bus.INSTANCE.post(new LivingIncomingDamageEvent(entity, source, amount)).canceled);
+        // LivingIncomingDamageEvent: the bridge's IncomingDamageMixin, which can change the amount (Fabric's ALLOW_DAMAGE cannot).
         // EntityJoinLevelEvent comes from EntityJoinLevelMixin: Fabric API for 1.21.1 has no event before an entity joins a level.
         ServerWorldEvents.LOAD.register((server, level) -> Bus.INSTANCE.post(new LevelEvent.Load(level)));
         ServerWorldEvents.UNLOAD.register((server, level) -> Bus.INSTANCE.post(new LevelEvent.Unload(level)));

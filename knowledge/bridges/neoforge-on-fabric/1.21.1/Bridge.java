@@ -56,6 +56,8 @@ public final class Bridge {
         if (hooked) return;
         hooked = true;
         GameEvents.hook();
+        TradeEvents.hook();
+        ModifyDefaultComponentsEvent.hook();
         ServerLifecycleEvents.SERVER_STARTING.register(started -> server = started);
         ServerLifecycleEvents.SERVER_STOPPED.register(stopped -> server = null);
         ServerLifecycleEvents.SERVER_STARTING.register(server -> Bus.INSTANCE.post(new ServerStartingEvent(server)));
