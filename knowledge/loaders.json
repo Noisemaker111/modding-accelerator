@@ -1531,6 +1531,84 @@
     "fabric": "class A { Object a() { return Ingredient.CODEC_NONEMPTY.listOf(1, Integer.MAX_VALUE); } }",
     "neoforge": "class A { Object a() { return Ingredient.LIST_CODEC_NONEMPTY; } }"
    }
+  },
+  {
+   "id": "neoforge-state-can-sustain-plant",
+   "about": "NeoForge 21.1 adds canSustainPlant(level, pos, facing, plant) to BlockState: whether the soil lets a plant grow on it, DEFAULT leaving it to the plant (NeoForge's default), which the NeoForge bridge's IBlockStateExtension.canSustainPlant returns on Fabric.",
+   "minecraft": {
+    "from": "1.20.5",
+    "below": "1.21.2"
+   },
+   "fabric": "IBlockStateExtension.canSustainPlant($state, $level, $pos, $facing, $plant)",
+   "neoforge": "$state.canSustainPlant($level, $pos, $facing, $plant)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { TriState a(BlockState soil, BlockGetter level, BlockPos pos, BlockState plant) { return IBlockStateExtension.canSustainPlant(soil, level, pos, Direction.UP, plant); } }",
+    "neoforge": "class A { TriState a(BlockState soil, BlockGetter level, BlockPos pos, BlockState plant) { return soil.canSustainPlant(level, pos, Direction.UP, plant); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-is-fertile",
+   "about": "NeoForge 21.1 adds isFertile(level, pos) to BlockState: moist farmland by NeoForge's default, which the NeoForge bridge's IBlockStateExtension.isFertile returns on Fabric.",
+   "minecraft": {
+    "from": "1.20.5",
+    "below": "1.21.2"
+   },
+   "fabric": "IBlockStateExtension.isFertile($state, $level, $pos)",
+   "neoforge": "$state.isFertile($level, $pos)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { boolean a(BlockState soil, BlockGetter level, BlockPos pos) { return IBlockStateExtension.isFertile(soil, level, pos); } }",
+    "neoforge": "class A { boolean a(BlockState soil, BlockGetter level, BlockPos pos) { return soil.isFertile(level, pos); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-can-be-hydrated",
+   "about": "NeoForge 21.1 adds canBeHydrated(level, pos, fluid, fluidPos) to BlockState: water by NeoForge's default, which the NeoForge bridge's IBlockStateExtension.canBeHydrated returns on Fabric.",
+   "minecraft": {
+    "from": "1.20.5",
+    "below": "1.21.2"
+   },
+   "fabric": "IBlockStateExtension.canBeHydrated($state, $level, $pos, $fluid, $fluidPos)",
+   "neoforge": "$state.canBeHydrated($level, $pos, $fluid, $fluidPos)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { boolean a(BlockState soil, BlockGetter level, BlockPos pos, FluidState fluid, BlockPos fluidPos) { return IBlockStateExtension.canBeHydrated(soil, level, pos, fluid, fluidPos); } }",
+    "neoforge": "class A { boolean a(BlockState soil, BlockGetter level, BlockPos pos, FluidState fluid, BlockPos fluidPos) { return soil.canBeHydrated(level, pos, fluid, fluidPos); } }"
+   }
   }
  ],
  "types": [
@@ -5085,7 +5163,7 @@
        "mixin": "ItemHooksMixin",
        "uses": [
         [
-         "\\b(getCraftingRemainingItem|hasCraftingRemainingItem|shouldCauseReequipAnimation|getCreatorModId)\\s*\\("
+         "\\b(getCraftingRemainingItem|hasCraftingRemainingItem|shouldCauseReequipAnimation|getCreatorModId|canPerformAction|supportsEnchantment|isPrimaryItemFor|getFoodProperties)\\s*\\("
         ]
        ],
        "injects": {
@@ -5096,7 +5174,7 @@
        "mixin": "ItemStackHooksMixin",
        "uses": [
         [
-         "\\b(getCraftingRemainingItem|hasCraftingRemainingItem|shouldCauseReequipAnimation|getCreatorModId)\\s*\\("
+         "\\b(getCraftingRemainingItem|hasCraftingRemainingItem|shouldCauseReequipAnimation|getCreatorModId|canPerformAction|supportsEnchantment|isPrimaryItemFor|getFoodProperties)\\s*\\("
         ]
        ],
        "injects": {
@@ -5230,6 +5308,25 @@
        "injects": {
         "net/minecraft/world/item/ItemStack": "extensions.GameHooks$StackDamage"
        }
+      },
+      {
+       "mixin": "BlockPropertiesHooksMixin",
+       "uses": [
+        [
+         "\\.lootFrom\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/level/block/state/BlockBehaviour$Properties": "extensions.BlockPropertiesHooks"
+       }
+      },
+      {
+       "mixin": "BlockLootFromMixin",
+       "uses": [
+        [
+         "\\.lootFrom\\s*\\("
+        ]
+       ]
       }
      ]
     },

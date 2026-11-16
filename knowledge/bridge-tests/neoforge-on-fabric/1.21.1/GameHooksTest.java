@@ -44,6 +44,22 @@ class GameHooksTest {
     }
 
     @Test
+    void toolsCanDoTheirAbilities() {
+        assertTrue(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_AXE).canPerformAction(ItemAbilities.AXE_STRIP));
+        assertFalse(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_AXE).canPerformAction(ItemAbilities.HOE_TILL));
+        assertTrue(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_HOE).canPerformAction(ItemAbilities.HOE_TILL));
+        assertFalse(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK).canPerformAction(ItemAbilities.AXE_DIG));
+    }
+
+    @Test
+    void aBlockTakesAnotherBlocksLoot() {
+        net.minecraft.world.level.block.Block block = new net.minecraft.world.level.block.Block(
+            net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().lootFrom(() -> net.minecraft.world.level.block.Blocks.STONE)
+        );
+        assertEquals(net.minecraft.world.level.block.Blocks.STONE.getLootTable(), block.getLootTable());
+    }
+
+    @Test
     void cropGrowthFollowsTheEvent() {
         CropGrowEvent.Pre.Result[] answer = { CropGrowEvent.Pre.Result.DEFAULT };
         Bus.INSTANCE.addListener(CropGrowEvent.Pre.class, event -> event.setResult(answer[0]));

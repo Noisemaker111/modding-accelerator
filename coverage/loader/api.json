@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "7c0ea74ff2ed17c99562168becce6be85014e14aa0059c034cde5ad4de36414c",
+ "rules_sha256": "27a7c265cecf3bb02e00d54e64e42af65fdb7d9fd34fd9f1003b8cf301ebc2c5",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -738,6 +738,24 @@
   "neoforge-ingredient-list-codec-nonempty": [
    {
     "symbol": "minecraft-1.21.1|net.minecraft.world.item.crafting.Ingredient#CODEC_NONEMPTY",
+    "found": true
+   }
+  ],
+  "neoforge-state-can-sustain-plant": [
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension",
+    "found": true
+   }
+  ],
+  "neoforge-state-is-fertile": [
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension",
+    "found": true
+   }
+  ],
+  "neoforge-state-can-be-hydrated": [
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension",
     "found": true
    }
   ],
