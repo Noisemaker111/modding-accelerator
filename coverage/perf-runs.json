@@ -56755,6 +56755,2604 @@
    "wallSeconds": 670.6001112,
    "finished": "2026-11-15T23:52:47.324542Z",
    "seconds": 663.1609946999998
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-16T00-40-56.691444400Z-020771a9",
+   "kind": "perf-optimize",
+   "session": "diorama-round4",
+   "started": "2026-11-16T00:40:56.692447700Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ":1.21.1"
+   },
+   "phases": {
+    "setup": 446.1023170000002,
+    "build": 28.914534399999994,
+    "launch": 249.32172905000002,
+    "warmup": 0.0,
+    "measure": 1132.7247390999999,
+    "gates": 363.71006245000007,
+    "other": 82.25186055
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 1.12751
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 27.395648499999997,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 50.642938,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 26.985390199999998,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 52.9278408,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 3.8993928,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 4.4270772,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 2.8830447,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.4496507,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.3252379,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.9368381,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 40.4130594,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 39.0582516,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.5807514,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.640739,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.649172,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.1021423,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 70.0839977,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 72.213849,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 6.7625415,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 4.4143304,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.0662766,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.002741,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 69.29653,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 68.7820569,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 16.0899368,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 15.726454,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-store",
+     "seconds": 7.2150905,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-store",
+     "seconds": 7.1831846,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.9232285,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.9628604,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.3491204,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.2720455,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 7.7383917,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-reuseLive",
+     "seconds": 8.7947392,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 6.7536324,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-slabsRing",
+     "seconds": 6.8061085,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 11.0681945,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 11.958029,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2188891,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 27.6740463,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2220178,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 28.7615403,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 3.6015091,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 4.7767492,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.2726619,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.8517645,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.0579593,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.1779609,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 39.952289,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 39.2763904,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.6614342,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.7098805,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.7375901,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 2.0503778,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 71.0221068,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 72.2767549,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.4275796,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.0368773,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 1.9996954,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.0074399,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 68.6070334,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 69.8072555,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 19.1714076,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 17.5478951,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-store",
+     "seconds": 8.2051087,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-store",
+     "seconds": 8.3495768,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.1958502,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.1585221,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.7285326,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.5020032,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 10.977542,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-reuseLive",
+     "seconds": 10.7777442,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 7.0384553,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-slabsRing",
+     "seconds": 7.1532923,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 5.2905795,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.2875981,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2634734,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 28.760350300000002,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2622252,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 30.342447,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 4.9012057,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 5.5189803,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.4778308,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.2803968,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.7457782,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.4086116,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 45.1651878,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 44.158947,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.9954912,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.0359118,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 2.086137,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.4682762,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 72.4191296,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.9606529,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 74.3863542,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.1696147,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.2635542,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 1.9721293,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 67.7456733,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 68.5489626,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 18.8010596,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 17.7067646,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-store",
+     "seconds": 7.572555,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-store",
+     "seconds": 7.2105773,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.6657806,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.8095178,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.3282137,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.0960536,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-reuseLive",
+     "seconds": 8.4031667,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 9.1019708,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-slabsRing",
+     "seconds": 6.9121103,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 7.5452831,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.3720664,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.4144578,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2687322,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 29.2409138,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2687702,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 32.0088288,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 5.5372933,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 5.0940621,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.9963303,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.1716596,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.4749077,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.3500148,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 44.6620491,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.9578419,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 44.9510636,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.9229964,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.0225466,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 3.0889523,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 73.5691277,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.8848014,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 74.2292358,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.4625596,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.2334327,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.2099079,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 67.9760508,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 68.4793565,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 17.3065601,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 16.6075862,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-store",
+     "seconds": 7.536647,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.9288335,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-store",
+     "seconds": 7.7185874,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.8088533,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.477151,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.7374539,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-reuseLive",
+     "seconds": 10.5227445,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 9.9213469,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-slabsRing",
+     "seconds": 6.7837714,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 7.0312555,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.2928385,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.5276711,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2382687,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 29.2361769,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2346629,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 29.3869538,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 5.0017057,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 5.4254748,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.5466619,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.8901337,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.1180226,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.8952934,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 46.6344122,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 46.1800587,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.1257458,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 2.2462738,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.3815057,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 2.3131382,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 72.0055317,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.310954,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 75.2395845,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.2288563,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.0648801,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 1.8624758,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 68.754115,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 69.7886027,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 19.2233541,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 17.7741992,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-store",
+     "seconds": 7.8476912,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.0256159,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-store",
+     "seconds": 7.8868441,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.8617427,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.4725183,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.3295865,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 9.5834043,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-reuseLive",
+     "seconds": 9.2818506,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 5.848317,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-slabsRing",
+     "seconds": 5.906739,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.2302149,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.1121636,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2507818,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 27.764854500000002,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2458636,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 28.3574817,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 4.0570299,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 4.9869525,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.0768727,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.4335145,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.2132219,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.1696031,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 40.9837442,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 40.2984357,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.8193343,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.855928,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.9580713,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 2.0562009,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 72.8334946,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 72.9329342,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.2684542,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.2637825,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.0471141,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.0820708,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 69.9461396,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 70.7697616,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 16.8370139,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 16.6592059,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-store",
+     "seconds": 7.0732294,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-store",
+     "seconds": 7.2426182,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.752148,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.7850046,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.3213839,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.339103,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 8.7336368,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-reuseLive",
+     "seconds": 9.3250613,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 5.9573507,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-slabsRing",
+     "seconds": 6.3927423,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.0413045,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.2037543,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.251202,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 25.6350284,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2507215,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 26.8728578,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 3.7777521,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 5.3673653,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.6545854,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.8675664,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.3747043,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.9440172,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 39.7523798,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 38.8518085,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.7200868,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.7171571,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.7604889,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 2.1174713,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 70.7813571,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.3945899,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 73.1252103,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.3684479,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.1123217,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 1.9488701,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 67.9110949,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 68.0881275,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 16.2341649,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 15.9134377,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-store",
+     "seconds": 6.9928552,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.7856935,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-store",
+     "seconds": 6.9971414,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.8391911,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.4822953,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.704622,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 8.7473441,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-reuseLive",
+     "seconds": 7.3821617,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 5.9459546,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-slabsRing",
+     "seconds": 5.8343762,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.3440645,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.0209323,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2362337,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 25.4326636,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.236188,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 25.5985361,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 4.5202458,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 4.5616673,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.4896432,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.4651492,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.8286219,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.8668517,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 40.2824961,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 40.2618737,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.879458,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.927524,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 1.9613053,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.0172728,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 73.3578052,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 73.9008691,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.378513,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.3449544,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.2578716,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 1.9965626,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 67.8847858,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 68.6865897,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 16.2842055,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 16.0437555,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-store",
+     "seconds": 6.9911202,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-store",
+     "seconds": 7.0186909,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.7239574,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.780121,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.4932919,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.2581601,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-reuseLive",
+     "seconds": 7.5325745,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 7.9829446,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-slabsRing",
+     "seconds": 5.9941882,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 6.8429501,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.2984428,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.191718,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.0733456
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.1242685
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "pair 0 before launch",
+      "at": "2026-11-16T00:40:59.400160400Z",
+      "systemCpu": 0.0873764647880092,
+      "javaProcesses": 7
+     },
+     {
+      "when": "pair 1 before launch",
+      "at": "2026-11-16T00:46:34.020044100Z",
+      "systemCpu": 0.10749973738018802,
+      "javaProcesses": 10
+     },
+     {
+      "when": "pair 2 before launch",
+      "at": "2026-11-16T00:51:17.206857900Z",
+      "systemCpu": 0.36362186804302854,
+      "javaProcesses": 16
+     },
+     {
+      "when": "pair 3 before launch",
+      "at": "2026-11-16T00:56:06.479428500Z",
+      "systemCpu": 0.26972205000559357,
+      "javaProcesses": 8
+     },
+     {
+      "when": "pair 4 before launch",
+      "at": "2026-11-16T01:00:58.477381100Z",
+      "systemCpu": 0.13456872740853476,
+      "javaProcesses": 10
+     },
+     {
+      "when": "pair 5 before launch",
+      "at": "2026-11-16T01:05:49.971028100Z",
+      "systemCpu": 0.2630371954520684,
+      "javaProcesses": 10
+     },
+     {
+      "when": "pair 6 before launch",
+      "at": "2026-11-16T01:10:30.645295100Z",
+      "systemCpu": 0.2593008359606853,
+      "javaProcesses": 12
+     },
+     {
+      "when": "pair 7 before launch",
+      "at": "2026-11-16T01:15:02.344736800Z",
+      "systemCpu": 0.10075362732747795,
+      "javaProcesses": 13
+     }
+    ],
+    "meanSystemCpu": 0.19823506329569823,
+    "maxSystemCpu": 0.36362186804302854,
+    "jit": "full",
+    "framesPerSecond": 60
+   },
+   "candidate": {
+    "label": "offheap-tiles-2",
+    "diffSha256": "025e32a14f17ddd4cef8b099e077c7809067fd06b7968001aa7d958550c8187b",
+    "changedFiles": [
+     "src/main/java/dev/diorama/data/TileStore.java",
+     "src/main/java/dev/diorama/render/MapMemory.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "bakes",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "store",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "mapped",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "tints",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "reuseLive",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "slabsRing",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 0.9976031381259292,
+     "low": 0.9746953054934069,
+     "high": 1.0280061379499874,
+     "pairs": 8,
+     "baselineMean": 234.0023874025876,
+     "candidateMean": 234.6472678527643
+    },
+    "warm": {
+     "geometricMean": 1.0307621932018116,
+     "low": 0.9761895404858638,
+     "high": 1.0957977825869576,
+     "pairs": 8,
+     "baselineMean": 170.17826979412922,
+     "candidateMean": 165.36146778056406
+    },
+    "scopes": {
+     "bakerMsPerMesh": {
+      "cold": {
+       "geometricMean": 0.9996608342509189,
+       "low": 0.9710329304062414,
+       "high": 1.0299085462060302,
+       "pairs": 8,
+       "baselineMean": 35.74851820171599,
+       "candidateMean": 35.693333003847755
+      },
+      "warm": {
+       "geometricMean": 1.0704442820410167,
+       "low": 1.0323399359955574,
+       "high": 1.104924128407541,
+       "pairs": 8,
+       "baselineMean": 31.476461932646266,
+       "candidateMean": 29.38254679144019
+      }
+     },
+     "liveMappingSampledCpu": {
+      "cold": {
+       "geometricMean": 0.9809771488421183,
+       "low": 0.9528353475313308,
+       "high": 1.0117739761116387,
+       "pairs": 8,
+       "baselineMean": 223.49774848453322,
+       "candidateMean": 227.932271574997
+      },
+      "warm": {
+       "geometricMean": 1.0446562893305926,
+       "low": 0.9879378113099333,
+       "high": 1.1104956784135231,
+       "pairs": 8,
+       "baselineMean": 163.51706242406567,
+       "candidateMean": 156.5803564097589
+      }
+     },
+     "dioramaThreadsCpuTime": {
+      "cold": {
+       "geometricMean": 0.9739683830122627,
+       "low": 0.9467384704137993,
+       "high": 1.0043798178605154,
+       "pairs": 8,
+       "baselineMean": 529.4444099983491,
+       "candidateMean": 544.0432776184867
+      },
+      "warm": {
+       "geometricMean": 0.9810991664276966,
+       "low": 0.9165762582226754,
+       "high": 1.0453164074570043,
+       "pairs": 8,
+       "baselineMean": 369.32705760845613,
+       "candidateMean": 377.36916336300953
+      }
+     },
+     "importCpuTime": {
+      "cold": {
+       "geometricMean": 0.9451347426390732,
+       "low": 0.886567348568423,
+       "high": 1.006527178477215,
+       "pairs": 8,
+       "baselineMean": 74.92427871397027,
+       "candidateMean": 79.4284731929935
+      },
+      "warm": {
+       "geometricMean": 0.8938482116920266,
+       "low": 0.5862704116551274,
+       "high": 1.27738604095169,
+       "pairs": 8,
+       "baselineMean": 19.98647761415294,
+       "candidateMean": 23.469612876514468
+      }
+     },
+     "renderThreadCpuTime": {
+      "cold": {
+       "geometricMean": 1.0317002471714651,
+       "low": 1.0126992090122933,
+       "high": 1.052876244283473,
+       "pairs": 8,
+       "baselineMean": 364.5538012058742,
+       "candidateMean": 353.6727800364078
+      },
+      "warm": {
+       "geometricMean": 1.027902938753691,
+       "low": 0.9941299112894029,
+       "high": 1.0608931296924247,
+       "pairs": 8,
+       "baselineMean": 303.96425593002834,
+       "candidateMean": 295.46979211182975
+      }
+     },
+     "serverThreadCpuTime": {
+      "cold": {
+       "geometricMean": 1.0029055597050842,
+       "low": 0.9547732386876567,
+       "high": 1.0528483483370514,
+       "pairs": 8,
+       "baselineMean": 173.1806479299802,
+       "candidateMean": 173.15406478608122
+      },
+      "warm": {
+       "geometricMean": 0.9816035844182753,
+       "low": 0.9227763101579245,
+       "high": 1.0431140613609262,
+       "pairs": 8,
+       "baselineMean": 134.50198335210905,
+       "candidateMean": 137.20446974966822
+      }
+     },
+     "serverTickMs": {
+      "cold": {
+       "geometricMean": 0.9843513433319871,
+       "low": 0.9602479963581056,
+       "high": 1.0096367565722262,
+       "pairs": 8,
+       "baselineMean": 6.775813692956146,
+       "candidateMean": 6.878975519488746
+      },
+      "warm": {
+       "geometricMean": 0.8668021271757639,
+       "low": 0.6695687354415363,
+       "high": 1.008210103265922,
+       "pairs": 8,
+       "baselineMean": 5.770274409723105,
+       "candidateMean": 7.266132690546433
+      }
+     },
+     "gcPauseTotalMs": {
+      "cold": {
+       "geometricMean": 1.0057520325367943,
+       "low": 0.9825316790949858,
+       "high": 1.0272903794154924,
+       "pairs": 8,
+       "baselineMean": 446.82653750000003,
+       "candidateMean": 443.7784
+      },
+      "warm": {
+       "geometricMean": 0.9993826497862814,
+       "low": 0.9061355082573376,
+       "high": 1.0956249252788932,
+       "pairs": 8,
+       "baselineMean": 209.505775,
+       "candidateMean": 209.5830125
+      }
+     },
+     "gcPauseMeanMs": {
+      "cold": {
+       "geometricMean": 1.0332009716436499,
+       "low": 0.9528086654246799,
+       "high": 1.1198513204128158,
+       "pairs": 8,
+       "baselineMean": 14.31223114223467,
+       "candidateMean": 13.818151860145935
+      },
+      "warm": {
+       "geometricMean": 0.9834885013390205,
+       "low": 0.9118360456501958,
+       "high": 1.056743267367176,
+       "pairs": 8,
+       "baselineMean": 12.75601931290389,
+       "candidateMean": 12.974227704808897
+      }
+     },
+     "heapUsedMeanBytes": {
+      "cold": {
+       "geometricMean": 0.9846482118255043,
+       "low": 0.9556111768310654,
+       "high": 1.0059383752813686,
+       "pairs": 8,
+       "baselineMean": 1744642645.74881,
+       "candidateMean": 1770980452.3791645
+      },
+      "warm": {
+       "geometricMean": 0.9833032663905924,
+       "low": 0.9569542407604419,
+       "high": 1.0115474666193285,
+       "pairs": 8,
+       "baselineMean": 1780417945.0586991,
+       "candidateMean": 1810630173.1187203
+      }
+     },
+     "dioramaAllThreadsCpu": {
+      "cold": {
+       "geometricMean": 0.974252751874317,
+       "low": 0.9492861325819474,
+       "high": 1.001497934265844,
+       "pairs": 8,
+       "baselineMean": 327.5954209114097,
+       "candidateMean": 336.6290464943443
+      },
+      "warm": {
+       "geometricMean": 1.015687887273787,
+       "low": 0.9614934943894957,
+       "high": 1.0702990511843093,
+       "pairs": 8,
+       "baselineMean": 203.8702448698062,
+       "candidateMean": 201.1628550521723
+      }
+     },
+     "gpuMeshCpu": {
+      "cold": {
+       "geometricMean": 0.9729668076431628,
+       "low": 0.9254848703875989,
+       "high": 1.0145974711731374,
+       "pairs": 8,
+       "baselineMean": 150.94491935383462,
+       "candidateMean": 155.03836286613273
+      },
+      "warm": {
+       "geometricMean": 1.0661400073126635,
+       "low": 0.9907544891840196,
+       "high": 1.1347841905420344,
+       "pairs": 8,
+       "baselineMean": 91.89366086097485,
+       "candidateMean": 86.64419423508821
+      }
+     },
+     "spotsCpu": {
+      "cold": {
+       "geometricMean": 0.9778679460762851,
+       "low": 0.9309495932266886,
+       "high": 1.033061307037431,
+       "pairs": 8,
+       "baselineMean": 81.16172884109797,
+       "candidateMean": 83.12355793113429
+      },
+      "warm": {
+       "geometricMean": 1.015893737322956,
+       "low": 0.9365485106982663,
+       "high": 1.1123447093553207,
+       "pairs": 8,
+       "baselineMean": 45.51979920175218,
+       "candidateMean": 44.707472295905866
+      }
+     },
+     "tintBlendCpu": {
+      "cold": {
+       "geometricMean": 1.0485397685232898,
+       "low": 0.9732462465591845,
+       "high": 1.1167181282554763,
+       "pairs": 8,
+       "baselineMean": 38.759010354015324,
+       "candidateMean": 37.17592595973086
+      },
+      "warm": {
+       "geometricMean": 1.0974679524563977,
+       "low": 0.9929723393220574,
+       "high": 1.2334224226341968,
+       "pairs": 8,
+       "baselineMean": 29.374296937178094,
+       "candidateMean": 26.87450452484285
+      }
+     },
+     "castersCpu": {
+      "cold": {
+       "geometricMean": 1.0026800055959697,
+       "low": 0.94550054060577,
+       "high": 1.0672323429517856,
+       "pairs": 8,
+       "baselineMean": 32.772387263749266,
+       "candidateMean": 32.66251458707644
+      },
+      "warm": {
+       "geometricMean": 1.0009039505685648,
+       "low": 0.8996137312642852,
+       "high": 1.1153435433755603,
+       "pairs": 8,
+       "baselineMean": 13.145525742041762,
+       "candidateMean": 13.249748249513738
+      }
+     },
+     "importCpu": {
+      "cold": {
+       "geometricMean": 0.949252913888678,
+       "low": 0.8853726459226988,
+       "high": 1.0166929064712893,
+       "pairs": 8,
+       "baselineMean": 59.65912399603074,
+       "candidateMean": 63.16333796124243
+      },
+      "warm": {
+       "geometricMean": 0.9745279242322374,
+       "low": 0.6010357824301227,
+       "high": 1.4150061136257164,
+       "pairs": 8,
+       "baselineMean": 14.749630129737174,
+       "candidateMean": 16.54135610872596
+      }
+     },
+     "traceCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      }
+     },
+     "tileWriteCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      }
+     },
+     "mipmapsCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": 1.0105107242060534,
+       "low": 0.8794717690183851,
+       "high": 1.1717251135420363,
+       "pairs": 6,
+       "baselineMean": 5.610982971181328,
+       "candidateMean": 5.555469778637954
+      }
+     },
+     "fogMaskCpu": {
+      "cold": {
+       "geometricMean": 1.0056299950308007,
+       "low": 0.9596637331445433,
+       "high": 1.0553437235341334,
+       "pairs": 8,
+       "baselineMean": 20.337330929270355,
+       "candidateMean": 20.271601066599597
+      },
+      "warm": {
+       "geometricMean": 0.9094954855246896,
+       "low": 0.8342753085844241,
+       "high": 0.9885359027453414,
+       "pairs": 8,
+       "baselineMean": 11.499728459048544,
+       "candidateMean": 12.60392968547948
+      }
+     },
+     "hudCpu": {
+      "cold": {
+       "geometricMean": 1.0374669456425523,
+       "low": 0.9619358303306142,
+       "high": 1.119487259386071,
+       "pairs": 8,
+       "baselineMean": 13.516365748678048,
+       "candidateMean": 13.056689150578281
+      },
+      "warm": {
+       "geometricMean": 0.9199370698296859,
+       "low": 0.8099505188547571,
+       "high": 1.0299656826165469,
+       "pairs": 8,
+       "baselineMean": 11.020582954032754,
+       "candidateMean": 11.895604231921103
+      }
+     },
+     "hudRenderMs": {
+      "cold": {
+       "geometricMean": 1.0189950244125416,
+       "low": 0.9954888541614844,
+       "high": 1.044480297119211,
+       "pairs": 8,
+       "baselineMean": 0.5714732156092825,
+       "candidateMean": 0.5612628586593622
+      },
+      "warm": {
+       "geometricMean": 0.9942204456546093,
+       "low": 0.9770639370366566,
+       "high": 1.0130308155008996,
+       "pairs": 8,
+       "baselineMean": 0.49609684739020715,
+       "candidateMean": 0.4989792812998946
+      }
+     },
+     "radarMs": {
+      "cold": {
+       "geometricMean": 1.0459119221601878,
+       "low": 1.0001902514255296,
+       "high": 1.0966820589321296,
+       "pairs": 8,
+       "baselineMean": 0.04645373880787012,
+       "candidateMean": 0.04440264440734889
+      },
+      "warm": {
+       "geometricMean": 1.0065808796652593,
+       "low": 0.9725312734846544,
+       "high": 1.0408192597560448,
+       "pairs": 8,
+       "baselineMean": 0.04818339954179448,
+       "candidateMean": 0.04787130921816101
+      }
+     },
+     "waypointMs": {
+      "cold": {
+       "geometricMean": 1.0025774440936737,
+       "low": 0.9319740755406472,
+       "high": 1.0741771306153332,
+       "pairs": 8,
+       "baselineMean": 0.00201656728921205,
+       "candidateMean": 0.0020221273185735003
+      },
+      "warm": {
+       "geometricMean": 1.0521760206694823,
+       "low": 0.9777128541189591,
+       "high": 1.1673563994037055,
+       "pairs": 8,
+       "baselineMean": 0.002559103198897166,
+       "candidateMean": 0.0024369121626540086
+      }
+     },
+     "sessionTickMs": {
+      "cold": {
+       "geometricMean": 1.0241003483200968,
+       "low": 0.9473736386519171,
+       "high": 1.100202689662694,
+       "pairs": 8,
+       "baselineMean": 0.5645144177010584,
+       "candidateMean": 0.5500226011886876
+      },
+      "warm": {
+       "geometricMean": 0.9533534427294006,
+       "low": 0.9099583626408652,
+       "high": 0.9964001692277749,
+       "pairs": 8,
+       "baselineMean": 0.27579590412666205,
+       "candidateMean": 0.2889231357870713
+      }
+     },
+     "levelUpdateMs": {
+      "cold": {
+       "geometricMean": 0.9873269568549132,
+       "low": 0.9498726351493264,
+       "high": 1.0293215400248186,
+       "pairs": 8,
+       "baselineMean": 0.13538386355190005,
+       "candidateMean": 0.13684978171609657
+      },
+      "warm": {
+       "geometricMean": 0.9816077179931332,
+       "low": 0.9005929272449892,
+       "high": 1.0689481306810948,
+       "pairs": 8,
+       "baselineMean": 0.11472046972144673,
+       "candidateMean": 0.1166530344590608
+      }
+     },
+     "frameMs": {
+      "cold": {
+       "geometricMean": 1.0017001917541166,
+       "low": 0.9996848006858774,
+       "high": 1.0037567568397703,
+       "pairs": 8,
+       "baselineMean": 16.85309367678633,
+       "candidateMean": 16.82436949517254
+      },
+      "warm": {
+       "geometricMean": 1.0003679438894877,
+       "low": 0.9993152247648874,
+       "high": 1.0015485946025802,
+       "pairs": 8,
+       "baselineMean": 16.73238344038653,
+       "candidateMean": 16.72622432920619
+      }
+     },
+     "fps": {
+      "cold": {
+       "geometricMean": 0.9983026939915632,
+       "low": 0.9962573035606774,
+       "high": 1.0002981018826331,
+       "pairs": 8,
+       "baselineMean": 59.337619716422715,
+       "candidateMean": 59.43808375743312
+      },
+      "warm": {
+       "geometricMean": 0.9996321914434232,
+       "low": 0.9984430763856856,
+       "high": 1.0006838329090384,
+       "pairs": 8,
+       "baselineMean": 59.76447332314698,
+       "candidateMean": 59.78644616519707
+      }
+     }
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "cold speedup 0.998x, 95% interval 0.975-1.028 includes 1; warm speedup 1.031x, 95% interval 0.976-1.096 includes 1",
+   "metric": {
+    "threadCpu": "^diorama-baker"
+   },
+   "source": ".\\.runs\\diorama-opt\\offheap-tiles-2",
+   "arms": "parallel",
+   "wallSeconds": 2322.6365761,
+   "finished": "2026-11-16T01:19:39.376077300Z",
+   "seconds": 2303.02524255
   }
  ]
 }
