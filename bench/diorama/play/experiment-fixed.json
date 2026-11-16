@@ -1,0 +1,216 @@
+{
+ "schema": 1,
+ "fingerprint": false,
+ "project": ":1.21.1",
+ "gameDirectory": "versions/1.21.1/run",
+ "world": "diorama-play",
+ "worldSource": "../../../.runs/diorama-play/diorama-play",
+ "reset": [
+  "versions/1.21.1/run/diorama"
+ ],
+ "files": {
+  "versions/1.21.1/run/options.txt": "options.txt",
+  "versions/1.21.1/run/diorama-gate/region/r.-1.-1.mca": "../../../.runs/diorama-play/diorama-play/region/r.-1.-1.mca",
+  "versions/1.21.1/run/diorama-gate/region/r.-1.0.mca": "../../../.runs/diorama-play/diorama-play/region/r.-1.0.mca",
+  "versions/1.21.1/run/diorama-gate/region/r.-1.1.mca": "../../../.runs/diorama-play/diorama-play/region/r.-1.1.mca",
+  "versions/1.21.1/run/diorama-gate/region/r.0.-1.mca": "../../../.runs/diorama-play/diorama-play/region/r.0.-1.mca",
+  "versions/1.21.1/run/diorama-gate/region/r.0.0.mca": "../../../.runs/diorama-play/diorama-play/region/r.0.0.mca",
+  "versions/1.21.1/run/diorama-gate/region/r.0.1.mca": "../../../.runs/diorama-play/diorama-play/region/r.0.1.mca",
+  "versions/1.21.1/run/diorama-gate/region/r.1.-1.mca": "../../../.runs/diorama-play/diorama-play/region/r.1.-1.mca",
+  "versions/1.21.1/run/diorama-gate/region/r.1.0.mca": "../../../.runs/diorama-play/diorama-play/region/r.1.0.mca",
+  "versions/1.21.1/run/diorama-gate/region/r.1.1.mca": "../../../.runs/diorama-play/diorama-play/region/r.1.1.mca"
+ },
+ "setup": [
+  {
+   "file": "save-off.java",
+   "expect": "save-off"
+  },
+  {
+   "file": "toggle-setup.java",
+   "thread": "control"
+  }
+ ],
+ "measure": {
+  "seconds": 30,
+  "warmup": 0,
+  "probes": "scopes.json",
+  "metric": {
+   "threadCpu": "^diorama-baker"
+  },
+  "scopes": [
+   {
+    "name": "bakerMsPerMesh",
+    "threadCpu": "^diorama-baker",
+    "perCall": "gpuMesh"
+   },
+   {
+    "name": "liveMappingSampledCpu",
+    "mod": "diorama",
+    "threads": "^(diorama-baker|Render thread)"
+   },
+   {
+    "name": "dioramaThreadsCpuTime",
+    "threadCpu": "^diorama-"
+   },
+   {
+    "name": "importCpuTime",
+    "threadCpu": "^diorama-saved-chunks"
+   },
+   {
+    "name": "renderThreadCpuTime",
+    "threadCpu": "^Render thread$"
+   },
+   {
+    "name": "serverThreadCpuTime",
+    "threadCpu": "^Server thread$"
+   },
+   {
+    "name": "serverTickMs",
+    "report": "metrics.tick_ms.mean"
+   },
+   {
+    "name": "gcPauseTotalMs",
+    "report": "gcPauseTotalMs"
+   },
+   {
+    "name": "gcPauseMeanMs",
+    "report": "metrics.gc_pause_ms.mean"
+   },
+   {
+    "name": "heapUsedMeanBytes",
+    "report": "metrics.heap_used_bytes.mean"
+   },
+   {
+    "name": "dioramaAllThreadsCpu",
+    "mod": "diorama"
+   },
+   {
+    "name": "gpuMeshCpu",
+    "mod": "diorama",
+    "method": "GpuMesher.build("
+   },
+   {
+    "name": "spotsCpu",
+    "mod": "diorama",
+    "method": "TileSpots.pick("
+   },
+   {
+    "name": "tintBlendCpu",
+    "mod": "diorama",
+    "method": "BiomeTints.blend("
+   },
+   {
+    "name": "castersCpu",
+    "mod": "diorama",
+    "method": "GpuMesher.casters("
+   },
+   {
+    "name": "importCpu",
+    "mod": "diorama",
+    "method": "SavedChunkImport.lambda$submit"
+   },
+   {
+    "name": "traceCpu",
+    "mod": "diorama",
+    "method": "TileBaker.bake("
+   },
+   {
+    "name": "tileWriteCpu",
+    "mod": "diorama",
+    "method": "TileStore.write("
+   },
+   {
+    "name": "mipmapsCpu",
+    "mod": "diorama",
+    "method": "Mipmaps.build("
+   },
+   {
+    "name": "fogMaskCpu",
+    "mod": "diorama",
+    "method": "MapViewport.lambda"
+   },
+   {
+    "name": "hudCpu",
+    "mod": "diorama",
+    "method": "MinimapHud.render("
+   },
+   {
+    "name": "hudRenderMs",
+    "probe": "hudRender",
+    "statistic": "meanInclusiveMs"
+   },
+   {
+    "name": "radarMs",
+    "probe": "radarCollect",
+    "statistic": "meanInclusiveMs"
+   },
+   {
+    "name": "waypointMs",
+    "probe": "waypointLayout",
+    "statistic": "meanInclusiveMs"
+   },
+   {
+    "name": "sessionTickMs",
+    "probe": "sessionTick",
+    "statistic": "meanInclusiveMs"
+   },
+   {
+    "name": "levelUpdateMs",
+    "probe": "levelUpdate",
+    "statistic": "meanInclusiveMs"
+   },
+   {
+    "name": "frameMs",
+    "report": "metrics.frame_ms.mean"
+   },
+   {
+    "name": "fps",
+    "report": "fps"
+   }
+  ],
+  "before": {
+   "cold": [
+    {
+     "file": "jit-warm.java",
+     "thread": "control",
+     "expect": "warm"
+    },
+    {
+     "file": "fixed.java",
+     "thread": "control",
+     "expect": "fixed"
+    }
+   ],
+   "warm": [
+    {
+     "file": "fixed.java",
+     "thread": "control",
+     "expect": "fixed"
+    }
+   ]
+  }
+ },
+ "gates": [
+  {
+   "name": "bakes",
+   "file": "bake-digest.java",
+   "thread": "control",
+   "compare": "exact"
+  },
+  {
+   "name": "store",
+   "file": "store-merge.java",
+   "thread": "control",
+   "compare": "exact"
+  },
+  {
+   "name": "tints",
+   "file": "tints-live.java",
+   "thread": "control",
+   "compare": "expect",
+   "expect": "true"
+  }
+ ],
+ "jit": "full",
+ "frames": 60
+}
