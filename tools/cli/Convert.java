@@ -917,6 +917,7 @@ final class Convert {
         Set<String> unbridged = unbridge();
         if (Versions.compare(minecraft, ONLY_IN_ERROR) >= 0) dropSideOnly();
         rewriteSources("fabric", "neoforge");
+        convertDataConditions(false);
         applyFabricBridge(meta, minecraft);
         Map<String, Object> entrypoints = new LinkedHashMap<>();
         if (meta.get("entrypoints") instanceof Map<?, ?>) for (var e : Json.object(meta.get("entrypoints")).entrySet()) {
@@ -2767,6 +2768,7 @@ final class Convert {
             entrypoints.computeIfAbsent("client", k -> new ArrayList<>()).add(name);
         }
         rewriteSources("neoforge", "fabric");
+        convertDataConditions(true);
         dropNeoForgeTabOrder();
         if (bridgeUsed) applyBridge();
         // NeoForge generates data from GatherDataEvent listeners; Fabric from fabric-datagen entrypoints: the bridge's
@@ -3806,6 +3808,41 @@ final class Convert {
         }
         if (custom != null) out.put("custom", custom);
         return pretty(out, "") + "\n";
+    }
+
+    /**
+     * The load conditions of every data file the mod ships (each source set's resources, generated ones too) moved to
+     * the other loader's form (DataConditions): the loader a file is not written for ignores the other's key and would
+     * load a file meant only for when another mod is present.
+     */
+    void convertDataConditions(boolean toFabric) throws Exception {
+        Path src = project.root.resolve("src");
+        if (!Files.isDirectory(src)) return;
+        String key = toFabric ? DataConditions.NEOFORGE : DataConditions.FABRIC;
+        DataConditions conditions = new DataConditions();
+        List<Path> files;
+        try (var walk = Files.walk(src)) {
+            files = walk.filter(p -> p.toString().endsWith(".json") && p.toString().replace('\\', '/').contains("/resources/")).toList();
+        }
+        int converted = 0;
+        for (Path p : files) {
+            String rel = project.root.relativize(p).toString().replace('\\', '/');
+            String text = read(rel);
+            if (!text.contains(key)) continue;
+            Object parsed;
+            try {
+                parsed = Json.parse(text);
+            } catch (RuntimeException notJson) {
+                continue;
+            }
+            if (!(parsed instanceof Map<?, ?>)) continue;
+            Map<String, Object> out = conditions.convert(Json.object(parsed), toFabric, rel);
+            if (out == null) continue;
+            write(rel, pretty(out, "").replaceAll("\t", "  ") + "\n");
+            converted++;
+        }
+        for (String l : conditions.left) leave(l.substring(0, l.indexOf(": ")), 0, l.substring(l.indexOf(": ") + 2), "the other loader reads only its own condition types");
+        if (converted > 0) applied.computeIfAbsent("data-conditions", k -> new ArrayList<>()).add(converted + " data files");
     }
 
     /** JSON with one entry per line and tab indents, the way fabric.mod.json files are written. */

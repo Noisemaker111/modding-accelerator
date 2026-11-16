@@ -229,6 +229,19 @@ public final class ConvertTests {
             "an access transformer field line becomes an access widener field with its type from Mojang's mappings, a private method stays overridable, and a field the game lacks is dropped:\n" + typed + typedLeft
         );
         ConvertNamesTests.run();
+        String neoData = "{\"type\":\"minecraft:crafting_shaped\",\"neoforge:conditions\":[{\"type\":\"neoforge:mod_loaded\",\"modid\":\"create\"}," +
+            "{\"type\":\"neoforge:not\",\"value\":{\"type\":\"neoforge:mod_loaded\",\"modid\":\"jumbofurnace\"}},{\"type\":\"neoforge:tag_empty\",\"tag\":\"c:ingots/zinc\"}]}";
+        DataConditions dataConditions = new DataConditions();
+        Map<String, Object> fabricData = dataConditions.convert(Json.object(Json.parse(neoData)), true, "data/demo/recipe/a.json");
+        check(
+            Json.write(fabricData).equals("{\"type\":\"minecraft:crafting_shaped\",\"fabric:load_conditions\":[{\"condition\":\"fabric:all_mods_loaded\",\"values\":[\"create\"]}," +
+                "{\"condition\":\"fabric:not\",\"value\":{\"condition\":\"fabric:all_mods_loaded\",\"values\":[\"jumbofurnace\"]}}," +
+                "{\"condition\":\"fabric:not\",\"value\":{\"condition\":\"fabric:tags_populated\",\"registry\":\"minecraft:item\",\"values\":[\"c:ingots/zinc\"]}}]}") &&
+            Json.write(new DataConditions().convert(fabricData, false, "a.json")).equals(neoData) &&
+            dataConditions.convert(Json.object(Json.parse("{\"type\":\"x\"}")), true, "b.json") == null &&
+            dataConditions.convert(Json.object(Json.parse("{\"neoforge:conditions\":[{\"type\":\"demo:enabled\"}]}")), true, "c.json") == null && dataConditions.left.size() == 1,
+            "NeoForge's load conditions in a data file become Fabric's and back; a file with a mod's own condition type keeps NeoForge's and is listed: " + Json.write(fabricData)
+        );
         List<String> sets = Convert.declaredSourceSets(
             "sourceSets {\n\tmain {\n\t\tjava.srcDirs = ['src/common/java']\n\t}\n\tclient {\n\t\tjava.srcDirs = ['src/main/java']\n\t}\n\tcodeGen\n\t// gone {\n\toldServerGametest {\n\t\tcompileClasspath += main.output\n\t}\n}\n" +
             "sourceSets.create('extra')\n"
