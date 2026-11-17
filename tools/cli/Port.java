@@ -808,6 +808,8 @@ final class Port {
         Path selectionFile = selectionFile(options);
         List<Dependencies.Selection> selections = Dependencies.selections(selectionFile);
         long targetStart = System.nanoTime();
+        // A required library with no target release may be ported from its own source on the way (LibraryPort).
+        if (options.has("fix") && !options.has("dry-run")) Dependencies.portFrom = from;
         Target.Setup setup = actual.equals(Set.of(to)) ? null : Target.plan(build, model, to, selections);
         List<Target.Edit> target = setup == null ? Target.manifestEditsForModel(model, to) : setup.edits();
         List<Path> excluded = setup == null ? List.of() : setup.excluded;

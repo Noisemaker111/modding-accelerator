@@ -21,7 +21,20 @@ def pluginPins = System.getProperty('mmt.pluginPins', '').split(',').findAll { i
 if (pluginPins) gradle.beforeSettings { s ->
     s.pluginManagement.resolutionStrategy.eachPlugin { d -> if (pluginPins[d.requested.id.id]) d.useVersion(pluginPins[d.requested.id.id]) }
 }
-def partFile ={ File state, String path -> new File(state, 'model-parts/' + Base64.urlEncoder.withoutPadding().encodeToString(path.bytes) + '.json') }
+// Libraries mmt ported from source (LibraryPort) live in a local Maven repository; their versions end in -mmt-<game>.
+def portedLibraries = System.getProperty('mmt.portedLibraries', '')
+def settingsRepositories = false
+if (portedLibraries) {
+    gradle.settingsEvaluated { s ->
+        // Gradle before 6.8 has no settings repositories; projects declare their own there.
+        try { settingsRepositories = s.dependencyResolutionManagement.repositoriesMode.get().toString() != 'PREFER_PROJECT' } catch (Throwable older) { return }
+        if (settingsRepositories) s.dependencyResolutionManagement.repositories.maven { url = new File(portedLibraries).toURI(); content { includeVersionByRegex('.*', '.*', '.*-mmt-.*') } }
+    }
+    gradle.allprojects { p ->
+        if (!settingsRepositories) p.repositories.maven { url = new File(portedLibraries).toURI(); content { includeVersionByRegex('.*', '.*', '.*-mmt-.*') } }
+    }
+}
+def partFile = { File state, String path -> new File(state, 'model-parts/' + Base64.urlEncoder.withoutPadding().encodeToString(path.bytes) + '.json') }
 def metadataPath = { String path -> (path == ':' ? '' : path) + ':mmtProjectMetadata' }
 gradle.rootProject { root ->
     if (simulateMiss) return

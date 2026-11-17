@@ -206,6 +206,52 @@ final class Dependencies {
         }
         // The policy for a dependency with no target release: an optional one is disabled, a required one blocks the port.
         for (var blocker : new ArrayList<>(setup.blockers)) if (disableOptional(setup, blocker)) setup.blockers.remove(blocker);
+        // What only arrives with a disabled dependency (JEI's core, lib and gui with its API) goes with it: same group and
+        // version, and declared in no build script.
+        for (var blocker : new ArrayList<>(setup.blockers)) {
+            String artifact = Json.text(blocker, "artifact", ""), version = Json.text(blocker, "version", "");
+            String group = artifact.contains(":") ? artifact.substring(0, artifact.indexOf(':')) : artifact;
+            Map<String, Object> with = null;
+            for (var done : setup.applied) if (Boolean.TRUE.equals(done.get("disabled")) && Json.text(done, "artifact", "").startsWith(group + ":") && version.equals(Json.text(done, "from", ""))) with = done;
+            if (with == null || declaredAnywhere(setup, artifact)) continue;
+            setup.blockers.remove(blocker);
+            setup.applied.add(Json.map("artifact", artifact, "from", version, "disabled", true, "reason", "it only arrives with " + Json.text(with, "artifact", "") + ", which was disabled"));
+        }
+        for (var blocker : new ArrayList<>(setup.blockers)) if (portLibrary(setup, blocker, loader)) setup.blockers.remove(blocker);
+    }
+
+    /** Whether any build script of the project declares group:name, literally or through properties. */
+    static boolean declaredAnywhere(Target.Setup setup, String artifact) {
+        if (setup.build == null) return true;
+        try (var scripts = Files.walk(setup.build.project.root, 3)) {
+            for (Path script : scripts.filter(p -> p.getFileName().toString().matches("build\\.gradle(\\.kts)?") && !p.toString().contains(File.separator + "build" + File.separator)).toList()) {
+                if (!declarations(setup, script, artifact).isEmpty()) return true;
+            }
+        } catch (IOException unreadable) {
+            return true;
+        }
+        return false;
+    }
+
+    /** The game version the running port starts from; set by port --fix, which may port a library it needs. */
+    static String portFrom = null;
+
+    /**
+     * A required dependency with no target release is ported from its own source (LibraryPort) when the running port may
+     * do so, and the build then uses that port from the local repository. When it cannot be, the blocker says why.
+     */
+    static boolean portLibrary(Target.Setup setup, Map<String, Object> blocker, String loader) {
+        String artifact = Json.text(blocker, "artifact", ""), old = Json.text(blocker, "version", ""), file = Json.text(blocker, "file", "");
+        if (portFrom == null || setup.build == null || file.isEmpty() || !artifact.contains(":")) return false;
+        String group = artifact.substring(0, artifact.indexOf(':')), name = artifact.substring(artifact.indexOf(':') + 1);
+        try {
+            var receipt = LibraryPort.ensure(setup, group, name, old, Path.of(file), portFrom, loader);
+            apply(setup, group, name, old, group, name, LibraryPort.version(old, setup.to), Path.of(file), receipt);
+            return true;
+        } catch (Exception failure) {
+            blocker.put("reason", Json.text(blocker, "reason", "") + "; mmt could not port it from source: " + failure.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -228,6 +274,7 @@ final class Dependencies {
                 Path mod = cachedJar(artifact.replaceFirst("-api(?=-[\\w.]+$|$)", ""), version);
                 if (mod != null) modId = modId(mod);
             }
+            if (modId == null) modId = groupModId(artifact, version);
             String why;
             if (runtimeOnly) why = "a " + configuration + " dependency, never compiled against or shipped";
             else if (modId == null) return false;
@@ -374,6 +421,28 @@ final class Dependencies {
         }
     }
 
+    /**
+     * The one mod id among the jars a project publishes with the same group and version (JEI's jei-1.21.1-common-api has
+     * none; its jei-1.21.1-fabric says jei), or null when they declare none or several.
+     */
+    static String groupModId(String artifact, String version) {
+        String[] parts = artifact.split(":");
+        if (parts.length != 2) return null;
+        Path home = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
+        Path group = home.resolve("caches/modules-2/files-2.1").resolve(parts[0]);
+        if (!Files.isDirectory(group)) return null;
+        Set<String> ids = new TreeSet<>();
+        try (var walk = Files.walk(group, 4)) {
+            for (Path jar : walk.filter(p -> p.getFileName().toString().endsWith("-" + version + ".jar") && p.getParent().getParent().getFileName().toString().equals(version)).toList()) {
+                String id = modId(jar);
+                if (id != null) ids.add(id);
+            }
+        } catch (IOException unreadable) {
+            return null;
+        }
+        return ids.size() == 1 ? ids.iterator().next() : null;
+    }
+
     /** The mod id a mod jar declares (fabric.mod.json id, or the first modId of its mods.toml), or null for a plain library. */
     static String modId(Path jar) {
         try (var zip = new ZipFile(jar.toFile())) {
@@ -467,7 +536,7 @@ final class Dependencies {
             }
             String shape = old.replaceAll("[0-9]+", "0"), chosen = null;
             for (String v : versions) if (v.replaceAll("[0-9]+", "0").equals(shape) && (chosen == null || numbers(v).compareTo(numbers(chosen)) > 0)) chosen = v;
-            Set<String> owners = propertyKeys(setup.build.project, old);
+            Set<String> owners = propertyKeys(setup.build.project, old, group, name);
             if (chosen == null) {
                 // A compile-only integration written out by name keeps its old coordinate, as any compile-only one does
                 // (mods compile against JEI's API): the build decides whether it still compiles.
@@ -969,7 +1038,7 @@ final class Dependencies {
         record.put("to", version);
         record.put("sourceSha512", sha512(binary));
         boolean renamed = !group.equals(newGroup) || !name.equals(newName);
-        Set<String> keys = propertyKeys(setup.build.project, old);
+        Set<String> keys = propertyKeys(setup.build.project, old, group, name);
         if (!renamed && keys.size() == 1) {
             String key = keys.iterator().next(), previous = setup.replacements.putIfAbsent(key, version);
             setup.pins.putIfAbsent(key, old);
@@ -979,6 +1048,14 @@ final class Dependencies {
         } else if (keys.isEmpty()) {
             Path file = Path.of(setup.project.get("buildFile").toString());
             String declared = declaredLiteral(setup.text(file), group + ":" + name, file);
+            // A library mmt ported is written out as its literal version, whatever properties made the old one.
+            if (declared.contains("${") && version.contains("-mmt-")) {
+                String rest = declared.substring(group.length() + name.length() + 2);
+                String classifier = rest.contains(":") ? rest.substring(rest.indexOf(':')) : "";
+                setup.replace(file, declared, newGroup + ":" + newName + ":" + version + classifier);
+                setup.applied.add(record);
+                return;
+            }
             if (declared.contains("${")) throw new IOException(
                 "Dependency " +
                 group +
@@ -1319,6 +1396,22 @@ final class Dependencies {
         }
         String base = published.split("\\+", 2)[0];
         return maven.contains(published) ? published : maven.contains(base) ? base : "";
+    }
+
+    /**
+     * The properties holding a dependency's version; when several hold the same value (bookshelf_version and prickle_version
+     * both 21.1.2), the ones named after the artifact.
+     */
+    static Set<String> propertyKeys(ProjectModel project, String version, String group, String name) throws IOException {
+        Set<String> keys = propertyKeys(project, version);
+        if (keys.size() < 2) return keys;
+        String artifact = (group + "." + name).toLowerCase(Locale.ROOT);
+        Set<String> named = new TreeSet<>();
+        for (String key : keys) {
+            String stem = key.replaceAll("(?i)[_.-]?version$", "").toLowerCase(Locale.ROOT);
+            if (stem.length() >= 3 && artifact.contains(stem)) named.add(key);
+        }
+        return named.isEmpty() ? keys : named;
     }
 
     static Set<String> propertyKeys(ProjectModel project, String version) throws IOException {

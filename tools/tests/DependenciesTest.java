@@ -33,7 +33,14 @@ public final class DependenciesTest {
         Files.writeString(written.resolve("build.gradle"), "dependencies {\n    compileOnly \"mezz.jei:jei-${jei_mc_version}:${jei_version}\"\n    implementation \"other:lib-${jei_version}:1\"\n}\n");
         var declared = Dependencies.written(new Target.Setup(null, Json.map(), "1.21.2", List.of()), written.resolve("build.gradle"), "mezz.jei:jei-1.21.1-neoforge");
         require(declared.equals(List.of("    compileOnly \"mezz.jei:jei-${jei_mc_version}:${jei_version}\"")), "a property-built declaration is found: " + declared);
+        // Two libraries at the same version (Enchantment Descriptions: bookshelf_version and prickle_version both 21.1.2): each
+        // dependency's version lives in the property named after it, so renaming one never moves the other.
+        Files.writeString(written.resolve("gradle.properties"), "bookshelf_version=21.1.2\nprickle_version=21.1.2\n");
+        var model = new ProjectModel(written);
+        require(Dependencies.propertyKeys(model, "21.1.2", "net.darkhax.pricklemc", "prickle-fabric-1.21.1").equals(Set.of("prickle_version")), "the property named after the artifact owns it");
+        require(Dependencies.propertyKeys(model, "21.1.2", "other", "lib").size() == 2, "no named owner leaves both, so nothing is guessed");
         require(!Dependencies.requiredInFabric("{\"depends\": {\"minecraft\": \"*\"}, \"suggests\": {\"modmenu\": \"*\"}}", "modmenu"), "fabric suggests is optional");
+        librarySourceCommit();
         require("1.4.0+1.21.6".equals(Dependencies.chooseGameRelease(List.of("1.3.0+1.21.1", "1.4.0+1.21.6", "1.3.2+1.21.6"), "1.3.0+1.21.1", "1.21.1", "1.21.6")), "game as a build suffix");
         var found = Dependencies.findPublishedProject(
             SOURCE,
@@ -567,6 +574,36 @@ public final class DependenciesTest {
 
     static Map<String, Object> project(String source, String loader, String version) {
         return Json.map("source_url", source, "loaders", List.of(loader), "game_versions", List.of(version));
+    }
+
+    /**
+     * A library ported from source is built from the commit of the release the mod used: its tag when one names it, else
+     * the last commit on the branch for its game version before the release was published (Bookshelf numbers releases by
+     * build, so no file in the source names 21.1.2). A later commit, or one on another branch, would be another library.
+     */
+    static void librarySourceCommit() throws Exception {
+        Path upstream = Files.createTempDirectory("mmt-library-");
+        LibraryPort.git(upstream, "init", "--quiet", "-b", "1.21.1");
+        LibraryPort.git(upstream, "config", "user.email", "test@example.invalid");
+        LibraryPort.git(upstream, "config", "user.name", "test");
+        String[] dates = { "2024-09-01T00:00:00Z", "2024-09-20T00:00:00Z", "2024-10-05T00:00:00Z" };
+        List<String> commits = new ArrayList<>();
+        for (String date : dates) {
+            Files.writeString(upstream.resolve("file.txt"), date);
+            LibraryPort.git(upstream, "add", "file.txt");
+            ProcessBuilder commit = new ProcessBuilder("git", "commit", "--quiet", "-m", date).directory(upstream.toFile());
+            commit.environment().put("GIT_COMMITTER_DATE", date);
+            commit.environment().put("GIT_AUTHOR_DATE", date);
+            require(commit.start().waitFor() == 0, "test commit");
+            commits.add(LibraryPort.git(upstream, "rev-parse", "HEAD").trim());
+        }
+        LibraryPort.git(upstream, "tag", "v3.0.1", commits.get(0));
+        Path work = Files.createTempDirectory("mmt-library-clone-").resolve("clone");
+        LibraryPort.git(work.getParent(), "clone", "--quiet", "--no-checkout", upstream.toUri().toString(), "clone");
+        var byDate = LibraryPort.commit(work, "21.1.2", "1.21.1", "2024-09-26T12:00:00Z");
+        require(byDate[0].equals(commits.get(1)), "the last commit before the release: " + Arrays.toString(byDate));
+        var byTag = LibraryPort.commit(work, "3.0.1+1.21.1", "1.21.1", "2024-10-10T00:00:00Z");
+        require(byTag[0].equals(commits.get(0)) && byTag[1].equals("tag v3.0.1"), "a tag naming the release wins: " + Arrays.toString(byTag));
     }
 
     static void require(boolean condition, String label) {

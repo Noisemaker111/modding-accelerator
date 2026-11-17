@@ -170,6 +170,9 @@ final class Target {
         neoForgeSibling(setup, build, pins, to);
         forgeSibling(setup, build, pins, to);
         neoFormFollows(setup, build, to);
+        // A multi-loader build's common or NeoForge module set up by ModDevGradle needs one that knows the target game
+        // (Bookshelf 1.21.1's ModDevGradle 2.0.30-beta never adds Mojang's library server for 1.21.2's jtracy).
+        modDevFollows(setup, build, to);
         Dependencies.resolve(setup);
         siblingDependencies(setup, build, modProjects, project, to, selections);
         applyReplacements(setup, build, pins);

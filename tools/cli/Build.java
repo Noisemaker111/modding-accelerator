@@ -308,6 +308,8 @@ final class Build {
         if (!selected.isBlank()) command.add("-Dmmt.project=" + selected);
         Path pins = project.state().resolve("plugin-pins.txt");
         if (Files.isRegularFile(pins)) command.add("-Dmmt.pluginPins=" + Files.readString(pins).trim());
+        // Libraries mmt ported from source (LibraryPort) resolve from its local repository, and only from there.
+        if (Files.isDirectory(LibraryPort.store())) command.add("-Dmmt.portedLibraries=" + LibraryPort.store());
         // Loom skips dependency source remapping for CLI checks; compiled dependency remapping still runs.
         command.add("-Dfabric.loom.ci=true");
         command.add("-Dmmt.runId=" + report.id);
