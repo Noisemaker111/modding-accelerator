@@ -266,6 +266,7 @@ public final class PortPreflightTest {
     }
 
     static void commonWordChecks(Path scratch, Path map) throws Exception {
+        VersionMap.Known known = VersionMap.Known.load(map);
         Path repo = scratch.resolve("common-repo");
         Files.createDirectories(repo);
         StringBuilder many = new StringBuilder("import net.minecraft.block.Block;\nclass Many {\n");
@@ -289,6 +290,14 @@ public final class PortPreflightTest {
         require(out.lines().filter(line -> line.contains("deadField")).count() == 2, "a removed name used twice still prints per use: " + out);
         require(out.contains("3 to review"), "the review count matches the printed lines: " + out);
         require(out.contains("0 file(s)") && Files.readString(repo.resolve("ManyA.java")).equals(many.toString()), "dry run changes nothing");
+        List<VersionMap.ApiFix> batch = VersionMap.ApiFix.parseAll(
+            List.of(repo.resolve("ManyA.java"), repo.resolve("Few.java")),
+            List.of(Files.readString(repo.resolve("ManyA.java")), Files.readString(repo.resolve("Few.java")))
+        );
+        require(batch.size() == 2, "batch parse returns one unit per file");
+        VersionMap.ApiFix.Lint single = VersionMap.ApiFix.lintKnown(known, repo.resolve("ManyA.java"), Files.readString(repo.resolve("ManyA.java")));
+        VersionMap.ApiFix.Lint batched = VersionMap.ApiFix.lintParsed(known, batch.get(0), Files.readString(repo.resolve("ManyA.java")));
+        require(batched.hits.equals(single.hits) && batched.fixed.equals(single.fixed), "batch parse lints exactly like single parse");
     }
 
     interface Throwing {
