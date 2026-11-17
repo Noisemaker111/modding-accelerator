@@ -168,6 +168,14 @@ final class Dependencies {
                 }
             } catch (IOException failure) {
                 String configuration = Json.text(dep, "configuration", "");
+                // A NeoForge mod jar Modrinth does not index: whether it has a target release is unknown, so it stays
+                // unchecked as before and the build decides; only a published project without one blocks.
+                if (selection == null && forgeMod(setup.project, group, name, old, binary) && failure.getMessage() != null
+                    && failure.getMessage().startsWith("its jar is not a published Modrinth release")) {
+                    setup.unchecked.add(Json.map("artifact", group + ":" + name, "version", old, "configuration", configuration, "file", binary.toString(),
+                        "reason", "a NeoForge mod Modrinth does not index; its " + setup.to + " release was not looked up, so the build decides whether " + old + " still works"));
+                    continue;
+                }
                 // A compile-only integration is never packaged or loaded with the mod, and authors often
                 // already compile against an older release of it. Keep it and let the compiler decide.
                 if (selection == null && compileOnly(configuration) && !(failure instanceof Target.LookupFailure)) {
@@ -1778,8 +1786,15 @@ final class Dependencies {
             if (!unindexed.getMessage().contains("HTTP 404")) throw unindexed;
         }
         Map<String, Object> metadata;
-        try (var jar = new ZipFile(binary.toFile()); var input = jar.getInputStream(jar.getEntry("fabric.mod.json"))) {
-            metadata = Json.object(Json.parse(new String(input.readAllBytes(), StandardCharsets.UTF_8)));
+        try (var jar = new ZipFile(binary.toFile())) {
+            var entry = jar.getEntry("fabric.mod.json");
+            if (entry == null) {
+                // A NeoForge or Forge mod jar: its mods.toml names a repository, and LibraryPort reads it from there.
+                throw new IOException("its jar is not a published Modrinth release, so no " + to + " release of it was found");
+            }
+            try (var input = jar.getInputStream(entry)) {
+                metadata = Json.object(Json.parse(new String(input.readAllBytes(), StandardCharsets.UTF_8)));
+            }
         }
         var contact = Json.object(metadata.getOrDefault("contact", Map.of()));
         String source = Json.text(contact, "sources", "");
