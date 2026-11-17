@@ -2495,6 +2495,37 @@ public final class VersionMap {
                 replacements++;
                 byKind.merge(method ? "method" : "field", 1, Integer::sum);
             }
+            // 2a'. A nested class the game moved out of its outer class (1.21.2: ArmorItem$Type -> equipment.ArmorType), written
+            // through the outer one: every Outer.Nested in the file becomes the class it is now, imported.
+            for (Err e : readErrors(log)) {
+                String sym = e.symbol() == null ? "" : e.symbol();
+                String where = Known.locationType(e.location());
+                if (!e.message().equals("cannot find symbol") || !sym.startsWith("class ") || where == null || e.location() == null || !e.location().startsWith("class ")) {
+                    continue;
+                }
+                String nested = sym.substring(6).trim();
+                Set<String> targets = new HashSet<>();
+                for (var c : k.classFqn.entrySet()) {
+                    String from = c.getKey(), to = c.getValue();
+                    if (from.endsWith("$" + nested) && simple(from.substring(0, from.length() - nested.length() - 1)).equals(where) && !to.contains("$")) {
+                        targets.add(to);
+                    }
+                }
+                Path f = sourcePath(e, repo);
+                if (targets.size() != 1 || f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String target = targets.iterator().next();
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                String moved = text.replaceAll("(?<![\\w$.])" + Pattern.quote(where) + "\\s*\\.\\s*" + Pattern.quote(nested) + "\\b", Matcher.quoteReplacement(simple(target)));
+                if (moved.equals(text)) {
+                    continue;
+                }
+                texts.put(f, withImport(moved, target));
+                replacements++;
+                byKind.merge("nested class moved out", 1, Integer::sum);
+            }
+
             // 2b. An @Override that no longer overrides: the game renamed the method it overrode, the same way on every owner.
             for (Err e : readErrors(log)) {
                 if (!e.message().startsWith("method does not override or implement a method from a supertype")) {

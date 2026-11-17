@@ -417,6 +417,32 @@ public final class PortPreflightTest {
         require(hud.contains("graphics.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, SPRITE, x, y, 16, 16);"), "the game's own value goes in first: " + hud);
         require(hud.contains("graphics.blitSprite(OTHER, x, y, 8, 8);"), "a call javac did not name is left alone");
 
+        // A nested class the game moved out of its outer class (1.21.2: ArmorItem.Type -> equipment.ArmorType): every use
+        // written through the outer class becomes the new class, imported; the outer class itself stays.
+        Path mo = Files.createDirectories(scratch.resolve("moved-out"));
+        Path moMap = scratch.resolve("moved-out.json");
+        Files.writeString(moMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "classes": [
+                { "from": "net.minecraft.world.item.ArmorItem$Type", "to": "net.minecraft.world.item.equipment.ArmorType" }
+              ]
+            }
+            """);
+        String[] armor = {
+            "package mod;",
+            "import net.minecraft.world.item.ArmorItem;",
+            "class Boots extends ArmorItem {",
+            "  Boots(ArmorItem.Type type) { super(type); }",
+            "  static final java.util.Map<ArmorItem.Type, Integer> M = new java.util.EnumMap<>(ArmorItem . Type.class);",
+            "}",
+        };
+        Files.writeString(mo.resolve("Boots.java"), String.join("\n", armor) + "\n");
+        Files.writeString(scratch.resolve("moved-out.log"), mo.resolve("Boots.java") + ":4: error: cannot find symbol\n" + armor[3] + "\n                ^\n  symbol:   class Type\n  location: class ArmorItem\n");
+        VersionMap.Fix.run(moMap, scratch.resolve("moved-out.log"), mo, false, null);
+        String boots = Files.readString(mo.resolve("Boots.java"));
+        require(boots.contains("Boots(ArmorType type)") && boots.contains("Map<ArmorType, Integer> M = new java.util.EnumMap<>(ArmorType.class)"), "every Outer.Nested becomes the moved class: " + boots);
+        require(boots.contains("import net.minecraft.world.item.equipment.ArmorType;") && boots.contains("extends ArmorItem"), "the moved class is imported and the outer class stays: " + boots);
+
         // A name the game reused (1.21.2: Registry.get(id) -> getValue, getHolder(id) -> get): the old call still compiles
         // and javac objects where its result goes, finding the Optional the new get returns. That call takes the old
         // method's new name; a line javac did not name, and a get with another argument count, stay.
