@@ -2756,6 +2756,21 @@ public final class VersionMap {
     /** Only reviewed AST recipes with a matching target mapping, before the first compile. */
     static final class Preflight {
 
+        /** A removed name used more than this many times across the repo prints once as a common word
+            instead of once per use: past the 90th percentile of repetition the uses are lookalikes,
+            not the removed member (measured p90 = 19 on Apotheosis 8.9.0). */
+        static final int COMMON_WORD_USES = 20;
+
+        /** One printed line per finding, except common words, which print once per repo (see run). */
+        static List<String> renderGrouped(String rel, List<ApiFix.LintHit> hits, Map<String, Integer> uses) {
+            List<String> lines = new ArrayList<>();
+            for (ApiFix.LintHit hit : hits) {
+                if (!hit.auto() && uses.getOrDefault(hit.detail(), 0) > COMMON_WORD_USES) continue;
+                lines.add(rel + ":" + hit.line() + ": " + hit.detail());
+            }
+            return lines;
+        }
+
         static int run(Path mapFile, Path repo, boolean dryRun) throws IOException {
             Known known = Known.load(mapFile);
             if ("yarn".equals(known.names)) {
@@ -2779,7 +2794,8 @@ public final class VersionMap {
             // it. Unanimous renames on provably game-owned receivers are rewritten; everything else
             // (ambiguous renames, removals, unknown receivers, mod-owned or self-declared names) is
             // reported for a human. Parse only: no build, no game.
-            int files = 0, auto = 0, review = 0;
+            record FileLint(Path file, String before, ApiFix.Lint lint) {}
+            List<FileLint> lints = new ArrayList<>();
             for (Path file : Fix.sourceFiles(repo)) {
                 String before = Files.readString(file, StandardCharsets.UTF_8);
                 ApiFix.Lint lint;
@@ -2789,20 +2805,34 @@ public final class VersionMap {
                     System.out.println(repo.relativize(file) + ": skipped, could not parse (" + failure.getMessage() + ")");
                     continue;
                 }
-                for (ApiFix.LintHit hit : lint.hits) {
-                    System.out.println(repo.relativize(file) + ":" + hit.line() + ": " + hit.detail());
-                    if (hit.auto()) {
-                        auto++;
-                    } else {
-                        review++;
-                    }
-                }
-                if (!lint.fixed.equals(before)) {
+                lints.add(new FileLint(file, before, lint));
+            }
+            Map<String, Integer> uses = new HashMap<>();
+            for (FileLint fileLint : lints) for (ApiFix.LintHit hit : fileLint.lint.hits) if (!hit.auto()) {
+                uses.merge(hit.detail(), 1, Integer::sum);
+            }
+            Map<String, Set<String>> commonWords = new LinkedHashMap<>();
+            for (FileLint fileLint : lints) for (ApiFix.LintHit hit : fileLint.lint.hits) if (!hit.auto()) {
+                if (uses.getOrDefault(hit.detail(), 0) > COMMON_WORD_USES) commonWords.computeIfAbsent(hit.detail(), key -> new LinkedHashSet<>()).add(repo.relativize(fileLint.file).toString());
+            }
+            int files = 0, auto = 0, review = 0;
+            for (FileLint fileLint : lints) {
+                int fileAuto = 0;
+                for (ApiFix.LintHit hit : fileLint.lint.hits) if (hit.auto()) fileAuto++;
+                List<String> lines = renderGrouped(repo.relativize(fileLint.file).toString(), fileLint.lint.hits, uses);
+                for (String line : lines) System.out.println(line);
+                auto += fileAuto;
+                review += lines.size() - fileAuto;
+                if (!fileLint.lint.fixed.equals(fileLint.before)) {
                     files++;
                     if (!dryRun) {
-                        Files.writeString(file, lint.fixed, StandardCharsets.UTF_8);
+                        Files.writeString(fileLint.file, fileLint.lint.fixed, StandardCharsets.UTF_8);
                     }
                 }
+            }
+            for (var word : commonWords.entrySet()) {
+                System.out.println("common word: " + uses.get(word.getKey()) + " uses across " + word.getValue().size() + " files: " + word.getKey() + " [common-word]");
+                review++;
             }
             System.out.println(
                 "map-preflight: " + files + " file(s), " + auto + " auto-fix(es), " + review + " to review" + (dryRun ? " (dry run)" : "")

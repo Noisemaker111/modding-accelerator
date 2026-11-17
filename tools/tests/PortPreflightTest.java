@@ -262,6 +262,49 @@ public final class PortPreflightTest {
             VersionMap.ApiFix.stepsFor(known, "method", "getBlockState", java.util.Set.of("renamed")).contains("1.12.2 -> 1.14.4"),
             "step lookup is per-map; cached steps never leak across maps"
         );
+        commonWordChecks(scratch, map);
+    }
+
+    static void commonWordChecks(Path scratch, Path map) throws Exception {
+        Path repo = scratch.resolve("common-repo");
+        Files.createDirectories(repo);
+        StringBuilder many = new StringBuilder("import net.minecraft.block.Block;\nclass Many {\n");
+        for (int i = 0; i < 15; i++) many.append("  Object m").append(i).append("(Block block) {\n    return block.deadMethod();\n  }\n");
+        many.append("}\n");
+        Files.writeString(repo.resolve("ManyA.java"), many.toString());
+        Files.writeString(repo.resolve("ManyB.java"), many.toString().replace("class Many", "class ManyB"));
+        Files.writeString(repo.resolve("Few.java"), String.join("\n",
+            "import net.minecraft.block.Block;",
+            "class Few {",
+            "  int a(Block block) {",
+            "    return block.deadField;",
+            "  }",
+            "  int b(Block block) {",
+            "    return block.deadField;",
+            "  }",
+            "}"));
+        String out = capture(() -> VersionMap.Preflight.run(map, repo, true));
+        require(out.lines().filter(line -> line.contains("deadMethod")).count() == 1, "a removed name used 30 times prints once: " + out);
+        require(out.contains("30 uses across 2 files") && out.contains("[common-word]"), "the summary names the count and files: " + out);
+        require(out.lines().filter(line -> line.contains("deadField")).count() == 2, "a removed name used twice still prints per use: " + out);
+        require(out.contains("3 to review"), "the review count matches the printed lines: " + out);
+        require(out.contains("0 file(s)") && Files.readString(repo.resolve("ManyA.java")).equals(many.toString()), "dry run changes nothing");
+    }
+
+    interface Throwing {
+        void run() throws Exception;
+    }
+
+    static String capture(Throwing run) throws Exception {
+        java.io.PrintStream keep = System.out;
+        java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+        System.setOut(new java.io.PrintStream(buffer));
+        try {
+            run.run();
+        } finally {
+            System.setOut(keep);
+        }
+        return buffer.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }
 }
