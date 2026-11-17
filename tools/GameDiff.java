@@ -2310,6 +2310,134 @@ public final class GameDiff {
             return internal.substring(Math.max(internal.lastIndexOf('/'), internal.lastIndexOf('$')) + 1);
         }
 
+        /** A parameter the game added to a method, and the one value its own code passes there (a Java expression). */
+        record ArgDefault(Meth from, Meth to, int index, String value, int votes, int of) {}
+
+        /**
+         * Added arguments with one value, read from the game's own calls: where a linked method gained exactly one
+         * parameter, the code b inserted before each of its calls (in methods both releases have, aligned through the
+         * links) is the value b passes. A method reference, a static field or a static no-argument call that two calls
+         * agree on, at 80%, is the value (1.21.2: GuiGraphics.blitSprite(RenderType::guiTextured, ...)).
+         */
+        List<ArgDefault> argDefaults() {
+            Map<List<Meth>, Map<String, Integer>> votes = new HashMap<>();
+            Map<List<Meth>, Integer> totals = new HashMap<>();
+            for (var e : mAB.entrySet()) {
+                Meth x = e.getKey();
+                Meth y = e.getValue();
+                if (x.refs.length == 0 || y.refs.length == 0) {
+                    continue;
+                }
+                long[] ta = new long[x.refs.length];
+                long[] tb = new long[y.refs.length];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = fnv(token(x.refs[i], true));
+                }
+                for (int j = 0; j < tb.length; j++) {
+                    tb[j] = fnv(token(y.refs[j], false));
+                }
+                // What a's code called at each place of b's: the same method linked, or another the game rewrote it to.
+                Map<Integer, Ref> before = new HashMap<>();
+                for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
+                    before.put(p[1], x.refs[p[0]]);
+                }
+                for (int[] g : gaps(ta, tb)) {
+                    if (g[1] != g[0] || g[3] - g[2] < 1 || g[3] - g[2] > 2) {
+                        continue; // only code b inserted, one or two references long
+                    }
+                    // The first call after it that both sides make, to a method that gained one parameter.
+                    for (int j = g[3]; j < y.refs.length && j < g[3] + 6; j++) {
+                        Ref rb = y.refs[j];
+                        if (rb.kind() != 'm') {
+                            continue;
+                        }
+                        Meth mb = b.method(rb.owner(), rb.name(), rb.desc());
+                        Meth ma = mb == null ? null : mBA.get(mb);
+                        Ref ra = before.get(j);
+                        if (ma == null && ra != null && ra.kind() == 'm') {
+                            ma = a.method(ra.owner(), ra.name(), ra.desc());
+                        }
+                        if (ma == null || mb == null || !gainedOne(ma, mb)) {
+                            continue;
+                        }
+                        String value = valueOf(Arrays.copyOfRange(y.refs, g[2], g[3]));
+                        List<Meth> pair = List.of(ma, mb);
+                        totals.merge(pair, 1, Integer::sum);
+                        if (value != null) {
+                            votes.computeIfAbsent(pair, k -> new HashMap<>()).merge(value, 1, Integer::sum);
+                        }
+                        break;
+                    }
+                }
+            }
+            List<ArgDefault> out = new ArrayList<>();
+            for (var e : votes.entrySet()) {
+                String best = null;
+                int c1 = 0;
+                for (var v : e.getValue().entrySet()) {
+                    if (v.getValue() > c1) {
+                        c1 = v.getValue();
+                        best = v.getKey();
+                    }
+                }
+                int total = totals.get(e.getKey());
+                if (c1 >= 2 && c1 * 10 >= total * 8) {
+                    Meth ma = e.getKey().get(0), mb = e.getKey().get(1);
+                    out.add(new ArgDefault(ma, mb, addedIndex(ma, mb), best, c1, total));
+                }
+            }
+            out.sort(Comparator.comparing((ArgDefault d) -> d.to().sig()));
+            return out;
+        }
+
+        /** b's method takes a's parameters (after the map's renames) with exactly one more, inserted anywhere. */
+        boolean gainedOne(Meth ma, Meth mb) {
+            return addedIndex(ma, mb) >= 0;
+        }
+
+        int addedIndex(Meth ma, Meth mb) {
+            List<String> before = VersionMap.Fix.paramTypes(ma.desc), after = VersionMap.Fix.paramTypes(descBA(mb.desc));
+            if (after.size() != before.size() + 1) {
+                return -1;
+            }
+            for (int i = 0; i < after.size(); i++) {
+                List<String> rest = new ArrayList<>(after);
+                rest.remove(i);
+                if (rest.equals(before)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        /** Java for a value b's code made from these references: Owner::method, Owner.FIELD or Owner.method(). */
+        String valueOf(Ref[] refs) {
+            String owner;
+            if (refs.length == 2 && refs[0].kind() == 'k' && refs[0].owner().startsWith("indy:") && refs[1].kind() == 'm') {
+                owner = refs[1].owner();
+                return owner.startsWith("net/minecraft/") || owner.startsWith("com/mojang/")
+                    ? owner.replace('/', '.').replace('$', '.') + "::" + refs[1].name()
+                    : null;
+            }
+            if (refs.length != 1) {
+                return null;
+            }
+            Ref r = refs[0];
+            owner = r.owner() == null ? "" : r.owner().replace('/', '.').replace('$', '.');
+            if (!owner.startsWith("net.minecraft.") && !owner.startsWith("com.mojang.")) {
+                return null;
+            }
+            if (r.kind() == 'f') {
+                Fld f = b.field(r.owner(), r.name());
+                return f != null && (f.flags & ACC_STATIC) != 0 ? owner + "." + r.name() : null;
+            }
+            if (r.kind() == 'm' && r.desc().startsWith("()")) {
+                Meth m = b.method(r.owner(), r.name(), r.desc());
+                return m != null && m.isStatic() ? owner + "." + r.name() + "()" : null;
+            }
+            return null;
+        }
+
         /** A class the game stopped using and what its own code uses in its place. */
         record ClassRewrite(Cls from, Cls to, int votes, int total) {}
 
@@ -2713,6 +2841,8 @@ public final class GameDiff {
         final List<String> classRewrites = new ArrayList<>();
         /** Members the game replaced with a chain on the same receiver (Hop.chains). */
         final List<String> chains = new ArrayList<>();
+        /** Parameters the game added with one value its own code always passes (Hop.argDefaults). */
+        final List<String> argDefaults = new ArrayList<>();
         Snap prev;
         Path prevLoaderJar;
         String prevLoaderVersion;
@@ -2808,6 +2938,20 @@ public final class GameDiff {
                         ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
                     );
                 }
+                for (Hop.ArgDefault d : h.argDefaults()) {
+                    argDefaults.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"owner\": " + VersionMap.Diff.q(d.from().owner.name.replace('/', '.')) +
+                        ", \"from\": " + VersionMap.Diff.q(d.from().name) +
+                        ", \"desc\": " + VersionMap.Diff.q(d.from().desc) +
+                        ", \"toOwner\": " + VersionMap.Diff.q(d.to().owner.name.replace('/', '.')) +
+                        ", \"to\": " + VersionMap.Diff.q(d.to().name) +
+                        ", \"newDesc\": " + VersionMap.Diff.q(d.to().desc) +
+                        ", \"index\": " + d.index() +
+                        ", \"value\": " + VersionMap.Diff.q(d.value()) +
+                        ", \"votes\": " + d.votes() + ", \"of\": " + d.of() + " }"
+                    );
+                }
                 for (Hop.Chain c : h.chains()) {
                     chains.add(
                         "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
@@ -2896,6 +3040,11 @@ public final class GameDiff {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(rewrites.get(i));
             }
             head.append(rewrites.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"argDefaults\": [");
+            for (int i = 0; i < argDefaults.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(argDefaults.get(i));
+            }
+            head.append(argDefaults.isEmpty() ? "],\n" : "\n  ],\n");
             head.append("  \"chains\": [");
             for (int i = 0; i < chains.size(); i++) {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(chains.get(i));

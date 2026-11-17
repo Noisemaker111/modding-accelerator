@@ -1100,6 +1100,9 @@ public final class VersionMap {
          * and name: {steps ("f:keyPresses,m:forward"), "f" for an old field or "m" for an old method}.
          */
         final Map<String, List<String[]>> chains = new HashMap<>();
+        /** Parameters the game added with one value it always passes (GameDiff's "argDefaults"), by new method name:
+         * {owner simple (new), index, value, new parameter count}. */
+        final Map<String, List<String[]>> argDefaults = new HashMap<>();
 
         static Known load(Path mapFile) throws IOException {
             Known k = new Known();
@@ -1172,6 +1175,12 @@ public final class VersionMap {
                         .add(new String[] { ownerSimple, to, ownerSimple });
                     case "fieldsRemoved" -> k.fieldGone.add(from);
                     case "classRewrites" -> k.classRewrites.put(from, to);
+                    case "argDefaults" -> {
+                        String toOwner = field(t, "toOwner"), toName = field(t, "to");
+                        k.argDefaults.computeIfAbsent(toName, x -> new ArrayList<>()).add(new String[] {
+                            simple(toOwner), t.replaceAll(".*\"index\": (\\d+).*", "$1"), field(t, "value"), String.valueOf(Fix.paramTypes(field(t, "newDesc")).size())
+                        });
+                    }
                     case "chains" -> {
                         String[] chain = { field(t, "steps"), t.contains("\"field\": true") ? "f" : "m" };
                         k.chains.computeIfAbsent(ownerSimple + "." + from, x -> new ArrayList<>()).add(chain);
@@ -2866,6 +2875,89 @@ public final class VersionMap {
                 texts.put(f, text);
                 replacements++;
                 byKind.merge("registry the game now asks for", 1, Integer::sum);
+            }
+
+            // 2c**'. An argument the game added and always passes the same value for, read from its own calls (GameDiff's
+            // "argDefaults"; 1.21.2: GuiGraphics.blitSprite(RenderType::guiTextured, ...)): where javac names a call that
+            // takes that many arguments and the call is one short, the value goes in at the game's place.
+            Pattern takes = Pattern.compile("^(?:method|constructor) (\\w+) in (?:class|interface|enum|record) ([\\w.$]+)(?:<[^>]*>)? cannot be applied to given types");
+            Pattern noneFits = Pattern.compile("^no suitable (?:method|constructor) found for (\\w+)\\((.*)\\)$");
+            List<Err> defaults = new ArrayList<>(readErrors(log));
+            defaults.sort(Comparator.comparing(Err::file).thenComparing(Comparator.comparingInt(Err::line).reversed()));
+            for (Err e : defaults) {
+                Matcher tm = takes.matcher(e.message()), nm = noneFits.matcher(e.message());
+                String name, owner = null;
+                int found;
+                String key = e.file() + ":" + e.line();
+                if (tm.find() && REQUIRED_FOUND.containsKey(key)) {
+                    name = tm.group(1);
+                    owner = simple(tm.group(2));
+                    String f = REQUIRED_FOUND.get(key)[1];
+                    found = f.equals("no arguments") ? 0 : topLevelArguments(f.replace('<', '(').replace('>', ')')).size();
+                } else if (nm.find()) {
+                    name = nm.group(1);
+                    found = nm.group(2).isBlank() ? 0 : topLevelArguments(nm.group(2).replace('<', '(').replace('>', ')')).size();
+                } else {
+                    continue;
+                }
+                String[] pick = null;
+                for (String[] d : k.argDefaults.getOrDefault(name, List.of())) {
+                    // {owner simple, index, value, arity}
+                    if ((owner == null || d[0].equals(owner) || SUPERS.getOrDefault(owner, Set.of()).contains(d[0]))
+                        && Integer.parseInt(d[3]) == found + 1) {
+                        if (pick != null && !pick[2].equals(d[2])) {
+                            pick = null;
+                            break; // two values could be meant
+                        }
+                        pick = d;
+                    }
+                }
+                Path f = sourcePath(e, repo);
+                if (pick == null || f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                int lineStart = 0;
+                for (int i = 1; i < e.line() && lineStart > -1; i++) {
+                    int next = text.indexOf('\n', lineStart);
+                    lineStart = next < 0 ? -1 : next + 1;
+                }
+                if (lineStart < 0) {
+                    continue;
+                }
+                int lineEnd = text.indexOf('\n', lineStart);
+                lineEnd = lineEnd < 0 ? text.length() : lineEnd;
+                Matcher callAt = Pattern.compile("(?<![\\w$])" + Pattern.quote(name) + "\\s*\\(").matcher(text);
+                callAt.region(Math.min(lineEnd, lineStart + Math.max(0, e.caret())), lineEnd);
+                if (!callAt.find()) {
+                    callAt.region(lineStart, lineEnd);
+                    if (!callAt.find()) {
+                        continue;
+                    }
+                }
+                int open = callAt.end() - 1, close = closingParen(text, open);
+                if (close < 0) {
+                    continue;
+                }
+                String inside = text.substring(open + 1, close);
+                List<String> args = inside.isBlank() ? List.of() : topLevelArguments(inside);
+                int index = Integer.parseInt(pick[1]);
+                if (args.size() != found || index > args.size()) {
+                    continue;
+                }
+                // Insert at the boundary before argument INDEX (or at the end), keeping every argument's own text.
+                int at = open + 1;
+                for (int i = 0; i < index; i++) {
+                    at += args.get(i).length() + 1;
+                }
+                String piece = index == 0 ? pick[2] + (args.isEmpty() ? "" : ", ") : (index == args.size() ? ", " + pick[2] : " " + pick[2] + ",");
+                if (index == args.size()) {
+                    at = close;
+                }
+                text = text.substring(0, at) + piece + text.substring(at);
+                texts.put(f, text);
+                replacements++;
+                byKind.merge("argument the game always passes", 1, Integer::sum);
             }
 
             // 2c***. A value whose type the game changed to one it converts to in one known way, where javac's caret is:
