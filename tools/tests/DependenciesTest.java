@@ -41,6 +41,24 @@ public final class DependenciesTest {
         require(Dependencies.propertyKeys(model, "21.1.2", "other", "lib").size() == 2, "no named owner leaves both, so nothing is guessed");
         require(!Dependencies.requiredInFabric("{\"depends\": {\"minecraft\": \"*\"}, \"suggests\": {\"modmenu\": \"*\"}}", "modmenu"), "fabric suggests is optional");
         librarySourceCommit();
+        // An integration class the mod still calls stays as a stub saying the optional mod is absent: isLoaded() is false,
+        // a void method does nothing, and nothing of the library or its imports is left (Corpse's OpenHudIntegration).
+        String integration = "package de.maxhenkel.corpse.integration.openhud;\n\nimport de.maxhenkel.openhud.api.OpenHud;\n"
+            + "import net.minecraft.client.gui.screens.Screen;\nimport net.minecraft.core.BlockPos;\nimport net.neoforged.fml.ModList;\n\n"
+            + "public class OpenHudIntegration {\n\n    private static Boolean loaded;\n\n    public static boolean isLoaded() {\n"
+            + "        if (loaded == null) {\n            loaded = ModList.get().isLoaded(\"openhud\");\n        }\n        return loaded;\n    }\n\n"
+            + "    public static void openWaypointScreen(Screen screen, BlockPos pos) {\n        OpenHud.getClientUtils().open(screen, pos);\n    }\n\n"
+            + "    static OpenHud api() {\n        return OpenHud.get();\n    }\n}\n";
+        String stub = Dependencies.absentStub(integration, Set.of("OpenHud"));
+        require(
+            stub != null && stub.contains("public static boolean isLoaded() { return false; }")
+                && stub.contains("public static void openWaypointScreen(Screen screen, BlockPos pos) {}"),
+            "the stub keeps the calls the mod makes: " + stub
+        );
+        require(
+            !stub.contains("OpenHud.") && !stub.contains("api()") && !stub.contains("ModList") && stub.contains("import net.minecraft.core.BlockPos;"),
+            "nothing of the library is left, and the types the stub uses stay imported: " + stub
+        );
         require("1.4.0+1.21.6".equals(Dependencies.chooseGameRelease(List.of("1.3.0+1.21.1", "1.4.0+1.21.6", "1.3.2+1.21.6"), "1.3.0+1.21.1", "1.21.1", "1.21.6")), "game as a build suffix");
         var found = Dependencies.findPublishedProject(
             SOURCE,

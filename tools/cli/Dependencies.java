@@ -111,7 +111,10 @@ final class Dependencies {
                 // port depends on, so it is listed as unchecked instead of disappearing from the result.
                 Path mod = forgeModJar(setup.project, group, name, old);
                 if (gameVersioned(setup, group, name, old, mod, Json.text(dep, "configuration", ""))) continue;
-                if (mod != null) setup.unchecked.add(
+                // A NeoForge mod jar is looked up like a Fabric one (its file's hash on Modrinth): left on the old game, the
+                // loader refuses to start any mod (Corpse's OpenHUD 1.3.0+1.21.1 asked for Minecraft [1.21.1] exactly).
+                if (mod != null && loader.equals("neoforge") && setup.build != null) binary = mod;
+                else if (mod != null) setup.unchecked.add(
                     Json.map(
                         "artifact",
                         group + ":" + name,
@@ -131,11 +134,11 @@ final class Dependencies {
                         " still works"
                     )
                 );
-                continue;
+                if (binary == null) continue;
             }
             Selection selection = select(setup.selections, group, name, old);
             // A library released per game version (in its name or its version) is looked up by that before anything else.
-            if (selection == null && gameVersioned(setup, group, name, old, binary, Json.text(dep, "configuration", ""))) continue;
+            if (selection == null && !forgeMod(setup.project, group, name, old, binary) && gameVersioned(setup, group, name, old, binary, Json.text(dep, "configuration", ""))) continue;
             try {
                 if (selection != null && selection.disable()) disable(setup, group, name, old, binary, selection);
                 else if (selection != null) choose(setup, group, name, old, binary, selection);
@@ -212,7 +215,10 @@ final class Dependencies {
             String artifact = Json.text(blocker, "artifact", ""), version = Json.text(blocker, "version", "");
             String group = artifact.contains(":") ? artifact.substring(0, artifact.indexOf(':')) : artifact;
             Map<String, Object> with = null;
-            for (var done : setup.applied) if (Boolean.TRUE.equals(done.get("disabled")) && Json.text(done, "artifact", "").startsWith(group + ":") && version.equals(Json.text(done, "from", ""))) with = done;
+            for (var done : setup.applied) {
+                boolean sameRelease = Json.text(done, "artifact", "").startsWith(group + ":") && version.equals(Json.text(done, "from", ""));
+                if (Boolean.TRUE.equals(done.get("disabled")) && sameRelease) with = done;
+            }
             if (with == null || declaredAnywhere(setup, artifact)) continue;
             setup.blockers.remove(blocker);
             setup.applied.add(Json.map("artifact", artifact, "from", version, "disabled", true, "reason", "it only arrives with " + Json.text(with, "artifact", "") + ", which was disabled"));
@@ -235,6 +241,83 @@ final class Dependencies {
 
     /** The game version the running port starts from; set by port --fix, which may port a library it needs. */
     static String portFrom = null;
+
+    /** Whether binary is the NeoForge or Forge mod jar of group:name:old (already looked up by its game version). */
+    static boolean forgeMod(Map<String, Object> project, String group, String name, String old, Path binary) {
+        return binary != null && binary.equals(forgeModJar(project, group, name, old)) && artifact(project, group, name, old) == null;
+    }
+
+    /** The simple names of a jar's classes (nested ones by their own name). */
+    static Set<String> simpleNames(Path jar) throws IOException {
+        Set<String> names = new HashSet<>();
+        try (var zip = new ZipFile(jar.toFile())) {
+            for (var e : Collections.list(zip.entries())) {
+                String n = e.getName();
+                if (n.endsWith(".class")) names.add(n.substring(Math.max(n.lastIndexOf('/'), n.lastIndexOf('$')) + 1, n.length() - 6));
+            }
+        }
+        return names;
+    }
+
+    /** Whether a mod source outside the removed set names this source's class. */
+    static boolean calledElsewhere(Target.Setup setup, Path source, Set<Path> removed) throws IOException {
+        String cls = source.getFileName().toString().replaceFirst("\\.java$", "");
+        Pattern use = Pattern.compile("\\b" + Pattern.quote(cls) + "\\b");
+        for (Path other : Port.sources(setup.build.project)) {
+            if (removed.contains(other) || !other.toString().endsWith(".java")) continue;
+            if (use.matcher(Files.readString(other)).find()) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The class as it is when its optional mod is absent: same package and name, every static or instance method whose
+     * signature names nothing of the library, each returning false, 0 or null (a void one does nothing), and nothing
+     * else. Null when the class itself extends or implements something, or has no such method.
+     */
+    static String absentStub(String text, Set<String> library) {
+        Matcher head = Pattern.compile("(?m)^((?:public\\s+|final\\s+|abstract\\s+)*)class\\s+(\\w+)\\s*\\{").matcher(text);
+        Matcher pkg = Pattern.compile("(?m)^package\\s+[\\w.]+\\s*;").matcher(text);
+        if (!head.find() || !pkg.find()) return null;
+        int open = text.indexOf('{', head.start()), close = Port.closingBrace(text, open);
+        if (close < 0) return null;
+        StringBuilder out = new StringBuilder(pkg.group());
+        out.append("\n\n/** Written by mmt port: the optional mod this integrated with has no release for the target, so it is never present. */\n");
+        out.append(head.group(1)).append("class ").append(head.group(2)).append(" {\n");
+        Matcher method = Pattern.compile(
+            "(?m)^[ \\t]+((?:public|protected|private|static|final|synchronized|\\s)+)([\\w<>\\[\\]?, .]+?)\\s+(\\w+)\\s*\\(([^)]*)\\)\\s*(?:throws [\\w., ]+)?\\s*\\{"
+        ).matcher(text);
+        int kept = 0, at = open + 1;
+        while (method.find(at) && method.start() < close) {
+            int bodyClose = Port.closingBrace(text, method.end() - 1);
+            if (bodyClose < 0) break;
+            at = bodyClose + 1;
+            String type = method.group(2).strip(), signature = type + " " + method.group(4);
+            boolean namesLibrary = false;
+            for (Matcher word = Pattern.compile("\\b[A-Z]\\w*").matcher(signature); word.find();) namesLibrary |= library.contains(word.group());
+            if (namesLibrary || type.equals("class") || type.equals("new")) continue;
+            String value = switch (type) {
+                case "void" -> "";
+                case "boolean" -> "return false;";
+                case "int", "long", "short", "byte", "float", "double" -> "return 0;";
+                case "char" -> "return '\\0';";
+                default -> "return null;";
+            };
+            out.append("    ").append(method.group(1).strip()).append(' ').append(type).append(' ').append(method.group(3));
+            out.append('(').append(method.group(4).strip()).append(") {").append(value.isEmpty() ? "" : " " + value + " ").append("}\n\n");
+            kept++;
+        }
+        if (kept == 0) return null;
+        // Types the kept signatures use (a Screen, a ResourceKey) keep their imports; the library's go.
+        StringBuilder imports = new StringBuilder();
+        for (Matcher imp = Pattern.compile("(?m)^import\\s+(?:static\\s+)?([\\w.]+)\\s*;").matcher(text); imp.find();) {
+            String simple = imp.group(1).substring(imp.group(1).lastIndexOf('.') + 1);
+            boolean used = Pattern.compile("\\b" + Pattern.quote(simple) + "\\b").matcher(out).find();
+            if (!library.contains(simple) && used) imports.append(imp.group()).append('\n');
+        }
+        String body = out.toString().replaceFirst("\\n\\n$", "\n") + "}\n";
+        return body.replaceFirst("(?m)^(package\\s+[\\w.]+\\s*;)\\n", "$1\n\n" + Matcher.quoteReplacement(imports.toString()));
+    }
 
     /**
      * A required dependency with no target release is ported from its own source (LibraryPort) when the running port may
@@ -310,6 +393,16 @@ final class Dependencies {
                 if (text.contains("@Mod(") || text.contains("implements ModInitializer") || text.contains("implements ClientModInitializer")) return false;
             }
             for (String block : blocks) setup.replace(script, block, comment(block));
+            // An integration class the rest of the mod still calls (Corpse: if (OpenHudIntegration.isLoaded()) ...) stays
+            // as a stub saying the optional mod is absent; the others go with the dependency.
+            Set<String> library = jar == null ? Set.of() : simpleNames(jar);
+            Set<Path> gone = new LinkedHashSet<>();
+            for (Path source : importers) {
+                String stub = calledElsewhere(setup, source, importers) ? absentStub(Files.readString(source), library) : null;
+                if (stub == null) gone.add(source);
+                else setup.replace(source, Files.readString(source), stub);
+            }
+            importers = gone;
             setup.excluded.addAll(importers);
             List<String> removed = importers.isEmpty() ? List.of() : entrypoints(setup, importers);
             setup.applied.add(
@@ -1282,6 +1375,11 @@ final class Dependencies {
                 ) return file;
             } catch (IOException unreadable) {}
         }
+        // A dependency the model lists without its file (Corpse's maven.modrinth:openhud): Gradle's cache has the jar.
+        Path cached = cachedJar(group + ":" + name, version);
+        if (cached != null) try (var jar = new ZipFile(cached.toFile())) {
+            if (jar.getEntry("META-INF/neoforge.mods.toml") != null || jar.getEntry("META-INF/mods.toml") != null) return cached;
+        } catch (IOException unreadable) {}
         return null;
     }
 
@@ -1589,7 +1687,15 @@ final class Dependencies {
             int first = type.indexOf('/'), second = first < 0 ? -1 : type.indexOf('/', first + 1);
             if (second > 0) prefixes.add(type.substring(0, second).replace('/', '.') + ".");
         }
-        for (Path file : Port.sources(project)) {
+        // A library by the mod's own author shares its vendor prefix (OpenHUD's de.maxhenkel. beside Corpse's
+        // de.maxhenkel.corpse): a prefix the mod's own packages start with says nothing about who uses the library.
+        List<Path> sources = Port.sources(project);
+        for (Path file : sources) {
+            if (!file.toString().endsWith(".java")) continue;
+            Matcher own = Pattern.compile("(?m)^\\s*package\\s+([\\w.]+)\\s*;").matcher(Files.readString(file));
+            if (own.find()) prefixes.removeIf(p -> (own.group(1) + ".").startsWith(p));
+        }
+        for (Path file : sources) {
             if (!file.toString().endsWith(".java")) continue;
             String text = Files.readString(file);
             boolean owns = false;

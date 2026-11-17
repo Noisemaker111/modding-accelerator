@@ -2065,7 +2065,8 @@ final class Target {
                 }
                 if (accepted) continue;
                 setup.replace(file, block.group(), block.group().replace(range.group(), "versionRange = \"[" + to + "]\""));
-                setup.applied.add(Json.map("file", file.toString(), "change", "Minecraft range " + range.group(1) + " -> [" + to + "]", "evidence", "the range is written in the mods.toml and does not take " + to));
+                String change = "Minecraft range " + range.group(1) + " -> [" + to + "]";
+                setup.applied.add(Json.map("file", file.toString(), "change", change, "evidence", "the range is written in the mods.toml and does not take " + to));
             }
         }
     }

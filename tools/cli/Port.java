@@ -684,7 +684,9 @@ final class Port {
                 body = body.replaceAll("\\b" + (outer == null ? "" : Pattern.quote(outer) + "\\.") + Pattern.quote(simple) + "\\b", name);
                 if (outer != null) body = body.replaceAll("(?<![\\w.])" + Pattern.quote(simple) + "\\b", name);
                 body = body.replaceFirst("^(\\s*(?:@\\w+(?:\\([^)]*\\))?\\s*)*)(?:(?:public|protected|private|static)\\s+)*", "$1public ");
-                String carriedSource = "package " + home + ";\n\n" + imports + "\n/** Carried by mmt port from Minecraft " + from + " (" + pkg + "." + (outer == null ? simple : outer + "." + simple) + "), which the target removed. */\n" + body.strip() + "\n";
+                String origin = pkg + "." + (outer == null ? simple : outer + "." + simple);
+                String carriedSource = "package " + home + ";\n\n" + imports + "\n/** Carried by mmt port from Minecraft " + from + " (" + origin
+                    + "), which the target removed. */\n" + body.strip() + "\n";
                 track(target);
                 Files.createDirectories(target.getParent());
                 Files.writeString(target, carriedSource);
@@ -739,13 +741,16 @@ final class Port {
                 Matcher imp = Pattern.compile("(?m)^import\\s+[^;]+;").matcher(source);
                 while (imp.find()) imports.append(imp.group()).append('\n');
                 track(target);
-                Files.writeString(target, "package " + home + ";\n\n" + imports + "import " + pkg + "." + outer + ";\n\n/** Carried by mmt port from Minecraft " + from + " (" + pkg + "." + outer + "." + simple + "), which only the game's own package can use. */\n" + body.strip() + "\n");
+                String header = "package " + home + ";\n\n" + imports + "import " + pkg + "." + outer + ";\n\n";
+                String why = "/** Carried by mmt port from Minecraft " + from + " (" + pkg + "." + outer + "." + simple + "), which only the game's own package can use. */\n";
+                Files.writeString(target, header + why + body.strip() + "\n");
                 carried++;
             }
             String uses = text.replaceAll("\\b" + Pattern.quote(outer) + "\\." + Pattern.quote(simple) + "\\b", name);
             // A carried value of it handed to a game constructor goes as a reference to its one method, which the game's
             // own interface accepts (new BlockEntityType<>(this.factory::create, ..)).
-            Matcher method = Files.isRegularFile(target) ? Pattern.compile("(?m)^\\s*(?:@\\w+\\s+)*(?:public\\s+)?(?:abstract\\s+)?[\\w<>?,. \\[\\]]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*;").matcher(Files.readString(target)) : null;
+            Pattern abstractMethod = Pattern.compile("(?m)^\\s*(?:@\\w+\\s+)*(?:public\\s+)?(?:abstract\\s+)?[\\w<>?,. \\[\\]]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*;");
+            Matcher method = Files.isRegularFile(target) ? abstractMethod.matcher(Files.readString(target)) : null;
             if (method != null && method.find()) {
                 Set<String> values = new HashSet<>();
                 Matcher typed = Pattern.compile("\\b" + Pattern.quote(name) + "(?:<[^;()]*?>)?\\s+(\\w+)\\s*[;,)=]").matcher(uses);

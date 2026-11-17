@@ -508,9 +508,10 @@ def mod_metadata(work, mod):
                 keys = json.loads(p.read_text(encoding="utf-8", errors="replace"))
             except ValueError:
                 continue
-            for key in keys:
+            for key, text in keys.items():
                 m = re.fullmatch(r"(block|item|entity)\." + re.escape(modid) + r"\.([a-z0-9_/]+)", key)
-                if m:
+                # A name that takes arguments ("Corpse of %s") is a message about the thing, not the thing's own name.
+                if m and not (isinstance(text, str) and re.search(r"%(?:\d+\$)?[sd]", text)):
                     wanted.add(f"{kinds[m.group(1)]} {modid}:{m.group(2)}")
         for kind, folder in (("BLOCK", "blockstates"), ("ITEM", "models/item")):
             for p in work.rglob(f"assets/{modid}/{folder}/*.json"):
