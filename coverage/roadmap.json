@@ -457,6 +457,33 @@
      "text": "Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far).",
      "start": "2027-01-04",
      "target": "2027-01-22"
+    },
+    {
+     "id": "41",
+     "title": "Resolve what a mod uses, then port in one typed pass",
+     "part": "Port by changed game part",
+     "status": "doing",
+     "text": "Compile the mod on its own version, record the game class, method, field, override and mixin target behind every site, join that with the step's change list, and apply every known change in one pass. Proves it wrong: under 70% of the errors left in the corpus ports that compile sit on a game part the change list names.",
+     "start": "2026-11-17",
+     "target": "2026-12-01"
+    },
+    {
+     "id": "42",
+     "title": "Generate the target build from the loader's starter project",
+     "part": "Port by changed game part",
+     "status": "next",
+     "text": "The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version.",
+     "start": "2026-11-24",
+     "target": "2026-12-08"
+    },
+    {
+     "id": "43",
+     "title": "One migration per redesigned game part, ranked by mods freed",
+     "part": "Port by changed game part",
+     "status": "next",
+     "text": "What the game's own code cannot show (1.21.1 to 1.21.2: 378 redesigned parts, the most common used by 14 of 150 mods) gets one migration written from the game's API, ranked by how many mods it frees; a removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).",
+     "start": "2026-11-24",
+     "target": "2026-12-22"
     }
    ]
   },
@@ -692,6 +719,11 @@
    "question": "Is moving between mods and plugins a goal?",
    "choice": "Yes (Jon, 2026-11-09): Goal 4 covers every loader and platform, Paper included. Server-side code can be mapped between a loader's API and Bukkit's; client code and new blocks or items cannot run on a plugin server, and a port names them instead of dropping them (step 39)",
    "date": "2026-11-09"
+  },
+  {
+   "question": "How does the porter scale to any mod and any version?",
+   "choice": "Not by rules read from compiler error text (355 of 358 rules matched on it, 320 hand-written per version step and naming scheme; a day of them moved the corpus from 10 to 15 building ports of 125). Jon asked for a step-back on 2026-11-17; a blind second opinion and OpenRewrite's and Error Prone's own files agree: resolve the game member behind every site of the mod on its own version and apply every known change in one typed pass; generate the target build from the loader's own starter project instead of patching each build script; write each redesign once per changed game part, ranked by mods freed. PR #97 holds the numbers",
+   "date": "2026-11-17"
   }
  ]
 }

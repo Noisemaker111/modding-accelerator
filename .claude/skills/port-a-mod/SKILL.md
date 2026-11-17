@@ -1,38 +1,34 @@
 ---
 name: port-a-mod
-description: Make mmt port carry mods across a Minecraft version step with no hand edits, by closing the step's whole list of changed game APIs rather than one mod's errors. Use when Jon names a mod and a target version, says "next mod", "bigger mod", "next version", or asks to push the porting map further.
+description: Make mmt port carry any mod across Minecraft versions with no hand edits, by fixing changed game parts once for every mod rather than one mod's compiler errors. Use when Jon names a mod and a target version, says "next mod", "bigger mod", "next version", "keep going" on porting, or asks to push the porting map further.
 ---
 
-The unit of work is a **version step**, not a mod. A step is done once and then serves every mod that crosses it;
-long jumps chain steps. Fixing one mod's errors in the order it hits them grows as mods x steps x errors and never
-finishes (Farmer's Delight 1.21.1 -> 1.21.2: weeks, 412 -> 202 errors, still not building).
+**Start from the files, not the conversation.** Chat gets summarized and loses decisions; these do not:
+- `coverage/roadmap.json`, Goal 2: the decisions (latest: 2026-11-17, why error-text rules stopped scaling) and the
+  steps marked `doing` and `next`. Work on a `doing` step.
+- `coverage/measures.json`: `port.corpus-builds` (whole corpus, every target version) is the number. `python
+  bench/measures.py table port.corpus-builds` prints where it stands.
+- The open PR's Approach section (`gh pr list --author @me`), for what is in flight.
+If an instruction pulls against the latest decision, say so to Jon before following either.
 
-**The list.** `coverage/changes/A__B.json` lists every game member the step changed (1.21.1 -> 1.21.2: 3,818).
-`python bench/exposure.py run --loader L --from A --to B --save NAME` ranks the ones popular mods use, and gives
-each a label:
-- **automatic**: the map renames it, or the game's own code shows its replacement (GameDiff `rewrites`,
-  `classRewrites`, `chains`: mined from how the game's and the loader's own compiled code changed between the two
-  releases), or a general porter step (dropped arguments, added registry, id/key conversion) applies.
-- **redesign**: no shape the miner knows yet. Teach the miner the shape (a field read that became a call chain, a
-  constructor that gained a type argument, ...) so every member of that shape, in every step, is covered at once;
-  a hand rule is the last resort and is written from the game's own API, proven in game.
-- **no equivalent**: the porter stops and names the construct; never partial output.
+**The method (decided 2026-11-17).** Progress grew one port at a time while the porter read compiler error text
+(355 of 358 rules matched on it). The way forward scales with changed game parts and versions, not with mods:
+1. **Resolve, then one typed pass.** Compile the mod on its own version, record the game member behind every site
+   (calls, fields, overrides, mixin targets), join that with the step's change list (`coverage/changes/`, GameDiff's
+   map) and apply every known change at once. A fix is stored once per changed game part.
+2. **Generate the build.** The target build comes from the loader's own starter project for that version; the mod's
+   code, resources and dependencies move into it.
+3. **Redesigns, once each, ranked by mods freed** (`python bench/exposure.py run`): a migration written from the
+   game's own API and proven in game; a removed method whose old body still compiles is inlined from it.
 
-**Sources.** Only the game's and the loaders' own files (jars, mappings) and tools we build. Never other people's
-porting work: not porting guides or primers, not other mods' ports; mod jars are only counted.
+**Sources.** Only the game's and the loaders' own files (jars, mappings, starter projects) and tools we build. Never
+other people's porting work: not guides or primers, not other mods' ports; mod jars are only counted.
 
-**The number** is the exposure-weighted share of uses that are automatic, plus mods that port with zero
-edits and load in game. Error counts of one port are diagnostics only.
+**End every working session by writing the state back:**
+- a new corpus number: `python bench/sweep.py run --tag T --no-game --jobs 2` (or the cloud run on a PR's final
+  commit), then `python bench/measures.py add port.corpus-builds N --n PORTS --source WHERE`;
+- the roadmap step's status, and a decision entry when the method changes;
+- the PR's Approach section (method, numbers, next step).
 
-Order of work, per step:
-1. Run exposure; take the unlabelled member that the most mods use.
-2. Ask why the game's own code did not give its replacement (no vanilla call sites, callers redesigned, votes below
-   threshold, a field or class the miner does not follow). Fix the miner when it can say; that labels every member
-   of that kind at once, in every step.
-3. Otherwise a rule generated from the game's mappings (`$^N`, `call-arguments`); a hand rule in
-   `knowledge/fixes.json` only for what is left, with `python bench/rule_test.py --only ID --write`.
-4. Re-run exposure; the step's number must rise. Check real ports with `python bench/port_board.py --changed`; only
-   the whole corpus runs in the cloud (`tools/cloud-run ports`, once per PR).
-5. Prove in game at the smallest scope: a ported mod loads hidden (`ui-check`, `world-check`) and an `eval` check like
-   `tools/tests/AppleSkinHudCheck.java`, broken once on purpose. Record with `python bench/record.py port RECEIPT
-   --mod NAME`.
+**Prove in game** at the smallest scope: the sweep without `--no-game` loads the ported mod and checks its
+registries; `game-stop` afterwards. Only the whole corpus runs in the cloud (`tools/cloud-run ports`, once per PR).
