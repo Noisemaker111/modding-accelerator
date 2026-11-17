@@ -3309,6 +3309,11 @@ public final class VersionMap {
                     continue;
                 }
                 String line = lines.get(e.line() - 1);
+                // A line a rule already rewrote this round (registry.get(id).map(Holder::value).orElse(null)) is not the one
+                // javac read: it is left alone.
+                if (e.source() != null && !e.source().isBlank() && !line.strip().equals(e.source().strip())) {
+                    continue;
+                }
                 String renamedTo = null, which = null;
                 for (var reused : reusedBy.entrySet()) {
                     String name = reused.getKey();

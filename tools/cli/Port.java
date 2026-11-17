@@ -3709,8 +3709,9 @@ final class Port {
             if (callClose < 0) continue;
             List<String> args = topLevelArguments(newBody.substring(callOpen + 1, callClose));
             if (args.size() != 6) continue;
-            String target = delegate.group(1);
-            withDelegates.append(newBody, done, callOpen + 1).append(target).append(".createRenderState(").append(args.get(0).strip())
+            // getRenderer(entity) is an EntityRenderer<? super T, ?>: its own state only goes back in through the raw type.
+            String target = "((net.minecraft.client.renderer.entity.EntityRenderer) " + delegate.group(1) + ")";
+            withDelegates.append(newBody, done, delegate.start()).append(target).append(".render(").append(target).append(".createRenderState(").append(args.get(0).strip())
                 .append(", ").append(args.get(2).strip()).append("), ").append(args.get(3).strip()).append(", ").append(args.get(4).strip())
                 .append(", ").append(args.get(5).strip()).append(')');
             done = callClose + 1;
