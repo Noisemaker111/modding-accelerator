@@ -663,6 +663,21 @@ public final class PortRepairTests {
         }
     }
 
+    static void carryChecks() {
+        // A removed game class is carried from the old game's source: a static nested one whole, braces matched; an inner
+        // (non-static) one needs its outer instance, so it is never carried.
+        String oldGame = "public class BlockEntityType<T> {\n    private final Set<Block> validBlocks;\n"
+            + "    public static final class Builder<T extends BlockEntity> {\n        final Set<Block> validBlocks;\n"
+            + "        public BlockEntityType<T> build(Type<?> t) { if (t == null) { return null; } return new BlockEntityType<>(); }\n    }\n"
+            + "    class Inner { }\n}\n";
+        String carried = Port.nestedDeclaration(oldGame, "Builder");
+        if (carried == null || !carried.startsWith("    public static final class Builder") || !carried.endsWith("    }") || carried.contains("Inner")) throw new IllegalStateException("static nested class carried whole: " + carried);
+        if (Port.nestedDeclaration(oldGame, "Inner") != null) throw new IllegalStateException("an inner class is not carried");
+        String top = Port.topLevel("package a;\n\nimport b.C;\n\n@Deprecated\npublic final class Gone {\n    int x;\n}\n", "Gone");
+        if (top == null || !top.startsWith("@Deprecated\npublic final class Gone") || !top.endsWith("}")) throw new IllegalStateException("a top-level class is carried from its annotations on: " + top);
+        count++;
+    }
+
     public static void main(String[] args) throws Exception {
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
@@ -675,6 +690,7 @@ public final class PortRepairTests {
         accessorWithoutMixinsChecks(home, scratch);
         mixinRepairChecks();
         parchmentChecks(home, scratch);
+        carryChecks();
         System.out.println(count + " port repair checks passed");
     }
 }

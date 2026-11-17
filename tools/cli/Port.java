@@ -628,6 +628,206 @@ final class Port {
         return changed;
     }
 
+    /**
+     * A game class the target removed (1.21.2's BlockEntityType.Builder) is carried into the mod: its source in the old
+     * game, from the decompiled game the old build set up, becomes a class of the mod's own package, and every use
+     * follows. The next repair round ports the carried code like the mod's own, with the same map; javac decides whether
+     * it stands. Only a top-level class or a static nested one is carried.
+     */
+    int carryRemovedClasses(Path log, String from) throws Exception {
+        String errors = logText(log);
+        Matcher reported = Pattern.compile(
+            "(?m)^\\s*" + FILE + ":[0-9]+: error: cannot find symbol\\R(?:.*\\R){0,2}?\\s*symbol:\\s+class ([A-Z]\\w*)\\R\\s*location:\\s+(class|package) ([\\w.]+)"
+        ).matcher(errors);
+        int carried = 0;
+        Set<String> done = new HashSet<>();
+        while (reported.find()) {
+            Path file = Path.of(reported.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            file = file.normalize();
+            if (!file.startsWith(build.project.root) || !Files.isRegularFile(file)) continue;
+            String text = Files.readString(file), simple = reported.group(2), outer = null, pkg;
+            if (reported.group(3).equals("package")) pkg = reported.group(4);
+            else {
+                String owner = reported.group(4);
+                Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+)\\." + Pattern.quote(owner) + "\\s*;").matcher(text);
+                if (owner.contains(".")) {
+                    pkg = owner.substring(0, owner.lastIndexOf('.'));
+                    outer = owner.substring(owner.lastIndexOf('.') + 1);
+                } else if (imported.find()) {
+                    pkg = imported.group(1);
+                    outer = owner;
+                } else continue;
+            }
+            if (!pkg.startsWith("net.minecraft") && !pkg.startsWith("com.mojang")) continue;
+            // Only a class the game map records as removed is carried; one it moves or replaces is the map's own step.
+            if (!mappedClasses().contains(pkg + "." + (outer == null ? simple : outer + "$" + simple))) continue;
+            Matcher declared =Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
+            if (!declared.find()) continue;
+            String[] parts = declared.group(1).split("\\.");
+            String home = String.join(".", Arrays.copyOf(parts, Math.min(3, parts.length))) + ".mmt.carried";
+            String name = outer == null ? simple : outer + simple;
+            Path root = file;
+            for (int i = 0; i < parts.length + 1 && root != null; i++) root = root.getParent();
+            if (root == null) continue;
+            Path target = root.resolve(home.replace('.', '/')).resolve(name + ".java");
+            if (done.add(target.toString()) && !Files.isRegularFile(target)) {
+                String source = oldGameSource(pkg.replace('.', '/') + "/" + (outer == null ? simple : outer) + ".java", from);
+                if (source == null) continue;
+                String body = outer == null ? topLevel(source, simple) : nestedDeclaration(source, simple);
+                if (body == null) continue;
+                StringBuilder imports = new StringBuilder();
+                Matcher imp = Pattern.compile("(?m)^import\\s+[^;]+;").matcher(source);
+                while (imp.find()) imports.append(imp.group()).append('\n');
+                if (outer != null) imports.append("import ").append(pkg).append('.').append(outer).append(";\nimport ").append(pkg).append('.').append(outer).append(".*;\n");
+                else imports.append("import ").append(pkg).append(".*;\n");
+                body = body.replaceAll("\\b" + (outer == null ? "" : Pattern.quote(outer) + "\\.") + Pattern.quote(simple) + "\\b", name);
+                if (outer != null) body = body.replaceAll("(?<![\\w.])" + Pattern.quote(simple) + "\\b", name);
+                body = body.replaceFirst("^(\\s*(?:@\\w+(?:\\([^)]*\\))?\\s*)*)(?:(?:public|protected|private|static)\\s+)*", "$1public ");
+                String carriedSource = "package " + home + ";\n\n" + imports + "\n/** Carried by mmt port from Minecraft " + from + " (" + pkg + "." + (outer == null ? simple : outer + "." + simple) + "), which the target removed. */\n" + body.strip() + "\n";
+                track(target);
+                Files.createDirectories(target.getParent());
+                Files.writeString(target, carriedSource);
+                carried++;
+            }
+            if (!Files.isRegularFile(target)) continue;
+            // Every use in the mod follows, not only the ones javac reported this round.
+            for (Path user : sources(build.project)) {
+                if (user.equals(target)) continue;
+                String before = Files.readString(user);
+                String uses = outer == null
+                    ? before.replaceAll("(?m)^import\\s+" + Pattern.quote(pkg + "." + simple) + "\\s*;", "import " + home + "." + name + ";")
+                    : before.replaceAll("\\b" + Pattern.quote(outer) + "\\." + Pattern.quote(simple) + "\\b", name);
+                if (uses.equals(before)) continue;
+                if (outer != null && !uses.contains("package " + home + ";")) uses = addImport(uses, home + "." + name);
+                Files.writeString(user, uses);
+            }
+        }
+        carried += carryInaccessible(errors, from);
+        if (carried > 0) rulesApplied.computeIfAbsent("carry-removed-game-class", k -> new ArrayList<>()).add(carried + " class(es)");
+        return carried;
+    }
+
+    /**
+     * Carried code may name a game type only the game's own package can use (BlockEntityType.BlockEntitySupplier, which
+     * the removed Builder used from inside): that functional interface is carried too, public, and where a carried value
+     * of it goes back to the game, it is passed as a method reference to its one method (factory::create), which the
+     * game's own interface accepts. Only inside carried classes.
+     */
+    int carryInaccessible(String errors, String from) throws Exception {
+        int carried = 0;
+        Matcher hidden = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error: (\\w+) is not public in ([\\w.]+); cannot be accessed from outside package").matcher(errors);
+        Set<String> done = new HashSet<>();
+        while (hidden.find()) {
+            Path file = Path.of(hidden.group(1)).normalize();
+            String simple = hidden.group(2), owner = hidden.group(3);
+            if (!file.toString().replace('\\', '/').contains("/mmt/carried/") || !Files.isRegularFile(file)) continue;
+            String text = Files.readString(file);
+            String outer = owner.contains(".") ? owner.substring(owner.lastIndexOf('.') + 1) : owner;
+            Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+)\\." + Pattern.quote(outer) + "\\s*;").matcher(text);
+            String pkg = owner.contains(".") ? owner.substring(0, owner.lastIndexOf('.')) : imported.find() ? imported.group(1) : null;
+            if (pkg == null) continue;
+            String home = text.replaceFirst("(?s)^\\s*package\\s+([\\w.]+);.*", "$1"), name = outer + simple;
+            Path target = file.resolveSibling(name + ".java");
+            if (done.add(name) && !Files.isRegularFile(target)) {
+                String source = oldGameSource(pkg.replace('.', '/') + "/" + outer + ".java", from);
+                String body = source == null ? null : nestedDeclaration(source, simple);
+                if (body == null || !body.matches("(?s)[^{]*\\binterface\\b.*")) continue;
+                body = body.replaceAll("(?<![\\w.])" + Pattern.quote(simple) + "\\b", name);
+                body = body.replaceFirst("^(\\s*(?:@\\w+(?:\\([^)]*\\))?\\s*)*)(?:(?:public|protected|private|static)\\s+)*", "$1public ");
+                StringBuilder imports = new StringBuilder();
+                Matcher imp = Pattern.compile("(?m)^import\\s+[^;]+;").matcher(source);
+                while (imp.find()) imports.append(imp.group()).append('\n');
+                track(target);
+                Files.writeString(target, "package " + home + ";\n\n" + imports + "import " + pkg + "." + outer + ";\n\n/** Carried by mmt port from Minecraft " + from + " (" + pkg + "." + outer + "." + simple + "), which only the game's own package can use. */\n" + body.strip() + "\n");
+                carried++;
+            }
+            String uses = text.replaceAll("\\b" + Pattern.quote(outer) + "\\." + Pattern.quote(simple) + "\\b", name);
+            if (!uses.equals(text)) Files.writeString(file, uses);
+        }
+        // A carried functional value passed where the game's interface of that name is wanted: pass its method instead.
+        Matcher mismatch = Pattern.compile("(?m)^\\s*" + FILE + ":([0-9]+): error: [^\\n]*?(\\w+)(?:<[^>\\n]*>)? cannot be converted to [^\\n]*\\n([^\\n]*)\\n([ \\t]*)\\^").matcher(errors);
+        while (mismatch.find()) {
+            Path file = Path.of(mismatch.group(1)).normalize();
+            if (!file.toString().replace('\\', '/').contains("/mmt/carried/")) continue;
+            Path iface = file.resolveSibling(mismatch.group(3) + ".java");
+            if (!Files.isRegularFile(iface)) continue;
+            Matcher method = Pattern.compile("(?m)^\\s*(?:@\\w+\\s+)*(?:public\\s+)?(?:abstract\\s+)?[\\w<>?,. \\[\\]]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*;").matcher(Files.readString(iface));
+            if (!method.find()) continue;
+            List<String> lines = new ArrayList<>(Arrays.asList(Files.readString(file).split("\n", -1)));
+            int at = Integer.parseInt(mismatch.group(2)) - 1, column = mismatch.group(5).length();
+            if (at >= lines.size() || column >= lines.get(at).length()) continue;
+            String line = lines.get(at);
+            Matcher value = Pattern.compile("[\\w.]+").matcher(line);
+            if (!value.find(column) || value.start() != column || line.startsWith("::", value.end())) continue;
+            lines.set(at, line.substring(0, value.end()) + "::" + method.group(1) + line.substring(value.end()));
+            Files.writeString(file, String.join("\n", lines));
+            carried++;
+        }
+        return carried;
+    }
+
+    Set<String> mappedClasses;
+
+    /** Old class names the route map records as removed with no replacement (dotted, nested with $). */
+    Set<String> mappedClasses() throws IOException {
+        if (mappedClasses != null) return mappedClasses;
+        mappedClasses = new HashSet<>();
+        if (mapFile == null || !Files.isRegularFile(mapFile)) return mappedClasses;
+        var map = Json.read(mapFile);
+        for (Object o : Json.array(map.get("classesRemoved"))) mappedClasses.add(String.valueOf(o).replace('/', '.'));
+        for (String list : List.of("classes", "classRewrites")) for (Object o : Json.array(map.get(list))) mappedClasses.remove(Json.text(Json.object(o), "from", ""));
+        return mappedClasses;
+    }
+
+    /** The old game's source of one file, from a decompiled game jar the build set up for `from` (ModDevGradle, Loom). */
+    String oldGameSource(String entry, String from) throws IOException {
+        List<Path> jars = new ArrayList<>();
+        String neo = "neoforge-" + Target.neoForgePrefix(from);
+        Files.walkFileTree(build.project.root, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, java.nio.file.attribute.BasicFileAttributes attrs) {
+                String n = dir.getFileName() == null ? "" : dir.getFileName().toString();
+                return (n.startsWith(".") || n.equals("src")) && !dir.equals(build.project.root) ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attrs) {
+                String n = file.getFileName().toString();
+                if (n.endsWith("-sources.jar") && file.toString().contains("moddev") && (n.startsWith("vanilla-" + from + "-") || n.startsWith(neo))) jars.add(file);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        for (Path jar : jars) try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+            var e = zip.getEntry(entry);
+            if (e != null) return new String(zip.getInputStream(e).readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        return null;
+    }
+
+    /** A static nested type's declaration (annotations to closing brace) in a class's source, or null. */
+    static String nestedDeclaration(String source, String simple) {
+        Matcher head = Pattern.compile("(?m)^([ \\t]*)((?:@\\w+(?:\\([^)]*\\))?\\s+)*(?:(?:public|protected|private|static|final|abstract)\\s+)*)(class|interface|enum|record)\\s+" + Pattern.quote(simple) + "\\b[^{]*\\{").matcher(source);
+        if (!head.find()) return null;
+        String modifiers = head.group(2);
+        if (head.group(3).equals("class") && !modifiers.contains("static")) return null;
+        int depth = 0;
+        for (int i = head.end() - 1; i < source.length(); i++) {
+            char c = source.charAt(i);
+            if (c == '{') depth++;
+            else if (c == '}' && --depth == 0) return source.substring(head.start(), i + 1);
+        }
+        return null;
+    }
+
+    /** A top-level type's declaration in its own file, or null. */
+    static String topLevel(String source, String simple) {
+        Matcher head = Pattern.compile("(?m)^((?:@\\w+(?:\\([^)]*\\))?\\s+)*(?:(?:public|final|abstract)\\s+)*)(class|interface|enum|record)\\s+" + Pattern.quote(simple) + "\\b").matcher(source);
+        if (!head.find()) return null;
+        int end = source.lastIndexOf('}');
+        return end < head.start() ? null : source.substring(head.start(), end + 1);
+    }
+
     /** The route map this port uses (for mixin target names, which javac never checks). */
     Path mapFile;
     Map<String, List<String[]>> mapMethods;
@@ -1192,6 +1392,7 @@ final class Port {
                 roundsTried = round + 1;
                 applyRules(log);
                 importMissingClasses(log);
+                carryRemovedClasses(log, from);
                 restoreAnnotationLibraries(log);
                 // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
                 if (!corpusLoaded && options.has("learn-from-mods")) {

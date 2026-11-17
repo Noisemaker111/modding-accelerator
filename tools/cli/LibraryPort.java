@@ -63,10 +63,17 @@ final class LibraryPort {
         String published = Json.text(release, "date_published", "");
         String[] commit = commit(work, old, from, published);
         git(work, "checkout", "--quiet", "--detach", commit[0]);
+        String projectPath = loaderProject(work, loader);
+        // The original builds first: that proves the commit is a working release, and it sets up the old decompiled game
+        // the port carries removed classes from.
+        List<String> baseline = PerfOptimize.childJava(Installation.home());
+        baseline.addAll(List.of("compile", "--root", work.toString(), "--json"));
+        if (projectPath != null) baseline.addAll(List.of("--project", projectPath));
+        new ProcessBuilder(baseline).directory(work.toFile()).redirectOutput(work.resolveSibling(work.getFileName() + ".baseline.json").toFile())
+            .redirectError(ProcessBuilder.Redirect.DISCARD).start().waitFor();
         // The port runs as its own mmt process, with its own receipt and lock, on the selected loader's project.
         List<String> command = PerfOptimize.childJava(Installation.home());
         command.addAll(List.of("port", "--root", work.toString(), "--from", from, "--to", setup.to, "--fix", "--json"));
-        String projectPath = loaderProject(work, loader);
         if (projectPath != null) command.addAll(List.of("--project", projectPath));
         Path log = work.resolveSibling(work.getFileName() + ".port.json");
         ProcessBuilder child = new ProcessBuilder(command).directory(work.toFile()).redirectErrorStream(false)
