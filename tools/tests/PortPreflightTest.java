@@ -406,16 +406,21 @@ public final class PortPreflightTest {
             "  void draw(GuiGraphics graphics) {",
             "    graphics.blitSprite(SPRITE, x, y, 16, 16);",
             "    graphics.blitSprite(OTHER, x, y, 8, 8);",
+            "    graphics.blitSprite(SHEET, 64, 64, 0, 0, x, y, 16, 16);",
             "  }",
             "}",
         };
         Files.writeString(ad.resolve("Hud.java"), String.join("\n", gui) + "\n");
         Files.writeString(scratch.resolve("arg-defaults.log"), ad.resolve("Hud.java") + ":3: error: method blitSprite in class GuiGraphics cannot be applied to given types;\n"
-            + gui[2] + "\n            ^\n  required: Function<ResourceLocation,RenderType>,ResourceLocation,int,int,int,int\n  found:    ResourceLocation,int,int,int,int\n  reason: actual and formal argument lists differ in length\n");
+            + gui[2] + "\n            ^\n  required: Function<ResourceLocation,RenderType>,ResourceLocation,int,int,int,int\n  found:    ResourceLocation,int,int,int,int\n  reason: actual and formal argument lists differ in length\n"
+            + ad.resolve("Hud.java") + ":5: error: no suitable method found for blitSprite(ResourceLocation,int,int,int,int,int,int,int,int)\n" + gui[4] + "\n            ^\n"
+            + "    method GuiGraphics.blitSprite(Function<ResourceLocation,RenderType>,ResourceLocation,int,int,int,int) is not applicable\n      (actual and formal argument lists differ in length)\n"
+            + "    method GuiGraphics.blitSprite(Function<ResourceLocation,RenderType>,ResourceLocation,int,int,int,int,int,int,int,int) is not applicable\n      (actual and formal argument lists differ in length)\n");
         VersionMap.Fix.run(adMap, scratch.resolve("arg-defaults.log"), ad, false, null);
         String hud = Files.readString(ad.resolve("Hud.java"));
         require(hud.contains("graphics.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, SPRITE, x, y, 16, 16);"), "the game's own value goes in first: " + hud);
         require(hud.contains("graphics.blitSprite(OTHER, x, y, 8, 8);"), "a call javac did not name is left alone");
+        require(hud.contains("graphics.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, SHEET, 64, 64, 0, 0, x, y, 16, 16);"), "an overload the game never calls gains the value every called one did: " + hud);
 
         // A nested class the game moved out of its outer class (1.21.2: ArmorItem.Type -> equipment.ArmorType): every use
         // written through the outer class becomes the new class, imported; the outer class itself stays.

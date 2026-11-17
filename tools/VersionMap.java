@@ -2973,6 +2973,29 @@ public final class VersionMap {
                         pick = d;
                     }
                 }
+                // An overload the game never calls (Jade's 9-argument blitSprite): when every overload the game does call
+                // gained the same value at the same place, and javac lists one taking one argument more, it gained it too.
+                if (pick == null) {
+                    Set<String> agreed = new HashSet<>();
+                    String[] any = null;
+                    for (String[] d : k.argDefaults.getOrDefault(name, List.of())) {
+                        if (owner == null || d[0].equals(owner) || SUPERS.getOrDefault(owner, Set.of()).contains(d[0])) {
+                            agreed.add(d[1] + "|" + d[2]);
+                            any = d;
+                        }
+                    }
+                    boolean longer = false;
+                    for (String c : CANDIDATES.getOrDefault(key, List.of())) {
+                        longer |= (c.isBlank() ? 0 : topLevelArguments(c.replace('<', '(').replace('>', ')')).size()) == found + 1;
+                    }
+                    if (REQUIRED_FOUND.containsKey(key)) {
+                        String r = REQUIRED_FOUND.get(key)[0];
+                        longer |= !r.equals("no arguments") && topLevelArguments(r.replace('<', '(').replace('>', ')')).size() == found + 1;
+                    }
+                    if (agreed.size() == 1 && longer) {
+                        pick = any;
+                    }
+                }
                 Path f = sourcePath(e, repo);
                 if (pick == null || f == null || !Files.isRegularFile(f)) {
                     continue;
