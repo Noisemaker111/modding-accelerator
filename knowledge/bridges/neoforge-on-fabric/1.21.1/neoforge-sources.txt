@@ -167,6 +167,7 @@ net.neoforged.neoforge.common.MonsterRoomHooks
 net.neoforged.neoforge.common.MutableDataComponentHolder
 net.neoforged.neoforge.common.NeoForgeConfig
 net.neoforged.neoforge.common.NeoForgeEventHandler
+net.neoforged.neoforge.common.NeoForgeMod
 net.neoforged.neoforge.common.SimpleTier
 net.neoforged.neoforge.common.SoundAction
 net.neoforged.neoforge.common.SoundActions
@@ -191,8 +192,13 @@ net.neoforged.neoforge.common.conditions.NotCondition
 net.neoforged.neoforge.common.conditions.OrCondition
 net.neoforged.neoforge.common.conditions.TagEmptyCondition
 net.neoforged.neoforge.common.conditions.TrueCondition
+net.neoforged.neoforge.common.crafting.BlockTagIngredient
+net.neoforged.neoforge.common.crafting.CompoundIngredient
 net.neoforged.neoforge.common.crafting.CraftingHelper
+net.neoforged.neoforge.common.crafting.DataComponentIngredient
+net.neoforged.neoforge.common.crafting.DifferenceIngredient
 net.neoforged.neoforge.common.crafting.IRecipeContainer
+net.neoforged.neoforge.common.crafting.IntersectionIngredient
 net.neoforged.neoforge.common.crafting.SizedIngredient
 net.neoforged.neoforge.common.damagesource.DamageContainer
 net.neoforged.neoforge.common.damagesource.IDeathMessageProvider
@@ -203,6 +209,7 @@ net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection
 net.neoforged.neoforge.common.data.ParticleDescriptionProvider
 net.neoforged.neoforge.common.data.fixes.NeoForgeEntityLegacyAttributesFix
 net.neoforged.neoforge.common.data.internal.NeoForgeLanguageProvider
+net.neoforged.neoforge.common.data.internal.VanillaSoundDefinitionsProvider
 net.neoforged.neoforge.common.enums.BubbleColumnDirection
 net.neoforged.neoforge.common.extensions.IAbstractMinecartExtension
 net.neoforged.neoforge.common.extensions.IAdvancementBuilderExtension
@@ -280,6 +287,7 @@ net.neoforged.neoforge.common.world.BiomeSpecialEffectsBuilder
 net.neoforged.neoforge.common.world.ClimateSettingsBuilder
 net.neoforged.neoforge.common.world.LevelChunkAuxiliaryLightManager
 net.neoforged.neoforge.common.world.ModifiableStructureInfo
+net.neoforged.neoforge.common.world.NoneBiomeModifier
 net.neoforged.neoforge.common.world.PieceBeardifierModifier
 net.neoforged.neoforge.common.world.StructureModifier
 net.neoforged.neoforge.common.world.StructureModifiers
@@ -403,6 +411,9 @@ net.neoforged.neoforge.fluids.capability.templates.FluidHandlerItemStack
 net.neoforged.neoforge.fluids.capability.templates.FluidHandlerItemStackSimple
 net.neoforged.neoforge.fluids.capability.templates.FluidTank
 net.neoforged.neoforge.fluids.capability.templates.VoidFluidHandler
+net.neoforged.neoforge.fluids.crafting.FluidIngredient
+net.neoforged.neoforge.fluids.crafting.FluidIngredientType
+net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient
 net.neoforged.neoforge.forge.snapshots.ForgeSnapshotsMod
 net.neoforged.neoforge.forge.snapshots.ForgeSnapshotsModClient
 net.neoforged.neoforge.gametest.BlockPosValueConverter
@@ -466,6 +477,7 @@ net.neoforged.neoforge.network.payload.DinnerboneProtocolUtils
 net.neoforged.neoforge.network.payload.ExtensibleEnumAcknowledgePayload
 net.neoforged.neoforge.network.payload.FeatureFlagAcknowledgePayload
 net.neoforged.neoforge.network.payload.FeatureFlagDataPayload
+net.neoforged.neoforge.network.payload.FrozenRegistryPayload
 net.neoforged.neoforge.network.payload.FrozenRegistrySyncCompletedPayload
 net.neoforged.neoforge.network.payload.FrozenRegistrySyncStartPayload
 net.neoforged.neoforge.network.payload.KnownRegistryDataMapsPayload
@@ -500,6 +512,7 @@ net.neoforged.neoforge.registries.NeoForgeRegistryCallbacks
 net.neoforged.neoforge.registries.NewRegistryEvent
 net.neoforged.neoforge.registries.RegistryBuilder
 net.neoforged.neoforge.registries.RegistryManager
+net.neoforged.neoforge.registries.RegistrySnapshot
 net.neoforged.neoforge.registries.callback.AddCallback
 net.neoforged.neoforge.registries.callback.BakeCallback
 net.neoforged.neoforge.registries.callback.ClearCallback
@@ -572,22 +585,20 @@ net.neoforged.neoforge.attachment.AttachmentSync AttachmentSync#syncInitialPlaye
 net.neoforged.neoforge.attachment.AttachmentSync AttachmentSync#syncLevelUpdate(2)
 net.neoforged.neoforge.attachment.AttachmentSync AttachmentSync#syncTarget(1)
 net.neoforged.neoforge.attachment.AttachmentSync AttachmentSync#syncUpdate(3)
-net.neoforged.neoforge.capabilities.CapabilityHooks #import com.example.examplemod.loaderbridge.neoforge.common.NeoForgeMod
-net.neoforged.neoforge.capabilities.CapabilityHooks #import com.example.examplemod.loaderbridge.neoforge.fluids.capability.wrappers.FluidBucketWrapper
+net.neoforged.neoforge.capabilities.CapabilityHooks #import ${package}.neoforge.fluids.capability.wrappers.FluidBucketWrapper
 net.neoforged.neoforge.capabilities.CapabilityHooks CapabilityHooks#invalidateCapsOnChunkLoad(1)
 net.neoforged.neoforge.capabilities.CapabilityHooks CapabilityHooks#invalidateCapsOnChunkUnload(1)
 net.neoforged.neoforge.capabilities.CapabilityHooks CapabilityHooks#markProxyableCapabilities(1)
 net.neoforged.neoforge.capabilities.CapabilityHooks CapabilityHooks#registerFallbackVanillaProviders(1)
 net.neoforged.neoforge.client.BlockEntityRenderBoundsDebugRenderer BlockEntityRenderBoundsDebugRenderer#drawRenderBoundingBox(4)
 net.neoforged.neoforge.client.BlockEntityRenderBoundsDebugRenderer BlockEntityRenderBoundsDebugRenderer#onRenderLevelStage(1)
-net.neoforged.neoforge.client.ClientNeoForgeMod #import com.example.examplemod.loaderbridge.neoforge.client.model.CompositeModel
-net.neoforged.neoforge.client.ClientNeoForgeMod #import com.example.examplemod.loaderbridge.neoforge.client.model.DynamicFluidContainerModel
-net.neoforged.neoforge.client.ClientNeoForgeMod #import com.example.examplemod.loaderbridge.neoforge.client.model.ElementsModel
-net.neoforged.neoforge.client.ClientNeoForgeMod #import com.example.examplemod.loaderbridge.neoforge.client.model.EmptyModel
-net.neoforged.neoforge.client.ClientNeoForgeMod #import com.example.examplemod.loaderbridge.neoforge.client.model.ItemLayerModel
-net.neoforged.neoforge.client.ClientNeoForgeMod #import com.example.examplemod.loaderbridge.neoforge.client.model.SeparateTransformsModel
-net.neoforged.neoforge.client.ClientNeoForgeMod #import com.example.examplemod.loaderbridge.neoforge.client.model.obj.ObjLoader
-net.neoforged.neoforge.client.ClientNeoForgeMod #import com.example.examplemod.loaderbridge.neoforge.common.NeoForgeMod
+net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.CompositeModel
+net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.DynamicFluidContainerModel
+net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.ElementsModel
+net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.EmptyModel
+net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.ItemLayerModel
+net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.SeparateTransformsModel
+net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.obj.ObjLoader
 net.neoforged.neoforge.client.ClientNeoForgeMod #import net.neoforged.fml.config.ModConfigs
 net.neoforged.neoforge.client.ClientNeoForgeMod ClientNeoForgeMod#ClientNeoForgeMod(2)
 net.neoforged.neoforge.client.ClientNeoForgeMod ClientNeoForgeMod#onRegisterClientExtensions(1)
@@ -599,12 +610,12 @@ net.neoforged.neoforge.client.NamedRenderTypeManager NamedRenderTypeManager#init
 net.neoforged.neoforge.client.NamedRenderTypeManager NamedRenderTypeManager#preRegisterVanillaRenderTypes(1)
 net.neoforged.neoforge.client.RecipeBookManager RecipeBookManager#init(0)
 net.neoforged.neoforge.client.RenderTypeHelper RenderTypeHelper#getFallbackItemRenderType(3)
-net.neoforged.neoforge.client.command.ClientConfigCommand #import com.example.examplemod.loaderbridge.neoforge.server.command.ModIdArgument
+net.neoforged.neoforge.client.command.ClientConfigCommand #import ${package}.neoforge.server.command.ModIdArgument
 net.neoforged.neoforge.client.command.ClientConfigCommand #import net.neoforged.fml.config.ModConfigs
 net.neoforged.neoforge.client.command.ClientConfigCommand ClientConfigCommand#register(1)
 net.neoforged.neoforge.client.command.ClientConfigCommand ClientConfigCommand.ShowFile#register(0)
 net.neoforged.neoforge.client.command.ClientConfigCommand ClientConfigCommand.ShowFile#showFile(1)
-net.neoforged.neoforge.client.event.AddSectionGeometryEvent #import com.example.examplemod.loaderbridge.neoforge.client.model.lighting.LightPipelineAwareModelBlockRenderer
+net.neoforged.neoforge.client.event.AddSectionGeometryEvent #import ${package}.neoforge.client.model.lighting.LightPipelineAwareModelBlockRenderer
 net.neoforged.neoforge.client.event.AddSectionGeometryEvent AddSectionGeometryEvent.SectionRenderingContext#getQuadLighter(1)
 net.neoforged.neoforge.client.event.ModelEvent ModelEvent.RegisterAdditional#register(1)
 net.neoforged.neoforge.client.extensions.IBakedModelExtension IBakedModelExtension#getRenderTypes(2)
@@ -614,7 +625,7 @@ net.neoforged.neoforge.client.extensions.IMinecraftExtension IMinecraftExtension
 net.neoforged.neoforge.client.extensions.common.ClientExtensionsManager ClientExtensionsManager#earlyInit(0)
 net.neoforged.neoforge.client.gui.ClientTooltipComponentManager ClientTooltipComponentManager#init(0)
 net.neoforged.neoforge.client.gui.GuiLayerManager GuiLayerManager#initModdedLayers(0)
-net.neoforged.neoforge.client.loading.ClientModLoader #import com.example.examplemod.loaderbridge.neoforge.client.gui.LoadingErrorScreen
+net.neoforged.neoforge.client.loading.ClientModLoader #import ${package}.neoforge.client.gui.LoadingErrorScreen
 net.neoforged.neoforge.client.loading.ClientModLoader #import net.neoforged.fml.ModLoadingException
 net.neoforged.neoforge.client.loading.ClientModLoader #import net.neoforged.fml.ModLoadingIssue
 net.neoforged.neoforge.client.loading.ClientModLoader #import net.neoforged.fml.ModWorkManager
@@ -648,7 +659,7 @@ net.neoforged.neoforge.client.model.generators.ModelBuilder ModelBuilder.Element
 net.neoforged.neoforge.client.model.generators.ModelBuilder ModelBuilder.TransformsBuilder#build(0)
 net.neoforged.neoforge.client.model.generators.ModelBuilder ModelBuilder.TransformsBuilder.TransformVecBuilder#build(0)
 net.neoforged.neoforge.client.model.generators.ModelFile ModelFile#ExistingModelFile
-net.neoforged.neoforge.client.model.geometry.UnbakedGeometryHelper #import com.example.examplemod.loaderbridge.neoforge.client.model.ElementsModel
+net.neoforged.neoforge.client.model.geometry.UnbakedGeometryHelper #import ${package}.neoforge.client.model.ElementsModel
 net.neoforged.neoforge.client.model.geometry.UnbakedGeometryHelper UnbakedGeometryHelper#bake(6)
 net.neoforged.neoforge.client.model.geometry.UnbakedGeometryHelper UnbakedGeometryHelper#bakeElements(3)
 net.neoforged.neoforge.client.model.geometry.UnbakedGeometryHelper UnbakedGeometryHelper#createUnbakedItemElements(2)
@@ -668,8 +679,8 @@ net.neoforged.neoforge.common.DataMapHooks DataMapHooks#onDataMapsUpdated(1)
 net.neoforged.neoforge.common.MonsterRoomHooks MonsterRoomHooks#onDataMapsUpdated(1)
 net.neoforged.neoforge.common.NeoForgeConfig NeoForgeConfig#onFileChange(1)
 net.neoforged.neoforge.common.NeoForgeConfig NeoForgeConfig#onLoad(1)
-net.neoforged.neoforge.common.NeoForgeEventHandler #import com.example.examplemod.loaderbridge.neoforge.common.loot.LootModifierManager
-net.neoforged.neoforge.common.NeoForgeEventHandler #import com.example.examplemod.loaderbridge.neoforge.registries.DataMapLoader
+net.neoforged.neoforge.common.NeoForgeEventHandler #import ${package}.neoforge.common.loot.LootModifierManager
+net.neoforged.neoforge.common.NeoForgeEventHandler #import ${package}.neoforge.registries.DataMapLoader
 net.neoforged.neoforge.common.NeoForgeEventHandler NeoForgeEventHandler#DATA_MAPS
 net.neoforged.neoforge.common.NeoForgeEventHandler NeoForgeEventHandler#INSTANCE
 net.neoforged.neoforge.common.NeoForgeEventHandler NeoForgeEventHandler#getLootModifierManager(0)
@@ -681,17 +692,91 @@ net.neoforged.neoforge.common.NeoForgeEventHandler NeoForgeEventHandler#onResour
 net.neoforged.neoforge.common.NeoForgeEventHandler NeoForgeEventHandler#playerLogin(1)
 net.neoforged.neoforge.common.NeoForgeEventHandler NeoForgeEventHandler#resourceReloadListeners(1)
 net.neoforged.neoforge.common.NeoForgeEventHandler NeoForgeEventHandler#tagsUpdated(1)
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeAdvancementProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeBiomeTagsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeBlockTagsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeDamageTypeTagsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeDataMapsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeEnchantmentTagsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeEntityTypeTagsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeFluidTagsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeItemTagsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeLootTableProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeRecipeProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeRegistryOrderReportProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeSpriteSourceProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.data.internal.NeoForgeStructureTagsProvider
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.common.world.NoneStructureModifier
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.fluids.BaseFlowingFluid
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.fluids.crafting.CompoundFluidIngredient
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.fluids.crafting.DataComponentFluidIngredient
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.fluids.crafting.DifferenceFluidIngredient
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.fluids.crafting.EmptyFluidIngredient
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.fluids.crafting.IntersectionFluidIngredient
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.fluids.crafting.SingleFluidIngredient
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.fluids.crafting.TagFluidIngredient
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.registries.holdersets.AndHolderSet
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.registries.holdersets.AnyHolderSet
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.registries.holdersets.NotHolderSet
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.registries.holdersets.OrHolderSet
+net.neoforged.neoforge.common.NeoForgeMod #import ${package}.neoforge.server.command.ModIdArgument
+net.neoforged.neoforge.common.NeoForgeMod #import net.neoforged.fml.CrashReportCallables
+net.neoforged.neoforge.common.NeoForgeMod #import net.neoforged.fml.ModLoadingIssue
+net.neoforged.neoforge.common.NeoForgeMod #import net.neoforged.fml.VersionChecker
+net.neoforged.neoforge.common.NeoForgeMod #import net.neoforged.fml.config.ModConfigs
+net.neoforged.neoforge.common.NeoForgeMod #import net.neoforged.fml.loading.progress.StartupNotificationManager
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#ADD_SPAWNS_STRUCTURE_MODIFIER_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#ADD_SPAWN_COSTS_BIOME_MODIFIER_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#AND_CONDITION
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#AND_HOLDER_SET
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#ANY_HOLDER_SET
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#CLEAR_SPAWNS_STRUCTURE_MODIFIER_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#COMPOUND_FLUID_INGREDIENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#CONDITION_CODECS
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#DATA_COMPONENT_FLUID_INGREDIENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#DIFFERENCE_FLUID_INGREDIENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#EMPTY_FLUID_INGREDIENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#EMPTY_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#ENUM_COMMAND_ARGUMENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#FALSE_CONDITION
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#FLUID_INGREDIENT_TYPES
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#HOLDER_SET_TYPES
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#INTERSECTION_FLUID_INGREDIENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#ITEM_EXISTS_CONDITION
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#LAVA_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#MILK_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#MODID_COMMAND_ARGUMENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#MOD_LOADED_CONDITION
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#NONE_STRUCTURE_MODIFIER_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#NOT_CONDITION
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#NOT_HOLDER_SET
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#NeoForgeMod(3)
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#OR_CONDITION
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#OR_HOLDER_SET
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#REMOVE_SPAWNS_STRUCTURE_MODIFIER_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#REMOVE_SPAWN_COSTS_BIOME_MODIFIER_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#SINGLE_FLUID_INGREDIENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#STRUCTURE_MODIFIER_SERIALIZERS
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#SWIM_SPEED
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#TAG_EMPTY_CONDITION
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#TAG_FLUID_INGREDIENT_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#TRUE_CONDITION
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#VANILLA_FLUID_TYPES
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#WATER_TYPE
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#gatherData(1)
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#preInit(1)
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#registerFluids(1)
+net.neoforged.neoforge.common.NeoForgeMod NeoForgeMod#serverStopping(1)
 net.neoforged.neoforge.common.VillagerTradingManager VillagerTradingManager#loadTrades(1)
 net.neoforged.neoforge.common.VillagerTradingManager VillagerTradingManager#postVillagerEvents(1)
 net.neoforged.neoforge.common.VillagerTradingManager VillagerTradingManager#postWandererEvent(1)
 net.neoforged.neoforge.common.crafting.CraftingHelper CraftingHelper#makeIngredientCodec(1)
 net.neoforged.neoforge.common.crafting.CraftingHelper CraftingHelper#makeIngredientMapCodec(0)
 net.neoforged.neoforge.common.crafting.SizedIngredient SizedIngredient#FLAT_CODEC
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection #import com.example.examplemod.loaderbridge.neoforge.common.conditions.ConditionalOps
+net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection #import ${package}.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#CODEC
 net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#NEOFORGE_TYPE
 net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#TYPE
-net.neoforged.neoforge.common.extensions.IAttributeExtension #import com.example.examplemod.loaderbridge.neoforge.common.NeoForgeMod
 net.neoforged.neoforge.common.extensions.IBlockEntityExtension IBlockEntityExtension#onLoad(0)
 net.neoforged.neoforge.common.extensions.IBlockEntityExtension IBlockEntityExtension#requestModelDataUpdate(0)
 net.neoforged.neoforge.common.extensions.IBlockGetterExtension IBlockGetterExtension#getAuxLightManager(1)
@@ -719,7 +804,7 @@ net.neoforged.neoforge.common.extensions.IPacketFlowExtension IPacketFlowExtensi
 net.neoforged.neoforge.common.extensions.IPacketFlowExtension IPacketFlowExtension#isClientbound(0)
 net.neoforged.neoforge.common.extensions.IPacketFlowExtension IPacketFlowExtension#isServerbound(0)
 net.neoforged.neoforge.common.extensions.IPacketFlowExtension IPacketFlowExtension#self(0)
-net.neoforged.neoforge.common.extensions.IRecipeOutputExtension #import com.example.examplemod.loaderbridge.neoforge.common.crafting.ConditionalRecipeOutput
+net.neoforged.neoforge.common.extensions.IRecipeOutputExtension #import ${package}.neoforge.common.crafting.ConditionalRecipeOutput
 net.neoforged.neoforge.common.extensions.IRecipeOutputExtension IRecipeOutputExtension#withConditions(1)
 net.neoforged.neoforge.common.extensions.IServerGamePacketListenerExtension IServerGamePacketListenerExtension#sendBundled(1)
 net.neoforged.neoforge.common.extensions.ITagAppenderExtension ITagAppenderExtension#remove(1)
@@ -739,10 +824,6 @@ net.neoforged.neoforge.common.extensions.ITransformationExtension ITransformatio
 net.neoforged.neoforge.common.extensions.ITransformationExtension ITransformationExtension#transformNormal(1)
 net.neoforged.neoforge.common.extensions.ITransformationExtension ITransformationExtension#transformPosition(1)
 net.neoforged.neoforge.common.util.AttributeTooltipContext AttributeTooltipContext#of(3)
-net.neoforged.neoforge.common.util.AttributeUtil #import com.example.examplemod.loaderbridge.neoforge.common.NeoForgeMod
-net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#addAttributeTooltips(3)
-net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#applyModifierTooltips(3)
-net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#applyTextFor(4)
 net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#sortedMap(0)
 net.neoforged.neoforge.common.util.FriendlyByteBufUtil FriendlyByteBufUtil#writeCustomData(2)
 net.neoforged.neoforge.common.util.flag.FeatureFlagLoader #import net.neoforged.fml.ModLoadingIssue
@@ -751,7 +832,6 @@ net.neoforged.neoforge.common.util.flag.FeatureFlagLoader FeatureFlagLoader#load
 net.neoforged.neoforge.common.world.StructureModifier StructureModifier#DIRECT_CODEC
 net.neoforged.neoforge.common.world.StructureModifier StructureModifier#LIST_CODEC
 net.neoforged.neoforge.common.world.StructureModifier StructureModifier#REFERENCE_CODEC
-net.neoforged.neoforge.common.world.StructureModifiers #import com.example.examplemod.loaderbridge.neoforge.common.NeoForgeMod
 net.neoforged.neoforge.common.world.StructureModifiers StructureModifiers#AddSpawnsStructureModifier
 net.neoforged.neoforge.common.world.StructureModifiers StructureModifiers#ClearSpawnsStructureModifier
 net.neoforged.neoforge.common.world.StructureModifiers StructureModifiers#RemoveSpawnsStructureModifier
@@ -782,9 +862,9 @@ net.neoforged.neoforge.event.ModMismatchEvent ModMismatchEvent#resolved
 net.neoforged.neoforge.event.ModMismatchEvent ModMismatchEvent#versionDifferences
 net.neoforged.neoforge.event.ModMismatchEvent ModMismatchEvent#wasResolved(1)
 net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent EntityAttributeModificationEvent#has(2)
-net.neoforged.neoforge.event.entity.living.EnderManAngerEvent #import com.example.examplemod.loaderbridge.IItemExtension
-net.neoforged.neoforge.event.entity.player.PlayerEnchantItemEvent #import com.example.examplemod.loaderbridge.IItemExtension
-net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent #import com.example.examplemod.loaderbridge.IItemExtension
+net.neoforged.neoforge.event.entity.living.EnderManAngerEvent #import ${package}.IItemExtension
+net.neoforged.neoforge.event.entity.player.PlayerEnchantItemEvent #import ${package}.IItemExtension
+net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent #import ${package}.IItemExtension
 net.neoforged.neoforge.event.level.ChunkDataEvent ChunkDataEvent#ChunkDataEvent(2)
 net.neoforged.neoforge.event.level.ChunkDataEvent ChunkDataEvent#Load
 net.neoforged.neoforge.event.level.ChunkDataEvent ChunkDataEvent.Load#Load(3)
@@ -793,16 +873,35 @@ net.neoforged.neoforge.event.level.ChunkEvent ChunkEvent#Load
 net.neoforged.neoforge.event.level.ChunkEvent ChunkEvent#Unload
 net.neoforged.neoforge.event.level.ChunkEvent ChunkEvent.Load#Load(2)
 net.neoforged.neoforge.event.level.ChunkEvent ChunkEvent.Unload#Unload(1)
-net.neoforged.neoforge.fluids.CauldronFluidContent #import com.example.examplemod.loaderbridge.neoforge.fluids.capability.wrappers.CauldronWrapper
+net.neoforged.neoforge.fluids.CauldronFluidContent #import ${package}.neoforge.fluids.capability.wrappers.CauldronWrapper
 net.neoforged.neoforge.fluids.CauldronFluidContent CauldronFluidContent#registerCapabilities(1)
-net.neoforged.neoforge.fluids.FluidInteractionRegistry #import com.example.examplemod.loaderbridge.neoforge.common.NeoForgeMod
 net.neoforged.neoforge.fluids.FluidInteractionRegistry FluidInteractionRegistry#static{}
 net.neoforged.neoforge.fluids.FluidInteractionRegistry FluidInteractionRegistry.InteractionInformation#InteractionInformation(2)
 net.neoforged.neoforge.fluids.SimpleFluidContent SimpleFluidContent#is(1)
 net.neoforged.neoforge.fluids.capability.templates.FluidTank FluidTank#readFromNBT(2)
 net.neoforged.neoforge.fluids.capability.templates.FluidTank FluidTank#writeToNBT(2)
-net.neoforged.neoforge.forge.snapshots.ForgeSnapshotsModClient #import com.example.examplemod.loaderbridge.neoforge.common.NeoForgeMod
-net.neoforged.neoforge.forge.snapshots.ForgeSnapshotsModClient ForgeSnapshotsModClient#renderMainMenuWarning(6)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#CODEC
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#CODEC_NON_EMPTY
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#LIST_CODEC
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#LIST_CODEC_NON_EMPTY
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#MAP_CODEC_CODEC
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#MAP_CODEC_NONEMPTY
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#SINGLE_OR_TAG_CODEC
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#STREAM_CODEC
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#codec(1)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#empty(0)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#isEmpty(0)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#makeMapCodec(0)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#of(0)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#of(1)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#single(1)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#singleOrTagCodec(0)
+net.neoforged.neoforge.fluids.crafting.FluidIngredient FluidIngredient#tag(1)
+net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient SizedFluidIngredient#FLAT_CODEC
+net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient SizedFluidIngredient#NESTED_CODEC
+net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient SizedFluidIngredient#STREAM_CODEC
+net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient SizedFluidIngredient#of(1)
+net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient SizedFluidIngredient#of(2)
 net.neoforged.neoforge.gametest.GameTestHooks GameTestHooks#getTemplateNamespace(1)
 net.neoforged.neoforge.gametest.GameTestHooks GameTestHooks#registerGametests(0)
 net.neoforged.neoforge.internal.BrandingControl #import net.neoforged.fml.i18n.FMLTranslations
@@ -844,39 +943,35 @@ net.neoforged.neoforge.network.ConfigSync #import net.neoforged.fml.config.Confi
 net.neoforged.neoforge.network.ConfigSync #import net.neoforged.fml.config.ModConfigs
 net.neoforged.neoforge.network.ConfigSync ConfigSync#receiveSyncedConfig(2)
 net.neoforged.neoforge.network.ConfigSync ConfigSync#syncConfigs(0)
-net.neoforged.neoforge.network.ConfigurationInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CheckExtensibleEnums
-net.neoforged.neoforge.network.ConfigurationInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CheckFeatureFlags
-net.neoforged.neoforge.network.ConfigurationInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CommonRegisterTask
-net.neoforged.neoforge.network.ConfigurationInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CommonVersionTask
-net.neoforged.neoforge.network.ConfigurationInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.RegistryDataMapNegotiation
-net.neoforged.neoforge.network.ConfigurationInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.SyncConfig
-net.neoforged.neoforge.network.ConfigurationInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.SyncRegistries
-net.neoforged.neoforge.network.ConfigurationInitialization #import com.example.examplemod.loaderbridge.neoforge.network.payload.FrozenRegistryPayload
+net.neoforged.neoforge.network.ConfigurationInitialization #import ${package}.neoforge.network.configuration.CheckExtensibleEnums
+net.neoforged.neoforge.network.ConfigurationInitialization #import ${package}.neoforge.network.configuration.CheckFeatureFlags
+net.neoforged.neoforge.network.ConfigurationInitialization #import ${package}.neoforge.network.configuration.CommonRegisterTask
+net.neoforged.neoforge.network.ConfigurationInitialization #import ${package}.neoforge.network.configuration.CommonVersionTask
+net.neoforged.neoforge.network.ConfigurationInitialization #import ${package}.neoforge.network.configuration.RegistryDataMapNegotiation
+net.neoforged.neoforge.network.ConfigurationInitialization #import ${package}.neoforge.network.configuration.SyncConfig
+net.neoforged.neoforge.network.ConfigurationInitialization #import ${package}.neoforge.network.configuration.SyncRegistries
 net.neoforged.neoforge.network.ConfigurationInitialization ConfigurationInitialization#configureEarlyTasks(2)
 net.neoforged.neoforge.network.ConfigurationInitialization ConfigurationInitialization#configureModdedClient(1)
-net.neoforged.neoforge.network.NetworkInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CheckExtensibleEnums
-net.neoforged.neoforge.network.NetworkInitialization #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CheckFeatureFlags
-net.neoforged.neoforge.network.NetworkInitialization #import com.example.examplemod.loaderbridge.neoforge.network.payload.ExtensibleEnumDataPayload
-net.neoforged.neoforge.network.NetworkInitialization #import com.example.examplemod.loaderbridge.neoforge.network.payload.FrozenRegistryPayload
+net.neoforged.neoforge.network.NetworkInitialization #import ${package}.neoforge.network.configuration.CheckExtensibleEnums
+net.neoforged.neoforge.network.NetworkInitialization #import ${package}.neoforge.network.configuration.CheckFeatureFlags
+net.neoforged.neoforge.network.NetworkInitialization #import ${package}.neoforge.network.payload.ExtensibleEnumDataPayload
 net.neoforged.neoforge.network.NetworkInitialization NetworkInitialization#register(1)
 net.neoforged.neoforge.network.filters.NetworkFilters NetworkFilters#injectIfNecessary(1)
 net.neoforged.neoforge.network.filters.NetworkFilters NetworkFilters#instances
-net.neoforged.neoforge.network.handlers.ClientPayloadHandler #import com.example.examplemod.loaderbridge.neoforge.network.payload.FrozenRegistryPayload
-net.neoforged.neoforge.network.handlers.ClientPayloadHandler #import com.example.examplemod.loaderbridge.neoforge.registries.RegistrySnapshot
 net.neoforged.neoforge.network.handlers.ClientPayloadHandler ClientPayloadHandler#createMenuScreen(4)
 net.neoforged.neoforge.network.handlers.ClientPayloadHandler ClientPayloadHandler#handle(2)
-net.neoforged.neoforge.network.handlers.ClientPayloadHandler ClientPayloadHandler#synchronizedRegistries
-net.neoforged.neoforge.network.handlers.ServerPayloadHandler #import com.example.examplemod.loaderbridge.neoforge.network.configuration.SyncRegistries
+net.neoforged.neoforge.network.handlers.ServerPayloadHandler #import ${package}.neoforge.network.configuration.SyncRegistries
 net.neoforged.neoforge.network.handlers.ServerPayloadHandler ServerPayloadHandler#handle(2)
 net.neoforged.neoforge.network.payload.AdvancedAddEntityPayload AdvancedAddEntityPayload#AdvancedAddEntityPayload(1)
 net.neoforged.neoforge.network.payload.AdvancedAddEntityPayload AdvancedAddEntityPayload#writeCustomData(1)
+net.neoforged.neoforge.network.payload.FrozenRegistryPayload FrozenRegistryPayload#STREAM_CODEC
 net.neoforged.neoforge.network.payload.SyncAttachmentsPayload SyncAttachmentsPayload#STREAM_CODEC
-net.neoforged.neoforge.network.registration.NetworkRegistry #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CheckExtensibleEnums
-net.neoforged.neoforge.network.registration.NetworkRegistry #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CheckFeatureFlags
-net.neoforged.neoforge.network.registration.NetworkRegistry #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CommonRegisterTask
-net.neoforged.neoforge.network.registration.NetworkRegistry #import com.example.examplemod.loaderbridge.neoforge.network.configuration.CommonVersionTask
-net.neoforged.neoforge.network.registration.NetworkRegistry #import com.example.examplemod.loaderbridge.neoforge.network.handling.ClientPayloadContext
-net.neoforged.neoforge.network.registration.NetworkRegistry #import com.example.examplemod.loaderbridge.neoforge.network.handling.ServerPayloadContext
+net.neoforged.neoforge.network.registration.NetworkRegistry #import ${package}.neoforge.network.configuration.CheckExtensibleEnums
+net.neoforged.neoforge.network.registration.NetworkRegistry #import ${package}.neoforge.network.configuration.CheckFeatureFlags
+net.neoforged.neoforge.network.registration.NetworkRegistry #import ${package}.neoforge.network.configuration.CommonRegisterTask
+net.neoforged.neoforge.network.registration.NetworkRegistry #import ${package}.neoforge.network.configuration.CommonVersionTask
+net.neoforged.neoforge.network.registration.NetworkRegistry #import ${package}.neoforge.network.handling.ClientPayloadContext
+net.neoforged.neoforge.network.registration.NetworkRegistry #import ${package}.neoforge.network.handling.ServerPayloadContext
 net.neoforged.neoforge.network.registration.NetworkRegistry #import net.neoforged.fml.config.ConfigTracker
 net.neoforged.neoforge.network.registration.NetworkRegistry NetworkRegistry#checkCommonVersion(2)
 net.neoforged.neoforge.network.registration.NetworkRegistry NetworkRegistry#checkPacket(2)
@@ -902,11 +997,9 @@ net.neoforged.neoforge.registries.NeoForgeRegistryCallbacks NeoForgeRegistryCall
 net.neoforged.neoforge.registries.NewRegistryEvent NewRegistryEvent#create(1)
 net.neoforged.neoforge.registries.NewRegistryEvent NewRegistryEvent#fill(0)
 net.neoforged.neoforge.registries.RegistryBuilder RegistryBuilder#create(0)
-net.neoforged.neoforge.registries.RegistryManager #import com.example.examplemod.loaderbridge.neoforge.network.configuration.RegistryDataMapNegotiation
-net.neoforged.neoforge.registries.RegistryManager #import com.example.examplemod.loaderbridge.neoforge.network.payload.FrozenRegistryPayload
+net.neoforged.neoforge.registries.RegistryManager #import ${package}.neoforge.network.configuration.RegistryDataMapNegotiation
 net.neoforged.neoforge.registries.RegistryManager RegistryManager#applySnapshot(2)
 net.neoforged.neoforge.registries.RegistryManager RegistryManager#applySnapshot(3)
-net.neoforged.neoforge.registries.RegistryManager RegistryManager#frozenSnapshot
 net.neoforged.neoforge.registries.RegistryManager RegistryManager#generateRegistryPackets(1)
 net.neoforged.neoforge.registries.RegistryManager RegistryManager#handleKnownDataMapsReply(2)
 net.neoforged.neoforge.registries.RegistryManager RegistryManager#initDataMaps(0)
@@ -916,13 +1009,18 @@ net.neoforged.neoforge.registries.RegistryManager RegistryManager#revertToVanill
 net.neoforged.neoforge.registries.RegistryManager RegistryManager#takeFrozenSnapshot(0)
 net.neoforged.neoforge.registries.RegistryManager RegistryManager#takeSnapshot(1)
 net.neoforged.neoforge.registries.RegistryManager RegistryManager#takeVanillaSnapshot(0)
-net.neoforged.neoforge.registries.RegistryManager RegistryManager#vanillaSnapshot
+net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#RegistrySnapshot(2)
+net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#SORTER
+net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#STREAM_CODEC
+net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#aliases
+net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#aliasesView
+net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#getAliases(0)
 net.neoforged.neoforge.registries.datamaps.DataMapEntry DataMapEntry.Removal#codec(2)
-net.neoforged.neoforge.registries.datamaps.DataMapFile #import com.example.examplemod.loaderbridge.neoforge.common.conditions.ConditionalOps
+net.neoforged.neoforge.registries.datamaps.DataMapFile #import ${package}.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.registries.datamaps.DataMapFile DataMapFile#codec(2)
 net.neoforged.neoforge.registries.holdersets.HolderSetType HolderSetType#makeCodec(3)
 net.neoforged.neoforge.registries.holdersets.HolderSetType HolderSetType#makeStreamCodec(1)
-net.neoforged.neoforge.resource.ContextAwareReloadListener #import com.example.examplemod.loaderbridge.neoforge.common.conditions.ConditionalOps
+net.neoforged.neoforge.resource.ContextAwareReloadListener #import ${package}.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.resource.ContextAwareReloadListener ContextAwareReloadListener#makeConditionalOps(0)
 net.neoforged.neoforge.resource.ResourcePackLoader #import net.neoforged.fml.ModLoadingIssue
 net.neoforged.neoforge.resource.ResourcePackLoader #import org.apache.maven.artifact.versioning.ArtifactVersion

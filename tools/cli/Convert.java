@@ -3380,7 +3380,13 @@ final class Convert {
         List<String> lines = neoforgeAccessTransformers(minecraft);
         if (lines.isEmpty()) return List.of();
         StringBuilder all = new StringBuilder();
-        for (String file : javaFiles()) if (bridgePackage == null || !file.startsWith(bridgeFolder() + "/") || copiedFiles.contains(file)) all.append(read(file)).append('\n');
+        // NeoForge's copied classes and the bridge's constructor factories use the game as the mod's code does.
+        Set<String> factories = new HashSet<>();
+        if (bridge != null) for (Object f : Json.object(bridge.getOrDefault("constructors", Map.of())).values()) factories.add(bridgeFolder() + "/" + f + ".java");
+        for (String file : javaFiles()) {
+            boolean user = bridgePackage == null || !file.startsWith(bridgeFolder() + "/") || copiedFiles.contains(file) || factories.contains(file);
+            if (user) all.append(read(file)).append('\n');
+        }
         String code = all.toString();
         List<String> out = new ArrayList<>();
         for (String line : lines) {
@@ -3593,6 +3599,9 @@ final class Convert {
                 Matcher.quoteReplacement(bridgePackage + "." + c.getValue())
             );
             if (!copied.isEmpty()) out = NeoForgeSources.point(out, copied, bridgePackage);
+            for (var c : Json.object(bridge.getOrDefault("constructors", Map.of())).entrySet()) if (!dropped(drops, c.getValue() + ".java")) {
+                out = constructorsToFactories(out, c.getKey(), String.valueOf(c.getValue()), bridgePackage);
+            }
             out = eventClassesInListeners(file, out);
             out = sideQueries(out);
             String held = attachmentCalls(out, attachmentFields);
@@ -3676,7 +3685,7 @@ final class Convert {
             if (line.isBlank() || line.startsWith("#")) continue;
             String[] parts = line.strip().split(" ", 2);
             if (parts.length == 1) allowed.add(parts[0]);
-            else copiedMembersGone.computeIfAbsent(parts[0], k -> new TreeSet<>()).add(parts[1]);
+            else copiedMembersGone.computeIfAbsent(parts[0], k -> new TreeSet<>()).add(parts[1].replace("${package}", bridgePackage));
         }
         allowed.removeAll(mirrored);
         List<String> texts = new ArrayList<>();
@@ -3718,7 +3727,7 @@ final class Convert {
      */
     static String sideQueries(String text) {
         Matcher m = Pattern.compile(
-            "\\b(FMLEnvironment\\.getDist\\(\\)|FMLEnvironment\\.dist|FMLLoader\\.getCurrent\\(\\)\\.getDist\\(\\)|FMLLoader\\.getDist\\(\\)|FabricLoader\\.getInstance\\(\\)\\.getEnvironmentType\\(\\))\\.(isClient|isDedicatedServer)\\(\\)"
+            "(?<![\\w.])((?:[a-z]\\w*\\.)*(?:FMLEnvironment\\.getDist\\(\\)|FMLEnvironment\\.dist|FMLLoader\\.getCurrent\\(\\)\\.getDist\\(\\)|FMLLoader\\.getDist\\(\\)|FabricLoader\\.getInstance\\(\\)\\.getEnvironmentType\\(\\)))\\.(isClient|isDedicatedServer)\\(\\)"
         ).matcher(text);
         if (!m.find()) return text;
         String out = m.reset().replaceAll(r -> Matcher.quoteReplacement("(" + r.group(1) + " == EnvType." + (r.group(2).equals("isClient") ? "CLIENT" : "SERVER") + ")"));
@@ -4097,6 +4106,59 @@ final class Convert {
     );
 
     /**
+     * NeoForge's patches add constructors to some of the game's generic classes (new BlockEntityType<>(factory, blocks...));
+     * on Fabric the bridge has a class of static of(...) overloads standing for every constructor NeoForge gives the class
+     * (bridges[].constructors: game class to bridge class), so new X<>(args) becomes Factory.of(args) and Java picks the
+     * overload as it picked the constructor. Only a class the source imports or names in full, never an anonymous subclass.
+     */
+    static String constructorsToFactories(String text, String game, String factory, String pkg) {
+        String simple = game.substring(game.lastIndexOf('.') + 1);
+        boolean imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
+        Matcher m = Pattern.compile("\\bnew\\s+(" + Pattern.quote(game) + (imported ? "|" + simple : "") + ")\\s*(<[^()]*>)?\\s*\\(").matcher(text);
+        boolean[] code = LoaderRules.code(text);
+        StringBuilder out = new StringBuilder();
+        boolean changed = false;
+        while (m.find()) {
+            if (!code[m.start()]) continue;
+            int close = closingParen(text, code, m.end() - 1);
+            int after = close + 1;
+            while (after < text.length() && Character.isWhitespace(text.charAt(after))) after++;
+            // An anonymous subclass needs the constructor itself.
+            if (close < 0 || after < text.length() && text.charAt(after) == '{') continue;
+            String args = m.group(2) == null || m.group(2).replaceAll("\\s", "").equals("<>") ? "" : m.group(2).strip();
+            m.appendReplacement(out, Matcher.quoteReplacement(factory + "." + args + "of("));
+            changed = true;
+        }
+        if (!changed) return text;
+        m.appendTail(out);
+        return LoaderRules.addImport(out.toString(), pkg + "." + factory);
+    }
+
+    /** The way back: Factory.of(args) is new X<>(args) again, and the import is the game class's. */
+    static String factoriesToConstructors(String text, String game, String factory, String pkg) {
+        Matcher imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(pkg + "." + factory) + "\\s*;[ \\t]*\\n?").matcher(text);
+        if (!imported.find()) return text;
+        String simple = game.substring(game.lastIndexOf('.') + 1);
+        boolean hasGame = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
+        String out = imported.replaceFirst(hasGame ? "" : Matcher.quoteReplacement("import " + game + ";\n"));
+        return Pattern.compile("(?<![\\w.])" + Pattern.quote(factory) + "\\.(<[^()]*>)?of\\(").matcher(out).replaceAll(
+            r -> Matcher.quoteReplacement("new " + simple + (r.group(1) == null ? "<>" : r.group(1)) + "(")
+        );
+    }
+
+    /** The index of the ')' that closes the '(' at open, or -1 (strings and comments skipped). */
+    static int closingParen(String text, boolean[] code, int open) {
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            if (!code[i]) continue;
+            char c = text.charAt(i);
+            if (c == '(') depth++;
+            else if (c == ')' && --depth == 0) return i;
+        }
+        return -1;
+    }
+
+    /**
      * A mod convert moved to Fabric through the NeoForge bridge, going back to NeoForge: every entrypoint the bridge made
      * of a @Mod class is that @Mod class again (its constructor takes back the IEventBus, ModContainer and Dist the bridge
      * supplied, without the bridge's own calls), imports of the bridge's classes name NeoForge's again, the event class
@@ -4142,6 +4204,9 @@ final class Convert {
                 Matcher.quoteReplacement(c.getValue())
             );
             out = NeoForgeSources.back(out, pkg);
+            for (Object item : LoaderRules.list(rules.get("bridges"))) {
+                for (var c : Json.object(Json.object(item).getOrDefault("constructors", Map.of())).entrySet()) out = factoriesToConstructors(out, c.getKey(), String.valueOf(c.getValue()), pkg);
+            }
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
             out = LoaderRules.dropImport(attachmentCallsBack(out), pkg + ".Attachments");
             // The side local of a common entrypoint read FMLLoader; the constructor takes Dist again.

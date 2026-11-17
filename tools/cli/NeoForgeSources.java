@@ -314,7 +314,9 @@ final class NeoForgeSources {
             Matcher type = TYPE.matcher(" " + h);
             String key;
             String inside = null;
-            boolean removable = !raw.contains("@Override") && depth > 0;
+            // Only the member's own annotations count, not an @Override inside a field's anonymous class.
+            String own = m.substring(start, brace >= 0 ? brace : end).split("=", 2)[0];
+            boolean removable = !own.contains("@Override") && depth > 0;
             if (h.startsWith("package ")) {
                 key = h;
                 removable = false;

@@ -87,7 +87,8 @@ def measure(version):
             f, key = row.split("\t", 1)
             name = "net.neoforged.neoforge." + Path(f).resolve().relative_to(root.resolve()).with_suffix("").as_posix().replace("/", ".")
             if key:
-                members.setdefault(name, set()).add(key)
+                # An import names the bridge by the MDK's package; convert puts the mod's in its place.
+                members.setdefault(name, set()).add(key.replace(str(root.relative_to(java)).replace(os.sep, ".").removesuffix(".neoforge"), "${package}"))
                 cut += 1
                 continue
             os.unlink(cs.extended(f))
