@@ -2875,9 +2875,10 @@ final class Convert {
         convertDataConditions(true);
         convertDataIngredients(true);
         dropNeoForgeTabOrder();
+        // Before the bridge points NeoForge's names at its own classes and copies, which a mixin's descriptors then hide.
+        neoforgeParametersOutOfMixins();
         if (bridgeUsed) applyBridge();
         if (bridgeUsed) setAsideDatagen();
-        neoforgeParametersOutOfMixins();
         lambdaMixinTargets(minecraft);
         enumExtensionLookups();
         superHookCalls();
