@@ -2884,8 +2884,9 @@ final class Port {
             denied.group(4) + "." + denied.group(2) + "(" + denied.group(3) + ")",
             new String[] { denied.group(2), denied.group(3), denied.group(4) }
         );
-        // An overloaded call names the private candidate in its list: "(m(args) has private access in Y)".
-        Matcher candidate = Pattern.compile("\\((\\w+)\\(([^)]*)\\) has private access in ([\\w.$]+)\\)").matcher(errors);
+        // An overloaded call names the private candidate in its list: "(m(args) has private access in Y)"; a call to
+        // the one candidate gives it as javac's reason ("reason: m(args) has private access in Y").
+        Matcher candidate = Pattern.compile("(?:\\(|reason: )(\\w+)\\(([^)]*)\\) has private access in ([\\w.$]+)").matcher(errors);
         while (candidate.find()) wanted.putIfAbsent(
             candidate.group(3) + "." + candidate.group(1) + "(" + candidate.group(2) + ")",
             new String[] { candidate.group(1), candidate.group(2), candidate.group(3) }
@@ -2910,7 +2911,8 @@ final class Port {
             String entry = null;
             for (Explain.Member m : info.members()) {
                 if (!m.name().equals(member[0]) || m.method() != (member[1] != null)) continue;
-                if (m.method() && !parameters(m.descriptor()).equals(member[1].replace(" ", ""))) continue;
+                // javac writes type arguments (Function<ResourceLocation,RenderType>); a descriptor has none.
+                if (m.method() && !parameters(m.descriptor()).equals(withoutTypeArguments(member[1]).replace(" ", ""))) continue;
                 entry = "public " + owner.replace('/', '.') + " " + m.name() + (m.method() ? m.descriptor() : "");
                 break;
             }
@@ -2927,6 +2929,18 @@ final class Port {
         Files.writeString(at, text + added, StandardCharsets.UTF_8);
         rulesApplied.putIfAbsent("access-transformer-repair", List.of());
         return lines;
+    }
+
+    /** Java type text without its type arguments: Function<ResourceLocation,RenderType>,int -> Function,int. */
+    static String withoutTypeArguments(String types) {
+        StringBuilder out = new StringBuilder();
+        int depth = 0;
+        for (char c : types.toCharArray()) {
+            if (c == '<') depth++;
+            else if (c == '>') depth--;
+            else if (depth == 0) out.append(c);
+        }
+        return out.toString();
     }
 
     /** A descriptor's parameter types written the way javac's messages write them: (ILjava/lang/String;)V -> int,String. */
