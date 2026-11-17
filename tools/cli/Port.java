@@ -743,6 +743,30 @@ final class Port {
                 carried++;
             }
             String uses = text.replaceAll("\\b" + Pattern.quote(outer) + "\\." + Pattern.quote(simple) + "\\b", name);
+            // A carried value of it handed to a game constructor goes as a reference to its one method, which the game's
+            // own interface accepts (new BlockEntityType<>(this.factory::create, ..)).
+            Matcher method = Files.isRegularFile(target) ? Pattern.compile("(?m)^\\s*(?:@\\w+\\s+)*(?:public\\s+)?(?:abstract\\s+)?[\\w<>?,. \\[\\]]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*;").matcher(Files.readString(target)) : null;
+            if (method != null && method.find()) {
+                Set<String> values = new HashSet<>();
+                Matcher typed = Pattern.compile("\\b" + Pattern.quote(name) + "(?:<[^;()]*?>)?\\s+(\\w+)\\s*[;,)=]").matcher(uses);
+                while (typed.find()) values.add(typed.group(1));
+                Matcher call = Pattern.compile("\\bnew\\s+(\\w+)\\s*(?:<[^()]*>)?\\s*(?:/\\*mmt-diamond\\*/)?\\(").matcher(uses);
+                StringBuilder out = new StringBuilder();
+                int last = 0;
+                while (call.find()) {
+                    if (Files.isRegularFile(file.resolveSibling(call.group(1) + ".java"))) continue;
+                    int open = call.end() - 1, close = closeParen(uses, open);
+                    if (close < 0) continue;
+                    String args = uses.substring(open + 1, close);
+                    String adapted = args;
+                    for (String v : values) adapted = adapted.replaceAll("(?<![\\w.:])((?:this\\.)?" + Pattern.quote(v) + ")(?![\\w(:])", "$1::" + method.group(1));
+                    if (adapted.equals(args)) continue;
+                    out.append(uses, last, open + 1).append(adapted);
+                    last = close;
+                }
+                out.append(uses.substring(last));
+                uses = out.toString();
+            }
             if (!uses.equals(text)) Files.writeString(file, uses);
         }
         // A carried functional value passed where the game's interface of that name is wanted: pass its method instead.
@@ -765,6 +789,44 @@ final class Port {
             carried++;
         }
         return carried;
+    }
+
+    /**
+     * javac names no required and found arguments for a constructor call written with a diamond (new BlockEntityType<>(..)
+     * after 1.21.2 dropped a parameter: "cannot infer type arguments ... argument lists differ in length"), so the typed
+     * repair has nothing to match. The call loses its diamond for a round, javac then lists both, and the repair that
+     * drops or converts arguments acts; the diamond comes back once that line compiles.
+     */
+    int undiamond(Path log) throws Exception {
+        Matcher m = Pattern.compile("(?m)^\\s*" + FILE + ":([0-9]+): error: (?:incompatible types: )?cannot infer type arguments for (\\w+)<>\\n(?:[^\\n]*\\n){0,3}?\\s*reason: (?:cannot infer type-variable\\(s\\) [^\\n]*\\n\\s*\\((?:actual and formal argument lists differ in length|argument mismatch[^\\n]*)\\)|actual and formal)").matcher(logText(log));
+        int changed = 0;
+        while (m.find()) {
+            Path file = Path.of(m.group(1)).normalize();
+            if (!file.startsWith(build.project.root) || !Files.isRegularFile(file)) continue;
+            List<String> lines = new ArrayList<>(Arrays.asList(Files.readString(file).split("\n", -1)));
+            int at = Integer.parseInt(m.group(2)) - 1;
+            if (at >= lines.size()) continue;
+            String line = lines.get(at), raw = line.replaceFirst("\\bnew\\s+" + Pattern.quote(m.group(3)) + "<>\\(", "new " + m.group(3) + "/*mmt-diamond*/(");
+            if (raw.equals(line)) continue;
+            lines.set(at, raw);
+            Files.writeString(file, String.join("\n", lines));
+            changed++;
+        }
+        // A line that compiles again gets its diamond back.
+        String errors = logText(log);
+        for (Path source : sources(build.project)) {
+            if (!source.toString().endsWith(".java")) continue;
+            String text = Files.readString(source);
+            if (!text.contains("/*mmt-diamond*/")) continue;
+            List<String> lines = new ArrayList<>(Arrays.asList(text.split("\n", -1)));
+            boolean restored = false;
+            for (int i = 0; i < lines.size(); i++) if (lines.get(i).contains("/*mmt-diamond*/") && !errors.contains(source.toString() + ":" + (i + 1) + ":")) {
+                lines.set(i, lines.get(i).replace("/*mmt-diamond*/", "<>"));
+                restored = true;
+            }
+            if (restored) Files.writeString(source, String.join("\n", lines));
+        }
+        return changed;
     }
 
     Set<String> mappedClasses;
@@ -1393,6 +1455,7 @@ final class Port {
                 applyRules(log);
                 importMissingClasses(log);
                 carryRemovedClasses(log, from);
+                undiamond(log);
                 restoreAnnotationLibraries(log);
                 // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
                 if (!corpusLoaded && options.has("learn-from-mods")) {

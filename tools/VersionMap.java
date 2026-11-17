@@ -2043,7 +2043,9 @@ public final class VersionMap {
                 return;
             }
             for (int at = i; at <= before.size() - (after.size() - j); at++) {
-                if (before.get(at).equals(after.get(j))) {
+                // javac shows a method reference or lambda argument as its text, which fits any interface parameter.
+                boolean functional = before.get(at).matches(".*(?:::|->|\\[\\.\\.\\.\\]).*") && !after.get(j).matches("(?:int|long|short|byte|char|boolean|float|double|String)");
+                if (before.get(at).equals(after.get(j)) || functional) {
                     picked[j] = at;
                     embed(before, after, at + 1, j + 1, picked, found);
                 }
