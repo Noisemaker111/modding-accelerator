@@ -4036,6 +4036,23 @@
       }
     },
     {
+      "id": "registry-ids-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "silent": "1.21.2 reads a block's and an item's id from its Properties while the constructor runs. A mod that registers through its own helpers still compiles, then fails at start-up with \"Block id not set\" and registers nothing.",
+      "apply": {
+        "transform": "registry-ids"
+      },
+      "scope": "repo",
+      "when": "\\bProperties\\b",
+      "note": "Seen in Torchmaster 1.21.1 -> 1.21.2: it built and loaded, and its blocks were missing from the registry (Block id not set in EntityBlockingLightBlock.<init>). The id is the registration's own name under the mod's id from its metadata, or the id Registry.register is given.",
+      "verified": "Mojang's 1.21.2 mappings: BlockBehaviour.Properties.setId(ResourceKey) and Item.Properties.setId(ResourceKey); Block.<init> reads properties.effectiveDrops(), which needs the id.",
+      "test": {
+        "before": "    var properties = new Item.Properties();\n    blockMegaTorch = BLOCKS.register(\"megatorch\", () -> new LightBlock(\n            BlockBehaviour.Properties.of()\n                    .strength(1.0f, 1.0f),\n            LightType.MegaTorch));\n    itemPearl = ITEMS.register(\"frozen_pearl\", () -> new PearlItem(new Item.Properties()));\n    return ITEMS.register(block.getId().getPath(), () -> new TMItemBlock(block.get(), properties));\n    Registry.register(BuiltInRegistries.BLOCK, id, new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE)));\n    BLOCK_ENTITIES.register(\"lantern\", () -> createType(LanternBlockEntity::new));\n",
+        "after": "    var properties = new Item.Properties();\n    blockMegaTorch = BLOCKS.register(\"megatorch\", () -> new LightBlock(\n            BlockBehaviour.Properties.of()\n                    .strength(1.0f, 1.0f).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(\"examplemod\", \"megatorch\"))),\n            LightType.MegaTorch));\n    itemPearl = ITEMS.register(\"frozen_pearl\", () -> new PearlItem(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(\"examplemod\", \"frozen_pearl\")))));\n    return ITEMS.register(block.getId().getPath(), () -> new TMItemBlock(block.get(), properties.setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(\"examplemod\", block.getId().getPath())))));\n    Registry.register(BuiltInRegistries.BLOCK, id, new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, id))));\n    BLOCK_ENTITIES.register(\"lantern\", () -> createType(LanternBlockEntity::new));\n"
+      }
+    },
+    {
       "id": "gui-colors-opaque-official",
       "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",

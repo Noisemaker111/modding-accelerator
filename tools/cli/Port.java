@@ -2170,7 +2170,11 @@ final class Port {
      * without an alpha byte still compiles and draws nothing.
      */
     void applySilentRules(String from, String to) throws Exception {
-        List<Path> all = ownedJava();
+        // The project's own sources and those of the modules beside it (a multi-loader mod's common code is compiled
+        // into each loader's project, and the compiler never reports what these rules fix).
+        List<Path> all = new ArrayList<>(ownedJava());
+        for (Path p : buildSources()) if (!all.contains(p)) all.add(p);
+        String modId = null;
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
             if (!rule.containsKey("silent") || !loaderFits(rule) || !ownRule(rule, learnFromMods)) continue;
@@ -2179,8 +2183,10 @@ final class Port {
                 : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null ? covered.isEmpty() : !crosses(Json.text(rule, "jump", ""), from, to)) continue;
             if (!targetHas(rule)) continue;
+            boolean ids = "registry-ids".equals(Json.object(rule.get("apply")).get("transform"));
+            if (ids && modId == null) modId = singleModId();
             for (Path file : all) {
-                String original = Files.readString(file), text = rewrite(rule, original);
+                String original = Files.readString(file), text = ids ? registryIds(original, modId) : rewrite(rule, original);
                 if (!text.equals(original)) {
                     Files.writeString(file, text);
                     rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
@@ -2210,6 +2216,194 @@ final class Port {
                 rulesApplied.putIfAbsent("class-names-in-strings", List.of());
             }
         }
+    }
+
+    /**
+     * 1.21.2 builds a block's and an item's description and loot from an id its Properties must carry before the
+     * constructor runs; a mod that registers through its own helpers compiles and then fails at start-up ("Block id not
+     * set"). Where a registration names what it makes, every Properties built in it, or passed to it by name, gets that
+     * id: register(NAME, () -> new X(... Properties ...)) under the mod's id, and Registry.register(BuiltInRegistries.
+     * BLOCK|ITEM, ID, new X(...)) under ID. A Properties that already sets an id is left alone.
+     */
+    static String registryIds(String text, String modId) {
+        Matcher call = Pattern.compile("\\bregister\\s*\\(").matcher(text);
+        List<int[]> calls = new ArrayList<>();
+        while (call.find()) {
+            int close = closeParen(text, call.end() - 1);
+            if (close > 0) calls.add(new int[] { call.end() - 1, close });
+        }
+        StringBuilder out = new StringBuilder(text);
+        for (int c = calls.size() - 1; c >= 0; c--) {
+            int open = calls.get(c)[0], close = calls.get(c)[1];
+            List<int[]> args = splitArgs(text, open + 1, close);
+            String key = null, kind = null;
+            int from, to;
+            if (args.size() == 3) {
+                Matcher reg = Pattern.compile("^\\s*(?:net\\.minecraft\\.core\\.registries\\.)?BuiltInRegistries\\.(BLOCK|ITEM)\\s*$")
+                    .matcher(text.substring(args.get(0)[0], args.get(0)[1]));
+                if (!reg.find()) continue;
+                kind = reg.group(1);
+                key = text.substring(args.get(1)[0], args.get(1)[1]).strip();
+                from = args.get(2)[0];
+                to = args.get(2)[1];
+            } else if (args.size() == 2 && modId != null && text.substring(args.get(1)[0], args.get(1)[1]).strip().startsWith("()")) {
+                String name = text.substring(args.get(0)[0], args.get(0)[1]).strip();
+                boolean stringName = name.matches("\"[^\"]*\"") || name.endsWith(".getPath()")
+                    || name.matches("[A-Za-z_$][\\w$]*") && Pattern.compile("\\bString\\s+" + Pattern.quote(name) + "\\b").matcher(text).find();
+                if (!stringName) continue;
+                key = "net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(\"" + modId + "\", " + name + ")";
+                from = args.get(1)[0];
+                to = args.get(1)[1];
+            } else {
+                continue;
+            }
+            // Inside the registration, last first so earlier offsets hold.
+            List<int[]> inserts = new ArrayList<>(); // {offset, kind 0 block / 1 item, wrapEnd or -1}
+            Matcher props = Pattern.compile(
+                "(?:(?:BlockBehaviour|Block)\\.)?Properties\\.(?:of|ofFullCopy|ofLegacyCopy)\\s*\\(|new\\s+(?:Item\\.)?Properties\\s*\\(\\s*\\)"
+            ).matcher(text);
+            props.region(from, to);
+            while (props.find()) {
+                boolean item = props.group().startsWith("new");
+                int end = item ? props.end() : closeParen(text, props.end() - 1) + 1;
+                end = chainEnd(text, end, to);
+                if (end > 0 && !text.substring(props.start(), end).contains(".setId(")) inserts.add(new int[] { end, item ? 1 : 0, -1 });
+            }
+            if (inserts.isEmpty()) {
+                // A Properties the code passes by name (built before the registration, or a parameter).
+                Matcher named = Pattern.compile("[(,]\\s*([a-z][\\w$]*)\\s*(?=[,)])").matcher(text);
+                named.region(from, to);
+                while (named.find()) {
+                    String n = named.group(1);
+                    Matcher decl = Pattern.compile(
+                        "(?:\\b(Item|BlockBehaviour|Block)\\.Properties\\s+" + Pattern.quote(n) + "\\b|\\bvar\\s+" + Pattern.quote(n)
+                            + "\\s*=\\s*(new\\s+Item\\.Properties|(?:BlockBehaviour|Block)\\.Properties\\.of))"
+                    ).matcher(text);
+                    if (!decl.find()) continue;
+                    boolean item = "Item".equals(decl.group(1)) || decl.group(2) != null && decl.group(2).startsWith("new");
+                    inserts.add(new int[] { named.end(1), item ? 1 : 0, -1 });
+                }
+            }
+            for (int i = inserts.size() - 1; i >= 0; i--) {
+                int[] at = inserts.get(i);
+                String registry = at[1] == 1 ? "ITEM" : "BLOCK";
+                if (kind != null && !kind.equals(registry)) continue;
+                out.insert(at[0], ".setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries." + registry + ", " + key + "))");
+            }
+        }
+        return out.toString();
+    }
+
+    /** Past a call chain (.a(..).b(..)) that starts at AT, within LIMIT; -1 when a call does not close. */
+    static int chainEnd(String text, int at, int limit) {
+        if (at <= 0) return -1;
+        while (true) {
+            Matcher next = Pattern.compile("\\G\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(").matcher(text);
+            next.region(at, limit);
+            if (!next.find()) return at;
+            int close = closeParen(text, next.end() - 1);
+            if (close < 0 || close >= limit) return at;
+            at = close + 1;
+        }
+    }
+
+    /** The index of the parenthesis that closes the one at OPEN, skipping strings and characters; -1 if none. */
+    static int closeParen(String text, int open) {
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"' || ch == '\'') {
+                for (i++; i < text.length() && text.charAt(i) != ch; i++) if (text.charAt(i) == '\\') i++;
+            } else if (ch == '(') depth++;
+            else if (ch == ')' && --depth == 0) return i;
+        }
+        return -1;
+    }
+
+    /** Top-level argument spans between FROM and TO (exclusive), split on commas outside brackets and strings. */
+    static List<int[]> splitArgs(String text, int from, int to) {
+        List<int[]> out = new ArrayList<>();
+        int depth = 0, start = from;
+        for (int i = from; i < to; i++) {
+            char ch = text.charAt(i);
+            if (ch == '"' || ch == '\'') {
+                for (i++; i < to && text.charAt(i) != ch; i++) if (text.charAt(i) == '\\') i++;
+            } else if ("([{".indexOf(ch) >= 0) depth++;
+            else if (")]}".indexOf(ch) >= 0) depth--;
+            else if (ch == ',' && depth == 0) {
+                out.add(new int[] { start, i });
+                start = i + 1;
+            }
+        }
+        if (to > from && !text.substring(start, to).isBlank()) out.add(new int[] { start, to });
+        return out;
+    }
+
+    /** The directory of the whole build: the nearest one up from the project with a Gradle settings file. */
+    Path buildRoot() {
+        Path start = build.project.root.toAbsolutePath().normalize();
+        for (Path p = start; p != null; p = p.getParent()) {
+            if (Files.isRegularFile(p.resolve("settings.gradle")) || Files.isRegularFile(p.resolve("settings.gradle.kts"))) return p;
+        }
+        return start;
+    }
+
+    /** Files under the build root whose path contains PART, skipping build output, run folders and dot folders. */
+    List<Path> buildFiles(String part) throws IOException {
+        Path root = buildRoot();
+        List<Path> out = new ArrayList<>();
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
+                String n = dir.getFileName() == null ? "" : dir.getFileName().toString();
+                return !dir.equals(root) && (n.startsWith(".") || List.of("build", "run", "runs", "out", "bin").contains(n))
+                    ? FileVisitResult.SKIP_SUBTREE
+                    : FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                if (file.toString().replace('\\', '/').contains(part)) out.add(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException unreadable) {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return out;
+    }
+
+    List<Path> buildSources() throws IOException {
+        List<Path> out = new ArrayList<>();
+        for (Path p : buildFiles("/src/main/java/")) if (p.toString().endsWith(".java")) out.add(p);
+        return out;
+    }
+
+    /** The mod's id, when the sources' metadata names exactly one (neoforge.mods.toml, mods.toml or fabric.mod.json). */
+    String singleModId() throws IOException {
+        Set<String> ids = new LinkedHashSet<>();
+        // A multi-loader mod keeps its id in the build root's gradle.properties.
+        Path root = buildRoot();
+        java.util.Properties gradle = Files.isRegularFile(root.resolve("gradle.properties"))
+            ? ProjectModel.properties(root.resolve("gradle.properties"))
+            : new java.util.Properties();
+        for (Path p : buildFiles("/src/main/resources/")) {
+            String name = p.getFileName().toString();
+            Matcher id = null;
+            if (name.equals("neoforge.mods.toml") || name.equals("mods.toml")) {
+                id = Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"").matcher(Files.readString(p));
+            } else if (name.equals("fabric.mod.json")) {
+                id = Pattern.compile("\"id\"\\s*:\\s*\"([^\"]+)\"").matcher(Files.readString(p));
+            }
+            if (id == null || !id.find()) continue;
+            String value = id.group(1);
+            Matcher template = Pattern.compile("^\\$\\{(\\w+)}$").matcher(value);
+            if (template.find()) value = gradle.getProperty(template.group(1));
+            if (value != null && value.strip().matches("[a-z0-9_.-]+")) ids.add(value.strip());
+        }
+        return ids.size() == 1 ? ids.iterator().next() : null;
     }
 
     static String classNamesInStrings(String text, Map<String, String> classes) {
@@ -3417,6 +3611,7 @@ final class Port {
         else if ("toast-visibility".equals(apply.get("transform"))) text = toastVisibility(text);
         else if ("food-effects".equals(apply.get("transform"))) text = foodEffects(text);
         else if ("food-consumable".equals(apply.get("transform"))) text = foodConsumables(text);
+        else if ("registry-ids".equals(apply.get("transform"))) text = registryIds(text, "examplemod");
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(
             text,
