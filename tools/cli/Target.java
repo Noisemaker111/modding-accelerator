@@ -126,6 +126,7 @@ final class Target {
             for (String key : List.of("neo_version_range", "neoforge_version_range")) if (
                 pins.containsKey(key)
             ) setup.replacements.put(key, "[" + resolved + ",)");
+            literalGameRange(setup, to);
             // A multi-loader build keeps Fabric's versions beside NeoForge's: the sibling project must follow the same game.
             try {
                 fabricPins(setup, build, pins, to);
@@ -2039,6 +2040,36 @@ final class Target {
     }
 
     /** Retarget one owned source manifest; a range that already accepts the target is left byte-exact. */
+    /**
+     * A Minecraft range written out in neoforge.mods.toml (Corpse: versionRange = "[1.21,1.21.1]") that does not take the
+     * target becomes the target, as a property-held range does; NeoForge would refuse the mod at load otherwise.
+     */
+    static void literalGameRange(Setup setup, String to) throws IOException {
+        Object dir = setup.project.get("directory");
+        if (dir == null) return;
+        for (String name : List.of("src/main/resources/META-INF/neoforge.mods.toml", "src/main/templates/META-INF/neoforge.mods.toml", "src/main/resources/META-INF/mods.toml")) {
+            Path file = Path.of(dir.toString()).resolve(name);
+            if (!Files.isRegularFile(file)) continue;
+            String text = setup.text(file);
+            Matcher block = Pattern.compile("(?s)\\[\\[dependencies\\.[^\\]]+\\]\\](.*?)(?=\\[\\[|\\z)").matcher(text);
+            while (block.find()) {
+                String body = block.group(1);
+                if (!body.matches("(?s).*\\bmodId\\s*=\\s*\"minecraft\".*")) continue;
+                Matcher range = Pattern.compile("versionRange\\s*=\\s*\"([^\"$]*)\"").matcher(body);
+                if (!range.find()) continue;
+                boolean accepted;
+                try {
+                    accepted = range.group(1).isBlank() || range.group(1).equals("*") || MavenRange.own(range.group(1), to);
+                } catch (RuntimeException unreadable) {
+                    accepted = true;
+                }
+                if (accepted) continue;
+                setup.replace(file, block.group(), block.group().replace(range.group(), "versionRange = \"[" + to + "]\""));
+                setup.applied.add(Json.map("file", file.toString(), "change", "Minecraft range " + range.group(1) + " -> [" + to + "]", "evidence", "the range is written in the mods.toml and does not take " + to));
+            }
+        }
+    }
+
     static void manifest(Setup setup) throws Exception {
         for (Path file : manifests(setup.project)) {
             String before = setup.text(file);

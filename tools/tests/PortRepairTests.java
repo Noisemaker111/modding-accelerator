@@ -663,6 +663,20 @@ public final class PortRepairTests {
         }
     }
 
+    /** A Minecraft range written out in neoforge.mods.toml follows the port when it does not take the target; others stay. */
+    static void literalRangeChecks(Path scratch) throws Exception {
+        Path mod = Files.createDirectories(scratch.resolve("literal-range/src/main/resources/META-INF"));
+        Files.writeString(mod.resolve("neoforge.mods.toml"), "modId=\"corpse\"\n[[dependencies.corpse]]\n    modId = \"neoforge\"\n    versionRange = \"[21.0,)\"\n"
+            + "[[dependencies.corpse]]\n    modId = \"minecraft\"\n    type = \"required\"\n    versionRange = \"[1.21,1.21.1]\"\n");
+        Target.Setup setup = new Target.Setup(null, Json.map("directory", scratch.resolve("literal-range").toString()), "1.21.2", List.of());
+        Target.literalGameRange(setup, "1.21.2");
+        String after = setup.text(mod.resolve("neoforge.mods.toml"));
+        check(after.contains("versionRange = \"[1.21.2]\"") && after.contains("versionRange = \"[21.0,)\""), "the game range follows, NeoForge's stays: " + after);
+        Target.Setup open = new Target.Setup(null, Json.map("directory", scratch.resolve("literal-range").toString()), "1.21.1", List.of());
+        Target.literalGameRange(open, "1.21.1");
+        check(open.edits().isEmpty(), "a range that takes the target is left as written");
+    }
+
     static void carryChecks() {
         // A removed game class is carried from the old game's source: a static nested one whole, braces matched; an inner
         // (non-static) one needs its outer instance, so it is never carried.
@@ -708,6 +722,7 @@ public final class PortRepairTests {
         mixinRepairChecks();
         parchmentChecks(home, scratch);
         carryChecks();
+        literalRangeChecks(scratch);
         System.out.println(count + " port repair checks passed");
     }
 }
