@@ -4167,6 +4167,26 @@
       }
     },
     {
+      "id": "custom-payload-from-bytes-1202",
+      "provenance": "hand",
+      "jump": "1.20.1 -> 1.20.2 (yarn)",
+      "match": "no suitable constructor found for CustomPayload(?:S2C|C2S)Packet\\(Identifier,PacketByteBuf\\)",
+      "apply": {
+        "find": "\\bnew\\s+(CustomPayload(?:S2C|C2S)Packet)\\s*\\(\\s*([\\w$.]+)\\s*,\\s*([\\w$.]+)\\s*\\)",
+        "replace": "new $1(new net.minecraft.network.packet.CustomPayload() { public void write(net.minecraft.network.PacketByteBuf mmtOut) { mmtOut.writeBytes($3, $3.readerIndex(), $3.readableBytes()); } public net.minecraft.util.Identifier id() { return $2; } })"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20.2 builds a custom payload packet from a CustomPayload (its id, and what it writes) instead of an id and a buffer. The payload writes the buffer's bytes without reading them away, so a packet sent to several players carries them each time.",
+      "verified": "Yarn 1.20.2+build.4: CustomPayloadS2CPacket(PacketByteBuf) and CustomPayloadS2CPacket(CustomPayload); CustomPayload { void write(PacketByteBuf); Identifier id(); }. Yarn 1.20.1: CustomPayloadS2CPacket(Identifier, PacketByteBuf)",
+      "test": {
+        "error": "SyncHandler.java:7: error: no suitable constructor found for CustomPayloadS2CPacket(Identifier,PacketByteBuf)\n",
+        "before": "package squeek.appleskin.network;\n\npublic class SyncHandler {\n\tprivate static CustomPayloadS2CPacket makeSyncPacket(Identifier identifier, float val) {\n\t\tPacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());\n\t\tbuf.writeFloat(val);\n\t\treturn new CustomPayloadS2CPacket(identifier, buf);\n\t}\n}\n",
+        "after": "package squeek.appleskin.network;\n\npublic class SyncHandler {\n\tprivate static CustomPayloadS2CPacket makeSyncPacket(Identifier identifier, float val) {\n\t\tPacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());\n\t\tbuf.writeFloat(val);\n\t\treturn new CustomPayloadS2CPacket(new net.minecraft.network.packet.CustomPayload() { public void write(net.minecraft.network.PacketByteBuf mmtOut) { mmtOut.writeBytes(buf, buf.readerIndex(), buf.readableBytes()); } public net.minecraft.util.Identifier id() { return identifier; } });\n\t}\n}\n",
+        "from": "AppleSkin 1.20.1 (fabric), java/squeek/appleskin/network/SyncHandler.java:22"
+      }
+    },
+    {
       "id": "food-status-effect-entries-1205",
       "provenance": "hand",
       "jump": "1.20.4 -> 1.20.5 (yarn)",
