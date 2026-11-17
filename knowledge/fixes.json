@@ -5809,15 +5809,35 @@
       "match": "incompatible types: Gson cannot be converted to Codec",
       "apply": {
         "find": "\\bsuper\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),\\s*(\\\"[^\\\"]*\\\")\\s*\\)",
-        "replace": "super(net.minecraft.util.ExtraCodecs.JSON, net.minecraft.resources.FileToIdConverter.json($2))"
+        "replace": "super(net.minecraft.util.ExtraCodecs.JSON, $2)"
       },
       "scope": "line",
       "when": "",
-      "note": "1.21.2 builds SimpleJsonResourceReloadListener from a codec and a FileToIdConverter instead of a Gson and a folder: ExtraCodecs.JSON keeps each file as the JsonElement the Gson parsed, and FileToIdConverter.json(folder) lists the same *.json files.",
-      "verified": "Jade 1.21.1 -> 1.21.6 (NeoForge): the error it names was left by the routed port on 2026-11-14; the 1.21.6 game source (NeoForm), NeoForge 21.6's jar and the game-derived route map have the replacement",
+      "note": "1.21.2 builds SimpleJsonResourceReloadListener from a codec instead of a Gson; the folder stays a String until a later release takes a FileToIdConverter (json-reload-listener-converter). ExtraCodecs.JSON keeps each file as the JsonElement the Gson parsed.",
+      "verified": "1.21.2's game jar (NeoForm 1.21.2-20241022.151510): SimpleJsonResourceReloadListener(Codec, String) and (HolderLookup.Provider, Codec, String); Jade and Carry On 1.21.1 -> 1.21.2 left 'FileToIdConverter cannot be converted to String' when the rule also wrapped the folder (2026-11-17)",
       "test": {
         "error": "ThemeHelper.java:4: error: incompatible types: Gson cannot be converted to Codec\n",
         "before": "package snownee.jade.impl.theme;\n\n\tpublic ThemeHelper() {\n\t\tsuper(JsonConfig.GSON, \"jade_themes\");\n\t}\n",
+        "after": "package snownee.jade.impl.theme;\n\n\tpublic ThemeHelper() {\n\t\tsuper(net.minecraft.util.ExtraCodecs.JSON, \"jade_themes\");\n\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/impl/theme/ThemeHelper.java:53"
+      }
+    },
+    {
+      "id": "json-reload-listener-converter",
+      "provenance": "hand",
+      "jump": "1.21.2 -> 1.21.6 (mojmap)",
+      "match": "incompatible types: String cannot be converted to FileToIdConverter",
+      "apply": {
+        "find": "\\bsuper\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),\\s*(\\\"[^\\\"]*\\\")\\s*\\)",
+        "replace": "super($1, net.minecraft.resources.FileToIdConverter.json($2))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "A later release builds SimpleJsonResourceReloadListener from a codec and a FileToIdConverter instead of a folder: FileToIdConverter.json(folder) lists the same *.json files.",
+      "verified": "1.21.6's game jar (NeoForm 1.21.6-20250617.151856): SimpleJsonResourceReloadListener(Codec, FileToIdConverter); 1.21.2's takes (Codec, String)",
+      "test": {
+        "error": "ThemeHelper.java:4: error: incompatible types: String cannot be converted to FileToIdConverter\n",
+        "before": "package snownee.jade.impl.theme;\n\n\tpublic ThemeHelper() {\n\t\tsuper(net.minecraft.util.ExtraCodecs.JSON, \"jade_themes\");\n\t}\n",
         "after": "package snownee.jade.impl.theme;\n\n\tpublic ThemeHelper() {\n\t\tsuper(net.minecraft.util.ExtraCodecs.JSON, net.minecraft.resources.FileToIdConverter.json(\"jade_themes\"));\n\t}\n",
         "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/impl/theme/ThemeHelper.java:53"
       }

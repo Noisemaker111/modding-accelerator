@@ -1941,7 +1941,7 @@ public final class GameDiff {
                 int total = totals.get(e.getKey());
                 // The game's own code may call a private helper in place of what it removed; a mod cannot.
                 boolean reachable = (best.flags & ACC_PRIVATE) == 0 || (e.getKey().flags & ACC_PRIVATE) != 0;
-                if (reachable && (c1 >= 2 && c1 * 10 >= total * 8 || c1 == 1 && total == 1 && typeSafe(e.getKey(), best))) {
+                if (reachable && receiverCarries(e.getKey(), best) && (c1 >= 2 && c1 * 10 >= total * 8 || c1 == 1 && total == 1 && typeSafe(e.getKey(), best))) {
                     out.add(new Rewrite(e.getKey(), best, c1, total));
                 }
             }
@@ -2309,6 +2309,26 @@ public final class GameDiff {
                 }
             }
             return true;
+        }
+
+        /**
+         * An instance call the game moved to another instance method keeps its receiver only when the new owner is the old
+         * class (as b has it) or related to it: 1.21.2's game replaced player.sendSystemMessage(c) with
+         * minecraft.gui.getChat().addMessage(c), a call on another object a mod's receiver cannot stand in for. A call that
+         * becomes or stops being static carries its receiver as an argument, which the porter checks by type.
+         */
+        boolean receiverCarries(Meth from, Meth to) {
+            if (to == null || from.isStatic() || to.isStatic()) {
+                return true;
+            }
+            // A class b no longer has goes with it (ItemInteractionResult -> InteractionResult): the mod's variable is
+            // retyped by the class rewrite, so its value is the new owner's.
+            Cls mapped = cAB.get(from.owner);
+            if (mapped == null && !b.classes.containsKey(from.owner.name)) {
+                return true;
+            }
+            String old = mapped == null ? from.owner.name : mapped.name;
+            return subtypeB(old, to.owner.name) || subtypeB(to.owner.name, old);
         }
 
         static String simpleName(String internal) {
