@@ -113,6 +113,8 @@ final class Convert {
      * line names no field type, which an access widener needs: fieldTypes gives it from the game (owner/name to
      * descriptor), and a field it does not know goes to unconverted with wildcards and +f. Asked for a method (owner,
      * name+descriptor), it gives "access N", the method's access flags, when it knows: a private method is also extendable.
+     * Asked for "*", it lists the class's members ("field NAME DESC", "method NAME DESC ACCESS", one per line) for a
+     * wildcard line (public X * or public X *()); "" names a class the game does not have.
      */
     static String transformerToWidener(String text, boolean official, List<String> unconverted) {
         return transformerToWidener(text, official, unconverted, (owner, field) -> null);
@@ -130,12 +132,35 @@ final class Convert {
             if (line.isEmpty()) continue;
             String[] t = line.split("\\s+");
             Matcher m = Pattern.compile("^(public|protected|default|private)(-f|\\+f)?$").matcher(t[0]);
-            if (!m.find() || "+f".equals(m.group(2)) || t.length < 2 || line.contains("*")) {
+            boolean wildcard = t.length == 3 && (t[2].equals("*") || t[2].equals("*()"));
+            if (!m.find() || "+f".equals(m.group(2)) || t.length < 2 || line.contains("*") && !wildcard) {
                 unconverted.add(line);
                 continue;
             }
             boolean definal = "-f".equals(m.group(2));
             String owner = t[1].replace('.', '/');
+            if (wildcard) {
+                // Every field (*) or method (*()) of the class: an access widener names each, so the game lists them.
+                String listing = fieldTypes.apply(owner, "*");
+                if (listing == null) {
+                    unconverted.add(line);
+                    continue;
+                }
+                if (listing.isEmpty()) {
+                    unconverted.add(line + " (the game has no such class, so the line opens nothing on either loader; dropped)");
+                    continue;
+                }
+                boolean methods = t[2].equals("*()");
+                for (String member : listing.lines().toList()) {
+                    String[] p = member.split(" ");
+                    if (methods != p[0].equals("method") || p[1].equals("<clinit>")) continue;
+                    String kind = methods ? "method " : "field ";
+                    out.append("accessible ").append(kind).append(owner).append(' ').append(p[1]).append(' ').append(p[2]).append('\n');
+                    boolean wasPrivate = methods && p.length > 3 && (Integer.parseInt(p[3]) & 0x0002) != 0;
+                    if (definal || wasPrivate) out.append(methods ? "extendable " : "mutable ").append(kind).append(owner).append(' ').append(p[1]).append(' ').append(p[2]).append('\n');
+                }
+                continue;
+            }
             if (t.length == 2) {
                 out.append(definal ? "extendable" : "accessible").append(" class ").append(owner).append('\n');
                 continue;
@@ -173,6 +198,7 @@ final class Convert {
      */
     java.util.function.BiFunction<String, String, String> gameFieldTypes(String minecraft) {
         Map<String, String> known = new HashMap<>();
+        Map<String, String> listings = new HashMap<>();
         Map<String, java.util.zip.ZipFile> jar = new HashMap<>();
         boolean[] loaded = { false };
         return (owner, field) -> {
@@ -181,9 +207,11 @@ final class Convert {
                     loaded[0] = true;
                     var version = Json.object(Json.parse(Target.fetch(build, gameVersionUrl(minecraft))));
                     var downloads = Json.object(version.get("downloads"));
-                    if (downloads.get("client_mappings") instanceof Map<?, ?> mappings) known.putAll(
-                        mappingFieldTypes(Target.fetch(build, Json.text(Json.object(mappings), "url", "")))
-                    );
+                    if (downloads.get("client_mappings") instanceof Map<?, ?> mappings) {
+                        String text = Target.fetch(build, Json.text(Json.object(mappings), "url", ""));
+                        known.putAll(mappingFieldTypes(text));
+                        listings.putAll(mappingMembers(text));
+                    }
                     else {
                         var client = Json.object(downloads.get("client"));
                         Path file = Path.of(System.getProperty("user.home"), ".mmt", "minecraft", minecraft, "client.jar");
@@ -197,15 +225,22 @@ final class Convert {
                 String key = owner + " " + field;
                 if (known.containsKey(key)) return known.get(key);
                 var zip = jar.get("client");
-                if (zip == null) return null;
+                // A class the game does not have: the line opens nothing on NeoForge either.
+                if (zip == null) return listings.isEmpty() ? null : field.equals("*") ? listings.getOrDefault(owner, "") : field.contains("(") ? null : "";
+                if (field.equals("*") && listings.containsKey(owner)) return listings.get(owner);
                 var entry = zip.getEntry(owner + ".class");
-                if (entry == null) return null;
+                if (entry == null) return "";
+                StringBuilder listing = new StringBuilder();
                 try (var in = zip.getInputStream(entry)) {
                     for (var member : Explain.Index.parse(in.readAllBytes()).members()) {
                         if (member.method()) known.put(owner + " " + member.name() + member.descriptor(), "access " + member.access());
                         else known.put(owner + " " + member.name(), member.descriptor());
+                        listing.append(member.method() ? "method " : "field ").append(member.name()).append(' ').append(member.descriptor());
+                        listing.append(member.method() ? " " + member.access() : "").append('\n');
                     }
                 }
+                listings.put(owner, listing.toString());
+                if (field.equals("*")) return listing.toString();
                 // The class is read and has no such member: "" says the game lacks it (null is "not known").
                 return known.getOrDefault(key, "");
             } catch (Exception offline) {
@@ -218,6 +253,8 @@ final class Convert {
         for (Object v : Json.array(Json.object(Json.parse(Target.fetch(build, "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"))).get("versions"))) {
             if (minecraft.equals(Json.object(v).get("id"))) return Json.text(Json.object(v), "url", "");
         }
+        // Gradle builds may write 26.2.0 for Mojang's 26.2.
+        if (minecraft.endsWith(".0")) return gameVersionUrl(minecraft.substring(0, minecraft.length() - 2));
         throw new IOException("Mojang lists no Minecraft " + minecraft);
     }
 
@@ -235,6 +272,38 @@ final class Convert {
             if (owner != null && field.find()) out.put(owner + " " + field.group(2), descriptor(field.group(1)));
         }
         return out;
+    }
+
+    /**
+     * Every class of Mojang's ProGuard mappings with its fields and methods in Mojang's names, as gameFieldTypes lists
+     * them for "*" ("field NAME DESC", "method NAME DESC"; the mappings give no access flags).
+     */
+    static Map<String, String> mappingMembers(String mappings) {
+        Map<String, StringBuilder> out = new HashMap<>();
+        StringBuilder owner = null;
+        Pattern field = Pattern.compile("^\\s+([\\w.$\\[\\]]+) ([\\w$]+) -> [\\w$]+\\s*$");
+        Pattern method = Pattern.compile("^\\s+(?:\\d+:\\d+:)?([\\w.$\\[\\]]+) ([\\w$<>]+)\\(([^)]*)\\)(?::\\d+:\\d+)? -> [\\w$<>]+\\s*$");
+        for (String line : mappings.split("\n")) {
+            if (line.startsWith("#") || line.isBlank()) continue;
+            if (!line.startsWith(" ")) {
+                owner = out.computeIfAbsent(line.substring(0, line.indexOf(" -> ")).replace('.', '/'), k -> new StringBuilder());
+                continue;
+            }
+            if (owner == null) continue;
+            Matcher f = field.matcher(line);
+            if (f.find()) {
+                owner.append("field ").append(f.group(2)).append(' ').append(descriptor(f.group(1))).append('\n');
+                continue;
+            }
+            Matcher m = method.matcher(line);
+            if (!m.find()) continue;
+            StringBuilder desc = new StringBuilder("(");
+            for (String arg : m.group(3).split(",")) if (!arg.isBlank()) desc.append(descriptor(arg.strip()));
+            owner.append("method ").append(m.group(2)).append(' ').append(desc).append(')').append(descriptor(m.group(1))).append('\n');
+        }
+        Map<String, String> listed = new HashMap<>();
+        for (var e : out.entrySet()) listed.put(e.getKey(), e.getValue().toString());
+        return listed;
     }
 
     /** A Java type as written in Mojang's mappings (int, java.util.List, a.B[]) as a JVM descriptor. */
@@ -3303,7 +3372,7 @@ final class Convert {
         List<String> lines = neoforgeAccessTransformers(minecraft);
         if (lines.isEmpty()) return List.of();
         StringBuilder all = new StringBuilder();
-        for (String file : javaFiles()) if (bridgePackage == null || !file.startsWith(bridgeFolder() + "/")) all.append(read(file)).append('\n');
+        for (String file : javaFiles()) if (bridgePackage == null || !file.startsWith(bridgeFolder() + "/") || copiedFiles.contains(file)) all.append(read(file)).append('\n');
         String code = all.toString();
         List<String> out = new ArrayList<>();
         for (String line : lines) {
@@ -3325,7 +3394,9 @@ final class Convert {
             boolean named = Pattern.compile("(?<![\\w$])" + Pattern.quote(owner) + "(?![\\w$])").matcher(code).find();
             boolean used;
             if (member.equals("<init>")) used = Pattern.compile("\\bnew\\s+(?:[\\w.]+\\.)?" + Pattern.quote(owner) + "\\s*[(<]").matcher(code).find();
-            else if (paren >= 0) used = named && Pattern.compile("(?:\\.|::)\\s*" + Pattern.quote(member) + "\\s*\\(?(?![\\w$])").matcher(code).find();
+            // A method is called on an object whose class the file need not name either (renderer.addLayer(...) on the
+            // renderer an event gives): a long enough name is taken on its own, as a field's is.
+            else if (paren >= 0) used = (named || member.length() >= 7) && Pattern.compile("(?:\\.|::)\\s*" + Pattern.quote(member) + "\\s*\\(?(?![\\w$])").matcher(code).find();
             else {
                 // A field is read on an instance whose class the file need not name (zombie.goalSelector): a long enough
                 // name is taken on its own, a short one (level) only where its class is named.
@@ -3333,6 +3404,13 @@ final class Convert {
                 used = (named || member.length() >= 7) && Pattern.compile("(?:\\.\\s*|(?<![\\w$.]))" + Pattern.quote(member) + "(?![\\w$(])").matcher(code).find();
             }
             if (used) out.add(line);
+        }
+        // A class the used members' descriptors name, which NeoForge also opens (new BlockEntityType<>(Supplier::new, ...)
+        // passes the private BlockEntityType$BlockEntitySupplier): the code needs it open to call them.
+        String descriptors = String.join(" ", out);
+        for (String line : lines) {
+            String[] t = line.split("\\s+");
+            if (t.length == 2 && !out.contains(line) && descriptors.contains("L" + t[1].replace('.', '/') + ";")) out.add(line);
         }
         return out;
     }
@@ -3359,6 +3437,8 @@ final class Convert {
                 return "";
             }
         }).toList());
+        // NeoForge's own classes the code names go in before the source rules run, which rewrite them as the mod's code.
+        if (bridgePackage != null) copied = copyNeoForgeSources(mirroredClasses(), LoaderRules.strings(bridgeLayer == null ? null : bridgeLayer.get("drops")));
         for (String file : javaFiles()) {
             String text = read(file);
             Matcher mod = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
@@ -3371,6 +3451,9 @@ final class Convert {
             boolean[] code = LoaderRules.code(text);
             while (s.find()) {
                 if (!code[s.start()]) continue;
+                // A private nested subscriber (NeoForge's own DeferredSpawnEggItem.CommonHandler) cannot be named from the
+                // entrypoint; NeoForge's copied classes are the ones that have them.
+                if (Pattern.compile("\\bprivate\\s").matcher(s.group()).find()) continue;
                 String args = s.group(1) == null ? "" : s.group(1);
                 boolean client = args.contains("Dist.CLIENT") && !args.contains("DEDICATED_SERVER");
                 String type = pkg + (s.group(2).equals(top) ? top : top + "." + s.group(2));
@@ -3478,17 +3561,20 @@ final class Convert {
      * reference or typed lambda get their event class written in (NeoForge reads it from the generic signature).
      */
     void applyBridge() throws Exception {
-        Map<String, Object> classes = Json.object(bridge.get("classes"));
         Path templates = build.harness.resolve(Json.text(bridge, "folder", ""));
         Set<String> attachmentFields = new TreeSet<>();
         for (String file : javaFiles()) for (Matcher f = ATTACHMENT_FIELD.matcher(read(file)); f.find(); ) attachmentFields.add(f.group(1));
         List<String> drops = LoaderRules.strings(bridgeLayer == null ? null : bridgeLayer.get("drops"));
+        Map<String, Object> classes = mirroredClasses();
+        // Wildcard imports of a package name its copied classes too.
+        Map<String, Object> named = new LinkedHashMap<>(classes);
+        for (String c : copied) named.put(c, NeoForgeSources.FOLDER + "." + c.substring(NeoForgeSources.PREFIX.length()));
         // The mod's tests use the same NeoForge classes as its code, so their imports and qualified names move too.
         List<String> sources = new ArrayList<>(javaFiles());
         sources.addAll(testJavaFiles());
         for (String file : sources) {
             String text = read(file);
-            String out = wildcardBridgeImports(text, classes, drops, bridgePackage);
+            String out = wildcardBridgeImports(text, named, drops, bridgePackage);
             // Plain, static and nested-class imports of a mirrored class (import static ...FluidType.BUCKET_VOLUME;).
             for (var c : classes.entrySet()) if (!dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) out = out.replaceAll(
                 "(?m)^import(\\s+static)?\\s+" + Pattern.quote(c.getKey()) + "((?:\\.\\w+)*(?:\\.\\*)?)\\s*;",
@@ -3498,6 +3584,7 @@ final class Convert {
                 "(?<![\\w.])" + Pattern.quote(c.getKey()) + "(?![\\w$])",
                 Matcher.quoteReplacement(bridgePackage + "." + c.getValue())
             );
+            if (!copied.isEmpty()) out = NeoForgeSources.point(out, copied, bridgePackage);
             out = eventClassesInListeners(file, out);
             out = sideQueries(out);
             String held = attachmentCalls(out, attachmentFields);
@@ -3518,19 +3605,92 @@ final class Convert {
                 ") replaces the files whose game or Fabric API names differ there."
             );
         }
+        // NeoForge's own copied classes use the bridge as the mod's code does.
         bridgeUsers = sourcesOutside(bridgeFolder());
+        for (String file : copiedFiles) bridgeUsers += read(file) + "\n";
         Map<String, Object> rewrites = bridgeLayer == null ? Map.of() : Json.object(bridgeLayer.getOrDefault("rewrites", Map.of()));
         for (var template : files.entrySet()) {
             // For an older game, the layer's whole-word renames (Identifier is ResourceLocation there).
             String text = layerRewrites(Files.readString(template.getValue(), StandardCharsets.UTF_8), rewrites);
             write(bridgeFolder() + "/" + template.getKey(), fillBridge(text, bridgePackage));
         }
-        bridgeMixinConfig = bridgeMixins(bridge, bridgeLayer, bridgePackage, javaFiles().stream().filter(f -> !f.startsWith(bridgeFolder() + "/")).toList());
+        bridgeMixinConfig = bridgeMixins(
+            bridge,
+            bridgeLayer,
+            bridgePackage,
+            javaFiles().stream().filter(f -> !f.startsWith(bridgeFolder() + "/") || copiedFiles.contains(f)).toList()
+        );
         notes.add(
             "NeoForge bridge: " +
             bridgePackage +
             " holds NeoForge's registration, event bus, mod container, config and lifecycle events written on Fabric's API, for the code that uses them."
         );
+    }
+
+    /** NeoForge's own source files convert copied into the bridge's package (NeoForgeSources), and their classes. */
+    final List<String> copiedFiles = new ArrayList<>();
+    Set<String> copied = Set.of();
+
+    /**
+     * The NeoForge classes the bridge mirrors for this game: a class is mirrored only when the bridge or its version layer
+     * has its file (a class only the 1.21.1 layer writes is NeoForge's own copy on 26.1, or nothing).
+     */
+    Map<String, Object> mirroredClasses() throws IOException {
+        Path templates = build.harness.resolve(Json.text(bridge, "folder", ""));
+        Set<String> present = bridgeTemplates(templates, bridgeLayer == null ? null : build.harness.resolve(Json.text(bridgeLayer, "folder", ""))).keySet();
+        Map<String, Object> classes = new LinkedHashMap<>();
+        for (var c : Json.object(bridge.get("classes")).entrySet()) if (present.contains(String.valueOf(c.getValue()).replace('.', '/') + ".java")) classes.put(c.getKey(), c.getValue());
+        return classes;
+    }
+
+    /**
+     * NeoForge's own classes that the mod names and the bridge does not mirror, from NeoForge's published sources jar
+     * (bridges[].sources or its version layer's: a "published" key, read with the sources classifier), copied into the
+     * bridge's package when the bridge's folder lists them as compiling on Fabric (neoforge-sources.txt). The
+     * environment variable MMT_NEOFORGE_SOURCES=all copies every class the jar has, for bench/bridge_import.py to measure. Returns
+     * the copied classes by NeoForge name.
+     */
+    Set<String> copyNeoForgeSources(Map<String, Object> classes, List<String> drops) throws Exception {
+        Map<String, Object> from = bridgeLayer != null && bridgeLayer.get("sources") != null ? bridgeLayer : bridge;
+        String key = Json.text(from, "sources", "");
+        if (key.isEmpty()) return Set.of();
+        boolean all = "all".equals(System.getenv("MMT_NEOFORGE_SOURCES"));
+        Path list = build.harness.resolve(Json.text(from, "folder", "")).resolve("neoforge-sources.txt");
+        if (!all && !Files.isRegularFile(list)) return Set.of();
+        Set<String> mirrored = new TreeSet<>();
+        for (var c : classes.entrySet()) if (!dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) mirrored.add(c.getKey());
+        Set<String> allowed = new TreeSet<>();
+        if (!all) for (String line : Files.readAllLines(list, StandardCharsets.UTF_8)) if (!line.isBlank() && !line.startsWith("#")) allowed.add(line.strip());
+        allowed.removeAll(mirrored);
+        List<String> texts = new ArrayList<>();
+        for (String file : javaFiles()) texts.add(read(file));
+        for (String file : testJavaFiles()) texts.add(read(file));
+        // Nothing the mod names is listed: no download.
+        if (!all && NeoForgeSources.closure(texts, Map.of(), allowed).isEmpty()) return Set.of();
+        Map<String, Object> entry = Json.object(Json.object(rules.get("published")).get(key));
+        String[] gav = Json.text(entry, "coordinate", "").split(":");
+        String url = Json.text(entry, "maven", "") + "/" + gav[0].replace('.', '/') + "/" + gav[1] + "/" + gav[2] + "/" + gav[1] + "-" + gav[2] + "-sources.jar";
+        Map<String, String> sources = NeoForgeSources.read(Target.download(build, url));
+        sources.keySet().removeAll(mirrored);
+        // NeoForge's own @Mod classes are NeoForge itself starting, never the converted mod's entrypoints.
+        sources.values().removeIf(text -> Pattern.compile("(?m)^@Mod\\(").matcher(text).find());
+        if (all) allowed.addAll(sources.keySet());
+        allowed.retainAll(sources.keySet());
+        Set<String> copied = all ? allowed : NeoForgeSources.closure(texts, sources, allowed);
+        for (String name : copied) {
+            String file = bridgeFolder() + "/" + NeoForgeSources.FOLDER + "/" + name.substring(NeoForgeSources.PREFIX.length()).replace('.', '/') + ".java";
+            write(file, NeoForgeSources.relocate(sources.get(name).replace("\r\n", "\n"), bridgePackage, mirrored));
+            copiedFiles.add(file);
+        }
+        if (!copied.isEmpty()) {
+            notes.add(
+                "NeoForge bridge: " + copied.size() + " of NeoForge's own classes (LGPL-2.1, from " + url.substring(url.lastIndexOf('/') + 1) +
+                ") are copied into " + bridgePackage + "." + NeoForgeSources.FOLDER +
+                "; events among them are posted on Fabric only where the bridge posts them."
+            );
+            applied.computeIfAbsent("neoforge-sources", k -> new ArrayList<>()).addAll(copiedFiles);
+        }
+        return copied;
     }
 
     /**
@@ -3963,6 +4123,7 @@ final class Convert {
                 "(?<![\\w.])" + Pattern.quote(pkg + "." + c.getKey()) + "(?![\\w$])",
                 Matcher.quoteReplacement(c.getValue())
             );
+            out = NeoForgeSources.back(out, pkg);
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
             out = LoaderRules.dropImport(attachmentCallsBack(out), pkg + ".Attachments");
             // The side local of a common entrypoint read FMLLoader; the constructor takes Dist again.

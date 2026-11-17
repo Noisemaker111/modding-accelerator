@@ -7956,7 +7956,8 @@
         "net/minecraft/world/phys/AABB": "generated1211.AABBGenerated"
        }
       }
-     ]
+     ],
+     "sources": "neoforge-21.1"
     },
     {
      "minecraft": "26.1",
@@ -7977,7 +7978,8 @@
       "mixin/generated/",
       "generated1211/",
       "mixin/generated1211/"
-     ]
+     ],
+     "sources": "neoforge-26.1"
     }
    ],
    "tests": [
@@ -14904,7 +14906,8 @@
       "net/minecraft/world/phys/AABB": "generated261.AABBGenerated"
      }
     }
-   ]
+   ],
+   "sources": "neoforge"
   },
   {
    "id": "fabric-on-neoforge",

@@ -205,17 +205,18 @@ public final class ConvertTests {
             widener +
             widenerLeft
         );
-        Map<String, String> fieldTypes = Convert.mappingFieldTypes(
-            "# {\"fileName\":\"client.txt\"}\nnet.minecraft.client.renderer.block.ModelBlockRenderer -> fxx:\n" +
+        String mappings = "# {\"fileName\":\"client.txt\"}\nnet.minecraft.client.renderer.block.ModelBlockRenderer -> fxx:\n" +
             "    net.minecraft.client.color.block.BlockColors blockColors -> b\n    int[][] grid -> c\n" +
-            "    15:20:void <init>(net.minecraft.client.color.block.BlockColors) -> <init>\n"
-        );
+            "    15:20:void <init>(net.minecraft.client.color.block.BlockColors) -> <init>\n";
+        Map<String, String> fieldTypes = Convert.mappingFieldTypes(mappings);
+        String members = Convert.mappingMembers(mappings).get("net/minecraft/client/renderer/block/ModelBlockRenderer");
         List<String> typedLeft = new ArrayList<>();
         String typed = Convert.transformerToWidener(
-            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\npublic net.minecraft.A shut()V\npublic net.minecraft.A open()V\npublic net.minecraft.A gone\n",
+            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\npublic net.minecraft.A shut()V\npublic net.minecraft.A open()V\npublic net.minecraft.A gone\npublic net.minecraft.A *()\npublic net.minecraft.Gone *\n",
             false,
             typedLeft,
-            (owner, field) -> field.equals("shut()V") ? "access 2" : field.equals("open()V") ? "access 4" : field.equals("gone") ? "" : fieldTypes.get(owner + " " + field)
+            (owner, field) -> field.equals("*") ? (owner.equals("net/minecraft/A") ? "field f I\nmethod m ()V 2\nmethod <clinit> ()V 8\n" : "") :
+                field.equals("shut()V") ? "access 2" : field.equals("open()V") ? "access 4" : field.equals("gone") ? "" : fieldTypes.get(owner + " " + field)
         );
         check(
             fieldTypes.get("net/minecraft/client/renderer/block/ModelBlockRenderer grid").equals("[[I") &&
@@ -223,10 +224,12 @@ public final class ConvertTests {
             typed.equals(
                 "accessWidener v2 named\naccessible field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n" +
                 "mutable field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n" +
-                "accessible method net/minecraft/A shut ()V\nextendable method net/minecraft/A shut ()V\naccessible method net/minecraft/A open ()V\n"
+                "accessible method net/minecraft/A shut ()V\nextendable method net/minecraft/A shut ()V\naccessible method net/minecraft/A open ()V\n" +
+                "accessible method net/minecraft/A m ()V\nextendable method net/minecraft/A m ()V\n"
             ) &&
-            typedLeft.size() == 2 && typedLeft.get(1).startsWith("public net.minecraft.A gone (the game has no such field") && typedLeft.get(1).endsWith("; dropped)"),
-            "an access transformer field line becomes an access widener field with its type from Mojang's mappings, a private method stays overridable, and a field the game lacks is dropped:\n" + typed + typedLeft
+            members.equals("field blockColors Lnet/minecraft/client/color/block/BlockColors;\nfield grid [[I\nmethod <init> (Lnet/minecraft/client/color/block/BlockColors;)V\n") &&
+            typedLeft.size() == 3 && typedLeft.get(1).startsWith("public net.minecraft.A gone (the game has no such field") && typedLeft.get(2).contains("no such class"),
+            "an access transformer field line becomes an access widener field with its type from Mojang's mappings, a wildcard every member the game lists, a private method stays overridable, and a field or class the game lacks is dropped:\n" + typed + typedLeft + members
         );
         ConvertNamesTests.run();
         String renamed = Convert.layerRewrites(
