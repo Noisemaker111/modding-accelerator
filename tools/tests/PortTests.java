@@ -217,6 +217,41 @@ public final class PortTests {
         );
     }
 
+    /** A dry run whose target planning fails previews the source rewrite; a real run still throws. */
+    static void planningDegradeChecks(Path home, Path scratch) throws Exception {
+        Path root = scratch.resolve("unplannable");
+        Files.createDirectories(root.resolve("gradle/wrapper"));
+        Files.writeString(
+            root.resolve("gradle/wrapper/gradle-wrapper.properties"),
+            "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n"
+        );
+        Files.write(root.resolve("gradle/wrapper/gradle-wrapper.jar"), new byte[0]);
+        ProjectModel project = new ProjectModel(root);
+        Build build = new Build(project, home, "", new Mmt.Report(root, "degrade"));
+        Map<String, Object> unpinned = Json.map(
+            "projects",
+            List.of(Json.map("path", ":", "plugins", List.of("test.loomshim"), "pins", Json.map(), "dependencies", List.of()))
+        );
+        Target.Setup degraded = Port.planTargets(
+            build, unpinned, "1.7.10", List.of(), Set.of("1.21.1"), new Mmt.Options(new String[] {"--dry-run"})
+        );
+        check(
+            degraded == null,
+            "a dry run whose target planning fails continues with no build changes"
+        );
+        check(
+            build.report.stages.stream().anyMatch(s -> "target-dependencies-skipped".equals(Json.object(s).get("name"))),
+            "a dry run whose target planning fails records why in its stages"
+        );
+        boolean thrown = false;
+        try {
+            Port.planTargets(build, unpinned, "1.7.10", List.of(), Set.of("1.21.1"), new Mmt.Options(new String[] {}));
+        } catch (IOException expected) {
+            thrown = expected.getMessage().contains("pinned inside build logic");
+        }
+        check(thrown, "a real run whose target planning fails still throws instead of previewing");
+    }
+
     public static void main(String[] args) throws Exception {
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
@@ -345,6 +380,7 @@ public final class PortTests {
         Build portBuild = new Build(project, home, "", new Mmt.Report(root, "port"));
         routeChecks(home, new Port(portBuild, model), scratch);
         versionsChecks();
+        planningDegradeChecks(home, scratch);
         for (var groups : List.of(
             List.of("net.minecraftforge"),
             List.of("net.fabricmc", "net.neoforged"),

@@ -557,7 +557,7 @@ final class Port {
         Path selectionFile = selectionFile(options);
         List<Dependencies.Selection> selections = Dependencies.selections(selectionFile);
         long targetStart = System.nanoTime();
-        Target.Setup setup = actual.equals(Set.of(to)) ? null : Target.plan(build, model, to, selections);
+        Target.Setup setup = planTargets(build, model, to, selections, actual, options);
         List<Target.Edit> target = setup == null ? Target.manifestEditsForModel(model, to) : setup.edits();
         List<Path> excluded = setup == null ? List.of() : setup.excluded;
         List<Map<String, Object>> applied = setup == null ? List.of() : setup.applied;
@@ -1700,6 +1700,23 @@ final class Port {
                 tasks.add("-x");
                 tasks.add(composite.toString());
             }
+        }
+    }
+
+    /** Target planning for a port. A dry run previews the source rewrite, which needs no target
+        build, so a planning failure degrades to no build changes instead of throwing. */
+    static Target.Setup planTargets(
+        Build build, Map<String, Object> model, String to, List<Dependencies.Selection> selections, Set<String> actual, Mmt.Options options
+    ) throws Exception {
+        if (actual.equals(Set.of(to))) return null;
+        if (!options.has("dry-run")) return Target.plan(build, model, to, selections);
+        try {
+            return Target.plan(build, model, to, selections);
+        } catch (Exception planning) {
+            build.report.stages.add(
+                Json.map("name", "target-dependencies-skipped", "reason", String.valueOf(planning.getMessage()))
+            );
+            return null;
         }
     }
 
