@@ -7799,6 +7799,26 @@
       }
     },
     {
+      "id": "entity-hurt-super-abstract-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "abstract method hurtServer\\(ServerLevel,DamageSource,float\\) in Entity cannot be accessed directly",
+      "apply": {
+        "find": "\\breturn\\s+super\\s*\\.\\s*hurtServer\\s*\\(\\s*[\\w.]+\\s*,\\s*([\\w.]+)\\s*,\\s*[\\w.]+\\s*\\)\\s*;",
+        "replace": "if (!this.isInvulnerableToBase($1)) {\n            this.markHurt();\n        }\n        return false;"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "An entity extending Entity itself returned super.hurt(source, amount) in 1.21.1; 1.21.2's Entity.hurtServer is abstract, so the super call runs what 1.21.1's Entity.hurt did: mark the entity hurt unless it is invulnerable to the source, and report no damage taken.",
+      "verified": "Mojang's 1.21.1 game jar, Entity.hurt(DamageSource,float): if isInvulnerableTo(source) return false; markHurt(); return false. 1.21.2: abstract hurtServer(ServerLevel,DamageSource,float), protected markHurt(), protected final isInvulnerableToBase(DamageSource) with the same body as 1.21.1's isInvulnerableTo (isRemoved, invulnerable unless BYPASSES_INVULNERABILITY or a creative player, fire with fireImmune, fall with FALL_DAMAGE_IMMUNE)",
+      "test": {
+        "error": "CorpseEntity.java:9: error: abstract method hurtServer(ServerLevel,DamageSource,float) in Entity cannot be accessed directly\n",
+        "before": "package mod;\n\nclass CorpseEntity extends Entity {\n    @Override\n    public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount) {\n        if (isInvulnerableTo(source)) {\n            return false;\n        }\n        return super.hurtServer(serverLevel, source, amount);\n    }\n}\n",
+        "after": "package mod;\n\nclass CorpseEntity extends Entity {\n    @Override\n    public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount) {\n        if (isInvulnerableTo(source)) {\n            return false;\n        }\n        if (!this.isInvulnerableToBase(source)) {\n            this.markHurt();\n        }\n        return false;\n    }\n}\n",
+        "from": "Corpse 1.21.1 (neoforge), CorpseEntity after hurt-server-override-1212 and hurt-server-super-1212"
+      }
+    },
+    {
       "id": "entity-model-render-state-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
