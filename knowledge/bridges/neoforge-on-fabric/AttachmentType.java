@@ -6,11 +6,19 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import ${package}.common.util.ValueIOSerializable;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 
 /**
  * NeoForge's net.neoforged.neoforge.attachment.AttachmentType as a Fabric API data attachment. The builder takes
@@ -23,11 +31,17 @@ import net.minecraft.server.level.ServerPlayer;
  */
 public final class AttachmentType<T> {
 
-    final Function<Object, T> defaultValue;
+    final Function<IAttachmentHolder, T> defaultValue;
     MapCodec<T> codec;
     boolean copyOnDeath;
     StreamCodec<? super RegistryFriendlyByteBuf, T> sync;
     BiPredicate<Object, ServerPlayer> sendTo;
+
+    /** The default value for a holder (an entity, block entity, level or chunk) that has none yet. */
+    T create(Object holder) {
+        return defaultValue.apply((IAttachmentHolder) holder);
+    }
+
     net.fabricmc.fabric.api.attachment.v1.AttachmentType<T> fabric;
 
     private AttachmentType(Builder<T> builder) {
@@ -42,8 +56,36 @@ public final class AttachmentType<T> {
         return new Builder<>(holder -> defaultValueSupplier.get());
     }
 
-    public static <T> Builder<T> builder(Function<Object, T> defaultValueConstructor) {
+    public static <T> Builder<T> builder(Function<IAttachmentHolder, T> defaultValueConstructor) {
         return new Builder<>(defaultValueConstructor);
+    }
+
+    /**
+     * NeoForge's serializable(...): the value writes and reads itself with the game's value IO, saved as a compound tag
+     * with the running server's registries (an item stack in it needs them).
+     */
+    public static <T extends ValueIOSerializable> Builder<T> serializable(Supplier<T> defaultValueSupplier) {
+        return serializable(holder -> defaultValueSupplier.get());
+    }
+
+    public static <T extends ValueIOSerializable> Builder<T> serializable(Function<IAttachmentHolder, T> defaultValueConstructor) {
+        return builder(defaultValueConstructor).serialize(MapCodec.assumeMapUnsafe(CompoundTag.CODEC.xmap(
+            tag -> {
+                T value = defaultValueConstructor.apply(null);
+                value.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, registries(), tag));
+                return value;
+            },
+            value -> {
+                TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registries());
+                value.serialize(output);
+                return output.buildResult();
+            }
+        )));
+    }
+
+    private static HolderLookup.Provider registries() {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        return server == null ? RegistryAccess.EMPTY : server.registryAccess();
     }
 
     /** Fabric API's attachment type for this one, made once DeferredRegister registers it. */
@@ -63,13 +105,13 @@ public final class AttachmentType<T> {
     }
 
     public static class Builder<T> {
-        private final Function<Object, T> defaultValue;
+        private final Function<IAttachmentHolder, T> defaultValue;
         private MapCodec<T> codec;
         private boolean copyOnDeath;
         private StreamCodec<? super RegistryFriendlyByteBuf, T> sync;
         private BiPredicate<Object, ServerPlayer> sendTo;
 
-        private Builder(Function<Object, T> defaultValue) {
+        private Builder(Function<IAttachmentHolder, T> defaultValue) {
             this.defaultValue = defaultValue;
         }
 

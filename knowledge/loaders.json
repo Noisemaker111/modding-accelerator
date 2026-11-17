@@ -2910,7 +2910,9 @@
     "net.neoforged.neoforge.common.crafting.ICustomIngredient": "crafting.ICustomIngredient",
     "net.neoforged.neoforge.common.crafting.IngredientType": "crafting.IngredientType",
     "net.neoforged.neoforge.client.extensions.common.IClientItemExtensions": "IClientItemExtensions",
-    "net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent": "RegisterClientExtensionsEvent"
+    "net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent": "RegisterClientExtensionsEvent",
+    "net.neoforged.neoforge.client.extensions.IRenderStateExtension": "IRenderStateExtension",
+    "net.neoforged.neoforge.attachment.IAttachmentHolder": "IAttachmentHolder"
    },
    "symbols": {
     "neoforge": [
@@ -4804,6 +4806,12 @@
      },
      "below": "1.21.2",
      "drops": [
+      "extensions/IReloadableServerResourcesExtension.java",
+      "mixin/ReloadableServerResourcesMixin.java",
+      "IAttachmentHolder.java",
+      "mixin/AttachmentHolderMixin.java",
+      "IRenderStateExtension.java",
+      "mixin/RenderStateDataMixin.java",
       "mixin/EntityRenderersAddLayersMixin.java",
       "BlockEntityTypes.java",
       "SavedDataTypes.java",
@@ -8292,11 +8300,11 @@
      ]
     },
     {
-       "mixin": "EntityConstructingMixin",
-       "for": [
-        "EntityEvent"
-       ]
-      },
+     "mixin": "EntityConstructingMixin",
+     "for": [
+      "EntityEvent"
+     ]
+    },
     {
      "mixin": "EntityRideTickMixin",
      "client": false,
@@ -8312,12 +8320,12 @@
      ]
     },
     {
-       "mixin": "EntityRenderersAddLayersMixin",
-       "client": true,
-       "for": [
-        "EntityRenderersEvent"
-       ]
-      },
+     "mixin": "EntityRenderersAddLayersMixin",
+     "client": true,
+     "for": [
+      "EntityRenderersEvent"
+     ]
+    },
     {
      "mixin": "PlayerTickMixin",
      "client": false,
@@ -8685,7 +8693,7 @@
      "client": true,
      "uses": [
       [
-       "\\b(getGuiLeft|getGuiTop|getXSize|getYSize|getSlotUnderMouse|getLeftPos|getTopPos|getImageWidth|getImageHeight|getHoveredSlot)\\s*\\("
+       "\\b(getGuiLeft|getGuiTop|getXSize|getYSize|getSlotUnderMouse|getLeftPos|getTopPos|getImageWidth|getImageHeight|getHoveredSlot|renderSlotContents)\\s*\\("
       ]
      ],
      "injects": {
@@ -8739,6 +8747,44 @@
        "\\b(onDataPacket|handleUpdateTag|onLoad)\\s*\\("
       ]
      ]
+    },
+    {
+     "mixin": "RenderStateDataMixin",
+     "client": true,
+     "uses": [
+      [
+       "\\b(?:getRenderData|setRenderData|getRenderDataOrDefault|getRenderDataOrThrow)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/client/renderer/entity/state/EntityRenderState": "IRenderStateExtension",
+      "net/minecraft/client/renderer/state/MapRenderState": "IRenderStateExtension"
+     }
+    },
+    {
+     "mixin": "AttachmentHolderMixin",
+     "for": [
+      "IAttachmentHolder",
+      "AttachmentType"
+     ],
+     "injects": {
+      "net/minecraft/world/entity/Entity": "IAttachmentHolder",
+      "net/minecraft/world/level/block/entity/BlockEntity": "IAttachmentHolder",
+      "net/minecraft/world/level/Level": "IAttachmentHolder",
+      "net/minecraft/world/level/chunk/ChunkAccess": "IAttachmentHolder"
+     }
+    },
+    {
+     "mixin": "ReloadableServerResourcesMixin",
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:getRegistryLookup)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/server/ReloadableServerResources": "extensions.IReloadableServerResourcesExtension"
+     }
     },
     {
      "mixin": "generated.VertexConsumerGeneratedMixin",
@@ -10184,19 +10230,6 @@
      }
     },
     {
-     "mixin": "generated.ReloadableServerResourcesGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRegistryLookup)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/server/ReloadableServerResources": "generated.ReloadableServerResourcesGenerated"
-     }
-    },
-    {
      "mixin": "generated.MinecraftApiGeneratedMixin",
      "generated": true,
      "client": false,
@@ -11437,7 +11470,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|getPersistentData|invalidateCapabilities|onChunkUnloaded|removeData|requestModelDataUpdate|syncData)\\s*\\("
+       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|getPersistentData|invalidateCapabilities|onChunkUnloaded|requestModelDataUpdate|syncData)\\s*\\("
       ]
      ],
      "injects": {
@@ -11593,7 +11626,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:findBlocks|getExistingDataOrNull|hasAttachments|hasData|readAttachmentsFromNBT|removeData|writeAttachmentsToNBT)\\s*\\("
+       "\\b(?:findBlocks|hasAttachments|readAttachmentsFromNBT|writeAttachmentsToNBT)\\s*\\("
       ]
      ],
      "injects": {
@@ -13265,19 +13298,6 @@
      }
     },
     {
-     "mixin": "generated261.ReloadableServerResourcesGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRegistryLookup)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/server/ReloadableServerResources": "generated261.ReloadableServerResourcesGenerated"
-     }
-    },
-    {
      "mixin": "generated261.ChunkMapGeneratedMixin",
      "generated": true,
      "client": false,
@@ -14518,7 +14538,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|getPersistentData|hasCustomOutlineRendering|invalidateCapabilities|onChunkUnloaded|removeData|requestModelDataUpdate|syncData)\\s*\\("
+       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|getPersistentData|hasCustomOutlineRendering|invalidateCapabilities|onChunkUnloaded|requestModelDataUpdate|syncData)\\s*\\("
       ]
      ],
      "injects": {
@@ -14635,7 +14655,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:findBlocks|getExistingDataOrNull|hasAttachments|hasData|readAttachmentsFromNBT|removeData|writeAttachmentsToNBT)\\s*\\("
+       "\\b(?:findBlocks|hasAttachments|readAttachmentsFromNBT|writeAttachmentsToNBT)\\s*\\("
       ]
      ],
      "injects": {
@@ -14933,6 +14953,14 @@
    "constructors": {
     "net.minecraft.world.level.block.entity.BlockEntityType": "BlockEntityTypes",
     "net.minecraft.world.level.saveddata.SavedDataType": "SavedDataTypes"
+   },
+   "statics": {
+    "net.minecraft.commands.synchronization.ArgumentTypeInfos#registerByClass": {
+     "to": "ArgumentTypeInfosExtension",
+     "accessTransformers": [
+      "public net.minecraft.commands.synchronization.ArgumentTypeInfos BY_CLASS"
+     ]
+    }
    }
   },
   {

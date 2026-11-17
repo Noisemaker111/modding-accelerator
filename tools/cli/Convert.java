@@ -2879,6 +2879,7 @@ final class Convert {
         neoforgeParametersOutOfMixins();
         if (bridgeUsed) applyBridge();
         if (bridgeUsed) setAsideDatagen();
+        setAsideTestMods();
         lambdaMixinTargets(minecraft);
         enumExtensionLookups();
         superHookCalls();
@@ -3247,6 +3248,32 @@ final class Convert {
         applied.computeIfAbsent("datagen-set-aside", k -> new ArrayList<>()).addAll(datagen);
     }
 
+    /**
+     * A test source set that is a NeoForge test mod (an @Mod class of its own, which NeoForge loads beside the mod in a
+     * development game) is not converted: Loom builds no second mod from it. Its sources move out of the build to
+     * src/neoforge-SET/java, so the mod itself compiles, and the test mod is listed as left.
+     */
+    void setAsideTestMods() throws Exception {
+        Map<String, List<String>> sets = new TreeMap<>();
+        for (String f : testJavaFiles()) sets.computeIfAbsent(f.substring(0, f.indexOf("/java/") + "/java/".length()), k -> new ArrayList<>()).add(f);
+        for (var set : sets.entrySet()) {
+            String mod = null;
+            for (String f : set.getValue()) if (mod == null && Pattern.compile("(?m)^@Mod\\(").matcher(read(f)).find()) mod = f;
+            if (mod == null) continue;
+            String aside = set.getKey().replaceFirst("^src/", "src/neoforge-");
+            for (String f : set.getValue()) {
+                write(aside + f.substring(set.getKey().length()), read(f));
+                delete(f);
+            }
+            leave(
+                mod,
+                0,
+                "NeoForge test mod in " + set.getKey(),
+                "its " + set.getValue().size() + " source file(s) are kept in " + aside + " outside the build: Fabric's build makes no second mod of a test source set"
+            );
+        }
+    }
+
     void dropNeoForgeTabOrder() throws Exception {
         int dropped = 0;
         for (String file : javaFiles()) {
@@ -3602,6 +3629,14 @@ final class Convert {
             for (var c : Json.object(bridge.getOrDefault("constructors", Map.of())).entrySet()) if (!dropped(drops, c.getValue() + ".java")) {
                 out = constructorsToFactories(out, c.getKey(), String.valueOf(c.getValue()), bridgePackage);
             }
+            // Static methods NeoForge's patches add to game classes: called on the bridge's class instead.
+            for (var s : Json.object(bridge.getOrDefault("statics", Map.of())).entrySet()) {
+                Map<String, Object> to = Json.object(s.getValue());
+                if (dropped(drops, Json.text(to, "to", "") + ".java")) continue;
+                out = staticsToBridge(out, s.getKey(), Json.text(to, "to", ""), bridgePackage);
+                // The bridge's class is written for every mod, so what it needs opened is opened for every mod.
+                for (String line : LoaderRules.strings(to.get("accessTransformers"))) if (!accessTransformers.contains(line)) accessTransformers.add(line);
+            }
             out = eventClassesInListeners(file, out);
             out = sideQueries(out);
             String held = attachmentCalls(out, attachmentFields);
@@ -3701,9 +3736,24 @@ final class Convert {
         // NeoForge's own @Mod classes are NeoForge itself starting, never the converted mod's entrypoints: what else they
         // hold (NeoForgeMod.MOD_ID) stays.
         sources.replaceAll((name, text) -> text.replaceAll("(?m)^@Mod\\(.*\\)[ \\t]*\\r?\\n", ""));
+        // A copied class that needs a NeoForge patch's member (RegistryOps(RegistryOps)) is written on the game's own
+        // members instead (neoforge-patches.json: text replaced, and the access transformer lines that needs).
+        Path patchFile = list.resolveSibling("neoforge-patches.json");
+        if (!Files.isRegularFile(patchFile)) patchFile = build.harness.resolve(Json.text(bridge, "folder", "")).resolve("neoforge-patches.json");
+        Map<String, Object> patches = Files.isRegularFile(patchFile) ? Json.read(patchFile) : Map.of();
+        for (var p : patches.entrySet()) {
+            String text = sources.get(p.getKey());
+            if (text == null || p.getKey().startsWith("about")) continue;
+            for (Object pair : LoaderRules.list(Json.object(p.getValue()).get("replace"))) {
+                List<String> fromTo = LoaderRules.strings(pair);
+                text = text.replace(fromTo.get(0), fromTo.get(1));
+            }
+            sources.put(p.getKey(), text);
+        }
         if (all) allowed.addAll(sources.keySet());
         allowed.retainAll(sources.keySet());
         Set<String> copied = all ? allowed : NeoForgeSources.closure(texts, sources, allowed);
+        for (String name : copied) if (patches.get(name) instanceof Map<?, ?> p) accessTransformers.addAll(LoaderRules.strings(p.get("accessTransformers")));
         for (String name : copied) {
             String file = bridgeFolder() + "/" + NeoForgeSources.FOLDER + "/" + name.substring(NeoForgeSources.PREFIX.length()).replace('.', '/') + ".java";
             write(file, NeoForgeSources.relocate(sources.get(name).replace("\r\n", "\n"), bridgePackage, mirrored));
@@ -4146,6 +4196,41 @@ final class Convert {
         );
     }
 
+    /**
+     * A static method NeoForge's patch adds to a game class (bridges[].statics, "game.Class#method"): Class.method(...) in a
+     * source that imports the class, or names it in full, calls the bridge's class of that name instead.
+     */
+    static String staticsToBridge(String text, String member, String to, String pkg) {
+        String game = member.substring(0, member.indexOf('#'));
+        String method = member.substring(member.indexOf('#') + 1);
+        String simple = game.substring(game.lastIndexOf('.') + 1);
+        boolean imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
+        String owner = Pattern.quote(game) + (imported ? "|" + Pattern.quote(simple) : "");
+        Matcher m = Pattern.compile("(?<![\\w.$])(?:" + owner + ")\\s*\\.\\s*(<[^()]*>\\s*)?" + Pattern.quote(method) + "\\s*\\(").matcher(text);
+        boolean[] code = LoaderRules.code(text);
+        StringBuilder out = new StringBuilder();
+        boolean changed = false;
+        while (m.find()) {
+            if (!code[m.start()]) continue;
+            m.appendReplacement(out, Matcher.quoteReplacement(to + "." + (m.group(1) == null ? "" : m.group(1).strip()) + method + "("));
+            changed = true;
+        }
+        if (!changed) return text;
+        m.appendTail(out);
+        return LoaderRules.addImport(out.toString(), pkg + "." + to);
+    }
+
+    /** The way back: the bridge's class is the game class again for that method. */
+    static String bridgeToStatics(String text, String member, String to, String pkg) {
+        Matcher imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(pkg + "." + to) + "\\s*;[ \\t]*\\n?").matcher(text);
+        if (!imported.find()) return text;
+        String game = member.substring(0, member.indexOf('#'));
+        String simple = game.substring(game.lastIndexOf('.') + 1);
+        boolean hasGame = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
+        String out = imported.replaceFirst(hasGame ? "" : Matcher.quoteReplacement("import " + game + ";\n"));
+        return out.replaceAll("(?<![\\w.])" + Pattern.quote(to) + "\\.", Matcher.quoteReplacement(simple + "."));
+    }
+
     /** The index of the ')' that closes the '(' at open, or -1 (strings and comments skipped). */
     static int closingParen(String text, boolean[] code, int open) {
         int depth = 0;
@@ -4206,6 +4291,7 @@ final class Convert {
             out = NeoForgeSources.back(out, pkg);
             for (Object item : LoaderRules.list(rules.get("bridges"))) {
                 for (var c : Json.object(Json.object(item).getOrDefault("constructors", Map.of())).entrySet()) out = factoriesToConstructors(out, c.getKey(), String.valueOf(c.getValue()), pkg);
+                for (var s : Json.object(Json.object(item).getOrDefault("statics", Map.of())).entrySet()) out = bridgeToStatics(out, s.getKey(), Json.text(Json.object(s.getValue()), "to", ""), pkg);
             }
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
             out = LoaderRules.dropImport(attachmentCallsBack(out), pkg + ".Attachments");

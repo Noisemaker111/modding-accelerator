@@ -14,18 +14,6 @@ public interface ChunkAccessGenerated {
         throw new UnsupportedOperationException("NeoForge's ChunkAccess.hasAttachments has no Fabric counterpart in the bridge yet");
     }
 
-    default boolean hasData(${package}.AttachmentType<?> arg0) {
-        throw new UnsupportedOperationException("NeoForge's ChunkAccess.hasData has no Fabric counterpart in the bridge yet");
-    }
-
-    default <T> T getExistingDataOrNull(${package}.AttachmentType<T> arg0) {
-        throw new UnsupportedOperationException("NeoForge's ChunkAccess.getExistingDataOrNull has no Fabric counterpart in the bridge yet");
-    }
-
-    default <T> T removeData(${package}.AttachmentType<T> arg0) {
-        throw new UnsupportedOperationException("NeoForge's ChunkAccess.removeData has no Fabric counterpart in the bridge yet");
-    }
-
     default net.minecraft.nbt.CompoundTag writeAttachmentsToNBT(net.minecraft.core.HolderLookup.Provider arg0) {
         throw new UnsupportedOperationException("NeoForge's ChunkAccess.writeAttachmentsToNBT has no Fabric counterpart in the bridge yet");
     }

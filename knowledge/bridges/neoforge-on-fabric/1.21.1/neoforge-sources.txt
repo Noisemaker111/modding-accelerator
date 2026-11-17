@@ -185,6 +185,7 @@ net.neoforged.neoforge.common.brewing.IBrewingRecipe
 net.neoforged.neoforge.common.command.EntitySelectorManager
 net.neoforged.neoforge.common.command.IEntitySelectorType
 net.neoforged.neoforge.common.conditions.AndCondition
+net.neoforged.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.common.conditions.FalseCondition
 net.neoforged.neoforge.common.conditions.IConditionBuilder
 net.neoforged.neoforge.common.conditions.ItemExistsCondition
@@ -773,10 +774,6 @@ net.neoforged.neoforge.common.VillagerTradingManager VillagerTradingManager#post
 net.neoforged.neoforge.common.crafting.CraftingHelper CraftingHelper#makeIngredientCodec(1)
 net.neoforged.neoforge.common.crafting.CraftingHelper CraftingHelper#makeIngredientMapCodec(0)
 net.neoforged.neoforge.common.crafting.SizedIngredient SizedIngredient#FLAT_CODEC
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection #import ${package}.neoforge.common.conditions.ConditionalOps
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#CODEC
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#NEOFORGE_TYPE
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#TYPE
 net.neoforged.neoforge.common.extensions.IBlockEntityExtension IBlockEntityExtension#onLoad(0)
 net.neoforged.neoforge.common.extensions.IBlockEntityExtension IBlockEntityExtension#requestModelDataUpdate(0)
 net.neoforged.neoforge.common.extensions.IBlockGetterExtension IBlockGetterExtension#getAuxLightManager(1)
@@ -824,6 +821,10 @@ net.neoforged.neoforge.common.extensions.ITransformationExtension ITransformatio
 net.neoforged.neoforge.common.extensions.ITransformationExtension ITransformationExtension#transformNormal(1)
 net.neoforged.neoforge.common.extensions.ITransformationExtension ITransformationExtension#transformPosition(1)
 net.neoforged.neoforge.common.util.AttributeTooltipContext AttributeTooltipContext#of(3)
+net.neoforged.neoforge.common.util.AttributeTooltipContext AttributeTooltipContext#player(0)
+net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#addAttributeTooltips(3)
+net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#applyModifierTooltips(3)
+net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#applyTextFor(4)
 net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#sortedMap(0)
 net.neoforged.neoforge.common.util.FriendlyByteBufUtil FriendlyByteBufUtil#writeCustomData(2)
 net.neoforged.neoforge.common.util.flag.FeatureFlagLoader #import net.neoforged.fml.ModLoadingIssue
@@ -1016,12 +1017,9 @@ net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#aliases
 net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#aliasesView
 net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#getAliases(0)
 net.neoforged.neoforge.registries.datamaps.DataMapEntry DataMapEntry.Removal#codec(2)
-net.neoforged.neoforge.registries.datamaps.DataMapFile #import ${package}.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.registries.datamaps.DataMapFile DataMapFile#codec(2)
 net.neoforged.neoforge.registries.holdersets.HolderSetType HolderSetType#makeCodec(3)
 net.neoforged.neoforge.registries.holdersets.HolderSetType HolderSetType#makeStreamCodec(1)
-net.neoforged.neoforge.resource.ContextAwareReloadListener #import ${package}.neoforge.common.conditions.ConditionalOps
-net.neoforged.neoforge.resource.ContextAwareReloadListener ContextAwareReloadListener#makeConditionalOps(0)
 net.neoforged.neoforge.resource.ResourcePackLoader #import net.neoforged.fml.ModLoadingIssue
 net.neoforged.neoforge.resource.ResourcePackLoader #import org.apache.maven.artifact.versioning.ArtifactVersion
 net.neoforged.neoforge.resource.ResourcePackLoader ResourcePackLoader#buildPackFinder(2)

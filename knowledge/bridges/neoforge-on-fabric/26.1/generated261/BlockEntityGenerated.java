@@ -10,10 +10,6 @@ public interface BlockEntityGenerated {
         throw new UnsupportedOperationException("NeoForge's BlockEntity.getPersistentData has no Fabric counterpart in the bridge yet");
     }
 
-    default <T> T removeData(${package}.AttachmentType<T> arg0) {
-        throw new UnsupportedOperationException("NeoForge's BlockEntity.removeData has no Fabric counterpart in the bridge yet");
-    }
-
     default void syncData(${package}.AttachmentType<?> arg0) {
     }
 

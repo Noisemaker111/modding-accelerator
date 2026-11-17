@@ -42,6 +42,7 @@ net.neoforged.neoforge.client.data.ParticleDescriptionProvider
 net.neoforged.neoforge.client.entity.animation.AnimationKeyframeTarget
 net.neoforged.neoforge.client.entity.animation.AnimationTarget
 net.neoforged.neoforge.client.entity.animation.json.AnimationHolder
+net.neoforged.neoforge.client.entity.animation.json.AnimationLoader
 net.neoforged.neoforge.client.entity.animation.json.AnimationParser
 net.neoforged.neoforge.client.entity.animation.json.AnimationTypeManager
 net.neoforged.neoforge.client.event.AddDebugSubscriptionFlagsEvent
@@ -118,7 +119,6 @@ net.neoforged.neoforge.client.extensions.IFontExtension
 net.neoforged.neoforge.client.extensions.IKeyMappingExtension
 net.neoforged.neoforge.client.extensions.IMinecraftExtension
 net.neoforged.neoforge.client.extensions.IModelProviderExtension
-net.neoforged.neoforge.client.extensions.IRenderStateExtension
 net.neoforged.neoforge.client.extensions.ITexturedModelExtension
 net.neoforged.neoforge.client.extensions.IVertexConsumerExtension
 net.neoforged.neoforge.client.extensions.ModelBakerExtension
@@ -157,6 +157,7 @@ net.neoforged.neoforge.client.internal.SelfTestClient
 net.neoforged.neoforge.client.loading.ClientModLoader
 net.neoforged.neoforge.client.model.AbstractUnbakedModel
 net.neoforged.neoforge.client.model.ComposedModelState
+net.neoforged.neoforge.client.model.ConditionalModelLoader
 net.neoforged.neoforge.client.model.DynamicBlockStateModel
 net.neoforged.neoforge.client.model.EmptyModel
 net.neoforged.neoforge.client.model.ExtraFaceData
@@ -174,6 +175,7 @@ net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel
 net.neoforged.neoforge.client.model.generators.blockstate.CustomBlockStateModelBuilder
 net.neoforged.neoforge.client.model.generators.blockstate.UnbakedMutator
 net.neoforged.neoforge.client.model.generators.loaders.CompositeModelBuilder
+net.neoforged.neoforge.client.model.generators.loaders.ConditionalModelBuilder
 net.neoforged.neoforge.client.model.generators.loaders.ObjModelBuilder
 net.neoforged.neoforge.client.model.generators.template.CustomLoaderBuilder
 net.neoforged.neoforge.client.model.generators.template.ElementBuilder
@@ -250,6 +252,7 @@ net.neoforged.neoforge.common.command.EntitySelectorManager
 net.neoforged.neoforge.common.command.IEntitySelectorType
 net.neoforged.neoforge.common.conditions.AlwaysCondition
 net.neoforged.neoforge.common.conditions.AndCondition
+net.neoforged.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.common.conditions.NeverCondition
 net.neoforged.neoforge.common.conditions.NotCondition
 net.neoforged.neoforge.common.conditions.OrCondition
@@ -745,9 +748,7 @@ net.neoforged.neoforge.client.BlockEntityRenderBoundsDebugRenderer BlockEntityRe
 net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.color.item.FluidContentsTint
 net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.data.internal.NeoForgeSpriteSourceProvider
 net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.data.internal.VanillaModelProvider
-net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.entity.animation.json.AnimationLoader
 net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.CompositeUnbakedModel
-net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.ConditionalModelLoader
 net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.block.CompositeBlockModel
 net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.item.DynamicFluidContainerModel
 net.neoforged.neoforge.client.ClientNeoForgeMod #import ${package}.neoforge.client.model.obj.ObjLoader
@@ -1001,16 +1002,6 @@ net.neoforged.neoforge.common.crafting.IngredientCodecs IngredientCodecs#CUSTOM_
 net.neoforged.neoforge.common.crafting.IngredientCodecs IngredientCodecs#codec(1)
 net.neoforged.neoforge.common.crafting.IngredientCodecs IngredientCodecs#optionalStreamCodec(1)
 net.neoforged.neoforge.common.crafting.IngredientCodecs IngredientCodecs#streamCodec(1)
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection #import ${package}.neoforge.common.conditions.ConditionalOps
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#CLIENT_CODEC
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#CLIENT_NEOFORGE_TYPE
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#CLIENT_TYPE
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#SERVER_CODEC
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#SERVER_NEOFORGE_TYPE
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#SERVER_TYPE
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#codec(1)
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#neoforgeType(1)
-net.neoforged.neoforge.common.data.GeneratingOverlayMetadataSection GeneratingOverlayMetadataSection#type(1)
 net.neoforged.neoforge.common.extensions.IAbstractBoatExtension IAbstractBoatExtension#canBoatInFluid(1)
 net.neoforged.neoforge.common.extensions.IBlockEntityExtension IBlockEntityExtension#onLoad(0)
 net.neoforged.neoforge.common.extensions.IBlockEntityExtension IBlockEntityExtension#requestModelDataUpdate(0)
@@ -1054,15 +1045,9 @@ net.neoforged.neoforge.common.extensions.ItemInstanceExtension ItemInstanceExten
 net.neoforged.neoforge.common.extensions.ItemInstanceExtension ItemInstanceExtension#getEnchantmentLevel(1)
 net.neoforged.neoforge.common.extensions.LootTableSubProviderExtension #import ${package}.neoforge.common.data.ConditionalLootTableSubProvider
 net.neoforged.neoforge.common.extensions.LootTableSubProviderExtension LootTableSubProviderExtension#withConditions(1)
-net.neoforged.neoforge.common.loot.IGlobalLootModifier #import ${package}.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.common.loot.IGlobalLootModifier IGlobalLootModifier#CONDITIONAL_CODEC
 net.neoforged.neoforge.common.loot.IGlobalLootModifier IGlobalLootModifier#DIRECT_CODEC
-net.neoforged.neoforge.common.tooltip.VanillaDataComponentTooltips VanillaDataComponentTooltips#collectVanillaAppenders(0)
-net.neoforged.neoforge.common.util.AttributeTooltipContext AttributeTooltipContext#of(4)
-net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#addAttributeTooltips(4)
 net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#addPotionTooltip(2)
-net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#applyModifierTooltips(3)
-net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#applyTextFor(4)
 net.neoforged.neoforge.common.util.AttributeUtil AttributeUtil#sortedMap(0)
 net.neoforged.neoforge.common.util.FriendlyByteBufUtil FriendlyByteBufUtil#writeCustomData(2)
 net.neoforged.neoforge.common.util.flag.FeatureFlagLoader #import net.neoforged.fml.ModLoadingIssue
@@ -1140,7 +1125,6 @@ net.neoforged.neoforge.event.ModMismatchEvent ModMismatchEvent#markResolved(1)
 net.neoforged.neoforge.event.ModMismatchEvent ModMismatchEvent#resolved
 net.neoforged.neoforge.event.ModMismatchEvent ModMismatchEvent#versionDifferences
 net.neoforged.neoforge.event.ModMismatchEvent ModMismatchEvent#wasResolved(1)
-net.neoforged.neoforge.event.ModifyRecipeJsonsEvent #import ${package}.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.event.RegisterCauldronInteractionEvent RegisterCauldronInteractionEvent.Interaction#register(3)
 net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent EntityAttributeModificationEvent#has(2)
 net.neoforged.neoforge.event.level.ChunkDataEvent ChunkDataEvent#ChunkDataEvent(2)
@@ -1276,13 +1260,9 @@ net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#aliases
 net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#aliasesView
 net.neoforged.neoforge.registries.RegistrySnapshot RegistrySnapshot#getAliases(0)
 net.neoforged.neoforge.registries.datamaps.DataMapEntry DataMapEntry.Removal#codec(2)
-net.neoforged.neoforge.registries.datamaps.DataMapFile #import ${package}.neoforge.common.conditions.ConditionalOps
 net.neoforged.neoforge.registries.datamaps.DataMapFile DataMapFile#codec(2)
 net.neoforged.neoforge.registries.holdersets.HolderSetType HolderSetType#makeCodec(3)
 net.neoforged.neoforge.registries.holdersets.HolderSetType HolderSetType#makeStreamCodec(1)
-net.neoforged.neoforge.resource.ContextAwareReloadListener #import ${package}.neoforge.common.conditions.ConditionalOps
-net.neoforged.neoforge.resource.ContextAwareReloadListener ContextAwareReloadListener#makeConditionalOps(0)
-net.neoforged.neoforge.resource.ContextAwareReloadListener ContextAwareReloadListener#makeConditionalOps(1)
 net.neoforged.neoforge.resource.NeoForgeReloadListeners #import ${package}.neoforge.common.loot.LootModifierManager
 net.neoforged.neoforge.resource.NeoForgeReloadListeners #import ${package}.neoforge.registries.DataMapLoader
 net.neoforged.neoforge.resource.NeoForgeReloadListeners NeoForgeReloadListeners#DATA_MAPS_KEY

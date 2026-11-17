@@ -1,12 +1,17 @@
 package ${package}.extensions;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * The getters NeoForge adds to AbstractContainerScreen: the screen's left and top edge, its image size and the slot
  * under the mouse (the game's leftPos, topPos, imageWidth, imageHeight and hoveredSlot), by NeoForge 26.x's names
  * (getLeftPos ...) and its older ones (getGuiLeft ...), which 26.1 still has. Added by ContainerScreenMixin,
- * which reads the fields through ContainerScreenAccess, and for the compile by Loom's interface injection.
+ * which reads the fields through ContainerScreenAccess, and for the compile by Loom's interface injection. Also
+ * renderSlotContents, the item and its decorations part of drawing a slot, as the game's extractSlot draws them (NeoForge
+ * takes the decorations' font from the item's client extensions; here it is the game's).
  */
 public interface IContainerScreenExtension {
 
@@ -48,5 +53,12 @@ public interface IContainerScreenExtension {
 
     default Slot getHoveredSlot() {
         return getSlotUnderMouse();
+    }
+
+    default void renderSlotContents(GuiGraphicsExtractor graphics, ItemStack stack, Slot slot, String countString) {
+        int seed = slot.x + slot.y * getImageWidth();
+        if (slot.isFake()) graphics.fakeItem(stack, slot.x, slot.y, seed);
+        else graphics.item(stack, slot.x, slot.y, seed);
+        graphics.itemDecorations(Minecraft.getInstance().font, stack, slot.x, slot.y, countString);
     }
 }

@@ -52,12 +52,13 @@ public final class ConvertTests {
         check(tested >= 19, "every loader rule turns its Fabric test into its NeoForge test and back (" + tested + " rules)");
         String nf = "package a;\nimport x.Gone;\n/** {not a brace */\npublic class A {\n    static final String S = \"}{\";\n    int f() {\n        return Gone.g();\n    }\n" +
             "    static class B extends C {\n        @Override\n        void run() { Gone.h(); }\n    }\n    int f(int x) { return x; }\n}\n";
-        String bet = "import net.minecraft.world.level.block.entity.BlockEntityType;\nclass R { Object a = new BlockEntityType<>(X::new, A, B); Object b = new BlockEntityType<T>(X::new, s) { }; String c = \"new BlockEntityType<>(\"; }\n";
-        String factored = Convert.constructorsToFactories(bet, "net.minecraft.world.level.block.entity.BlockEntityType", "BlockEntityTypes", "p.loaderbridge");
+        String bet = "import net.minecraft.world.level.block.entity.BlockEntityType;\nimport net.minecraft.commands.synchronization.ArgumentTypeInfos;\nclass R { Object a = new BlockEntityType<>(X::new, A, B); Object b = new BlockEntityType<T>(X::new, s) { }; String c = \"new BlockEntityType<>(\"; Object d = ArgumentTypeInfos.registerByClass(C.class, i); }\n";
+        String statics = "net.minecraft.commands.synchronization.ArgumentTypeInfos#registerByClass";
+        String factored = Convert.staticsToBridge(Convert.constructorsToFactories(bet, "net.minecraft.world.level.block.entity.BlockEntityType", "BlockEntityTypes", "p.loaderbridge"), statics, "ArgumentTypeInfosExtension", "p.loaderbridge");
         check(
-            factored.contains("a = BlockEntityTypes.of(X::new, A, B)") && factored.contains("b = new BlockEntityType<T>(X::new, s) { }") && factored.contains("\"new BlockEntityType<>(\"") && factored.contains("import p.loaderbridge.BlockEntityTypes;") &&
-                Convert.factoriesToConstructors(factored, "net.minecraft.world.level.block.entity.BlockEntityType", "BlockEntityTypes", "p.loaderbridge").equals(bet),
-            "a constructor NeoForge adds to a game class becomes the bridge's factory and back, never an anonymous subclass or a string: " + factored
+            factored.contains("a = BlockEntityTypes.of(X::new, A, B)") && factored.contains("b = new BlockEntityType<T>(X::new, s) { }") && factored.contains("\"new BlockEntityType<>(\"") && factored.contains("import p.loaderbridge.BlockEntityTypes;") && factored.contains("d = ArgumentTypeInfosExtension.registerByClass(C.class, i)") &&
+                Convert.bridgeToStatics(Convert.factoriesToConstructors(factored, "net.minecraft.world.level.block.entity.BlockEntityType", "BlockEntityTypes", "p.loaderbridge"), statics, "ArgumentTypeInfosExtension", "p.loaderbridge").equals(bet),
+            "a constructor or static method NeoForge adds to a game class becomes the bridge's and back, never an anonymous subclass or a string: " + factored
         );
         List<String> around = new ArrayList<>();
         for (int line : new int[] {2, 7, 11, 4}) around.add(String.valueOf(NeoForgeSources.around(nf, line) == null ? null : NeoForgeSources.around(nf, line).key()));
