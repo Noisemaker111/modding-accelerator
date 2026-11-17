@@ -6,6 +6,10 @@ package ${package}.generated;
  */
 public interface EntityFluidInteractionGenerated {
 
+    default boolean update(net.minecraft.world.entity.Entity arg0, java.util.function.Predicate<${package}.fluids.FluidType> arg1) {
+        throw new UnsupportedOperationException("NeoForge's EntityFluidInteraction.update has no Fabric counterpart in the bridge yet");
+    }
+
     default void applyCurrentTo(${package}.fluids.FluidType arg0, net.minecraft.world.entity.Entity arg1, double arg2) {
     }
 

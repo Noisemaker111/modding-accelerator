@@ -32,18 +32,37 @@ ROOT = Path(__file__).resolve().parent.parent
 FOLDER = ROOT / "knowledge/bridges/neoforge-on-fabric"
 GENERATED = "generated"
 # (game version, its folder of generated files, where they go: the bridge folder or its layer, the plain game version)
-VERSIONS = [("26.3", "generated", "", "26.3"), ("26.1", "generated261", "26.1", "26.1.2")]
+VERSIONS = [("26.3", "generated", "", "26.3"), ("26.1", "generated261", "26.1", "26.1.2"), ("1.21.1", "generated1211", "1.21.1", "1.21.1")]
 
 
 def patched_jar(version):
     """A NeoForge-patched game jar of that game version from any original build under .runs (ModDevGradle keeps one)."""
-    prefix = {"26.3": "26.3.", "26.1": "26.1."}.get(version, version)
-    jars = (ROOT / ".runs/convert-sweep/work").glob(f"*/build/moddev/artifacts/minecraft-patched-{prefix}*.jar")
+    work = ROOT / ".runs/convert-sweep/work"
+    if version == "1.21.1":
+        # ModDevGradle 1.x names it neoforge-21.1.N-minecraft.jar.
+        jars = [j for j in work.glob("*/build/moddev/artifacts/neoforge-21.1.*-minecraft.jar")]
+    else:
+        prefix = {"26.3": "26.3.", "26.1": "26.1."}.get(version, version)
+        jars = work.glob(f"*/build/moddev/artifacts/minecraft-patched-{prefix}*.jar")
     jars = [j for j in jars if not j.name.endswith(("-sources.jar", "-merged.jar"))]
     # The newest release, a full release before a beta.
-    jars.sort(key=lambda j: ("beta" not in j.name, [int(x) for x in re.findall(r"\d+", j.name.split("patched-")[1])]))
+    jars.sort(key=lambda j: ("beta" not in j.name, [int(x) for x in re.findall(r"\d+", re.split(r"patched-|neoforge-", j.name)[1])]))
     if not jars:
         raise SystemExit(f"no NeoForge-patched game jar for {version} under .runs/convert-sweep/work: build a NeoForge original first")
+    return jars[-1]
+
+
+def plain_jar(game_version):
+    """The game jar in Mojang's names without NeoForge: Mojang's own jar from 26.1 on (unobfuscated); for 1.21.1 the
+    Mojang-named jar Loom made for a Fabric build (bench/bridge_check.py --minecraft 1.21.1 makes one)."""
+    if not game_version.startswith("1."):
+        loader_api.fetch(f"minecraft-{game_version}", {"manifest": True, "version": game_version})
+        return loader_api.CACHE / f"minecraft-{game_version}-client.jar"
+    jars = sorted((Path.home() / ".gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged").glob(f"{game_version}-loom.mappings.*/*.jar"),
+                  key=lambda j: j.stat().st_mtime)
+    jars = [j for j in jars if not j.name.endswith("-sources.jar")]
+    if not jars:
+        raise SystemExit(f"no Mojang-named {game_version} game jar in Loom's cache: run bench/bridge_check.py --minecraft {game_version} first")
     return jars[-1]
 
 
@@ -65,6 +84,40 @@ def javap(classpath, classes):
             params = split_params(m.group(4))
             found[current].append((m.group(1), m.group(2), m.group(3), params, " static " in f" {line} "))
     return found
+
+
+def supertypes(classpath, classes):
+    """{class: every supertype, transitively} from the jar's own class headers (javap)."""
+    direct, todo = {}, list(classes)
+    while todo:
+        batch = [c for c in dict.fromkeys(todo) if c not in direct]
+        todo = []
+        if not batch:
+            break
+        out = subprocess.run(["javap", "-cp", str(classpath)] + batch, capture_output=True, text=True).stdout
+        for c in batch:
+            direct[c] = []
+        for line in out.splitlines():
+            head = re.match(r"^\S.*?\b(?:class|interface|enum|record) ([\w.$]+)(.*)\{$", line)
+            if not head:
+                continue
+            rest = head.group(2)
+            while "<" in rest:
+                rest = re.sub(r"<[^<>]*>", "", rest)
+            supers = re.findall(r"[\w.$]+", re.sub(r"\b(?:extends|implements|permits)\b", ",", rest.split(" permits ")[0]))
+            direct[head.group(1)] = [x for x in supers if x not in ("java.lang.Object",) and not x.startswith("java.")]
+            todo += direct[head.group(1)]
+    closure = {}
+
+    def walk(c, seen):
+        for x in direct.get(c, []):
+            if x not in seen:
+                seen.append(x)
+                walk(x, seen)
+        return seen
+    for c in classes:
+        closure[c] = walk(c, [])
+    return closure
 
 
 def public_classes(classpath, classes):
@@ -129,6 +182,7 @@ def fabric_injected_names(rules):
     return names
 
 
+OBJECT_METHODS = {("toString", ()), ("hashCode", ()), ("equals", ("java.lang.Object",))}
 PRIMITIVES = {"void", "boolean", "byte", "char", "short", "int", "long", "float", "double"}
 
 
@@ -174,46 +228,57 @@ def generate(rules, version, folder_name, game_version):
     additions = bc.patch_additions(userdev)
     extensions = bc.extended_game_classes(userdev)
     bridge, files = bc.bridge_files(rules, layer)
-    # What the hand-written bridge has, and what Fabric API itself injects into game classes, is not generated again.
-    have = set(fabric_injected_names(rules))
-    for rel, text in files.items():
-        if not rel.startswith(("generated", "mixin/generated")):
-            have |= set(bc.DECLARED.findall(text))
+    # What the hand-written bridge gives a game class or its supertypes, and what Fabric API itself injects into game
+    # classes (by name: a generated default of the same name would clash with Fabric's), is not generated again.
+    fabric = set(fabric_injected_names(rules))
+    hand_written = bc.injected_names(bridge, files, layer, generated=False)
     # Only classes this game version's bridge has (a layer-only class is not there).
     mirrored = {k: v for k, v in bridge["classes"].items() if v.replace(".", "/") + ".java" in files}
     package = "${package}"
     universal_jar = loader_api.CACHE / next(p.name for p in loader_api.CACHE.glob(key + "-neoforge-*-universal.jar"))
     game_jar = patched_jar(version)
-    loader_api.fetch(f"minecraft-{game_version}", {"manifest": True, "version": game_version})
-    vanilla_jar = loader_api.CACHE / f"minecraft-{game_version}-client.jar"
+    vanilla_jar = plain_jar(game_version)
     games = sorted(set(additions) | set(extensions))
     game_methods = javap(game_jar, games)
-    vanilla_methods = javap(vanilla_jar, games)
+    ancestors = supertypes(vanilla_jar, sorted(set(games) | set(hand_written)))
+    # A hand-written method on a subclass also rules out a generated one on its supertype: the subclass would inherit
+    # both defaults (a conflict when the method is called).
+    below = {}
+    for c in hand_written:
+        for a in ancestors.get(c, []):
+            below.setdefault(a, set()).update(hand_written[c])
+    # The game's own methods, its classes' inherited ones included: a generated default with the signature of an
+    # inherited game method would conflict with it (ItemStack's getMaxStackSize comes from ItemInstance).
+    vanilla_methods = javap(vanilla_jar, sorted(set(games) | {a for xs in ancestors.values() for a in xs}))
     listing = subprocess.run(["javap", "-cp", str(vanilla_jar)] + games, capture_output=True, text=True).stdout
     interfaces = set(re.findall(r"(?m)^\S.*?\binterface ([\w.$]+)", listing))
     interface_methods = javap(universal_jar, sorted({x for xs in extensions.values() for x in xs}))
     nested = sorted({n for ms in list(game_methods.values()) + list(interface_methods.values()) for m in ms for t in [m[1]] + m[3]
                      for n in re.findall(r"[\w.]+\$[\w$]+", t)})
     public_nested = public_classes(vanilla_jar, nested) | public_classes(universal_jar, nested)
-    out, blocked, mixins = {}, {}, []
+    out, blocked, mixins, written = {}, {}, [], {}
     for game in games:
+        have = fabric.union(below.get(game, set()), *(hand_written.get(c, set()) for c in [game] + ancestors.get(game, [])))
         vanilla, vanilla_sigs = {}, set()
         for _tp, ret, name, params, static in vanilla_methods.get(game, []):
-            vanilla_sigs.add((name, tuple(params)))
             if not static:
                 vanilla.setdefault(name, []).append((ret, params))
+        for c in [game] + ancestors.get(game, []):
+            for _tp, ret, name, params, static in vanilla_methods.get(c, []):
+                vanilla_sigs.add((name, tuple(params)))
         wanted = []
         for _tp, ret, name, params, static in game_methods.get(game, []):
             if name in additions.get(game, set()) and name not in have and not static and (name, tuple(params)) not in vanilla_sigs:
                 wanted.append((_tp, ret, name, params))
         for interface in extensions.get(game, []):
             for _tp, ret, name, params, static in interface_methods.get(interface, []):
-                if name not in have and not static:
+                if name not in have and not static and (name, tuple(params)) not in vanilla_sigs:
                     wanted.append((_tp, ret, name, params))
         methods, seen = [], set()
         for tp, ret, name, params in wanted:
             sig = (name, tuple(params))
-            if sig in seen:
+            # An interface cannot give a default for Object's own methods (toString, equals, hashCode).
+            if sig in seen or sig in OBJECT_METHODS:
                 continue
             seen.add(sig)
             types = [source_type(t, mirrored, package) for t in [ret] + params + ([tp] if tp else [])]
@@ -234,12 +299,7 @@ def generate(rules, version, folder_name, game_version):
         simple = game.split(".")[-1].replace("$", "")
         iface = f"{simple}Generated"
         target = game.replace(".", "/")
-        out[f"{GENERATED}/{iface}.java"] = (
-            f"package {package}.{GENERATED};\n\n"
-            f"/**\n * Generated by bench/bridge_generate.py from NeoForge {entry['coordinate'].split(':')[2]}: the methods NeoForge adds to\n"
-            f" * {game.replace('$', '.')} that the hand-written bridge lacks, so mods' overrides and calls compile. Do not edit.\n */\n"
-            f"public interface {iface} {{\n\n" + "\n\n".join(methods) + "\n}\n"
-        )
+        written[game] = (iface, methods)
         mixin = f"{iface}Mixin"
         out[f"mixin/{GENERATED}/{mixin}.java"] = (
             f"package {package}.mixin.{GENERATED};\n\n"
@@ -257,6 +317,17 @@ def generate(rules, version, folder_name, game_version):
             "uses": [["\\b(?:" + "|".join(names) + ")\\s*\\("]],
             "injects": {target: f"{GENERATED}.{iface}"},
         })
+    # A game class's generated interface extends its game supertypes' (LivingEntityGenerated extends EntityGenerated),
+    # so a method both declare (ILivingEntityExtension overrides IEntityExtension's) resolves to the subclass's.
+    for game, (iface, methods) in written.items():
+        parents = [written[a][0] for a in ancestors.get(game, []) if a in written]
+        extends = f" extends {', '.join(parents)}" if parents else ""
+        out[f"{GENERATED}/{iface}.java"] = (
+            f"package {package}.{GENERATED};\n\n"
+            f"/**\n * Generated by bench/bridge_generate.py from NeoForge {entry['coordinate'].split(':')[2]}: the methods NeoForge adds to\n"
+            f" * {game.replace('$', '.')} that the hand-written bridge lacks, so mods' overrides and calls compile. Do not edit.\n */\n"
+            f"public interface {iface}{extends} {{\n\n" + "\n\n".join(methods) + "\n}\n"
+        )
     count = sum(t.count("    default ") for p, t in out.items() if p.startswith(GENERATED))
     print(f"{version}: {count} methods on {len(mixins)} game classes; left out (a NeoForge type the bridge lacks): "
           f"{sum(len(v) for v in blocked.values())} on {len(blocked)} classes")
@@ -273,7 +344,7 @@ def main(argv=None):
         return 0
     data = json.loads((ROOT / "knowledge/loaders.json").read_text(encoding="utf-8"))
     b = next(x for x in data["bridges"] if x["id"] == bc.BRIDGE)
-    entries = []
+    entries, layer_entries = [], {}
     for (version, (out, mixins)), (_v, name, where, _game) in zip(results, VERSIONS):
         root = FOLDER / where if where else FOLDER
         for old in list(root.glob(f"{name}/*.java")) + list(root.glob(f"mixin/{name}/*.java")):
@@ -282,7 +353,12 @@ def main(argv=None):
             path = root / rel
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
-        entries += mixins
+        # A layer with its own mixin list (it replaces the bridge's) gets its version's entries; the others share the bridge's.
+        layer = next((l for l in b.get("layers", []) if where and l["minecraft"] == where), None)
+        if layer is not None and "mixins" in layer:
+            layer_entries[where] = mixins
+        else:
+            entries += mixins
     # Each version's own generated files only: a layer leaves out the other versions' (its drops).
     names = [name for _v, name, _w, _g in VERSIONS]
     for layer in b.get("layers", []):
@@ -291,6 +367,9 @@ def main(argv=None):
         drops += [d for n in names if n != own for d in (f"{n}/", f"mixin/{n}/")]
         layer["drops"] = drops
     b["mixins"] = [m for m in b["mixins"] if not m.get("generated")] + entries
+    for layer in b.get("layers", []):
+        if layer["minecraft"] in layer_entries:
+            layer["mixins"] = [m for m in layer["mixins"] if not m.get("generated")] + layer_entries[layer["minecraft"]]
     (ROOT / "knowledge/loaders.json").write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     return 0
 

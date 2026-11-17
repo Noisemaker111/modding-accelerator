@@ -76,6 +76,10 @@ public interface ItemGenerated {
         throw new UnsupportedOperationException("NeoForge's Item.canEquip has no Fabric counterpart in the bridge yet");
     }
 
+    default net.minecraft.world.entity.EquipmentSlot getEquipmentSlot(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.getEquipmentSlot has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean onEntitySwing(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.LivingEntity arg1, net.minecraft.world.InteractionHand arg2) {
         throw new UnsupportedOperationException("NeoForge's Item.onEntitySwing has no Fabric counterpart in the bridge yet");
     }
@@ -97,6 +101,10 @@ public interface ItemGenerated {
 
     default boolean canPerformAction(net.minecraft.world.item.ItemInstance arg0, ${package}.ItemAbility arg1) {
         throw new UnsupportedOperationException("NeoForge's Item.canPerformAction has no Fabric counterpart in the bridge yet");
+    }
+
+    default int getMaxStackSize(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.getMaxStackSize has no Fabric counterpart in the bridge yet");
     }
 
     default boolean isPrimaryItemFor(net.minecraft.world.item.ItemStack arg0, net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> arg1) {
@@ -125,6 +133,10 @@ public interface ItemGenerated {
 
     default boolean canContinueUsing(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.item.ItemStack arg1) {
         throw new UnsupportedOperationException("NeoForge's Item.canContinueUsing has no Fabric counterpart in the bridge yet");
+    }
+
+    default java.lang.String getCreatorModId(net.minecraft.core.HolderLookup.Provider arg0, net.minecraft.world.item.ItemStack arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.getCreatorModId has no Fabric counterpart in the bridge yet");
     }
 
     default int getBurnTime(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.item.crafting.RecipeType<?> arg1, net.minecraft.world.level.block.entity.FuelValues arg2) {

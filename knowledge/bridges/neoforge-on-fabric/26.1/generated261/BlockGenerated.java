@@ -14,6 +14,10 @@ public interface BlockGenerated {
         throw new UnsupportedOperationException("NeoForge's Block.hasDynamicLightEmission has no Fabric counterpart in the bridge yet");
     }
 
+    default int getLightEmission(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2) {
+        throw new UnsupportedOperationException("NeoForge's Block.getLightEmission has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean ignitedByLava(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2, net.minecraft.core.Direction arg3) {
         throw new UnsupportedOperationException("NeoForge's Block.ignitedByLava has no Fabric counterpart in the bridge yet");
     }
@@ -56,6 +60,10 @@ public interface BlockGenerated {
         return ((net.minecraft.world.level.block.Block) (Object) this).getExplosionResistance();
     }
 
+    default net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.block.state.BlockState arg2, boolean arg3, net.minecraft.world.entity.player.Player arg4) {
+        throw new UnsupportedOperationException("NeoForge's Block.getCloneItemStack has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean addLandingEffects(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.server.level.ServerLevel arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.level.block.state.BlockState arg3, net.minecraft.world.entity.LivingEntity arg4, int arg5) {
         throw new UnsupportedOperationException("NeoForge's Block.addLandingEffects has no Fabric counterpart in the bridge yet");
     }
@@ -96,6 +104,10 @@ public interface BlockGenerated {
 
     default net.minecraft.world.level.block.state.BlockState rotate(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.LevelAccessor arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.level.block.Rotation arg3) {
         throw new UnsupportedOperationException("NeoForge's Block.rotate has no Fabric counterpart in the bridge yet");
+    }
+
+    default float getEnchantPowerBonus(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2) {
+        throw new UnsupportedOperationException("NeoForge's Block.getEnchantPowerBonus has no Fabric counterpart in the bridge yet");
     }
 
     default void onNeighborChange(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.LevelReader arg1, net.minecraft.core.BlockPos arg2, net.minecraft.core.BlockPos arg3) {
@@ -161,6 +173,10 @@ public interface BlockGenerated {
         throw new UnsupportedOperationException("NeoForge's Block.isFireSource has no Fabric counterpart in the bridge yet");
     }
 
+    default boolean canEntityDestroy(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.entity.Entity arg3) {
+        throw new UnsupportedOperationException("NeoForge's Block.canEntityDestroy has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean canDropFromExplosion(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.level.Explosion arg3) {
         throw new UnsupportedOperationException("NeoForge's Block.canDropFromExplosion has no Fabric counterpart in the bridge yet");
     }
@@ -209,6 +225,10 @@ public interface BlockGenerated {
 
     default net.minecraft.world.level.material.PushReaction getPistonPushReaction(net.minecraft.world.level.block.state.BlockState arg0) {
         throw new UnsupportedOperationException("NeoForge's Block.getPistonPushReaction has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isEmpty(net.minecraft.world.level.block.state.BlockState arg0) {
+        throw new UnsupportedOperationException("NeoForge's Block.isEmpty has no Fabric counterpart in the bridge yet");
     }
 
     default boolean shouldHideAdjacentFluidFace(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.core.Direction arg1, net.minecraft.world.level.material.FluidState arg2) {

@@ -10,6 +10,10 @@ public interface SlotGenerated {
         throw new UnsupportedOperationException("NeoForge's Slot.getSlotIndex has no Fabric counterpart in the bridge yet");
     }
 
+    default boolean isSameInventory(net.minecraft.world.inventory.Slot arg0) {
+        throw new UnsupportedOperationException("NeoForge's Slot.isSameInventory has no Fabric counterpart in the bridge yet");
+    }
+
     default net.minecraft.world.inventory.Slot setBackground(net.minecraft.resources.Identifier arg0) {
         throw new UnsupportedOperationException("NeoForge's Slot.setBackground has no Fabric counterpart in the bridge yet");
     }

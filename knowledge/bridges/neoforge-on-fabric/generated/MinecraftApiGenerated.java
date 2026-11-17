@@ -9,4 +9,12 @@ public interface MinecraftApiGenerated {
     default net.minecraft.server.jsonrpc.JsonRpcLogger logger() {
         throw new UnsupportedOperationException("NeoForge's MinecraftApi.logger has no Fabric counterpart in the bridge yet");
     }
+
+    default net.minecraft.server.dedicated.DedicatedServer server() {
+        throw new UnsupportedOperationException("NeoForge's MinecraftApi.server has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.core.RegistryAccess registryAccess() {
+        throw new UnsupportedOperationException("NeoForge's MinecraftApi.registryAccess has no Fabric counterpart in the bridge yet");
+    }
 }

@@ -9,4 +9,24 @@ public interface AttributeGenerated {
     default net.minecraft.network.chat.TextColor getMergedStyle(boolean arg0) {
         throw new UnsupportedOperationException("NeoForge's Attribute.getMergedStyle has no Fabric counterpart in the bridge yet");
     }
+
+    default net.minecraft.network.chat.MutableComponent toValueComponent(net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation arg0, double arg1, net.minecraft.world.item.TooltipFlag arg2) {
+        throw new UnsupportedOperationException("NeoForge's Attribute.toValueComponent has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.network.chat.MutableComponent toComponent(net.minecraft.world.entity.ai.attributes.AttributeModifier arg0, net.minecraft.world.item.TooltipFlag arg1) {
+        throw new UnsupportedOperationException("NeoForge's Attribute.toComponent has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.network.chat.Component getDebugInfo(net.minecraft.world.entity.ai.attributes.AttributeModifier arg0, net.minecraft.world.item.TooltipFlag arg1) {
+        throw new UnsupportedOperationException("NeoForge's Attribute.getDebugInfo has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.resources.Identifier getBaseId() {
+        throw new UnsupportedOperationException("NeoForge's Attribute.getBaseId has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.network.chat.MutableComponent toBaseComponent(double arg0, double arg1, boolean arg2, net.minecraft.world.item.TooltipFlag arg3) {
+        throw new UnsupportedOperationException("NeoForge's Attribute.toBaseComponent has no Fabric counterpart in the bridge yet");
+    }
 }

@@ -10,6 +10,10 @@ public interface ConnectionGenerated {
         throw new UnsupportedOperationException("NeoForge's Connection.channel has no Fabric counterpart in the bridge yet");
     }
 
+    default net.minecraft.network.protocol.PacketFlow getDirection() {
+        throw new UnsupportedOperationException("NeoForge's Connection.getDirection has no Fabric counterpart in the bridge yet");
+    }
+
     default net.minecraft.network.ProtocolInfo<?> getInboundProtocol() {
         throw new UnsupportedOperationException("NeoForge's Connection.getInboundProtocol has no Fabric counterpart in the bridge yet");
     }

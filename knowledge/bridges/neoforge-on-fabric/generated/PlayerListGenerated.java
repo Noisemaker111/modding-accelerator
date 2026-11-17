@@ -9,4 +9,20 @@ public interface PlayerListGenerated {
     default net.minecraft.world.level.storage.PlayerDataStorage getPlayerIo() {
         throw new UnsupportedOperationException("NeoForge's PlayerList.getPlayerIo has no Fabric counterpart in the bridge yet");
     }
+
+    default net.minecraft.server.players.PlayerList self() {
+        throw new UnsupportedOperationException("NeoForge's PlayerList.self has no Fabric counterpart in the bridge yet");
+    }
+
+    default void broadcastAll(net.minecraft.network.protocol.common.custom.CustomPacketPayload arg0) {
+    }
+
+    default void broadcastAll(net.minecraft.network.protocol.common.custom.CustomPacketPayload arg0, net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> arg1) {
+    }
+
+    default void broadcast(double arg0, double arg1, double arg2, double arg3, net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> arg4, net.minecraft.network.protocol.common.custom.CustomPacketPayload arg5) {
+    }
+
+    default void broadcast(net.minecraft.world.entity.player.Player arg0, double arg1, double arg2, double arg3, double arg4, net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> arg5, net.minecraft.network.protocol.common.custom.CustomPacketPayload arg6) {
+    }
 }

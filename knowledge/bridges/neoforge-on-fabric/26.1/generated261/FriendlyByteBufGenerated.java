@@ -6,6 +6,10 @@ package ${package}.generated261;
  */
 public interface FriendlyByteBufGenerated {
 
+    default io.netty.buffer.ByteBuf getSource() {
+        throw new UnsupportedOperationException("NeoForge's FriendlyByteBuf.getSource has no Fabric counterpart in the bridge yet");
+    }
+
     default <T> void writeObjectCollection(java.util.Collection<T> arg0, java.util.function.BiConsumer<T, net.minecraft.network.FriendlyByteBuf> arg1) {
     }
 

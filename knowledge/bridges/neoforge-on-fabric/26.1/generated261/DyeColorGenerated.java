@@ -6,6 +6,10 @@ package ${package}.generated261;
  */
 public interface DyeColorGenerated {
 
+    default net.minecraft.tags.TagKey<net.minecraft.world.item.Item> getTag() {
+        throw new UnsupportedOperationException("NeoForge's DyeColor.getTag has no Fabric counterpart in the bridge yet");
+    }
+
     default net.minecraft.tags.TagKey<net.minecraft.world.item.Item> getDyedTag() {
         throw new UnsupportedOperationException("NeoForge's DyeColor.getDyedTag has no Fabric counterpart in the bridge yet");
     }

@@ -6,7 +6,15 @@ package ${package}.generated;
  */
 public interface TriStateGenerated {
 
+    default boolean isTrue() {
+        throw new UnsupportedOperationException("NeoForge's TriState.isTrue has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean isDefault() {
         throw new UnsupportedOperationException("NeoForge's TriState.isDefault has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isFalse() {
+        throw new UnsupportedOperationException("NeoForge's TriState.isFalse has no Fabric counterpart in the bridge yet");
     }
 }

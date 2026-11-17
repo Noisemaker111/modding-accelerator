@@ -9,4 +9,30 @@ public interface TransformationGenerated {
     default org.joml.Matrix3fc getNormalMatrix() {
         throw new UnsupportedOperationException("NeoForge's Transformation.getNormalMatrix has no Fabric counterpart in the bridge yet");
     }
+
+    default boolean isIdentity() {
+        throw new UnsupportedOperationException("NeoForge's Transformation.isIdentity has no Fabric counterpart in the bridge yet");
+    }
+
+    default void transformPosition(org.joml.Vector4f arg0) {
+    }
+
+    default void transformNormal(org.joml.Vector3f arg0) {
+    }
+
+    default net.minecraft.core.Direction rotateTransform(net.minecraft.core.Direction arg0) {
+        throw new UnsupportedOperationException("NeoForge's Transformation.rotateTransform has no Fabric counterpart in the bridge yet");
+    }
+
+    default com.mojang.math.Transformation blockCenterToCorner() {
+        throw new UnsupportedOperationException("NeoForge's Transformation.blockCenterToCorner has no Fabric counterpart in the bridge yet");
+    }
+
+    default com.mojang.math.Transformation blockCornerToCenter() {
+        throw new UnsupportedOperationException("NeoForge's Transformation.blockCornerToCenter has no Fabric counterpart in the bridge yet");
+    }
+
+    default com.mojang.math.Transformation applyOrigin(org.joml.Vector3f arg0) {
+        throw new UnsupportedOperationException("NeoForge's Transformation.applyOrigin has no Fabric counterpart in the bridge yet");
+    }
 }

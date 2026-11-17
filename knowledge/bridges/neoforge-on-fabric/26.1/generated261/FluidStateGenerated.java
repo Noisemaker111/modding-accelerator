@@ -10,6 +10,14 @@ public interface FluidStateGenerated {
         return ((net.minecraft.world.level.material.FluidState) (Object) this).getExplosionResistance();
     }
 
+    default ${package}.fluids.FluidType getFluidType() {
+        throw new UnsupportedOperationException("NeoForge's FluidState.getFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean move(net.minecraft.world.entity.LivingEntity arg0, net.minecraft.world.phys.Vec3 arg1, double arg2) {
+        throw new UnsupportedOperationException("NeoForge's FluidState.move has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean canConvertToSource(net.minecraft.server.level.ServerLevel arg0, net.minecraft.core.BlockPos arg1) {
         throw new UnsupportedOperationException("NeoForge's FluidState.canConvertToSource has no Fabric counterpart in the bridge yet");
     }

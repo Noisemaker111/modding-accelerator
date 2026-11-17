@@ -6,6 +6,10 @@ package ${package}.generated261;
  */
 public interface PacketFlowGenerated {
 
+    default net.minecraft.network.protocol.PacketFlow self() {
+        throw new UnsupportedOperationException("NeoForge's PacketFlow.self has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean isClientbound() {
         throw new UnsupportedOperationException("NeoForge's PacketFlow.isClientbound has no Fabric counterpart in the bridge yet");
     }

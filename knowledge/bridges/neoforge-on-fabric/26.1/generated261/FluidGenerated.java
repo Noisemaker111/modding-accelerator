@@ -6,12 +6,20 @@ package ${package}.generated261;
  */
 public interface FluidGenerated {
 
+    default ${package}.fluids.FluidType getFluidType() {
+        throw new UnsupportedOperationException("NeoForge's Fluid.getFluidType has no Fabric counterpart in the bridge yet");
+    }
+
     default ${package}.transfer.fluid.FluidResource computeDefaultResource(java.util.function.Function<net.minecraft.world.level.material.Fluid, ${package}.transfer.fluid.FluidResource> arg0) {
         throw new UnsupportedOperationException("NeoForge's Fluid.computeDefaultResource has no Fabric counterpart in the bridge yet");
     }
 
     default float getExplosionResistance(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.level.Explosion arg3) {
         throw new UnsupportedOperationException("NeoForge's Fluid.getExplosionResistance has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean move(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.entity.LivingEntity arg1, net.minecraft.world.phys.Vec3 arg2, double arg3) {
+        throw new UnsupportedOperationException("NeoForge's Fluid.move has no Fabric counterpart in the bridge yet");
     }
 
     default boolean canConvertToSource(net.minecraft.world.level.material.FluidState arg0, net.minecraft.server.level.ServerLevel arg1, net.minecraft.core.BlockPos arg2) {
@@ -36,5 +44,8 @@ public interface FluidGenerated {
 
     default boolean canExtinguish(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2) {
         throw new UnsupportedOperationException("NeoForge's Fluid.canExtinguish has no Fabric counterpart in the bridge yet");
+    }
+
+    default void appendHoverText(${package}.fluids.FluidStack arg0, net.minecraft.world.item.Item.TooltipContext arg1, net.minecraft.world.item.component.TooltipDisplay arg2, java.util.function.Consumer<net.minecraft.network.chat.Component> arg3, net.minecraft.world.item.TooltipFlag arg4) {
     }
 }

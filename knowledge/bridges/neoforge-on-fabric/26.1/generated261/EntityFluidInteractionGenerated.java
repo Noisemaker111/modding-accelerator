@@ -6,6 +6,9 @@ package ${package}.generated261;
  */
 public interface EntityFluidInteractionGenerated {
 
+    default void update(net.minecraft.world.entity.Entity arg0, java.util.function.Predicate<${package}.fluids.FluidType> arg1) {
+    }
+
     default void applyCurrentTo(${package}.fluids.FluidType arg0, net.minecraft.world.entity.Entity arg1, double arg2) {
     }
 

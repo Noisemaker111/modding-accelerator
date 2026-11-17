@@ -6,6 +6,10 @@ package ${package}.generated261;
  */
 public interface FontGenerated {
 
+    default net.minecraft.client.gui.Font self() {
+        throw new UnsupportedOperationException("NeoForge's Font.self has no Fabric counterpart in the bridge yet");
+    }
+
     default net.minecraft.network.chat.FormattedText ellipsize(net.minecraft.network.chat.FormattedText arg0, int arg1) {
         throw new UnsupportedOperationException("NeoForge's Font.ellipsize has no Fabric counterpart in the bridge yet");
     }

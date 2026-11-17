@@ -9,4 +9,8 @@ public interface MobEffectGenerated {
     default net.minecraft.world.effect.MobEffect addAttributeModifier(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> arg0, net.minecraft.resources.Identifier arg1, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation arg2, it.unimi.dsi.fastutil.ints.Int2DoubleFunction arg3) {
         throw new UnsupportedOperationException("NeoForge's MobEffect.addAttributeModifier has no Fabric counterpart in the bridge yet");
     }
+
+    default int getSortOrder(net.minecraft.world.effect.MobEffectInstance arg0) {
+        throw new UnsupportedOperationException("NeoForge's MobEffect.getSortOrder has no Fabric counterpart in the bridge yet");
+    }
 }

@@ -6,6 +6,18 @@ package ${package}.generated;
  */
 public interface GuiGraphicsExtractorGenerated {
 
+    default void setTooltipForNextFrame(net.minecraft.client.gui.Font arg0, java.util.List<net.minecraft.network.chat.Component> arg1, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> arg2, net.minecraft.world.item.ItemStack arg3, int arg4, int arg5) {
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) (Object) this).setTooltipForNextFrame(arg0, arg3, arg4, arg5);
+    }
+
+    default void setTooltipForNextFrame(net.minecraft.client.gui.Font arg0, java.util.List<net.minecraft.network.chat.Component> arg1, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> arg2, net.minecraft.world.item.ItemStack arg3, int arg4, int arg5, net.minecraft.resources.Identifier arg6) {
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) (Object) this).setTooltipForNextFrame(arg0, arg3, arg4, arg5);
+    }
+
+    default void setTooltipForNextFrame(net.minecraft.client.gui.Font arg0, java.util.List<net.minecraft.network.chat.Component> arg1, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> arg2, net.minecraft.world.item.ItemStack arg3, int arg4, int arg5, net.minecraft.resources.Identifier arg6, boolean arg7) {
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) (Object) this).setTooltipForNextFrame(arg0, arg3, arg4, arg5);
+    }
+
     default void setComponentTooltipForNextFrame(net.minecraft.client.gui.Font arg0, java.util.List<? extends net.minecraft.network.chat.FormattedText> arg1, int arg2, int arg3, net.minecraft.world.item.ItemStack arg4) {
     }
 
@@ -30,5 +42,18 @@ public interface GuiGraphicsExtractorGenerated {
 
     default net.minecraft.client.gui.navigation.ScreenRectangle peekScissorStack() {
         throw new UnsupportedOperationException("NeoForge's GuiGraphicsExtractor.peekScissorStack has no Fabric counterpart in the bridge yet");
+    }
+
+    default int getColorFromFormattingCharacter(char arg0, boolean arg1) {
+        throw new UnsupportedOperationException("NeoForge's GuiGraphicsExtractor.getColorFromFormattingCharacter has no Fabric counterpart in the bridge yet");
+    }
+
+    default void drawScrollingString(net.minecraft.client.gui.ActiveTextCollector arg0, net.minecraft.client.gui.Font arg1, net.minecraft.network.chat.Component arg2, int arg3, int arg4, int arg5) {
+    }
+
+    default void blitInscribed(net.minecraft.resources.Identifier arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) {
+    }
+
+    default void blitInscribed(net.minecraft.resources.Identifier arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, boolean arg7, boolean arg8) {
     }
 }

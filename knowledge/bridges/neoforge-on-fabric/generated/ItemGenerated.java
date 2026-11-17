@@ -16,4 +16,179 @@ public interface ItemGenerated {
     default boolean isCombineRepairable(net.minecraft.world.item.ItemStack arg0) {
         throw new UnsupportedOperationException("NeoForge's Item.isCombineRepairable has no Fabric counterpart in the bridge yet");
     }
+
+    default net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.getDefaultAttributeModifiers has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean onDroppedByPlayer(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.player.Player arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.onDroppedByPlayer has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.network.chat.Component getHighlightTip(net.minecraft.world.item.ItemStack arg0, net.minecraft.network.chat.Component arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.getHighlightTip has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.InteractionResult onItemUseFirst(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.item.context.UseOnContext arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.onItemUseFirst has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isPiglinCurrency(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.isPiglinCurrency has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean makesPiglinsNeutral(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.LivingEntity arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.makesPiglinsNeutral has no Fabric counterpart in the bridge yet");
+    }
+
+    default float getXpRepairRatio(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.getXpRepairRatio has no Fabric counterpart in the bridge yet");
+    }
+
+    default void onStopUsing(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.LivingEntity arg1, int arg2) {
+    }
+
+    default boolean onLeftClickEntity(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.player.Player arg1, net.minecraft.world.entity.Entity arg2) {
+        throw new UnsupportedOperationException("NeoForge's Item.onLeftClickEntity has no Fabric counterpart in the bridge yet");
+    }
+
+    default void clientInventoryTick(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.level.Level arg1, net.minecraft.world.entity.Entity arg2, net.minecraft.world.entity.EquipmentSlot arg3) {
+    }
+
+    default int getEntityLifespan(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.level.Level arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.getEntityLifespan has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean hasCustomEntity(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.hasCustomEntity has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.entity.Entity createEntity(net.minecraft.world.level.Level arg0, net.minecraft.world.entity.Entity arg1, net.minecraft.world.item.ItemStack arg2) {
+        throw new UnsupportedOperationException("NeoForge's Item.createEntity has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean onEntityItemUpdate(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.item.ItemEntity arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.onEntityItemUpdate has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean doesSneakBypassUse(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.level.LevelReader arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.entity.player.Player arg3) {
+        throw new UnsupportedOperationException("NeoForge's Item.doesSneakBypassUse has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canEquip(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.EquipmentSlot arg1, net.minecraft.world.entity.LivingEntity arg2) {
+        throw new UnsupportedOperationException("NeoForge's Item.canEquip has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.entity.EquipmentSlot getEquipmentSlot(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.getEquipmentSlot has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean onEntitySwing(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.LivingEntity arg1, net.minecraft.world.InteractionHand arg2) {
+        throw new UnsupportedOperationException("NeoForge's Item.onEntitySwing has no Fabric counterpart in the bridge yet");
+    }
+
+    default int getDamage(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.getDamage has no Fabric counterpart in the bridge yet");
+    }
+
+    default int getMaxDamage(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.getMaxDamage has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isDamaged(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.isDamaged has no Fabric counterpart in the bridge yet");
+    }
+
+    default void setDamage(net.minecraft.world.item.ItemStack arg0, int arg1) {
+    }
+
+    default boolean canPerformAction(net.minecraft.world.item.ItemInstance arg0, ${package}.ItemAbility arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.canPerformAction has no Fabric counterpart in the bridge yet");
+    }
+
+    default int getMaxStackSize(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.getMaxStackSize has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isPrimaryItemFor(net.minecraft.world.item.ItemStack arg0, net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.isPrimaryItemFor has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean supportsEnchantment(net.minecraft.world.item.ItemStack arg0, net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.supportsEnchantment has no Fabric counterpart in the bridge yet");
+    }
+
+    default int getEnchantmentLevel(net.minecraft.world.item.ItemInstance arg0, net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.getEnchantmentLevel has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.item.enchantment.ItemEnchantments getAllEnchantments(net.minecraft.world.item.ItemStack arg0, net.minecraft.core.HolderLookup.RegistryLookup<net.minecraft.world.item.enchantment.Enchantment> arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.getAllEnchantments has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean shouldCauseReequipAnimation(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.item.ItemStack arg1, boolean arg2) {
+        throw new UnsupportedOperationException("NeoForge's Item.shouldCauseReequipAnimation has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean shouldCauseBlockBreakReset(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.item.ItemStack arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.shouldCauseBlockBreakReset has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canContinueUsing(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.item.ItemStack arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.canContinueUsing has no Fabric counterpart in the bridge yet");
+    }
+
+    default java.lang.String getCreatorModId(net.minecraft.core.HolderLookup.Provider arg0, net.minecraft.world.item.ItemStack arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.getCreatorModId has no Fabric counterpart in the bridge yet");
+    }
+
+    default void onAnimalArmorTick(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.level.Level arg1, net.minecraft.world.entity.Mob arg2) {
+    }
+
+    default <T extends net.minecraft.world.entity.LivingEntity> int damageItem(net.minecraft.world.item.ItemStack arg0, int arg1, T arg2, java.util.function.Consumer<net.minecraft.world.item.ItemStack> arg3) {
+        throw new UnsupportedOperationException("NeoForge's Item.damageItem has no Fabric counterpart in the bridge yet");
+    }
+
+    default void onDestroyed(net.minecraft.world.entity.item.ItemEntity arg0, net.minecraft.world.damagesource.DamageSource arg1) {
+        ((net.minecraft.world.item.Item) (Object) this).onDestroyed(arg0);
+    }
+
+    default boolean isGazeDisguise(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.player.Player arg1, net.minecraft.world.entity.LivingEntity arg2) {
+        throw new UnsupportedOperationException("NeoForge's Item.isGazeDisguise has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canWalkOnPowderedSnow(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.LivingEntity arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.canWalkOnPowderedSnow has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isDamageable(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.isDamageable has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.phys.AABB getSweepHitBox(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.player.Player arg1, net.minecraft.world.entity.Entity arg2) {
+        throw new UnsupportedOperationException("NeoForge's Item.getSweepHitBox has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isNotReplaceableByPickAction(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.player.Player arg1, int arg2) {
+        throw new UnsupportedOperationException("NeoForge's Item.isNotReplaceableByPickAction has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canGrindstoneRepair(net.minecraft.world.item.ItemStack arg0) {
+        throw new UnsupportedOperationException("NeoForge's Item.canGrindstoneRepair has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canBeHurtBy(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.damagesource.DamageSource arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.canBeHurtBy has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.item.ItemStack applyEnchantments(net.minecraft.world.item.ItemStack arg0, java.util.List<net.minecraft.world.item.enchantment.EnchantmentInstance> arg1) {
+        throw new UnsupportedOperationException("NeoForge's Item.applyEnchantments has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canFitInsideContainerItems(net.minecraft.world.item.ItemStack arg0) {
+        return ((net.minecraft.world.item.Item) (Object) this).canFitInsideContainerItems();
+    }
+
+    default void onGlideDamage(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.entity.LivingEntity arg1, net.minecraft.world.entity.EquipmentSlot arg2) {
+    }
 }

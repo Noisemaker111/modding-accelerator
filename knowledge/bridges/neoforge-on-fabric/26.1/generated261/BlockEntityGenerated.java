@@ -6,6 +6,14 @@ package ${package}.generated261;
  */
 public interface BlockEntityGenerated {
 
+    default net.minecraft.nbt.CompoundTag getPersistentData() {
+        throw new UnsupportedOperationException("NeoForge's BlockEntity.getPersistentData has no Fabric counterpart in the bridge yet");
+    }
+
+    default <T> T removeData(${package}.AttachmentType<T> arg0) {
+        throw new UnsupportedOperationException("NeoForge's BlockEntity.removeData has no Fabric counterpart in the bridge yet");
+    }
+
     default void syncData(${package}.AttachmentType<?> arg0) {
     }
 
@@ -13,16 +21,13 @@ public interface BlockEntityGenerated {
         throw new UnsupportedOperationException("NeoForge's BlockEntity.getAndClearAttachmentTypesToSync has no Fabric counterpart in the bridge yet");
     }
 
-    default void onDataPacket(net.minecraft.network.Connection arg0, net.minecraft.world.level.storage.ValueInput arg1) {
-    }
-
-    default void handleUpdateTag(net.minecraft.world.level.storage.ValueInput arg0) {
-    }
-
     default void onChunkUnloaded() {
     }
 
     default void requestModelDataUpdate() {
+    }
+
+    default void invalidateCapabilities() {
     }
 
     default boolean hasCustomOutlineRendering(net.minecraft.world.entity.player.Player arg0) {

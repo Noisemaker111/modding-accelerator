@@ -799,7 +799,11 @@ def run_all(mods, args, concepts):
             m = futures[f]
             try:
                 r = f.result()
-                print(f"{m['id']}: {r['outcome']} {json.dumps(r.get('concepts', {}))[:300]}", flush=True)
+                # The game's own result too: an outcome with items left does not say whether the mod ran.
+                game = r.get("game")
+                ran = "" if game is None else ("; in game: loads" if game.get("loaded") else "; in game: fails")
+                ran += "" if game is None or not game.get("loaded") else (", same behaviour fingerprint" if (r.get("fingerprint") or {}).get("equal") else ", fingerprint differs")
+                print(f"{m['id']}: {r['outcome']}{ran} {json.dumps(r.get('concepts', {}))[:300]}", flush=True)
             except Exception as e:
                 failed.append(m["id"])
                 print(f"{m['id']}: runner error {e!r}", flush=True)

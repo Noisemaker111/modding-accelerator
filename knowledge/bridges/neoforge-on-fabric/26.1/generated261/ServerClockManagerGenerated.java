@@ -9,4 +9,8 @@ public interface ServerClockManagerGenerated {
     default float getRate(net.minecraft.core.Holder<net.minecraft.world.clock.WorldClock> arg0) {
         throw new UnsupportedOperationException("NeoForge's ServerClockManager.getRate has no Fabric counterpart in the bridge yet");
     }
+
+    default float getPartialTick(net.minecraft.core.Holder<net.minecraft.world.clock.WorldClock> arg0) {
+        throw new UnsupportedOperationException("NeoForge's ServerClockManager.getPartialTick has no Fabric counterpart in the bridge yet");
+    }
 }

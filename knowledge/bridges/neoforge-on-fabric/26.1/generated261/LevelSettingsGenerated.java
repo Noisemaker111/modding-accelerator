@@ -9,4 +9,8 @@ public interface LevelSettingsGenerated {
     default net.minecraft.world.level.LevelSettings withLifecycle(com.mojang.serialization.Lifecycle arg0) {
         throw new UnsupportedOperationException("NeoForge's LevelSettings.withLifecycle has no Fabric counterpart in the bridge yet");
     }
+
+    default com.mojang.serialization.Lifecycle getLifecycle() {
+        throw new UnsupportedOperationException("NeoForge's LevelSettings.getLifecycle has no Fabric counterpart in the bridge yet");
+    }
 }

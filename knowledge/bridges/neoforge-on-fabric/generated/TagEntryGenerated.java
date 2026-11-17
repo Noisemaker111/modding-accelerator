@@ -6,6 +6,10 @@ package ${package}.generated;
  */
 public interface TagEntryGenerated {
 
+    default net.minecraft.resources.Identifier getId() {
+        throw new UnsupportedOperationException("NeoForge's TagEntry.getId has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean isRequired() {
         throw new UnsupportedOperationException("NeoForge's TagEntry.isRequired has no Fabric counterpart in the bridge yet");
     }

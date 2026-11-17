@@ -6,10 +6,30 @@ package ${package}.generated;
  */
 public interface BlockEntityGenerated {
 
+    default net.minecraft.nbt.CompoundTag getPersistentData() {
+        throw new UnsupportedOperationException("NeoForge's BlockEntity.getPersistentData has no Fabric counterpart in the bridge yet");
+    }
+
+    default <T> T removeData(${package}.AttachmentType<T> arg0) {
+        throw new UnsupportedOperationException("NeoForge's BlockEntity.removeData has no Fabric counterpart in the bridge yet");
+    }
+
     default void syncData(${package}.AttachmentType<?> arg0) {
     }
 
     default java.util.Set<${package}.AttachmentType<?>> getAndClearAttachmentTypesToSync() {
         throw new UnsupportedOperationException("NeoForge's BlockEntity.getAndClearAttachmentTypesToSync has no Fabric counterpart in the bridge yet");
+    }
+
+    default void onChunkUnloaded() {
+    }
+
+    default void requestModelDataUpdate() {
+    }
+
+    default void invalidateCapabilities() {
+    }
+
+    default void applyStructureRotation(net.minecraft.world.level.block.Mirror arg0, net.minecraft.world.level.block.Rotation arg1) {
     }
 }

@@ -6,7 +6,42 @@ package ${package}.generated;
  */
 public interface FluidGenerated {
 
+    default ${package}.fluids.FluidType getFluidType() {
+        throw new UnsupportedOperationException("NeoForge's Fluid.getFluidType has no Fabric counterpart in the bridge yet");
+    }
+
     default ${package}.transfer.fluid.FluidResource computeDefaultResource(java.util.function.Function<net.minecraft.world.level.material.Fluid, ${package}.transfer.fluid.FluidResource> arg0) {
         throw new UnsupportedOperationException("NeoForge's Fluid.computeDefaultResource has no Fabric counterpart in the bridge yet");
+    }
+
+    default float getExplosionResistance(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.level.Explosion arg3) {
+        throw new UnsupportedOperationException("NeoForge's Fluid.getExplosionResistance has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canConvertToSource(net.minecraft.world.level.material.FluidState arg0, net.minecraft.server.level.ServerLevel arg1, net.minecraft.core.BlockPos arg2) {
+        throw new UnsupportedOperationException("NeoForge's Fluid.canConvertToSource has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean supportsBoating(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.entity.vehicle.boat.AbstractBoat arg1) {
+        throw new UnsupportedOperationException("NeoForge's Fluid.supportsBoating has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.level.pathfinder.PathType getBlockPathType(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.entity.Mob arg3, boolean arg4) {
+        throw new UnsupportedOperationException("NeoForge's Fluid.getBlockPathType has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.level.pathfinder.PathType getAdjacentBlockPathType(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.entity.Mob arg3, net.minecraft.world.level.pathfinder.PathType arg4) {
+        throw new UnsupportedOperationException("NeoForge's Fluid.getAdjacentBlockPathType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canHydrate(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.world.level.block.state.BlockState arg2, net.minecraft.core.BlockPos arg3) {
+        throw new UnsupportedOperationException("NeoForge's Fluid.canHydrate has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canExtinguish(net.minecraft.world.level.material.FluidState arg0, net.minecraft.world.level.BlockGetter arg1, net.minecraft.core.BlockPos arg2) {
+        throw new UnsupportedOperationException("NeoForge's Fluid.canExtinguish has no Fabric counterpart in the bridge yet");
+    }
+
+    default void appendHoverText(${package}.fluids.FluidStack arg0, net.minecraft.world.item.Item.TooltipContext arg1, net.minecraft.world.item.component.TooltipDisplay arg2, java.util.function.Consumer<net.minecraft.network.chat.Component> arg3, net.minecraft.world.item.TooltipFlag arg4) {
     }
 }

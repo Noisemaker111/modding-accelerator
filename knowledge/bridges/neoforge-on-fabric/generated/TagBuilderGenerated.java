@@ -6,7 +6,15 @@ package ${package}.generated;
  */
 public interface TagBuilderGenerated {
 
+    default net.minecraft.tags.TagBuilder replace() {
+        throw new UnsupportedOperationException("NeoForge's TagBuilder.replace has no Fabric counterpart in the bridge yet");
+    }
+
     default java.util.stream.Stream<net.minecraft.tags.TagEntry> getRemoveEntries() {
         throw new UnsupportedOperationException("NeoForge's TagBuilder.getRemoveEntries has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.tags.TagBuilder removeElement(net.minecraft.resources.Identifier arg0) {
+        throw new UnsupportedOperationException("NeoForge's TagBuilder.removeElement has no Fabric counterpart in the bridge yet");
     }
 }

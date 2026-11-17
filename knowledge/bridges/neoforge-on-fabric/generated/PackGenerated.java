@@ -10,11 +10,19 @@ public interface PackGenerated {
         throw new UnsupportedOperationException("NeoForge's Pack.isHidden has no Fabric counterpart in the bridge yet");
     }
 
+    default java.util.List<net.minecraft.server.packs.repository.Pack> getChildren() {
+        throw new UnsupportedOperationException("NeoForge's Pack.getChildren has no Fabric counterpart in the bridge yet");
+    }
+
     default java.util.stream.Stream<net.minecraft.server.packs.repository.Pack> streamSelfAndChildren() {
         throw new UnsupportedOperationException("NeoForge's Pack.streamSelfAndChildren has no Fabric counterpart in the bridge yet");
     }
 
     default net.minecraft.server.packs.repository.Pack withChildren(java.util.List<net.minecraft.server.packs.repository.Pack> arg0) {
         throw new UnsupportedOperationException("NeoForge's Pack.withChildren has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.server.packs.repository.Pack hidden() {
+        throw new UnsupportedOperationException("NeoForge's Pack.hidden has no Fabric counterpart in the bridge yet");
     }
 }

@@ -8,8 +8,9 @@ The API is read from NeoForge's own published jars (knowledge/loaders.json "publ
 classes, the userdev jar for the patches that add methods to the game's classes). Two numbers per release:
   - mirrored methods: the public methods of the NeoForge classes the bridge mirrors (bridges[].classes) that the
     bridge's file for that game version declares, by name;
-  - game-class additions: the public methods NeoForge's patches add to the game's classes that some bridge file for
-    that game version declares, by name (the bridge adds them through mixins and interface injection).
+  - game-class additions: the public methods NeoForge adds to the game's classes, by its patches or by the extension
+    interfaces (IBlockExtension ...) its patches make them implement, that some bridge file for that game version
+    declares, by name (the bridge adds them through mixins and interface injection, hand-written or generated).
 Names only: an overload the bridge lacks still counts as present, so the numbers are an upper bound.
 """
 import argparse
@@ -122,6 +123,22 @@ def bridge_files(rules, layer_version):
 DECLARED = re.compile(r"\b([a-zA-Z_]\w*)\s*\(")
 
 
+def injected_names(bridge, files, layer_version=None, generated=True):
+    """{game class (dotted, $ for nested): method names the bridge's files for that game version give it}: the
+    interfaces its mixins and its layer's inject (mixins[].injects), hand-written and, unless generated is False,
+    generated. A nested interface (GameHooks$FoodBuilder) counts its whole file."""
+    out = {}
+    layer = next((l for l in bridge.get("layers", []) if l["minecraft"] == layer_version), {}) if layer_version else {}
+    for m in bridge.get("mixins", []) + layer.get("mixins", []):
+        if m.get("generated") and not generated:
+            continue
+        for target, interface in (m.get("injects") or {}).items():
+            path = re.split(r"[<$]", interface)[0].replace(".", "/") + ".java"
+            if path in files:
+                out.setdefault(target.replace("/", "."), set()).update(DECLARED.findall(files[path]))
+    return out
+
+
 def measure(rules, version, key, layer_version):
     entry = rules["published"][key]
     _, _, universal = loader_api.fetch(key, entry)
@@ -129,21 +146,34 @@ def measure(rules, version, key, layer_version):
     _, _, userdev = loader_api.fetch(key + "-userdev", userdev_entry)
     api = neoforge_api(universal)
     additions = patch_additions(userdev)
+    # A game class also gets every method of the extension interfaces its patch makes it implement.
+    extensions = extended_game_classes(userdev)
+    for game, interfaces in extensions.items():
+        for interface in interfaces:
+            additions.setdefault(game, set()).update(api.get(interface, set()))
+    interfaces = {i for xs in extensions.values() for i in xs}
     bridge, files = bridge_files(rules, layer_version)
     everything = set()
     for text in files.values():
         everything |= set(DECLARED.findall(text))
+    given = injected_names(bridge, files, layer_version)
+    implementers = {}
+    for game, xs in extensions.items():
+        for x in xs:
+            implementers.setdefault(x, set()).update(given.get(game, set()))
     mirrored = {}
     for neoforge, rel in bridge["classes"].items():
         path = rel.replace(".", "/") + ".java"
         if neoforge in api and path in files:
-            mirrored[neoforge] = (api[neoforge], set(DECLARED.findall(files[path])))
+            # An extension interface's method may live in what the bridge gives the game classes that implement it.
+            have = set(DECLARED.findall(files[path])) | implementers.get(neoforge, set())
+            mirrored[neoforge] = (api[neoforge], have)
     methods = sum(len(want) for want, _ in mirrored.values())
     present = sum(len(want & have) for want, have in mirrored.values())
     added = sum(len(m) for m in additions.values())
-    added_present = sum(len(m & everything) for m in additions.values())
+    added_present = sum(len(m & given.get(g, set())) for g, m in additions.items())
     gaps = sorted(((len(want - have), c, sorted(want - have)) for c, (want, have) in mirrored.items() if want - have), reverse=True)
-    game_gaps = sorted(((len(m - everything), c, sorted(m - everything)) for c, m in additions.items() if m - everything), reverse=True)
+    game_gaps = sorted(((len(m - given.get(c, set())), c, sorted(m - given.get(c, set()))) for c, m in additions.items() if m - given.get(c, set())), reverse=True)
     return {
         "minecraft": version,
         "neoforge": entry["coordinate"],
@@ -215,18 +245,47 @@ def class_refs(data):
     return superclass, calls, declared
 
 
-EXTENSION = re.compile(r"^\+.*\bimplements\b.*?(net\.neoforged\.neoforge\.[\w.]*extensions\.I\w+Extension)")
+DECLARATION = re.compile(r"^[+ ]( *)(?:public |protected |private |static |final |abstract |sealed |non-sealed )*(?:class|interface|enum|record) (\w+)")
+NEOFORGE_IMPORT = re.compile(r"^\+import (net\.neoforged\.[\w.]+\.(\w+));")
 
 
 def extended_game_classes(userdev):
-    """{game class: [NeoForge extension interfaces its patch makes it implement]}."""
+    """{game class: [NeoForge extension interfaces its patch makes it implement]}.
+
+    A line the patch adds to a class's header (the declaration line or one continuing it, up to its "{") names the
+    interface qualified or by its simple name with an import the patch adds; a nested class's declaration (indented)
+    gives the nested class (Advancement$Builder)."""
     out = {}
     with zipfile.ZipFile(io.BytesIO(userdev)) as jar:
         for entry in jar.namelist():
-            if entry.startswith("patches/") and entry.endswith(".java.patch"):
-                found = [m.group(1) for line in jar.read(entry).decode("utf-8", "replace").splitlines() if (m := EXTENSION.match(line))]
-                if found:
-                    out[entry[len("patches/"):-len(".java.patch")].replace("/", ".")] = found
+            if not (entry.startswith("patches/") and entry.endswith(".java.patch")):
+                continue
+            outer = entry[len("patches/"):-len(".java.patch")].replace("/", ".")
+            lines = jar.read(entry).decode("utf-8", "replace").splitlines()
+            imports = {m.group(2): m.group(1) for line in lines if (m := NEOFORGE_IMPORT.match(line))}
+            game, header = None, False
+            for line in lines:
+                if line.startswith("-"):
+                    continue
+                m = DECLARATION.match(line)
+                if m:
+                    game = outer if not m.group(1) else outer + "$" + m.group(2)
+                    header = True
+                    rest = line.split(m.group(2), 1)[1]
+                else:
+                    rest = line[1:]
+                if not header:
+                    continue
+                if "{" in rest:
+                    header = False
+                if not line.startswith("+"):
+                    continue
+                for name in re.findall(r"\b((?:net\.neoforged\.[\w.]+\.)?\w*Extension)\b", rest.split("{", 1)[0]):
+                    qualified = name if name.startswith("net.neoforged.") else imports.get(name)
+                    # A nested interface (ITexturedModelExtension.ProviderExtension) in its class-file name.
+                    qualified = qualified and re.sub(r"(\.[A-Z]\w*)\.", r"\1$", qualified)
+                    if qualified and qualified not in out.get(game, []):
+                        out.setdefault(game, []).append(qualified)
     return out
 
 
@@ -262,14 +321,23 @@ def corpus_use(rules, folders, release=RELEASES[0]):
     everything = set()
     for text in files.values():
         everything |= set(DECLARED.findall(text))
+    given = injected_names(bridge, files, layer_version)
+    implementers = {}
+    for game, xs in extensions.items():
+        for x in xs:
+            implementers.setdefault(x, set()).update(given.get(game, set()))
     lacking = {}
     for neoforge, rel in bridge["classes"].items():
         path = rel.replace(".", "/") + ".java"
         have = set(DECLARED.findall(files[path])) if path in files else set()
+        # An extension interface's methods may live in what the bridge gives the game classes that implement it.
+        have |= implementers.get(neoforge, set())
         if neoforge in api:
             lacking[neoforge] = api[neoforge] - have
+    for interface in set(implementers) - set(bridge["classes"]):
+        lacking[interface] = api.get(interface, set()) - implementers[interface]
     for game, methods in additions.items():
-        lacking[game] = methods - everything
+        lacking[game] = methods - given.get(game, set())
     # A game class's extension interfaces' methods count as its own (Block gets IBlockExtension's).
     overridable = {}
     for game, interfaces in extensions.items():

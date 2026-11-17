@@ -9,4 +9,8 @@ public interface MinecraftGenerated {
     default net.minecraft.client.renderer.block.BlockModelResolver getBlockModelResolver() {
         throw new UnsupportedOperationException("NeoForge's Minecraft.getBlockModelResolver has no Fabric counterpart in the bridge yet");
     }
+
+    default java.util.Locale getLocale() {
+        throw new UnsupportedOperationException("NeoForge's Minecraft.getLocale has no Fabric counterpart in the bridge yet");
+    }
 }

@@ -6,6 +6,10 @@ package ${package}.generated;
  */
 public interface ItemContainerContentsGenerated {
 
+    default int getSlots() {
+        throw new UnsupportedOperationException("NeoForge's ItemContainerContents.getSlots has no Fabric counterpart in the bridge yet");
+    }
+
     default java.util.Optional<net.minecraft.world.item.ItemStackTemplate> getTemplateInSlot(int arg0) {
         throw new UnsupportedOperationException("NeoForge's ItemContainerContents.getTemplateInSlot has no Fabric counterpart in the bridge yet");
     }

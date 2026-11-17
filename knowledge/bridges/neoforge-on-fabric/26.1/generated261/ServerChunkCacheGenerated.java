@@ -6,6 +6,10 @@ package ${package}.generated261;
  */
 public interface ServerChunkCacheGenerated {
 
+    default net.minecraft.server.level.ServerChunkCache self() {
+        throw new UnsupportedOperationException("NeoForge's ServerChunkCache.self has no Fabric counterpart in the bridge yet");
+    }
+
     default void sendToTrackingPlayersAndSelf(net.minecraft.world.entity.Entity arg0, net.minecraft.network.protocol.common.custom.CustomPacketPayload arg1) {
     }
 

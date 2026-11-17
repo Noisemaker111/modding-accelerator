@@ -14,6 +14,18 @@ public interface EntityGenerated {
         throw new UnsupportedOperationException("NeoForge's Entity.getFluidHeight has no Fabric counterpart in the bridge yet");
     }
 
+    default java.util.Collection<net.minecraft.world.entity.item.ItemEntity> captureDrops() {
+        throw new UnsupportedOperationException("NeoForge's Entity.captureDrops has no Fabric counterpart in the bridge yet");
+    }
+
+    default java.util.Collection<net.minecraft.world.entity.item.ItemEntity> captureDrops(java.util.Collection<net.minecraft.world.entity.item.ItemEntity> arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.captureDrops has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.nbt.CompoundTag getPersistentData() {
+        throw new UnsupportedOperationException("NeoForge's Entity.getPersistentData has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean canTrample(net.minecraft.server.level.ServerLevel arg0, net.minecraft.world.level.block.state.BlockState arg1, net.minecraft.core.BlockPos arg2, double arg3) {
         throw new UnsupportedOperationException("NeoForge's Entity.canTrample has no Fabric counterpart in the bridge yet");
     }
@@ -36,5 +48,87 @@ public interface EntityGenerated {
 
     default net.minecraft.world.entity.EntityFluidInteraction getFluidInteraction() {
         throw new UnsupportedOperationException("NeoForge's Entity.getFluidInteraction has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean shouldRiderSit() {
+        throw new UnsupportedOperationException("NeoForge's Entity.shouldRiderSit has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canRiderInteract() {
+        throw new UnsupportedOperationException("NeoForge's Entity.canRiderInteract has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canBeRiddenUnderFluidType(${package}.fluids.FluidType arg0, net.minecraft.world.entity.Entity arg1) {
+        throw new UnsupportedOperationException("NeoForge's Entity.canBeRiddenUnderFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.entity.MobCategory getClassification(boolean arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.getClassification has no Fabric counterpart in the bridge yet");
+    }
+
+    default double getFluidTypeHeight(${package}.fluids.FluidType arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.getFluidTypeHeight has no Fabric counterpart in the bridge yet");
+    }
+
+    default ${package}.fluids.FluidType getMaxHeightFluidType() {
+        throw new UnsupportedOperationException("NeoForge's Entity.getMaxHeightFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isInFluidType(net.minecraft.world.level.material.FluidState arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.isInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isInFluidType(${package}.fluids.FluidType arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.isInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isInFluidType() {
+        throw new UnsupportedOperationException("NeoForge's Entity.isInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default ${package}.fluids.FluidType getFirstEyeInFluidType() {
+        throw new UnsupportedOperationException("NeoForge's Entity.getFirstEyeInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isEyeInFluidType(${package}.fluids.FluidType arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.isEyeInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canStartSwimming() {
+        throw new UnsupportedOperationException("NeoForge's Entity.canStartSwimming has no Fabric counterpart in the bridge yet");
+    }
+
+    default double getFluidMotionScale(${package}.fluids.FluidType arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.getFluidMotionScale has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean isPushedByFluid(${package}.fluids.FluidType arg0) {
+        return ((net.minecraft.world.entity.Entity) (Object) this).isPushedByFluid();
+    }
+
+    default boolean canSwimInFluidType(${package}.fluids.FluidType arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.canSwimInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canFluidExtinguish(${package}.fluids.FluidType arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.canFluidExtinguish has no Fabric counterpart in the bridge yet");
+    }
+
+    default float getFluidFallDistanceModifier(${package}.fluids.FluidType arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.getFluidFallDistanceModifier has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canHydrateInFluidType(${package}.fluids.FluidType arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.canHydrateInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean hasCustomOutlineRendering(net.minecraft.world.entity.player.Player arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.hasCustomOutlineRendering has no Fabric counterpart in the bridge yet");
+    }
+
+    default void sendPairingData(net.minecraft.server.level.ServerPlayer arg0, java.util.function.Consumer<net.minecraft.network.protocol.common.custom.CustomPacketPayload> arg1) {
+    }
+
+    default void copyAttachmentsFrom(net.minecraft.world.entity.Entity arg0, boolean arg1) {
     }
 }

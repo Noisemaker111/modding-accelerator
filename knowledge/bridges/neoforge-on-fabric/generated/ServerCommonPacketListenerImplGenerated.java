@@ -6,6 +6,10 @@ package ${package}.generated;
  */
 public interface ServerCommonPacketListenerImplGenerated {
 
+    default net.minecraft.network.Connection getConnection() {
+        throw new UnsupportedOperationException("NeoForge's ServerCommonPacketListenerImpl.getConnection has no Fabric counterpart in the bridge yet");
+    }
+
     default net.minecraft.network.PacketProcessor getPacketProcessor() {
         throw new UnsupportedOperationException("NeoForge's ServerCommonPacketListenerImpl.getPacketProcessor has no Fabric counterpart in the bridge yet");
     }

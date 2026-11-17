@@ -17,4 +17,7 @@ public interface DataGeneratorGenerated {
     default net.minecraft.data.DataGenerator.PackGenerator getPackGenerator(boolean arg0, java.lang.String arg1, java.lang.String arg2) {
         throw new UnsupportedOperationException("NeoForge's DataGenerator.getPackGenerator has no Fabric counterpart in the bridge yet");
     }
+
+    default void merge(net.minecraft.data.DataGenerator arg0) {
+    }
 }

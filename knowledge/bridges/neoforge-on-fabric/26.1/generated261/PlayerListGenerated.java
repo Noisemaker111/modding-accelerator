@@ -10,6 +10,10 @@ public interface PlayerListGenerated {
         throw new UnsupportedOperationException("NeoForge's PlayerList.getPlayerIo has no Fabric counterpart in the bridge yet");
     }
 
+    default net.minecraft.server.players.PlayerList self() {
+        throw new UnsupportedOperationException("NeoForge's PlayerList.self has no Fabric counterpart in the bridge yet");
+    }
+
     default void broadcastAll(net.minecraft.network.protocol.common.custom.CustomPacketPayload arg0) {
     }
 

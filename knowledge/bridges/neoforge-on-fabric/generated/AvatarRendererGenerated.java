@@ -11,7 +11,4 @@ public interface AvatarRendererGenerated {
 
     default void submit(net.minecraft.client.renderer.entity.state.LivingEntityRenderState arg0, com.mojang.blaze3d.vertex.PoseStack arg1, net.minecraft.client.renderer.SubmitNodeCollector arg2, net.minecraft.client.renderer.state.level.CameraRenderState arg3) {
     }
-
-    default void submit(net.minecraft.client.renderer.entity.state.EntityRenderState arg0, com.mojang.blaze3d.vertex.PoseStack arg1, net.minecraft.client.renderer.SubmitNodeCollector arg2, net.minecraft.client.renderer.state.level.CameraRenderState arg3) {
-    }
 }

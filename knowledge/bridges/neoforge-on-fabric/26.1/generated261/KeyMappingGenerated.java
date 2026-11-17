@@ -12,4 +12,8 @@ public interface KeyMappingGenerated {
     default boolean hasKeyModifierConflict(net.minecraft.client.KeyMapping arg0) {
         throw new UnsupportedOperationException("NeoForge's KeyMapping.hasKeyModifierConflict has no Fabric counterpart in the bridge yet");
     }
+
+    default net.minecraft.network.chat.Component getDisplayName() {
+        throw new UnsupportedOperationException("NeoForge's KeyMapping.getDisplayName has no Fabric counterpart in the bridge yet");
+    }
 }

@@ -38,5 +38,9 @@ public final class ClientBridge {
         LevelStages.hook();
         ClientTickEvents.START_CLIENT_TICK.register(client -> Bus.INSTANCE.post(new ClientTickEvent.Pre()));
         ClientTickEvents.END_CLIENT_TICK.register(client -> Bus.INSTANCE.post(new ClientTickEvent.Post()));
+        // NeoForge's BlockEntity.onLoad on the client too (only with the bridge's BlockEntityHooksMixin).
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientBlockEntityEvents.BLOCK_ENTITY_LOAD.register((blockEntity, level) -> {
+            if (blockEntity instanceof ${package}.extensions.BlockEntityHooks hooks) hooks.onLoad();
+        });
     }
 }

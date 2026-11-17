@@ -6,6 +6,10 @@ package ${package}.generated261;
  */
 public interface IngredientGenerated {
 
+    default net.minecraft.core.HolderSet<net.minecraft.world.item.Item> getValues() {
+        throw new UnsupportedOperationException("NeoForge's Ingredient.getValues has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean isSimple() {
         throw new UnsupportedOperationException("NeoForge's Ingredient.isSimple has no Fabric counterpart in the bridge yet");
     }
