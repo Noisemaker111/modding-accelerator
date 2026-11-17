@@ -414,6 +414,33 @@ public final class PortPreflightTest {
         require(hud.contains("graphics.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, SPRITE, x, y, 16, 16);"), "the game's own value goes in first: " + hud);
         require(hud.contains("graphics.blitSprite(OTHER, x, y, 8, 8);"), "a call javac did not name is left alone");
 
+        // A name the game reused (1.21.2: Registry.get(id) -> getValue, getHolder(id) -> get): the old call still compiles
+        // and javac objects where its result goes, finding the Optional the new get returns. That call takes the old
+        // method's new name; a line javac did not name, and a get with another argument count, stay.
+        Path ru = Files.createDirectories(scratch.resolve("reused"));
+        Path ruMap = scratch.resolve("reused.json");
+        Files.writeString(ruMap, """
+            { "from": "1.21.1", "to": "1.21.2", "names": "mojmap",
+              "methods": [
+                { "owner": "net.minecraft.core.Registry", "from": "get", "desc": "(Lnet/minecraft/resources/ResourceLocation;)Ljava/lang/Object;", "to": "getValue", "newDesc": "(Lnet/minecraft/resources/ResourceLocation;)Ljava/lang/Object;" },
+                { "owner": "net.minecraft.core.Registry", "from": "getHolder", "desc": "(Lnet/minecraft/resources/ResourceLocation;)Ljava/util/Optional;", "to": "get", "newDesc": "(Lnet/minecraft/resources/ResourceLocation;)Ljava/util/Optional;" }
+              ]
+            }
+            """);
+        String[] cache = {
+            "class Cache {",
+            "  static Supplier<Item> of(Registry<Item> registry, ResourceLocation id) { return cache(() -> registry.get(id)); }",
+            "  static Optional<Reference<Item>> holder(Registry<Item> registry, ResourceLocation id) { return registry.get(id); }",
+            "}",
+        };
+        Files.writeString(ru.resolve("Cache.java"), String.join("\n", cache) + "\n");
+        Files.writeString(scratch.resolve("reused.log"), ru.resolve("Cache.java") + ":2: error: incompatible types: inference variable T#1 has incompatible bounds\n"
+            + cache[1] + "\n                                                                        ^\n    equality constraints: Item\n    lower bounds: Optional<Reference<Item>>\n");
+        VersionMap.Fix.run(ruMap, scratch.resolve("reused.log"), ru, false, null);
+        String reused = Files.readString(ru.resolve("Cache.java"));
+        require(reused.contains("cache(() -> registry.getValue(id))"), "the reused name's old call takes its new name: " + reused);
+        require(reused.contains("{ return registry.get(id); }"), "a call javac did not name keeps the reused name");
+
         // A method the game renamed, implemented without @Override: javac only says the class misses the new name, and the
         // one declaration the map renames to it on that supertype takes it; a same-name method with other arity stays.
         Path ab = Files.createDirectories(scratch.resolve("abstract"));

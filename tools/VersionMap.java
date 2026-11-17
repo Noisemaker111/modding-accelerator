@@ -982,6 +982,9 @@ public final class VersionMap {
                 if (s.startsWith("found:") && found == null) {
                     found = s.substring(6).trim();
                 }
+                if (s.startsWith("lower bounds:")) {
+                    FOUND_TYPE.putIfAbsent(m.group(1) + ":" + m.group(2), s.substring(13).trim());
+                }
             }
             if (required != null && found != null) {
                 REQUIRED_FOUND.put(m.group(1) + ":" + m.group(2), new String[] { required, found });
@@ -1036,6 +1039,8 @@ public final class VersionMap {
 
     /** javac's "required:" and "found:" argument types for a call it reports at file:line (one candidate only). */
     static final Map<String, String[]> REQUIRED_FOUND = new HashMap<>();
+    /** The type javac found where it wanted another, by file:line ("Optional<Reference<T#2>>" from "lower bounds:"). */
+    static final Map<String, String> FOUND_TYPE = new HashMap<>();
 
     /** The parameter lists of the candidates javac names for a call it reports at file:line ("method X.of(A,B) is not applicable"). */
     static final Map<String, List<String>> CANDIDATES = new HashMap<>();
@@ -2006,6 +2011,22 @@ public final class VersionMap {
 
         /** A descriptor's parameter types: class names dotted ($ kept), primitives and arrays as written. */
         /** A descriptor's return type, dotted with $ for nested classes, or its primitive letter. */
+        /** The argument counts of each call .name( on a line (a call whose parentheses close on a later line counts -1). */
+        static Set<Integer> callArgCounts(String line, String name) {
+            Set<Integer> counts = new HashSet<>();
+            Matcher m = Pattern.compile("\\.\\s*" + Pattern.quote(name) + "\\s*\\(").matcher(line);
+            while (m.find()) {
+                int close = closingParen(line, m.end() - 1);
+                if (close < 0) {
+                    counts.add(-1);
+                    continue;
+                }
+                String inside = line.substring(m.end(), close);
+                counts.add(inside.isBlank() ? 0 : topLevelArguments(inside).size());
+            }
+            return counts;
+        }
+
         static String returnType(String desc) {
             String r = desc.substring(desc.indexOf(')') + 1);
             return r.startsWith("L") ? r.substring(1, r.length() - 1).replace('/', '.') : r;
@@ -3220,6 +3241,75 @@ public final class VersionMap {
                     text = withImport(text, fqn);
                 }
                 texts.put(entry.getKey(), text);
+            }
+
+            // 2d'. A name the game reused: 1.21.2 renamed Registry.get(id) to getValue and getHolder to get, so a mod's
+            // registry.get(id) still compiles as a call and javac only objects where its result is used ("Optional<Reference
+            // <T>> cannot be converted to T", or an inference whose lower bound is that). When the type javac found is what
+            // the method now under that name returns, and the map renames the old one, the call on that line is renamed.
+            Map<String, List<String[]>> reusedBy = new HashMap<>(); // new name -> {owner simple, old desc} of what took it
+            for (var e : k.renamedOverloads.entrySet()) {
+                for (String[] o : e.getValue()) {
+                    reusedBy.computeIfAbsent(o[2], x -> new ArrayList<>()).add(new String[] { o[0], o[1] });
+                }
+            }
+            for (Err e : readErrors(log)) {
+                Path f = sourcePath(e, repo);
+                String foundType = FOUND_TYPE.get(e.file() + ":" + e.line());
+                Matcher conv = Pattern.compile("^incompatible types: ([\\w.$]+)(?:<.*)? cannot be converted to ").matcher(e.message());
+                if (foundType == null && conv.find()) {
+                    foundType = conv.group(1);
+                }
+                if (f == null || foundType == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String raw = foundType.replaceAll("<.*", "");
+                raw = raw.substring(raw.lastIndexOf('.') + 1);
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                List<String> lines = new ArrayList<>(Arrays.asList(text.split("\n", -1)));
+                if (e.line() - 1 >= lines.size()) {
+                    continue;
+                }
+                String line = lines.get(e.line() - 1);
+                String renamedTo = null, which = null;
+                for (var reused : reusedBy.entrySet()) {
+                    String name = reused.getKey();
+                    if (!k.renamedOverloads.containsKey(name) || !Pattern.compile("\\.\\s*" + Pattern.quote(name) + "\\s*\\(").matcher(line).find()) {
+                        continue;
+                    }
+                    for (String[] taker : reused.getValue()) {
+                        String ret = simple(returnType(taker[1]).replace('$', '.'));
+                        if (!ret.equals(raw)) {
+                            continue;
+                        }
+                        for (String[] own : k.renamedOverloads.get(name)) {
+                            if (own[0].equals(taker[0]) && callArgCounts(line, name).equals(Set.of(paramTypes(own[1]).size()))) {
+                                if (renamedTo != null && !renamedTo.equals(own[2])) {
+                                    renamedTo = "";
+                                }
+                                else if (renamedTo == null) {
+                                    renamedTo = own[2];
+                                    which = name;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (renamedTo == null || renamedTo.isEmpty()) {
+                    continue;
+                }
+                Matcher calls = Pattern.compile("\\.(\\s*)" + Pattern.quote(which) + "(\\s*\\()").matcher(line);
+                int count = 0;
+                while (calls.find()) {
+                    count++;
+                }
+                if (count != 1) {
+                    continue;
+                }
+                lines.set(e.line() - 1, calls.replaceFirst(".$1" + Matcher.quoteReplacement(renamedTo) + "$2"));
+                texts.put(f, String.join("\n", lines));
+                replacements++;
+                byKind.merge("reused names", 1, Integer::sum);
             }
 
             // 2e. A member the game replaced with a chain on the same receiver (GameDiff's "chains"): input.up becomes
