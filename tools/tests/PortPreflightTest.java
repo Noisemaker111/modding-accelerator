@@ -327,6 +327,7 @@ public final class PortPreflightTest {
             "    save(output, ResourceLocation.fromNamespaceAndPath(a, b).withPrefix(\"cooking/\"));",
             "    BlockPredicate.Builder.block().of(ModBlocks.CROP.get()).build();",
             "    Widget w = id;",
+            "    builder.build(id.location().toString());",
             "  }",
             "}",
         };
@@ -342,7 +343,8 @@ public final class PortPreflightTest {
             + "    method RecipeBuilder.save(RecipeOutput,String) is not applicable\n      (argument mismatch; ResourceLocation cannot be converted to String)\n"
             + "    method CookingPotRecipeBuilder.save(RecipeOutput,ResourceKey) is not applicable\n      (argument mismatch; ResourceLocation cannot be converted to ResourceKey)\n"
             + at.apply(6, "") + "incompatible types: CropBlock cannot be converted to HolderGetter<Block>" + caret.apply(6, "()).")
-            + at.apply(7, "") + "incompatible types: ResourceKey<Recipe<?>> cannot be converted to Widget" + caret.apply(7, "id;"));
+            + at.apply(7, "") + "incompatible types: ResourceKey<Recipe<?>> cannot be converted to Widget" + caret.apply(7, "id;")
+            + at.apply(8, "") + "incompatible types: String cannot be converted to ResourceKey<EntityType<?>>" + caret.apply(8, "id.location().toString"));
         VersionMap.Fix.run(map, cvLog, cv, false, null);
         String converted = Files.readString(cv.resolve("Ids.java"));
         require(converted.contains("ResourceLocation recipeId = id.location();"), "a key gives its location: " + converted);
@@ -350,6 +352,7 @@ public final class PortPreflightTest {
         require(converted.contains("save(output, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, ResourceLocation.fromNamespaceAndPath(a, b).withPrefix(\"cooking/\")));"), "the argument of the one candidate that takes a key");
         require(converted.contains(".of(net.minecraft.core.registries.BuiltInRegistries.BLOCK, ModBlocks.CROP.get())"), "the block registry goes before the block");
         require(converted.contains("    Widget w = id;"), "a type with no known conversion is left alone");
+        require(converted.contains("builder.build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, id.location()));"), "an id written as text becomes the key of its location: " + converted);
         require(targeted.contains("var u = new Other(\"a\", 1, 2, \"b\");"), "which of two equal arguments goes is not guessed");
 
         // A member the game replaced with a chain on the same receiver: a field read becomes the chain, a call keeps its

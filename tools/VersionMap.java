@@ -2103,6 +2103,13 @@ public final class VersionMap {
             if (from.equals("ResourceLocation") && key.find() && REGISTRY_OF.containsKey(key.group(1))) {
                 return "net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries." + REGISTRY_OF.get(key.group(1)) + ", " + value + ")";
             }
+            // An id written as text (1.21.2: EntityType.Builder.build(String) -> build(ResourceKey<EntityType<?>>)); a
+            // location's own text goes back to the location.
+            if (from.equals("String") && key.find(0) && REGISTRY_OF.containsKey(key.group(1))) {
+                Matcher text = Pattern.compile("^([\\w$]+(?:\\(\\))?(?:\\.[\\w$]+(?:\\(\\))?)*)\\.toString\\(\\)$").matcher(value.strip());
+                String location = text.find() ? text.group(1) : "net.minecraft.resources.ResourceLocation.parse(" + value + ")";
+                return "net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries." + REGISTRY_OF.get(key.group(1)) + ", " + location + ")";
+            }
             if (from.matches("ResourceKey(?:<.*>)?") && to.equals("ResourceLocation")) {
                 return plain + ".location()";
             }
