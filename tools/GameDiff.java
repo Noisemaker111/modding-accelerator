@@ -1939,7 +1939,9 @@ public final class GameDiff {
                     }
                 }
                 int total = totals.get(e.getKey());
-                if (c1 >= 2 && c1 * 10 >= total * 8 || c1 == 1 && total == 1 && typeSafe(e.getKey(), best)) {
+                // The game's own code may call a private helper in place of what it removed; a mod cannot.
+                boolean reachable = (best.flags & ACC_PRIVATE) == 0 || (e.getKey().flags & ACC_PRIVATE) != 0;
+                if (reachable && (c1 >= 2 && c1 * 10 >= total * 8 || c1 == 1 && total == 1 && typeSafe(e.getKey(), best))) {
                     out.add(new Rewrite(e.getKey(), best, c1, total));
                 }
             }
@@ -2093,7 +2095,10 @@ public final class GameDiff {
             for (int i = 0; i < refs.size(); i++) {
                 Ref r = refs.get(i);
                 boolean last = i == refs.size() - 1;
-                if (cur == null || (r.kind() != 'm' && r.kind() != 'f') || r.name().contains("$") || !subtypeB(cur.name, r.owner())) {
+                Meth stepMethod = r.kind() == 'm' ? b.method(r.owner(), r.name(), r.desc()) : null;
+                Fld stepField = r.kind() == 'f' ? b.field(r.owner(), r.name()) : null;
+                boolean hidden = stepMethod != null && (stepMethod.flags & ACC_PRIVATE) != 0 || stepField != null && (stepField.flags & ACC_PRIVATE) != 0;
+                if (cur == null || hidden || (r.kind() != 'm' && r.kind() != 'f') || r.name().contains("$") || !subtypeB(cur.name, r.owner())) {
                     return null;
                 }
                 String type;
