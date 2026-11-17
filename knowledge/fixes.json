@@ -4167,6 +4167,26 @@
       }
     },
     {
+      "id": "food-status-effect-entries-1205",
+      "provenance": "hand",
+      "jump": "1.20.4 -> 1.20.5 (yarn)",
+      "match": "symbol:\\s+method getStatusEffects\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) FoodComponent\\b",
+      "apply": {
+        "find": "\\.\\s*getStatusEffects\\s*\\(\\s*\\)",
+        "replace": ".effects().stream().map(mmtEntry -> com.mojang.datafixers.util.Pair.of(mmtEntry.effect(), mmtEntry.probability())).toList()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20.5 made a food's effects a list of StatusEffectEntry records (effect, probability) instead of (effect, chance) pairs; the entries become the same pairs, so a loop over them reads as before.",
+      "verified": "Yarn 1.20.2+build.4: FoodComponent.getStatusEffects() List<Pair<StatusEffectInstance, Float>>; yarn 1.21.1+build.3: FoodComponent record, effects() List<FoodComponent.StatusEffectEntry>, StatusEffectEntry.effect() StatusEffectInstance and probability() float",
+      "test": {
+        "error": "FoodHelper.java:5: error: cannot find symbol\n\t\tfor (Pair<StatusEffectInstance, Float> effect : itemStack.get(DataComponentTypes.FOOD).getStatusEffects())\n\t\t                                                                                      ^\n  symbol:   method getStatusEffects()\n  location: class FoodComponent\n",
+        "before": "package squeek.appleskin.helpers;\n\npublic class FoodHelper {\n\tstatic void f(ItemStack itemStack) {\n\t\tfor (Pair<StatusEffectInstance, Float> effect : itemStack.get(DataComponentTypes.FOOD).getStatusEffects())\n\t\t\tuse(effect);\n\t}\n}\n",
+        "after": "package squeek.appleskin.helpers;\n\npublic class FoodHelper {\n\tstatic void f(ItemStack itemStack) {\n\t\tfor (Pair<StatusEffectInstance, Float> effect : itemStack.get(DataComponentTypes.FOOD).effects().stream().map(mmtEntry -> com.mojang.datafixers.util.Pair.of(mmtEntry.effect(), mmtEntry.probability())).toList())\n\t\t\tuse(effect);\n\t}\n}\n",
+        "from": "AppleSkin 1.20.1 (fabric), src/main/java/squeek/appleskin/helpers/FoodHelper.java:64"
+      }
+    },
+    {
       "id": "food-effects-from-consumable",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
