@@ -7799,6 +7799,26 @@
       }
     },
     {
+      "id": "local-player-system-message-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method sendSystemMessage\\([^)]*\\)\\n\\s*location: (?:variable \\w+ of type|class) LocalPlayer",
+      "apply": {
+        "find": "(?<![\\w$])(?:[\\w$]+(?:\\(\\))?\\s*\\.\\s*)*[\\w$]+(?:\\(\\))?\\s*\\.\\s*sendSystemMessage\\s*\\(",
+        "replace": "net.minecraft.client.Minecraft.getInstance().gui.getChat().addMessage("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 removed LocalPlayer.sendSystemMessage(Component); its 1.21.1 body was this.minecraft.gui.getChat().addMessage(component), and a LocalPlayer's minecraft is the one client instance.",
+      "verified": "Mojang's 1.21.1 game jar (NeoForm 1.21.1-20240808.144430), LocalPlayer.sendSystemMessage: getfield minecraft, getfield Minecraft.gui, Gui.getChat(), ChatComponent.addMessage(Component); 1.21.2 has no LocalPlayer.sendSystemMessage and keeps ChatComponent.addMessage(Component)",
+      "test": {
+        "error": "TeleportScreen.java:5: error: cannot find symbol\n        minecraft.player.sendSystemMessage(Component.translatable(\"chat.corpse.teleport_death_location\", teleport));\n                        ^\n  symbol:   method sendSystemMessage(MutableComponent)\n  location: variable player of type LocalPlayer\n",
+        "before": "package mod;\n\nclass TeleportScreen {\n    void f() {\n        minecraft.player.sendSystemMessage(Component.translatable(\"chat.corpse.teleport_death_location\", teleport));\n    }\n}\n",
+        "after": "package mod;\n\nclass TeleportScreen {\n    void f() {\n        net.minecraft.client.Minecraft.getInstance().gui.getChat().addMessage(Component.translatable(\"chat.corpse.teleport_death_location\", teleport));\n    }\n}\n",
+        "from": "Corpse 1.21.1 (neoforge), src/main/java/de/maxhenkel/corpse/gui/... line 137"
+      }
+    },
+    {
       "id": "hurt-or-simulate-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
