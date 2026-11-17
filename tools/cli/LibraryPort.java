@@ -86,8 +86,8 @@ final class LibraryPort {
             List<String> baseline = PerfOptimize.childJava(Installation.home());
             baseline.addAll(List.of("compile", "--root", work.toString(), "--json"));
             if (projectPath != null) baseline.addAll(List.of("--project", projectPath));
-            new ProcessBuilder(baseline).directory(work.toFile()).redirectOutput(baselineLog.toFile())
-                .redirectError(ProcessBuilder.Redirect.DISCARD).start().waitFor();
+            within(new ProcessBuilder(baseline).directory(work.toFile()).redirectOutput(baselineLog.toFile())
+                .redirectError(ProcessBuilder.Redirect.DISCARD).start(), "building its original");
             // A build that renames its projects (GlitchCore includes neoforge as :NeoForge) says what it has; the loader's
             // project is the one of that name, whatever its case.
             java.util.regex.Matcher has = java.util.regex.Pattern.compile("It has \\d+: ([^.\\\\]+)\\.").matcher(PerfOptimize.childOutput(baselineLog));
@@ -104,8 +104,7 @@ final class LibraryPort {
         ProcessBuilder child = new ProcessBuilder(command).directory(work.toFile()).redirectErrorStream(false)
             .redirectOutput(log.toFile()).redirectError(ProcessBuilder.Redirect.DISCARD);
         child.environment().put("MMT_LIBRARY_DEPTH", String.valueOf(depth + 1));
-        Process process = child.start();
-        process.waitFor();
+        within(child.start(), "porting it");
         Map<String, Object> result;
         try {
             result = Json.object(Json.parse(PerfOptimize.childOutput(log)));
@@ -244,6 +243,15 @@ final class LibraryPort {
             zip.stream().map(e -> e.getName()).filter(n -> n.endsWith(".class")).forEach(names::add);
         }
         return names;
+    }
+
+    /** A library port's step gets its own time (MMT_LIBRARY_MINUTES, 20 by default), so one slow library never takes a mod's. */
+    static void within(Process process, String step) throws Exception {
+        long minutes = Long.parseLong(System.getenv().getOrDefault("MMT_LIBRARY_MINUTES", "20"));
+        if (process.waitFor(minutes, java.util.concurrent.TimeUnit.MINUTES)) return;
+        process.descendants().forEach(ProcessHandle::destroyForcibly);
+        process.destroyForcibly();
+        throw new IOException(step + " took longer than " + minutes + " minutes, so it was stopped");
     }
 
     static String git(Path dir, String... args) throws Exception {
