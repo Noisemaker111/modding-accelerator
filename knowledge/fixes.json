@@ -369,7 +369,7 @@
       "id": "neo263-gamerule-name",
       "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
-      "match": "symbol:\\s+variable (GameRules|RULE_NATURAL_REGENERATION)",
+      "match": "symbol:\\s+(?:class|variable) (GameRules|RULE_NATURAL_REGENERATION)",
       "apply": {
         "find": "GameRules\\.RULE_NATURAL_REGENERATION",
         "replace": "GameRules.NATURAL_HEALTH_REGENERATION"
@@ -3428,7 +3428,7 @@
       "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.11 -> 26.1 (fabric-api)",
-      "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keybinding\\.v1 does not exist|symbol:\\s+variable KeyBindingHelper",
+      "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keybinding\\.v1 does not exist|symbol:\\s+(?:class|variable) KeyBindingHelper",
       "apply": {
         "find": "\\bKeyBindingHelper\\.registerKeyBinding\\(",
         "replace": "KeyMappingHelper.registerKeyMapping(",
@@ -3520,7 +3520,7 @@
       "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1 -> 1.21.11 (fabric-api)",
-      "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keymapping\\.v1 does not exist|symbol:\\s+variable KeyMappingHelper",
+      "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keymapping\\.v1 does not exist|symbol:\\s+(?:class|variable) KeyMappingHelper",
       "apply": {
         "find": "\\bKeyMappingHelper\\.registerKeyMapping\\(",
         "replace": "KeyBindingHelper.registerKeyBinding(",

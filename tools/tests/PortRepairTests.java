@@ -113,6 +113,12 @@ public final class PortRepairTests {
         // javac's log, written with Windows line ends, so a match that spans lines holds on every machine.
         int written = 0;
         Path windowsLog = Files.createTempFile("rule-error", ".log");
+        String qualifier = Port.logText(Files.writeString(windowsLog,
+            "  symbol:   variable Builder\r\n  symbol:   variable EMPTY\r\n  symbol:   variable level\r\n"));
+        check(
+            qualifier.contains("symbol:   class Builder") && qualifier.contains("variable EMPTY") && qualifier.contains("variable level"),
+            "a class javac calls a variable (named as a qualifier) is read as a class; constants and variables stay"
+        );
         for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
             if ("stonecutter".equals(rule.get("source")) || !(rule.get("test") instanceof Map<?, ?>)) continue;

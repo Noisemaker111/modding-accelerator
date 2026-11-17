@@ -285,14 +285,18 @@ public final class PortPreflightTest {
         // Arguments javac says the only candidate no longer takes go, for a constructor too, without a map: trailing ones, or
         // ones matched one way only; an inner choice between equal types is left alone.
         Path jr = Files.createDirectories(scratch.resolve("javac-required"));
-        String targets = "class Targets {\n  void f() {\n    var t = new TextureTarget(w, h,\n        true, Minecraft.ON_OSX);\n    var u = new Other(\"a\", 1, 2, \"b\");\n  }\n}\n";
+        String targets = "class Targets {\n  void f() {\n    var t = new TextureTarget(w, h,\n        true, Minecraft.ON_OSX);\n    var u = new Other(\"a\", 1, 2, \"b\");\n    tip(this.getDescriptionId(stack));\n    tip(this.getDescriptionId(stack.copy()));\n  }\n}\n";
         Files.writeString(jr.resolve("Targets.java"), targets);
         Path jrLog = scratch.resolve("javac-required.log");
         Files.writeString(jrLog, jr.resolve("Targets.java") + ":3: error: constructor TextureTarget in class TextureTarget cannot be applied to given types;\n    var t = new TextureTarget(w, h,\n            ^\n  required: int,int,boolean\n  found:    int,int,boolean,boolean\n  reason: actual and formal argument lists differ in length\n"
-            + jr.resolve("Targets.java") + ":5: error: constructor Other in class Other cannot be applied to given types;\n    var u = new Other(\"a\", 1, 2, \"b\");\n            ^\n  required: String,int,String\n  found:    String,int,int,String\n  reason: actual and formal argument lists differ in length\n");
+            + jr.resolve("Targets.java") + ":5: error: constructor Other in class Other cannot be applied to given types;\n    var u = new Other(\"a\", 1, 2, \"b\");\n            ^\n  required: String,int,String\n  found:    String,int,int,String\n  reason: actual and formal argument lists differ in length\n"
+            + jr.resolve("Targets.java") + ":6: error: method getDescriptionId in class Item cannot be applied to given types;\n    tip(this.getDescriptionId(stack));\n            ^\n  required: no arguments\n  found:    ItemStack\n  reason: actual and formal argument lists differ in length\n"
+            + jr.resolve("Targets.java") + ":7: error: method getDescriptionId in class Item cannot be applied to given types;\n    tip(this.getDescriptionId(stack.copy()));\n            ^\n  required: no arguments\n  found:    ItemStack\n  reason: actual and formal argument lists differ in length\n");
         VersionMap.Fix.run(map, jrLog, jr, false, null);
         String targeted = Files.readString(jr.resolve("Targets.java"));
         require(targeted.contains("var t = new TextureTarget(w, h,\n        true);\n"), "the argument javac no longer takes goes, its lines kept: " + targeted);
+        require(targeted.contains("tip(this.getDescriptionId());"), "a method that takes nothing now loses a plain argument");
+        require(targeted.contains("tip(this.getDescriptionId(stack.copy()));"), "a computed argument is not thrown away");
 
         // A registry the game's builders now ask for is passed where every candidate javac names takes it, in a static
         // helper with nothing else to give; a data-driven registry is the world's, and is left alone.

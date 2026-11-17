@@ -161,7 +161,18 @@ gradle.afterProject { p ->
     // mixin-check prepares the client launch to apply mixins, never to render, so it skips the game's
     // sound and texture download (hundreds of MB on a cold machine). Off unless asked for.
     if (System.getProperty('mmt.skipAssets', '') == 'true') {
-        p.tasks.matching { it.name == 'downloadAssets' }.configureEach { enabled = false }
+        p.tasks.matching { it.name == 'downloadAssets' }.configureEach { t ->
+            enabled = false
+            // ModDevGradle's prepare*Run tasks take the download's properties file as an input and refuse to start without
+            // it: an empty one stands in (the task never ran, so a later real launch still downloads and rewrites it).
+            if (t.hasProperty('assetPropertiesFile')) {
+                def f = t.assetPropertiesFile.get().asFile
+                if (!f.exists()) {
+                    f.parentFile.mkdirs()
+                    f.text = 'asset_index=\nassets_root=\n'
+                }
+            }
+        }
     }
     def sets = p.extensions.findByName('sourceSets')
     if (sets?.findByName('test') && !p.tasks.findByName('mmtPure')) {

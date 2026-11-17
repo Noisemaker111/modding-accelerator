@@ -2711,11 +2711,14 @@ public final class VersionMap {
                 Matcher sm = single.matcher(e.message());
                 String[] rf = REQUIRED_FOUND.get(e.file() + ":" + e.line());
                 Path f = sourcePath(e, repo);
-                if (!sm.find() || rf == null || f == null || !Files.isRegularFile(f) || rf[0].equals("no arguments")) {
+                if (!sm.find() || rf == null || f == null || !Files.isRegularFile(f)) {
                     continue;
                 }
+                // The one candidate takes nothing now (1.21.2: Item.getDescriptionId(ItemStack) -> getDescriptionId()):
+                // every argument goes, but only arguments that are plain names, so nothing a call computed is lost.
+                boolean none = rf[0].equals("no arguments");
                 List<String> required = new ArrayList<>(), found = new ArrayList<>();
-                for (String t : topLevelArguments(rf[0].replace('<', '(').replace('>', ')'))) {
+                for (String t : none ? List.<String>of() : topLevelArguments(rf[0].replace('<', '(').replace('>', ')'))) {
                     required.add(t.strip().replaceAll("\\(.*", ""));
                 }
                 for (String t : topLevelArguments(rf[1].replace('<', '(').replace('>', ')'))) {
@@ -2753,7 +2756,7 @@ public final class VersionMap {
                     continue;
                 }
                 List<String> args = topLevelArguments(text.substring(open + 1, close));
-                if (args.size() != found.size()) {
+                if (args.size() != found.size() || none && !args.stream().allMatch(a -> a.strip().matches("(?:this\\.)?[A-Za-z_$][\\w$]*"))) {
                     continue;
                 }
                 List<String> keep = new ArrayList<>();

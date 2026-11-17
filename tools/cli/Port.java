@@ -714,7 +714,10 @@ final class Port {
      * port, and ends lines with \r\n, which become \n: a rule's match spans lines with \n.
      */
     static String logText(Path log) throws IOException {
-        return new String(Files.readAllBytes(log), StandardCharsets.UTF_8).replace("\r\n", "\n");
+        // javac calls a missing class a variable when the code names it as a qualifier (BlockEntityType.Builder.of(..)):
+        // a capitalised name with lower case in it is a class by Java's naming, so rules written for "class X" match it.
+        return new String(Files.readAllBytes(log), StandardCharsets.UTF_8).replace("\r\n", "\n")
+            .replaceAll("(symbol:\\s+)variable ([A-Z][a-z][\\w$]*)", "$1class $2");
     }
 
     static List<Path> sources(ProjectModel project) throws IOException {

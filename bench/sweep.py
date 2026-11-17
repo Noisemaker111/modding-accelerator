@@ -536,7 +536,8 @@ def game_checks(mod, rec, work):
     rec["modid"] = modid
     if code == 0 and modid:
         snippet = (f'net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("{modid}")' if mod["loader"] == "fabric"
-                   else f'net.neoforged.fml.ModList.get().isLoaded("{modid}")')
+                   # The mod list itself: on NeoForge 21.2 ModList.isLoaded answered false for a mod getMods() listed.
+                   else f'net.neoforged.fml.ModList.get().getMods().stream().anyMatch(m -> m.getModId().equals("{modid}"))')
         code, out, err = sh(MMT + ["eval", "--root", work, "--code", snippet, "--json"] + proj, timeout=600)
         res = last_json(out) or {}
         value = str((res.get("result") or res).get("value"))
