@@ -197,6 +197,26 @@ public final class PortTests {
         );
     }
 
+    /** A build that pins its game as mcVersion reads as that Minecraft version, like the longer pin names. */
+    static void versionsChecks() {
+        Map<String, Object> mcVersion = Json.map(
+            "projects",
+            List.of(Json.map("pins", Json.map("mcVersion", "1.21.1"), "dependencies", List.of()))
+        );
+        check(
+            Port.versions(mcVersion).equals(Set.of("1.21.1")),
+            "a build that pins its game as mcVersion reads as that Minecraft version"
+        );
+        Map<String, Object> standard = Json.map(
+            "projects",
+            List.of(Json.map("pins", Json.map("minecraft_version", "1.21.1"), "dependencies", List.of()))
+        );
+        check(
+            Port.versions(standard).equals(Set.of("1.21.1")),
+            "a build that pins its game as minecraft_version still reads as that version"
+        );
+    }
+
     public static void main(String[] args) throws Exception {
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
@@ -324,6 +344,7 @@ public final class PortTests {
         Port port = new Port(build, model);
         Build portBuild = new Build(project, home, "", new Mmt.Report(root, "port"));
         routeChecks(home, new Port(portBuild, model), scratch);
+        versionsChecks();
         for (var groups : List.of(
             List.of("net.minecraftforge"),
             List.of("net.fabricmc", "net.neoforged"),

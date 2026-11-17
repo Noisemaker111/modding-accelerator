@@ -100,7 +100,7 @@ final class Target {
             pin.getKey(),
             pin.getValue().toString()
         );
-        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version", "mcVersion")) if (
             pins.containsKey(key)
         ) setup.replacements.put(key, to);
         if (setup.replacements.isEmpty()) throw new IOException(
@@ -188,7 +188,7 @@ final class Target {
      */
     static void unobfuscatedFabric(Setup setup, Build build, String to) throws Exception {
         String from = null;
-        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version", "mcVersion")) if (
             setup.pins.get(key) != null
         ) from = setup.pins.get(key);
         if (from == null || Versions.compare(to, "26.1") < 0 || Versions.compare(from, "26.1") >= 0) return;
@@ -406,7 +406,7 @@ final class Target {
      */
     static void modDevFollows(Setup setup, Build build, String to) throws Exception {
         String from = "";
-        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version", "mcVersion")) if (
             setup.pins.containsKey(key)
         ) {
             from = setup.pins.get(key);
@@ -1032,7 +1032,7 @@ final class Target {
      */
     static void neoGradleFollows(Setup setup, Build build, String to) throws Exception {
         String from = "";
-        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version", "mcVersion")) if (
             setup.pins.containsKey(key)
         ) {
             from = setup.pins.get(key);
@@ -1366,7 +1366,7 @@ final class Target {
     static void unitTestsInFml(Setup setup, Build build, String to, String neoForge) throws Exception {
         if (Versions.compare(to, "26.1") < 0) return;
         String from = "";
-        for (String key : List.of("minecraft_version", "minecraftVersion", "mc_version")) if (setup.pins.containsKey(key)) {
+        for (String key : List.of("minecraft_version", "minecraftVersion", "mc_version", "mcVersion")) if (setup.pins.containsKey(key)) {
             from = setup.pins.get(key);
             break;
         }

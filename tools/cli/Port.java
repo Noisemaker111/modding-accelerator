@@ -1711,7 +1711,8 @@ final class Port {
                 "minecraft_version",
                 "minecraftVersion",
                 "exactMinecraftVersion",
-                "mc_version"
+                "mc_version",
+                "mcVersion"
             )) if (pins.containsKey(key)) actual.add(pins.get(key).toString());
             for (Object d : Json.array(Json.object(p).get("dependencies"))) {
                 var dep = Json.object(d);

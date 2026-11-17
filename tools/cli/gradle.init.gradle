@@ -123,7 +123,7 @@ gradle.afterProject { p ->
                     [configuration: c.name, group: d.group, name: d.name, version: d.version]
                 }}.unique()
                 def pins = [:]
-                ['minecraft_version','minecraftVersion','exactMinecraftVersion','mc_version','loader_version','fabric_version','fabric_api_version',
+                ['minecraft_version','minecraftVersion','exactMinecraftVersion','mc_version','mcVersion','loader_version','fabric_version','fabric_api_version',
                  'yarn_mappings','yarn_version','neoforge_version','neo_version','neoForgeVersion','neoforgeVersion','forge_version'].each { key -> if (p.hasProperty(key)) pins[key] = p.property(key).toString() }
                 // Declared accepted game/loader ranges must travel with the version pins.
                 ['minecraft_version_range','neo_version_range','neoforge_version_range','forge_version_range','loader_version_range'].each { key -> if (p.hasProperty(key)) pins[key] = p.property(key).toString() }
