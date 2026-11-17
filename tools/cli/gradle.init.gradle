@@ -16,7 +16,12 @@ def planning = System.getProperty('mmt.metadataMode', '') == 'plan'
 // Test hook for mmt's fallback: behave like an init script that registers too late
 // whenever Gradle is configuring on demand, so the retry without it can be exercised.
 def simulateMiss = System.getProperty('mmt.simulateCodMiss', '') == 'true' && gradle.startParameter.configureOnDemand
-def partFile = { File state, String path -> new File(state, 'model-parts/' + Base64.urlEncoder.withoutPadding().encodeToString(path.bytes) + '.json') }
+// Plugin releases mmt pinned because the newest one in the build's range needs a newer Java (Build.pluginPin).
+def pluginPins = System.getProperty('mmt.pluginPins', '').split(',').findAll { it.contains('=') }.collectEntries { def kv = it.split('=', 2); [(kv[0]): kv[1]] }
+if (pluginPins) gradle.beforeSettings { s ->
+    s.pluginManagement.resolutionStrategy.eachPlugin { d -> if (pluginPins[d.requested.id.id]) d.useVersion(pluginPins[d.requested.id.id]) }
+}
+def partFile ={ File state, String path -> new File(state, 'model-parts/' + Base64.urlEncoder.withoutPadding().encodeToString(path.bytes) + '.json') }
 def metadataPath = { String path -> (path == ':' ? '' : path) + ':mmtProjectMetadata' }
 gradle.rootProject { root ->
     if (simulateMiss) return
