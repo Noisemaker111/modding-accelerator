@@ -56,6 +56,7 @@ final class Installation {
         "tools/VersionMap.java",
         "tools/GameDiff.java",
         "tools/MixinAudit.java",
+        "tools/MixinTriage.java",
         "tools/mixincheck/MmtMixinCheck.java",
         "tools/mixincheck/MmtMixinErrors.java",
         "tools/mixincheck/MmtLaunchRecorder.java",
@@ -489,9 +490,10 @@ final class Installation {
                 "UTF-8",
                 "-cp",
                 own.toString(),
-                // A suite may use a shared fixture class beside it (PackCheckFixtures); javac compiles it on demand.
+                // A suite may use a shared fixture class beside it (PackCheckFixtures), or a shared
+                // production helper beside tools/ (MixinTriage); javac compiles them on demand.
                 "-sourcepath",
-                harness.resolve("tools/tests").toString(),
+                harness.resolve("tools/tests").toString() + File.pathSeparator + harness.resolve("tools").toString(),
                 "-d",
                 classes.toString()
             )

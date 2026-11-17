@@ -252,6 +252,56 @@ public final class PortTests {
         check(thrown, "a real run whose target planning fails still throws instead of previewing");
     }
 
+    /** Mixin triage sorts any mod's mixins against the pinned legacy Mixin, no game jar needed. */
+    static void triageChecks() {
+        String plain = """
+            import org.spongepowered.asm.mixin.Mixin;
+            import org.spongepowered.asm.mixin.Shadow;
+            import org.spongepowered.asm.mixin.injection.At;
+            import org.spongepowered.asm.mixin.injection.Inject;
+            @Mixin(net.minecraft.world.entity.LivingEntity.class)
+            public class LivingEntityMixin {
+              @Shadow int health;
+              @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
+              void onHurt() {}
+            }
+            """;
+        MixinTriage.Verdict portable = MixinTriage.triage("LivingEntityMixin", plain);
+        check(
+            portable.tier() == MixinTriage.Tier.PORTABLE &&
+            portable.targets().equals(List.of("net.minecraft.world.entity.LivingEntity")),
+            "a plain inject+shadow mixin is portable and names its target: " + portable
+        );
+        String modern = plain.replace("@Inject(method", "@ModifyExpressionValue(method");
+        MixinTriage.Verdict manual = MixinTriage.triage("ModernMixin", modern);
+        check(
+            manual.tier() == MixinTriage.Tier.MANUAL &&
+            manual.reasons().stream().anyMatch(reason -> reason.contains("ModifyExpressionValue")),
+            "a MixinExtras-era injector is manual with the injector named: " + manual
+        );
+        String custom = plain.replace("public class LivingEntityMixin {", "public class LivingEntityMixin extends InjectionPoint {");
+        MixinTriage.Verdict adapt = MixinTriage.triage("CustomMixin", custom);
+        check(
+            adapt.tier() == MixinTriage.Tier.ADAPT,
+            "a custom extension point is adapt, not portable: " + adapt
+        );
+        String config = """
+            { "package": "example.mixin", "minVersion": "0.15.2", "compatibilityLevel": "JAVA_21", "mixins": [] }
+            """;
+        MixinTriage.ConfigVerdict rewritten = MixinTriage.triageConfig(config);
+        check(
+            rewritten.tier() == MixinTriage.Tier.ADAPT &&
+            rewritten.rewrites().stream().anyMatch(rewrite -> rewrite.contains("0.7")) &&
+            rewritten.rewrites().stream().anyMatch(rewrite -> rewrite.contains("JAVA_8")),
+            "a modern config is adapt with both pins rewritten: " + rewritten
+        );
+        MixinTriage.ConfigVerdict clean = MixinTriage.triageConfig("{ \"package\": \"example.mixin\", \"mixins\": [] }");
+        check(
+            clean.tier() == MixinTriage.Tier.PORTABLE,
+            "a config with no version pins is portable: " + clean
+        );
+    }
+
     public static void main(String[] args) throws Exception {
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
@@ -381,6 +431,7 @@ public final class PortTests {
         routeChecks(home, new Port(portBuild, model), scratch);
         versionsChecks();
         planningDegradeChecks(home, scratch);
+        triageChecks();
         for (var groups : List.of(
             List.of("net.minecraftforge"),
             List.of("net.fabricmc", "net.neoforged"),
