@@ -3635,6 +3635,44 @@ final class Port {
     }
 
     /**
+     * 1.21.2's models pose from a render state: EntityModel<T extends Entity>.setupAnim(entity, limbSwing, limbSwingAmount,
+     * ageInTicks, netHeadYaw, headPitch) became EntityModel<S extends EntityRenderState>.setupAnim(S). The renderer that
+     * computed those five values in 1.21.1 (LivingEntityRenderer.render) now stores the same ones in the state
+     * (walkAnimationPos, walkAnimationSpeed, ageInTicks, yRot, xRot). A mod model extending a game model XModel<..> takes
+     * XRenderState, and its setupAnim keeps its body with the old names read back from the state; super.setupAnim passes
+     * the state. The entity itself is not in the state: a body that still reads it is left for javac to name.
+     */
+    static String entityModelRenderState(String text) {
+        Matcher cls = Pattern.compile("\\bclass\\s+\\w+\\s*(?:<[^{]*?>)?\\s+extends\\s+(\\w*)Model\\s*<\\s*([^<>{]+?)\\s*>").matcher(text);
+        if (!cls.find()) return text;
+        String prefix = cls.group(1).isEmpty() ? "Entity" : cls.group(1);
+        String state = prefix + "RenderState";
+        boolean living = !prefix.equals("Entity");
+        Matcher setup = Pattern.compile(
+            "(public\\s+void\\s+setupAnim\\s*\\()\\s*[\\w.<>?, ]+?\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*\\)\\s*\\{"
+        ).matcher(text);
+        if (!setup.find() || !living) return text;
+        String var = Pattern.compile("\\bstate\\b").matcher(text).find() ? "mmtState" : "state";
+        int bodyOpen = setup.end() - 1, bodyClose = closingBrace(text, bodyOpen);
+        if (bodyClose < 0) return text;
+        String indent = text.substring(text.lastIndexOf('\n', setup.start()) + 1, setup.start()).replaceAll("\\S.*", "") + "    ";
+        String[] names = { setup.group(3), setup.group(4), setup.group(5), setup.group(6), setup.group(7) };
+        String[] fields = { "walkAnimationPos", "walkAnimationSpeed", "ageInTicks", "yRot", "xRot" };
+        StringBuilder prologue = new StringBuilder();
+        for (int i = 0; i < 5; i++) prologue.append('\n').append(indent).append("float ").append(names[i]).append(" = ").append(var).append('.').append(fields[i]).append(';');
+        String body = text.substring(bodyOpen + 1, bodyClose).replaceAll(
+            "\\bsuper\\s*\\.\\s*setupAnim\\s*\\(\\s*" + Pattern.quote(setup.group(2)) + "\\s*,[^;]*\\)\\s*;",
+            Matcher.quoteReplacement("super.setupAnim(" + var + ");")
+        );
+        String out = text.substring(0, setup.start()) + setup.group(1) + state + " " + var + ") {" + prologue + body + text.substring(bodyClose);
+        out = out.substring(0, cls.start()) + text.substring(cls.start(), cls.end()).replaceFirst(
+            "Model\\s*<\\s*" + Pattern.quote(cls.group(2)) + "\\s*>$",
+            Matcher.quoteReplacement("Model<" + state + ">")
+        ) + out.substring(cls.end());
+        return addImport(out, "net.minecraft.client.renderer.entity.state." + state);
+    }
+
+    /**
      * 1.21.2 split entity rendering into extracting a render state and drawing it: EntityRenderer<T> became
      * EntityRenderer<T, S extends EntityRenderState>, and render(T entity, float yaw, float partialTicks, PoseStack,
      * MultiBufferSource, int) became render(S state, PoseStack, MultiBufferSource, int). A renderer that extends
@@ -3982,6 +4020,7 @@ final class Port {
         if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
         else if ("call-arguments".equals(apply.get("transform"))) text = callArguments(text, apply);
         else if ("entity-render-state".equals(apply.get("transform"))) text = entityRenderState(text);
+        else if ("entity-model-render-state".equals(apply.get("transform"))) text = entityModelRenderState(text);
         else if ("toast-visibility".equals(apply.get("transform"))) text = toastVisibility(text);
         else if ("food-effects".equals(apply.get("transform"))) text = foodEffects(text);
         else if ("food-consumable".equals(apply.get("transform"))) text = foodConsumables(text);

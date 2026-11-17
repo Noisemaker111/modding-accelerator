@@ -7799,6 +7799,28 @@
       }
     },
     {
+      "id": "entity-model-render-state-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.client.model.EntityModel.setupAnim"
+      ],
+      "match": "type argument [\\w.]+ is not within bounds of type-variable \\w+|method does not override or implement a method from a supertype",
+      "apply": {
+        "transform": "entity-model-render-state"
+      },
+      "scope": "log",
+      "when": "setupAnim\\s*\\(\\s*[\\w.<>?, ]+?\\s+\\w+\\s*,\\s*float\\s+\\w+\\s*,\\s*float",
+      "note": "1.21.2 poses models from a render state: setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch) became setupAnim(S state). A mod model extending a game XModel takes XRenderState; its setupAnim keeps its body, with the five old values read back from the fields the renderer now stores them in. The entity is not in the state, so a body that reads it is left for javac to name.",
+      "verified": "Mojang's 1.21.1 game jar: LivingEntityRenderer.render passes WalkAnimationState.position(pt), speed(pt), getBob (tickCount + pt), wrapped head minus body yaw and lerped xRot to setupAnim; 1.21.2: LivingEntityRenderer.extractRenderState stores walkAnimationPos, walkAnimationSpeed, yRot (head minus body yaw), xRot, and EntityRenderer.extractRenderState ageInTicks (tickCount + pt); EntityModel<T extends EntityRenderState>.setupAnim(T), SkeletonModel<S extends SkeletonRenderState>",
+      "test": {
+        "error": "DummySkeletonModel.java:8: error: type argument T is not within bounds of type-variable S\n",
+        "before": "package de.maxhenkel.corpse.entities;\n\nimport net.minecraft.client.model.SkeletonModel;\nimport net.minecraft.client.model.geom.ModelPart;\n\npublic class DummySkeletonModel<T extends Mob & RangedAttackMob> extends SkeletonModel<T> {\n\n    public DummySkeletonModel(ModelPart modelPart) {\n        super(modelPart);\n    }\n\n    @Override\n    public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {\n        super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);\n        head.yRot = netHeadYaw * 0.5F;\n    }\n\n}\n",
+        "after": "package de.maxhenkel.corpse.entities;\nimport net.minecraft.client.renderer.entity.state.SkeletonRenderState;\n\nimport net.minecraft.client.model.SkeletonModel;\nimport net.minecraft.client.model.geom.ModelPart;\n\npublic class DummySkeletonModel<T extends Mob & RangedAttackMob> extends SkeletonModel<SkeletonRenderState> {\n\n    public DummySkeletonModel(ModelPart modelPart) {\n        super(modelPart);\n    }\n\n    @Override\n    public void setupAnim(SkeletonRenderState state) {\n        float limbSwing = state.walkAnimationPos;\n        float limbSwingAmount = state.walkAnimationSpeed;\n        float ageInTicks = state.ageInTicks;\n        float netHeadYaw = state.yRot;\n        float headPitch = state.xRot;\n        super.setupAnim(state);\n        head.yRot = netHeadYaw * 0.5F;\n    }\n\n}\n",
+        "from": "Corpse 1.21.1 (neoforge), DummySkeletonModel, with a body added so the read-back shows"
+      }
+    },
+    {
       "id": "local-player-system-message-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
