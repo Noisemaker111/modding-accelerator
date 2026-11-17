@@ -1108,6 +1108,9 @@ public final class VersionMap {
         /** Parameters the game added with one value it always passes (GameDiff's "argDefaults"), by new method name:
          * {owner simple (new), index, value, new parameter count}. */
         final Map<String, List<String[]>> argDefaults = new HashMap<>();
+        /** Methods moved to a class one holder keeps beside the old one (GameDiff's "siblings"): "fromField|toField" by
+         * old owner (simple) and name. */
+        final Map<String, Set<String>> siblings = new HashMap<>();
 
         static Known load(Path mapFile) throws IOException {
             Known k = new Known();
@@ -1193,6 +1196,9 @@ public final class VersionMap {
                             k.chains.computeIfAbsent(simple(newOwner) + "." + from, x -> new ArrayList<>()).add(chain);
                         }
                     }
+                    case "siblings" -> k.siblings
+                        .computeIfAbsent(ownerSimple + "." + from, x -> new HashSet<>())
+                        .add(field(t, "fromField") + "|" + field(t, "toField"));
                     case "rewrites" -> k.rewrites
                         .computeIfAbsent(ownerSimple + "." + from, x -> new ArrayList<>())
                         .add(
@@ -3376,6 +3382,45 @@ public final class VersionMap {
                 texts.put(f, String.join("\n", lines));
                 replacements++;
                 byKind.merge("reused names", 1, Integer::sum);
+            }
+
+            // 2e'. A method moved to a class the same holder keeps beside the old one (26.2: LevelRenderer.blockChanged ->
+            // LevelExtractor, both fields of Minecraft): a call through holder.levelRenderer goes through holder.levelExtractor;
+            // its arguments then follow the new signature like any other call.
+            for (Err e : readErrors(log)) {
+                String sym = e.symbol() == null ? "" : e.symbol();
+                Matcher mm = Pattern.compile("^method (\\w+)\\(").matcher(sym);
+                Matcher via = Pattern.compile("^variable (\\w+) of type ([\\w.$]+)").matcher(e.location() == null ? "" : e.location());
+                if (!e.message().equals("cannot find symbol") || !mm.find() || !via.find()) {
+                    continue;
+                }
+                Set<String> moves = k.siblings.getOrDefault(simple(via.group(2)) + "." + mm.group(1), Set.of());
+                String toField = null;
+                for (String move : moves) {
+                    if (move.startsWith(via.group(1) + "|")) {
+                        toField = toField == null ? move.substring(move.indexOf('|') + 1) : "";
+                    }
+                }
+                Path f = sourcePath(e, repo);
+                if (toField == null || toField.isEmpty() || f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                String[] lines = text.split("\r?\n", -1);
+                if (e.line() < 1 || e.line() > lines.length) {
+                    continue;
+                }
+                String moved = lines[e.line() - 1].replaceFirst(
+                    "\\.(\\s*)" + Pattern.quote(via.group(1)) + "(\\s*\\.\\s*" + Pattern.quote(mm.group(1)) + "\\s*\\()",
+                    ".$1" + Matcher.quoteReplacement(toField) + "$2"
+                );
+                if (moved.equals(lines[e.line() - 1])) {
+                    continue;
+                }
+                lines[e.line() - 1] = moved;
+                texts.put(f, String.join(text.contains("\r\n") ? "\r\n" : "\n", lines));
+                replacements++;
+                byKind.merge("method moved beside its holder's field", 1, Integer::sum);
             }
 
             // 2e. A member the game replaced with a chain on the same receiver (GameDiff's "chains"): input.up becomes

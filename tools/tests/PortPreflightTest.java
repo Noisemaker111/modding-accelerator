@@ -422,6 +422,33 @@ public final class PortPreflightTest {
         require(hud.contains("graphics.blitSprite(OTHER, x, y, 8, 8);"), "a call javac did not name is left alone");
         require(hud.contains("graphics.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, SHEET, 64, 64, 0, 0, x, y, 16, 16);"), "an overload the game never calls gains the value every called one did: " + hud);
 
+        // A method moved to a class one holder keeps beside the old one (26.2: LevelRenderer.blockChanged -> LevelExtractor,
+        // Minecraft.levelRenderer and Minecraft.levelExtractor): the call goes through the other field; another call stays.
+        Path sb = Files.createDirectories(scratch.resolve("siblings"));
+        Path sbMap = scratch.resolve("siblings.json");
+        Files.writeString(sbMap, """
+            { "from": "26.1.2", "to": "26.2", "names": "mojmap",
+              "siblings": [
+                { "step": "26.1.2 -> 26.2", "owner": "net.minecraft.client.renderer.LevelRenderer", "from": "blockChanged", "desc": "(I)V", "holder": "net.minecraft.client.Minecraft", "fromField": "levelRenderer", "toField": "levelExtractor", "newOwner": "net.minecraft.client.renderer.extract.LevelExtractor", "newDesc": "(I)V" }
+              ]
+            }
+            """);
+        String[] sync = {
+            "class Sync {",
+            "  void f() {",
+            "    Minecraft.getInstance().levelRenderer.blockChanged(null, pos, null, null, 0);",
+            "    Minecraft.getInstance().levelRenderer.needsUpdate();",
+            "  }",
+            "}",
+        };
+        Files.writeString(sb.resolve("Sync.java"), String.join("\n", sync) + "\n");
+        Files.writeString(scratch.resolve("siblings.log"), sb.resolve("Sync.java") + ":3: error: cannot find symbol\n" + sync[2]
+            + "\n                                               ^\n  symbol:   method blockChanged(<null>,BlockPos,<null>,<null>,int)\n  location: variable levelRenderer of type LevelRenderer\n");
+        VersionMap.Fix.run(sbMap, scratch.resolve("siblings.log"), sb, false, null);
+        String synced = Files.readString(sb.resolve("Sync.java"));
+        require(synced.contains("Minecraft.getInstance().levelExtractor.blockChanged(null, pos, null, null, 0);"), "the call goes through the holder's other field: " + synced);
+        require(synced.contains("Minecraft.getInstance().levelRenderer.needsUpdate();"), "a call javac did not name stays");
+
         // A nested class the game moved out of its outer class (1.21.2: ArmorItem.Type -> equipment.ArmorType): every use
         // written through the outer class becomes the new class, imported; the outer class itself stays.
         Path mo = Files.createDirectories(scratch.resolve("moved-out"));

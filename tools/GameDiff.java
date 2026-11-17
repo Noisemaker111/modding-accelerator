@@ -2044,6 +2044,56 @@ public final class GameDiff {
          * the last is a field or a no-argument method, and the last gives what the old member gave (same field type, or
          * the same parameters and return type) after the map's renames.
          */
+        /** A method moved to an unrelated class that one holder keeps beside the old one, each in a public field of its own. */
+        record Sibling(Meth from, Meth to, String holder, String fromField, String toField) {}
+
+        /**
+         * 26.2 moved LevelRenderer.blockChanged to LevelExtractor, and Minecraft keeps both (levelRenderer, levelExtractor):
+         * a call through holder.levelRenderer goes through holder.levelExtractor. Only a holder with exactly one public
+         * field of each type in b counts, and only a move between classes neither of which extends the other.
+         */
+        List<Sibling> siblings() {
+            List<Sibling> out = new ArrayList<>();
+            for (var e : mAB.entrySet()) {
+                Meth a = e.getKey(), m = e.getValue();
+                if (a.isStatic() || m.isStatic() || (m.flags & ACC_PUBLIC) == 0) {
+                    continue;
+                }
+                Cls mapped = cAB.get(a.owner);
+                String oldOwner = mapped == null ? null : mapped.name, newOwner = m.owner.name;
+                if (oldOwner == null || oldOwner.equals(newOwner) || subtypeB(oldOwner, newOwner) || subtypeB(newOwner, oldOwner)) {
+                    continue;
+                }
+                Sibling found = null;
+                int holders = 0;
+                for (Cls c : b.classes.values()) {
+                    String fromField = null, toField = null;
+                    int fromCount = 0, toCount = 0;
+                    for (Fld f : c.fields.values()) {
+                        if ((f.flags & ACC_PUBLIC) == 0 || (f.flags & ACC_STATIC) != 0) {
+                            continue;
+                        }
+                        if (f.desc.equals("L" + oldOwner + ";")) {
+                            fromField = f.name;
+                            fromCount++;
+                        } else if (f.desc.equals("L" + newOwner + ";")) {
+                            toField = f.name;
+                            toCount++;
+                        }
+                    }
+                    if (fromCount == 1 && toCount == 1) {
+                        holders++;
+                        found = new Sibling(a, m, c.name.replace('/', '.'), fromField, toField);
+                    }
+                }
+                if (holders == 1) {
+                    out.add(found);
+                }
+            }
+            out.sort(Comparator.comparing((Sibling s) -> s.from().owner.name + "." + s.from().name + s.from().desc));
+            return out;
+        }
+
         List<Chain> chains() {
             Map<String, Evidence> ev = evidence();
             List<Chain> out = new ArrayList<>();
@@ -2866,6 +2916,8 @@ public final class GameDiff {
         final List<String> classRewrites = new ArrayList<>();
         /** Members the game replaced with a chain on the same receiver (Hop.chains). */
         final List<String> chains = new ArrayList<>();
+        /** Methods moved to a class one holder keeps beside the old one (Hop.siblings). */
+        final List<String> siblings = new ArrayList<>();
         /** Parameters the game added with one value its own code always passes (Hop.argDefaults). */
         final List<String> argDefaults = new ArrayList<>();
         Snap prev;
@@ -2977,6 +3029,19 @@ public final class GameDiff {
                         ", \"votes\": " + d.votes() + ", \"of\": " + d.of() + " }"
                     );
                 }
+                for (Hop.Sibling c : h.siblings()) {
+                    siblings.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"owner\": " + VersionMap.Diff.q(c.from().owner.name.replace('/', '.')) +
+                        ", \"from\": " + VersionMap.Diff.q(c.from().name) +
+                        ", \"desc\": " + VersionMap.Diff.q(c.from().desc) +
+                        ", \"holder\": " + VersionMap.Diff.q(c.holder()) +
+                        ", \"fromField\": " + VersionMap.Diff.q(c.fromField()) +
+                        ", \"toField\": " + VersionMap.Diff.q(c.toField()) +
+                        ", \"newOwner\": " + VersionMap.Diff.q(c.to().owner.name.replace('/', '.')) +
+                        ", \"newDesc\": " + VersionMap.Diff.q(c.to().desc) + " }"
+                    );
+                }
                 for (Hop.Chain c : h.chains()) {
                     chains.add(
                         "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
@@ -3070,6 +3135,11 @@ public final class GameDiff {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(argDefaults.get(i));
             }
             head.append(argDefaults.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"siblings\": [");
+            for (int i = 0; i < siblings.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(siblings.get(i));
+            }
+            head.append(siblings.isEmpty() ? "],\n" : "\n  ],\n");
             head.append("  \"chains\": [");
             for (int i = 0; i < chains.size(); i++) {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(chains.get(i));
