@@ -4167,6 +4167,26 @@
       }
     },
     {
+      "id": "sprite-region-opener-1202",
+      "provenance": "hand",
+      "jump": "1.20.1 -> 1.20.2 (yarn)",
+      "match": "no suitable method found for load\\(Identifier,Resource\\)|incompatible parameter types in lambda expression",
+      "apply": {
+        "find": "\\(\\s*\\)\\s*->\\s*SpriteLoader\\s*\\.\\s*load\\s*\\(\\s*([\\w$.]+)\\s*,\\s*([\\w$.]+)\\s*\\)",
+        "replace": "mmtOpener -> mmtOpener.loadSprite($1, $2)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20.2 made a sprite region a function of the SpriteOpener that loads it; the game's own SpriteRegions.add(id, resource) now adds opener -> opener.loadSprite(id, resource) where 1.20.1 added () -> SpriteLoader.load(id, resource).",
+      "verified": "Yarn 1.20.2+build.4: AtlasSource.SpriteRegion extends Function<SpriteOpener, SpriteContents>; SpriteRegions.add(Identifier, Resource) defaults to add(id, opener -> opener.loadSprite(id, resource)) (method_47675); SpriteOpener.loadSprite(Identifier, Resource); no SpriteLoader.load(Identifier, Resource)",
+      "test": {
+        "error": "AtlasLoaderMixin.java:6: error: no suitable method found for load(Identifier,Resource)\n",
+        "before": "package me.pepperbell.continuity.client.mixin;\n\nclass AtlasLoaderMixin {\n\tvoid f(Map<Identifier, AtlasSource.SpriteRegion> emissiveSuppliers, Identifier emissiveId, Resource resource) {\n\t\tif (resource != null) {\n\t\t\temissiveSuppliers.put(emissiveId, () -> SpriteLoader.load(emissiveId, resource));\n\t\t}\n\t}\n}\n",
+        "after": "package me.pepperbell.continuity.client.mixin;\n\nclass AtlasLoaderMixin {\n\tvoid f(Map<Identifier, AtlasSource.SpriteRegion> emissiveSuppliers, Identifier emissiveId, Resource resource) {\n\t\tif (resource != null) {\n\t\t\temissiveSuppliers.put(emissiveId, mmtOpener -> mmtOpener.loadSprite(emissiveId, resource));\n\t\t}\n\t}\n}\n",
+        "from": "Continuity 1.20.1 (fabric), src/main/java/me/pepperbell/continuity/client/mixin/AtlasLoaderMixin.java:72"
+      }
+    },
+    {
       "id": "custom-payload-from-bytes-1202",
       "provenance": "hand",
       "jump": "1.20.1 -> 1.20.2 (yarn)",
