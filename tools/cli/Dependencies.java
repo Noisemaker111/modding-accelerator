@@ -242,8 +242,14 @@ final class Dependencies {
      */
     static boolean portLibrary(Target.Setup setup, Map<String, Object> blocker, String loader) {
         String artifact = Json.text(blocker, "artifact", ""), old = Json.text(blocker, "version", ""), file = Json.text(blocker, "file", "");
-        if (portFrom == null || setup.build == null || file.isEmpty() || !artifact.contains(":")) return false;
+        if (portFrom == null || setup.build == null || !artifact.contains(":")) return false;
         String group = artifact.substring(0, artifact.indexOf(':')), name = artifact.substring(artifact.indexOf(':') + 1);
+        // A NeoForge mod dependency's blocker carries no file; its jar is in Gradle's cache under the old version.
+        if (file.isEmpty()) {
+            Path cached = cachedJar(artifact, old);
+            if (cached == null) return false;
+            file = cached.toString();
+        }
         try {
             var receipt = LibraryPort.ensure(setup, group, name, old, Path.of(file), portFrom, loader);
             apply(setup, group, name, old, group, name, LibraryPort.version(old, setup.to), Path.of(file), receipt);

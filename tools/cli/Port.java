@@ -838,6 +838,10 @@ final class Port {
         if (mapFile == null || !Files.isRegularFile(mapFile)) return mappedClasses;
         var map = Json.read(mapFile);
         for (Object o : Json.array(map.get("classesRemoved"))) mappedClasses.add(String.valueOf(o).replace('/', '.'));
+        // A verified rule for a removed class (BlockEntityType.Builder -> the 1.21.2 constructor) goes before carrying it.
+        for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
+            if (Json.object(item).get("members") instanceof List<?> members) for (Object member : members) mappedClasses.remove(String.valueOf(member));
+        }
         for (String list : List.of("classes", "classRewrites")) for (Object o : Json.array(map.get(list))) mappedClasses.remove(Json.text(Json.object(o), "from", ""));
         return mappedClasses;
     }

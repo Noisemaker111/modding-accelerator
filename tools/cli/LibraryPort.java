@@ -44,33 +44,58 @@ final class LibraryPort {
         int depth = Integer.parseInt(System.getenv().getOrDefault("MMT_LIBRARY_DEPTH", "0"));
         if (depth >= 2) throw new IOException("it is a library of a library of a library; mmt ports libraries at most two levels down");
         String hash = Dependencies.sha512(binary);
-        Map<String, Object> release;
+        String source = "", published = "";
         try {
-            release = Json.object(Json.parse(Target.fetch(setup.build, "https://api.modrinth.com/v2/version_file/" + hash + "?algorithm=sha512")));
+            var release = Json.object(Json.parse(Target.fetch(setup.build, "https://api.modrinth.com/v2/version_file/" + hash + "?algorithm=sha512")));
+            var project = Json.object(Json.parse(Target.fetch(setup.build, "https://api.modrinth.com/v2/project/" + release.get("project_id"))));
+            source = Json.text(project, "source_url", "");
+            published = Json.text(release, "date_published", "");
         } catch (IOException unindexed) {
-            throw new IOException("its jar is not a published Modrinth release, so its source could not be found");
+            // A Maven jar is often not the file uploaded to Modrinth; the jar's own metadata names its repository, and its
+            // entries carry the time it was built.
         }
-        var project = Json.object(Json.parse(Target.fetch(setup.build, "https://api.modrinth.com/v2/project/" + release.get("project_id"))));
-        String source = Json.text(project, "source_url", "");
-        if (!source.matches("https://(github\\.com|gitlab\\.com|codeberg\\.org)/[\\w.-]+/[\\w.-]+/?")) throw new IOException(
-            "its published project names no source repository (source_url: " + (source.isEmpty() ? "none" : source) + ")"
+        if (!source.matches(REPOSITORY)) source = metadataRepository(binary);
+        if (published.isEmpty()) published = builtAt(binary);
+        // A jar built with fixed entry times: another loader's jar of the same release (same group and version) may carry
+        // the real ones.
+        if (published.isEmpty()) {
+            Path groupDir = binary;
+            for (int i = 0; i < 4 && groupDir != null; i++) groupDir = groupDir.getParent();
+            if (groupDir != null && Files.isDirectory(groupDir)) try (var walk = Files.walk(groupDir, 4)) {
+                for (Path sibling : walk.filter(p -> p.getFileName().toString().endsWith("-" + old + ".jar")).toList()) {
+                    published = builtAt(sibling);
+                    if (!published.isEmpty()) break;
+                }
+            }
+        }
+        if (!source.matches(REPOSITORY)) throw new IOException(
+            "neither its published project nor its own metadata names a source repository"
         );
         source = source.replaceAll("/$", "");
         Path work = Path.of(System.getProperty("user.home"), ".mmt/library-ports", name + "-" + old + "-" + setup.to);
         if (Files.isDirectory(work)) deleteTree(work);
         Files.createDirectories(work.getParent());
         git(work.getParent(), "clone", "--quiet", "--filter=blob:none", "--no-checkout", source + ".git", work.getFileName().toString());
-        String published = Json.text(release, "date_published", "");
         String[] commit = commit(work, old, from, published);
         git(work, "checkout", "--quiet", "--detach", commit[0]);
         String projectPath = loaderProject(work, loader);
         // The original builds first: that proves the commit is a working release, and it sets up the old decompiled game
         // the port carries removed classes from.
-        List<String> baseline = PerfOptimize.childJava(Installation.home());
-        baseline.addAll(List.of("compile", "--root", work.toString(), "--json"));
-        if (projectPath != null) baseline.addAll(List.of("--project", projectPath));
-        new ProcessBuilder(baseline).directory(work.toFile()).redirectOutput(work.resolveSibling(work.getFileName() + ".baseline.json").toFile())
-            .redirectError(ProcessBuilder.Redirect.DISCARD).start().waitFor();
+        Path baselineLog = work.resolveSibling(work.getFileName() + ".baseline.json");
+        for (int attempt = 0; attempt < 2; attempt++) {
+            List<String> baseline = PerfOptimize.childJava(Installation.home());
+            baseline.addAll(List.of("compile", "--root", work.toString(), "--json"));
+            if (projectPath != null) baseline.addAll(List.of("--project", projectPath));
+            new ProcessBuilder(baseline).directory(work.toFile()).redirectOutput(baselineLog.toFile())
+                .redirectError(ProcessBuilder.Redirect.DISCARD).start().waitFor();
+            // A build that renames its projects (GlitchCore includes neoforge as :NeoForge) says what it has; the loader's
+            // project is the one of that name, whatever its case.
+            java.util.regex.Matcher has = java.util.regex.Pattern.compile("It has \\d+: ([^.\\\\]+)\\.").matcher(PerfOptimize.childOutput(baselineLog));
+            String named = null;
+            if (has.find()) for (String p : has.group(1).split(",\\s*")) if (p.trim().equalsIgnoreCase(":" + loader)) named = p.trim();
+            if (named == null || named.equals(projectPath)) break;
+            projectPath = named;
+        }
         // The port runs as its own mmt process, with its own receipt and lock, on the selected loader's project.
         List<String> command = PerfOptimize.childJava(Installation.home());
         command.addAll(List.of("port", "--root", work.toString(), "--from", from, "--to", setup.to, "--fix", "--json"));
@@ -114,6 +139,38 @@ final class LibraryPort {
         );
         Json.save(dir.resolve("receipt.json"), receipt);
         return receipt;
+    }
+
+    static final String REPOSITORY = "https://(github\\.com|gitlab\\.com|codeberg\\.org)/[\\w.-]+/[\\w.-]+/?";
+
+    /** The source repository a mod jar's own metadata names (issue tracker, sources, homepage), or "". */
+    static String metadataRepository(Path jar) {
+        try (var zip = new ZipFile(jar.toFile())) {
+            StringBuilder text = new StringBuilder();
+            for (String name : List.of("META-INF/neoforge.mods.toml", "META-INF/mods.toml", "fabric.mod.json")) {
+                var entry = zip.getEntry(name);
+                if (entry != null) text.append(new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8)).append('\n');
+            }
+            java.util.regex.Matcher url = java.util.regex.Pattern.compile("https://(?:github\\.com|gitlab\\.com|codeberg\\.org)/([\\w.-]+)/([\\w.-]+)").matcher(text);
+            while (url.find()) {
+                String repo = url.group(2).replaceAll("\\.git$", "");
+                if (!url.group(1).equalsIgnoreCase("sponsors")) return "https://" + url.group().split("/")[2] + "/" + url.group(1) + "/" + repo;
+            }
+        } catch (IOException unreadable) {
+            return "";
+        }
+        return "";
+    }
+
+    /** When a jar was built: its newest entry time, unless the build wrote fixed times (reproducible archives), else "". */
+    static String builtAt(Path jar) {
+        long newest = 0;
+        try (var zip = new ZipFile(jar.toFile())) {
+            for (var e : java.util.Collections.list(zip.entries())) newest = Math.max(newest, e.getTime());
+        } catch (IOException unreadable) {
+            return "";
+        }
+        return newest < Instant.parse("2012-01-01T00:00:00Z").toEpochMilli() ? "" : Instant.ofEpochMilli(newest).plusSeconds(86400).toString();
     }
 
     /** {commit, why}: the release's tag, else the last commit before the release on the branch for its game version. */
