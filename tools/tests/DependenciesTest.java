@@ -25,6 +25,14 @@ public final class DependenciesTest {
         require(!Dependencies.requiredInToml(toml, "patchouli"), "mandatory=false is optional");
         require(!Dependencies.requiredInToml(toml, "geckolib"), "not named at all is optional");
         require(Dependencies.requiredInFabric("{\"depends\": {\"minecraft\": \"*\", \"trinkets\": \"*\"}, \"suggests\": {\"modmenu\": \"*\"}}", "trinkets"), "fabric depends blocks");
+        // A declaration written with the build's properties (Sophisticated Backpacks: "mezz.jei:jei-${jei_mc_version}:${jei_version}")
+        // is found once they are filled in; a declaration of another artifact is not.
+        Path written = Files.createTempDirectory("mmt-written-");
+        Files.writeString(written.resolve("settings.gradle"), "");
+        Files.writeString(written.resolve("gradle.properties"), "jei_mc_version=1.21.1-neoforge\njei_version=19.32.0.359\n");
+        Files.writeString(written.resolve("build.gradle"), "dependencies {\n    compileOnly \"mezz.jei:jei-${jei_mc_version}:${jei_version}\"\n    implementation \"other:lib-${jei_version}:1\"\n}\n");
+        var declared = Dependencies.written(new Target.Setup(null, Json.map(), "1.21.2", List.of()), written.resolve("build.gradle"), "mezz.jei:jei-1.21.1-neoforge");
+        require(declared.equals(List.of("    compileOnly \"mezz.jei:jei-${jei_mc_version}:${jei_version}\"")), "a property-built declaration is found: " + declared);
         require(!Dependencies.requiredInFabric("{\"depends\": {\"minecraft\": \"*\"}, \"suggests\": {\"modmenu\": \"*\"}}", "modmenu"), "fabric suggests is optional");
         require("1.4.0+1.21.6".equals(Dependencies.chooseGameRelease(List.of("1.3.0+1.21.1", "1.4.0+1.21.6", "1.3.2+1.21.6"), "1.3.0+1.21.1", "1.21.1", "1.21.6")), "game as a build suffix");
         var found = Dependencies.findPublishedProject(

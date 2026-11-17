@@ -235,6 +235,21 @@ final class Dependencies {
             else why = "the mod's own metadata does not require " + modId;
             Path script = Path.of(setup.project.get("buildFile").toString());
             List<String> blocks = declarations(setup, script, artifact);
+            if (blocks.isEmpty()) {
+                // A multi-loader build declares it in a sibling module's script (JEI's fabric/build.gradle.kts).
+                Path own = script;
+                try (var scripts = Files.walk(setup.build.project.root, 3)) {
+                    for (Path other : scripts.filter(p -> p.getFileName().toString().matches("build\\.gradle(\\.kts)?")
+                        && !p.toString().contains(File.separator + "build" + File.separator) && !p.equals(own)).toList()) {
+                        List<String> found = declarations(setup, other, artifact);
+                        if (!found.isEmpty()) {
+                            script = other;
+                            blocks = found;
+                            break;
+                        }
+                    }
+                }
+            }
             if (blocks.isEmpty()) return false;
             Set<Path> importers = runtimeOnly || jar == null ? Set.of() : importers(setup.build.project, jar);
             for (Path source : importers) {
@@ -296,7 +311,7 @@ final class Dependencies {
         try {
             return List.of(declaration(setup, script, artifact));
         } catch (IOException several) {
-            if (several.getMessage() == null || !several.getMessage().startsWith("Multiple active")) return List.of();
+            if (several.getMessage() == null || !several.getMessage().startsWith("Multiple active")) return written(setup, script, artifact);
             Matcher marker = Pattern.compile("Multiple active (.+) declarations in").matcher(several.getMessage());
             if (!marker.find()) return List.of();
             List<String> lines = new ArrayList<>();
@@ -308,6 +323,41 @@ final class Dependencies {
             }
             return lines;
         }
+    }
+
+    /**
+     * Declarations that name the artifact only once the build's properties are filled in ("mezz.jei:jei-${jei_mc_version}:
+     * ${jei_version}" with jei_mc_version=1.21.1-neoforge): each single-line, active one. Empty when there is none, or one
+     * spans lines and cannot be placed exactly.
+     */
+    static List<String> written(Target.Setup setup, Path script, String artifact) throws IOException {
+        java.util.Properties properties = new java.util.Properties();
+        // The script's own folder first, then up to the build's root (a subproject reads its root's properties too).
+        int depth = 0;
+        for (Path dir = script.toAbsolutePath().getParent(); dir != null && depth < 3; dir = dir.getParent(), depth++) {
+            Path file = dir.resolve("gradle.properties");
+            if (Files.isRegularFile(file)) {
+                for (var e : ProjectModel.properties(file).entrySet()) properties.putIfAbsent(e.getKey(), e.getValue());
+            }
+            if (Files.isRegularFile(dir.resolve("settings.gradle")) || Files.isRegularFile(dir.resolve("settings.gradle.kts"))) break;
+        }
+        List<String> lines = new ArrayList<>();
+        for (String line : setup.text(script).split("\\r?\\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("//") || trimmed.startsWith("*") || !line.contains("$")) continue;
+            Matcher reference = Pattern.compile("\\$\\{?([\\w.]+)\\}?").matcher(line);
+            StringBuilder resolved = new StringBuilder();
+            while (reference.find()) {
+                String value = properties.getProperty(reference.group(1));
+                reference.appendReplacement(resolved, Matcher.quoteReplacement(value == null ? reference.group() : value));
+            }
+            reference.appendTail(resolved);
+            if (!resolved.toString().contains(artifact + ":")) continue;
+            String plain = line.replaceAll("\\$\\{[\\w.]+\\}", "");
+            if (plain.chars().filter(c -> c == '(').count() != plain.chars().filter(c -> c == ')').count() || plain.contains("{")) return List.of();
+            if (!lines.contains(line)) lines.add(line);
+        }
+        return lines;
     }
 
     /** The jar Gradle downloaded for group:name:version, in its module cache, or null. */
