@@ -6,13 +6,16 @@ layer; tools/cli/NeoForgeSources.java).
 
 For each version, NeoForge's MDK for that game is converted to Fabric with MMT_NEOFORGE_SOURCES=all, so every class of
 NeoForge's published sources jar that the bridge does not mirror is copied into the bridge's package. mmt compile then
-builds it; each copied file javac reports an error in is removed, and it compiles again until no copied file fails.
-What is left compiles together on Fabric, so any part of it a mod names, with every listed class that names in turn
-(what convert copies), compiles too. An error outside the copied files (the bridge or the MDK) stops the run, except
+builds it; in each copied file javac reports an error in, the member around the error (a method, field, constructor,
+initializer, nested class or import) is removed, or the whole file when the error is outside any member or in an
+@Override method (NeoForgeSources.around), and it compiles again until no copied file fails. What is left compiles
+together on Fabric, so any part of it a mod names, with every listed class that names in turn (what convert copies,
+without the listed members), compiles too. An error outside the copied files (the bridge or the MDK) stops the run, except
 the entrypoint's subscription of a removed NeoForge @EventBusSubscriber class, which goes with the class.
 """
 import argparse
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -27,6 +30,7 @@ VERSIONS = {
     "1.21.1": ("mdk-mdg-1.21.1", {}, BRIDGE + "/1.21.1"),
 }
 MARK = "/" + "loaderbridge/neoforge/"
+MEMBERS = cs.ROOT / "tools" / "cli" / "NeoForgeSources.java"
 
 
 def newest_log(work):
@@ -55,7 +59,8 @@ def measure(version):
     root = Path(copied[0].as_posix().split(MARK)[0] + MARK)
     print(f"{version}: {len(copied)} of NeoForge's classes copied; compiling", flush=True)
     removed = 0
-    for round_ in range(1, 60):
+    members = {}
+    for round_ in range(1, 200):
         code, result, seconds = cs.mmt(["compile", "--root", str(work), "--json"], cs.TIMEOUT["convert"])
         if code == 0:
             break
@@ -69,10 +74,25 @@ def measure(version):
                 print(f"  {e['file']}:{e['line']}: {e['message']}")
             sys.exit(f"{version}: the compile fails outside NeoForge's copied classes (round {round_}); log {log}: {str(result)[:800]}")
         java = work / "src" / "main" / "java"
+        lines = {}
+        for e in errors:
+            if Path(e["file"]).resolve() in mine:
+                lines.setdefault(Path(e["file"]).resolve(), set()).add(e["line"])
+        batch = work / ".runs" / "bridge-import-errors.txt"
+        batch.write_text("".join(f"{f}\t{','.join(map(str, sorted(n)))}\n" for f, n in lines.items()), encoding="utf-8")
+        out = subprocess.run(["java", str(MEMBERS), str(batch)], capture_output=True, text=True, encoding="utf-8", check=True).stdout
         gone = set()
-        for f in mine:
+        cut = 0
+        for row in out.splitlines():
+            f, key = row.split("\t", 1)
+            name = "net.neoforged.neoforge." + Path(f).resolve().relative_to(root.resolve()).with_suffix("").as_posix().replace("/", ".")
+            if key:
+                members.setdefault(name, set()).add(key)
+                cut += 1
+                continue
             os.unlink(cs.extended(f))
-            gone.add(f.relative_to(java.resolve()).with_suffix("").as_posix().replace("/", "."))
+            members.pop(name, None)
+            gone.add(Path(f).resolve().relative_to(java.resolve()).with_suffix("").as_posix().replace("/", "."))
         # Convert subscribes NeoForge's own @EventBusSubscriber classes from the mod's entrypoints: not the removed ones.
         for own in java.rglob("*.java"):
             if MARK in own.as_posix():
@@ -81,16 +101,18 @@ def measure(version):
             kept = "".join(line for line in text.splitlines(keepends=True) if not any(name + ".class" in line for name in gone))
             if kept != text:
                 Path(cs.extended(own)).write_text(kept, encoding="utf-8")
-        removed += len(mine)
-        print(f"  round {round_}: {len(mine)} files failed ({seconds:.0f} s), {removed} removed in all", flush=True)
+        removed += len(gone)
+        print(f"  round {round_}: {len(mine)} files failed ({seconds:.0f} s): {cut} members and {len(gone)} files removed; {removed} files in all", flush=True)
     else:
-        sys.exit(f"{version}: still failing after 60 rounds")
+        sys.exit(f"{version}: still failing after 200 rounds")
     kept = sorted("net.neoforged.neoforge." + p.relative_to(root).with_suffix("").as_posix().replace("/", ".") for p in root.rglob("*.java"))
     out = cs.ROOT / folder / "neoforge-sources.txt"
     out.write_text(
         f"# NeoForge's own classes that compile on Fabric through this bridge (python bench/bridge_import.py --only {version}):\n"
         "# mmt convert copies the ones a mod names, with the listed classes those name, from NeoForge's sources jar.\n"
-        + "".join(name + "\n" for name in kept), encoding="utf-8", newline="\n")
+        "# A line with a second part names a member of the class that does not compile on Fabric and is left out.\n"
+        + "".join(name + "\n" for name in kept)
+        + "".join(f"{name} {key}\n" for name in kept for key in sorted(members.get(name, ()))), encoding="utf-8", newline="\n")
     print(f"{version}: {len(kept)} of {len(copied)} compile on Fabric; wrote {out.relative_to(cs.ROOT)}")
     cs.stop(work)
     return len(kept), len(copied)

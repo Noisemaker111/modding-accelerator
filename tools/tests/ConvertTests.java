@@ -50,6 +50,15 @@ public final class ConvertTests {
             tested++;
         }
         check(tested >= 19, "every loader rule turns its Fabric test into its NeoForge test and back (" + tested + " rules)");
+        String nf = "package a;\nimport x.Gone;\n/** {not a brace */\npublic class A {\n    static final String S = \"}{\";\n    int f() {\n        return Gone.g();\n    }\n" +
+            "    static class B extends C {\n        @Override\n        void run() { Gone.h(); }\n    }\n    int f(int x) { return x; }\n}\n";
+        List<String> around = new ArrayList<>();
+        for (int line : new int[] {2, 7, 11, 4}) around.add(String.valueOf(NeoForgeSources.around(nf, line) == null ? null : NeoForgeSources.around(nf, line).key()));
+        check(
+            around.equals(List.of("#import x.Gone", "A#f(0)", "A#B", "null")) &&
+                NeoForgeSources.remove(nf, around).equals("package a;\n/** {not a brace */\npublic class A {\n    static final String S = \"}{\";\n    int f(int x) { return x; }\n}\n"),
+            "a NeoForge class keeps what compiles on Fabric: an error takes out its import or member, an @Override one its nested class, one in the class header the file: " + around
+        );
         check(
             LoaderRules.find(
                 "String s = \"FabricLoader.getInstance().getGameDir()\"; // FabricLoader.getInstance().getGameDir()",

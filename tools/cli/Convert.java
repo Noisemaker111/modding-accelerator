@@ -2882,6 +2882,13 @@ final class Convert {
         lambdaMixinTargets(minecraft);
         enumExtensionLookups();
         superHookCalls();
+        // The members of NeoForge's copied classes that do not compile on Fabric come out once the rules have run, as
+        // bench/bridge_import.py measured them.
+        for (String file : copiedFiles) {
+            String name = NeoForgeSources.PREFIX + file.substring((bridgeFolder() + "/" + NeoForgeSources.FOLDER + "/").length(), file.length() - ".java".length()).replace('/', '.');
+            Set<String> gone = copiedMembersGone.get(name);
+            if (gone != null && exists(file)) write(file, NeoForgeSources.remove(read(file), gone));
+        }
         // NeoForge generates data from GatherDataEvent listeners; Fabric from fabric-datagen entrypoints: the bridge's
         // DataEntrypoint posts the event (when the bridge has it for this game version).
         if (bridgeUsed && exists(bridgeFolder() + "/DataEntrypoint.java")) {
@@ -3441,6 +3448,9 @@ final class Convert {
         // NeoForge's own classes the code names go in before the source rules run, which rewrite them as the mod's code.
         if (bridgePackage != null) copied = copyNeoForgeSources(mirroredClasses(), LoaderRules.strings(bridgeLayer == null ? null : bridgeLayer.get("drops")));
         for (String file : javaFiles()) {
+            // NeoForge's own subscribers (in its copied classes) are NeoForge wiring itself up, which on Fabric is the
+            // bridge's job; many are package-private, so the mod's entrypoint could not name them anyway.
+            if (copiedFiles.contains(file)) continue;
             String text = read(file);
             Matcher mod = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
             Matcher s = Pattern.compile(
@@ -3452,9 +3462,6 @@ final class Convert {
             boolean[] code = LoaderRules.code(text);
             while (s.find()) {
                 if (!code[s.start()]) continue;
-                // A private nested subscriber (NeoForge's own DeferredSpawnEggItem.CommonHandler) cannot be named from the
-                // entrypoint; NeoForge's copied classes are the ones that have them.
-                if (Pattern.compile("\\bprivate\\s").matcher(s.group()).find()) continue;
                 String args = s.group(1) == null ? "" : s.group(1);
                 boolean client = args.contains("Dist.CLIENT") && !args.contains("DEDICATED_SERVER");
                 String type = pkg + (s.group(2).equals(top) ? top : top + "." + s.group(2));
@@ -3632,6 +3639,9 @@ final class Convert {
     final List<String> copiedFiles = new ArrayList<>();
     Set<String> copied = Set.of();
 
+    /** The members of NeoForge's classes that do not compile on Fabric, which come out of their copies, by class. */
+    final Map<String, Set<String>> copiedMembersGone = new HashMap<>();
+
     /**
      * The NeoForge classes the bridge mirrors for this game: a class is mirrored only when the bridge or its version layer
      * has its file (a class only the 1.21.1 layer writes is NeoForge's own copy on 26.1, or nothing).
@@ -3661,7 +3671,13 @@ final class Convert {
         Set<String> mirrored = new TreeSet<>();
         for (var c : classes.entrySet()) if (!dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) mirrored.add(c.getKey());
         Set<String> allowed = new TreeSet<>();
-        if (!all) for (String line : Files.readAllLines(list, StandardCharsets.UTF_8)) if (!line.isBlank() && !line.startsWith("#")) allowed.add(line.strip());
+        // A line is a class, or a class and one of its members that does not compile on Fabric (NeoForgeSources.Member).
+        if (!all) for (String line : Files.readAllLines(list, StandardCharsets.UTF_8)) {
+            if (line.isBlank() || line.startsWith("#")) continue;
+            String[] parts = line.strip().split(" ", 2);
+            if (parts.length == 1) allowed.add(parts[0]);
+            else copiedMembersGone.computeIfAbsent(parts[0], k -> new TreeSet<>()).add(parts[1]);
+        }
         allowed.removeAll(mirrored);
         List<String> texts = new ArrayList<>();
         for (String file : javaFiles()) texts.add(read(file));
@@ -3673,8 +3689,9 @@ final class Convert {
         String url = Json.text(entry, "maven", "") + "/" + gav[0].replace('.', '/') + "/" + gav[1] + "/" + gav[2] + "/" + gav[1] + "-" + gav[2] + "-sources.jar";
         Map<String, String> sources = NeoForgeSources.read(Target.download(build, url));
         sources.keySet().removeAll(mirrored);
-        // NeoForge's own @Mod classes are NeoForge itself starting, never the converted mod's entrypoints.
-        sources.values().removeIf(text -> Pattern.compile("(?m)^@Mod\\(").matcher(text).find());
+        // NeoForge's own @Mod classes are NeoForge itself starting, never the converted mod's entrypoints: what else they
+        // hold (NeoForgeMod.MOD_ID) stays.
+        sources.replaceAll((name, text) -> text.replaceAll("(?m)^@Mod\\(.*\\)[ \\t]*\\r?\\n", ""));
         if (all) allowed.addAll(sources.keySet());
         allowed.retainAll(sources.keySet());
         Set<String> copied = all ? allowed : NeoForgeSources.closure(texts, sources, allowed);
