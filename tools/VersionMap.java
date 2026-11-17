@@ -2849,6 +2849,85 @@ public final class VersionMap {
                 byKind.merge("arguments javac no longer takes", 1, Integer::sum);
             }
 
+            // 2c*''. Trailing arguments the game added that the enclosing method already has (1.20.2: renderBackground(context)
+            // inside render(DrawContext context, int mouseX, int mouseY, float delta) takes (context, mouseX, mouseY, delta)):
+            // javac's required list is the found one plus some types, and the enclosing method's other parameters are
+            // exactly those types in that order. Anything less certain is left.
+            for (Err e : readErrors(log)) {
+                Matcher sm = single.matcher(e.message());
+                String[] rf = REQUIRED_FOUND.get(e.file() + ":" + e.line());
+                Path f = sourcePath(e, repo);
+                if (!sm.find() || rf == null || f == null || !Files.isRegularFile(f) || rf[0].equals("no arguments")) {
+                    continue;
+                }
+                List<String> required = new ArrayList<>(), found = new ArrayList<>();
+                for (String t : topLevelArguments(rf[0].replace('<', '(').replace('>', ')'))) {
+                    required.add(t.strip().replaceAll("\\(.*", ""));
+                }
+                if (!rf[1].equals("no arguments")) {
+                    for (String t : topLevelArguments(rf[1].replace('<', '(').replace('>', ')'))) {
+                        found.add(t.strip().replaceAll("\\(.*", ""));
+                    }
+                }
+                if (required.size() <= found.size() || !required.subList(0, found.size()).equals(found)) {
+                    continue;
+                }
+                List<String> missing = required.subList(found.size(), required.size());
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                int lineStart = 0;
+                for (int i = 1; i < e.line() && lineStart > -1; i++) {
+                    int next = text.indexOf('\n', lineStart);
+                    lineStart = next < 0 ? -1 : next + 1;
+                }
+                if (lineStart < 0) {
+                    continue;
+                }
+                // The enclosing method: the last declaration header before the call.
+                Matcher header = Pattern.compile("(?m)^[ \\t]*(?:@\\w+\\s+)*(?:(?:public|protected|private|static|final|synchronized)\\s+)*[\\w<>\\[\\]?, .]+\\s+\\w+\\s*\\(([^)]*)\\)\\s*(?:throws [\\w., ]+)?\\s*\\{").matcher(text);
+                String params = null;
+                while (header.find() && header.start() < lineStart) {
+                    params = header.group(1);
+                }
+                if (params == null) {
+                    continue;
+                }
+                List<String[]> declared = new ArrayList<>(); // {type, name}
+                for (String p : topLevelArguments(params.replace('<', '(').replace('>', ')'))) {
+                    String[] parts = p.strip().replaceAll("\\(.*?\\)", "").replaceAll("^final\\s+", "").split("\\s+");
+                    if (parts.length >= 2) {
+                        declared.add(new String[] { parts[parts.length - 2], parts[parts.length - 1] });
+                    }
+                }
+                int lineEnd = text.indexOf('\n', lineStart);
+                lineEnd = lineEnd < 0 ? text.length() : lineEnd;
+                Matcher callAt = Pattern.compile("(?<![\\w$])(?:" + Pattern.quote(sm.group(1)) + "|super|this)\\s*\\(").matcher(text);
+                callAt.region(Math.min(lineEnd, lineStart + Math.max(0, e.caret())), lineEnd);
+                if (!callAt.find()) {
+                    continue;
+                }
+                int open = callAt.end() - 1, close = closingParen(text, open);
+                if (close < 0) {
+                    continue;
+                }
+                String inside = text.substring(open + 1, close);
+                List<String> args = inside.isBlank() ? List.of() : topLevelArguments(inside);
+                List<String> unused = new ArrayList<>();
+                List<String> unusedTypes = new ArrayList<>();
+                for (String[] d : declared) {
+                    if (args.stream().noneMatch(a -> a.strip().equals(d[1]))) {
+                        unused.add(d[1]);
+                        unusedTypes.add(d[0]);
+                    }
+                }
+                if (args.size() != found.size() || !unusedTypes.equals(missing)) {
+                    continue;
+                }
+                text = text.substring(0, close) + (args.isEmpty() ? "" : ", ") + String.join(", ", unused) + text.substring(close);
+                texts.put(f, text);
+                replacements++;
+                byKind.merge("arguments from the enclosing method", 1, Integer::sum);
+            }
+
             // 2c**. An argument the game added that has one value: every candidate javac names takes a HolderGetter of a
             // built-in registry at the same place, and the call passes none there (1.21.2: ShapedRecipeBuilder.shaped(
             // RecipeCategory, Item) -> shaped(HolderGetter<Item>, RecipeCategory, ItemLike)). The registry is passed.

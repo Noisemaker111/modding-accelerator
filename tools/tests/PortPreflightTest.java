@@ -422,6 +422,31 @@ public final class PortPreflightTest {
         require(hud.contains("graphics.blitSprite(OTHER, x, y, 8, 8);"), "a call javac did not name is left alone");
         require(hud.contains("graphics.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, SHEET, 64, 64, 0, 0, x, y, 16, 16);"), "an overload the game never calls gains the value every called one did: " + hud);
 
+        // Trailing arguments the game added that the enclosing method has (1.20.2: renderBackground(context) inside
+        // render(context, mouseX, mouseY, delta)): they are passed in the method's order; where the types do not line up
+        // exactly, nothing is guessed.
+        Path ep = Files.createDirectories(scratch.resolve("enclosing"));
+        Files.writeString(scratch.resolve("enclosing.json"), "{ \"from\": \"1.20.1\", \"to\": \"1.20.2\", \"names\": \"yarn\" }\n");
+        String[] configLines = {
+            "class ConfigScreen extends Screen {",
+            "  public void render(DrawContext context, int mouseX, int mouseY, float delta) {",
+            "    renderBackground(context);",
+            "  }",
+            "  public void tick(DrawContext context, int ticks) {",
+            "    renderBackground(context);",
+            "  }",
+            "}",
+        };
+        Files.writeString(ep.resolve("ConfigScreen.java"), String.join("\n", configLines) + "\n");
+        String needs = "\n    ^\n  required: DrawContext,int,int,float\n  found:    DrawContext\n  reason: actual and formal argument lists differ in length\n";
+        Files.writeString(scratch.resolve("enclosing.log"),
+            ep.resolve("ConfigScreen.java") + ":3: error: method renderBackground in class Screen cannot be applied to given types;\n" + configLines[2] + needs
+            + ep.resolve("ConfigScreen.java") + ":6: error: method renderBackground in class Screen cannot be applied to given types;\n" + configLines[5] + needs);
+        VersionMap.Fix.run(scratch.resolve("enclosing.json"), scratch.resolve("enclosing.log"), ep, false, null);
+        String config = Files.readString(ep.resolve("ConfigScreen.java"));
+        require(config.contains("    renderBackground(context, mouseX, mouseY, delta);\n  }\n  public void tick"), "the enclosing method's parameters are passed: " + config);
+        require(config.contains("int ticks) {\n    renderBackground(context);"), "types that do not line up are left: " + config);
+
         // A method moved to a class one holder keeps beside the old one (26.2: LevelRenderer.blockChanged -> LevelExtractor,
         // Minecraft.levelRenderer and Minecraft.levelExtractor): the call goes through the other field; another call stays.
         Path sb = Files.createDirectories(scratch.resolve("siblings"));
