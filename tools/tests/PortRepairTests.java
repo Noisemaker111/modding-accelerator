@@ -673,6 +673,23 @@ public final class PortRepairTests {
         String carried = Port.nestedDeclaration(oldGame, "Builder");
         if (carried == null || !carried.startsWith("    public static final class Builder") || !carried.endsWith("    }") || carried.contains("Inner")) throw new IllegalStateException("static nested class carried whole: " + carried);
         if (Port.nestedDeclaration(oldGame, "Inner") != null) throw new IllegalStateException("an inner class is not carried");
+        // An access transformer follows the map: a renamed method keeps its access under the new name and descriptor, a
+        // field under its new name, a moved class in a descriptor follows; an entry the map does not know stays as written.
+        List<String> at = new ArrayList<>(List.of(
+            "public net.minecraft.client.gui.GuiGraphics blitSprite(Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIII)V # Jade",
+            "public net.minecraft.client.renderer.LevelRenderer rainSoundTime",
+            "protected net.minecraft.world.entity.animal.Sheep getOffspringColor(Lnet/minecraft/world/entity/animal/Animal;Lold/Thing;)Lnet/minecraft/world/item/DyeColor;",
+            "public net.minecraft.world.level.biome.Biome TEMPERATURE_NOISE"
+        ));
+        Map<String, String[]> members = new HashMap<>();
+        members.put("net.minecraft.client.gui.GuiGraphics blitSprite(Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIII)V", new String[] { "net.minecraft.client.gui.GuiGraphics", "blitSprite", "(Ljava/util/function/Function;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIIII)V" });
+        members.put("net.minecraft.client.renderer.LevelRenderer rainSoundTime", new String[] { "net.minecraft.client.renderer.WeatherEffectRenderer", "rainSoundTime", "" });
+        int followed = Port.followMap(at, Map.of("old.Thing", "fresh.Thing"), members);
+        if (followed != 3
+            || !at.get(0).equals("public net.minecraft.client.gui.GuiGraphics blitSprite(Ljava/util/function/Function;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIIII)V # Jade")
+            || !at.get(1).equals("public net.minecraft.client.renderer.WeatherEffectRenderer rainSoundTime")
+            || !at.get(2).contains("(Lnet/minecraft/world/entity/animal/Animal;Lfresh/Thing;)")
+            || !at.get(3).equals("public net.minecraft.world.level.biome.Biome TEMPERATURE_NOISE")) throw new IllegalStateException("access transformer follows the map: " + at);
         String top = Port.topLevel("package a;\n\nimport b.C;\n\n@Deprecated\npublic final class Gone {\n    int x;\n}\n", "Gone");
         if (top == null || !top.startsWith("@Deprecated\npublic final class Gone") || !top.endsWith("}")) throw new IllegalStateException("a top-level class is carried from its annotations on: " + top);
         count++;

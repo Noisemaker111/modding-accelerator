@@ -1445,7 +1445,9 @@ final class Port {
             repairTasks.add(0, "--continue");
             applySilentRules(from, to);
             renameClassesInStrings(map);
+            portAccessTransformer(mapFile);
             var initial = build.gradle(tasks, explicitTask ? "port-initial-compile" : "port-initial-build");
+            if (initial.exit() != 0 && dropMissingAccessTargets(initial.log()) > 0) initial = build.gradle(tasks, explicitTask ? "port-initial-compile-at" : "port-initial-build-at");
             log = initial.log();
             compiled = initial.exit() == 0;
             // The errors the port started from (every one: port builds lift javac's 100-error cap), before any repair.
@@ -2952,6 +2954,93 @@ final class Port {
     }
 
     /** The NeoForge access transformer the build applies: NeoGradle's accessTransformers file, or META-INF/accesstransformer.cfg. */
+    /**
+     * The access transformer follows the game before the first build: an entry for a class, field or method the map moves,
+     * renames or re-types names it as the target has it (descriptors included). What the map cannot place stays, for the
+     * build to name.
+     */
+    int portAccessTransformer(Path mapFile) throws Exception {
+        Path at = accessTransformer();
+        if (at == null || mapFile == null || !Files.isRegularFile(at) || !Files.isRegularFile(mapFile)) return 0;
+        var map = Json.read(mapFile);
+        Map<String, String> classes = new HashMap<>();
+        for (Object o : Json.array(map.get("classes"))) classes.put(Json.text(Json.object(o), "from", ""), Json.text(Json.object(o), "to", ""));
+        Map<String, String[]> members = new HashMap<>(); // owner name desc -> {owner, name, desc}
+        for (String list : List.of("methods", "methodsMoved", "signatures", "fields")) for (Object o : Json.array(map.get(list))) {
+            var m = Json.object(o);
+            String owner = Json.text(m, "owner", ""), desc = Json.text(m, "desc", "");
+            members.putIfAbsent(owner + " " + Json.text(m, "from", "") + (list.equals("fields") ? "" : desc), new String[] {
+                Json.text(m, "newOwner", classes.getOrDefault(owner, owner)), Json.text(m, "to", ""), list.equals("fields") ? "" : Json.text(m, "newDesc", desc)
+            });
+        }
+        if (classes.isEmpty() && members.isEmpty()) return 0;
+        List<String> lines = new ArrayList<>(Arrays.asList(Files.readString(at, StandardCharsets.UTF_8).split("\n", -1)));
+        int changed = followMap(lines, classes, members);
+        if (changed == 0) return 0;
+        track(at);
+        Files.writeString(at, String.join("\n", lines), StandardCharsets.UTF_8);
+        rulesApplied.computeIfAbsent("access-transformer-follows-map", k -> new ArrayList<>()).add(changed + " entr(y/ies)");
+        return changed;
+    }
+
+    /** Access transformer lines rewritten for the map's class moves and member renames ({owner, name, desc} by "owner namedesc"). */
+    static int followMap(List<String> lines, Map<String, String> classes, Map<String, String[]> members) {
+        Pattern entry = Pattern.compile("^(\\s*(?:public|protected|private|default)(?:[-+]f)?\\s+)([\\w.$]+)(?:(\\s+)([\\w$<>]+)(\\([^)\\s]*\\)\\S+)?)?(.*)$");
+        int changed = 0;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            Matcher m = entry.matcher(line.replace("\r", ""));
+            if (!m.find()) continue;
+            String owner = m.group(2), name = m.group(4), desc = m.group(5) == null ? "" : m.group(5);
+            String[] to = name == null ? null : members.get(owner + " " + name + desc);
+            String newOwner = to != null ? to[0] : classes.getOrDefault(owner, owner), newName = to != null ? to[1] : name, newDesc = to != null ? to[2] : desc;
+            // Classes inside a descriptor follow their moves too.
+            if (!newDesc.isEmpty()) {
+                Matcher type = Pattern.compile("L([\\w/$]+);").matcher(newDesc);
+                StringBuilder out = new StringBuilder();
+                while (type.find()) {
+                    String dotted = type.group(1).replace('/', '.');
+                    type.appendReplacement(out, Matcher.quoteReplacement("L" + classes.getOrDefault(dotted, dotted).replace('.', '/') + ";"));
+                }
+                type.appendTail(out);
+                newDesc = out.toString();
+            }
+            String rewritten = m.group(1) + newOwner + (name == null ? "" : m.group(3) + newName + newDesc) + m.group(6) + (line.endsWith("\r") ? "\r" : "");
+            if (!rewritten.equals(line)) {
+                lines.set(i, rewritten);
+                changed++;
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * Entries the build says name nothing in the target game (NeoForge's validation: "access-transformer:missing-target:
+     * The target X does not exist. @ file:line") are commented out with why, so the build goes on and javac names the
+     * code that still needs them.
+     */
+    int dropMissingAccessTargets(Path log) throws Exception {
+        Matcher missing = Pattern.compile("access-transformer:missing-target: The target (.+?) does not exist\\. @ (.+?):(\\d+)").matcher(logText(log));
+        Map<Path, Map<Integer, String>> byFile = new LinkedHashMap<>();
+        while (missing.find()) byFile.computeIfAbsent(Path.of(missing.group(2).strip()), f -> new TreeMap<>()).put(Integer.parseInt(missing.group(3)), missing.group(1));
+        int dropped = 0;
+        for (var e : byFile.entrySet()) {
+            Path at = e.getKey();
+            if (!Files.isRegularFile(at) || !at.toAbsolutePath().normalize().startsWith(build.project.root)) continue;
+            List<String> lines = new ArrayList<>(Arrays.asList(Files.readString(at, StandardCharsets.UTF_8).split("\n", -1)));
+            for (var line : e.getValue().entrySet()) {
+                int i = line.getKey() - 1;
+                if (i < 0 || i >= lines.size() || lines.get(i).stripLeading().startsWith("#")) continue;
+                lines.set(i, "# mmt port: the target game has no " + line.getValue() + "\n# " + lines.get(i));
+                dropped++;
+            }
+            track(at);
+            Files.writeString(at, String.join("\n", lines), StandardCharsets.UTF_8);
+        }
+        if (dropped > 0) rulesApplied.computeIfAbsent("access-transformer-missing-target", k -> new ArrayList<>()).add(dropped + " entr(y/ies)");
+        return dropped;
+    }
+
     Path accessTransformer() throws IOException {
         for (String script : List.of("build.gradle", "build.gradle.kts")) {
             Path file = build.project.root.resolve(script);
