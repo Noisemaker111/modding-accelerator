@@ -6,15 +6,15 @@ import java.util.regex.*;
 
 /**
  * Whether the game really loaded this project's mods. The expected list comes from the metadata
- * Gradle processed into the build output the client runs from (fabric.mod.json, neoforge.mods.toml
- * or mods.toml); the answer comes from the running loader's own mod list, through the game agent.
+ * Gradle processed into the build output the client runs from (fabric.mod.json, a TOML,
+ * or mcmod.info on Forge before 1.13); the answer comes from the running loader's own mod list, through the game agent.
  * A rendered frame proves neither: NeoForge shows its title screen with "0 mods" after refusing one.
  */
 final class LoadedMods {
 
     private LoadedMods() {}
 
-    /** One mod a metadata file declares. kind: fabric (fabric.mod.json), neoforge (neoforge.mods.toml), forge (mods.toml). */
+    /** One mod a metadata file declares. kind: fabric (fabric.mod.json), neoforge (neoforge.mods.toml), forge (mods.toml or mcmod.info). */
     record Declared(String kind, String id, String version, Path file) {}
 
     /** The project that owns a client task: ":runClient" is ":", ":fabric:runClient" is ":fabric". */
@@ -73,6 +73,20 @@ final class LoadedMods {
                         toml
                     )
                 );
+            }
+            // Legacy Forge (before 1.13) declares mods in a top-level mcmod.info array, not a TOML.
+            Path info = dir.resolve("mcmod.info");
+            if (Files.isRegularFile(info)) {
+                List<Object> entries;
+                try {
+                    entries = Json.array(Json.parse(Files.readString(info, StandardCharsets.UTF_8)));
+                } catch (IllegalArgumentException invalid) {
+                    throw new IOException("The built " + info + " is not valid JSON: " + invalid.getMessage());
+                }
+                for (Object entry : entries) {
+                    Map<String, Object> mod = Json.object(entry);
+                    mods.add(new Declared("forge", Json.text(mod, "modid", ""), Json.text(mod, "version", ""), info));
+                }
             }
         }
         return mods;
@@ -165,7 +179,7 @@ final class LoadedMods {
                     "The build output the client runs from has no " +
                     (loader.equals("fabric")
                             ? "fabric.mod.json"
-                            : loader.equals("neoforge") ? "META-INF/neoforge.mods.toml" : "META-INF/mods.toml") +
+                            : loader.equals("neoforge") ? "META-INF/neoforge.mods.toml" : loader.equals("forge") ? "META-INF/mods.toml (1.13+) or mcmod.info (older)" : "META-INF/mods.toml") +
                     " (looked in " +
                     (outputs.isEmpty()
                             ? "no main or client source-set output"

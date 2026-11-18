@@ -336,6 +336,66 @@ public final class PortTests {
         );
     }
 
+    /**
+     * A 1.7.10 target names its mod through mcmod.info translated from the modern metadata; newer
+     * targets keep their TOML and get none, and the game check reads the built mcmod.info back.
+     */
+    static void legacyMetadataChecks(Path scratch) throws IOException {
+        Path root = scratch.resolve("legacy-meta");
+        Path templates = root.resolve("src/main/templates/META-INF");
+        Files.createDirectories(templates);
+        Files.writeString(
+            templates.resolve("neoforge.mods.toml"),
+            "license=\"MIT\"\n[[mods]]\nmodId=\"${mod_id}\"\nversion=\"${mod_version}\"\ndisplayName=\"${mod_name}\"\n"
+                + "description='''${mod_description}'''\nauthors=\"${mod_authors}\"\n[[mixins]]\nconfig=\"other.mixins.json\"\n"
+        );
+        Files.writeString(
+            root.resolve("gradle.properties"),
+            "mod_id=cinematiczoom\nmod_version=1.0.0\nmod_name=CinematicZoom\n"
+                + "mod_description=Smooth zoom.\nmod_authors=Mel1x (Ported by smallinger)\n"
+        );
+        Map<String, Object> info = Port.legacyModInfo(root, "1.7.10");
+        check(
+            info != null &&
+            info.get("modid").equals("cinematiczoom") &&
+            info.get("version").equals("1.0.0") &&
+            info.get("name").equals("CinematicZoom") &&
+            info.get("mcversion").equals("1.7.10") &&
+            info.get("authorList").equals(List.of("Mel1x (Ported by smallinger)")) &&
+            info.values().stream().noneMatch(v -> v.toString().contains("${")),
+            "the template becomes a resolved mcmod.info entry: " + info
+        );
+        check(
+            Port.legacyModInfo(root, "1.21.1") == null,
+            "a modern target gets no mcmod.info: its TOML stays the metadata"
+        );
+        Path fabricRoot = scratch.resolve("legacy-fabric");
+        Files.createDirectories(fabricRoot.resolve("src/main/resources"));
+        Files.writeString(
+            fabricRoot.resolve("src/main/resources/fabric.mod.json"),
+            "{\"id\":\"zoom\",\"version\":\"2.0\",\"name\":\"Zoom\",\"authors\":[\"One\",\"Two\"],\"contact\":{\"homepage\":\"https://example.invalid\"}}"
+        );
+        Map<String, Object> fabricInfo = Port.legacyModInfo(fabricRoot, "1.7.10");
+        check(
+            fabricInfo != null &&
+            fabricInfo.get("modid").equals("zoom") &&
+            fabricInfo.get("authorList").equals(List.of("One", "Two")) &&
+            fabricInfo.get("url").equals("https://example.invalid"),
+            "fabric metadata translates too: " + fabricInfo
+        );
+        Path out = scratch.resolve("legacy-built");
+        Files.createDirectories(out);
+        Files.writeString(out.resolve("mcmod.info"), Json.write(List.of(info)));
+        List<LoadedMods.Declared> declared = LoadedMods.declared(List.of(out));
+        check(
+            declared.size() == 1 &&
+            declared.get(0).kind().equals("forge") &&
+            declared.get(0).id().equals("cinematiczoom") &&
+            declared.get(0).version().equals("1.0.0"),
+            "the game check reads the built mcmod.info: " + declared
+        );
+    }
+
     public static void main(String[] args) throws Exception {
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
@@ -467,6 +527,7 @@ public final class PortTests {
         planningDegradeChecks(home, scratch);
         triageChecks();
         mixinConfigChecks();
+        legacyMetadataChecks(scratch);
         for (var groups : List.of(
             List.of("net.minecraftforge"),
             List.of("net.fabricmc", "net.neoforged"),

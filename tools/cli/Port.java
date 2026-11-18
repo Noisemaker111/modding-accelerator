@@ -1044,6 +1044,7 @@ final class Port {
                 mixins = compiled ? mixinCheck(model, options) : null;
             }
             var audit = compiled ? tools.audit(model) : null;
+            if (compiled) migrateLegacyMetadata(to);
             boolean passed = compiled && mixins != null && Boolean.TRUE.equals(mixins.get("ok"));
             boolean built = !explicitTask && compiled;
             if (passed && (!explicitTask ? roundsTried > 0 : true)) {
@@ -2710,6 +2711,168 @@ final class Port {
             )
         );
         return true;
+    }
+
+    /**
+     * Forge before 1.13 reads the mod list from mcmod.info, not a TOML: a ported tree that keeps
+     * only the modern metadata loads but stays nameless. Translate the source metadata once the
+     * tree compiles, before the jar build; the game check reads the built mcmod.info back.
+     */
+    void migrateLegacyMetadata(String to) throws Exception {
+        Map<String, Object> info = legacyModInfo(build.project.root, to);
+        if (info == null) return;
+        Path file = build.project.root.resolve("src/main/resources/mcmod.info");
+        String text = Json.write(List.of(info));
+        if (Files.isRegularFile(file) && Files.readString(file).equals(text)) return;
+        track(file);
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, text);
+    }
+
+    /**
+     * The mcmod.info entry the target's Forge reads, or null when the target needs none (1.13+)
+     * or the source metadata names no mod.
+     */
+    static Map<String, Object> legacyModInfo(Path root, String to) throws IOException {
+        if (Versions.compare(to, "1.13") >= 0) return null;
+        Map<String, String> raw = null;
+        for (String name : List.of(
+            "src/main/templates/META-INF/neoforge.mods.toml",
+            "src/main/resources/META-INF/neoforge.mods.toml",
+            "src/main/resources/META-INF/mods.toml"
+        )) {
+            Path toml = root.resolve(name);
+            if (Files.isRegularFile(toml)) raw = tomlModTable(Files.readString(toml), gradleProperties(root));
+            if (raw != null) break;
+        }
+        if (raw == null) {
+            Path fabric = root.resolve("src/main/resources/fabric.mod.json");
+            if (Files.isRegularFile(fabric)) raw = fabricModTable(Files.readString(fabric));
+        }
+        if (raw == null || raw.getOrDefault("modid", "").isEmpty()) return null;
+        Map<String, Object> info = new LinkedHashMap<>();
+        info.put("modid", raw.get("modid"));
+        if (!raw.getOrDefault("name", "").isEmpty()) info.put("name", raw.get("name"));
+        if (!raw.getOrDefault("description", "").isEmpty()) info.put("description", raw.get("description"));
+        if (!raw.getOrDefault("version", "").isEmpty()) info.put("version", raw.get("version"));
+        info.put("mcversion", to);
+        if (!raw.getOrDefault("url", "").isEmpty()) info.put("url", raw.get("url"));
+        List<String> authors = new ArrayList<>();
+        for (String author : raw.getOrDefault("authors", "").split(",")) {
+            if (!author.strip().isEmpty()) authors.add(author.strip());
+        }
+        if (!authors.isEmpty()) info.put("authorList", authors);
+        if (!raw.getOrDefault("credits", "").isEmpty()) info.put("credits", raw.get("credits"));
+        if (!raw.getOrDefault("logoFile", "").isEmpty()) info.put("logoFile", raw.get("logoFile"));
+        return info;
+    }
+
+    /** key=value properties without profile handling: the mod_* values a metadata template needs. */
+    static Map<String, String> gradleProperties(Path root) throws IOException {
+        Map<String, String> props = new LinkedHashMap<>();
+        Path file = root.resolve("gradle.properties");
+        if (!Files.isRegularFile(file)) return props;
+        for (String line : Files.readString(file).split("\\R")) {
+            String strip = line.strip();
+            if (strip.isEmpty() || strip.startsWith("#") || !strip.contains("=")) continue;
+            props.put(strip.substring(0, strip.indexOf('=')).strip(), strip.substring(strip.indexOf('=') + 1).strip());
+        }
+        return props;
+    }
+
+    /**
+     * The first [[mods]] table of a source TOML under canonical keys (modid, version, name,
+     * description, authors, credits, url, logoFile), with ${placeholders} resolved, or null.
+     */
+    static Map<String, String> tomlModTable(String text, Map<String, String> props) {
+        Map<String, String> table = null;
+        boolean inMods = false;
+        List<String> lines = new ArrayList<>(List.of(text.split("\\R")));
+        for (int i = 0; i < lines.size(); i++) {
+            String strip = lines.get(i).strip();
+            if (strip.startsWith("[[")) {
+                inMods = strip.matches("\\[\\[\\s*mods\\s*\\]\\].*");
+                if (inMods && table == null) table = new LinkedHashMap<>();
+                continue;
+            }
+            if (!inMods || table == null || strip.startsWith("#") || !strip.contains("=")) continue;
+            String key = strip.substring(0, strip.indexOf('=')).strip();
+            String value = quotedValue(strip.substring(strip.indexOf('=') + 1).strip(), lines, i);
+            if (value == null) continue;
+            table.put(canonicalModKey(key), substitute(value, props));
+        }
+        return table;
+    }
+
+    /** modId/displayName/displayURL read as the mcmod.info keys they become. */
+    static String canonicalModKey(String key) {
+        if (key.equals("modId")) return "modid";
+        if (key.equals("displayName")) return "name";
+        if (key.equals("displayURL")) return "url";
+        return key;
+    }
+
+    /** The first quoted string of a TOML value, spanning lines for triple-quoted text, or null. */
+    static String quotedValue(String value, List<String> lines, int index) {
+        if (value.startsWith("'''")) {
+            StringBuilder multi = new StringBuilder(value.substring(3));
+            int i = index;
+            while (!multi.toString().endsWith("'''") && i + 1 < lines.size()) {
+                i++;
+                multi.append("\n").append(lines.get(i));
+            }
+            String joined = multi.toString();
+            if (!joined.endsWith("'''")) return null;
+            return joined.substring(0, joined.length() - 3);
+        }
+        if (value.startsWith("\"")) return quotedUntil(value.substring(1), '"');
+        if (value.startsWith("'")) return quotedUntil(value.substring(1), '\'');
+        return null;
+    }
+
+    /** Up to the next quote, honoring backslash escapes in double-quoted text. */
+    static String quotedUntil(String rest, char quote) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < rest.length(); i++) {
+            char c = rest.charAt(i);
+            if (quote == '"' && c == '\\' && i + 1 < rest.length()) {
+                i++;
+                out.append(rest.charAt(i));
+                continue;
+            }
+            if (c == quote) return out.toString();
+            out.append(c);
+        }
+        return null;
+    }
+
+    /** ${name} placeholders resolve from the project's properties; unknown ones stay visible. */
+    static String substitute(String value, Map<String, String> props) {
+        String resolved = value;
+        for (var entry : props.entrySet()) {
+            resolved = resolved.replace("${" + entry.getKey() + "}", entry.getValue());
+        }
+        return resolved;
+    }
+
+    /** A fabric.mod.json under the same canonical keys the TOML table uses. */
+    static Map<String, String> fabricModTable(String text) {
+        Map<String, Object> meta = Json.object(Json.parse(text));
+        Map<String, String> table = new LinkedHashMap<>();
+        table.put("modid", Json.text(meta, "id", ""));
+        table.put("version", Json.text(meta, "version", ""));
+        table.put("name", Json.text(meta, "name", ""));
+        table.put("description", Json.text(meta, "description", ""));
+        table.put("license", Json.text(meta, "license", ""));
+        List<String> authors = new ArrayList<>();
+        for (Object author : Json.array(meta.get("authors"))) {
+            if (author instanceof Map) authors.add(Json.text((Map<String, Object>) author, "name", ""));
+            if (author instanceof String) authors.add(author.toString());
+        }
+        table.put("authors", String.join(", ", authors));
+        Map<String, Object> contact = Json.object(meta.get("contact"));
+        table.put("url", Json.text(contact, "homepage", ""));
+        return table;
     }
 
     /** Runs a "neo-config" rule: a ModConfigSpec holder becomes plain Configuration-backed fields with a sync method. */
