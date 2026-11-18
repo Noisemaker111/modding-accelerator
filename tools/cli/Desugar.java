@@ -413,10 +413,21 @@ final class Desugar {
                 }
             }
             if (compact != null && !explicitCanonical) {
-                headerEdit(tree, name, compact, true);
+                headerEdit(tree, name, compact, true, recordNeedsStatic());
             } else {
-                headerEdit(tree, name, null, !explicitCanonical);
+                headerEdit(tree, name, null, !explicitCanonical, recordNeedsStatic());
             }
+        }
+
+        /** A record nested in a class, enum, or record is implicitly static; the lowered class must say so,
+         * or its static members are illegal. Interface members are static already, locals stay inner. */
+        private boolean recordNeedsStatic() {
+            TreePath parent = getCurrentPath().getParentPath();
+            if (parent == null) {
+                return false;
+            }
+            Tree.Kind kind = parent.getLeaf().getKind();
+            return kind == Tree.Kind.CLASS || kind == Tree.Kind.ENUM || kind == Tree.Kind.RECORD;
         }
 
         /** Record components are the non-static member variables; static fields are ordinary members. */
@@ -501,7 +512,7 @@ final class Desugar {
          * record; a compact constructor body is converted to the canonical constructor it implies. When the
          * record already declares its canonical constructor, no constructor is synthesized.
          */
-        private void headerEdit(ClassTree tree, String name, MethodTree compact, boolean synthesizeCanonical) {
+        private void headerEdit(ClassTree tree, String name, MethodTree compact, boolean synthesizeCanonical, boolean nestedStatic) {
             List<String> components = new ArrayList<>();
             List<String> types = new ArrayList<>();
             for (VariableTree field : recordComponents(tree)) {
@@ -598,7 +609,7 @@ final class Desugar {
                 }
                 members.append(")\";}");
             }
-            String header = kept + (permits ? "class " : "final class ") + name + typeParams + impl + "{" + members;
+            String header = kept + (nestedStatic && !kept.contains("static") ? "static " : "") + (permits ? "class " : "final class ") + name + typeParams + impl + "{" + members;
             edits.add(new Edit(start(tree), headerEnd, header));
             if (compact != null) {
                 edits.add(new Edit(start(compact), end(compact), ""));

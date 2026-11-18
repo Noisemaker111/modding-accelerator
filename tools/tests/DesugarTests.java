@@ -332,6 +332,21 @@ public final class DesugarTests {
         );
     }
 
+    static void nestedRecordChecks() throws Exception {
+        String nested = lower(
+            "Nested.java",
+            "class Outer {\n    public record Nested(String id) {\n        public static final String KIND = \"nested\";\n    }\n}\n"
+        );
+        check(
+            nested.contains("public static final class Nested{"),
+            "a record nested in a class lowers to a static nested class"
+        );
+        check(
+            lower("Nested.java", nested).equals(nested),
+            "a lowered nested record is stable"
+        );
+    }
+
     static void ifaceChecks() throws Exception {
         String ifaces = lower(
             "Ifaces.java",
@@ -361,6 +376,7 @@ public final class DesugarTests {
         patternChecks();
         switchChecks();
         unattributedChecks();
+        nestedRecordChecks();
         guardClauseChecks();
         ifaceChecks();
         smallChecks();
