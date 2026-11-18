@@ -6641,7 +6641,7 @@
       },
       "scope": "log",
       "when": "import net\\.neoforged\\.api\\.distmarker\\.Dist;",
-      "note": "Dist markup becomes clientSideOnly on the 1.7.10 @Mod.",
+      "note": "Dist markup dies with the deleted client-only annotation.",
       "test": {
         "error": "CinematicZoomClient.java:6: error: package net.neoforged.api.distmarker does not exist\n",
         "before": "package de.smallinger.cinematiczoom;\n\nimport net.minecraft.client.Minecraft;\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\n",
@@ -6897,15 +6897,15 @@
       "match": "package net\\.neoforged\\.fml\\.common does not exist",
       "apply": {
         "find": "@Mod\\((\\w+)\\.MODID\\)",
-        "replace": "@Mod(modid = $1.MODID, clientSideOnly = true)"
+        "replace": "@Mod(modid = $1.MODID)"
       },
       "scope": "log",
       "when": "@Mod\\(\\w+\\.MODID\\)",
-      "note": "Name and version default from the id at 1.7.10; clientSideOnly keeps a client mod off servers.",
+      "note": "Name and version default from the id at 1.7.10; there is no client-only marker on the annotation.",
       "test": {
         "error": "CinematicZoom.java:15: error: package net.neoforged.fml.common does not exist\n",
         "before": "package de.smallinger.cinematiczoom;\n\n */\n@Mod(CinematicZoom.MODID)\npublic class CinematicZoom {\n",
-        "after": "package de.smallinger.cinematiczoom;\n\n */\n@Mod(modid = CinematicZoom.MODID, clientSideOnly = true)\npublic class CinematicZoom {\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n */\n@Mod(modid = CinematicZoom.MODID)\npublic class CinematicZoom {\n",
         "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:15"
       }
     },
@@ -6996,9 +6996,9 @@
       "id": "nf1710-config-usage",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.7.10",
-      "match": "symbol:\\s+method get\\(\\)",
+      "match": "symbol:\\s+method get\\(\\)|cannot be dereferenced",
       "apply": {
-        "find": "Config\\.(\\w+)\\.get\\(\\)\\.(?:float|double|int|boolean)Value\\(\\)",
+        "find": "Config\\.(\\w+)\\.get\\(\\)(\\.(?:float|double|int|boolean)Value\\(\\))?",
         "replace": "Config.$1"
       },
       "scope": "log",
@@ -7037,14 +7037,15 @@
       "match": "package net\\.neoforged\\.neoforge\\.client\\.gui does not exist",
       "apply": {
         "find": "(?s)    @Override\\n    public Screen createScreen\\(ModContainer \\w+, Screen \\w+\\) \\{\\n        return new ConfigurationScreen\\(\\w+, \\w+\\);\\n    \\}",
-        "replace": "    @Override\n    public void initialize(Minecraft minecraft) {\n    }\n\n    @Override\n    public Class<? extends GuiScreen> mainConfigGuiClass() {\n        return ModGuiConfig.class;\n    }\n\n    @Override\n    public java.util.Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {\n        return null;\n    }\n\n    @Override\n    @SuppressWarnings(\"unchecked\")\n    public <T extends GuiScreen> T getHandlerFor(RuntimeOptionCategoryElement element) {\n        return null;\n    }\n\n    public static class ModGuiConfig extends GuiConfig {\n        public ModGuiConfig(GuiScreen parent) {\n            super(parent, new java.util.ArrayList<IConfigElement>(), \"\", false, false, \"\", \"\");\n        }\n    }",
+        "replace": "    @Override\n    public void initialize(Minecraft minecraft) {\n    }\n\n    @Override\n    public Class<? extends GuiScreen> mainConfigGuiClass() {\n        return ModGuiConfig.class;\n    }\n\n    @Override\n    public java.util.Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {\n        return null;\n    }\n\n    @Override\n    public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element) {\n        return null;\n    }\n\n    public static class ModGuiConfig extends GuiConfig {\n        public ModGuiConfig(GuiScreen parent) {\n            super(parent, new java.util.ArrayList<IConfigElement>(), \"\", false, false, \"\", \"\");\n        }\n    }",
         "ensureImports": [
           "net.minecraft.client.Minecraft",
           "net.minecraft.client.gui.GuiScreen",
           "cpw.mods.fml.client.IModGuiFactory",
           "cpw.mods.fml.client.config.GuiConfig",
           "cpw.mods.fml.client.config.IConfigElement",
-          "cpw.mods.fml.client.config.GuiConfigEntries.RuntimeOptionCategoryElement"
+          "cpw.mods.fml.client.IModGuiFactory.RuntimeOptionCategoryElement",
+          "cpw.mods.fml.client.IModGuiFactory.RuntimeOptionGuiHandler"
         ]
       },
       "scope": "log",
@@ -7053,7 +7054,7 @@
       "test": {
         "error": "ConfigScreenFactory.java:14: error: package net.neoforged.neoforge.client.gui does not exist\n",
         "before": "package de.smallinger.cinematiczoom;\n\n    \n    @Override\n    public Screen createScreen(ModContainer container, Screen lastScreen) {\n        return new ConfigurationScreen(container, lastScreen);\n    }\n}\n",
-        "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.client.config.GuiConfigEntries.RuntimeOptionCategoryElement;\nimport cpw.mods.fml.client.config.IConfigElement;\nimport cpw.mods.fml.client.config.GuiConfig;\nimport cpw.mods.fml.client.IModGuiFactory;\nimport net.minecraft.client.gui.GuiScreen;\nimport net.minecraft.client.Minecraft;\n\n    \n    @Override\n    public void initialize(Minecraft minecraft) {\n    }\n\n    @Override\n    public Class<? extends GuiScreen> mainConfigGuiClass() {\n        return ModGuiConfig.class;\n    }\n\n    @Override\n    public java.util.Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {\n        return null;\n    }\n\n    @Override\n    @SuppressWarnings(\"unchecked\")\n    public <T extends GuiScreen> T getHandlerFor(RuntimeOptionCategoryElement element) {\n        return null;\n    }\n\n    public static class ModGuiConfig extends GuiConfig {\n        public ModGuiConfig(GuiScreen parent) {\n            super(parent, new java.util.ArrayList<IConfigElement>(), \"\", false, false, \"\", \"\");\n        }\n    }\n}\n",
+        "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.client.IModGuiFactory.RuntimeOptionGuiHandler;\nimport cpw.mods.fml.client.IModGuiFactory.RuntimeOptionCategoryElement;\nimport cpw.mods.fml.client.config.IConfigElement;\nimport cpw.mods.fml.client.config.GuiConfig;\nimport cpw.mods.fml.client.IModGuiFactory;\nimport net.minecraft.client.gui.GuiScreen;\nimport net.minecraft.client.Minecraft;\n\n    \n    @Override\n    public void initialize(Minecraft minecraft) {\n    }\n\n    @Override\n    public Class<? extends GuiScreen> mainConfigGuiClass() {\n        return ModGuiConfig.class;\n    }\n\n    @Override\n    public java.util.Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {\n        return null;\n    }\n\n    @Override\n    public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element) {\n        return null;\n    }\n\n    public static class ModGuiConfig extends GuiConfig {\n        public ModGuiConfig(GuiScreen parent) {\n            super(parent, new java.util.ArrayList<IConfigElement>(), \"\", false, false, \"\", \"\");\n        }\n    }\n}\n",
         "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ConfigScreenFactory.java:14"
       }
     },
@@ -7129,6 +7130,161 @@
         "before": "package de.smallinger.cinematiczoom.mixin;\n\nimport de.smallinger.cinematiczoom.ZoomManager;\nimport net.minecraft.client.Camera;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.renderer.GameRenderer;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\n/**\n * Mixin to modify the FOV based on zoom state.\n * Ported from Fabric to NeoForge.\n */\n@Mixin(GameRenderer.class)\npublic class GameRendererMixin {\n\n        @Inject(method = \"getFov\", at = @At(\"RETURN\"), cancellable = true)\n        private void cinematiczoom$applyZoom(Camera camera, float tickDelta, boolean changingFov,\n                                             CallbackInfoReturnable<Double> cir) {\n        ZoomManager.frameUpdate();\n\n        Minecraft client = Minecraft.getInstance();\n        if (client.screen != null) return;\n\n        double fov = cir.getReturnValue();\n        double mul = ZoomManager.getCurrentFovMul();\n        if (mul != 1.0) {\n            cir.setReturnValue(fov * mul);\n        }\n    }\n}\n",
         "after": "package de.smallinger.cinematiczoom.mixin;\nimport net.minecraftforge.client.event.FOVUpdateEvent;\nimport cpw.mods.fml.common.eventhandler.SubscribeEvent;\n\nimport de.smallinger.cinematiczoom.ZoomManager;\nimport net.minecraft.client.Minecraft;\n\n/**\n * Mixin to modify the FOV based on zoom state.\n * Ported from Fabric to NeoForge.\n */\npublic class GameRendererMixin {\n\n    @SubscribeEvent\n    public void onFov(FOVUpdateEvent event) {\n        ZoomManager.frameUpdate();\n        Minecraft client = Minecraft.getMinecraft();\n        if (client.currentScreen != null) return;\n        double fov = event.fov;\n        double mul = ZoomManager.getCurrentFovMul();\n        if (mul != 1.0) event.newfov = (float) (fov * mul);\n    }\n}\n",
         "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/mixin/GameRendererMixin.java"
+      }
+    },
+    {
+      "id": "nf1710-bus-neoforge-import-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.common does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.neoforge\\.common\\.NeoForge;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.neoforge\\.common\\.NeoForge;",
+      "note": "The bus holder import dies with the usage rewrite to MinecraftForge.",
+      "test": {
+        "error": "CinematicZoomClient.java:12: error: package net.neoforged.neoforge.common does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.PlayerTickEvent;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\nimport net.neoforged.neoforge.event.tick.PlayerTickEvent;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:12"
+      }
+    },
+    {
+      "id": "nf1710-keybinding-symbol",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}KeyMapping",
+      "apply": {
+        "find": "\\bKeyMapping\\b",
+        "replace": "KeyBinding"
+      },
+      "scope": "log",
+      "when": "import net\\.minecraft\\.client\\.settings\\.KeyBinding;",
+      "note": "Follows the KeyMapping import swap for the field and parameter types left behind.",
+      "test": {
+        "error": "CinematicZoomClient.java:24: error: cannot find symbolKeyMapping\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.minecraft.client.settings.KeyBinding;\n    \n    public static KeyMapping ZOOM_KEYBIND;\n\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.minecraft.client.settings.KeyBinding;\n    \n    public static KeyBinding ZOOM_KEYBIND;\n\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:24, as nf1710-keybinding-import left it"
+      }
+    },
+    {
+      "id": "nf1710-client-getinstance",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}getInstance",
+      "apply": {
+        "find": "Minecraft\\.getInstance\\(\\)",
+        "replace": "Minecraft.getMinecraft()"
+      },
+      "scope": "log",
+      "when": "Minecraft\\.getInstance\\(\\)",
+      "note": "The client accessor is getMinecraft at 1.7.10.",
+      "test": {
+        "error": "CinematicZoomClient.java:56: error: cannot find symbolgetInstance\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n        if (event.getEntity().level().isClientSide()) {\n            Minecraft client = Minecraft.getInstance();\n            if (client.player != null) {\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n        if (event.getEntity().level().isClientSide()) {\n            Minecraft client = Minecraft.getMinecraft();\n            if (client.player != null) {\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:56"
+      }
+    },
+    {
+      "id": "nf1710-client-player",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+variable player",
+      "apply": {
+        "find": "(client|mc|minecraft)\\.player\\b",
+        "replace": "$1.thePlayer"
+      },
+      "scope": "log",
+      "when": "(client|mc|minecraft)\\.player\\b",
+      "note": "The client player field is thePlayer; gated to the usual client variable names.",
+      "test": {
+        "error": "CinematicZoomClient.java:57: error: cannot find symbol\n  symbol: variable player\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n            Minecraft client = Minecraft.getInstance();\n            if (client.player != null) {\n                ZoomManager.tick(client, ZOOM_KEYBIND);\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n            Minecraft client = Minecraft.getInstance();\n            if (client.thePlayer != null) {\n                ZoomManager.tick(client, ZOOM_KEYBIND);\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:57"
+      }
+    },
+    {
+      "id": "nf1710-client-screen",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+variable screen",
+      "apply": {
+        "find": "(client|mc|minecraft)\\.screen\\b",
+        "replace": "$1.currentScreen"
+      },
+      "scope": "log",
+      "when": "(client|mc|minecraft)\\.screen\\b",
+      "note": "The open GUI field is currentScreen; gated to the usual client variable names.",
+      "test": {
+        "error": "GameRendererMixin.java:25: error: cannot find symbol\n  symbol: variable screen\n",
+        "before": "package de.smallinger.cinematiczoom.mixin;\n\n        Minecraft client = Minecraft.getInstance();\n        if (client.screen != null) return;\n\n",
+        "after": "package de.smallinger.cinematiczoom.mixin;\n\n        Minecraft client = Minecraft.getInstance();\n        if (client.currentScreen != null) return;\n\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/mixin/GameRendererMixin.java:25"
+      }
+    },
+    {
+      "id": "nf1710-client-options",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+variable options",
+      "apply": {
+        "find": "(client|mc|minecraft)\\.options\\b",
+        "replace": "$1.gameSettings"
+      },
+      "scope": "log",
+      "when": "(client|mc|minecraft)\\.options\\b",
+      "note": "Client settings live on gameSettings; gated to the usual client variable names.",
+      "test": {
+        "error": "ZoomManager.java:42: error: cannot find symbol\n  symbol: variable options\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n            if (Config.HIDE_HUD_DURING_ZOOM.get()) {\n                prevHudHidden = client.options.hideGui;\n                client.options.hideGui = true;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n            if (Config.HIDE_HUD_DURING_ZOOM.get()) {\n                prevHudHidden = client.gameSettings.hideGui;\n                client.gameSettings.hideGui = true;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ZoomManager.java:42"
+      }
+    },
+    {
+      "id": "nf1710-client-hidegui",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+variable hideGui",
+      "apply": {
+        "find": "gameSettings\\.hideGui\\b",
+        "replace": "gameSettings.hideGUI"
+      },
+      "scope": "log",
+      "when": "gameSettings\\.hideGui",
+      "note": "The HUD-hide flag is hideGUI in capitals once options becomes gameSettings.",
+      "test": {
+        "error": "ZoomManager.java:42: error: cannot find symbol\n  symbol: variable hideGui\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n            if (Config.HIDE_HUD_DURING_ZOOM.get()) {\n                prevHudHidden = client.gameSettings.hideGui;\n                client.gameSettings.hideGui = true;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n            if (Config.HIDE_HUD_DURING_ZOOM.get()) {\n                prevHudHidden = client.gameSettings.hideGUI;\n                client.gameSettings.hideGUI = true;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ZoomManager.java:42, as nf1710-client-options left it"
+      }
+    },
+    {
+      "id": "nf1710-gui-implements",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.client\\.gui does not exist",
+      "apply": {
+        "find": "implements IConfigScreenFactory",
+        "replace": "implements IModGuiFactory",
+        "ensureImports": [
+          "cpw.mods.fml.client.IModGuiFactory"
+        ]
+      },
+      "scope": "log",
+      "when": "implements IConfigScreenFactory",
+      "note": "The factory class implements IModGuiFactory once its method is rewritten.",
+      "test": {
+        "error": "ConfigScreenFactory.java:12: error: package net.neoforged.neoforge.client.gui does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n */\npublic class ConfigScreenFactory implements IConfigScreenFactory {\n    \n",
+        "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.client.IModGuiFactory;\n\n */\npublic class ConfigScreenFactory implements IModGuiFactory {\n    \n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ConfigScreenFactory.java:12"
       }
     }
   ]

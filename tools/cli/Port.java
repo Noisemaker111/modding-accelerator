@@ -2952,7 +2952,7 @@ final class Port {
         String modern = "    public static void renderBars() {\n" +
             "        if (currentBarsPct <= 0.0001f) return;\n" +
             "        Minecraft mc = Minecraft.getMinecraft();\n" +
-            "        ScaledResolution res = new ScaledResolution(mc);\n" +
+            "        ScaledResolution res = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);\n" +
             "        int sw = res.getScaledWidth();\n" +
             "        int sh = res.getScaledHeight();\n" +
             "        int h = Math.round(sh * (currentBarsPct / 100f));\n" +
