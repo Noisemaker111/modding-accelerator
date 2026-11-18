@@ -997,6 +997,14 @@ final class Port {
                 String state = Fingerprints.files(sources(build.project));
                 if (!seen.add(state)) break;
                 roundsTried = round + 1;
+                // The desugar shifts line numbers, so it gets its own round and rebuild before the line-based
+                // rules read positions from the same log.
+                if (desugar(log)) {
+                    var desugared = build.gradle(repairTasks, "port-desugar-" + (round + 1));
+                    log = desugared.log();
+                    compiled = desugared.exit() == 0;
+                    continue;
+                }
                 applyRules(log);
                 importMissingClasses(log);
                 // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
@@ -2290,6 +2298,69 @@ final class Port {
         }
         Path fallback = build.project.root.resolve("src/main/resources/META-INF/accesstransformer.cfg");
         return Files.isRegularFile(fallback) ? fallback : null;
+    }
+
+    /**
+     * Lowers modern Java the legacy target cannot compile (records, pattern matching, switch expressions,
+     * text blocks, sealed, var) using the evaluated compile classpath for the types var needs. Only runs
+     * when the log shows the legacy release rejecting modern syntax and the model targets a legacy release.
+     */
+    boolean desugar(Path log) throws Exception {
+        if (!Desugar.needsDesugar(logText(log))) return false;
+        if (!targetsLegacyRelease()) return false;
+        List<String> classpath = compileClasspath();
+        if (classpath.isEmpty()) return false;
+        Set<Path> files = new LinkedHashSet<>(ownedJava());
+        Matcher reported = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error:").matcher(logText(log));
+        while (reported.find()) {
+            Path file = Path.of(reported.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            file = file.normalize();
+            if (file.startsWith(build.project.root) && Files.isRegularFile(file) && file.toString().endsWith(".java")) files.add(file);
+        }
+        boolean changed = false;
+        for (Path file : files) {
+            String before = Files.readString(file);
+            String after = Desugar.desugarFile(file, classpath);
+            if (!after.equals(before)) {
+                Files.writeString(file, after);
+                changed = true;
+            }
+        }
+        if (changed) rulesApplied.putIfAbsent("desugar", List.of());
+        return changed;
+    }
+
+    /** True when an evaluated compile task targets Java 8 or older. */
+    boolean targetsLegacyRelease() {
+        for (Object project : Json.array(model.get("projects"))) {
+            for (Object task : Json.array(Json.object(project).get("compile"))) {
+                if (isLegacyRelease(Json.object(task).get("release"))) return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean isLegacyRelease(Object release) {
+        if (release == null) return false;
+        String text = release.toString().strip();
+        if (text.startsWith("1.")) text = text.substring(2);
+        try {
+            return Integer.parseInt(text) <= 8;
+        } catch (NumberFormatException notVersion) {
+            return false;
+        }
+    }
+
+    /** The union of every evaluated compile classpath: a superset, which is all attribution needs. */
+    List<String> compileClasspath() {
+        Set<String> entries = new LinkedHashSet<>();
+        for (Object project : Json.array(model.get("projects"))) {
+            for (Object task : Json.array(Json.object(project).get("compile"))) {
+                for (Object entry : Json.array(Json.object(task).get("classpath"))) entries.add(entry.toString());
+            }
+        }
+        return new ArrayList<>(entries);
     }
 
     void applyRules(Path log) throws Exception {
