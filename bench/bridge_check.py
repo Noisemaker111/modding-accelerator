@@ -186,6 +186,14 @@ def main():
         for key, value in PINS.get((args.bridge, args.minecraft), {}).items():
             props.write_text(re.sub(rf"(?m)^{re.escape(key)}\s*=.*$", f"{key}={value}", props.read_text(encoding="utf-8")), encoding="utf-8")
         if to_fabric:
+            # A bridge class standing in for a static method NeoForge adds reads game members that a converted mod opens
+            # only when it calls that method (bridges[].statics, accessTransformers). The host calls none and gets every
+            # bridge file, so it opens them all, in its own access transformer, which convert carries to Fabric.
+            opened = [line for s in b.get("statics", {}).values() for line in s.get("accessTransformers", [])]
+            if opened:
+                at = work / "src" / "main" / "resources" / "META-INF" / "accesstransformer.cfg"
+                at.parent.mkdir(parents=True, exist_ok=True)
+                at.write_text((at.read_text(encoding="utf-8") if at.is_file() else "") + "\n".join(opened) + "\n", encoding="utf-8")
             code, result, _ = convert_sweep.mmt(["convert", "--root", str(work), "--to", "fabric", "--no-compile", "--json"], 3600)
             if code not in (0, 1) or "error" in result and "from" not in result:
                 print(json.dumps({"ok": False, "stage": "convert", "result": result}, indent=1))

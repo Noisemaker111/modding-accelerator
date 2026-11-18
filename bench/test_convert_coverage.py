@@ -80,4 +80,28 @@ check(not C.declared_by_game(game, "net/minecraft/A", "getCapability"), "a metho
 sweep = {"runs": [{"id": "demo", "outcome": "loads, registers what the original does"}, {"id": "old", "outcome": "converted, does not compile"}]}
 check("net.fabricmc.fabric.api.nothing.v1.Gone" in C.proven(refs, sweep) and not C.proven(refs, {"runs": [sweep["runs"][1]]}),
       "what a mod whose conversion compiled uses is handled; a failed one proves nothing")
+check({"TRUE", "FALSE", "isTrue"} <= C.declared("public enum TriState {\n    TRUE,\n    DEFAULT,\n    FALSE;\n\n    public boolean isTrue() {\n        return this == TRUE;\n    }\n}\n"),
+      "an enum's constants are members it declares")
+check("TRUE" not in C.declared("class A {\n    void f() {\n        TRUE,\n    }\n}\n"), "a bare name in a class that is no enum is not a member")
+
+# real: published jars are read like corpus mods; a mod that uses only what the bridge has is clear, and what the others
+# miss comes in the order that clears mods soonest.
+import tempfile  # noqa: E402
+import zipfile  # noqa: E402
+with tempfile.TemporaryDirectory() as tmp:
+    gone = class_file("demo/Other", [("m", "net/fabricmc/fabric/api/nothing/v1/Gone", "run", "()V")])
+    for name, classes in (("clear--a.jar", [data]), ("held--b.jar", [data, gone]), ("held2--c.jar", [gone])):
+        with zipfile.ZipFile(Path(tmp) / name, "w") as z:
+            for i, c in enumerate(classes):
+                z.writestr(f"demo/C{i}.class", c)
+    found = C.real(tmp, "fabric", "26.3", rules)
+    check(len(found["mods"]) == 3 and found["clear"] == 1, f"one of three jars uses nothing the bridge lacks: {found['clear']} of {len(found['mods'])}")
+    first = found["order"][0]
+    check(first["symbol"] == "net.fabricmc.fabric.api.nothing.v1.Gone" and first["mods"] == 2 and first["clearAfter"] == 3,
+          f"the class two jars miss comes first and clears both: {found['order']}")
+try:
+    C.real(".", "fabric", "1.21.1", rules)
+    check(False, "Fabric jars before 26.1 are refused")
+except SystemExit:
+    check(True, "")
 print(f"{checks} convert coverage checks passed")
