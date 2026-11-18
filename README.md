@@ -26,6 +26,11 @@ the mod's own state asserted in a client (`--assert`, `--expect-value`), a plugi
 modpack's world made, filled and reopened on its own server, or a performance change measured against the unchanged mod
 with its output compared exactly.
 
+**Where this is going: nobody has to think about Minecraft versions or loaders.** You drop a mod in, pick the version
+and the loader you want, and get it back in minutes, checked in the game. That has to hold for any mod anyone makes,
+so nothing here is made for one mod: the porter learns each changed part of the game once, the converter each piece of
+a loader's API once, and every mod that uses it is covered. It is not there yet; the table says how far each part is.
+
 ## What it does
 
 | Goal | You run | Where it stands |

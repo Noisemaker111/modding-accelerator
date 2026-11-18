@@ -1,6 +1,6 @@
 {
  "about": "The one roadmap: the four goals, each with its steps, dates and targets. ROADMAP.md and docs/index.html are generated from this file by python bench/bench_page.py. Every step belongs to one goal; 'part' groups steps inside a goal, 'headline' names the measures that say most about it, 'today' says in a sentence what works now, and 'try' is the commands the page shows for it. Status words: done (ran and checked), doing (being worked on), next, later. start/target/done are dates; a target is a proposal and may move, but the old one is kept in 'moved' when it does. measures are ids in coverage/measures.json.",
- "goal": "a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.",
+ "goal": "Nobody should have to think about Minecraft versions or loaders: drop a mod in, pick the version and the loader you want, and get it back in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.",
  "targetsSet": "2026-11-06",
  "goals": [
   {
@@ -691,6 +691,17 @@
      ]
     },
     {
+     "id": "49",
+     "title": "Drop a mod in, pick a version and a loader, get it back",
+     "part": "One place for both",
+     "status": "later",
+     "text": "Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod goes in, the person picks the Minecraft version and the loader they want, and the mod comes back on that version and loader, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.",
+     "finish": "One command and one screen take a mod, a version and a loader; of the 150 most-downloaded mods, the share that comes back needing nothing by hand is shown per version and loader",
+     "wrongIf": "a mod that ports alone and converts alone fails when the two are chained",
+     "start": "2026-12-08",
+     "target": "2027-01-15"
+    },
+    {
      "id": "19",
      "title": "Forge → NeoForge and Fabric → Quilt",
      "part": "Loader pairs",
@@ -807,6 +818,11 @@
   {
    "question": "What chooses the next piece of porting or converting work?",
    "choice": "A list of what real mods use, and only after it has been checked against real builds (Jon asked on 2026-11-18 why progress was small and nothing was laid out). Three methods that day were each chosen from a list nobody had checked, and each missed: building ports from the loader's starter project freed 0 of 126 and lost 2 (PR #109); the port worklist cleared 21 ports of which 7 built, because it reads almost nothing in Fabric mods; three convert methods aimed at the 14 corpus mods that do not compile freed none of their three targets. The number to steer by is how many of the 150 most-downloaded mods have nothing left, read from their jars in a minute or two with no build (python bench/exposure.py run for porting, python bench/convert_coverage.py real for converting). The unit of work is one changed game part or one loader symbol, and the corpus sweep in the cloud is the proof at the end of a PR, never what chooses the work",
+   "date": "2026-11-18"
+  },
+  {
+   "question": "Where is all of this going?",
+   "choice": "One place where someone drops a mod in, picks the version and the loader they want, and gets it back very quickly, so nobody has to worry about versions or loaders (Jon, 2026-11-18). It has to be designed for any mod anyone can make, so nothing is made by hand for one mod, because that does not scale: the porter learns a changed part of the game once and the converter a piece of a loader's API once, and every mod that uses it is covered. Porting and converting stay separate records and claims (2026-10-24), and step 49 joins them behind one front door",
    "date": "2026-11-18"
   }
  ]
