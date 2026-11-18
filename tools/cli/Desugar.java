@@ -307,6 +307,7 @@ final class Desugar {
                 return null;
             }
             patternSwitchEdit(tree);
+            arrowStatementEdit(tree);
             return super.visitSwitch(tree, unused);
         }
 
@@ -1124,6 +1125,63 @@ final class Desugar {
             }
             out.append('}');
             edits.add(new Edit(start(tree), end(tree), out.toString()));
+        }
+
+        /**
+         * Lowers arrow cases in a statement switch over constants into colon cases with breaks. An arrow
+         * never falls through, so appending a break keeps the meaning. Pattern cases belong to the
+         * if-else lowering, and anything unrecognized is left for a human.
+         */
+        private void arrowStatementEdit(SwitchTree tree) {
+            List<? extends CaseTree> cases = tree.getCases();
+            if (cases.isEmpty()) {
+                return;
+            }
+            List<Edit> arrowEdits = new ArrayList<>();
+            for (CaseTree kase : cases) {
+                if (hasGuard(kase)) {
+                    return;
+                }
+                List<? extends Tree> labels = caseLabels(kase);
+                if (labels.isEmpty()) {
+                    return;
+                }
+                for (Tree label : labels) {
+                    String kind = label.getKind().name();
+                    boolean constant = label.getKind() == Tree.Kind.IDENTIFIER || label.getKind().name().endsWith("_LITERAL") || kind.equals("CONSTANT_CASE_LABEL");
+                    if (!constant && !kind.equals("DEFAULT_CASE_LABEL")) {
+                        return;
+                    }
+                }
+                List<? extends StatementTree> statements = kase.getStatements();
+                if (statements != null && statements.isEmpty()) {
+                    return;
+                }
+                int caseStart = start(kase);
+                int bodyStart;
+                int bodyEnd;
+                if (statements != null) {
+                    bodyStart = start(statements.get(0));
+                    bodyEnd = end(statements.get(statements.size() - 1));
+                } else {
+                    Tree body = kase.getBody();
+                    if (body == null || body.getKind() == Tree.Kind.THROW) {
+                        return;
+                    }
+                    bodyStart = start(body);
+                    bodyEnd = end(body);
+                }
+                if (caseStart < 0 || bodyStart < 0 || bodyEnd < 0) {
+                    return;
+                }
+                int arrow = masked.indexOf("->", caseStart);
+                if (arrow < 0 || arrow + 2 > bodyStart) {
+                    return;
+                }
+                arrowEdits.add(new Edit(arrow, arrow + 2, ":"));
+                arrowEdits.add(new Edit(bodyEnd, bodyEnd, "break;"));
+            }
+            edits.addAll(arrowEdits);
         }
 
         private String selectorType(SwitchTree tree) {

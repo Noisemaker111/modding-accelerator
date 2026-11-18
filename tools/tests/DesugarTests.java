@@ -170,6 +170,22 @@ public final class DesugarTests {
             lower("Fall.java", fallthrough).equals(fallthrough),
             "a pattern case that falls through is left alone instead of dropping its fallthrough"
         );
+        String arrows = lower(
+            "Menu.java",
+            "class Menu {\n    void f(int n) {\n        switch (n) {\n            case 0 -> System.out.println(n);\n            case 1 -> {\n                System.out.println(n);\n            }\n            default -> System.out.println(-1);\n        }\n    }\n}\n"
+        );
+        check(
+            arrows.contains("case 0 : System.out.println(n);break;") &&
+            arrows.contains("case 1 : {") &&
+            arrows.contains("}break;") &&
+            arrows.contains("default : System.out.println(-1);break;") &&
+            !arrows.contains("->"),
+            "arrow cases over constants become colon cases with breaks"
+        );
+        check(
+            lower("Menu.java", arrows).equals(arrows),
+            "a lowered arrow switch is stable"
+        );
     }
 
     static void smallChecks() throws Exception {
