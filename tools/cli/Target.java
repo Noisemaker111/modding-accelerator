@@ -57,6 +57,21 @@ final class Target {
             texts.put(file, text.substring(0, at) + to + text.substring(at + from.length()));
         }
 
+        /** Replace a whole file's content; the old text stays the edit's before for preview and undo. */
+        void rewrite(Path file, String content) throws IOException {
+            originals.putIfAbsent(file, text(file));
+            texts.put(file, content);
+        }
+
+        /** Track a file the port creates; its before is null, so preview shows it and undo deletes it. */
+        void createFile(Path file, String content) throws IOException {
+            if (texts.containsKey(file)) throw new IOException("Duplicate scaffold write to " + file);
+            if (Files.exists(file)) throw new IOException(
+                "Scaffold would overwrite " + file + "; rewrite it instead of creating it"
+            );
+            texts.put(file, content);
+        }
+
         List<Edit> edits() {
             List<Edit> edits = new ArrayList<>();
             for (Path file : texts.keySet()) if (!Objects.equals(originals.get(file), texts.get(file))) edits.add(
@@ -107,6 +122,9 @@ final class Target {
             "Minecraft is pinned inside build logic; update its owning setting, then rerun port."
         );
         if (loaders.equals(Set.of("neoforge"))) {
+            // RetroFuturaGradle serves 1.7.10, which NeoForge never published for: a cross-architecture
+            // port swaps the whole build for an RFG scaffold instead of resolving NeoForge artifacts.
+            if (to.equals("1.7.10")) return legacyForgeScaffold(build, setup, pins, to);
             String resolved = neoForgeVersion(build, to);
             boolean owned = false;
             for (String key : List.of("neo_version", "neoforge_version", "neoForgeVersion", "neoforgeVersion")) if (
@@ -458,6 +476,264 @@ final class Target {
             );
             return;
         }
+    }
+
+    /** GTNH nexus maven-metadata for RetroFuturaGradle; the plugin marker resolves through the scaffold's pluginManagement. */
+    static final String RFG_METADATA =
+        "https://nexus.gtnewhorizons.com/repository/public/com/gtnewhorizons/retrofuturagradle/maven-metadata.xml";
+
+    /**
+     * A NeoForge build ported to 1.7.10 cannot keep its build: NeoForge never published for that game.
+     * The scaffold swaps the whole build for RetroFuturaGradle (which maps mcVersion 1.7.10 to Forge
+     * 1.7.10-10.13.4.1614) instead of resolving same-loader artifacts, so a real run plans past the
+     * target stage. Source incompatibilities stay compile errors for the bridge and sidecar passes.
+     */
+    static Setup legacyForgeScaffold(Build build, Setup setup, Map<String, Object> pins, String to)
+        throws Exception {
+        String rfg = rfgVersion(build);
+        scaffoldFiles(setup, build, pins, rfg, to);
+        return setup;
+    }
+
+    /** The newest final RFG 2.x release; RFG 2 serves 1.7.10 with a Java 25 daemon. */
+    static String rfgVersion(Build build) throws Exception {
+        String rfg = newestInLine(fetch(build, RFG_METADATA), "2");
+        if (rfg == null) throw new IOException(
+            "RetroFuturaGradle publishes no 2.x release (nexus.gtnewhorizons.com)"
+        );
+        return rfg;
+    }
+
+    /**
+     * Swap the selected project's build for the RFG scaffold: rewrite the Groovy scripts in place,
+     * replace Kotlin scripts with Groovy ones (Gradle refuses both spellings side by side), retarget
+     * the owned game pin at mcVersion, and pin the daemon the RFG plugin needs. New files are tracked
+     * as creations, so preview shows them and undo deletes them.
+     */
+    static void scaffoldFiles(Setup setup, Build build, Map<String, Object> pins, String rfg, String to)
+        throws Exception {
+        Path root = build.project.root;
+        Path directory = Path.of(Json.text(setup.project, "directory", root.toString()))
+            .toAbsolutePath()
+            .normalize();
+        scaffoldScript(setup, root, "settings", rfgSettingsGradle(rootName(root)));
+        Path buildFile = Path.of(
+            Json.text(setup.project, "buildFile", directory.resolve("build.gradle").toString())
+        );
+        scaffoldScript(setup, buildFile.toAbsolutePath().getParent(), "build", rfgBuildGradle(rfg));
+        retargetGamePin(setup, build, directory, pins, to);
+        Path daemon = root.resolve("gradle/gradle-daemon-jvm.properties");
+        if (Files.isRegularFile(daemon)) setup.rewrite(daemon, rfgDaemonJvmProperties());
+        else setup.createFile(daemon, rfgDaemonJvmProperties());
+        setup.applied.add(
+            Json.map(
+                "artifact",
+                "com.gtnewhorizons.retrofuturagradle",
+                "to",
+                rfg,
+                "identity",
+                "resolved from nexus.gtnewhorizons.com",
+                "gameVersion",
+                to,
+                "evidence",
+                "RetroFuturaGradle " + rfg + " maps mcVersion 1.7.10 to Forge 1.7.10-10.13.4.1614"
+            )
+        );
+        setup.applied.add(
+            Json.map(
+                "change",
+                "RFG scaffold replaces the NeoForge build for " + to,
+                "evidence",
+                "RetroFuturaGradle example build (mcVersion, toolchain, processResources)"
+            )
+        );
+    }
+
+    /** One Gradle script: rewrite the Groovy spelling, or replace the Kotlin spelling with Groovy. */
+    static void scaffoldScript(Setup setup, Path directory, String base, String content) throws IOException {
+        Path groovy = directory.resolve(base + ".gradle");
+        Path kotlin = directory.resolve(base + ".gradle.kts");
+        if (Files.isRegularFile(groovy)) setup.rewrite(groovy, content);
+        else if (Files.isRegularFile(kotlin)) {
+            setup.excluded.add(kotlin);
+            setup.createFile(groovy, content);
+        } else setup.createFile(groovy, content);
+    }
+
+    /** The settings' project name when it names one, else the folder name. */
+    static String rootName(Path root) throws IOException {
+        for (String name : List.of("settings.gradle", "settings.gradle.kts")) {
+            Path file = root.resolve(name);
+            if (!Files.isRegularFile(file)) continue;
+            for (String line : Files.readAllLines(file)) {
+                String stripped = line.strip();
+                if (!stripped.startsWith("rootProject.name")) continue;
+                String rest = stripped.substring("rootProject.name".length()).strip();
+                if (!rest.startsWith("=")) continue;
+                String value = rest.substring(1).strip();
+                if (value.length() < 2) continue;
+                char quote = value.charAt(0);
+                if (quote != '"' && quote != '\'') continue;
+                int last = value.lastIndexOf(quote);
+                if (last > 0) return value.substring(1, last);
+            }
+        }
+        return root.getFileName().toString();
+    }
+
+    /**
+     * The RFG scaffold drives the game from the build script's mcVersion, while the model reads the
+     * properties pin: the owned game line becomes mcVersion, and any second game pin goes, so the
+     * re-evaluated build selects exactly the target.
+     */
+    static void retargetGamePin(Setup setup, Build build, Path directory, Map<String, Object> pins, String to)
+        throws Exception {
+        List<Path> owners = new ArrayList<>();
+        for (Path file : build.project.inputs()) {
+            if (!file.getFileName().toString().equals("gradle.properties")) continue;
+            if (gamePinOwner(setup, file, pins)) owners.add(file);
+        }
+        Path own = directory.resolve("gradle.properties");
+        Path owner = owners.contains(own) ? own : owners.size() == 1 ? owners.get(0) : null;
+        if (owner == null) throw new IOException(
+            "Cannot choose an unambiguous gradle.properties owner for the game pin: " + owners
+        );
+        List<String> out = new ArrayList<>();
+        boolean swapped = false;
+        for (String line : setup.text(owner).split("\n", -1)) {
+            if (!gamePin(line)) out.add(line);
+            else if (!swapped) {
+                out.add("mcVersion = " + to);
+                swapped = true;
+            }
+        }
+        if (!swapped) throw new IOException("Cannot find the game pin in " + owner);
+        setup.rewrite(owner, String.join("\n", out));
+    }
+
+    /** A gradle.properties file carrying one of the model's game pins at its pinned value. */
+    static boolean gamePinOwner(Setup setup, Path file, Map<String, Object> pins) throws IOException {
+        for (String key : List.of(
+            "minecraft_version",
+            "minecraftVersion",
+            "exactMinecraftVersion",
+            "mc_version",
+            "mcVersion"
+        )) {
+            Object pin = pins.get(key);
+            if (pin == null) continue;
+            for (String line : setup.text(file).split("\n", -1)) {
+                String stripped = line.strip();
+                if (!stripped.startsWith(key)) continue;
+                String rest = stripped.substring(key.length()).strip();
+                if ((rest.startsWith("=") || rest.startsWith(":")) && rest.substring(1).strip().equals(
+                    String.valueOf(pin)
+                )) return true;
+            }
+        }
+        return false;
+    }
+
+    /** A gradle.properties game line, whatever its spelling: the scaffold owns exactly one game pin. */
+    static boolean gamePin(String line) {
+        String stripped = line.strip();
+        for (String key : List.of(
+            "minecraft_version",
+            "minecraftVersion",
+            "exactMinecraftVersion",
+            "mc_version",
+            "mcVersion"
+        )) {
+            if (!stripped.startsWith(key)) continue;
+            String rest = stripped.substring(key.length()).strip();
+            if (rest.startsWith("=") || rest.startsWith(":")) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The scaffold build: the direct RFG plugin from the GTNH example, with the port's toolchain
+     * (Java 17 compiles the modern sources, bytecode stays 8) instead of the example's Java 8.
+     */
+    static String rfgBuildGradle(String rfg) {
+        return String.join(
+            "\n",
+            "plugins {",
+            "    id(\"java\")",
+            "    id(\"com.gtnewhorizons.retrofuturagradle\") version \"" + rfg + "\"",
+            "}",
+            "",
+            "// The port keeps the mod's own coordinates; the scaffold only swaps the game target.",
+            "java {",
+            "    toolchain {",
+            "        languageVersion.set(JavaLanguageVersion.of(17))",
+            "        vendor.set(org.gradle.jvm.toolchain.JvmVendorSpec.AZUL)",
+            "    }",
+            "    withSourcesJar()",
+            "}",
+            "",
+            "minecraft {",
+            "    mcVersion.set(\"1.7.10\")",
+            "    username.set(\"Developer\")",
+            "}",
+            "",
+            "// Modern sources compile down to Java 8 bytecode; RFG's own Minecraft tasks keep theirs.",
+            "tasks.named(\"compileJava\") {",
+            "    options.release.set(8)",
+            "}",
+            "tasks.named(\"compileTestJava\") {",
+            "    options.release.set(8)",
+            "}",
+            "",
+            "tasks.processResources {",
+            "    filesMatching(\"mcmod.info\") {",
+            "        expand(project.properties)",
+            "    }",
+            "}",
+            "",
+            "repositories {",
+            "    maven {",
+            "        name = \"GTNH Maven\"",
+            "        url = uri(\"https://nexus.gtnewhorizons.com/repository/public/\")",
+            "    }",
+            "    mavenCentral()",
+            "}",
+            ""
+        );
+    }
+
+    /** The scaffold settings: the GTNH example's pluginManagement, keeping the project's name. */
+    static String rfgSettingsGradle(String rootName) {
+        String safe = rootName.replace("\\", "\\\\").replace("\"", "\\\"");
+        return String.join(
+            "\n",
+            "rootProject.name = \"" + safe + "\"",
+            "",
+            "pluginManagement {",
+            "    repositories {",
+            "        maven {",
+            "            name = \"GTNH Maven\"",
+            "            url = uri(\"https://nexus.gtnewhorizons.com/repository/public/\")",
+            "            mavenContent {",
+            "                includeGroupByRegex(\"com\\.gtnewhorizons\\..+\")",
+            "                includeGroup(\"com.gtnewhorizons\")",
+            "            }",
+            "        }",
+            "        gradlePluginPortal()",
+            "        mavenCentral()",
+            "        mavenLocal()",
+            "    }",
+            "    plugins {",
+            "        id(\"org.gradle.toolchains.foojay-resolver-convention\") version \"1.0.0\"",
+            "    }",
+            "}",
+            ""
+        );
+    }
+
+    /** RFG 2 resolves its daemon through this file; its plugin needs Java 25. */
+    static String rfgDaemonJvmProperties() {
+        return "toolchainVersion=25\n";
     }
 
     /** The newest final release of one major line in a maven-metadata.xml (pre-releases only when the line has nothing else). */
@@ -1810,9 +2086,18 @@ final class Target {
     }
 
     static void apply(List<Edit> edits) throws IOException {
-        for (Edit edit : edits) if (!Files.readString(edit.file()).equals(edit.before())) throw new IOException(
-            "Target configuration changed during setup: " + edit.file()
-        );
+        for (Edit edit : edits) {
+            // A null before is a file the port creates: it must be absent, not equal to anything.
+            if (edit.before() == null) {
+                if (Files.exists(edit.file())) throw new IOException(
+                    "Target configuration changed during setup: " + edit.file()
+                );
+                continue;
+            }
+            if (!Files.readString(edit.file()).equals(edit.before())) throw new IOException(
+                "Target configuration changed during setup: " + edit.file()
+            );
+        }
         requireWritable(edits);
         write(edits);
     }
@@ -1820,7 +2105,11 @@ final class Target {
     static void requireWritable(List<Edit> edits) throws IOException {
         // Every file is checked before the first is written: a read-only one stops the port with nothing changed.
         List<String> locked = new ArrayList<>();
-        for (Edit edit : edits) if (!Files.isWritable(edit.file())) locked.add(edit.file().toString());
+        for (Edit edit : edits) {
+            // A created file checks its parent: the file itself cannot be writable yet.
+            Path writable = edit.before() == null ? edit.file().toAbsolutePath().getParent() : edit.file();
+            if (!Files.isWritable(writable)) locked.add(edit.file().toString());
+        }
         if (!locked.isEmpty()) throw new IOException(
             "Cannot write " +
             String.join(", ", locked) +
@@ -1831,7 +2120,12 @@ final class Target {
     }
 
     static void write(List<Edit> edits) throws IOException {
-        for (Edit edit : edits) Files.writeString(edit.file(), edit.after());
+        for (Edit edit : edits) {
+            if (edit.before() == null && edit.file().getParent() != null) Files.createDirectories(
+                edit.file().getParent()
+            );
+            Files.writeString(edit.file(), edit.after());
+        }
     }
 
     static String fetch(Build build, String url) throws Exception {

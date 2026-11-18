@@ -71,6 +71,7 @@ final class Installation {
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinConfig.java",
         "tools/GamePrep.java",
         "tools/tests/PortTests.java",
+        "tools/tests/PortScaffoldTests.java",
         "tools/tests/PortRepairTests.java",
         "tools/tests/ConvertTests.java",
         "tools/tests/ConvertBridgeTests.java",
@@ -439,6 +440,7 @@ final class Installation {
 
     static final List<Suite> SUITES = List.of(
         new Suite("port", "PortTests", true, true),
+        new Suite("port-scaffold", "PortScaffoldTests", true, true),
         new Suite("port-repair", "PortRepairTests", true, true),
         new Suite("convert", "ConvertTests", true, true),
         new Suite("build-script", "BuildScriptTests", true, true),

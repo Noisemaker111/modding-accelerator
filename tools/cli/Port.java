@@ -900,7 +900,8 @@ final class Port {
         Map<String, Object> before = this.before;
         Set<Path> backupPaths = new TreeSet<>(sources(build.project));
         for (Target.Edit edit : target) {
-            Path file = edit.file().toRealPath();
+            boolean created = edit.before() == null && !Files.exists(edit.file());
+            Path file = created ? edit.file().toAbsolutePath().normalize() : edit.file().toRealPath();
             if (!file.startsWith(build.project.root)) throw new IOException(
                 "Target edit is outside the source project: " + file
             );
@@ -915,6 +916,10 @@ final class Port {
             Path original = pendingOriginals(build.project).resolve(relative.toString());
             Path source = Files.isRegularFile(original) ? original : file;
             if (source == original) takenOver.add(relative.toString().replace('\\', '/'));
+            if (!Files.isRegularFile(source)) {
+                before.put(relative.toString().replace(File.separatorChar, '/'), null);
+                continue;
+            }
             Files.createDirectories(backup.getParent());
             Files.copy(source, backup);
             before.put(relative.toString().replace('\\', '/'), Fingerprints.bytes(Files.readAllBytes(source)));
@@ -922,9 +927,12 @@ final class Port {
         planned.addAll(takenOver);
         deletePending(build.project);
         // The restore plan is on disk before the first edit: an interrupted port still knows what it may have changed.
-        for (Target.Edit edit : target) planned.add(
-            build.project.root.relativize(edit.file().toRealPath()).toString().replace('\\', '/')
-        );
+        for (Target.Edit edit : target) {
+            Path edited = edit.before() == null && !Files.exists(edit.file())
+                ? edit.file().toAbsolutePath().normalize()
+                : edit.file().toRealPath();
+            planned.add(build.project.root.relativize(edited).toString().replace(File.separatorChar, '/'));
+        }
         plannedRemovals = relative(build.project.root, excluded);
         saveInProgress();
         Path log;
