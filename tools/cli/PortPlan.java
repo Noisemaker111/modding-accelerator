@@ -10,18 +10,18 @@ import javax.lang.model.util.*;
 import javax.tools.*;
 
 /**
- * What a mod uses of the game and its loader, resolved by the compiler on the mod's own version: every call, field,
- * type, constructor and override, with the member it names exactly (owner, name, descriptor) and where it is written.
- * Joined with the game's change map for a jump, it says before any port what the mod needs, member by member: renamed,
- * moved, re-typed, replaced by what the game's own code does, or redesigned with nothing to follow. Nothing is read
- * from compiler errors; the same list drives every mod and every naming scheme.
+ * mmt port-plan: every place in a mod's code that touches game or loader code, found by the compiler on the mod's own
+ * version (each call, field, class, constructor and override, with exactly which game method or field it is), and what
+ * the target version did to each: renamed, moved to another class, takes different arguments, the game shows the
+ * replacement, or removed with nothing replacing it. It comes before any port and reads no compiler errors, so the same
+ * plan works for every mod and every naming scheme.
  */
-final class UsedMembers {
+final class PortPlan {
 
-    private UsedMembers() {}
+    private PortPlan() {}
 
-    /** One place a mod names a game member: kind is call, field, type, new or override; start/end are the name's offsets. */
-    record Use(String file, long line, long column, long start, long end, String kind, String owner, String name, String desc) {}
+    /** One place in the mod that touches game code: kind is call, field, class, new or override; start/end bound the name. */
+    record Place(String file, long line, long column, long start, long end, String kind, String owner, String name, String desc) {}
 
     static boolean game(String owner) {
         return owner.startsWith("net.minecraft.") || owner.startsWith("com.mojang.") || owner.startsWith("net.neoforged.")
@@ -29,9 +29,9 @@ final class UsedMembers {
     }
 
     /** Every game use in the sources, resolved against the classpath (the mod's own version, where it compiles). */
-    static List<Use> record(List<Path> sources, List<Path> classpath) throws IOException {
+    static List<Place> record(List<Path> sources, List<Path> classpath) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        if (compiler == null) throw new IOException("mmt uses needs a JDK (javac), not a JRE");
+        if (compiler == null) throw new IOException("mmt port-plan needs a JDK (javac), not a JRE");
         DiagnosticCollector<JavaFileObject> ignored = new DiagnosticCollector<>();
         try (StandardJavaFileManager files = compiler.getStandardFileManager(ignored, Locale.ROOT, StandardCharsets.UTF_8)) {
             StringBuilder cp = new StringBuilder();
@@ -48,16 +48,16 @@ final class UsedMembers {
                 StringWriter trace = new StringWriter();
                 Throwable cause = broken.getCause() == null ? broken : broken.getCause();
                 cause.printStackTrace(new PrintWriter(trace));
-                System.err.println("mmt uses: javac stopped while attributing: " + trace.toString().lines().limit(14).toList());
+                System.err.println("mmt port-plan: javac stopped while attributing: " + trace.toString().lines().limit(14).toList());
             }
             ignored.getDiagnostics().stream().filter(d -> d.getKind() == Diagnostic.Kind.ERROR).limit(5)
-                .forEach(d -> System.err.println("mmt uses: unresolved: " + d.getSource().getName() + ":" + d.getLineNumber() + ": " + d.getMessage(Locale.ROOT)));
+                .forEach(d -> System.err.println("mmt port-plan: unresolved: " + d.getSource().getName() + ":" + d.getLineNumber() + ": " + d.getMessage(Locale.ROOT)));
             Trees resolved = Trees.instance(task);
             Elements elements = task.getElements();
             Types types = task.getTypes();
-            List<Use> uses = new ArrayList<>();
-            for (CompilationUnitTree unit : trees) new Scanner(unit, resolved, elements, types, uses).scan(unit, null);
-            return uses;
+            List<Place> places = new ArrayList<>();
+            for (CompilationUnitTree unit : trees) new Scanner(unit, resolved, elements, types, places).scan(unit, null);
+            return places;
         }
     }
 
@@ -67,15 +67,15 @@ final class UsedMembers {
         final Trees trees;
         final Elements elements;
         final Types types;
-        final List<Use> uses;
+        final List<Place> places;
         final SourcePositions positions;
 
-        Scanner(CompilationUnitTree unit, Trees trees, Elements elements, Types types, List<Use> uses) {
+        Scanner(CompilationUnitTree unit, Trees trees, Elements elements, Types types, List<Place> places) {
             this.unit = unit;
             this.trees = trees;
             this.elements = elements;
             this.types = types;
-            this.uses = uses;
+            this.places = places;
             this.positions = trees.getSourcePositions();
         }
 
@@ -164,7 +164,7 @@ final class UsedMembers {
                 }
                 case CLASS, INTERFACE, ENUM, RECORD, ANNOTATION_TYPE -> {
                     String owner = elements.getBinaryName((TypeElement) e).toString();
-                    if (game(owner)) add("type", owner, "", "", start, end);
+                    if (game(owner)) add("class", owner, "", "", start, end);
                 }
                 default -> {}
             }
@@ -172,7 +172,7 @@ final class UsedMembers {
 
         void add(String kind, String owner, String name, String desc, long start, long end) {
             LineMap lines = unit.getLineMap();
-            uses.add(new Use(Path.of(unit.getSourceFile().toUri()).toString(), lines.getLineNumber(start), lines.getColumnNumber(start), start, end, kind, owner, name, desc));
+            places.add(new Place(Path.of(unit.getSourceFile().toUri()).toString(), lines.getLineNumber(start), lines.getColumnNumber(start), start, end, kind, owner, name, desc));
         }
 
         String descriptor(ExecutableElement m) {
@@ -200,58 +200,62 @@ final class UsedMembers {
         }
     }
 
+    static final String RENAMED = "renamed";
+    static final String MOVED = "moved to another class";
+    static final String ARGUMENTS = "takes different arguments";
+    static final String KNOWN = "the game shows the replacement";
+    static final String REMOVED = "removed, nothing replaces it";
+
     /**
-     * What the change map says about each use: unchanged, renamed, moved, re-typed, replaced (the game's own code shows
-     * the replacement), removed (nothing to follow) or a moved/removed class. Keys follow GameDiff's map: dotted owners,
-     * $ for nested classes, JVM descriptors.
+     * What the target version did to the game code each place touches, read from the game's change map (GameDiff's keys:
+     * dotted classes with $ for nested ones, JVM descriptors). A place whose class moved or went is labelled by its class.
      */
-    static Map<String, Object> join(List<Use> uses, Map<String, Object> map) {
-        Map<String, String> change = new HashMap<>();
+    static Map<String, Object> join(List<Place> places, Map<String, Object> map) {
+        Map<String, String> verdict = new HashMap<>();
         for (String list : List.of("methods", "methodsMoved", "signatures")) for (Object o : Json.array(map.get(list))) {
             var m = Json.object(o);
             String key = Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", "");
-            String what = list.equals("signatures") ? "re-typed" : list.equals("methodsMoved") ? "moved" : "renamed";
-            change.putIfAbsent(key, what);
+            verdict.putIfAbsent(key, list.equals("signatures") ? ARGUMENTS : list.equals("methodsMoved") ? MOVED : RENAMED);
         }
         for (String list : List.of("rewrites", "chains", "argDefaults", "siblings")) for (Object o : Json.array(map.get(list))) {
             var m = Json.object(o);
-            change.putIfAbsent(Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""), "replaced");
+            verdict.putIfAbsent(Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""), KNOWN);
         }
         for (Object o : Json.array(map.get("methodsRemoved"))) {
             var m = Json.object(o);
-            change.putIfAbsent(Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""), "removed");
+            verdict.putIfAbsent(Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""), REMOVED);
         }
         for (Object o : Json.array(map.get("fields"))) {
             var m = Json.object(o);
-            change.putIfAbsent(Json.text(m, "owner", "") + "." + Json.text(m, "from", ""), "renamed");
+            verdict.putIfAbsent(Json.text(m, "owner", "") + "." + Json.text(m, "from", ""), RENAMED);
         }
         for (Object o : Json.array(map.get("fieldsRemoved"))) {
             var m = Json.object(o);
-            change.putIfAbsent(Json.text(m, "owner", "") + "." + Json.text(m, "from", ""), "removed");
+            verdict.putIfAbsent(Json.text(m, "owner", "") + "." + Json.text(m, "from", ""), REMOVED);
         }
         Map<String, String> classes = new HashMap<>();
-        for (Object o : Json.array(map.get("classes"))) classes.put(Json.text(Json.object(o), "from", ""), "moved");
-        for (Object o : Json.array(map.get("classRewrites"))) classes.putIfAbsent(Json.text(Json.object(o), "from", ""), "replaced");
-        for (Object o : Json.array(map.get("classesRemoved"))) classes.putIfAbsent(String.valueOf(o), "removed");
+        for (Object o : Json.array(map.get("classes"))) classes.put(Json.text(Json.object(o), "from", ""), MOVED);
+        for (Object o : Json.array(map.get("classRewrites"))) classes.putIfAbsent(Json.text(Json.object(o), "from", ""), KNOWN);
+        for (Object o : Json.array(map.get("classesRemoved"))) classes.putIfAbsent(String.valueOf(o), REMOVED);
         Map<String, Integer> counts = new TreeMap<>();
-        Map<String, Map<String, Object>> members = new TreeMap<>();
-        List<Object> changed = new ArrayList<>();
-        for (Use u : uses) {
-            String what;
-            String member = u.owner() + (u.name().isEmpty() ? "" : "." + u.name() + (u.kind().equals("field") ? "" : u.desc()));
-            if (u.kind().equals("type")) what = classes.getOrDefault(u.owner(), "unchanged");
-            else if (u.kind().equals("field")) what = change.getOrDefault(u.owner() + "." + u.name(), classes.containsKey(u.owner()) ? "owner " + classes.get(u.owner()) : "unchanged");
-            else what = change.getOrDefault(member, classes.containsKey(u.owner()) ? "owner " + classes.get(u.owner()) : "unchanged");
+        Map<String, Map<String, Object>> targets = new TreeMap<>();
+        List<Object> places2 = new ArrayList<>();
+        for (Place p : places) {
+            String target = p.owner() + (p.name().isEmpty() ? "" : "." + p.name() + (p.kind().equals("field") ? "" : p.desc()));
+            String byClass = classes.containsKey(p.owner()) ? "its class: " + classes.get(p.owner()) : null;
+            String what = p.kind().equals("class") ? classes.get(p.owner())
+                : verdict.getOrDefault(p.kind().equals("field") ? p.owner() + "." + p.name() : target, byClass);
+            if (what == null) continue;
             counts.merge(what, 1, Integer::sum);
-            if (what.equals("unchanged")) continue;
-            members.computeIfAbsent(member, k -> Json.map("member", k, "change", what, "uses", 0));
-            members.get(member).put("uses", ((Number) members.get(member).get("uses")).intValue() + 1);
-            changed.add(Json.map("file", u.file(), "line", u.line(), "column", u.column(), "kind", u.kind(), "member", member, "change", what));
+            targets.computeIfAbsent(target, k -> Json.map("gameCode", k, "change", what, "places", 0));
+            targets.get(target).put("places", ((Number) targets.get(target).get("places")).intValue() + 1);
+            places2.add(Json.map("file", p.file(), "line", p.line(), "column", p.column(), "kind", p.kind(), "gameCode", target, "change", what));
         }
-        return Json.map("uses", uses.size(), "byChange", counts, "changedMembers", new ArrayList<>(members.values()), "changedUses", changed);
+        return Json.map("placesTouchingGameCode", places.size(), "placesToChange", places2.size(), "byChange", counts,
+            "changedGameCode", new ArrayList<>(targets.values()), "places", places2);
     }
 
-    /** mmt uses: the mod's game uses on its own version, joined with --map when given. */
+    /** mmt port-plan: the places in the mod that touch game code, and, with --map, what the target did to each. */
     static Map<String, Object> run(Build build, Map<String, Object> model, Mmt.Options options) throws Exception {
         // The mod's own compile runs once on its version, recording the sources and classpath javac is given (the init
         // script's mmt.recordCompile): what the build model names can differ (NeoGradle's placeholder game jar), and the
@@ -261,7 +265,7 @@ final class UsedMembers {
         List<String> tasks = new ArrayList<>(build.tasks(model, "classes"));
         tasks.add(0, "-Dmmt.recompile=true");
         tasks.add(0, "-Dmmt.recordCompile=" + records);
-        var compiled = build.gradle(tasks, "uses-compile");
+        var compiled = build.gradle(tasks, "port-plan-compile");
         Set<Path> sourceSet = new LinkedHashSet<>(), entries = new LinkedHashSet<>();
         if (Files.isDirectory(records)) try (var list = Files.list(records)) {
             for (Path record : list.filter(f -> f.toString().endsWith(".json")).toList()) {
@@ -275,17 +279,17 @@ final class UsedMembers {
             "The mod's own compile recorded no Java sources or classpath (" + sources.size() + " sources, " + classpath.size()
                 + " entries); its build log: " + compiled.log()
         );
-        List<Use> uses = record(sources, classpath);
+        List<Place> places = record(sources, classpath);
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("sources", sources.size());
-        if (options.values.containsKey("map")) result.putAll(join(uses, Json.read(Path.of(options.get("map", "")))));
-        else result.put("uses", uses.size());
-        Path out = build.project.state().resolve("uses.json");
+        result.put("sourceFiles", sources.size());
+        if (options.values.containsKey("map")) result.putAll(join(places, Json.read(Path.of(options.get("map", "")))));
+        else result.put("placesTouchingGameCode", places.size());
+        Path out = build.project.state().resolve("port-plan.json");
         Files.createDirectories(out.getParent());
         List<Object> all = new ArrayList<>();
-        for (Use u : uses) all.add(Json.map("file", u.file(), "line", u.line(), "column", u.column(), "start", u.start(), "end", u.end(),
-            "kind", u.kind(), "owner", u.owner(), "name", u.name(), "desc", u.desc()));
-        Json.save(out, Json.map("uses", all));
+        for (Place p : places) all.add(Json.map("file", p.file(), "line", p.line(), "column", p.column(), "start", p.start(), "end", p.end(),
+            "kind", p.kind(), "owner", p.owner(), "name", p.name(), "desc", p.desc()));
+        Json.save(out, Json.map("places", all));
         result.put("written", out.toString());
         result.put("ok", true);
         return result;

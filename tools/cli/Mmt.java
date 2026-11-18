@@ -244,7 +244,7 @@ public final class Mmt {
         "port",
         "convert",
         "explain",
-        "uses",
+        "port-plan",
         "dependencies",
         "mixin-check",
         "data-check",
@@ -501,8 +501,8 @@ public final class Mmt {
                         result = preview ? Convert.preview(project.root, home, options) : new Convert(build).run(options);
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
-                    case "uses" -> {
-                        result = UsedMembers.run(build, model, options);
+                    case "port-plan" -> {
+                        result = PortPlan.run(build, model, options);
                         exit = 0;
                     }
                     case "explain" -> {

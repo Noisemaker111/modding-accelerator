@@ -176,7 +176,7 @@ gradle.afterProject { p ->
         }
         p.tasks.withType(org.gradle.language.jvm.tasks.ProcessResources).configureEach { outputs.upToDateWhen { false } }
     }
-    // mmt uses: the classpath and sources javac is actually given, written as the task runs. A build model can only name
+    // mmt port-plan: the classpath and sources javac is actually given, written as the task runs. A build model can only name
     // what Gradle resolves when it configures, and some plugins put the game jar in only at compile time (NeoGradle's
     // placeholder neoforge jar).
     def compileRecord = System.getProperty('mmt.recordCompile', '')
