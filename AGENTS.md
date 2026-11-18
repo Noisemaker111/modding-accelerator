@@ -5,7 +5,7 @@ Every agent reads this whole file before every reply, so each line costs every t
 - How something works goes next to the code or in its own doc (`PERFORMANCE.md`, `bench/README.md`); what a change did goes in its PR.
 - When agents keep making the same mistake, fix the tool that lets them make it. Add a line only when that isn't possible, and rewrite or delete the line it replaces in the same PR.
 
-`mmt` tests Minecraft mods and plugins, ports mod source between versions, converts between loaders, and diagnoses modpacks. Where it is going: someone drops a mod in, picks a version and a loader, and gets it back in minutes, for any mod anyone makes. So never fix the mod in front of you: teach the tool the changed game part or the loader API behind the failure, which covers every mod that uses it. What it does and why: `README.md`, `SCOPE.md`, `CONTRIBUTING.md`. Traps: `KNOWN_ISSUES.md`.
+`mmt` tests Minecraft mods and plugins, ports mod source between versions, converts between loaders, and diagnoses modpacks. What it does and why: `README.md`, `SCOPE.md`, `CONTRIBUTING.md`. Traps: `KNOWN_ISSUES.md`.
 
 ## Commands
 

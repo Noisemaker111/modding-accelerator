@@ -696,7 +696,7 @@
      "part": "One place for both",
      "status": "later",
      "text": "Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod goes in, the person picks the Minecraft version and the loader they want, and the mod comes back on that version and loader, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.",
-     "finish": "One command and one screen take a mod, a version and a loader; of the 150 most-downloaded mods, the share that comes back needing nothing by hand is shown per version and loader",
+     "finish": "Through one command and one screen, 60 of the 150 most-downloaded NeoForge mods for 1.21.1 come back on Fabric for 1.21.2 needing nothing by hand. Not measured yet: 58 clear the port alone and 68 the conversion alone today, and 60 assumes steps 46 and 48 reach their 100; the first measurement of both together replaces it if it is far off",
      "wrongIf": "a mod that ports alone and converts alone fails when the two are chained",
      "start": "2026-12-08",
      "target": "2027-01-15"
