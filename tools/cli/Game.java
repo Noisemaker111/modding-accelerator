@@ -344,7 +344,7 @@ final class Game {
             throw new IOException(failure.getMessage() + "\nGame log: " + session.get("log"), failure);
         }
         if (!Boolean.TRUE.equals(result.get("ok"))) throw new IOException(
-            "Game action failed: " + result.get("error") + "\nGame log: " + session.get("log")
+            "Game action '" + request.get("command") + "' failed: " + result.get("error") + "\nGame log: " + session.get("log")
         );
         return result;
     }

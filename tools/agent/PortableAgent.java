@@ -242,7 +242,11 @@ public final class PortableAgent {
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
-            invoke(call(client, "getWindow"), new String[]{"setWindowedSize", "setWindowed"}, width, height);
+            try {
+                invoke(call(client, "getWindow"), new String[]{"setWindowedSize", "setWindowed"}, width, height);
+            } catch (NoSuchMethodException legacy) {
+                resizeLegacy(width, height);
+            }
             done.complete(Json.map("ok", true, "requestedWidth", width, "requestedHeight", height));
         } else if (command.equals("open-world")) {
             String world = Json.text(request, "world", "lab");
@@ -458,6 +462,16 @@ public final class PortableAgent {
                 if (list == null) throw new IllegalStateException("The loader's mod list is not built yet");
                 for (Object info : (Collection<?>)listType.getMethod("getMods").invoke(list))
                     all.put(String.valueOf(publicCall(info, "getModId")), String.valueOf(publicCall(info, "getVersion")));
+            } else {
+                // 1.7.10 names its loader Loader and its list getModList, through ModContainer as well.
+                Class<?> legacyLoader = optionalClass("cpw.mods.fml.common.Loader");
+                if (legacyLoader != null) {
+                    loaderName = "forge";
+                    Object loader = legacyLoader.getMethod("instance").invoke(null);
+                    for (Object container : (Collection<?>)legacyLoader.getMethod("getModList").invoke(loader)) {
+                        all.put(String.valueOf(publicCall(container, "getModId")), String.valueOf(publicCall(container, "getVersion")));
+                    }
+                }
             }
             Object ids = request.get("ids");
             if (ids instanceof List) for (Object id : (List<?>)ids) {
@@ -499,6 +513,14 @@ public final class PortableAgent {
         } catch (Throwable error) {
             done.complete(Json.map("ok", false, "error", cause(error)));
         }
+    }
+    /**
+     * Pre-window-handle clients resize through LWJGL: the canvas follows the display mode.
+     */
+    private static void resizeLegacy(int width, int height) throws Exception {
+        Class<?> display = load("org.lwjgl.opengl.Display");
+        Class<?> mode = load("org.lwjgl.opengl.DisplayMode");
+        invoke(display, new String[]{"setDisplayMode"}, mode.getConstructor(int.class, int.class).newInstance(width, height));
     }
     private static Object button(Object element, String wanted) throws Exception {
         if (element == null) return null;
