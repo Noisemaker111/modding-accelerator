@@ -20,8 +20,9 @@ def check(ok, label):
     checks += 1
 
 
-def class_file(this, refs):
-    """A class file whose constant pool names this class and refs: (kind 'm'|'f', owner, name, desc)."""
+def class_file(this, refs, extends=None, declares=()):
+    """A class file whose constant pool names this class and refs: (kind 'm'|'f', owner, name, desc); extends names its
+    superclass and declares the methods it has of its own."""
     pool = []
 
     def utf8(s):
@@ -40,8 +41,11 @@ def class_file(this, refs):
         pool.append(b"\x0c" + struct.pack(">HH", n, d))
         nat = len(pool)
         pool.append((b"\x0a" if kind == "m" else b"\x09") + struct.pack(">HH", o, nat))
+    parent = cls(extends) if extends else 0
+    methods = b"".join(struct.pack(">HHHH", 1, utf8(name), utf8("()V"), 0) for name in declares)
     body = b"".join(pool)
-    return b"\xca\xfe\xba\xbe" + struct.pack(">HHH", 0, 65, len(pool) + 1) + body + struct.pack(">HHHHHHH", 0x21, me, 0, 0, 0, 0, 0)
+    return (b"\xca\xfe\xba\xbe" + struct.pack(">HHH", 0, 65, len(pool) + 1) + body + struct.pack(">HHHHH", 0x21, me, parent, 0, 0)
+            + struct.pack(">H", len(declares)) + methods + struct.pack(">H", 0))
 
 
 data = class_file("demo/Mod", [
@@ -115,6 +119,22 @@ with tempfile.TemporaryDirectory() as tmp:
     first = found["order"][0]
     check(first["symbol"] == "net.fabricmc.fabric.api.nothing.v1.Gone" and first["mods"] == 2 and first["clearAfter"] == 3,
           f"the class two jars miss comes first and clears both: {found['order']}")
+# A call the bytecode names on the mod's own subclass is the loader class's unless the subclass declares it itself.
+event = "net/fabricmc/fabric/api/event/Event"
+with tempfile.TemporaryDirectory() as tmp:
+    jars = {
+        "inherits--a.jar": [class_file("demo/Mine", [], extends=event), class_file("demo/Use", [("m", "demo/Mine", "noSuchMember", "()V")])],
+        "overrides--b.jar": [class_file("demo/Mine", [], extends=event, declares=["noSuchMember"]),
+                             class_file("demo/Use", [("m", "demo/Mine", "noSuchMember", "()V")])],
+    }
+    for name, classes in jars.items():
+        with zipfile.ZipFile(Path(tmp) / name, "w") as z:
+            for i, c in enumerate(classes):
+                z.writestr(f"demo/C{i}.class", c)
+    found = C.real(tmp, "fabric", "26.3", rules)
+    held = {e["symbol"]: e["mods"] for e in found["missing"]}
+    check(held == {"net.fabricmc.fabric.api.event.Event#noSuchMember": ["inherits"]} and found["clear"] == 1,
+          f"an inherited loader method a published mod calls through its own subclass is missing; its own override is not: {held}")
 try:
     C.real(".", "fabric", "1.21.1", rules)
     check(False, "Fabric jars before 26.1 are refused")

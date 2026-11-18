@@ -92,30 +92,35 @@ def references(data):
     return classes, members
 
 
-def mod_references(folder):
-    """What every class file under folder (a mod's build/classes, or jars there) names of the loaders and the game."""
-    classes, members, own = set(), set(), {}
-    for f in Path(folder).rglob("*"):
-        datas = []
+def class_files(path):
+    """The bytes of every class file under a folder (a mod's build/classes, or jars there), or in one jar."""
+    for f in ([Path(path)] if Path(path).is_file() else Path(path).rglob("*")):
         # Windows refuses paths over 260 characters unless they are given in their \\?\ form.
         long = Path("\\\\?\\" + str(f.resolve())) if sys.platform == "win32" else f
         if f.suffix == ".class":
-            datas = [long.read_bytes()]
+            yield long.read_bytes()
         elif f.suffix == ".jar":
             with zipfile.ZipFile(f) as jar:
-                datas = [jar.read(e) for e in jar.namelist() if e.endswith(".class")]
-        for data in datas:
-            try:
-                c, m = references(data)
-            except (ValueError, IndexError, struct.error):
-                continue
-            classes |= c
-            members |= m
-            try:
-                name, supers, declared = class_header(data)
-                own[name] = (supers, set(declared))
-            except (ValueError, IndexError, KeyError, struct.error):
-                pass
+                for e in jar.namelist():
+                    if e.endswith(".class"):
+                        yield jar.read(e)
+
+
+def mod_references(path):
+    """What a mod's class files (a folder of them or of jars, or one jar) name of the loaders and the game."""
+    classes, members, own = set(), set(), {}
+    for data in class_files(path):
+        try:
+            c, m = references(data)
+        except (ValueError, IndexError, struct.error):
+            continue
+        classes |= c
+        members |= m
+        try:
+            name, supers, declared = class_header(data)
+            own[name] = (supers, set(declared))
+        except (ValueError, IndexError, KeyError, struct.error):
+            pass
     keep = lambda name: name.startswith(LOADER["fabric"] + LOADER["neoforge"] + GAME)
 
     # A member the mod reaches through its own class (this.modLoc() in a subclass of NeoForge's BlockStateProvider) is
@@ -535,20 +540,9 @@ def real(jars, loader, minecraft, rules=None):
         raise SystemExit("Fabric jars before 26.1 name the game in intermediary names, which this cannot read yet.")
     refs, corpus = {"mods": {}}, {"mods": []}
     for jar in sorted(Path(jars).glob("*.jar")):
-        classes, members = set(), set()
-        with zipfile.ZipFile(jar) as z:
-            for e in z.namelist():
-                if e.endswith(".class"):
-                    try:
-                        c, m = references(z.read(e))
-                    except (ValueError, IndexError, struct.error):
-                        continue
-                    classes |= c
-                    members |= m
-        keep = lambda name: name.startswith(LOADER["fabric"] + LOADER["neoforge"] + GAME)  # noqa: E731
         mod = jar.name.split("--")[0]
-        refs["mods"][mod] = {"minecraft": minecraft, "classes": sorted(c for c in classes if keep(c)),
-                             "members": sorted(f"{o}#{n}:{k}" for o, n, k in members if keep(o))}
+        # Read as a corpus mod is, so a call through the mod's own subclass reaches the loader class that declares it.
+        refs["mods"][mod] = {"minecraft": minecraft, **mod_references(jar)}
         corpus["mods"].append({"id": mod, "loader": loader})
     result = coverage(refs, rules or loader_api.load_rules(), corpus)
     left = {r["mod"]: set() for r in result["mods"]}

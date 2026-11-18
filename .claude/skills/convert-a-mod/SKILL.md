@@ -10,8 +10,8 @@ loader's API to the bridge, and every mod that uses that piece is fixed with it.
 ## Where converting stands (2026-11-18)
 
 - `python bench/convert_coverage.py real` (2 minutes, no build) reads the 150 most-downloaded NeoForge mods for
-  1.21.1: **72 use nothing the bridge lacks; 326 classes and members hold the other 78, and the next 22 on its list
-  would make it 101.** That list is the work, top first, and that count is the number to move.
+  1.21.1: **68 use nothing the bridge lacks; 442 classes and members hold the other 82, and the next 20 on its list
+  would make it 94.** That list is the work, top first, and that count is the number to move.
 - `python bench/convert_sweep.py table` prints the last full sweep of our own 35 mods: which compile, load and behave
   like the original, mod by mod. It is the proof at the end of a PR, never what chooses the work.
 - The list predicts the compiler: every corpus mod it shows with nothing missing compiled after converting (15 of

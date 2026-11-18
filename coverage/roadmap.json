@@ -597,7 +597,7 @@
     "loader.convert-corpus",
     "loader.pairs-working"
    ],
-   "today": "mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. 72 of the 150 most-downloaded NeoForge mods for 1.21.1 use nothing its NeoForge-on-Fabric bridge lacks. Of 28 real corpus mods it accepts, 15 compile and load in the game after converting, 10 with the same behaviour fingerprint as the original and 6 with nothing left out. Forge, Quilt and Paper are not converted yet.",
+   "today": "mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. 68 of the 150 most-downloaded NeoForge mods for 1.21.1 use nothing its NeoForge-on-Fabric bridge lacks. Of 28 real corpus mods it accepts, 15 compile and load in the game after converting, 10 with the same behaviour fingerprint as the original and 6 with nothing left out. Forge, Quilt and Paper are not converted yet.",
    "try": [
     {
      "say": "move a Fabric mod to NeoForge, then check it in the game",
@@ -680,8 +680,8 @@
      "title": "What the most-downloaded mods need from the bridge, most-used first",
      "part": "Loader pairs",
      "status": "next",
-     "text": "python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and lists every NeoForge class and member they use that the bridge lacks, in the order that clears the most mods soonest. 326 hold 78 mods back, and the list has a short head: the next 22 take the count from 72 to 101. Each one is added from NeoForge's own published files (.claude/skills/convert-a-mod), checked without a mod by python bench/bridge_check.py in about a minute and a half, and counted again by the same command. The list predicts the compiler on the corpus: all 15 mods it shows with nothing missing compiled after converting.",
-     "finish": "100 of the 150 most-downloaded NeoForge mods for 1.21.1 use nothing the bridge lacks (72 today), and the corpus count rises with it (15 of 28 today)",
+     "text": "python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and lists every NeoForge class and member they use that the bridge lacks, in the order that clears the most mods soonest. 442 hold 82 mods back, and the list has a short head: the next 20 take the count from 68 to 94. Each one is added from NeoForge's own published files (.claude/skills/convert-a-mod), checked without a mod by python bench/bridge_check.py in about a minute and a half, and counted again by the same command. The list predicts the compiler on the corpus: all 15 mods it shows with nothing missing compiled after converting.",
+     "finish": "100 of the 150 most-downloaded NeoForge mods for 1.21.1 use nothing the bridge lacks (68 today), and the corpus count rises with it (15 of 28 today)",
      "wrongIf": "the count of clear mods rises by 20 and no more corpus mods compile and load",
      "start": "2026-11-19",
      "target": "2026-12-05",
