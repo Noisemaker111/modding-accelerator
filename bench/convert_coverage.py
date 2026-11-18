@@ -4,6 +4,11 @@
     python bench/convert_coverage.py refs CLASSES_DIR [--out FILE]   what one compiled mod uses (run by convert_sweep --references)
     python bench/convert_coverage.py                                coverage per mod and the ranked to-do list
     python bench/convert_coverage.py --json                         the same as JSON
+    python bench/convert_coverage.py real [--loader neoforge --version 1.21.1] [JARS_DIR]
+                                                                    the same over the most-downloaded published mods
+                                                                    (python bench/exposure.py fetch): how many use nothing
+                                                                    the bridge lacks, and what to add next, in the order
+                                                                    that clears the most mods soonest
 
 A mod's references come from its own compiled classes (the untouched original, built once on the cloud runner by
 bench/convert_sweep.py run --references): every class, method and field of the loader (Fabric API and Loader, or NeoForge,
@@ -87,30 +92,35 @@ def references(data):
     return classes, members
 
 
-def mod_references(folder):
-    """What every class file under folder (a mod's build/classes, or jars there) names of the loaders and the game."""
-    classes, members, own = set(), set(), {}
-    for f in Path(folder).rglob("*"):
-        datas = []
+def class_files(path):
+    """The bytes of every class file under a folder (a mod's build/classes, or jars there), or in one jar."""
+    for f in ([Path(path)] if Path(path).is_file() else Path(path).rglob("*")):
         # Windows refuses paths over 260 characters unless they are given in their \\?\ form.
         long = Path("\\\\?\\" + str(f.resolve())) if sys.platform == "win32" else f
         if f.suffix == ".class":
-            datas = [long.read_bytes()]
+            yield long.read_bytes()
         elif f.suffix == ".jar":
             with zipfile.ZipFile(f) as jar:
-                datas = [jar.read(e) for e in jar.namelist() if e.endswith(".class")]
-        for data in datas:
-            try:
-                c, m = references(data)
-            except (ValueError, IndexError, struct.error):
-                continue
-            classes |= c
-            members |= m
-            try:
-                name, supers, declared = class_header(data)
-                own[name] = (supers, set(declared))
-            except (ValueError, IndexError, KeyError, struct.error):
-                pass
+                for e in jar.namelist():
+                    if e.endswith(".class"):
+                        yield jar.read(e)
+
+
+def mod_references(path):
+    """What a mod's class files (a folder of them or of jars, or one jar) name of the loaders and the game."""
+    classes, members, own = set(), set(), {}
+    for data in class_files(path):
+        try:
+            c, m = references(data)
+        except (ValueError, IndexError, struct.error):
+            continue
+        classes |= c
+        members |= m
+        try:
+            name, supers, declared = class_header(data)
+            own[name] = (supers, set(declared))
+        except (ValueError, IndexError, KeyError, struct.error):
+            pass
     keep = lambda name: name.startswith(LOADER["fabric"] + LOADER["neoforge"] + GAME)
 
     # A member the mod reaches through its own class (this.modLoc() in a subclass of NeoForge's BlockStateProvider) is
@@ -158,6 +168,18 @@ DECLARED = re.compile(
     r"(?m)^\s*(?:@\w+(?:\([^)]*\))?\s*)*(?:(?:public|protected|static|final|abstract|default|synchronized|native)\s+)*"
     r"(?:<[^;{}()]*?>\s+)?(?:@[\w.]+\s+)*(?!return\b|new\b|throw\b|else\b|case\b)[\w.$]+(?:<[^;{}()]*?>)?(?:\[\])*\s+(\w+)\s*(?:\(|=|;)"
 )
+# An enum constant: a name alone on its line (with arguments or a body), which the declaration pattern does not see.
+ENUM_CONSTANT = re.compile(r"(?m)^\s*([A-Z][A-Z0-9_]*)\s*(?:\([^;{}]*\))?\s*(?:,|;|\{)?\s*(?://.*)?$")
+
+
+def declared(text):
+    """The member names a source file declares, an enum's constants included (TriState.TRUE read as missing without)."""
+    names = set(DECLARED.findall(text))
+    if re.search(r"\benum\s+\w+", text):
+        names.update(ENUM_CONSTANT.findall(text))
+    return names
+
+
 # Java's own supertypes a bridge class may extend or implement: their members are the JDK's, so any name counts.
 JDK = {"Iterable", "Comparable", "Runnable", "Supplier", "Consumer", "Function", "Predicate", "AutoCloseable", "Closeable", "Collection", "List", "Map", "Set", "Record", "Enum"}
 
@@ -194,7 +216,7 @@ def bridge_provides(rules, frm, minecraft):
                     # A class of the bridge's own (an injected interface, a helper) keeps its path in the bridge.
                     cls = names.get(rel.replace("/", "."), names.get(rel)) or names.get(rel.rsplit("/", 1)[-1]) or "bridge/" + rel
                 text = p.read_text(encoding="utf-8", errors="replace")
-                out.setdefault(cls, set()).update(DECLARED.findall(text))
+                out.setdefault(cls, set()).update(declared(text))
                 header = re.search(r"\b(?:class|interface|record|enum)\s+\w+[^{]*\{", text)
                 supers.setdefault(cls, set()).update(re.findall(r"\b([A-Z]\w*)\b", re.sub(r"<[^{]*?>", "", header.group(0)).split(" ", 2)[-1]) if header else [])
         # NeoForge's own classes convert copies when they compile on Fabric (neoforge-sources.txt, bench/bridge_import.py),
@@ -260,7 +282,7 @@ def copied_classes(folders, bridge):
                 text = jar.read(name.replace(".", "/") + ".java").decode("utf-8", "replace") if jar else ""
             except KeyError:
                 text = ""
-            out[name.replace(".", "/")] = (set(DECLARED.findall(text)) or {"*"}) - dropped.get(name, set())
+            out[name.replace(".", "/")] = (declared(text) or {"*"}) - dropped.get(name, set())
             header = re.search(r"\b(?:class|interface|record|enum)\s+\w+[^{]*\{", text)
             COPY_SUPERS[name.replace(".", "/")] = set(re.findall(r"\b([A-Z]\w*)\b", re.sub(r"<[^{]*?>", "", header.group(0)).split(" ", 2)[-1])) if header else set()
     return out
@@ -346,11 +368,13 @@ def class_header(data):
 
 def vanilla(minecraft):
     """{class: [supertypes, member names]} of the game release, cached under .runs/loader-api. From 26.1 the client jar
-    is unobfuscated, so it is read as it is; an older release has only its member names (Mojang's client mappings),
-    without supertypes. None when the release cannot be read."""
+    is unobfuscated, so it is read as it is; an older release's classes are read from its obfuscated jar (their
+    supertypes) and named by Mojang's client mappings (which also give the member names). Without supertypes a method
+    a game class inherits from a library (EnumCodec.fieldOf, which is Codec's) read as one the loader added. None when
+    the release cannot be read."""
     # Mojang names a release 26.2, never 26.2.0.
     minecraft = re.sub(r"^(\d+\.\d+)\.0$", r"\1", minecraft)
-    cache = loader_api.CACHE / f"vanilla-{minecraft}.json"
+    cache = loader_api.CACHE / f"game-{minecraft}.json"
     if cache.is_file():
         return json.loads(cache.read_text(encoding="utf-8"))
     out = {}
@@ -363,14 +387,35 @@ def vanilla(minecraft):
                         name, supers, members = class_header(jar.read(e))
                         out[name] = [supers, sorted(members)]
         else:
-            _, _, data = loader_api.fetch(f"minecraft-{minecraft}", {"manifest": True, "version": minecraft, "mojangMappings": True})
-            for name, members in loader_api.index_mappings(data, {}).items():
-                out[name.replace(".", "/")] = [None, sorted(members)]
+            _, _, mappings = loader_api.fetch(f"minecraft-{minecraft}", {"manifest": True, "version": minecraft, "mojangMappings": True})
+            _, _, data = loader_api.fetch(f"minecraft-{minecraft}", {"manifest": True, "version": minecraft})
+            out = named_game(data, mappings)
     except Exception as e:  # noqa: BLE001 (an unreachable release reads as unknown, never as covered)
         print(f"no game index for {minecraft}: {e}", file=sys.stderr)
         return None
     loader_api.CACHE.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(out), encoding="utf-8")
+    return out
+
+
+def named_game(jar_bytes, mappings):
+    """{class: [supertypes, member names]} of an obfuscated release, in Mojang's names: the supertypes from the jar's
+    class files, the names from the mappings (a line "net.minecraft.Foo -> abc:" names class abc)."""
+    named = {}
+    for line in mappings.decode("utf-8").splitlines():
+        if line and not line.startswith((" ", "#")) and " -> " in line:
+            name, obfuscated = line.rstrip(":").split(" -> ")
+            named[obfuscated.strip().replace(".", "/")] = name.strip().replace(".", "/")
+    members = loader_api.index_mappings(mappings, {})
+    out = {}
+    with zipfile.ZipFile(io.BytesIO(jar_bytes)) as jar:
+        for e in jar.namelist():
+            if not e.endswith(".class"):
+                continue
+            obfuscated, supers, _ = class_header(jar.read(e))
+            name = named.get(obfuscated)
+            if name:
+                out[name] = [[named.get(s, s) for s in supers], sorted(members.get(name.replace("/", "."), ()))]
     return out
 
 
@@ -394,7 +439,8 @@ def declared_by_game(game, owner, name):
     if not seen or name in OBJECT_METHODS:
         return True
     # A supertype outside the game other than Java's base classes (a library, a JDK interface) may declare it.
-    outside = {s for c in seen for s in (game[c][0] or []) if s and not s.startswith(GAME)}
+    # Mojang's own libraries (com.mojang.serialization.Codec, Brigadier) are outside the game jar too.
+    outside = {s for c in seen for s in (game[c][0] or []) if s and s not in game}
     return bool(outside - {"java/lang/Object", "java/lang/Enum", "java/lang/Record"})
 
 
@@ -487,6 +533,36 @@ def coverage(refs, rules, corpus, sweep=None):
     return {"mods": rows, "missing": [{"symbol": x.replace("/", "."), "mods": m} for x, m in ranked]}
 
 
+def real(jars, loader, minecraft, rules=None):
+    """The same coverage over published mod jars (python bench/exposure.py fetch): the mods with nothing missing, and
+    what the others miss in the order that clears the most mods soonest. The jars are only read, to count."""
+    if loader == "fabric" and version(minecraft) < (26,):
+        raise SystemExit("Fabric jars before 26.1 name the game in intermediary names, which this cannot read yet.")
+    refs, corpus = {"mods": {}}, {"mods": []}
+    for jar in sorted(Path(jars).glob("*.jar")):
+        mod = jar.name.split("--")[0]
+        # Read as a corpus mod is, so a call through the mod's own subclass reaches the loader class that declares it.
+        refs["mods"][mod] = {"minecraft": minecraft, **mod_references(jar)}
+        corpus["mods"].append({"id": mod, "loader": loader})
+    result = coverage(refs, rules or loader_api.load_rules(), corpus)
+    left = {r["mod"]: set() for r in result["mods"]}
+    for e in result["missing"]:
+        for mod in e["mods"]:
+            left[mod].add(e["symbol"])
+    result["clear"] = sum(1 for s in left.values() if not s)
+    # The order that clears mods soonest: a symbol that is the last thing some mod misses first, then the most-used.
+    order = []
+    while any(left.values()):
+        used = Counter(s for mod in left.values() for s in mod)
+        last = Counter(next(iter(mod)) for mod in left.values() if len(mod) == 1)
+        best = max(sorted(used), key=lambda s: (last.get(s, 0), used[s]))
+        for mod in left.values():
+            mod.discard(best)
+        order.append({"symbol": best, "mods": used[best], "clearAfter": sum(1 for s in left.values() if not s)})
+    result["order"] = order
+    return result
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("command", nargs="?", default="check")
@@ -495,7 +571,22 @@ def main(argv=None):
     p.add_argument("--json", action="store_true")
     p.add_argument("--top", type=int, default=30)
     p.add_argument("--blocked", help="comma-separated mod ids: rank what they miss by package, and the mods each package frees")
+    p.add_argument("--loader", default="neoforge", help="real: the loader the jars were published for")
+    p.add_argument("--version", default="1.21.1", help="real: their Minecraft version")
     a = p.parse_args(argv)
+    if a.command == "real":
+        jars = Path(a.folder) if a.folder else Path.home() / ".mmt" / "exposure" / "jars" / f"{a.loader}-{a.version}"
+        if not any(jars.glob("*.jar")):
+            raise SystemExit(f"No jars in {jars}: python bench/exposure.py fetch --loader {a.loader} --version {a.version}")
+        result = real(jars, a.loader, a.version)
+        if a.json:
+            print(json.dumps(result, indent=1))
+            return 0
+        print(f"{len(result['mods'])} mods read ({a.loader} {a.version}): {result['clear']} use nothing the bridge lacks; "
+              f"{len(result['order'])} classes and members hold the rest. Next, with the mods clear once each is there:")
+        for e in result["order"][:a.top]:
+            print(f"  {e['clearAfter']:3} clear  used by {e['mods']:2}  {e['symbol']}")
+        return 0
     if a.command == "refs":
         out = mod_references(a.folder)
         text = json.dumps(out, indent=1)

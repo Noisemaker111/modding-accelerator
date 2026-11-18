@@ -675,12 +675,24 @@
    ]
   },
   {
+   "id": "loader.real-mods-clear",
+   "area": "loader",
+   "name": "Most-downloaded NeoForge mods for 1.21.1 that use nothing the NeoForge-on-Fabric bridge lacks",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 (python bench/exposure.py fetch) and counts the ones whose every NeoForge class and member, and every method NeoForge adds to a game class, is in the bridge or rewritten by a rule. No mod is built; it takes about two minutes. It predicts that a mod compiles after converting, not that it behaves the same.",
+   "points": [
+    {"date": "2026-11-18", "value": 68, "n": 150, "note": "442 classes and members hold the other 82; the next 20 on the list would make it 94", "source": "python bench/convert_coverage.py real --loader neoforge --version 1.21.1"}
+   ],
+   "target": {"value": 100, "by": "2026-12-05", "step": "48"}
+  },
+  {
    "id": "loader.convert-corpus",
    "area": "loader",
    "name": "Corpus mods that convert, compile and load in the game",
    "unit": "mods",
    "better": "higher",
-   "target": {"value": 17, "by": "2026-11-25", "step": "42"},
+   "target": {"value": 17, "by": "2026-12-05", "step": "48"},
    "points": [
     {"date": "2026-11-14", "value": 1, "note": "first full sweep, 12 not refused", "source": "coverage/sweeps/convert.json history baseline"},
     {"date": "2026-11-15", "value": 5, "note": "28 not refused", "source": "coverage/sweeps/convert.json history round-2"},
@@ -817,6 +829,18 @@
     {"date": "2026-11-14", "value": 24.2, "n": 6, "note": "with bench/diorama/tint-carry-over.patch and dirty-only-gpu-spots.patch, mean of 6 paired launches", "source": "coverage/perf-runs.json#2026-11-15T06-25-41.604795900Z-ad5239e8"}
    ],
    "info": true
+  },
+  {
+   "id": "port.real-mods-clear",
+   "area": "port",
+   "name": "Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and counts the ones that use no game class, method or field the porter cannot carry to 1.21.2 (unchanged, renamed, moved, rewritten from the game's own code, or named by a rule). No mod is built; it takes about half a minute.",
+   "points": [
+    {"date": "2026-11-18", "value": 58, "n": 150, "note": "637 changed game parts hold the other 92; 313 of them are used by one mod each", "source": "python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/neoforge-1.21.1-1.21.2.json)"}
+   ],
+   "target": {"value": 100, "by": "2026-12-22", "step": "46"}
   },
   {
    "id": "port.corpus-builds",

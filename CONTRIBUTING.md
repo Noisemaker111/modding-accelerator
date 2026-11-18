@@ -58,16 +58,20 @@ and every new session started from it. These four steps keep that from happening
    | Work | Workflow | Whole-goal number |
    |---|---|---|
    | Try mmt on a new mod or plugin | `.claude/skills/bench-new-mod` | commands that pass on it, before/after loop time |
-   | Port between game versions | `.claude/skills/port-a-mod` | corpus ports that build, load and behave, no hand edits |
-   | Convert between loaders | `.claude/skills/convert-a-mod` | corpus mods that compile, load and behave like the original |
+   | Port between game versions | `.claude/skills/port-a-mod` | most-downloaded mods with nothing left to port by hand, per update |
+   | Convert between loaders | `.claude/skills/convert-a-mod` | most-downloaded mods that use nothing the bridge lacks |
    | Modpacks | `tools/packcheck/CONTRIBUTING.md` | packs that pass as shipped, and with repairs |
    | Make a mod faster | `.claude/skills/optimize-a-mod` | accepted speedups with exact gates, patterns saved |
 
-3. **Find the method before the first fix.** List the whole job from a source that names all of it (the game's
-   change list between two versions, a loader's published API, a pack-wide profile), rank it by how many mods each
-   item frees, and fix a whole kind at once from the game's and loaders' own files. The third hand fix of the same
-   kind means stop and find what produces them. A day of one-error-at-a-time port rules moved the corpus from 10 to
-   15 of 125 ports; the ranked list that replaced it covers 101,819 places in 44 mods at once.
+3. **Choose the work from a list of what real mods use, and only once that list predicts the result.** The list comes
+   from a source that names the whole job (what the 150 most-downloaded mods use of the game or of a loader, read
+   from their jars in a minute or two with no build), ranked by how many mods each item frees. Before it chooses
+   anything, check it against real builds: the mods it clears must build. On 2026-11-18 three methods were each
+   picked from a list nobody had checked, and each missed (a new way to build ports freed 0 of 126; the port
+   worklist cleared 21 ports and 7 built; three convert methods freed none of their targets). One item of the list
+   is the unit of work, checked in minutes without porting or converting a mod; the sweep over our own corpus is
+   the proof at the end of a PR, never what chooses the work. The third hand fix of the same kind still means stop
+   and find what produces them.
 4. **Land it at the finish line.** One step is one PR. When the number reaches the finish line and is proven, merge.
    The same PR marks the step done in `coverage/roadmap.json`, records the number, names the next step, and updates
    the workflow if the method changed, so `main` always holds the current method. A PR open for more than a few days

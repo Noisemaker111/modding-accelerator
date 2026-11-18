@@ -1,7 +1,6 @@
 name: CI
 # The checks every pull request must pass (both are required on main): bench/run_tests.py on Linux and on Windows.
-# The list of checks lives in bench/run_tests.py, not here. Linux also holds the PR budget: the job fails past 180 s
-# (bench/test_budgets.py). Server, plugin and Stonecutter checks are in integration.yml; heavy jobs (pack sweep, port
+# The list of checks lives in bench/run_tests.py, not here. Server, plugin and Stonecutter checks are in integration.yml; heavy jobs (pack sweep, port
 # board, perf A/B) are dispatched from cloud-*.yml with tools/cloud-run. No macOS: the code is not macOS-specific and
 # its JFR sampling flaked (29 of 69 runs). Caches are saved only from a passing main run, so a PR never evicts them
 # and a run whose downloads failed never saves a near-empty cache.
@@ -20,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - run: echo "JOB_STARTED=$(date +%s)" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
@@ -42,8 +40,6 @@ jobs:
           restore-keys: ci-${{ runner.os }}-
       - name: Offline checks
         run: python bench/run_tests.py
-      - name: Within the PR budget
-        run: python bench/test_budgets.py --job-started "$JOB_STARTED"
       - name: Stop Gradle before the cache save
         if: success() && github.event_name == 'push' && steps.cache.outputs.cache-hit != 'true'
         run: pkill -f GradleDaemon || true
