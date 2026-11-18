@@ -88,7 +88,7 @@ def neoforge_api(data):
     return out
 
 
-PATCH_METHOD = re.compile(r"^\+\s+(?:public|protected) (?!class |interface |enum |record )[^=;(]*?\b(\w+)\s*\(")
+PATCH_METHOD = re.compile(r"^\+\s+public (?!class |interface |enum |record )[^=;(]*?\b(\w+)\s*\(")
 
 
 def patch_additions(data):

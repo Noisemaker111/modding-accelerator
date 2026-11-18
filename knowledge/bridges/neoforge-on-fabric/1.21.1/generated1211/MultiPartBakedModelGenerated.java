@@ -9,24 +9,4 @@ public interface MultiPartBakedModelGenerated extends BakedModelGenerated {
     default java.util.BitSet getSelectors(net.minecraft.world.level.block.state.BlockState arg0) {
         throw new UnsupportedOperationException("NeoForge's MultiPartBakedModel.getSelectors has no Fabric counterpart in the bridge yet");
     }
-
-    default java.util.List<net.minecraft.client.renderer.block.model.BakedQuad> getQuads(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.core.Direction arg1, net.minecraft.util.RandomSource arg2, ${package}.neoforge.client.model.data.ModelData arg3, net.minecraft.client.renderer.RenderType arg4) {
-        return ((net.minecraft.client.resources.model.MultiPartBakedModel) (Object) this).getQuads(arg0, arg1, arg2);
-    }
-
-    default ${package}.TriState useAmbientOcclusion(net.minecraft.world.level.block.state.BlockState arg0, ${package}.neoforge.client.model.data.ModelData arg1, net.minecraft.client.renderer.RenderType arg2) {
-        throw new UnsupportedOperationException("NeoForge's MultiPartBakedModel.useAmbientOcclusion has no Fabric counterpart in the bridge yet");
-    }
-
-    default ${package}.neoforge.client.model.data.ModelData getModelData(net.minecraft.world.level.BlockAndTintGetter arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.block.state.BlockState arg2, ${package}.neoforge.client.model.data.ModelData arg3) {
-        throw new UnsupportedOperationException("NeoForge's MultiPartBakedModel.getModelData has no Fabric counterpart in the bridge yet");
-    }
-
-    default net.minecraft.client.renderer.texture.TextureAtlasSprite getParticleIcon(${package}.neoforge.client.model.data.ModelData arg0) {
-        return ((net.minecraft.client.resources.model.MultiPartBakedModel) (Object) this).getParticleIcon();
-    }
-
-    default ${package}.neoforge.client.ChunkRenderTypeSet getRenderTypes(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.util.RandomSource arg1, ${package}.neoforge.client.model.data.ModelData arg2) {
-        throw new UnsupportedOperationException("NeoForge's MultiPartBakedModel.getRenderTypes has no Fabric counterpart in the bridge yet");
-    }
 }

@@ -6,10 +6,6 @@ package ${package}.generated261;
  */
 public interface RenderPipelineGenerated {
 
-    default java.util.Optional<${package}.neoforge.client.stencil.StencilTest> getStencilTest() {
-        throw new UnsupportedOperationException("NeoForge's RenderPipeline.getStencilTest has no Fabric counterpart in the bridge yet");
-    }
-
     default com.mojang.blaze3d.pipeline.RenderPipeline.Builder toBuilder() {
         throw new UnsupportedOperationException("NeoForge's RenderPipeline.toBuilder has no Fabric counterpart in the bridge yet");
     }

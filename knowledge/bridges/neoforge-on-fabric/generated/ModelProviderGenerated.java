@@ -6,17 +6,6 @@ package ${package}.generated;
  */
 public interface ModelProviderGenerated {
 
-    default void registerModels(net.minecraft.client.data.models.BlockModelGenerators arg0, net.minecraft.client.data.models.ItemModelGenerators arg1) {
-    }
-
-    default java.util.stream.Stream<? extends net.minecraft.core.Holder<net.minecraft.world.level.block.Block>> getKnownBlocks() {
-        throw new UnsupportedOperationException("NeoForge's ModelProvider.getKnownBlocks has no Fabric counterpart in the bridge yet");
-    }
-
-    default java.util.stream.Stream<? extends net.minecraft.core.Holder<net.minecraft.world.item.Item>> getKnownItems() {
-        throw new UnsupportedOperationException("NeoForge's ModelProvider.getKnownItems has no Fabric counterpart in the bridge yet");
-    }
-
     default net.minecraft.resources.Identifier modLocation(java.lang.String arg0) {
         throw new UnsupportedOperationException("NeoForge's ModelProvider.modLocation has no Fabric counterpart in the bridge yet");
     }

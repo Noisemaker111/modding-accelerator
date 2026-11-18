@@ -9,8 +9,4 @@ public interface BucketItemGenerated extends ItemGenerated, DispensibleContainer
     default boolean emptyContents(net.minecraft.world.entity.LivingEntity arg0, net.minecraft.world.level.Level arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.phys.BlockHitResult arg3, net.minecraft.world.item.ItemStack arg4) {
         return ((net.minecraft.world.item.BucketItem) (Object) this).emptyContents(arg0, arg1, arg2, arg3);
     }
-
-    default boolean canBlockContainFluid(net.minecraft.world.entity.player.Player arg0, net.minecraft.world.level.Level arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.level.block.state.BlockState arg3) {
-        throw new UnsupportedOperationException("NeoForge's BucketItem.canBlockContainFluid has no Fabric counterpart in the bridge yet");
-    }
 }

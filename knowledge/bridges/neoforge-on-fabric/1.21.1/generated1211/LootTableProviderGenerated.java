@@ -9,7 +9,4 @@ public interface LootTableProviderGenerated {
     default java.util.List<net.minecraft.data.loot.LootTableProvider.SubProviderEntry> getTables() {
         throw new UnsupportedOperationException("NeoForge's LootTableProvider.getTables has no Fabric counterpart in the bridge yet");
     }
-
-    default void validate(net.minecraft.core.WritableRegistry<net.minecraft.world.level.storage.loot.LootTable> arg0, net.minecraft.world.level.storage.loot.ValidationContext arg1, net.minecraft.util.ProblemReporter.Collector arg2) {
-    }
 }

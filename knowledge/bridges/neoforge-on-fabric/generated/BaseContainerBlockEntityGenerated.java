@@ -9,8 +9,4 @@ public interface BaseContainerBlockEntityGenerated extends BlockEntityGenerated,
     default void setItem(int arg0, net.minecraft.world.item.ItemStack arg1, boolean arg2) {
         ((net.minecraft.world.level.block.entity.BaseContainerBlockEntity) (Object) this).setItem(arg0, arg1);
     }
-
-    default net.minecraft.world.level.storage.loot.LootContext getLootContext(net.minecraft.server.level.ServerLevel arg0, net.minecraft.world.item.ItemStack arg1) {
-        throw new UnsupportedOperationException("NeoForge's BaseContainerBlockEntity.getLootContext has no Fabric counterpart in the bridge yet");
-    }
 }

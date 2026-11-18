@@ -6,10 +6,6 @@ package ${package}.generated1211;
  */
 public interface SimpleBakedModelGenerated extends BakedModelGenerated {
 
-    default ${package}.neoforge.client.ChunkRenderTypeSet getRenderTypes(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.util.RandomSource arg1, ${package}.neoforge.client.model.data.ModelData arg2) {
-        throw new UnsupportedOperationException("NeoForge's SimpleBakedModel.getRenderTypes has no Fabric counterpart in the bridge yet");
-    }
-
     default java.util.List<net.minecraft.client.renderer.RenderType> getRenderTypes(net.minecraft.world.item.ItemStack arg0, boolean arg1) {
         throw new UnsupportedOperationException("NeoForge's SimpleBakedModel.getRenderTypes has no Fabric counterpart in the bridge yet");
     }

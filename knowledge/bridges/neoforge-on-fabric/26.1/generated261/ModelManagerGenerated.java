@@ -9,8 +9,4 @@ public interface ModelManagerGenerated {
     default net.minecraft.client.resources.model.ModelBakery getModelBakery() {
         throw new UnsupportedOperationException("NeoForge's ModelManager.getModelBakery has no Fabric counterpart in the bridge yet");
     }
-
-    default <T> T getStandaloneModel(${package}.neoforge.client.model.standalone.StandaloneModelKey<T> arg0) {
-        throw new UnsupportedOperationException("NeoForge's ModelManager.getStandaloneModel has no Fabric counterpart in the bridge yet");
-    }
 }

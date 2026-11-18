@@ -6,9 +6,6 @@ package ${package}.generated261;
  */
 public interface AnvilMenuGenerated {
 
-    default void createResultInternal() {
-    }
-
     default void setCost(int arg0) {
     }
 }

@@ -5600,15 +5600,12 @@
        "client": true,
        "uses": [
         [
-         "\\b(?:getBlockAtCamera|getRoll|setRotation)\\s*\\("
+         "\\b(?:getBlockAtCamera|getRoll)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/client/Camera": "generated1211.CameraGenerated"
-       },
-       "protected": [
-        "setRotation"
-       ]
+       }
       },
       {
        "mixin": "generated1211.KeyMappingGeneratedMixin",
@@ -5715,23 +5712,6 @@
        }
       },
       {
-       "mixin": "generated1211.DebugScreenOverlayGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:collectGameInformationText|collectSystemInformationText)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/gui/components/DebugScreenOverlay": "generated1211.DebugScreenOverlayGenerated"
-       },
-       "protected": [
-        "collectGameInformationText",
-        "collectSystemInformationText"
-       ]
-      },
-      {
        "mixin": "generated1211.EditBoxGeneratedMixin",
        "generated": true,
        "client": true,
@@ -5750,28 +5730,11 @@
        "client": true,
        "uses": [
         [
-         "\\b(?:getSlotColor|renderSlotContents|renderSlotHighlight)\\s*\\("
+         "\\b(?:getSlotColor)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/client/gui/screens/inventory/AbstractContainerScreen": "generated1211.AbstractContainerScreenGenerated"
-       },
-       "protected": [
-        "renderSlotContents",
-        "renderSlotHighlight"
-       ]
-      },
-      {
-       "mixin": "generated1211.CreativeModeInventoryScreenGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:setCurrentPage)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen": "generated1211.CreativeModeInventoryScreenGenerated"
        }
       },
       {
@@ -5788,60 +5751,16 @@
        }
       },
       {
-       "mixin": "generated1211.HierarchicalModelGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:animate|animateWalk|applyStatic)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/model/HierarchicalModel": "generated1211.HierarchicalModelGenerated"
-       },
-       "protected": [
-        "animate",
-        "animateWalk",
-        "applyStatic"
-       ]
-      },
-      {
-       "mixin": "generated1211.ClientConfigurationPacketListenerImplGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:getConnectionType)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/multiplayer/ClientConfigurationPacketListenerImpl": "generated1211.ClientConfigurationPacketListenerImplGenerated"
-       }
-      },
-      {
        "mixin": "generated1211.ClientLevelGeneratedMixin",
        "generated": true,
        "client": true,
        "uses": [
         [
-         "\\b(?:getDayTimeFraction|getDayTimePerTick|getModelData|getModelDataManager|getPartEntities|getShade|setDayTimeFraction|setDayTimePerTick)\\s*\\("
+         "\\b(?:getDayTimeFraction|getDayTimePerTick|getPartEntities|getShade|setDayTimeFraction|setDayTimePerTick)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/client/multiplayer/ClientLevel": "generated1211.ClientLevelGenerated"
-       }
-      },
-      {
-       "mixin": "generated1211.ClientPacketListenerGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:getConnectionType)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/multiplayer/ClientPacketListener": "generated1211.ClientPacketListenerGenerated"
        }
       },
       {
@@ -6006,24 +5925,11 @@
        "client": true,
        "uses": [
         [
-         "\\b(?:getLiquidBlockRenderer|renderBatched|renderBreakingTexture|renderSingleBlock)\\s*\\("
+         "\\b(?:getLiquidBlockRenderer)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/client/renderer/block/BlockRenderDispatcher": "generated1211.BlockRenderDispatcherGenerated"
-       }
-      },
-      {
-       "mixin": "generated1211.ModelBlockRendererGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:renderModel|tesselateBlock|tesselateWithAO|tesselateWithoutAO)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/renderer/block/ModelBlockRenderer": "generated1211.ModelBlockRendererGenerated"
        }
       },
       {
@@ -6037,32 +5943,6 @@
        ],
        "injects": {
         "net/minecraft/client/renderer/block/model/BakedQuad": "generated1211.BakedQuadGenerated"
-       }
-      },
-      {
-       "mixin": "generated1211.BlockElementGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:getFaceData|setFaceData)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/renderer/block/model/BlockElement": "generated1211.BlockElementGenerated"
-       }
-      },
-      {
-       "mixin": "generated1211.BlockElementFaceGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:faceData)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/renderer/block/model/BlockElementFace": "generated1211.BlockElementFaceGenerated"
        }
       },
       {
@@ -6279,7 +6159,7 @@
        "client": true,
        "uses": [
         [
-         "\\b(?:getAuxLightManager|getModelData|getShade)\\s*\\("
+         "\\b(?:getShade)\\s*\\("
         ]
        ],
        "injects": {
@@ -6422,7 +6302,7 @@
        "client": true,
        "uses": [
         [
-         "\\b(?:getModelData|getParticleIcon|getQuads|getRenderPasses|getRenderTypes|useAmbientOcclusion)\\s*\\("
+         "\\b(?:getRenderPasses|getRenderTypes)\\s*\\("
         ]
        ],
        "injects": {
@@ -6474,7 +6354,7 @@
        "client": true,
        "uses": [
         [
-         "\\b(?:getModelData|getParticleIcon|getQuads|getRenderTypes|getSelectors|useAmbientOcclusion)\\s*\\("
+         "\\b(?:getSelectors)\\s*\\("
         ]
        ],
        "injects": {
@@ -6492,19 +6372,6 @@
        ],
        "injects": {
         "net/minecraft/client/resources/model/SimpleBakedModel": "generated1211.SimpleBakedModelGenerated"
-       }
-      },
-      {
-       "mixin": "generated1211.WeightedBakedModelGeneratedMixin",
-       "generated": true,
-       "client": true,
-       "uses": [
-        [
-         "\\b(?:getModelData|getParticleIcon|getQuads|getRenderTypes|useAmbientOcclusion)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/client/resources/model/WeightedBakedModel": "generated1211.WeightedBakedModelGenerated"
        }
       },
       {
@@ -6552,15 +6419,12 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:clear|getId|unfreeze)\\s*\\("
+         "\\b(?:getId|unfreeze)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/core/MappedRegistry": "generated1211.MappedRegistryGenerated"
-       },
-       "protected": [
-        "clear"
-       ]
+       }
       },
       {
        "mixin": "generated1211.RegistryGeneratedMixin",
@@ -6641,85 +6505,17 @@
        }
       },
       {
-       "mixin": "generated1211.BlockLootSubProviderGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getKnownBlocks)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/data/loot/BlockLootSubProvider": "generated1211.BlockLootSubProviderGenerated"
-       },
-       "protected": [
-        "getKnownBlocks"
-       ]
-      },
-      {
-       "mixin": "generated1211.EntityLootSubProviderGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:canHaveLootTable|getKnownEntityTypes)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/data/loot/EntityLootSubProvider": "generated1211.EntityLootSubProviderGenerated"
-       },
-       "protected": [
-        "canHaveLootTable",
-        "getKnownEntityTypes"
-       ]
-      },
-      {
        "mixin": "generated1211.LootTableProviderGeneratedMixin",
        "generated": true,
        "client": false,
        "uses": [
         [
-         "\\b(?:getTables|validate)\\s*\\("
+         "\\b(?:getTables)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/data/loot/LootTableProvider": "generated1211.LootTableProviderGenerated"
-       },
-       "protected": [
-        "validate"
-       ]
-      },
-      {
-       "mixin": "generated1211.RecipeProviderGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:buildRecipes)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/data/recipes/RecipeProvider": "generated1211.RecipeProviderGenerated"
-       },
-       "protected": [
-        "buildRecipes"
-       ]
-      },
-      {
-       "mixin": "generated1211.TagsProviderGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getPath)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/data/tags/TagsProvider": "generated1211.TagsProviderGenerated"
-       },
-       "protected": [
-        "getPath"
-       ]
+       }
       },
       {
        "mixin": "generated1211.LanguageGeneratedMixin",
@@ -6787,19 +6583,6 @@
        }
       },
       {
-       "mixin": "generated1211.RegistryFriendlyByteBufGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getConnectionType)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/network/RegistryFriendlyByteBuf": "generated1211.RegistryFriendlyByteBufGenerated"
-       }
-      },
-      {
        "mixin": "generated1211.BundlerInfoGeneratedMixin",
        "generated": true,
        "client": false,
@@ -6831,24 +6614,11 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:disconnect|getMainThreadEventLoop|send)\\s*\\("
+         "\\b(?:disconnect|getMainThreadEventLoop)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/network/protocol/common/ClientCommonPacketListener": "generated1211.ClientCommonPacketListenerGenerated"
-       }
-      },
-      {
-       "mixin": "generated1211.ServerCommonPacketListenerGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:send)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/network/protocol/common/ServerCommonPacketListener": "generated1211.ServerCommonPacketListenerGenerated"
        }
       },
       {
@@ -6982,25 +6752,12 @@
        }
       },
       {
-       "mixin": "generated1211.ServerEntityGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:sendPairingData)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/server/level/ServerEntity": "generated1211.ServerEntityGenerated"
-       }
-      },
-      {
        "mixin": "generated1211.ServerLevelGeneratedMixin",
        "generated": true,
        "client": false,
        "uses": [
         [
-         "\\b(?:cleanCapabilityListenerReferences|getDayTimeFraction|getDayTimePerTick|getPartEntities|registerCapabilityListener|setDayTimeFraction|setDayTimePerTick|syncData)\\s*\\("
+         "\\b(?:cleanCapabilityListenerReferences|getDayTimeFraction|getDayTimePerTick|getPartEntities|setDayTimeFraction|setDayTimePerTick|syncData)\\s*\\("
         ]
        ],
        "injects": {
@@ -7039,15 +6796,12 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:createCookie|getConnection|getConnectionType|getMainThreadEventLoop)\\s*\\("
+         "\\b(?:getConnection|getMainThreadEventLoop)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/server/network/ServerCommonPacketListenerImpl": "generated1211.ServerCommonPacketListenerImplGenerated"
-       },
-       "protected": [
-        "createCookie"
-       ]
+       }
       },
       {
        "mixin": "generated1211.PackResourcesGeneratedMixin",
@@ -7115,22 +6869,6 @@
        }
       },
       {
-       "mixin": "generated1211.SimpleJsonResourceReloadListenerGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getPreparedPath)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/server/packs/resources/SimpleJsonResourceReloadListener": "generated1211.SimpleJsonResourceReloadListenerGenerated"
-       },
-       "protected": [
-        "getPreparedPath"
-       ]
-      },
-      {
        "mixin": "generated1211.TagBuilderGeneratedMixin",
        "generated": true,
        "client": false,
@@ -7170,38 +6908,12 @@
        }
       },
       {
-       "mixin": "generated1211.DamageScalingGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getScalingFunction)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/damagesource/DamageScaling": "generated1211.DamageScalingGenerated"
-       }
-      },
-      {
-       "mixin": "generated1211.DeathMessageTypeGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getMessageFunction)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/damagesource/DeathMessageType": "generated1211.DeathMessageTypeGenerated"
-       }
-      },
-      {
        "mixin": "generated1211.MobEffectGeneratedMixin",
        "generated": true,
        "client": false,
        "uses": [
         [
-         "\\b(?:addAttributeModifier|getSortOrder|initializeClient)\\s*\\("
+         "\\b(?:addAttributeModifier|getSortOrder)\\s*\\("
         ]
        ],
        "injects": {
@@ -7214,17 +6926,12 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:IEntityExtension|canBeRiddenUnderFluidType|canFluidExtinguish|canHydrateInFluidType|canRiderInteract|canStartSwimming|canSwimInFluidType|canTrample|captureDrops|copyAttachmentsFrom|copyPersisted|deserializeNBT|getClassification|getEyeInFluidType|getFluidFallDistanceModifier|getFluidMotionScale|getFluidTypeHeight|getMaxHeightFluidType|getPersistentData|getPickedResult|getSoundFromFluidType|hasCustomOutlineRendering|if|isAddedToLevel|isEyeInFluidType|isInFluidType|isPushedByFluid|onAddedToLevel|onRemovedFromLevel|playCombinationStepSounds|playMuffledStepSound|register|return|revive|sendPairingData|serializeNBT|setFluidTypeHeight|shouldRiderSit|syncData|updateFluidHeightAndDoFluidPushing)\\s*\\("
+         "\\b(?:canBeRiddenUnderFluidType|canFluidExtinguish|canHydrateInFluidType|canRiderInteract|canStartSwimming|canSwimInFluidType|canTrample|captureDrops|copyAttachmentsFrom|deserializeNBT|getClassification|getEyeInFluidType|getFluidFallDistanceModifier|getFluidMotionScale|getFluidTypeHeight|getMaxHeightFluidType|getPersistentData|getPickedResult|hasCustomOutlineRendering|isAddedToLevel|isEyeInFluidType|isInFluidType|isPushedByFluid|onAddedToLevel|onRemovedFromLevel|revive|sendPairingData|serializeNBT|shouldRiderSit|syncData|updateFluidHeightAndDoFluidPushing)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/world/entity/Entity": "generated1211.EntityGenerated"
-       },
-       "protected": [
-        "playCombinationStepSounds",
-        "playMuffledStepSound",
-        "setFluidTypeHeight"
-       ]
+       }
       },
       {
        "mixin": "generated1211.EntityTypeGeneratedMixin",
@@ -7258,7 +6965,7 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:canDrownInFluidType|canSwimInFluidType|jumpInFluid|moveInFluid|onDamageTaken|removeEffectsCuredBy|self|shouldRiderFaceForward|sinkInFluid)\\s*\\("
+         "\\b(?:canDrownInFluidType|canSwimInFluidType|jumpInFluid|moveInFluid|removeEffectsCuredBy|self|shouldRiderFaceForward|sinkInFluid)\\s*\\("
         ]
        ],
        "injects": {
@@ -7344,28 +7051,12 @@
        }
       },
       {
-       "mixin": "generated1211.SlimeGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:spawnCustomParticles)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/entity/monster/Slime": "generated1211.SlimeGenerated"
-       },
-       "protected": [
-        "spawnCustomParticles"
-       ]
-      },
-      {
        "mixin": "generated1211.PlayerGeneratedMixin",
        "generated": true,
        "client": false,
        "uses": [
         [
-         "\\b(?:createMenu|getDigSpeed|getDisplayName|getForcedPose|getPrefixes|getScreenOpeningData|getSuffixes|hasCorrectToolForDrops|if|isCloseEnough|isFakePlayer|mayFly|openMenu|refreshDisplayName|setForcedPose)\\s*\\("
+         "\\b(?:getDigSpeed|getForcedPose|getPrefixes|getSuffixes|hasCorrectToolForDrops|isCloseEnough|isFakePlayer|mayFly|openMenu|refreshDisplayName|setForcedPose)\\s*\\("
         ]
        ],
        "injects": {
@@ -7378,7 +7069,7 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:canBeRidden|canUseRail|getCollisionHandler|getComparatorLevel|getCurrentCartSpeedCapOnRail|getCurrentRailPosition|getDragAir|getMaxCartSpeedOnRail|getMaxSpeedAirLateral|getMaxSpeedAirVertical|getMaxSpeedWithRail|getSlopeAdjustment|isPoweredCart|moveMinecartOnRail|setCanUseRail|setCurrentCartSpeedCapOnRail|setDragAir|setMaxSpeedAirLateral|setMaxSpeedAirVertical|shouldDoRailFunctions)\\s*\\("
+         "\\b(?:canBeRidden|canUseRail|getComparatorLevel|getCurrentCartSpeedCapOnRail|getCurrentRailPosition|getDragAir|getMaxCartSpeedOnRail|getMaxSpeedAirLateral|getMaxSpeedAirVertical|getMaxSpeedWithRail|getSlopeAdjustment|isPoweredCart|moveMinecartOnRail|setCanUseRail|setCurrentCartSpeedCapOnRail|setDragAir|setMaxSpeedAirLateral|setMaxSpeedAirVertical|shouldDoRailFunctions)\\s*\\("
         ]
        ],
        "injects": {
@@ -7490,36 +7181,17 @@
        }
       },
       {
-       "mixin": "generated1211.BlockItemGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getPlaceSound)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/item/BlockItem": "generated1211.BlockItemGenerated"
-       },
-       "protected": [
-        "getPlaceSound"
-       ]
-      },
-      {
        "mixin": "generated1211.BucketItemGeneratedMixin",
        "generated": true,
        "client": false,
        "uses": [
         [
-         "\\b(?:canBlockContainFluid|emptyContents)\\s*\\("
+         "\\b(?:emptyContents)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/world/item/BucketItem": "generated1211.BucketItemGenerated"
-       },
-       "protected": [
-        "canBlockContainFluid"
-       ]
+       }
       },
       {
        "mixin": "generated1211.CreativeModeTabGeneratedMixin",
@@ -7605,28 +7277,12 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:IItemStackExtension|canDisableShield|canElytraFly|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canWalkOnPowderedSnow|doesSneakBypassUse|elytraFlightTick|getAllEnchantments|getAttributeModifiers|getBurnTime|getEnchantmentValue|getEntityLifespan|getEquipmentSlot|getHighlightTip|getSweepHitBox|getTagEnchantments|getXpRepairRatio|isBookEnchantable|isEnderMask|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|isRepairable|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onItemUseFirst|onStopUsing|shouldCauseBlockBreakReset|supportsEnchantment)\\s*\\("
+         "\\b(?:canDisableShield|canElytraFly|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canWalkOnPowderedSnow|doesSneakBypassUse|elytraFlightTick|getAllEnchantments|getAttributeModifiers|getBurnTime|getEnchantmentValue|getEntityLifespan|getEquipmentSlot|getHighlightTip|getSweepHitBox|getTagEnchantments|getXpRepairRatio|isBookEnchantable|isEnderMask|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|isRepairable|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onItemUseFirst|onStopUsing|shouldCauseBlockBreakReset|supportsEnchantment)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/world/item/ItemStack": "generated1211.ItemStackGenerated"
        }
-      },
-      {
-       "mixin": "generated1211.MapItemGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getCustomMapData)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/item/MapItem": "generated1211.MapItemGenerated"
-       },
-       "protected": [
-        "getCustomMapData"
-       ]
       },
       {
        "mixin": "generated1211.ProjectileWeaponItemGeneratedMixin",
@@ -7640,22 +7296,6 @@
        "injects": {
         "net/minecraft/world/item/ProjectileWeaponItem": "generated1211.ProjectileWeaponItemGenerated"
        }
-      },
-      {
-       "mixin": "generated1211.SpawnEggItemGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getDefaultType)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/item/SpawnEggItem": "generated1211.SpawnEggItemGenerated"
-       },
-       "protected": [
-        "getDefaultType"
-       ]
       },
       {
        "mixin": "generated1211.TooltipFlagGeneratedMixin",
@@ -7676,7 +7316,7 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:getRecipes|isInput)\\s*\\("
+         "\\b(?:isInput)\\s*\\("
         ]
        ],
        "injects": {
@@ -7736,19 +7376,6 @@
        }
       },
       {
-       "mixin": "generated1211.BlockGetterGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:getAuxLightManager|getModelData)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/level/BlockGetter": "generated1211.BlockGetterGenerated"
-       }
-      },
-      {
        "mixin": "generated1211.DataPackConfigGeneratedMixin",
        "generated": true,
        "client": false,
@@ -7767,15 +7394,12 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:addFreshBlockEntities|advanceDaytime|getDayTimeFraction|getDayTimePerTick|getDescription|getDescriptionKey|getMaxEntityRadius|getModelDataManager|getPartEntities|increaseMaxEntityRadius|markAndNotifyBlock|setDayTimeFraction|setDayTimePerTick)\\s*\\("
+         "\\b(?:addFreshBlockEntities|getDayTimeFraction|getDayTimePerTick|getDescription|getDescriptionKey|getMaxEntityRadius|getPartEntities|increaseMaxEntityRadius|markAndNotifyBlock|setDayTimeFraction|setDayTimePerTick)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/world/level/Level": "generated1211.LevelGenerated"
-       },
-       "protected": [
-        "advanceDaytime"
-       ]
+       }
       },
       {
        "mixin": "generated1211.LevelReaderGeneratedMixin",
@@ -7843,6 +7467,19 @@
        }
       },
       {
+       "mixin": "generated1211.AbstractCauldronBlockGeneratedMixin",
+       "generated": true,
+       "client": false,
+       "uses": [
+        [
+         "\\b(?:onPlace|onRemove)\\s*\\("
+        ]
+       ],
+       "injects": {
+        "net/minecraft/world/level/block/AbstractCauldronBlock": "generated1211.AbstractCauldronBlockGenerated"
+       }
+      },
+      {
        "mixin": "generated1211.BaseRailBlockGeneratedMixin",
        "generated": true,
        "client": false,
@@ -7861,7 +7498,7 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:IBlockExtension|addLandingEffects|addRunningEffects|canBeHydrated|canConnectRedstone|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getBubbleColumnDirection|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getMapColor|getPistonPushReaction|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|initializeClient|isBed|isBurning|isConduitFrame|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|makesOpenTrapdoorAboveClimbable|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
+         "\\b(?:addLandingEffects|addRunningEffects|canBeHydrated|canConnectRedstone|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getMapColor|getPistonPushReaction|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBed|isBurning|isConduitFrame|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|makesOpenTrapdoorAboveClimbable|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
         ]
        ],
        "injects": {
@@ -7893,22 +7530,6 @@
        "injects": {
         "net/minecraft/world/level/block/ComparatorBlock": "generated1211.ComparatorBlockGenerated"
        }
-      },
-      {
-       "mixin": "generated1211.DetectorRailBlockGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:registerDefaultState)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/level/block/DetectorRailBlock": "generated1211.DetectorRailBlockGenerated"
-       },
-       "protected": [
-        "registerDefaultState"
-       ]
       },
       {
        "mixin": "generated1211.DropExperienceBlockGeneratedMixin",
@@ -7955,15 +7576,12 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:isActivatorRail|registerDefaultState)\\s*\\("
+         "\\b(?:isActivatorRail)\\s*\\("
         ]
        ],
        "injects": {
         "net/minecraft/world/level/block/PoweredRailBlock": "generated1211.PoweredRailBlockGenerated"
-       },
-       "protected": [
-        "registerDefaultState"
-       ]
+       }
       },
       {
        "mixin": "generated1211.RedStoneOreBlockGeneratedMixin",
@@ -8062,7 +7680,7 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:getModelData|getPersistentData|hasCustomOutlineRendering|invalidateCapabilities|onChunkUnloaded|removeData|requestModelDataUpdate|syncData)\\s*\\("
+         "\\b(?:getPersistentData|hasCustomOutlineRendering|invalidateCapabilities|onChunkUnloaded|removeData|requestModelDataUpdate|syncData)\\s*\\("
         ]
        ],
        "injects": {
@@ -8119,26 +7737,7 @@
        ],
        "injects": {
         "net/minecraft/world/level/block/piston/PistonBaseBlock": "generated1211.PistonBaseBlockGenerated"
-       },
-       "protected": [
-        "rotate"
-       ]
-      },
-      {
-       "mixin": "generated1211.BlockBehaviourGeneratedMixin",
-       "generated": true,
-       "client": false,
-       "uses": [
-        [
-         "\\b(?:isAir)\\s*\\("
-        ]
-       ],
-       "injects": {
-        "net/minecraft/world/level/block/state/BlockBehaviour": "generated1211.BlockBehaviourGenerated"
-       },
-       "protected": [
-        "isAir"
-       ]
+       }
       },
       {
        "mixin": "generated1211.BlockStateGeneratedMixin",
@@ -8146,7 +7745,7 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:IBlockStateExtension|addLandingEffects|addRunningEffects|canBeHydrated|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canRedstoneConnectTo|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getBubbleColumnDirection|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|if|ignitedByLava|isBed|isBurning|isConduitFrame|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
+         "\\b(?:addLandingEffects|addRunningEffects|canBeHydrated|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canRedstoneConnectTo|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBed|isBurning|isConduitFrame|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
         ]
        ],
        "injects": {
@@ -8198,7 +7797,7 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:getAuxLightManager|syncData)\\s*\\("
+         "\\b(?:syncData)\\s*\\("
         ]
        ],
        "injects": {
@@ -8224,7 +7823,7 @@
        "client": false,
        "uses": [
         [
-         "\\b(?:getModifiedStructureSettings|modifiableStructureInfo)\\s*\\("
+         "\\b(?:getModifiedStructureSettings)\\s*\\("
         ]
        ],
        "injects": {
@@ -8255,10 +7854,7 @@
        ],
        "injects": {
         "net/minecraft/world/level/material/FlowingFluid": "generated1211.FlowingFluidGenerated"
-       },
-       "protected": [
-        "canConvertToSource"
-       ]
+       }
       },
       {
        "mixin": "generated1211.FluidGeneratedMixin",
@@ -8271,10 +7867,7 @@
        ],
        "injects": {
         "net/minecraft/world/level/material/Fluid": "generated1211.FluidGenerated"
-       },
-       "protected": [
-        "getExplosionResistance"
-       ]
+       }
       },
       {
        "mixin": "generated1211.FluidStateGeneratedMixin",
@@ -9199,7 +8792,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:applyBakedNormals|misc|putMutableQuad)\\s*\\("
+       "\\b(?:misc)\\s*\\("
       ]
      ],
      "injects": {
@@ -9394,15 +8987,12 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:getBlockAtCamera|getRoll|setRotation)\\s*\\("
+       "\\b(?:getBlockAtCamera|getRoll)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/client/Camera": "generated.CameraGenerated"
-     },
-     "protected": [
-      "setRotation"
-     ]
+     }
     },
     {
      "mixin": "generated.KeyMappingGeneratedMixin",
@@ -9444,63 +9034,16 @@
      }
     },
     {
-     "mixin": "generated.EquipmentAssetProviderGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:registerModels)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/data/models/EquipmentAssetProvider": "generated.EquipmentAssetProviderGenerated"
-     },
-     "protected": [
-      "registerModels"
-     ]
-    },
-    {
      "mixin": "generated.ModelProviderGeneratedMixin",
      "generated": true,
      "client": true,
      "uses": [
       [
-       "\\b(?:getKnownBlocks|getKnownItems|mcLocation|modLocation|registerModels)\\s*\\("
+       "\\b(?:mcLocation|modLocation)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/client/data/models/ModelProvider": "generated.ModelProviderGenerated"
-     },
-     "protected": [
-      "getKnownBlocks",
-      "getKnownItems",
-      "registerModels"
-     ]
-    },
-    {
-     "mixin": "generated.MultiVariantGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:with)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/data/models/MultiVariant": "generated.MultiVariantGenerated"
-     }
-    },
-    {
-     "mixin": "generated.MultiVariantGeneratorGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:withUnbaked)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/data/models/blockstates/MultiVariantGenerator": "generated.MultiVariantGeneratorGenerated"
      }
     },
     {
@@ -9509,7 +9052,7 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:createBaseTemplate|extend)\\s*\\("
+       "\\b(?:createBaseTemplate)\\s*\\("
       ]
      ],
      "injects": {
@@ -9634,51 +9177,6 @@
      }
     },
     {
-     "mixin": "generated.CreativeModeInventoryScreenGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:setCurrentPage)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen": "generated.CreativeModeInventoryScreenGenerated"
-     }
-    },
-    {
-     "mixin": "generated.RecipeBookComponentGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:createTabButton)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/gui/screens/recipebook/RecipeBookComponent": "generated.RecipeBookComponentGenerated"
-     },
-     "protected": [
-      "createTabButton"
-     ]
-    },
-    {
-     "mixin": "generated.RecipeButtonGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:extractDisplayRenderState)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/gui/screens/recipebook/RecipeButton": "generated.RecipeButtonGenerated"
-     },
-     "protected": [
-      "extractDisplayRenderState"
-     ]
-    },
-    {
      "mixin": "generated.WorldCreationContextGeneratedMixin",
      "generated": true,
      "client": true,
@@ -9702,45 +9200,6 @@
      ],
      "injects": {
       "net/minecraft/client/multiplayer/ClientCommonPacketListenerImpl": "generated.ClientCommonPacketListenerImplGenerated"
-     }
-    },
-    {
-     "mixin": "generated.ClientConfigurationPacketListenerImplGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getConnectionType)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/multiplayer/ClientConfigurationPacketListenerImpl": "generated.ClientConfigurationPacketListenerImplGenerated"
-     }
-    },
-    {
-     "mixin": "generated.ClientLevelGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getModelData|getModelDataManager)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/multiplayer/ClientLevel": "generated.ClientLevelGenerated"
-     }
-    },
-    {
-     "mixin": "generated.ClientPacketListenerGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getConnectionType)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/multiplayer/ClientPacketListener": "generated.ClientPacketListenerGenerated"
      }
     },
     {
@@ -9788,7 +9247,7 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:submitMultiLayerBlockModel|submitSpecial)\\s*\\("
+       "\\b(?:submitMultiLayerBlockModel)\\s*\\("
       ]
      ],
      "injects": {
@@ -9801,7 +9260,7 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:submitMultiLayerBlockModel|submitSpecial)\\s*\\("
+       "\\b(?:submitMultiLayerBlockModel)\\s*\\("
       ]
      ],
      "injects": {
@@ -9814,7 +9273,7 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:submitMultiLayerBlockModel|submitSpecial)\\s*\\("
+       "\\b(?:submitMultiLayerBlockModel)\\s*\\("
       ]
      ],
      "injects": {
@@ -9845,19 +9304,6 @@
      ],
      "injects": {
       "net/minecraft/client/renderer/block/BlockModelRenderState": "generated.BlockModelRenderStateGenerated"
-     }
-    },
-    {
-     "mixin": "generated.MovingBlockRenderStateGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getModelData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/renderer/block/MovingBlockRenderState": "generated.MovingBlockRenderStateGenerated"
      }
     },
     {
@@ -10147,19 +9593,6 @@
      }
     },
     {
-     "mixin": "generated.RenderSectionRegionGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getAuxLightManager|getModelData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/renderer/chunk/RenderSectionRegion": "generated.RenderSectionRegionGenerated"
-     }
-    },
-    {
      "mixin": "generated.EntityRenderDispatcherGeneratedMixin",
      "generated": true,
      "client": true,
@@ -10303,25 +9736,12 @@
      }
     },
     {
-     "mixin": "generated.ModelBakerInternerGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:colors|normals)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/resources/model/ModelBaker$Interner": "generated.ModelBakerInternerGenerated"
-     }
-    },
-    {
      "mixin": "generated.ModelManagerGeneratedMixin",
      "generated": true,
      "client": true,
      "uses": [
       [
-       "\\b(?:getMissingModels|getModelBakery|getStandaloneModel)\\s*\\("
+       "\\b(?:getMissingModels|getModelBakery)\\s*\\("
       ]
      ],
      "injects": {
@@ -10352,19 +9772,6 @@
      ],
      "injects": {
       "net/minecraft/client/resources/model/UnbakedModel": "generated.UnbakedModelGenerated"
-     }
-    },
-    {
-     "mixin": "generated.CuboidFaceGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:faceData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/resources/model/cuboid/CuboidFace": "generated.CuboidFaceGenerated"
      }
     },
     {
@@ -10464,15 +9871,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:clear|getId|unfreeze)\\s*\\("
+       "\\b(?:getId|unfreeze)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/core/MappedRegistry": "generated.MappedRegistryGenerated"
-     },
-     "protected": [
-      "clear"
-     ]
+     }
     },
     {
      "mixin": "generated.RegistryGeneratedMixin",
@@ -10579,38 +9983,6 @@
      }
     },
     {
-     "mixin": "generated.BlockLootSubProviderGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getKnownBlocks)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/loot/BlockLootSubProvider": "generated.BlockLootSubProviderGenerated"
-     },
-     "protected": [
-      "getKnownBlocks"
-     ]
-    },
-    {
-     "mixin": "generated.EntityLootSubProviderGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getKnownEntityTypes)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/loot/EntityLootSubProvider": "generated.EntityLootSubProviderGenerated"
-     },
-     "protected": [
-      "getKnownEntityTypes"
-     ]
-    },
-    {
      "mixin": "generated.VanillaBlockLootGeneratedMixin",
      "generated": true,
      "client": false,
@@ -10624,51 +9996,6 @@
      }
     },
     {
-     "mixin": "generated.VanillaEntityLootGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getKnownEntityTypes)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/loot/packs/VanillaEntityLoot": "generated.VanillaEntityLootGenerated"
-     },
-     "protected": [
-      "getKnownEntityTypes"
-     ]
-    },
-    {
-     "mixin": "generated.RecipeOutputGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:withContext)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/recipes/RecipeOutput": "generated.RecipeOutputGenerated"
-     }
-    },
-    {
-     "mixin": "generated.RecipeProviderGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:shaped)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/recipes/RecipeProvider": "generated.RecipeProviderGenerated"
-     },
-     "protected": [
-      "shaped"
-     ]
-    },
-    {
      "mixin": "generated.RecipeUnlockAdvancementBuilderGeneratedMixin",
      "generated": true,
      "client": false,
@@ -10680,22 +10007,6 @@
      "injects": {
       "net/minecraft/data/recipes/RecipeUnlockAdvancementBuilder": "generated.RecipeUnlockAdvancementBuilderGenerated"
      }
-    },
-    {
-     "mixin": "generated.TagsProviderGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getPath)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/tags/TagsProvider": "generated.TagsProviderGenerated"
-     },
-     "protected": [
-      "getPath"
-     ]
     },
     {
      "mixin": "generated.BootstrapContextAccessGeneratedMixin",
@@ -10802,19 +10113,6 @@
      }
     },
     {
-     "mixin": "generated.RegistryFriendlyByteBufGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getConnectionType)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/network/RegistryFriendlyByteBuf": "generated.RegistryFriendlyByteBufGenerated"
-     }
-    },
-    {
      "mixin": "generated.BundlerInfoGeneratedMixin",
      "generated": true,
      "client": false,
@@ -10846,24 +10144,11 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:disconnect|send)\\s*\\("
+       "\\b(?:disconnect)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/network/protocol/common/ClientCommonPacketListener": "generated.ClientCommonPacketListenerGenerated"
-     }
-    },
-    {
-     "mixin": "generated.ServerCommonPacketListenerGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:send)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/network/protocol/common/ServerCommonPacketListener": "generated.ServerCommonPacketListenerGenerated"
      }
     },
     {
@@ -10945,19 +10230,6 @@
      }
     },
     {
-     "mixin": "generated.ReloadableServerResourcesGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getListener)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/server/ReloadableServerResources": "generated.ReloadableServerResourcesGenerated"
-     }
-    },
-    {
      "mixin": "generated.MinecraftApiGeneratedMixin",
      "generated": true,
      "client": false,
@@ -11015,7 +10287,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:cleanCapabilityListenerReferences|getSeedOverride|registerCapabilityListener|syncData)\\s*\\("
+       "\\b(?:cleanCapabilityListenerReferences|getSeedOverride|syncData)\\s*\\("
       ]
      ],
      "injects": {
@@ -11054,15 +10326,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:createCookie|getConnection|getConnectionType|getPacketProcessor)\\s*\\("
+       "\\b(?:getConnection|getPacketProcessor)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/server/network/ServerCommonPacketListenerImpl": "generated.ServerCommonPacketListenerImplGenerated"
-     },
-     "protected": [
-      "createCookie"
-     ]
+     }
     },
     {
      "mixin": "generated.PackMetadataResourcesGeneratedMixin",
@@ -11141,22 +10410,6 @@
      "injects": {
       "net/minecraft/server/packs/resources/ResourceFilterSection": "generated.ResourceFilterSectionGenerated"
      }
-    },
-    {
-     "mixin": "generated.SimpleJsonResourceReloadListenerGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getPreparedPath)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/server/packs/resources/SimpleJsonResourceReloadListener": "generated.SimpleJsonResourceReloadListenerGenerated"
-     },
-     "protected": [
-      "getPreparedPath"
-     ]
     },
     {
      "mixin": "generated.PlayerListGeneratedMixin",
@@ -11250,32 +10503,6 @@
      }
     },
     {
-     "mixin": "generated.DamageScalingGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getScalingFunction)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/damagesource/DamageScaling": "generated.DamageScalingGenerated"
-     }
-    },
-    {
-     "mixin": "generated.DeathMessageTypeGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getMessageFunction)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/damagesource/DeathMessageType": "generated.DeathMessageTypeGenerated"
-     }
-    },
-    {
      "mixin": "generated.MobEffectGeneratedMixin",
      "generated": true,
      "client": false,
@@ -11294,16 +10521,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IEntityExtension|canBeRiddenUnderFluidType|canFluidExtinguish|canHydrateInFluidType|canRiderInteract|canStartSwimming|canSwimInFluidType|canTrample|captureDrops|copyAttachmentsFrom|copyPersisted|getBlockBounciness|getClassification|getFirstEyeInFluidType|getFluidFallDistanceModifier|getFluidHeight|getFluidInteraction|getFluidMotionScale|getFluidTypeHeight|getMaxHeightFluidType|getPersistentData|getSoundFromFluidType|if|isAddedToLevel|isEyeInFluid|isEyeInFluidType|isInFluidType|isPushedByFluid|onAddedToLevel|onRemovedFromLevel|playCombinationStepSounds|playMuffledStepSound|register|return|revive|sendPairingData|shouldRiderSit|syncData)\\s*\\("
+       "\\b(?:canBeRiddenUnderFluidType|canFluidExtinguish|canHydrateInFluidType|canRiderInteract|canStartSwimming|canSwimInFluidType|canTrample|captureDrops|copyAttachmentsFrom|getBlockBounciness|getClassification|getFirstEyeInFluidType|getFluidFallDistanceModifier|getFluidHeight|getFluidInteraction|getFluidMotionScale|getFluidTypeHeight|getMaxHeightFluidType|getPersistentData|isAddedToLevel|isEyeInFluid|isEyeInFluidType|isInFluidType|isPushedByFluid|onAddedToLevel|onRemovedFromLevel|revive|sendPairingData|shouldRiderSit|syncData)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/entity/Entity": "generated.EntityGenerated"
-     },
-     "protected": [
-      "playCombinationStepSounds",
-      "playMuffledStepSound"
-     ]
+     }
     },
     {
      "mixin": "generated.EntityFluidInteractionGeneratedMixin",
@@ -11311,7 +10534,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:applyCurrentTo|getFallDistanceModifier|getFirstEyeInFluid|getFluidHeight|getMaxFluidHeightMatching|getMaxHeightFluidType|isEyeInFluid|isEyeInFluidMatching|isInAnyFluid|isInFluid|isInFluidMatching|update)\\s*\\("
+       "\\b(?:applyCurrentTo|getFallDistanceModifier|getFirstEyeInFluid|getFluidHeight|getMaxHeightFluidType|isEyeInFluid|isInAnyFluid|isInFluid|update)\\s*\\("
       ]
      ],
      "injects": {
@@ -11350,15 +10573,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:canDrownInFluidType|canGlide|canSwimInFluidType|jumpInFluid|moveInFluid|onDamageTaken|randomTeleport|self|setItemSlot|sinkInFluid)\\s*\\("
+       "\\b(?:canDrownInFluidType|canSwimInFluidType|jumpInFluid|moveInFluid|randomTeleport|self|setItemSlot|sinkInFluid)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/entity/LivingEntity": "generated.LivingEntityGenerated"
-     },
-     "protected": [
-      "canGlide"
-     ]
+     }
     },
     {
      "mixin": "generated.MobGeneratedMixin",
@@ -11426,22 +10646,6 @@
      }
     },
     {
-     "mixin": "generated.AbstractCubeMobGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:spawnCustomParticles)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/entity/monster/cubemob/AbstractCubeMob": "generated.AbstractCubeMobGenerated"
-     },
-     "protected": [
-      "spawnCustomParticles"
-     ]
-    },
-    {
      "mixin": "generated.MagmaCubeGeneratedMixin",
      "generated": true,
      "client": false,
@@ -11460,7 +10664,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:createMenu|dropWithoutEvent|getDestroySpeed|getDisplayName|getForcedPose|getPrefixes|getScreenOpeningData|getSuffixes|hasCorrectToolForDrops|if|isCloseEnough|isFakePlayer|mayFly|openMenu|refreshDisplayName|setForcedPose)\\s*\\("
+       "\\b(?:dropWithoutEvent|getDestroySpeed|getForcedPose|getPrefixes|getSuffixes|hasCorrectToolForDrops|isCloseEnough|isFakePlayer|mayFly|openMenu|refreshDisplayName|setForcedPose)\\s*\\("
       ]
      ],
      "injects": {
@@ -11512,31 +10716,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:createResultInternal|setCost)\\s*\\("
+       "\\b(?:setCost)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/inventory/AnvilMenu": "generated.AnvilMenuGenerated"
-     },
-     "protected": [
-      "createResultInternal"
-     ]
-    },
-    {
-     "mixin": "generated.ItemCombinerMenuGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:onQuickCraft)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/inventory/ItemCombinerMenu": "generated.ItemCombinerMenuGenerated"
-     },
-     "protected": [
-      "onQuickCraft"
-     ]
+     }
     },
     {
      "mixin": "generated.SlotGeneratedMixin",
@@ -11550,22 +10735,6 @@
      "injects": {
       "net/minecraft/world/inventory/Slot": "generated.SlotGenerated"
      }
-    },
-    {
-     "mixin": "generated.SmithingMenuGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:onQuickCraft)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/inventory/SmithingMenu": "generated.SmithingMenuGenerated"
-     },
-     "protected": [
-      "onQuickCraft"
-     ]
     },
     {
      "mixin": "generated.ArrowItemGeneratedMixin",
@@ -11586,15 +10755,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getPlaceSound|onBlockPlacedBy)\\s*\\("
+       "\\b(?:onBlockPlacedBy)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/item/BlockItem": "generated.BlockItemGenerated"
-     },
-     "protected": [
-      "getPlaceSound"
-     ]
+     }
     },
     {
      "mixin": "generated.BrushItemGeneratedMixin",
@@ -11615,15 +10781,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:canBlockContainFluid|emptyContents)\\s*\\("
+       "\\b(?:emptyContents)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/item/BucketItem": "generated.BucketItemGenerated"
-     },
-     "protected": [
-      "canBlockContainFluid"
-     ]
+     }
     },
     {
      "mixin": "generated.CreativeModeTabGeneratedMixin",
@@ -11709,7 +10872,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IItemExtension|applyEnchantments|canBeHurtBy|canContinueUsing|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canPerformAction|canWalkOnPowderedSnow|clientInventoryTick|computeDefaultResource|createEntity|damageItem|doesSneakBypassUse|getAllEnchantments|getCreatorModId|getDamage|getDefaultAttributeModifiers|getEnchantmentLevel|getEntityLifespan|getEquipmentSlot|getHighlightTip|getMaxDamage|getMaxStackSize|getSweepHitBox|getXpRepairRatio|hasCustomEntity|if|isCombineRepairable|isDamageable|isDamaged|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onGlideDamage|onItemUseFirst|onLeftClickEntity|onStopUsing|resetDefaultResource|setDamage|shouldCauseBlockBreakReset|shouldCauseReequipAnimation|supportsEnchantment)\\s*\\("
+       "\\b(?:applyEnchantments|canBeHurtBy|canContinueUsing|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canPerformAction|canWalkOnPowderedSnow|clientInventoryTick|computeDefaultResource|createEntity|damageItem|doesSneakBypassUse|getAllEnchantments|getCreatorModId|getDamage|getDefaultAttributeModifiers|getEnchantmentLevel|getEntityLifespan|getEquipmentSlot|getHighlightTip|getMaxDamage|getMaxStackSize|getSweepHitBox|getXpRepairRatio|hasCustomEntity|isCombineRepairable|isDamageable|isDamaged|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onGlideDamage|onItemUseFirst|onLeftClickEntity|onStopUsing|resetDefaultResource|setDamage|shouldCauseBlockBreakReset|shouldCauseReequipAnimation|supportsEnchantment)\\s*\\("
       ]
      ],
      "injects": {
@@ -11748,28 +10911,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IItemStackExtension|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canWalkOnPowderedSnow|doesSneakBypassUse|getAllEnchantments|getAttributeModifiers|getEntityLifespan|getEquipmentSlot|getHighlightTip|getSweepHitBox|getTagEnchantments|getXpRepairRatio|hurtAndBreak|isCombineRepairable|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onGlideDamage|onItemUseFirst|onStopUsing|shouldCauseBlockBreakReset|supportsEnchantment)\\s*\\("
+       "\\b(?:canEquip|canFitInsideContainerItems|canGrindstoneRepair|canWalkOnPowderedSnow|doesSneakBypassUse|getAllEnchantments|getAttributeModifiers|getEntityLifespan|getEquipmentSlot|getHighlightTip|getSweepHitBox|getTagEnchantments|getXpRepairRatio|hurtAndBreak|isCombineRepairable|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onGlideDamage|onItemUseFirst|onStopUsing|shouldCauseBlockBreakReset|supportsEnchantment)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/item/ItemStack": "generated.ItemStackGenerated"
      }
-    },
-    {
-     "mixin": "generated.MapItemGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getCustomMapData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/item/MapItem": "generated.MapItemGenerated"
-     },
-     "protected": [
-      "getCustomMapData"
-     ]
     },
     {
      "mixin": "generated.MobBucketItemGeneratedMixin",
@@ -11822,22 +10969,6 @@
      "injects": {
       "net/minecraft/world/item/ShearsItem": "generated.ShearsItemGenerated"
      }
-    },
-    {
-     "mixin": "generated.SolidBucketItemGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getPlaceSound)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/item/SolidBucketItem": "generated.SolidBucketItemGenerated"
-     },
-     "protected": [
-      "getPlaceSound"
-     ]
     },
     {
      "mixin": "generated.SpyglassItemGeneratedMixin",
@@ -11983,19 +11114,6 @@
      }
     },
     {
-     "mixin": "generated.BlockGetterGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getAuxLightManager|getModelData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/BlockGetter": "generated.BlockGetterGenerated"
-     }
-    },
-    {
      "mixin": "generated.DataPackConfigGeneratedMixin",
      "generated": true,
      "client": false,
@@ -12014,7 +11132,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:addFreshBlockEntities|getDescription|getDescriptionKey|getMaxEntityRadius|getModelDataManager|increaseMaxEntityRadius|markAndNotifyBlock)\\s*\\("
+       "\\b(?:addFreshBlockEntities|getDescription|getDescriptionKey|getMaxEntityRadius|increaseMaxEntityRadius|markAndNotifyBlock)\\s*\\("
       ]
      ],
      "injects": {
@@ -12066,7 +11184,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getModifiedEnvironmentAttributes|getModifiedSpecialEffects|modifiableBiomeInfo)\\s*\\("
+       "\\b(?:getModifiedEnvironmentAttributes|getModifiedSpecialEffects)\\s*\\("
       ]
      ],
      "injects": {
@@ -12074,16 +11192,16 @@
      }
     },
     {
-     "mixin": "generated.AbstractBedBlockGeneratedMixin",
+     "mixin": "generated.AbstractCauldronBlockGeneratedMixin",
      "generated": true,
      "client": false,
      "uses": [
       [
-       "\\b(?:getRelocability)\\s*\\("
+       "\\b(?:onPlace)\\s*\\("
       ]
      ],
      "injects": {
-      "net/minecraft/world/level/block/AbstractBedBlock": "generated.AbstractBedBlockGenerated"
+      "net/minecraft/world/level/block/AbstractCauldronBlock": "generated.AbstractCauldronBlockGenerated"
      }
     },
     {
@@ -12105,7 +11223,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IBlockExtension|addLandingEffects|addRunningEffects|canBeConnectedTo|canBeHydrated|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBlockPathType|getBounceRestitution|getBubbleColumnDirection|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getMapColor|getModelData|getPistonPushReaction|getRelocability|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBurning|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isScaffolding|isSlimeBlock|isStickyBlock|makesOpenTrapdoorAboveClimbable|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
+       "\\b(?:addLandingEffects|addRunningEffects|canBeConnectedTo|canBeHydrated|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBlockPathType|getBounceRestitution|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getMapColor|getPistonPushReaction|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBurning|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isScaffolding|isSlimeBlock|isStickyBlock|makesOpenTrapdoorAboveClimbable|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
       ]
      ],
      "injects": {
@@ -12136,48 +11254,6 @@
      ],
      "injects": {
       "net/minecraft/world/level/block/ComparatorBlock": "generated.ComparatorBlockGenerated"
-     }
-    },
-    {
-     "mixin": "generated.DetectorRailBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:registerDefaultState)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/DetectorRailBlock": "generated.DetectorRailBlockGenerated"
-     },
-     "protected": [
-      "registerDefaultState"
-     ]
-    },
-    {
-     "mixin": "generated.DoorBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRelocability)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/DoorBlock": "generated.DoorBlockGenerated"
-     }
-    },
-    {
-     "mixin": "generated.DoublePlantBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRelocability)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/DoublePlantBlock": "generated.DoublePlantBlockGenerated"
      }
     },
     {
@@ -12251,15 +11327,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:isActivatorRail|registerDefaultState)\\s*\\("
+       "\\b(?:isActivatorRail)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/level/block/PoweredRailBlock": "generated.PoweredRailBlockGenerated"
-     },
-     "protected": [
-      "registerDefaultState"
-     ]
+     }
     },
     {
      "mixin": "generated.RedStoneOreBlockGeneratedMixin",
@@ -12384,15 +11457,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getLootContext|setItem)\\s*\\("
+       "\\b(?:setItem)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/level/block/entity/BaseContainerBlockEntity": "generated.BaseContainerBlockEntityGenerated"
-     },
-     "protected": [
-      "getLootContext"
-     ]
+     }
     },
     {
      "mixin": "generated.BlockEntityGeneratedMixin",
@@ -12400,7 +11470,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|getModelData|getPersistentData|invalidateCapabilities|onChunkUnloaded|requestModelDataUpdate|syncData)\\s*\\("
+       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|getPersistentData|invalidateCapabilities|onChunkUnloaded|requestModelDataUpdate|syncData)\\s*\\("
       ]
      ],
      "injects": {
@@ -12491,44 +11561,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getRelocability|rotate)\\s*\\("
+       "\\b(?:rotate)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/level/block/piston/PistonBaseBlock": "generated.PistonBaseBlockGenerated"
-     },
-     "protected": [
-      "rotate"
-     ]
-    },
-    {
-     "mixin": "generated.PistonHeadBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRelocability)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/piston/PistonHeadBlock": "generated.PistonHeadBlockGenerated"
      }
-    },
-    {
-     "mixin": "generated.BlockBehaviourGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:isAir)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/state/BlockBehaviour": "generated.BlockBehaviourGenerated"
-     },
-     "protected": [
-      "isAir"
-     ]
     },
     {
      "mixin": "generated.BlockStateGeneratedMixin",
@@ -12536,7 +11574,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IBlockStateExtension|addLandingEffects|addRunningEffects|canBeConnectedTo|canBeHydrated|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBlockPathType|getBounceRestitution|getBubbleColumnDirection|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getModelData|getRelocability|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|if|ignitedByLava|isBurning|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isScaffolding|isSlimeBlock|isStickyBlock|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
+       "\\b(?:addLandingEffects|addRunningEffects|canBeConnectedTo|canBeHydrated|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBlockPathType|getBounceRestitution|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBurning|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isScaffolding|isSlimeBlock|isStickyBlock|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
       ]
      ],
      "injects": {
@@ -12549,15 +11587,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:anyMatched|filterPosition)\\s*\\("
+       "\\b(?:filterPosition)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/level/blockscan/BlockMatcher": "generated.BlockMatcherGenerated"
-     },
-     "protected": [
-      "anyMatched"
-     ]
+     }
     },
     {
      "mixin": "generated.BoxBlockMatcherGeneratedMixin",
@@ -12565,15 +11600,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:anyMatched|filterPosition)\\s*\\("
+       "\\b(?:filterPosition)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/level/blockscan/BoxBlockMatcher": "generated.BoxBlockMatcherGenerated"
-     },
-     "protected": [
-      "anyMatched"
-     ]
+     }
     },
     {
      "mixin": "generated.OrderedBlockMatcherGeneratedMixin",
@@ -12581,15 +11613,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:anyMatched|filterPosition)\\s*\\("
+       "\\b(?:filterPosition)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/level/blockscan/OrderedBlockMatcher": "generated.OrderedBlockMatcherGenerated"
-     },
-     "protected": [
-      "anyMatched"
-     ]
+     }
     },
     {
      "mixin": "generated.ChunkAccessGeneratedMixin",
@@ -12636,7 +11665,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getAuxLightManager|syncData)\\s*\\("
+       "\\b(?:syncData)\\s*\\("
       ]
      ],
      "injects": {
@@ -12675,7 +11704,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getModifiedStructureSettings|modifiableStructureInfo)\\s*\\("
+       "\\b(?:getModifiedStructureSettings)\\s*\\("
       ]
      ],
      "injects": {
@@ -12693,10 +11722,7 @@
      ],
      "injects": {
       "net/minecraft/world/level/material/FlowingFluid": "generated.FlowingFluidGenerated"
-     },
-     "protected": [
-      "canConvertToSource"
-     ]
+     }
     },
     {
      "mixin": "generated.FluidGeneratedMixin",
@@ -12709,10 +11735,7 @@
      ],
      "injects": {
       "net/minecraft/world/level/material/Fluid": "generated.FluidGenerated"
-     },
-     "protected": [
-      "getExplosionResistance"
-     ]
+     }
     },
     {
      "mixin": "generated.FluidStateGeneratedMixin",
@@ -12902,7 +11925,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getStencilTest|toBuilder)\\s*\\("
+       "\\b(?:toBuilder)\\s*\\("
       ]
      ],
      "injects": {
@@ -12954,7 +11977,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:applyBakedNormals|misc|putMutableQuad)\\s*\\("
+       "\\b(?:misc)\\s*\\("
       ]
      ],
      "injects": {
@@ -13006,15 +12029,12 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:getBlockAtCamera|getRoll|setRotation)\\s*\\("
+       "\\b(?:getBlockAtCamera|getRoll)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/client/Camera": "generated261.CameraGenerated"
-     },
-     "protected": [
-      "setRotation"
-     ]
+     }
     },
     {
      "mixin": "generated261.ClientClockManagerGeneratedMixin",
@@ -13069,22 +12089,6 @@
      }
     },
     {
-     "mixin": "generated261.EquipmentAssetProviderGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:registerModels)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/data/models/EquipmentAssetProvider": "generated261.EquipmentAssetProviderGenerated"
-     },
-     "protected": [
-      "registerModels"
-     ]
-    },
-    {
      "mixin": "generated261.ItemModelGeneratorsGeneratedMixin",
      "generated": true,
      "client": true,
@@ -13103,42 +12107,11 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:getKnownBlocks|getKnownItems|mcLocation|modLocation|registerModels)\\s*\\("
+       "\\b(?:mcLocation|modLocation)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/client/data/models/ModelProvider": "generated261.ModelProviderGenerated"
-     },
-     "protected": [
-      "getKnownBlocks",
-      "getKnownItems",
-      "registerModels"
-     ]
-    },
-    {
-     "mixin": "generated261.MultiVariantGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:with)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/data/models/MultiVariant": "generated261.MultiVariantGenerated"
-     }
-    },
-    {
-     "mixin": "generated261.MultiVariantGeneratorGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:withUnbaked)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/data/models/blockstates/MultiVariantGenerator": "generated261.MultiVariantGeneratorGenerated"
      }
     },
     {
@@ -13147,7 +12120,7 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:createBaseTemplate|extend)\\s*\\("
+       "\\b(?:createBaseTemplate)\\s*\\("
       ]
      ],
      "injects": {
@@ -13272,19 +12245,6 @@
      }
     },
     {
-     "mixin": "generated261.CreativeModeInventoryScreenGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:setCurrentPage)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen": "generated261.CreativeModeInventoryScreenGenerated"
-     }
-    },
-    {
      "mixin": "generated261.WorldCreationContextGeneratedMixin",
      "generated": true,
      "client": true,
@@ -13311,42 +12271,16 @@
      }
     },
     {
-     "mixin": "generated261.ClientConfigurationPacketListenerImplGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getConnectionType)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/multiplayer/ClientConfigurationPacketListenerImpl": "generated261.ClientConfigurationPacketListenerImplGenerated"
-     }
-    },
-    {
      "mixin": "generated261.ClientLevelGeneratedMixin",
      "generated": true,
      "client": true,
      "uses": [
       [
-       "\\b(?:addBreakingBlockEffect|getModelData|getModelDataManager)\\s*\\("
+       "\\b(?:addBreakingBlockEffect)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/client/multiplayer/ClientLevel": "generated261.ClientLevelGenerated"
-     }
-    },
-    {
-     "mixin": "generated261.ClientPacketListenerGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getConnectionType)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/multiplayer/ClientPacketListener": "generated261.ClientPacketListenerGenerated"
      }
     },
     {
@@ -13394,7 +12328,7 @@
      "client": true,
      "uses": [
       [
-       "\\b(?:getRenderableSections|getTicks|iterateVisibleBlockEntities)\\s*\\("
+       "\\b(?:getTicks|iterateVisibleBlockEntities)\\s*\\("
       ]
      ],
      "injects": {
@@ -13477,19 +12411,6 @@
      ],
      "injects": {
       "net/minecraft/client/renderer/block/BlockModelRenderState": "generated261.BlockModelRenderStateGenerated"
-     }
-    },
-    {
-     "mixin": "generated261.MovingBlockRenderStateGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getModelData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/renderer/block/MovingBlockRenderState": "generated261.MovingBlockRenderStateGenerated"
      }
     },
     {
@@ -13779,19 +12700,6 @@
      }
     },
     {
-     "mixin": "generated261.RenderSectionRegionGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:getAuxLightManager|getModelData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/renderer/chunk/RenderSectionRegion": "generated261.RenderSectionRegionGenerated"
-     }
-    },
-    {
      "mixin": "generated261.EntityRenderDispatcherGeneratedMixin",
      "generated": true,
      "client": true,
@@ -13922,25 +12830,12 @@
      }
     },
     {
-     "mixin": "generated261.ModelBakerInternerGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:colors|normals)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/resources/model/ModelBaker$Interner": "generated261.ModelBakerInternerGenerated"
-     }
-    },
-    {
      "mixin": "generated261.ModelManagerGeneratedMixin",
      "generated": true,
      "client": true,
      "uses": [
       [
-       "\\b(?:getModelBakery|getStandaloneModel)\\s*\\("
+       "\\b(?:getModelBakery)\\s*\\("
       ]
      ],
      "injects": {
@@ -13971,19 +12866,6 @@
      ],
      "injects": {
       "net/minecraft/client/resources/model/UnbakedModel": "generated261.UnbakedModelGenerated"
-     }
-    },
-    {
-     "mixin": "generated261.CuboidFaceGeneratedMixin",
-     "generated": true,
-     "client": true,
-     "uses": [
-      [
-       "\\b(?:faceData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/client/resources/model/cuboid/CuboidFace": "generated261.CuboidFaceGenerated"
      }
     },
     {
@@ -14083,15 +12965,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:clear|getId|unfreeze)\\s*\\("
+       "\\b(?:getId|unfreeze)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/core/MappedRegistry": "generated261.MappedRegistryGenerated"
-     },
-     "protected": [
-      "clear"
-     ]
+     }
     },
     {
      "mixin": "generated261.RegistryGeneratedMixin",
@@ -14185,68 +13064,17 @@
      }
     },
     {
-     "mixin": "generated261.BlockLootSubProviderGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getKnownBlocks)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/loot/BlockLootSubProvider": "generated261.BlockLootSubProviderGenerated"
-     },
-     "protected": [
-      "getKnownBlocks"
-     ]
-    },
-    {
-     "mixin": "generated261.EntityLootSubProviderGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getKnownEntityTypes)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/loot/EntityLootSubProvider": "generated261.EntityLootSubProviderGenerated"
-     },
-     "protected": [
-      "getKnownEntityTypes"
-     ]
-    },
-    {
      "mixin": "generated261.LootTableProviderGeneratedMixin",
      "generated": true,
      "client": false,
      "uses": [
       [
-       "\\b(?:getTables|validate)\\s*\\("
+       "\\b(?:getTables)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/data/loot/LootTableProvider": "generated261.LootTableProviderGenerated"
-     },
-     "protected": [
-      "validate"
-     ]
-    },
-    {
-     "mixin": "generated261.RecipeProviderGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:shaped)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/recipes/RecipeProvider": "generated261.RecipeProviderGenerated"
-     },
-     "protected": [
-      "shaped"
-     ]
+     }
     },
     {
      "mixin": "generated261.RecipeUnlockAdvancementBuilderGeneratedMixin",
@@ -14260,22 +13088,6 @@
      "injects": {
       "net/minecraft/data/recipes/RecipeUnlockAdvancementBuilder": "generated261.RecipeUnlockAdvancementBuilderGenerated"
      }
-    },
-    {
-     "mixin": "generated261.TagsProviderGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getPath)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/data/tags/TagsProvider": "generated261.TagsProviderGenerated"
-     },
-     "protected": [
-      "getPath"
-     ]
     },
     {
      "mixin": "generated261.GameTestHelperGeneratedMixin",
@@ -14369,19 +13181,6 @@
      }
     },
     {
-     "mixin": "generated261.RegistryFriendlyByteBufGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getConnectionType)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/network/RegistryFriendlyByteBuf": "generated261.RegistryFriendlyByteBufGenerated"
-     }
-    },
-    {
      "mixin": "generated261.BundlerInfoGeneratedMixin",
      "generated": true,
      "client": false,
@@ -14413,24 +13212,11 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:disconnect|send)\\s*\\("
+       "\\b(?:disconnect)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/network/protocol/common/ClientCommonPacketListener": "generated261.ClientCommonPacketListenerGenerated"
-     }
-    },
-    {
-     "mixin": "generated261.ServerCommonPacketListenerGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:send)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/network/protocol/common/ServerCommonPacketListener": "generated261.ServerCommonPacketListenerGenerated"
      }
     },
     {
@@ -14512,19 +13298,6 @@
      }
     },
     {
-     "mixin": "generated261.ReloadableServerResourcesGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getListener)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/server/ReloadableServerResources": "generated261.ReloadableServerResourcesGenerated"
-     }
-    },
-    {
      "mixin": "generated261.ChunkMapGeneratedMixin",
      "generated": true,
      "client": false,
@@ -14569,7 +13342,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:cleanCapabilityListenerReferences|getSeedOverride|registerCapabilityListener|syncData)\\s*\\("
+       "\\b(?:cleanCapabilityListenerReferences|getSeedOverride|syncData)\\s*\\("
       ]
      ],
      "injects": {
@@ -14608,15 +13381,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:createCookie|getConnection|getConnectionType|getPacketProcessor)\\s*\\("
+       "\\b(?:getConnection|getPacketProcessor)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/server/network/ServerCommonPacketListenerImpl": "generated261.ServerCommonPacketListenerImplGenerated"
-     },
-     "protected": [
-      "createCookie"
-     ]
+     }
     },
     {
      "mixin": "generated261.PackResourcesGeneratedMixin",
@@ -14695,22 +13465,6 @@
      "injects": {
       "net/minecraft/server/packs/resources/ResourceFilterSection": "generated261.ResourceFilterSectionGenerated"
      }
-    },
-    {
-     "mixin": "generated261.SimpleJsonResourceReloadListenerGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getPreparedPath)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/server/packs/resources/SimpleJsonResourceReloadListener": "generated261.SimpleJsonResourceReloadListenerGenerated"
-     },
-     "protected": [
-      "getPreparedPath"
-     ]
     },
     {
      "mixin": "generated261.PlayerListGeneratedMixin",
@@ -14817,32 +13571,6 @@
      }
     },
     {
-     "mixin": "generated261.DamageScalingGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getScalingFunction)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/damagesource/DamageScaling": "generated261.DamageScalingGenerated"
-     }
-    },
-    {
-     "mixin": "generated261.DeathMessageTypeGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getMessageFunction)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/damagesource/DeathMessageType": "generated261.DeathMessageTypeGenerated"
-     }
-    },
-    {
      "mixin": "generated261.MobEffectGeneratedMixin",
      "generated": true,
      "client": false,
@@ -14861,16 +13589,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IEntityExtension|canBeRiddenUnderFluidType|canFluidExtinguish|canHydrateInFluidType|canRiderInteract|canStartSwimming|canSwimInFluidType|canTrample|captureDrops|copyAttachmentsFrom|copyPersisted|getClassification|getFirstEyeInFluidType|getFluidFallDistanceModifier|getFluidHeight|getFluidInteraction|getFluidMotionScale|getFluidTypeHeight|getMaxHeightFluidType|getPersistentData|getSoundFromFluidType|hasCustomOutlineRendering|if|isAddedToLevel|isEyeInFluid|isEyeInFluidType|isInFluidType|isPushedByFluid|onAddedToLevel|onRemovedFromLevel|playCombinationStepSounds|playMuffledStepSound|register|return|revive|sendPairingData|shouldRiderSit|syncData)\\s*\\("
+       "\\b(?:canBeRiddenUnderFluidType|canFluidExtinguish|canHydrateInFluidType|canRiderInteract|canStartSwimming|canSwimInFluidType|canTrample|captureDrops|copyAttachmentsFrom|getClassification|getFirstEyeInFluidType|getFluidFallDistanceModifier|getFluidHeight|getFluidInteraction|getFluidMotionScale|getFluidTypeHeight|getMaxHeightFluidType|getPersistentData|hasCustomOutlineRendering|isAddedToLevel|isEyeInFluid|isEyeInFluidType|isInFluidType|isPushedByFluid|onAddedToLevel|onRemovedFromLevel|revive|sendPairingData|shouldRiderSit|syncData)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/entity/Entity": "generated261.EntityGenerated"
-     },
-     "protected": [
-      "playCombinationStepSounds",
-      "playMuffledStepSound"
-     ]
+     }
     },
     {
      "mixin": "generated261.EntityFluidInteractionGeneratedMixin",
@@ -14878,7 +13602,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:applyCurrentTo|getFallDistanceModifier|getFirstEyeInFluid|getFluidHeight|getMaxFluidHeightMatching|getMaxHeightFluidType|isEyeInFluid|isEyeInFluidMatching|isInAnyFluid|isInFluid|isInFluidMatching|update)\\s*\\("
+       "\\b(?:applyCurrentTo|getFallDistanceModifier|getFirstEyeInFluid|getFluidHeight|getMaxHeightFluidType|isEyeInFluid|isInAnyFluid|isInFluid|update)\\s*\\("
       ]
      ],
      "injects": {
@@ -14917,7 +13641,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:canDrownInFluidType|canSwimInFluidType|jumpInFluid|moveInFluid|onDamageTaken|randomTeleport|self|setItemSlot|sinkInFluid)\\s*\\("
+       "\\b(?:canDrownInFluidType|canSwimInFluidType|jumpInFluid|moveInFluid|randomTeleport|self|setItemSlot|sinkInFluid)\\s*\\("
       ]
      ],
      "injects": {
@@ -15003,28 +13727,12 @@
      }
     },
     {
-     "mixin": "generated261.SlimeGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:spawnCustomParticles)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/entity/monster/Slime": "generated261.SlimeGenerated"
-     },
-     "protected": [
-      "spawnCustomParticles"
-     ]
-    },
-    {
      "mixin": "generated261.PlayerGeneratedMixin",
      "generated": true,
      "client": false,
      "uses": [
       [
-       "\\b(?:createMenu|getDestroySpeed|getDisplayName|getForcedPose|getPrefixes|getScreenOpeningData|getSuffixes|hasCorrectToolForDrops|if|isCloseEnough|isFakePlayer|mayFly|openMenu|refreshDisplayName|setForcedPose)\\s*\\("
+       "\\b(?:getDestroySpeed|getForcedPose|getPrefixes|getSuffixes|hasCorrectToolForDrops|isCloseEnough|isFakePlayer|mayFly|openMenu|refreshDisplayName|setForcedPose)\\s*\\("
       ]
      ],
      "injects": {
@@ -15076,15 +13784,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:createResultInternal|setCost)\\s*\\("
+       "\\b(?:setCost)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/inventory/AnvilMenu": "generated261.AnvilMenuGenerated"
-     },
-     "protected": [
-      "createResultInternal"
-     ]
+     }
     },
     {
      "mixin": "generated261.SlotGeneratedMixin",
@@ -15126,22 +13831,6 @@
      }
     },
     {
-     "mixin": "generated261.BlockItemGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getPlaceSound)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/item/BlockItem": "generated261.BlockItemGenerated"
-     },
-     "protected": [
-      "getPlaceSound"
-     ]
-    },
-    {
      "mixin": "generated261.BrushItemGeneratedMixin",
      "generated": true,
      "client": false,
@@ -15160,15 +13849,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:canBlockContainFluid|emptyContents)\\s*\\("
+       "\\b(?:emptyContents)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/item/BucketItem": "generated261.BucketItemGenerated"
-     },
-     "protected": [
-      "canBlockContainFluid"
-     ]
+     }
     },
     {
      "mixin": "generated261.CreativeModeTabGeneratedMixin",
@@ -15267,7 +13953,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IItemExtension|applyEnchantments|canBeHurtBy|canContinueUsing|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canPerformAction|canWalkOnPowderedSnow|computeDefaultResource|createEntity|damageItem|doesSneakBypassUse|getAllEnchantments|getBurnTime|getCreatorModId|getDamage|getDefaultAttributeModifiers|getEnchantmentLevel|getEntityLifespan|getEquipmentSlot|getHighlightTip|getMaxDamage|getMaxStackSize|getSweepHitBox|getXpRepairRatio|hasCustomEntity|if|isCombineRepairable|isDamageable|isDamaged|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onItemUseFirst|onLeftClickEntity|onStopUsing|resetDefaultResource|setDamage|shouldCauseBlockBreakReset|shouldCauseReequipAnimation|supportsEnchantment)\\s*\\("
+       "\\b(?:applyEnchantments|canBeHurtBy|canContinueUsing|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canPerformAction|canWalkOnPowderedSnow|computeDefaultResource|createEntity|damageItem|doesSneakBypassUse|getAllEnchantments|getBurnTime|getCreatorModId|getDamage|getDefaultAttributeModifiers|getEnchantmentLevel|getEntityLifespan|getEquipmentSlot|getHighlightTip|getMaxDamage|getMaxStackSize|getSweepHitBox|getXpRepairRatio|hasCustomEntity|isCombineRepairable|isDamageable|isDamaged|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onItemUseFirst|onLeftClickEntity|onStopUsing|resetDefaultResource|setDamage|shouldCauseBlockBreakReset|shouldCauseReequipAnimation|supportsEnchantment)\\s*\\("
       ]
      ],
      "injects": {
@@ -15306,28 +13992,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IItemStackExtension|canEquip|canFitInsideContainerItems|canGrindstoneRepair|canWalkOnPowderedSnow|doesSneakBypassUse|getAllEnchantments|getAttributeModifiers|getBurnTime|getEntityLifespan|getEquipmentSlot|getHighlightTip|getSweepHitBox|getTagEnchantments|getXpRepairRatio|hurtAndBreak|isCombineRepairable|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onItemUseFirst|onStopUsing|shouldCauseBlockBreakReset|supportsEnchantment)\\s*\\("
+       "\\b(?:canEquip|canFitInsideContainerItems|canGrindstoneRepair|canWalkOnPowderedSnow|doesSneakBypassUse|getAllEnchantments|getAttributeModifiers|getBurnTime|getEntityLifespan|getEquipmentSlot|getHighlightTip|getSweepHitBox|getTagEnchantments|getXpRepairRatio|hurtAndBreak|isCombineRepairable|isGazeDisguise|isNotReplaceableByPickAction|isPiglinCurrency|isPrimaryItemFor|makesPiglinsNeutral|onAnimalArmorTick|onDestroyed|onDroppedByPlayer|onEntityItemUpdate|onEntitySwing|onItemUseFirst|onStopUsing|shouldCauseBlockBreakReset|supportsEnchantment)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/item/ItemStack": "generated261.ItemStackGenerated"
      }
-    },
-    {
-     "mixin": "generated261.MapItemGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getCustomMapData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/item/MapItem": "generated261.MapItemGenerated"
-     },
-     "protected": [
-      "getCustomMapData"
-     ]
     },
     {
      "mixin": "generated261.ProjectileWeaponItemGeneratedMixin",
@@ -15382,38 +14052,6 @@
      }
     },
     {
-     "mixin": "generated261.SolidBucketItemGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getPlaceSound)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/item/SolidBucketItem": "generated261.SolidBucketItemGenerated"
-     },
-     "protected": [
-      "getPlaceSound"
-     ]
-    },
-    {
-     "mixin": "generated261.SpawnEggItemGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:createDispenseBehavior)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/item/SpawnEggItem": "generated261.SpawnEggItemGenerated"
-     },
-     "protected": [
-      "createDispenseBehavior"
-     ]
-    },
-    {
      "mixin": "generated261.SpyglassItemGeneratedMixin",
      "generated": true,
      "client": false,
@@ -15458,7 +14096,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getRecipes|isInput)\\s*\\("
+       "\\b(?:isInput)\\s*\\("
       ]
      ],
      "injects": {
@@ -15557,19 +14195,6 @@
      }
     },
     {
-     "mixin": "generated261.BlockGetterGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getAuxLightManager|getModelData)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/BlockGetter": "generated261.BlockGetterGenerated"
-     }
-    },
-    {
      "mixin": "generated261.DataPackConfigGeneratedMixin",
      "generated": true,
      "client": false,
@@ -15588,7 +14213,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:addFreshBlockEntities|getDescription|getDescriptionKey|getMaxEntityRadius|getModelDataManager|increaseMaxEntityRadius|markAndNotifyBlock)\\s*\\("
+       "\\b(?:addFreshBlockEntities|getDescription|getDescriptionKey|getMaxEntityRadius|increaseMaxEntityRadius|markAndNotifyBlock)\\s*\\("
       ]
      ],
      "injects": {
@@ -15640,7 +14265,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getModifiedSpecialEffects|modifiableBiomeInfo)\\s*\\("
+       "\\b(?:getModifiedSpecialEffects)\\s*\\("
       ]
      ],
      "injects": {
@@ -15661,6 +14286,19 @@
      }
     },
     {
+     "mixin": "generated261.AbstractCauldronBlockGeneratedMixin",
+     "generated": true,
+     "client": false,
+     "uses": [
+      [
+       "\\b(?:onPlace)\\s*\\("
+      ]
+     ],
+     "injects": {
+      "net/minecraft/world/level/block/AbstractCauldronBlock": "generated261.AbstractCauldronBlockGenerated"
+     }
+    },
+    {
      "mixin": "generated261.BaseRailBlockGeneratedMixin",
      "generated": true,
      "client": false,
@@ -15674,25 +14312,12 @@
      }
     },
     {
-     "mixin": "generated261.BedBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRelocability)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/BedBlock": "generated261.BedBlockGenerated"
-     }
-    },
-    {
      "mixin": "generated261.BlockGeneratedMixin",
      "generated": true,
      "client": false,
      "uses": [
       [
-       "\\b(?:IBlockExtension|addLandingEffects|addRunningEffects|canBeHydrated|canConnectRedstone|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getBubbleColumnDirection|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getMapColor|getPistonPushReaction|getRelocability|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBed|isBurning|isConduitFrame|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|makesOpenTrapdoorAboveClimbable|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
+       "\\b(?:addLandingEffects|addRunningEffects|canBeHydrated|canConnectRedstone|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getMapColor|getPistonPushReaction|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBed|isBurning|isConduitFrame|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|makesOpenTrapdoorAboveClimbable|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
       ]
      ],
      "injects": {
@@ -15723,48 +14348,6 @@
      ],
      "injects": {
       "net/minecraft/world/level/block/ComparatorBlock": "generated261.ComparatorBlockGenerated"
-     }
-    },
-    {
-     "mixin": "generated261.DetectorRailBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:registerDefaultState)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/DetectorRailBlock": "generated261.DetectorRailBlockGenerated"
-     },
-     "protected": [
-      "registerDefaultState"
-     ]
-    },
-    {
-     "mixin": "generated261.DoorBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRelocability)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/DoorBlock": "generated261.DoorBlockGenerated"
-     }
-    },
-    {
-     "mixin": "generated261.DoublePlantBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRelocability)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/DoublePlantBlock": "generated261.DoublePlantBlockGenerated"
      }
     },
     {
@@ -15825,15 +14408,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:isActivatorRail|registerDefaultState)\\s*\\("
+       "\\b(?:isActivatorRail)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/level/block/PoweredRailBlock": "generated261.PoweredRailBlockGenerated"
-     },
-     "protected": [
-      "registerDefaultState"
-     ]
+     }
     },
     {
      "mixin": "generated261.RedStoneOreBlockGeneratedMixin",
@@ -15958,7 +14538,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|getModelData|getPersistentData|hasCustomOutlineRendering|invalidateCapabilities|onChunkUnloaded|requestModelDataUpdate|syncData)\\s*\\("
+       "\\b(?:applyStructureRotation|getAndClearAttachmentTypesToSync|getPersistentData|hasCustomOutlineRendering|invalidateCapabilities|onChunkUnloaded|requestModelDataUpdate|syncData)\\s*\\("
       ]
      ],
      "injects": {
@@ -16049,44 +14629,12 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getRelocability|rotate)\\s*\\("
+       "\\b(?:rotate)\\s*\\("
       ]
      ],
      "injects": {
       "net/minecraft/world/level/block/piston/PistonBaseBlock": "generated261.PistonBaseBlockGenerated"
-     },
-     "protected": [
-      "rotate"
-     ]
-    },
-    {
-     "mixin": "generated261.PistonHeadBlockGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:getRelocability)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/piston/PistonHeadBlock": "generated261.PistonHeadBlockGenerated"
      }
-    },
-    {
-     "mixin": "generated261.BlockBehaviourGeneratedMixin",
-     "generated": true,
-     "client": false,
-     "uses": [
-      [
-       "\\b(?:isAir)\\s*\\("
-      ]
-     ],
-     "injects": {
-      "net/minecraft/world/level/block/state/BlockBehaviour": "generated261.BlockBehaviourGenerated"
-     },
-     "protected": [
-      "isAir"
-     ]
     },
     {
      "mixin": "generated261.BlockStateGeneratedMixin",
@@ -16094,7 +14642,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:IBlockStateExtension|addLandingEffects|addRunningEffects|canBeHydrated|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canRedstoneConnectTo|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getBubbleColumnDirection|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getRelocability|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|if|ignitedByLava|isBed|isBurning|isConduitFrame|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
+       "\\b(?:addLandingEffects|addRunningEffects|canBeHydrated|canDropFromExplosion|canEntityDestroy|canHarvestBlock|canRedstoneConnectTo|canStickTo|canSustainPlant|collisionExtendsVertically|getAdjacentBlockPathType|getBeaconColorMultiplier|getBedDirection|getBlockPathType|getCloneItemStack|getEnchantPowerBonus|getExpDrop|getExplosionResistance|getFireSpreadSpeed|getFlammability|getFriction|getLightEmission|getSoundType|getStateAtViewpoint|getToolModifiedState|getWeakChanges|hasDynamicLightEmission|hidesNeighborFace|ignitedByLava|isBed|isBurning|isConduitFrame|isEmpty|isFertile|isFireSource|isFlammable|isLadder|isPortalFrame|isScaffolding|isSlimeBlock|isStickyBlock|onBlockExploded|onBlockStateChange|onCaughtFire|onDestroyedByPlayer|onDestroyedByPushReaction|onNeighborChange|onTreeGrow|playFallSound|playStepSound|rotate|setBedOccupied|shouldCheckWeakPower|shouldDisplayFluidOverlay|shouldHideAdjacentFluidFace|supportsExternalFaceHiding)\\s*\\("
       ]
      ],
      "injects": {
@@ -16146,7 +14694,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getAuxLightManager|syncData)\\s*\\("
+       "\\b(?:syncData)\\s*\\("
       ]
      ],
      "injects": {
@@ -16198,7 +14746,7 @@
      "client": false,
      "uses": [
       [
-       "\\b(?:getModifiedStructureSettings|modifiableStructureInfo)\\s*\\("
+       "\\b(?:getModifiedStructureSettings)\\s*\\("
       ]
      ],
      "injects": {
@@ -16229,10 +14777,7 @@
      ],
      "injects": {
       "net/minecraft/world/level/material/FlowingFluid": "generated261.FlowingFluidGenerated"
-     },
-     "protected": [
-      "canConvertToSource"
-     ]
+     }
     },
     {
      "mixin": "generated261.FluidGeneratedMixin",
@@ -16245,10 +14790,7 @@
      ],
      "injects": {
       "net/minecraft/world/level/material/Fluid": "generated261.FluidGenerated"
-     },
-     "protected": [
-      "getExplosionResistance"
-     ]
+     }
     },
     {
      "mixin": "generated261.FluidStateGeneratedMixin",

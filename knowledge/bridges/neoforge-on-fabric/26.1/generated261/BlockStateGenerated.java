@@ -14,6 +14,10 @@ public interface BlockStateGenerated {
         throw new UnsupportedOperationException("NeoForge's BlockState.hasDynamicLightEmission has no Fabric counterpart in the bridge yet");
     }
 
+    default int getLightEmission(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1) {
+        throw new UnsupportedOperationException("NeoForge's BlockState.getLightEmission has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean ignitedByLava(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1, net.minecraft.core.Direction arg2) {
         throw new UnsupportedOperationException("NeoForge's BlockState.ignitedByLava has no Fabric counterpart in the bridge yet");
     }
@@ -46,6 +50,10 @@ public interface BlockStateGenerated {
 
     default float getExplosionResistance(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.Explosion arg2) {
         throw new UnsupportedOperationException("NeoForge's BlockState.getExplosionResistance has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.core.BlockPos arg0, net.minecraft.world.level.LevelReader arg1, boolean arg2, net.minecraft.world.entity.player.Player arg3) {
+        throw new UnsupportedOperationException("NeoForge's BlockState.getCloneItemStack has no Fabric counterpart in the bridge yet");
     }
 
     default boolean addLandingEffects(net.minecraft.server.level.ServerLevel arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.block.state.BlockState arg2, net.minecraft.world.entity.LivingEntity arg3, int arg4) {
@@ -88,6 +96,10 @@ public interface BlockStateGenerated {
 
     default net.minecraft.world.level.block.state.BlockState rotate(net.minecraft.world.level.LevelAccessor arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.block.Rotation arg2) {
         throw new UnsupportedOperationException("NeoForge's BlockState.rotate has no Fabric counterpart in the bridge yet");
+    }
+
+    default float getEnchantPowerBonus(net.minecraft.world.level.LevelReader arg0, net.minecraft.core.BlockPos arg1) {
+        throw new UnsupportedOperationException("NeoForge's BlockState.getEnchantPowerBonus has no Fabric counterpart in the bridge yet");
     }
 
     default void onNeighborChange(net.minecraft.world.level.LevelReader arg0, net.minecraft.core.BlockPos arg1, net.minecraft.core.BlockPos arg2) {
@@ -143,6 +155,10 @@ public interface BlockStateGenerated {
 
     default boolean isFireSource(net.minecraft.world.level.LevelReader arg0, net.minecraft.core.BlockPos arg1, net.minecraft.core.Direction arg2) {
         throw new UnsupportedOperationException("NeoForge's BlockState.isFireSource has no Fabric counterpart in the bridge yet");
+    }
+
+    default boolean canEntityDestroy(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.entity.Entity arg2) {
+        throw new UnsupportedOperationException("NeoForge's BlockState.canEntityDestroy has no Fabric counterpart in the bridge yet");
     }
 
     default boolean isBurning(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1) {
@@ -203,15 +219,7 @@ public interface BlockStateGenerated {
         throw new UnsupportedOperationException("NeoForge's BlockState.isEmpty has no Fabric counterpart in the bridge yet");
     }
 
-    default ${package}.neoforge.common.enums.BubbleColumnDirection getBubbleColumnDirection() {
-        throw new UnsupportedOperationException("NeoForge's BlockState.getBubbleColumnDirection has no Fabric counterpart in the bridge yet");
-    }
-
     default boolean shouldHideAdjacentFluidFace(net.minecraft.core.Direction arg0, net.minecraft.world.level.material.FluidState arg1) {
         throw new UnsupportedOperationException("NeoForge's BlockState.shouldHideAdjacentFluidFace has no Fabric counterpart in the bridge yet");
-    }
-
-    default ${package}.neoforge.common.util.BlockRelocability getRelocability(net.minecraft.world.level.LevelReader arg0, net.minecraft.core.BlockPos arg1) {
-        throw new UnsupportedOperationException("NeoForge's BlockState.getRelocability has no Fabric counterpart in the bridge yet");
     }
 }

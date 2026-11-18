@@ -6,18 +6,6 @@ package ${package}.generated1211;
  */
 public interface BlockRenderDispatcherGenerated {
 
-    default void renderBreakingTexture(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.BlockAndTintGetter arg2, com.mojang.blaze3d.vertex.PoseStack arg3, com.mojang.blaze3d.vertex.VertexConsumer arg4, ${package}.neoforge.client.model.data.ModelData arg5) {
-        ((net.minecraft.client.renderer.block.BlockRenderDispatcher) (Object) this).renderBreakingTexture(arg0, arg1, arg2, arg3, arg4);
-    }
-
-    default void renderBatched(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.BlockAndTintGetter arg2, com.mojang.blaze3d.vertex.PoseStack arg3, com.mojang.blaze3d.vertex.VertexConsumer arg4, boolean arg5, net.minecraft.util.RandomSource arg6, ${package}.neoforge.client.model.data.ModelData arg7, net.minecraft.client.renderer.RenderType arg8) {
-        ((net.minecraft.client.renderer.block.BlockRenderDispatcher) (Object) this).renderBatched(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-
-    default void renderSingleBlock(net.minecraft.world.level.block.state.BlockState arg0, com.mojang.blaze3d.vertex.PoseStack arg1, net.minecraft.client.renderer.MultiBufferSource arg2, int arg3, int arg4, ${package}.neoforge.client.model.data.ModelData arg5, net.minecraft.client.renderer.RenderType arg6) {
-        ((net.minecraft.client.renderer.block.BlockRenderDispatcher) (Object) this).renderSingleBlock(arg0, arg1, arg2, arg3, arg4);
-    }
-
     default net.minecraft.client.renderer.block.LiquidBlockRenderer getLiquidBlockRenderer() {
         throw new UnsupportedOperationException("NeoForge's BlockRenderDispatcher.getLiquidBlockRenderer has no Fabric counterpart in the bridge yet");
     }

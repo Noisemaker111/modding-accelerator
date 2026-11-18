@@ -9,8 +9,4 @@ public interface PotionBrewingGenerated {
     default boolean isInput(net.minecraft.world.item.ItemStack arg0) {
         throw new UnsupportedOperationException("NeoForge's PotionBrewing.isInput has no Fabric counterpart in the bridge yet");
     }
-
-    default java.util.List<${package}.neoforge.common.brewing.IBrewingRecipe> getRecipes() {
-        throw new UnsupportedOperationException("NeoForge's PotionBrewing.getRecipes has no Fabric counterpart in the bridge yet");
-    }
 }
