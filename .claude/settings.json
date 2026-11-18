@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python bench/session_state.py",
+            "command": "python \"$CLAUDE_PROJECT_DIR/bench/session_state.py\"",
             "timeout": 20
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python bench/push_guard.py",
+            "command": "python \"$CLAUDE_PROJECT_DIR/bench/push_guard.py\"",
             "timeout": 60,
             "statusMessage": "Checking what CI would fail on"
           }
