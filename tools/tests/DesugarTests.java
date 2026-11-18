@@ -102,7 +102,7 @@ public final class DesugarTests {
         );
         String pkg = lower(
             "Pkg.java",
-            "record Pkg(String id) {\\n    void run() {\\n    }\\n}\\n"
+            "record Pkg(String id) {\n    void run() {\n    }\n}\n"
         );
         check(
             pkg.contains("final class Pkg{private final String id;") &&
@@ -146,7 +146,7 @@ public final class DesugarTests {
         );
         String bare = lower(
             "Bare.java",
-            "class Bare {\\n    Object f(Object ctx) {\\n        if (ctx instanceof String p) return p;\\n        return null;\\n    }\\n}\\n"
+            "class Bare {\n    Object f(Object ctx) {\n        if (ctx instanceof String p) return p;\n        return null;\n    }\n}\n"
         );
         check(
             bare.contains("if (ctx instanceof String) return ((String)ctx);"),
@@ -154,7 +154,7 @@ public final class DesugarTests {
         );
         String orHeaded = lower(
             "OrHead.java",
-            "class OrHead {\\n    boolean f(Object other) {\\n        return this == other || other instanceof String s && s.isEmpty();\\n    }\\n}\\n"
+            "class OrHead {\n    boolean f(Object other) {\n        return this == other || other instanceof String s && s.isEmpty();\n    }\n}\n"
         );
         check(
             orHeaded.contains("other instanceof String && ((String)other).isEmpty();"),
@@ -166,7 +166,7 @@ public final class DesugarTests {
         );
         String field = lower(
             "Field.java",
-            "class Field {\\n    int target;\\n    int f(Object o) {\\n        if (o instanceof String target) {\\n            return this.target;\\n        }\\n        return -1;\\n    }\\n}\\n"
+            "class Field {\n    int target;\n    int f(Object o) {\n        if (o instanceof String target) {\n            return this.target;\n        }\n        return -1;\n    }\n}\n"
         );
         check(
             field.contains("if (o instanceof String) {") && field.contains("return this.target;"),
@@ -262,10 +262,80 @@ public final class DesugarTests {
         );
     }
 
+    static void unattributedChecks() throws Exception {
+        String unresolvable = lower(
+            "Unresolvable.java",
+            "class Unresolvable {\n    UnknownHolder holder;\n    String f() {\n        switch (holder.get()) {\n            case String s:\n                return s;\n            default:\n                return \"none\";\n        }\n    }\n}\n"
+        );
+        check(
+            unresolvable.contains("java.lang.Object _desugarsel") && unresolvable.contains("instanceof String"),
+            "a pattern switch over an unresolvable selector hoists it as an object"
+        );
+        check(
+            lower("Unresolvable.java", unresolvable).equals(unresolvable),
+            "a lowered object-hoisted switch is stable"
+        );
+        String returned = lower(
+            "Unresolved.java",
+            "class Unresolved {\n    String f(int n) {\n        return switch (n) {\n            case 0 -> Unknown.VALUE;\n            default -> \"d\";\n        };\n    }\n}\n"
+        );
+        check(
+            returned.contains("String _desugarsw") && returned.contains("Unknown.VALUE"),
+            "a returned switch with unresolvable values keeps the method return type"
+        );
+        check(
+            lower("Unresolved.java", returned).equals(returned),
+            "a lowered method-typed switch is stable"
+        );
+    }
+
+    static void guardClauseChecks() throws Exception {
+        String returned = lower(
+            "Guarded.java",
+            "class Guarded {\n    boolean f(Object o, Object user) {\n        return o != user && o instanceof String s && s.isEmpty();\n    }\n}\n"
+        );
+        check(
+            returned.contains("return o != user && o instanceof String && ((String)o).isEmpty();"),
+            "an instanceof chain in a return lowers its guarded uses"
+        );
+        check(
+            lower("Guarded.java", returned).equals(returned),
+            "a lowered return guard is stable"
+        );
+        String abort = lower(
+            "Abort.java",
+            "class Abort {\n    void f(Object x) {\n        if (!(x instanceof String s)) {\n            return;\n        }\n        s.trim();\n    }\n}\n"
+        );
+        check(
+            abort.contains("!(x instanceof String)") && abort.contains("((String)x).trim();"),
+            "an aborting negated guard lowers the code after the if"
+        );
+        check(
+            lower("Abort.java", abort).equals(abort),
+            "a lowered abort guard is stable"
+        );
+        String disjoined = lower(
+            "Disjoined.java",
+            "class Disjoined {\n    String f(Object x, boolean bound) {\n        if (!bound || !(x instanceof String s)) {\n            return \"d\";\n        }\n        return s.trim();\n    }\n}\n"
+        );
+        check(
+            disjoined.contains("!bound || !(x instanceof String)") && disjoined.contains("return ((String)x).trim();"),
+            "a disjoined abort guard lowers the code after the if"
+        );
+        String logged = lower(
+            "Logged.java",
+            "class Logged {\n    void log(Object x) {\n    }\n    void f(Object x) {\n        if (!(x instanceof String s)) {\n            log(x);\n            return;\n        }\n        s.trim();\n    }\n}\n"
+        );
+        check(
+            logged.contains("((String)x).trim();"),
+            "a multi-statement abort guard lowers the code after the if"
+        );
+    }
+
     static void ifaceChecks() throws Exception {
         String ifaces = lower(
             "Ifaces.java",
-            "interface Ifaces {\\n    void use();\\n    private static void helper() {\\n    }\\n    private void more() {\\n    }\\n    void plain();\\n}\\n"
+            "interface Ifaces {\n    void use();\n    private static void helper() {\n    }\n    private void more() {\n    }\n    void plain();\n}\n"
         );
         check(
             ifaces.contains("static void helper() {") && !ifaces.contains("private static void helper()") &&
@@ -277,7 +347,7 @@ public final class DesugarTests {
             lower("Ifaces.java", ifaces).equals(ifaces),
             "a lowered interface is stable"
         );
-        String klass = "class Klass {\\n    private void m() {\\n    }\\n}\\n";
+        String klass = "class Klass {\n    private void m() {\n    }\n}\n";
         check(
             lower("Klass.java", klass).equals(klass),
             "a private class method is already legacy-legal and stays"
@@ -290,6 +360,8 @@ public final class DesugarTests {
         recordChecks();
         patternChecks();
         switchChecks();
+        unattributedChecks();
+        guardClauseChecks();
         ifaceChecks();
         smallChecks();
         System.out.println(count + " desugar checks passed");

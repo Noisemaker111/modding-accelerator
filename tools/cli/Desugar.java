@@ -991,6 +991,9 @@ final class Desugar {
             if (up == null) {
                 return null;
             }
+            if (up.getLeaf().getKind() == Tree.Kind.LOGICAL_COMPLEMENT) {
+                return negatedScope(up, tree);
+            }
             if (up.getLeaf().getKind() == Tree.Kind.CONDITIONAL_AND) {
                 int from = end(tree);
                 Tree top = up.getLeaf();
@@ -1024,6 +1027,84 @@ final class Desugar {
             return scope;
         }
 
+        /**
+         * Scope for a guard clause: if (!(shape with bindings)) { abort; } establishes the bindings in
+         * the code after the if, because reaching past it proves the condition was false. The walk tracks
+         * whether the if condition must be false for the bindings to hold: && keeps a true requirement,
+         * || keeps a false one, and ! flips it, so !(A && E) and !A || !(E) both qualify while !(A || E)
+         * bails. The then-branch must abort and have no else, and the scope is the rest of the enclosing
+         * block or if-branch.
+         */
+        private Scope negatedScope(TreePath bang, InstanceOfTree tree) {
+            boolean needTrue = false;
+            TreePath current = bang.getParentPath();
+            while (current != null && current.getLeaf().getKind() == Tree.Kind.PARENTHESIZED) {
+                current = current.getParentPath();
+            }
+            Tree andTop = null;
+            int from = end(tree);
+            while (current != null) {
+                Tree.Kind kind = current.getLeaf().getKind();
+                if (kind == Tree.Kind.CONDITIONAL_AND) {
+                    if (!needTrue) {
+                        return null;
+                    }
+                    andTop = current.getLeaf();
+                    current = current.getParentPath();
+                } else if (kind == Tree.Kind.CONDITIONAL_OR) {
+                    if (needTrue) {
+                        return null;
+                    }
+                    current = current.getParentPath();
+                } else if (kind == Tree.Kind.LOGICAL_COMPLEMENT) {
+                    needTrue = !needTrue;
+                    current = current.getParentPath();
+                } else {
+                    break;
+                }
+                while (current != null && current.getLeaf().getKind() == Tree.Kind.PARENTHESIZED) {
+                    current = current.getParentPath();
+                }
+            }
+            if (current == null || current.getLeaf().getKind() != Tree.Kind.IF || needTrue) {
+                return null;
+            }
+            IfTree statement = (IfTree) current.getLeaf();
+            if (statement.getElseStatement() != null || !aborts(statement.getThenStatement())) {
+                return null;
+            }
+            TreePath holder = current.getParentPath();
+            if (holder == null) {
+                return null;
+            }
+            Tree parent = holder.getLeaf();
+            if (parent.getKind() != Tree.Kind.BLOCK && parent.getKind() != Tree.Kind.IF) {
+                return null;
+            }
+            Scope scope = new Scope(new ArrayList<>());
+            if (andTop != null) {
+                scope.spans.add(new int[] {from, end(andTop)});
+            }
+            scope.spans.add(new int[] {end(statement), end(parent)});
+            return scope;
+        }
+
+        /** True when the statement never falls through to what follows it. */
+        private boolean aborts(StatementTree statement) {
+            if (statement == null) {
+                return false;
+            }
+            if (statement.getKind() == Tree.Kind.BLOCK) {
+                List<? extends StatementTree> body = ((BlockTree) statement).getStatements();
+                if (body.isEmpty()) {
+                    return false;
+                }
+                return aborts(body.get(body.size() - 1));
+            }
+            Tree.Kind kind = statement.getKind();
+            return kind == Tree.Kind.RETURN || kind == Tree.Kind.THROW || kind == Tree.Kind.BREAK || kind == Tree.Kind.CONTINUE;
+        }
+
         private boolean contains(Tree root, Tree target) {
             if (root == target) {
                 return true;
@@ -1043,7 +1124,8 @@ final class Desugar {
 
         /**
          * The body or branch a guard shape continues into: the then of an if, the body of a while, the details
-         * of an assert, or the arms of a ternary.
+         * of an assert, the arms of a ternary, or the rest of the current expression when the guard sits
+         * directly in a return or expression statement with no branch to continue into.
          */
         private Scope continuationScope(TreePath holder, Tree leaf, Tree condition) {
             if (leaf.getKind() == Tree.Kind.IF) {
@@ -1076,6 +1158,9 @@ final class Desugar {
                     return null;
                 }
                 return new Scope(List.of(spanOf(expression.getTrueExpression()), spanOf(expression.getFalseExpression())));
+            }
+            if (leaf.getKind() == Tree.Kind.RETURN || leaf.getKind() == Tree.Kind.EXPRESSION_STATEMENT) {
+                return new Scope(new ArrayList<>());
             }
             return null;
         }
@@ -1310,11 +1395,11 @@ final class Desugar {
             try {
                 TypeMirror mirror = trees.getTypeMirror(new TreePath(getCurrentPath(), tree.getExpression()));
                 if (mirror == null || mirror.getKind() == TypeKind.ERROR || mirror.getKind() == TypeKind.NULL) {
-                    return null;
+                    return "java.lang.Object";
                 }
                 return mirror.toString();
             } catch (Exception ignored) {
-                return null;
+                return "java.lang.Object";
             }
         }
 
@@ -1372,10 +1457,13 @@ final class Desugar {
                 }
             }
             String switchType = expressionType(tree);
+            TreePath path = getCurrentPath();
+            if (switchType == null) {
+                switchType = enclosingReturnType(path);
+            }
             if (switchType == null) {
                 return;
             }
-            TreePath path = getCurrentPath();
             Tree parent = path.getParentPath() == null ? null : path.getParentPath().getLeaf();
             if (parent instanceof VariableTree && ((VariableTree) parent).getInitializer() == tree) {
                 directInitEdit(tree, (VariableTree) parent, switchType, binds);
@@ -1398,6 +1486,31 @@ final class Desugar {
             } catch (Exception ignored) {
                 return null;
             }
+        }
+
+        /** The declared method return type when the switch expression is the whole return value, so the
+         * scratch variable keeps the method's type without attribution. Lambdas stop the climb: their
+         * target type is not recoverable from source text. */
+        private String enclosingReturnType(TreePath path) {
+            TreePath up = path.getParentPath();
+            if (up == null || up.getLeaf().getKind() != Tree.Kind.RETURN) {
+                return null;
+            }
+            up = up.getParentPath();
+            while (up != null && !(up.getLeaf() instanceof MethodTree)) {
+                if (up.getLeaf().getKind() == Tree.Kind.LAMBDA_EXPRESSION) {
+                    return null;
+                }
+                up = up.getParentPath();
+            }
+            if (up == null) {
+                return null;
+            }
+            String declared = text(((MethodTree) up.getLeaf()).getReturnType());
+            if (declared == null || declared.equals("void")) {
+                return null;
+            }
+            return declared;
         }
 
         /** int zeroCost = switch ... becomes a pre-initialized variable plus a statement switch. */
@@ -1568,11 +1681,11 @@ final class Desugar {
             try {
                 TypeMirror mirror = trees.getTypeMirror(new TreePath(getCurrentPath(), tree.getExpression()));
                 if (mirror == null || mirror.getKind() == TypeKind.ERROR || mirror.getKind() == TypeKind.NULL) {
-                    return null;
+                    return "java.lang.Object";
                 }
                 return mirror.toString();
             } catch (Exception ignored) {
-                return null;
+                return "java.lang.Object";
             }
         }
 
