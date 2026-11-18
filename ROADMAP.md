@@ -4,18 +4,18 @@
 > `python bench/bench_page.py --roadmap`. Edit those two files, not this one. The same roadmap with its timeline, charts and
 > porting map: **<https://noisemaker111.github.io/minecraft-modding-tools/>**
 
-**The goal:** Nobody should have to think about Minecraft versions or loaders: drop a mod in, pick the version and the loader you want, and get it back in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
+**The goal:** Nobody should have to think about Minecraft versions or loaders: drop a mod's .jar in, from the command line or the desktop app, pick the version and the loader you want, and get a .jar back in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**27 of 51 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**27 of 52 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
 | Goal | Steps done | Now |
 |---|---|---|
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
-| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;27 | 🔵 44 · The port worklist sees every mod and predicts the build<br>⚪ 47 · A rule names a game part and is applied only there |
+| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;27 | ⚪ 44 · The port worklist sees every mod and predicts the build<br>⚪ 47 · A rule names a game part and is applied only there |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
-| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `███░░░░░░░`&nbsp;3&nbsp;of&nbsp;9 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first |
+| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `███░░░░░░░`&nbsp;3&nbsp;of&nbsp;10 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first<br>⚪ 50 · A mod's .jar goes in and a .jar comes out |
 
 ## Goal 1 — Test a mod in seconds
 
@@ -173,7 +173,7 @@ One command moves a mod's source from any version to any other, forward or back,
 
 | # | Step | Status | When |
 |---|---|---|---|
-| 44 | The port worklist sees every mod and predicts the build | 🔵 doing | Nov 17 → Dec 1 |
+| 44 | The port worklist sees every mod and predicts the build | ⚪ next | Nov 17 → Dec 1 |
 | 47 | A rule names a game part and is applied only there | ⚪ next | Nov 24 → Dec 8 |
 | 45 | Generate the target build from the loader's starter project | ⚫ later | Nov 24 → Dec 8 |
 | 46 | One migration per redesigned game part, ranked by mods freed | ⚫ later | Nov 24 → Dec 22 |
@@ -226,7 +226,7 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **28 · Port a Paper plugin between versions** (later). Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far).
 
-**44 · The port worklist sees every mod and predicts the build** (doing). mmt port-plan compiles a mod on its own version and lists every place it touches game code, with the exact game method or field, joined with what the target version did to it. It has to be true before it chooses any work: it reads NeoForge mods (a median of 109 changed game parts per port) but almost nothing in Fabric mods (a median of 5; betterf3 has 5,289 lines and 28 places), and 32 of the 126 corpus ports have no plan at all. *So far:* Half done in PR #97: the plan exists and covers 94 ports of 44 mods, 101,819 places, almost all of them in the 47 NeoForge ports. 3,208 changes in 887 game classes are handled by nothing. Checked against the cloud sweep on 2026-11-18, it does not predict builds yet (see the finish line).
+**44 · The port worklist sees every mod and predicts the build** (next). mmt port-plan compiles a mod on its own version and lists every place it touches game code, with the exact game method or field, joined with what the target version did to it. It has to be true before it chooses any work: it reads NeoForge mods (a median of 109 changed game parts per port) but almost nothing in Fabric mods (a median of 5; betterf3 has 5,289 lines and 28 places), and 32 of the 126 corpus ports have no plan at all. *So far:* Half done in PR #97: the plan exists and covers 94 ports of 44 mods, 101,819 places, almost all of them in the 47 NeoForge ports. 3,208 changes in 887 game classes are handled by nothing. Checked against the cloud sweep on 2026-11-18, it does not predict builds yet (see the finish line).
 
 **47 · A rule names a game part and is applied only there** (next). A port rule is a pattern on the compiler's error text plus a find-and-replace on the file (355 of 358 rules), so it cannot tell LocalPlayer.sendSystemMessage, removed in 1.21.2, from ServerPlayer.sendSystemMessage, which stayed: both read .sendSystemMessage( in the text. The worklist already holds each place's start, end and resolved game member. A rule's members are applied at exactly those places, in one pass before the first compile, and a rule's test compiles its before on the old game and its after on the new one, in seconds. That makes one changed game part a unit of work that can be checked without porting a mod.
 
@@ -325,7 +325,8 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 | # | Step | Status | When |
 |---|---|---|---|
-| 49 | Drop a mod in, pick a version and a loader, get it back | ⚫ later | Dec 8 → Jan 15, 2027 |
+| 50 | A mod's .jar goes in and a .jar comes out | ⚪ next | Nov 19 → Dec 5 |
+| 49 | Drop a mod's .jar in, pick a version and a loader, get a .jar back | ⚫ later | Dec 8 → Jan 15, 2027 |
 
 ### Loader pairs
 
@@ -357,7 +358,9 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 **48 · What the most-downloaded mods need from the bridge, most-used first** (next). python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and lists every NeoForge class and member they use that the bridge lacks, in the order that clears the most mods soonest. 442 hold 82 mods back, and the list has a short head: the next 20 take the count from 68 to 94. Each one is added from NeoForge's own published files (.claude/skills/convert-a-mod), checked without a mod by python bench/bridge_check.py in about a minute and a half, and counted again by the same command. The list predicts the compiler on the corpus: all 15 mods it shows with nothing missing compiled after converting.
 
-**49 · Drop a mod in, pick a version and a loader, get it back** (later). Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod goes in, the person picks the Minecraft version and the loader they want, and the mod comes back on that version and loader, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.
+**50 · A mod's .jar goes in and a .jar comes out** (next). port and convert change a mod's source folder, which only its author has. A compiled mod is read today for two things only: to count what it uses of the game and of a loader (python bench/exposure.py, python bench/convert_coverage.py real) and to run it in a modpack on a real server (mmt pack-check). The mod has to go in and come out as a .jar. This step comes before the others because it decides their shape: the work is either done on the compiled classes themselves, or on source recovered from the .jar and built again, and the first job is to try both on mods the scoreboards already clear and keep the one whose results load in the game. If the compiled classes are changed directly, steps 44 and 47 are rewritten: the worklist is the .jar scoreboard, which has no source to be blind to, and a fix is applied where a class names the game part.
+
+**49 · Drop a mod's .jar in, pick a version and a loader, get a .jar back** (later). Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod's .jar goes in, the person picks the Minecraft version and the loader they want, and a .jar for that version and loader comes back, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on step 50 (a .jar in and out) and on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.
 
 **19 · Forge → NeoForge and Fabric → Quilt** (later). Forge → NeoForge and Fabric → Quilt, which are close pairs.
 
@@ -386,7 +389,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 51 steps by Mar 26, 2027 | 48% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 52 steps by Mar 26, 2027 | 47% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
@@ -394,7 +397,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 ## Decisions
 
-<details><summary>18 decisions, oldest first</summary>
+<details><summary>19 decisions, oldest first</summary>
 
 | Date | Question | Choice |
 |---|---|---|
@@ -416,5 +419,6 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 | 2026-11-17 | How does the porter scale to any mod and any version? | Not by rules read from compiler error text (355 of 358 rules matched on it, 320 hand-written per version step and naming scheme; a day of them moved the corpus from 10 to 15 building ports of 125). Jon asked for a step-back on 2026-11-17; a blind second opinion and OpenRewrite's and Error Prone's own files agree: resolve the game member behind every site of the mod on its own version and apply every known change in one typed pass; generate the target build from the loader's own starter project instead of patching each build script; write each redesign once per changed game part, ranked by mods freed. PR #97 holds the numbers |
 | 2026-11-18 | What chooses the next piece of porting or converting work? | A list of what real mods use, and only after it has been checked against real builds (Jon asked on 2026-11-18 why progress was small and nothing was laid out). Three methods that day were each chosen from a list nobody had checked, and each missed: building ports from the loader's starter project freed 0 of 126 and lost 2 (PR #109); the port worklist cleared 21 ports of which 7 built, because it reads almost nothing in Fabric mods; three convert methods aimed at the 14 corpus mods that do not compile freed none of their three targets. The number to steer by is how many of the 150 most-downloaded mods have nothing left, read from their jars in a minute or two with no build (python bench/exposure.py run for porting, python bench/convert_coverage.py real for converting). The unit of work is one changed game part or one loader symbol, and the corpus sweep in the cloud is the proof at the end of a PR, never what chooses the work |
 | 2026-11-18 | Where is all of this going? | One place where someone drops a mod in, picks the version and the loader they want, and gets it back very quickly, so nobody has to worry about versions or loaders (Jon, 2026-11-18). It has to be designed for any mod anyone can make, so nothing is made by hand for one mod, because that does not scale: the porter learns a changed part of the game once and the converter a piece of a loader's API once, and every mod that uses it is covered. Porting and converting stay separate records and claims (2026-10-24), and step 49 joins them behind one front door |
+| 2026-11-18 | What does someone hand over: the mod's source, or its .jar? | The .jar, through the command line and the desktop app (Jon, 2026-11-18). Until now port and convert took a source folder only, so only a mod's author could use them. Step 50 is the first step for that reason, and it decides whether the source-based steps 44 and 47 stay as written |
 
 </details>
