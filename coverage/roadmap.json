@@ -460,7 +460,7 @@
      "target": "2027-01-22"
     },
     {
-     "id": "41",
+     "id": "44",
      "title": "Resolve what a mod uses, then port in one typed pass",
      "part": "Port by changed game part",
      "status": "doing",
@@ -470,7 +470,7 @@
      "result": "Half done in PR #97: mmt port-plan records every place a mod touches game code on its own version (the compiler resolves each one) and joins it with the game's change map; over the corpus (44 mods, 94 ports) that is 101,819 places, 35% handled by the porter's automatic steps, 15% by a rule, 49% by nothing yet. The one-pass rewrite from that list is not built."
     },
     {
-     "id": "42",
+     "id": "45",
      "title": "Generate the target build from the loader's starter project",
      "part": "Port by changed game part",
      "status": "next",
@@ -479,7 +479,7 @@
      "target": "2026-12-08"
     },
     {
-     "id": "43",
+     "id": "46",
      "title": "One migration per redesigned game part, ranked by mods freed",
      "part": "Port by changed game part",
      "status": "next",
