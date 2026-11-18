@@ -17,6 +17,12 @@ Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
 
 ## Rules
 
+- **Build the black box, not the next fix.** The goal is any mod in, any version out, with no hand edits, so a
+  change counts by how many mods it frees, not by the one in front of you. Before a fix, ask what produces that whole
+  class of failure and fix it there, from the game's and loaders' own files, once for every mod and version. A rule
+  keyed to one mod or one compiler message is the last resort. A day of those moved the corpus from 10 to 15 of 125
+  ports (2026-11-17). Steer by `port.corpus-builds` in `coverage/measures.json` and the roadmap's latest decision;
+  each session starts with both (`bench/session_state.py`).
 - **Before contributing or asking, read `CONTRIBUTING.md`,** then check the code, issues and PRs.
   Unwritten choices are yours; third-party files (game jars, mappings, mods) are downloaded at run time, not added to the repo.
 - **One feature = one branch = one PR.** Commit after each passing step; push to the same PR. Use

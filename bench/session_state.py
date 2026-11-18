@@ -45,6 +45,9 @@ def main():
     if corpus and corpus.get("points"):
         p = corpus["points"][-1]
         out.append(f"Porting, whole corpus: {p.get('value')} of {p.get('n', '?')} ports build ({p.get('date')}).")
+    out += ["", "Before each fix, the scale check (AGENTS.md, 'Build the black box'): how many mods and versions does this",
+            "class of failure cover; what produces it; would this fix finish the next 100 of them; if not, what would?",
+            "A third fix of the same kind means a generator is missing."]
     sys.stdout.write("\n".join(out).rstrip() + "\n")
 
 
