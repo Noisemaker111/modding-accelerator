@@ -202,7 +202,7 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 }
 """
 
-MAP_BODY = r"""<p class="lede">Pick the version your mod is on and the one you want. Long ports go through the popular versions, and each line's colour says what has really been tried. <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/tools/ChangeIndex.java">How it's measured</a></p>
+MAP_BODY = r"""<p class="lede">Pick the version your mod is on and the one you want. Long ports go through the popular versions, and each line's colour says what has really been tried. <a href="https://github.com/Noisemaker111/minecraft-modding-tools/blob/main/tools/ChangeIndex.java">How it's measured</a></p>
 
 <div class="card">
   <div class="pick">
