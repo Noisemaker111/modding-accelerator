@@ -1472,6 +1472,8 @@ final class Port {
         boolean compiled = false;
         int rounds = Integer.parseInt(options.get("rounds", "12"));
         List<String> removed = new ArrayList<>();
+        // What the starter build deleted (the old buildSrc) is a removal the receipt and undo know about.
+        for (String name : takenOver) if (!Files.exists(build.project.root.resolve(name))) removed.add(name);
         if (rounds < 1 || rounds > 20) throw new IllegalArgumentException("--rounds must be 1–20");
         try {
             if (!target.isEmpty()) {

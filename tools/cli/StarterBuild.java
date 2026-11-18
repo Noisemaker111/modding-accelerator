@@ -17,7 +17,6 @@ final class StarterBuild {
 
     private StarterBuild() {}
 
-    static final Set<String> LOADERS = Set.of("fabric", "neoforge", "forge", "quilt");
 
     /** The loader's starter for a version, cloned once into ~/.mmt/starters. */
     static Path starter(String loader, String version) throws Exception {
@@ -67,19 +66,28 @@ final class StarterBuild {
             for (String d : ProjectModel.strings(set.get("java"))) if (Files.isDirectory(Path.of(d))) (name.equals("main") ? java : clientJava).add(rel(root, d));
             for (String d : ProjectModel.strings(set.get("resources"))) if (Files.isDirectory(Path.of(d))) (name.equals("main") ? resources : clientResources).add(rel(root, d));
         }
-        // Only modules the old build includes: a folder beside them can be a separate build (Zombie Apocalypse Addon keeps a
-        // whole Forge 1.20.1 copy of the mod in forge1201/).
-        Set<String> included = included(root);
+        // Only modules the old build includes and the selected project depends on (common/): a folder beside them can be a
+        // separate build (Zombie Apocalypse Addon's forge1201/), another loader's, or a test mod (MidnightLib's test-fabric/).
+        Set<String> siblings = siblings(root, project);
         try (var dirs = Files.list(root)) {
             for (Path module : dirs.filter(Files::isDirectory).toList()) {
                 String name = module.getFileName().toString().toLowerCase(Locale.ROOT);
-                if (!included.contains(name)) continue;
-                if (module.equals(selected) || LOADERS.contains(name) || name.startsWith(".") || name.equals("buildsrc")) continue;
+                if (!siblings.contains(name) || module.equals(selected)) continue;
                 if (Files.isDirectory(module.resolve("src/main/java"))) java.add(rel(root, module.resolve("src/main/java").toString()));
                 if (Files.isDirectory(module.resolve("src/main/resources"))) resources.add(rel(root, module.resolve("src/main/resources").toString()));
             }
         }
         if (java.isEmpty()) throw new IOException("The mod's build names no Java source folder, so there is nothing to move into a starter build.");
+        // What a build task wrote (build/generated/...) comes back from the starter's own tasks, not as a source folder.
+        resources.removeIf(d -> d.startsWith("build/") || d.contains("/build/"));
+        for (Object p : Json.array(project.get("plugins"))) if (String.valueOf(p).toLowerCase(Locale.ROOT).contains("architectury")) throw new IOException(
+            "The mod builds with Architectury, whose plugin rewrites its code (@ExpectPlatform), which a starter build does not do.");
+        // The old build scripts: how they packaged resources (renames, expanded files and the values they expanded with).
+        StringBuilder oldScripts = new StringBuilder();
+        for (Path s : new LinkedHashSet<>(List.of(root.resolve("build.gradle"), root.resolve("build.gradle.kts"),
+                Path.of(Json.text(project, "buildFile", root.resolve("build.gradle").toString()))))) {
+            if (Files.isRegularFile(s)) oldScripts.append(Files.readString(s)).append('\n');
+        }
 
         // Properties: the starter's (its game, loader and plugin versions), then the mod's own that the starter does not set.
         Properties starterProps = ProjectModel.properties(starter.resolve("gradle.properties"));
@@ -108,6 +116,9 @@ final class StarterBuild {
             props.put("version", modVersion);
             props.put("group", group);
         }
+        // Values the old build expanded under another name ("mod_display_name": project.mod_name).
+        Matcher alias = Pattern.compile("[\"']?(\\w+)[\"']?\\s*[:=]\\s*(?:project\\.)?(\\w+)\\s*[,\\]\\n]").matcher(oldScripts);
+        while (alias.find()) if (!props.containsKey(alias.group(1)) && props.containsKey(alias.group(2))) props.put(alias.group(1), props.get(alias.group(2)));
         // Gradle's own switches the starter turns on that an unprepared mod can trip over: no configuration cache.
         props.put("org.gradle.configuration-cache", "false");
 
@@ -137,7 +148,7 @@ final class StarterBuild {
         extra.append("sourceSets {\n    main {\n");
         // Gradle reads its own default folders already; naming them again copies every resource twice.
         for (String d : java) if (!d.equals("src/main/java")) extra.append("        java.srcDir '").append(d).append("'\n");
-        for (String d : resources) if (!d.equals("src/main/resources")) extra.append("        resources.srcDir '").append(d).append("'\n");
+        for (String d : resources) if (!d.equals("src/main/resources") && !text.contains("'" + d + "'")) extra.append("        resources.srcDir '").append(d).append("'\n");
         extra.append("    }\n");
         if (hasClient && loader.equals("fabric")) {
             extra.append("    client {\n");
@@ -147,11 +158,38 @@ final class StarterBuild {
         }
         extra.append("}\n");
         // The mod's metadata file in its resources is filled from its properties, as its own build did.
-        String metadata = loader.equals("fabric") ? "fabric.mod.json" : "META-INF/neoforge.mods.toml";
-        if (!loader.equals("fabric")) extra.append("processResources {\n    def mmtProps = project.properties.findAll { k, v -> v instanceof String }\n    inputs.properties mmtProps\n")
-            .append("    filesMatching(['").append(metadata).append("', 'META-INF/mods.toml', 'pack.mcmeta']) { expand mmtProps }\n}\n");
+        // So are the other files the old build filled (modid.mixins.json), and its renames (modid.mixins.json to ${mod_id}.mixins.json).
+        Set<String> expanded = new LinkedHashSet<>(loader.equals("fabric") ? List.of() : List.of("META-INF/neoforge.mods.toml", "META-INF/mods.toml", "pack.mcmeta"));
+        Matcher matching = Pattern.compile("filesMatching\\s*\\(?\\s*(\\[[^\\]]*\\]|[\"'][^\"']+[\"'])").matcher(oldScripts);
+        while (matching.find()) {
+            Matcher quoted = Pattern.compile("[\"']([^\"'$]+)[\"']").matcher(matching.group(1));
+            while (quoted.find()) if (!(loader.equals("fabric") && quoted.group(1).equals("fabric.mod.json"))) expanded.add(quoted.group(1));
+        }
+        List<String> renames = new ArrayList<>();
+        Matcher rename = Pattern.compile("(?m)^\\s*rename\\s*\\(?\\s*(\"[^\"\\n]*\"|'[^'\\n]*')\\s*,\\s*(\"[^\"\\n]*\"|'[^'\\n]*')").matcher(oldScripts);
+        while (rename.find()) renames.add("    rename " + rename.group(1) + ", " + rename.group(2) + "\n");
+        if (!expanded.isEmpty() || !renames.isEmpty()) {
+            extra.append("processResources {\n");
+            if (!expanded.isEmpty()) {
+                extra.append("    def mmtProps = project.properties.findAll { k, v -> v instanceof String }\n    inputs.properties mmtProps\n    filesMatching([");
+                extra.append(String.join(", ", expanded.stream().map(f -> "'" + f + "'").toList())).append("]) { expand mmtProps }\n");
+            }
+            renames.forEach(extra::append);
+            extra.append("}\n");
+        }
         // The access widener (Fabric) or transformer (NeoForge) the mod declares.
-        String widener = accessWidener(root, resources);
+        String widener = accessWidener(root, resources, props);
+        if (widener == null && loader.equals("fabric")) {
+            // The metadata names the packaged file (${mod_id}.accesswidener) and the old build renamed its source file to it.
+            String named = accessWidenerName(root, resources, props);
+            Path script = Path.of(Json.text(project, "buildFile", root.resolve("build.gradle").toString()));
+            Matcher path = Pattern.compile("accessWidenerPath\\s*=\\s*(?:project\\.)?file\\(\\s*[\"']([^\"']+)[\"']").matcher(Files.isRegularFile(script) ? Files.readString(script) : "");
+            if (named != null && path.find() && Files.isRegularFile(script.getParent().resolve(path.group(1)))) {
+                widener = rel(root, script.getParent().resolve(path.group(1)).toAbsolutePath().normalize().toString());
+                String file = Path.of(widener).getFileName().toString();
+                if (!file.equals(named) && renames.isEmpty()) extra.append("processResources {\n    rename { it == '").append(file).append("' ? '").append(named).append("' : it }\n}\n");
+            }
+        }
         if (widener != null) extra.append("loom {\n    accessWidenerPath = file('").append(widener).append("')\n}\n");
         String transformer = accessTransformer(root, resources);
         if (transformer != null && !transformer.endsWith("src/main/resources/META-INF/accesstransformer.cfg")) {
@@ -165,7 +203,7 @@ final class StarterBuild {
             for (String r : repos) extra.append("    maven { url = '").append(r).append("' }\n");
             extra.append("}\n");
         }
-        List<String> deps = dependencies(project, loader);
+        List<String> deps = dependencies(project, loader, siblings, modProps);
         if (!deps.isEmpty()) {
             extra.append("dependencies {\n");
             for (String d : deps) extra.append("    ").append(d).append('\n');
@@ -235,6 +273,26 @@ final class StarterBuild {
         return names;
     }
 
+    /**
+     * A version the mod's properties hold once, written as that property (${jei_version}), so the porter's target step moves it
+     * as it does in the mod's own build. Names stay as declared: AppleSkin pins jei-1.20.1-fabric on every version.
+     */
+    static String versionProperty(String version, Map<String, String> props) {
+        List<String> keys = new ArrayList<>();
+        for (var e : props.entrySet()) if (e.getValue().equals(version)) keys.add(e.getKey());
+        return keys.size() == 1 ? "${" + keys.get(0) + "}" : version;
+    }
+
+    /** Included modules the selected project depends on: Gradle reports a project dependency by the module's name. */
+    static Set<String> siblings(Path root, Map<String, Object> project) throws IOException {
+        Set<String> included = included(root), names = new HashSet<>();
+        for (Object o : Json.array(project.get("dependencies"))) {
+            String name = Json.text(Json.object(o), "name", "").toLowerCase(Locale.ROOT);
+            if (included.contains(name)) names.add(name);
+        }
+        return names;
+    }
+
     static void write(Path file, String text, Consumer<Path> track, List<Path> written) throws IOException {
         track.accept(file);
         Files.writeString(file, text, StandardCharsets.UTF_8);
@@ -274,12 +332,19 @@ final class StarterBuild {
         return m.appendTail(out).toString();
     }
 
-    static String accessWidener(Path root, List<String> resources) throws IOException {
+    static String accessWidener(Path root, List<String> resources, Map<String, String> props) throws IOException {
+        String named = accessWidenerName(root, resources, props);
+        if (named != null) for (String d : resources) if (Files.isRegularFile(root.resolve(d).resolve(named))) return d + "/" + named;
+        return null;
+    }
+
+    /** The access widener file the mod's fabric.mod.json names, its ${properties} filled. */
+    static String accessWidenerName(Path root, List<String> resources, Map<String, String> props) throws IOException {
         for (String r : resources) {
             Path meta = root.resolve(r).resolve("fabric.mod.json");
             if (!Files.isRegularFile(meta)) continue;
             Matcher m = Pattern.compile("\"accessWidener\"\\s*:\\s*\"([^\"]+)\"").matcher(Files.readString(meta));
-            if (m.find()) for (String d : resources) if (Files.isRegularFile(root.resolve(d).resolve(m.group(1)))) return d + "/" + m.group(1);
+            if (m.find()) return fill(m.group(1), props);
         }
         return null;
     }
@@ -295,19 +360,20 @@ final class StarterBuild {
         "modLocalRuntime", "testImplementation", "testCompileOnly", "testRuntimeOnly");
 
     /** The mod's declared dependencies as starter-build lines, without the game, the loader, its API or test libraries. */
-    static List<String> dependencies(Map<String, Object> project, String loader) {
+    static List<String> dependencies(Map<String, Object> project, String loader, Set<String> siblings, Map<String, String> props) {
         Set<String> lines = new LinkedHashSet<>();
         for (Object o : Json.array(project.get("dependencies"))) {
             var d = Json.object(o);
             String conf = Json.text(d, "configuration", ""), group = Json.text(d, "group", ""), name = Json.text(d, "name", ""), version = Json.text(d, "version", "");
             if (!DECLARED.contains(conf) || group.isEmpty() || version.isEmpty() || name.equals("unspecified")) continue;
+            if (siblings.contains(name.toLowerCase(Locale.ROOT))) continue;
             if (group.startsWith("net.neoforged") || group.startsWith("net.fabricmc") || group.equals("com.mojang") || group.startsWith("net.minecraft")
                 || group.startsWith("org.junit") || group.startsWith("ng_dummy") || group.startsWith("loom_mappings")) continue;
             // NeoForge's ModDevGradle has no mod* configurations: the jar is used as it is.
             if (loader.equals("neoforge") && conf.startsWith("mod")) conf = Character.toLowerCase(conf.charAt(3)) + conf.substring(4);
             if (loader.equals("neoforge") && conf.equals("include")) conf = "jarJar";
             if (loader.equals("fabric") && conf.equals("jarJar")) conf = "include";
-            lines.add(conf + " '" + group + ":" + name + ":" + version + "'");
+            lines.add(conf + " \"" + group + ":" + name + ":" + versionProperty(version, props) + "\"");
         }
         return new ArrayList<>(lines);
     }
