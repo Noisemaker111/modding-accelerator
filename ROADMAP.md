@@ -2,7 +2,7 @@
 
 > Generated from [`coverage/roadmap.json`](coverage/roadmap.json) and [`coverage/measures.json`](coverage/measures.json) by
 > `python bench/bench_page.py --roadmap`. Edit those two files, not this one. The same roadmap with its timeline, charts and
-> porting map: **<https://noisemaker111.github.io/modding-accelerator/>**
+> porting map: **<https://noisemaker111.github.io/minecraft-modding-tools/>**
 
 **The goal:** a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 

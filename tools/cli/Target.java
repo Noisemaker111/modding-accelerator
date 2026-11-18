@@ -2284,7 +2284,7 @@ final class Target {
             System.currentTimeMillis() - Files.getLastModifiedTime(cache).toMillis() < 3600000
         ) return Files.readString(cache);
         var request = HttpRequest.newBuilder(URI.create(url))
-            .header("User-Agent", "modding-accelerator/local-port-tool")
+            .header("User-Agent", "minecraft-modding-tools/local-port-tool")
             .timeout(Duration.ofSeconds(30))
             .GET()
             .build();
@@ -2348,7 +2348,7 @@ final class Target {
             );
         if (Files.isRegularFile(cache)) return cache;
         var request = HttpRequest.newBuilder(URI.create(url))
-            .header("User-Agent", "modding-accelerator/local-port-tool")
+            .header("User-Agent", "minecraft-modding-tools/local-port-tool")
             .timeout(Duration.ofSeconds(60))
             .GET()
             .build();

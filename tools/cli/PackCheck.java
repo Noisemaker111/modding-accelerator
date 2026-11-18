@@ -28,7 +28,7 @@ import java.util.zip.*;
 final class PackCheck {
 
     static final String CURSEFORGE = "https://www.curseforge.com/api/v1/mods/", MODRINTH = "https://api.modrinth.com/v2/";
-    static final String AGENT = "Noisemaker111/modding-accelerator pack-check";
+    static final String AGENT = "Noisemaker111/minecraft-modding-tools pack-check";
     static final HttpClient HTTP = HttpClient.newBuilder()
         .followRedirects(HttpClient.Redirect.NORMAL)
         .connectTimeout(Duration.ofSeconds(20))
