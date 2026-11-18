@@ -707,8 +707,7 @@ final class Target {
         String safe = rootName.replace("\\", "\\\\").replace("\"", "\\\"");
         return String.join(
             "\n",
-            "rootProject.name = \"" + safe + "\"",
-            "",
+            "// The pluginManagement block must come before any other statement in the file.",
             "pluginManagement {",
             "    repositories {",
             "        maven {",
@@ -727,6 +726,8 @@ final class Target {
             "        id(\"org.gradle.toolchains.foojay-resolver-convention\") version \"1.0.0\"",
             "    }",
             "}",
+            "",
+            "rootProject.name = \"" + safe + "\"",
             ""
         );
     }

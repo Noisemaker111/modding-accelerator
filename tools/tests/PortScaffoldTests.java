@@ -61,7 +61,8 @@ public final class PortScaffoldTests {
             settings.contains("nexus.gtnewhorizons.com") &&
             settings.lines().filter(line -> line.contains("includeGroupByRegex")).findFirst().get().chars().filter(
                 c -> c == 92
-            ).count() == 4,
+            ).count() == 4 &&
+            settings.indexOf("pluginManagement") < settings.indexOf("rootProject.name"),
             "the scaffold settings keep the project name and provision the toolchain"
         );
         String properties = groovySetup.text(groovy.resolve("gradle.properties"));
