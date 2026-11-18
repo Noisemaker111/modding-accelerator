@@ -6,16 +6,21 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -54,6 +59,14 @@ public class DeferredRegister<T> {
 
     public static Blocks createBlocks(String namespace) {
         return new Blocks(namespace);
+    }
+
+    public static DataComponents createDataComponents(ResourceKey<Registry<DataComponentType<?>>> registryKey, String namespace) {
+        return new DataComponents(registryKey, namespace);
+    }
+
+    public static Entities createEntities(String namespace) {
+        return new Entities(namespace);
     }
 
     protected DeferredRegister(ResourceKey<? extends Registry<T>> registryKey, String namespace) {
@@ -140,6 +153,48 @@ public class DeferredRegister<T> {
         }
         for (DeferredRegister<?> register : left) register.registerAll();
         PENDING.clear();
+    }
+
+    /** NeoForge's DeferredRegister.DataComponents: data component types from a builder. */
+    public static class DataComponents extends DeferredRegister<DataComponentType<?>> {
+
+        protected DataComponents(ResourceKey<Registry<DataComponentType<?>>> registryKey, String namespace) {
+            super(registryKey, namespace);
+        }
+
+        public <D> DeferredHolder<DataComponentType<?>, DataComponentType<D>> registerComponentType(String name, UnaryOperator<DataComponentType.Builder<D>> builder) {
+            return this.register(name, () -> builder.apply(DataComponentType.builder()).build());
+        }
+    }
+
+    /** NeoForge's DeferredRegister.Entities: entity types from a builder, built with their id. */
+    public static class Entities extends DeferredRegister<EntityType<?>> {
+
+        protected Entities(String namespace) {
+            super(Registries.ENTITY_TYPE, namespace);
+        }
+
+        public <E extends Entity> DeferredHolder<EntityType<?>, EntityType<E>> registerEntityType(String name, EntityType.EntityFactory<E> factory, MobCategory category) {
+            return this.registerEntityType(name, factory, category, UnaryOperator.identity());
+        }
+
+        public <E extends Entity> DeferredHolder<EntityType<?>, EntityType<E>> registerEntityType(
+            String name,
+            EntityType.EntityFactory<E> factory,
+            MobCategory category,
+            BiFunction<EntityType.EntityFactory<E>, MobCategory, EntityType.Builder<E>> builder
+        ) {
+            return this.register(name, key -> builder.apply(factory, category).build(ResourceKey.create(Registries.ENTITY_TYPE, key)));
+        }
+
+        public <E extends Entity> DeferredHolder<EntityType<?>, EntityType<E>> registerEntityType(
+            String name,
+            EntityType.EntityFactory<E> factory,
+            MobCategory category,
+            UnaryOperator<EntityType.Builder<E>> builder
+        ) {
+            return this.registerEntityType(name, factory, category, (f, c) -> builder.apply(EntityType.Builder.of(f, c)));
+        }
     }
 
     /** NeoForge's DeferredRegister.Blocks: DeferredBlock holders, and blocks whose properties carry their id. */

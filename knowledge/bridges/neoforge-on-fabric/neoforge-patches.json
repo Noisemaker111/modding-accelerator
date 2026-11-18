@@ -1,0 +1,30 @@
+{
+  "about": "NeoForge's own classes that convert copies (neoforge-sources.txt) which call a member only NeoForge's patches add to a game class, rewritten on the game's own members: each text is replaced in the copy, and the access transformer lines that needs are added to the mod's access widener (only when the class is copied).",
+  "net.neoforged.neoforge.common.conditions.ConditionalOps": {
+    "about": "NeoForge's RegistryOps(RegistryOps other) copies the other's delegate and lookup provider; the game's constructor takes them.",
+    "replace": [
+      [
+        "super(ops);",
+        "super(ops.delegate, ops.lookupProvider);"
+      ]
+    ],
+    "accessTransformers": [
+      "public net.minecraft.resources.DelegatingOps delegate",
+      "public net.minecraft.resources.RegistryOps lookupProvider",
+      "protected net.minecraft.resources.RegistryOps <init>(Lcom/mojang/serialization/DynamicOps;Lnet/minecraft/resources/RegistryOps$RegistryInfoLookup;)V"
+    ]
+  },
+  "net.neoforged.neoforge.common.util.AttributeTooltipContext": {
+    "about": "NeoForge adds player() and level() to the game's Item.TooltipContext; the context declares them itself, and its level is the player's (the game's context does not give its level).",
+    "replace": [
+      [
+        "    TooltipFlag flag();\n",
+        "    TooltipFlag flag();\n\n    @Nullable\n    Player player();\n\n    @Nullable\n    Level level();\n"
+      ],
+      [
+        "return itemCtx.level();",
+        "return player == null ? null : player.level();"
+      ]
+    ]
+  }
+}

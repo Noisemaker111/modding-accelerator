@@ -27,6 +27,8 @@ public class RegisterGuiLayersEvent extends Event implements IModBusEvent {
     /** RenderGuiEvent and the mods' layers, from Fabric API's HudRenderCallback; from ClientGameEvents.hook(). */
     static void hook() {
         HudRenderCallback.EVENT.register((graphics, deltaTracker) -> {
+            VanillaGuiLayers.leftHeight = 39;
+            VanillaGuiLayers.rightHeight = 39;
             if (Bus.INSTANCE.post(new RenderGuiEvent.Pre(graphics, deltaTracker)).isCanceled()) return;
             for (Named named : List.copyOf(LAYERS)) {
                 if (Bus.INSTANCE.post(new RenderGuiLayerEvent.Pre(graphics, deltaTracker, named.name(), named.layer())).isCanceled()) continue;

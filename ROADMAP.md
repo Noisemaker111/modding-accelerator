@@ -6,7 +6,7 @@
 
 **The goal:** a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**26 of 43 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**27 of 45 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
@@ -15,7 +15,7 @@
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
 | **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `███████░░░`&nbsp;16&nbsp;of&nbsp;23 | 🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>⚪ 16 · Name what moved in 26.3 |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
-| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;2&nbsp;of&nbsp;5 | Not started |
+| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;3&nbsp;of&nbsp;7 | ⚪ 42 · The blockers of the other 14 mods, by cause, produced from the loaders' files |
 
 ## Goal 1 — Test a mod in seconds
 
@@ -286,8 +286,9 @@ A pack user points mmt at an installed pack or an export and gets its conflicts 
 
 The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims.
 
-- **Today:** mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. Two real Fabric mods run on NeoForge with no hand edits; Forge, Quilt and Paper are not converted yet.
-- **The number that says most:** Loader or platform changes that work in the game is **2 pairs**, target 1 pair by Jan 29, 2027, step 18
+- **Today:** mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. Of 28 real corpus mods it accepts, 14 compile and load in the game after converting, 10 of them with the same behaviour fingerprint as the original. Forge, Quilt and Paper are not converted yet.
+- **The number that says most:** Corpus mods that convert, compile and load in the game is **14 mods**, target 17 mods by Nov 25, step 42
+- **Also:** Loader or platform changes that work in the game is **2 pairs**, target 1 pair by Jan 29, 2027, step 18
 
 ### Loader pairs
 
@@ -295,6 +296,8 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 |---|---|---|---|
 | 40 | Loader rules from the loaders' own APIs | 🟢 done | Nov 14 |
 | 18 | Fabric → NeoForge on one mod | 🟢 done | Nov 14 |
+| 41 | NeoForge mods to Fabric through a bridge built from NeoForge's own files | 🟢 done | Nov 18 |
+| 42 | The blockers of the other 14 mods, by cause, produced from the loaders' files | ⚪ next | Nov 18 → Nov 25 |
 | 19 | Forge → NeoForge and Fabric → Quilt | ⚫ later | Feb 1, 2027 → Feb 26, 2027 |
 
 ### Mods and plugins
@@ -315,6 +318,10 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 **18 · Fabric → NeoForge on one mod** (done). Fabric → NeoForge on one small mod, measured end to end. *So far:* mmt convert moved Auto Omen (Fabric 26.3) to NeoForge with no hand edits, and its own in-game raid self test passed 23 of 23 checks there, the same as on Fabric. Pride Flags (Fabric 26.1.2, with Fabric data generation) moved too: on NeoForge its blocks, items, flammability, loot, recipes and rendered flags were checked in the game. The NeoForge Auto Omen converted back to Fabric passed the same self test.
 
+**41 · NeoForge mods to Fabric through a bridge built from NeoForge's own files** (done). Cover NeoForge's whole published API on Fabric instead of fixing mods one at a time: a coverage check against NeoForge's jars and patches (bench/bridge_coverage.py), the methods its patches add to game classes generated for 26.3, 26.1 and 1.21.1 (bench/bridge_generate.py), and NeoForge's own LGPL classes copied into the converted mod when they compile on Fabric, with failing members left out (bench/bridge_import.py). *So far:* 14 of 28 compile and load in the game (was 10 on 2026-11-16), 10 with the same behaviour fingerprint as the original; curios is new. 720 of NeoForge's classes compile on Fabric for 26.3, 714 for 26.1, 568 for 1.21.1.
+
+**42 · The blockers of the other 14 mods, by cause, produced from the loaders' files** (next). List what blocks each of the 14 mods that do not compile yet, group the blockers by cause across all 14, and produce each group's fixes in one go from the loaders' own files (no per-mod fixes).
+
 **19 · Forge → NeoForge and Fabric → Quilt** (later). Forge → NeoForge and Fabric → Quilt, which are close pairs.
 
 **39 · Mod ↔ plugin on one server-side project** (later). Move one server-side project across the mod and plugin line: a Forge or Fabric mod with no client code to a Paper plugin (events, commands, scheduler and config mapped to the Bukkit API), and a plugin the other way. Client code, mixins into the game and new blocks or items cannot exist on a plugin server, so the port stops and names each one instead of dropping it.
@@ -323,11 +330,12 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 </details>
 
-<details><summary>Every number for this goal (2)</summary>
+<details><summary>Every number for this goal (3)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
 | Loader or platform changes that work in the game | 0 pairs (Nov 9) | 2 pairs (Nov 14) | 1 pair by Jan 29, 2027, step 18 | Met |
+| Corpus mods that convert, compile and load in the game | 1 mod (Nov 14) | 14 mods (Nov 17) | 17 mods by Nov 25, step 42 | 81% of the way |
 | Loader-change rules, each with every class and member it names found in the loaders' published jars | — | 41 rules (Nov 14) | — | Fact |
 
 </details>
@@ -340,7 +348,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 26 steps (Nov 14) | 43 steps by Mar 26, 2027 | 55% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 45 steps by Mar 26, 2027 | 55% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 

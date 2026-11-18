@@ -20,7 +20,7 @@ public final class Attachments {
     }
 
     public static <T> T getData(Object holder, AttachmentType<T> type) {
-        return target(holder).getAttachedOrCreate(type.fabric(), () -> type.defaultValue.apply(holder));
+        return target(holder).getAttachedOrCreate(type.fabric(), () -> type.create(holder));
     }
 
     public static <T> T getData(Object holder, Supplier<AttachmentType<T>> type) {

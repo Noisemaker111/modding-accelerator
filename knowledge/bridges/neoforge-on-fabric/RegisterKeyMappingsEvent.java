@@ -6,7 +6,7 @@ import net.minecraft.client.KeyMapping;
 /**
  * NeoForge's net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent, posted when the client entrypoint ends
  * (before the game reads its options, as NeoForge posts it); each mapping is registered with Fabric API's key mapping
- * helper.
+ * helper, and each category with the game's own list of categories (which Fabric API keeps sorted).
  */
 public class RegisterKeyMappingsEvent extends Event {
 
@@ -18,5 +18,9 @@ public class RegisterKeyMappingsEvent extends Event {
 
     public void register(KeyMapping key) {
         register.accept(key);
+    }
+
+    public void registerCategory(KeyMapping.Category category) {
+        KeyMapping.Category.register(category.id());
     }
 }

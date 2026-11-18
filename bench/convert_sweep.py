@@ -304,7 +304,32 @@ def mixin_snippet(packages):
     return MIXIN_SNIPPET.replace("PACKAGES", test)
 
 
-def game_registries(work, namespace, packages=()):
+# The registry snippet in yarn's names, for the untouched original of a yarn-named mod (its game is in yarn's names).
+YARN_SNIPPET_NAMES = [("net.minecraft.core.registries.BuiltInRegistries.REGISTRY", "net.minecraft.registry.Registries.REGISTRIES"),
+                      ("registry.keySet()", "registry.getIds()"), ("registry.key()", "registry.getKey()")]
+
+
+def registry_snippet(namespace, yarn=False):
+    text = REGISTRY_SNIPPET.replace("NAMESPACE", namespace or "")
+    for mojang, named in YARN_SNIPPET_NAMES if yarn else []:
+        text = text.replace(mojang, named)
+    return text
+
+
+def yarn_to_mojang_targets(mixins, table_file):
+    """An original yarn mod's applied mixins ("Mixin > game class") with the game classes in Mojang's names, from the
+    yarn -> Mojang table convert wrote, so they compare with the renamed mod's."""
+    if not isinstance(mixins, str) or not Path(table_file).is_file():
+        return mixins
+    classes = {c["from"]: c["to"] for c in json.loads(Path(table_file).read_text(encoding="utf-8")).get("classes", [])}
+    out = []
+    for line in mixins.split("\n"):
+        mixin, sep, target = line.partition(" > ")
+        out.append(mixin + sep + classes.get(target, target) if sep else line)
+    return "\n".join(sorted(out))
+
+
+def game_registries(work, namespace, packages=(), yarn=False):
     """Starts the project in a hidden client, reads its registry entries and its applied mixins, stops the game."""
     record = {}
     code, ui, seconds = mmt(["ui-check", "--root", str(work), "--json"], TIMEOUT["ui-check"])
@@ -313,7 +338,7 @@ def game_registries(work, namespace, packages=()):
     if code != 0:
         record["loadError"] = str(ui.get("error") or ui.get("details") or ui)[-1500:]
     else:
-        record["registries"], error = evaluate(work, "registries", REGISTRY_SNIPPET.replace("NAMESPACE", namespace or ""))
+        record["registries"], error = evaluate(work, "registries", registry_snippet(namespace, yarn))
         if error:
             record["evalError"] = error
         record["mixins"], error = evaluate(work, "mixins", mixin_snippet(packages))
@@ -321,6 +346,28 @@ def game_registries(work, namespace, packages=()):
             record["mixinError"] = error
     mmt(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
     return record
+
+
+RUNTIME_MOD = re.compile(r"(?m)^([ \t]*)(runtimeOnly|localRuntime|modRuntimeOnly|modLocalRuntime)(\b.*)$")
+
+
+def without_runtime_mods(work):
+    """Comments out the build's runtime-only dependencies (other mods a dev run loads for testing integrations) in an
+    original's copy; returns the lines it changed, for restore_runtime_mods."""
+    build = Path(work) / "build.gradle"
+    if not build.is_file():
+        return []
+    text = build.read_text(encoding="utf-8", errors="replace")
+    lines = [m.group(0) for m in RUNTIME_MOD.finditer(text)]
+    if lines:
+        build.write_text(RUNTIME_MOD.sub(lambda m: m.group(1) + "// left out for the behaviour check: " + m.group(2) + m.group(3), text), encoding="utf-8")
+    return lines
+
+
+def restore_runtime_mods(work, lines):
+    build = Path(work) / "build.gradle"
+    text = build.read_text(encoding="utf-8", errors="replace")
+    build.write_text(re.sub(r"(?m)^([ \t]*)// left out for the behaviour check: ", r"\1", text), encoding="utf-8")
 
 
 def behaviour(converted, original):
@@ -392,6 +439,43 @@ def stop(work):
         mmt(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
 
 
+def minecraft_of(work):
+    """The game version a checkout's gradle.properties names (minecraft_version, or NeoForge's own numbering)."""
+    p = Path(work) / "gradle.properties"
+    props = p.read_text(encoding="utf-8", errors="replace") if p.is_file() else ""
+    m = re.search(r"(?m)^\s*minecraft_version\s*=\s*(\S+)", props)
+    if m:
+        return m.group(1)
+    n = re.search(r"(?m)^\s*neo(?:forge)?_version\s*=\s*(\S+)", props)
+    if not n:
+        return ""
+    parts = n.group(1).split(".")
+    if int(parts[0]) >= 26:
+        return ".".join(parts[:2] if len(parts) < 4 or parts[2] == "0" else parts[:3])
+    return "1." + parts[0] + ("" if parts[1] == "0" else "." + parts[1])
+
+
+def original_references(mod, src, started):
+    """The untouched mod built once: every loader class and member, and game method, its compiled classes name
+    (bench/convert_coverage.py reads them; coverage/convert-references.json keeps them)."""
+    import convert_coverage
+    work = fresh_copy(src, f"{mod['id']}-references")
+    started.append(work)
+    code, result, seconds = mmt(["compile", "--root", str(work), "--json"], TIMEOUT["convert"])
+    out = {"commit": mod["commit"], "minecraft": minecraft_of(work), "compiled": code == 0, "seconds": round(seconds, 1)}
+    if code == 0:
+        # mmt compile names where it wrote each set's classes (its own javac writes them under .mmt, Gradle under build).
+        folders = [c["classes"] for c in (result.get("result") or {}).get("compiled", []) if isinstance(c, dict) and c.get("classes")]
+        merged = {"classes": set(), "members": set()}
+        for folder in folders or [work / "build" / "classes"]:
+            found = convert_coverage.mod_references(folder)
+            merged["classes"] |= set(found["classes"])
+            merged["members"] |= set(found["members"])
+        out.update({k: sorted(v) for k, v in merged.items()})
+    stop(work)
+    return out
+
+
 def run_one(mod, args, concepts):
     started = []
     try:
@@ -402,7 +486,10 @@ def run_one(mod, args, concepts):
 
 
 def run_mod(mod, args, concepts, started):
-    to = OTHER[mod["loader"]]
+    # --names mojang: a yarn-named Fabric mod stays on Fabric and only its names move; the game check then proves
+    # the renamed mixins apply to the same game classes and the mod registers what it did.
+    names = getattr(args, "names", "")
+    to = mod["loader"] if names else OTHER[mod["loader"]]
     record = {"id": mod["id"], "name": mod["name"], "label": args.label, "from": mod["loader"], "to": to, "commit": mod["commit"],
               "features": mod["features"], "started": datetime.datetime.now().isoformat(timespec="seconds")}
     try:
@@ -410,15 +497,21 @@ def run_mod(mod, args, concepts, started):
     except Exception as e:
         record.update(stage="clone", error=str(e), concepts={"clone failed": 1})
         return record
-    work = fresh_copy(src, f"{mod['id']}-to-{to}")
+    if getattr(args, "references", False):
+        record["references"] = original_references(mod, src, started)
+    work = fresh_copy(src, f"{mod['id']}-to-{to}" + (f"-{names}" if names else ""))
     started.append(work)
     props = (work / "gradle.properties").read_text(encoding="utf-8", errors="replace") if (work / "gradle.properties").is_file() else ""
     yarn = bool(re.search(r"(?m)^\s*yarn_(?:mappings|version)\s*=", props)) and mod["loader"] == "fabric"
     record["yarn"] = yarn
-    convert_args = ["convert", "--root", str(work), "--to", to, "--json"] + (["--no-compile"] if args.no_compile else [])
+    convert_args = ["convert", "--root", str(work), "--to", to, "--json"] + (["--names", names] if names else []) + (["--no-compile"] if args.no_compile else [])
     code, result, seconds = mmt(convert_args, TIMEOUT["convert"])
     record["convertSeconds"] = round(seconds, 1)
     record["exit"] = code
+    # convert renames a yarn-named mod to Mojang's names first; its compiler errors are then not about yarn's names.
+    if yarn and "yarn-to-mojang" in (result.get("rulesApplied") or {}):
+        yarn = False
+        record["renamedFromYarn"] = True
     concepts_hit, items = {}, []
 
     def hit(concept, item):
@@ -464,17 +557,41 @@ def run_mod(mod, args, concepts, started):
             namespace = mod_namespace(work, to) or mod_namespace(src, mod["loader"])
             record["namespace"] = namespace
             packages = own_packages(src)
+            # Both games run the mod without the build's runtime-only mods (other mods a dev run loads to test integrations,
+            # which the converted build may name in versions the game rejects), unless one cannot start without them.
+            converted_left_out = without_runtime_mods(work)
             record["game"] = game_registries(work, namespace, packages)
+            if converted_left_out and not record["game"].get("loaded"):
+                first_error = record["game"].get("loadError", "")
+                restore_runtime_mods(work, converted_left_out)
+                record["game"] = game_registries(work, namespace, packages)
+                record["game"]["loadErrorWithoutRuntimeMods"] = first_error[:3000]
+                converted_left_out = []
+            record["game"]["runtimeModsLeftOut"] = converted_left_out
             if record["game"].get("loaded"):
                 original = fresh_copy(src, f"{mod['id']}-original")
                 started.append(original)
-                record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages)
+                renamed = record.get("renamedFromYarn", False)
+                # The same other mods on both sides: the converted game loads none of the original loader's runtime-only
+                # mods (Mekanism for a NeoForge mod on Fabric), so the original runs without them too, unless it
+                # cannot start without them.
+                runtime_only = without_runtime_mods(original)
+                record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages, yarn=renamed)
+                if runtime_only and not record["originalGame"].get("loaded"):
+                    restore_runtime_mods(original, runtime_only)
+                    record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]), packages, yarn=renamed)
+                    runtime_only = []
+                record["originalGame"]["runtimeModsLeftOut"] = runtime_only
+                if renamed:
+                    tables = sorted((work / ".mmt" / "portable" / "yarn-to-mojang").glob("names-*.json"))
+                    if tables:
+                        record["originalGame"]["mixins"] = yarn_to_mojang_targets(record["originalGame"].get("mixins"), tables[-1])
                 record["behaviour"] = behaviour(record["game"], record["originalGame"])
                 if not args.no_fingerprint:
                     record["fingerprint"] = fingerprint_behaviour(work, original, mod["id"])
             else:
                 hit("game load failed after a clean compile", {"kind": "game", "text": record["game"].get("loadError", "")[:1500]})
-        if result.get("compiled") and not args.no_back:
+        if result.get("compiled") and not args.no_back and not names:
             code2, back, seconds2 = mmt(["convert", "--root", str(work), "--to", mod["loader"], "--json"], TIMEOUT["convert"])
             entry = {"exit": code2, "seconds": round(seconds2, 1)}
             if "error" in back and "from" not in back:
@@ -499,7 +616,7 @@ def run_mod(mod, args, concepts, started):
     record["outcome"] = outcome(record)
     runs = WORK / "runs"
     runs.mkdir(parents=True, exist_ok=True)
-    (runs / f"{mod['id']}-to-{to}.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
+    (runs / f"{mod['id']}-to-{to}{'-' + names if names else ''}.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
     return record
 
 
@@ -633,6 +750,8 @@ def main():
     run.add_argument("--no-compile", action="store_true", help="convert without compiling")
     run.add_argument("--no-game", action="store_true")
     run.add_argument("--no-back", action="store_true")
+    run.add_argument("--references", action="store_true", help="also build each untouched mod once and record the loader API it uses (bench/convert_coverage.py)")
+    run.add_argument("--names", default="", help="mojang: rename yarn-named Fabric mods to Mojang's names, staying on Fabric, instead of converting")
     run.add_argument("--no-fingerprint", action="store_true", help="skip the behaviour fingerprints of the original and the converted mod")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
@@ -680,7 +799,11 @@ def run_all(mods, args, concepts):
             m = futures[f]
             try:
                 r = f.result()
-                print(f"{m['id']}: {r['outcome']} {json.dumps(r.get('concepts', {}))[:300]}", flush=True)
+                # The game's own result too: an outcome with items left does not say whether the mod ran.
+                game = r.get("game")
+                ran = "" if game is None else ("; in game: loads" if game.get("loaded") else "; in game: fails")
+                ran += "" if game is None or not game.get("loaded") else (", same behaviour fingerprint" if (r.get("fingerprint") or {}).get("equal") else ", fingerprint differs")
+                print(f"{m['id']}: {r['outcome']}{ran} {json.dumps(r.get('concepts', {}))[:300]}", flush=True)
             except Exception as e:
                 failed.append(m["id"])
                 print(f"{m['id']}: runner error {e!r}", flush=True)

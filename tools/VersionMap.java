@@ -40,8 +40,11 @@ public final class VersionMap {
         List<String> learn = new ArrayList<>();
         boolean dryRun = false;
         boolean preflight = false;
+        boolean hierarchy = false;
+        String intermediary = null;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
+                case "--intermediary" -> intermediary = args[++i];
                 case "--names" -> names = args[++i];
                 case "--from-names" -> fromNames = args[++i];
                 case "--to-names" -> toNames = args[++i];
@@ -53,6 +56,7 @@ public final class VersionMap {
                 case "--repo" -> repo = args[++i];
                 case "--dry-run" -> dryRun = true;
                 case "--preflight" -> preflight = true;
+                case "--hierarchy" -> hierarchy = true;
                 case "--rules" -> rules = args[++i];
                 case "--learn" -> learn.add(args[++i]);
                 case "--chain" -> chain = args[++i];
@@ -65,6 +69,15 @@ public final class VersionMap {
                 }
                 default -> pos.add(args[i]);
             }
+        }
+        if (intermediary != null) {
+            // --intermediary VERSION OUT: every intermediary class and member of one release in Mojang's names, the
+            // names a mixin refmap resolves to (mmt convert reads a yarn mod's refmap through it).
+            Path target = Path.of(intermediary);
+            Files.createDirectories(target.toAbsolutePath().getParent());
+            Files.writeString(target, intermediaryJson(Table.load(pos.get(0), "mojmap")), StandardCharsets.UTF_8);
+            System.out.println("        " + target);
+            return;
         }
         if (chain != null) {
             if (!(names.equals("mojmap") || names.equals("yarn")) || out == null) {
@@ -145,7 +158,24 @@ public final class VersionMap {
             ? Path.of(out)
             : cache.resolve("map-" + names + "-" + pos.get(0) + "-to-" + pos.get(1) + ".json");
         Files.createDirectories(target.toAbsolutePath().getParent());
-        Files.writeString(target, d.json(pos.get(0), pos.get(1), names), StandardCharsets.UTF_8);
+        String json = d.json(pos.get(0), pos.get(1), names);
+        // --hierarchy: each game class's supertypes in the target's names (Mojang's), read from the client jar
+        // and its official mappings, so a member a class inherits or overrides is found on the supertype the mappings declare it on.
+        if (hierarchy && bNames.equals("mojmap")) {
+            StringBuilder supers = new StringBuilder(",\n  \"supers\": {");
+            boolean first = true;
+            for (var c : hierarchy(pos.get(1)).entrySet()) {
+                List<String> up = c.getValue();
+                if (up.isEmpty()) continue;
+                supers.append(first ? "\n    " : ",\n    ").append(Diff.q(c.getKey())).append(": [");
+                for (int i = 0; i < up.size(); i++) supers.append(i == 0 ? "" : ", ").append(Diff.q(up.get(i)));
+                supers.append("]");
+                first = false;
+            }
+            supers.append("\n  }");
+            json = json.substring(0, json.lastIndexOf("\n}")) + supers + "\n}\n";
+        }
+        Files.writeString(target, json, StandardCharsets.UTF_8);
         System.out.printf(
             "map %s -> %s (%s): classes %d renamed or moved, %d removed; methods %d renamed, %d moved, " +
             "%d signature changes, %d removed; fields %d renamed, %d removed (%.1fs)%n",
@@ -163,6 +193,98 @@ public final class VersionMap {
             (System.nanoTime() - t0) / 1e9
         );
         System.out.println("        " + target);
+    }
+
+    /**
+     * One release's intermediary names in Mojang's: classes (intermediary -> Mojang, slash form) and members by their
+     * intermediary name alone (method_N and field_N name one member in the whole game) as [owner, name, desc].
+     */
+    static String intermediaryJson(Table t) {
+        StringBuilder sb = new StringBuilder("{\n  \"classes\": {");
+        boolean first = true;
+        for (var e : new TreeMap<>(t.classes).entrySet()) {
+            sb.append(first ? "\n    " : ",\n    ").append(Diff.q(e.getKey())).append(": ").append(Diff.q(e.getValue()));
+            first = false;
+        }
+        sb.append("\n  },\n  \"members\": {");
+        first = true;
+        // An overriding method shares its intermediary (and Mojang) name with the one it overrides: written once.
+        Set<String> written = new HashSet<>();
+        for (Map<String, Member> kind : List.of(t.methods, t.fields)) {
+            for (var e : new TreeMap<>(kind).entrySet()) {
+                String key = e.getKey();
+                String name = key.substring(key.lastIndexOf('.') + 1);
+                if (!name.startsWith("method_") && !name.startsWith("field_")) continue;
+                if (!written.add(name)) continue;
+                Member m = e.getValue();
+                sb.append(first ? "\n    " : ",\n    ").append(Diff.q(name)).append(": [");
+                sb.append(Diff.q(m.owner())).append(", ").append(Diff.q(m.name())).append(", ").append(Diff.q(m.desc())).append("]");
+                first = false;
+            }
+        }
+        return sb.append("\n  }\n}\n").toString();
+    }
+
+    /**
+     * Each game class's superclass and interfaces in Mojang's names (slash form), read from the release's client jar
+     * with its official mappings (Table.load has cached the version json and the mappings by now). java/lang/Object
+     * is left out.
+     */
+    static Map<String, List<String>> hierarchy(String version) throws Exception {
+        String versionJson = Files.readString(cache.resolve("version-" + version + ".json"), StandardCharsets.UTF_8);
+        int downloads = versionJson.indexOf("\"downloads\"");
+        String jarUrl = jsonString(versionJson, "url", versionJson.indexOf("\"client\"", downloads));
+        Path jar = fetch(jarUrl, "client-" + version + ".jar");
+        int dl = versionJson.indexOf("\"client_mappings\"");
+        String mappings = fetchText(jsonString(versionJson, "url", dl), "client-" + version + ".txt");
+        Map<String, String> names = Proguard.parse(mappings).classes;
+        Map<String, List<String>> out = new TreeMap<>();
+        try (ZipFile zip = new ZipFile(jar.toFile())) {
+            for (var entries = zip.entries(); entries.hasMoreElements();) {
+                ZipEntry e = entries.nextElement();
+                if (!e.getName().endsWith(".class") || e.getName().startsWith("META-INF/")) continue;
+                List<String> types = supertypes(zip.getInputStream(e).readAllBytes());
+                if (types.isEmpty()) continue;
+                List<String> up = new ArrayList<>();
+                for (String t : types.subList(1, types.size())) if (!t.equals("java/lang/Object")) up.add(names.getOrDefault(t, t));
+                out.put(names.getOrDefault(types.get(0), types.get(0)), up);
+            }
+        }
+        return out;
+    }
+
+    /** A class file's own name, then its superclass and interfaces (slash form); empty when it is no class file. */
+    static List<String> supertypes(byte[] b) throws IOException {
+        DataInputStream in = new DataInputStream(new ByteArrayInputStream(b));
+        if (in.readInt() != 0xCAFEBABE) return List.of();
+        in.readUnsignedShort();
+        in.readUnsignedShort();
+        int count = in.readUnsignedShort();
+        String[] utf = new String[count];
+        int[] classRef = new int[count];
+        for (int i = 1; i < count; i++) {
+            int tag = in.readUnsignedByte();
+            switch (tag) {
+                case 1 -> utf[i] = in.readUTF();
+                case 7 -> classRef[i] = in.readUnsignedShort();
+                case 8, 16, 19, 20 -> in.readUnsignedShort();
+                case 15 -> in.skipBytes(3);
+                case 3, 4, 9, 10, 11, 12, 17, 18 -> in.skipBytes(4);
+                case 5, 6 -> {
+                    in.skipBytes(8);
+                    i++;
+                }
+                default -> throw new IOException("unknown constant pool tag " + tag);
+            }
+        }
+        in.readUnsignedShort();
+        List<String> out = new ArrayList<>();
+        out.add(utf[classRef[in.readUnsignedShort()]]);
+        int sup = in.readUnsignedShort();
+        out.add(sup == 0 ? "java/lang/Object" : utf[classRef[sup]]);
+        int interfaces = in.readUnsignedShort();
+        for (int i = 0; i < interfaces; i++) out.add(utf[classRef[in.readUnsignedShort()]]);
+        return out;
     }
 
     // ------------------------------------------------------------------ downloads

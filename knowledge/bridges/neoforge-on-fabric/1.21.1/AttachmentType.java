@@ -28,6 +28,12 @@ public final class AttachmentType<T> {
     boolean copyOnDeath;
     StreamCodec<? super RegistryFriendlyByteBuf, T> sync;
     BiPredicate<Object, ServerPlayer> sendTo;
+
+    /** The default value for a holder (an entity, block entity, level or chunk) that has none yet. */
+    T create(Object holder) {
+        return defaultValue.apply(holder);
+    }
+
     net.fabricmc.fabric.api.attachment.v1.AttachmentType<T> fabric;
 
     private AttachmentType(Builder<T> builder) {

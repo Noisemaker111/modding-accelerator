@@ -568,9 +568,10 @@
    "title": "Change loader or platform",
    "intro": "The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims.",
    "headline": [
+    "loader.convert-corpus",
     "loader.pairs-working"
    ],
-   "today": "mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. Two real Fabric mods run on NeoForge with no hand edits; Forge, Quilt and Paper are not converted yet.",
+   "today": "mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. Of 28 real corpus mods it accepts, 14 compile and load in the game after converting, 10 of them with the same behaviour fingerprint as the original. Forge, Quilt and Paper are not converted yet.",
    "try": [
     {
      "say": "move a Fabric mod to NeoForge, then check it in the game",
@@ -612,6 +613,36 @@
      ],
      "done": "2026-11-14",
      "result": "mmt convert moved Auto Omen (Fabric 26.3) to NeoForge with no hand edits, and its own in-game raid self test passed 23 of 23 checks there, the same as on Fabric. Pride Flags (Fabric 26.1.2, with Fabric data generation) moved too: on NeoForge its blocks, items, flammability, loot, recipes and rendered flags were checked in the game. The NeoForge Auto Omen converted back to Fabric passed the same self test."
+    },
+    {
+     "id": "41",
+     "title": "NeoForge mods to Fabric through a bridge built from NeoForge's own files",
+     "part": "Loader pairs",
+     "status": "done",
+     "text": "Cover NeoForge's whole published API on Fabric instead of fixing mods one at a time: a coverage check against NeoForge's jars and patches (bench/bridge_coverage.py), the methods its patches add to game classes generated for 26.3, 26.1 and 1.21.1 (bench/bridge_generate.py), and NeoForge's own LGPL classes copied into the converted mod when they compile on Fabric, with failing members left out (bench/bridge_import.py).",
+     "finish": "14 of 28 corpus mods convert, compile and load in the game (cloud sweep on the final commit)",
+     "wrongIf": "the copied classes or generated methods break a mod that loaded before, or the count stays at 13",
+     "start": "2026-11-16",
+     "target": "2026-11-18",
+     "measures": [
+      "loader.convert-corpus"
+     ],
+     "done": "2026-11-18",
+     "result": "14 of 28 compile and load in the game (was 10 on 2026-11-16), 10 with the same behaviour fingerprint as the original; curios is new. 720 of NeoForge's classes compile on Fabric for 26.3, 714 for 26.1, 568 for 1.21.1."
+    },
+    {
+     "id": "42",
+     "title": "The blockers of the other 14 mods, by cause, produced from the loaders' files",
+     "part": "Loader pairs",
+     "status": "next",
+     "text": "List what blocks each of the 14 mods that do not compile yet, group the blockers by cause across all 14, and produce each group's fixes in one go from the loaders' own files (no per-mod fixes).",
+     "finish": "17 of 28 corpus mods convert, compile and load in the game (proposed; set from the grouped list)",
+     "wrongIf": "a group's fixes land and none of the mods it was counted for compiles",
+     "start": "2026-11-18",
+     "target": "2026-11-25",
+     "measures": [
+      "loader.convert-corpus"
+     ]
     },
     {
      "id": "19",

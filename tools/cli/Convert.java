@@ -113,6 +113,8 @@ final class Convert {
      * line names no field type, which an access widener needs: fieldTypes gives it from the game (owner/name to
      * descriptor), and a field it does not know goes to unconverted with wildcards and +f. Asked for a method (owner,
      * name+descriptor), it gives "access N", the method's access flags, when it knows: a private method is also extendable.
+     * Asked for "*", it lists the class's members ("field NAME DESC", "method NAME DESC ACCESS", one per line) for a
+     * wildcard line (public X * or public X *()); "" names a class the game does not have.
      */
     static String transformerToWidener(String text, boolean official, List<String> unconverted) {
         return transformerToWidener(text, official, unconverted, (owner, field) -> null);
@@ -130,12 +132,35 @@ final class Convert {
             if (line.isEmpty()) continue;
             String[] t = line.split("\\s+");
             Matcher m = Pattern.compile("^(public|protected|default|private)(-f|\\+f)?$").matcher(t[0]);
-            if (!m.find() || "+f".equals(m.group(2)) || t.length < 2 || line.contains("*")) {
+            boolean wildcard = t.length == 3 && (t[2].equals("*") || t[2].equals("*()"));
+            if (!m.find() || "+f".equals(m.group(2)) || t.length < 2 || line.contains("*") && !wildcard) {
                 unconverted.add(line);
                 continue;
             }
             boolean definal = "-f".equals(m.group(2));
             String owner = t[1].replace('.', '/');
+            if (wildcard) {
+                // Every field (*) or method (*()) of the class: an access widener names each, so the game lists them.
+                String listing = fieldTypes.apply(owner, "*");
+                if (listing == null) {
+                    unconverted.add(line);
+                    continue;
+                }
+                if (listing.isEmpty()) {
+                    unconverted.add(line + " (the game has no such class, so the line opens nothing on either loader; dropped)");
+                    continue;
+                }
+                boolean methods = t[2].equals("*()");
+                for (String member : listing.lines().toList()) {
+                    String[] p = member.split(" ");
+                    if (methods != p[0].equals("method") || p[1].equals("<clinit>")) continue;
+                    String kind = methods ? "method " : "field ";
+                    out.append("accessible ").append(kind).append(owner).append(' ').append(p[1]).append(' ').append(p[2]).append('\n');
+                    boolean wasPrivate = methods && p.length > 3 && (Integer.parseInt(p[3]) & 0x0002) != 0;
+                    if (definal || wasPrivate) out.append(methods ? "extendable " : "mutable ").append(kind).append(owner).append(' ').append(p[1]).append(' ').append(p[2]).append('\n');
+                }
+                continue;
+            }
             if (t.length == 2) {
                 out.append(definal ? "extendable" : "accessible").append(" class ").append(owner).append('\n');
                 continue;
@@ -173,6 +198,7 @@ final class Convert {
      */
     java.util.function.BiFunction<String, String, String> gameFieldTypes(String minecraft) {
         Map<String, String> known = new HashMap<>();
+        Map<String, String> listings = new HashMap<>();
         Map<String, java.util.zip.ZipFile> jar = new HashMap<>();
         boolean[] loaded = { false };
         return (owner, field) -> {
@@ -181,9 +207,11 @@ final class Convert {
                     loaded[0] = true;
                     var version = Json.object(Json.parse(Target.fetch(build, gameVersionUrl(minecraft))));
                     var downloads = Json.object(version.get("downloads"));
-                    if (downloads.get("client_mappings") instanceof Map<?, ?> mappings) known.putAll(
-                        mappingFieldTypes(Target.fetch(build, Json.text(Json.object(mappings), "url", "")))
-                    );
+                    if (downloads.get("client_mappings") instanceof Map<?, ?> mappings) {
+                        String text = Target.fetch(build, Json.text(Json.object(mappings), "url", ""));
+                        known.putAll(mappingFieldTypes(text));
+                        listings.putAll(mappingMembers(text));
+                    }
                     else {
                         var client = Json.object(downloads.get("client"));
                         Path file = Path.of(System.getProperty("user.home"), ".mmt", "minecraft", minecraft, "client.jar");
@@ -197,15 +225,22 @@ final class Convert {
                 String key = owner + " " + field;
                 if (known.containsKey(key)) return known.get(key);
                 var zip = jar.get("client");
-                if (zip == null) return null;
+                // A class the game does not have: the line opens nothing on NeoForge either.
+                if (zip == null) return listings.isEmpty() ? null : field.equals("*") ? listings.getOrDefault(owner, "") : field.contains("(") ? null : "";
+                if (field.equals("*") && listings.containsKey(owner)) return listings.get(owner);
                 var entry = zip.getEntry(owner + ".class");
-                if (entry == null) return null;
+                if (entry == null) return "";
+                StringBuilder listing = new StringBuilder();
                 try (var in = zip.getInputStream(entry)) {
                     for (var member : Explain.Index.parse(in.readAllBytes()).members()) {
                         if (member.method()) known.put(owner + " " + member.name() + member.descriptor(), "access " + member.access());
                         else known.put(owner + " " + member.name(), member.descriptor());
+                        listing.append(member.method() ? "method " : "field ").append(member.name()).append(' ').append(member.descriptor());
+                        listing.append(member.method() ? " " + member.access() : "").append('\n');
                     }
                 }
+                listings.put(owner, listing.toString());
+                if (field.equals("*")) return listing.toString();
                 // The class is read and has no such member: "" says the game lacks it (null is "not known").
                 return known.getOrDefault(key, "");
             } catch (Exception offline) {
@@ -218,6 +253,8 @@ final class Convert {
         for (Object v : Json.array(Json.object(Json.parse(Target.fetch(build, "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"))).get("versions"))) {
             if (minecraft.equals(Json.object(v).get("id"))) return Json.text(Json.object(v), "url", "");
         }
+        // Gradle builds may write 26.2.0 for Mojang's 26.2.
+        if (minecraft.endsWith(".0")) return gameVersionUrl(minecraft.substring(0, minecraft.length() - 2));
         throw new IOException("Mojang lists no Minecraft " + minecraft);
     }
 
@@ -235,6 +272,38 @@ final class Convert {
             if (owner != null && field.find()) out.put(owner + " " + field.group(2), descriptor(field.group(1)));
         }
         return out;
+    }
+
+    /**
+     * Every class of Mojang's ProGuard mappings with its fields and methods in Mojang's names, as gameFieldTypes lists
+     * them for "*" ("field NAME DESC", "method NAME DESC"; the mappings give no access flags).
+     */
+    static Map<String, String> mappingMembers(String mappings) {
+        Map<String, StringBuilder> out = new HashMap<>();
+        StringBuilder owner = null;
+        Pattern field = Pattern.compile("^\\s+([\\w.$\\[\\]]+) ([\\w$]+) -> [\\w$]+\\s*$");
+        Pattern method = Pattern.compile("^\\s+(?:\\d+:\\d+:)?([\\w.$\\[\\]]+) ([\\w$<>]+)\\(([^)]*)\\)(?::\\d+:\\d+)? -> [\\w$<>]+\\s*$");
+        for (String line : mappings.split("\n")) {
+            if (line.startsWith("#") || line.isBlank()) continue;
+            if (!line.startsWith(" ")) {
+                owner = out.computeIfAbsent(line.substring(0, line.indexOf(" -> ")).replace('.', '/'), k -> new StringBuilder());
+                continue;
+            }
+            if (owner == null) continue;
+            Matcher f = field.matcher(line);
+            if (f.find()) {
+                owner.append("field ").append(f.group(2)).append(' ').append(descriptor(f.group(1))).append('\n');
+                continue;
+            }
+            Matcher m = method.matcher(line);
+            if (!m.find()) continue;
+            StringBuilder desc = new StringBuilder("(");
+            for (String arg : m.group(3).split(",")) if (!arg.isBlank()) desc.append(descriptor(arg.strip()));
+            owner.append("method ").append(m.group(2)).append(' ').append(desc).append(')').append(descriptor(m.group(1))).append('\n');
+        }
+        Map<String, String> listed = new HashMap<>();
+        for (var e : out.entrySet()) listed.put(e.getKey(), e.getValue().toString());
+        return listed;
     }
 
     /** A Java type as written in Mojang's mappings (int, java.util.List, a.B[]) as a JVM descriptor. */
@@ -287,7 +356,10 @@ final class Convert {
         if (!Set.of("fabric", "neoforge").contains(to)) throw new IllegalArgumentException(
             "convert needs --to fabric or --to neoforge. Forge, Quilt and Paper are not converted yet; see mmt help convert."
         );
-        if (to.equals(from)) throw new IllegalArgumentException("This project is already a " + from + " mod.");
+        // --names mojang on a yarn-named Fabric mod: only its names move (yarn is not published past 1.21.11).
+        boolean namesOnly = to.equals(from) && options.get("names", "").equalsIgnoreCase("mojang");
+        if (to.equals(from) && !namesOnly) throw new IllegalArgumentException("This project is already a " + from + " mod.");
+        if (namesOnly && !from.equals("fabric")) throw new IllegalArgumentException("--names mojang renames a yarn-named Fabric mod; NeoForge mods are in Mojang's names already.");
         if (
             Files.isRegularFile(project.root.resolve("build.gradle.kts")) ||
             !Files.isRegularFile(project.root.resolve("build.gradle"))
@@ -320,7 +392,10 @@ final class Convert {
             Files.createDirectories(transaction.resolve("before"));
             saveInProgress();
         }
-        if (from.equals("fabric")) toNeoForge(minecraft);
+        if (namesOnly) {
+            if (!yarnNames()) throw new IllegalArgumentException("This Fabric mod's build does not map the game with net.fabricmc:yarn; it is in Mojang's names already.");
+            yarnToMojang(minecraft);
+        } else if (from.equals("fabric")) toNeoForge(minecraft);
         else toFabric(minecraft);
         if (!neutralDependencies.isEmpty()) notes.add(
             "Dependencies kept as they are, since they name no loader (libraries, or a mod's loader-neutral API): " +
@@ -355,7 +430,18 @@ final class Convert {
             result.put("compiled", null);
             // A dry run succeeds when it ran; what it could not convert is in left.
             result.put("ok", dryRun || left.isEmpty());
-        } else compile(result);
+        } else {
+            compile(result);
+            // The build repair at compile time wrote files after the undo record was made: it is made again.
+            if (repairedBuild) Port.finishTransaction(project, transaction, before, removed);
+            // A yarn mod renamed on Fabric: its new refmaps must resolve every mixin to what the original's did.
+            if (namesOnly && refmapNames != null && Boolean.TRUE.equals(result.get("compiled"))) {
+                List<String> differ = refmapNames.check(originalRefmaps, RefmapNames.read(project.root.resolve("build/classes")));
+                result.put("refmapCheck", Json.map("mixins", originalRefmaps.size(), "differ", differ));
+                for (String d : differ) leave("mixins", 0, d, "the renamed mixin resolves other game members than the original's refmap did");
+                if (!differ.isEmpty()) result.put("ok", false);
+            }
+        }
         result.put("details", text(result));
         return result;
     }
@@ -486,7 +572,9 @@ final class Convert {
             Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
             before.put(relative, Fingerprints.bytes(Files.readAllBytes(file)));
         } else before.put(relative, null);
-        saveInProgress();
+        // Appended, not the whole record saved again: undo after an interruption reads it (Port.withJournal).
+        String hash = before.get(relative) == null ? "" : String.valueOf(before.get(relative));
+        Files.writeString(transaction.resolve(Port.JOURNAL), relative + "\t" + hash + "\n", StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 
     /** Files whose lines end in CRLF: they are read with LF and written back with CRLF. */
@@ -677,6 +765,212 @@ final class Convert {
         return out.toString();
     }
 
+    // ---- yarn's names to Mojang's ---------------------------------------------------------------------
+
+    /** Whether the mod is written in Fabric's yarn names: its build maps the game with net.fabricmc:yarn (a yarn_mappings property alone may be left over). */
+    boolean yarnNames() throws IOException {
+        for (String file : List.of("build.gradle", "build.gradle.kts")) if (read(file).contains("net.fabricmc:yarn:")) return true;
+        return false;
+    }
+
+    /** Set once yarnToMojang has renamed the mod: its access widener is in Mojang's names from then on. */
+    boolean renamedFromYarn;
+
+    /** The untouched yarn mod's refmaps (mixin -> source string -> intermediary), and their names in Mojang's. */
+    Map<String, Map<String, String>> originalRefmaps = Map.of();
+
+    RefmapNames refmapNames;
+
+    /**
+     * A mod in yarn's names moves to Mojang's names first, on its own game version, since NeoForge (and the other
+     * loader's bridge) is written in Mojang's names. The Java sources go through Loom's own migrateMappings to
+     * net.minecraft:mappings (Mojang's official names), which renames every Java reference with the compiler's
+     * types; what Mixin reads by name (targets, method = "...", @At targets, @Accessor, @Shadow), which migrateMappings
+     * leaves, and the access widener, which these Loom versions do not migrate, through the yarn -> Mojang table port
+     * uses (VersionMap --from-names yarn --to-names mojmap, MixinNames); and the build maps the game with
+     * loom.officialMojangMappings().
+     */
+    void yarnToMojang(String minecraft) throws Exception {
+        // Every source set (main, client, test, testmod, gametest ...): each is compiled against the same game.
+        List<String> roots = new ArrayList<>();
+        if (Files.isDirectory(project.root.resolve("src"))) try (var sets = Files.list(project.root.resolve("src"))) {
+            for (Path set : sets.sorted().toList()) if (Files.isDirectory(set.resolve("java"))) roots.add("src/" + set.getFileName() + "/java");
+        }
+        // The untouched mod's own build resolves every mixin string to an intermediary member in its refmaps: built once
+        // here, they rename those strings exactly (RefmapNames) and check the renamed build's refmaps after it compiles.
+        List<String> tasks = new ArrayList<>();
+        for (String root : roots) {
+            String set = root.split("/")[1];
+            tasks.add(set.equals("main") ? "classes" : set + "Classes");
+        }
+        tasks.add("--continue");
+        var original = build.gradle(tasks, "convert-yarn-refmap");
+        originalRefmaps = RefmapNames.read(project.root.resolve("build/classes"));
+        // Build output only: the renamed build's refmaps must be its own when they are checked after it compiles.
+        OwnCompile.deleteTree(project.root.resolve("build/classes"));
+        if (originalRefmaps.isEmpty() && original.exit() != 0) notes.add(
+            "Names: the untouched mod did not build (" + Run.tail(original.log()).strip().lines().findFirst().orElse("") +
+            "), so its mixin strings are renamed from the yarn -> Mojang table instead of its refmap."
+        );
+        // migrateMappings resolves types from the sources it is given: a testmod's classes extend main's, so every set is
+        // renamed in one run over their files together (each set alone when two sets hold a file at the same path).
+        Map<String, String> origin = new HashMap<>();
+        boolean together = true;
+        for (String root : roots) try (var walk = Files.walk(project.root.resolve(root))) {
+            for (Path file : walk.filter(p -> p.toString().endsWith(".java")).toList()) {
+                String rel = project.root.resolve(root).relativize(file).toString().replace('\\', '/');
+                if (origin.putIfAbsent(rel, root) != null) together = false;
+            }
+        }
+        List<List<String>> runs = together ? List.of(roots) : roots.stream().map(List::of).toList();
+        for (List<String> group : runs) {
+            if (group.isEmpty()) continue;
+            Path input = project.state().resolve("yarn-to-mojang/in");
+            Path output = project.state().resolve("yarn-to-mojang/out");
+            OwnCompile.deleteTree(input);
+            OwnCompile.deleteTree(output);
+            Map<String, String> from = new HashMap<>();
+            for (String root : group) try (var walk = Files.walk(project.root.resolve(root))) {
+                for (Path file : walk.filter(p -> p.toString().endsWith(".java")).toList()) {
+                    String rel = project.root.resolve(root).relativize(file).toString().replace('\\', '/');
+                    Files.createDirectories(input.resolve(rel).getParent());
+                    Files.copy(file, input.resolve(rel));
+                    from.put(rel, root);
+                }
+            }
+            var run = build.gradle(
+                List.of("migrateMappings", "--mappings", "net.minecraft:mappings:" + minecraft, "--input", input.toString(), "--output", output.toString()),
+                "convert-yarn-to-mojang"
+            );
+            if (run.exit() != 0) throw new IOException(
+                "Loom's migrateMappings could not move " + group + " from yarn's names to Mojang's: " + Run.tail(run.log())
+            );
+            Map<String, Integer> renamed = new TreeMap<>();
+            try (var walk = Files.walk(output)) {
+                for (Path file : walk.filter(p -> p.toString().endsWith(".java")).toList()) {
+                    String rel = output.relativize(file).toString().replace('\\', '/');
+                    if (!from.containsKey(rel)) continue;
+                    String target = from.get(rel) + "/" + rel;
+                    String text = Files.readString(file, StandardCharsets.UTF_8);
+                    if (!text.equals(read(target))) {
+                        write(target, text);
+                        renamed.merge(from.get(rel), 1, Integer::sum);
+                    }
+                }
+            }
+            for (var e : renamed.entrySet()) applied.computeIfAbsent("yarn-to-mojang", k -> new ArrayList<>()).add(e.getKey() + " (" + e.getValue() + " files)");
+        }
+        Path tableFile = project.state().resolve("yarn-to-mojang/names-" + minecraft + ".json");
+        var names = new JavaTools(build).run(
+            "VersionMap",
+            List.of(minecraft, minecraft, "--from-names", "yarn", "--to-names", "mojmap", "--names", "yarn", "--hierarchy", "--out", tableFile.toString()),
+            "convert-yarn-names"
+        );
+        if (names.exit() != 0) throw new IOException("No yarn -> Mojang table for " + minecraft + ": " + Run.tail(names.log()));
+        Map<String, Object> table = Json.read(tableFile);
+        // What Mixin reads by name when the game runs, which migrateMappings leaves in yarn's names.
+        MixinNames mixins = new MixinNames(table);
+        Set<String> exact = new HashSet<>();
+        if (!originalRefmaps.isEmpty()) {
+            Path interFile = project.state().resolve("yarn-to-mojang/intermediary-" + minecraft + ".json");
+            var inter = new JavaTools(build).run("VersionMap", List.of(minecraft, "--intermediary", interFile.toString()), "convert-yarn-intermediary");
+            if (inter.exit() != 0) throw new IOException("No intermediary -> Mojang table for " + minecraft + ": " + Run.tail(inter.log()));
+            refmapNames = new RefmapNames(Json.read(interFile));
+            Map<String, Map<String, String>> byFile = new TreeMap<>();
+            for (var e : originalRefmaps.entrySet()) {
+                String outer = e.getKey().split("\\$")[0] + ".java";
+                for (String root : roots) if (exists(root + "/" + outer)) {
+                    byFile.computeIfAbsent(root + "/" + outer, k -> new TreeMap<>()).putAll(e.getValue());
+                    break;
+                }
+            }
+            for (var e : byFile.entrySet()) {
+                String text = read(e.getKey()), out = refmapNames.apply(text, e.getValue());
+                if (!out.equals(text)) write(e.getKey(), out);
+                exact.add(e.getKey());
+            }
+            applied.computeIfAbsent("yarn-to-mojang", k -> new ArrayList<>()).add("mixin strings from the mod's refmap (" + exact.size() + " files)");
+        }
+        int mixinFiles = 0;
+        List<String> every = new ArrayList<>(javaFiles());
+        every.addAll(testJavaFiles());
+        for (String file : every) {
+            mixins.stringsDone = exact.contains(file);
+            String text = read(file), out = mixins.remap(mixins.javaNames(text));
+            if (!out.equals(text)) {
+                write(file, out);
+                mixinFiles++;
+            }
+        }
+        for (String l : mixins.left) leave("mixins", 0, l, "a mixin names a member whose overloads Mojang names differently, with no descriptor to choose");
+        if (mixinFiles > 0) applied.computeIfAbsent("yarn-to-mojang", k -> new ArrayList<>()).add("mixin names (" + mixinFiles + " files)");
+        for (String widener : accessWideners()) {
+            String text = read(widener), out = widenerToMojang(text, table);
+            if (!out.equals(text)) {
+                write(widener, out);
+                applied.computeIfAbsent("yarn-to-mojang", k -> new ArrayList<>()).add(widener);
+            }
+        }
+        String gradle = read("build.gradle");
+        String mojang = gradle.replaceAll("(?m)^([ \\t]*)mappings\\s*\\(?\\s*[\"']net\\.fabricmc:yarn:[^\"']*[\"']\\s*\\)?[ \\t]*$", "$1mappings loom.officialMojangMappings()");
+        if (!mojang.equals(gradle)) write("build.gradle", mojang);
+        renamedFromYarn = true;
+        notes.add(
+            "Names: the mod was in yarn's names; Loom's migrateMappings moved its sources to Mojang's names (" + minecraft +
+            ") and the yarn -> Mojang table its access widener, before the loader moved."
+        );
+    }
+
+    /** The access wideners fabric.mod.json names, under src/main/resources. */
+    List<String> accessWideners() throws IOException {
+        List<String> out = new ArrayList<>();
+        String meta = read("src/main/resources/fabric.mod.json");
+        if (meta.isEmpty()) return out;
+        if (Json.object(Json.parse(meta)).get("accessWidener") instanceof String widener && exists("src/main/resources/" + widener)) out.add("src/main/resources/" + widener);
+        return out;
+    }
+
+    /**
+     * An access widener in yarn's names written in Mojang's (classes, members and descriptors), from the yarn -> Mojang
+     * table (classes, methods and fields by owner, name and descriptor). A name the table leaves out is the same in both.
+     */
+    static String widenerToMojang(String text, Map<String, Object> table) {
+        Map<String, String> classes = new HashMap<>(), members = new HashMap<>();
+        for (Object o : Json.array(table.get("classes"))) {
+            var c = Json.object(o);
+            classes.put(Json.text(c, "from", "").replace('.', '/'), Json.text(c, "to", "").replace('.', '/'));
+        }
+        for (String kind : List.of("methods", "fields")) for (Object o : Json.array(table.get(kind))) {
+            var m = Json.object(o);
+            if (MixinNames.synthetic(Json.text(m, "to", ""))) continue;
+            members.put(Json.text(m, "owner", "").replace('.', '/') + " " + Json.text(m, "from", "") + " " + Json.text(m, "desc", ""), Json.text(m, "to", ""));
+        }
+        java.util.function.UnaryOperator<String> type = name -> classes.getOrDefault(name, name);
+        java.util.function.UnaryOperator<String> desc = d -> Pattern.compile("L([^;]+);").matcher(d).replaceAll(r -> Matcher.quoteReplacement("L" + type.apply(r.group(1)) + ";"));
+        StringBuilder out = new StringBuilder();
+        for (String line : text.split("\n", -1)) {
+            String body = line.replaceAll("#.*$", "").strip();
+            String[] t = body.split("\\s+");
+            if (body.isEmpty() || t[0].equals("accessWidener") || t.length < 3) {
+                out.append(line).append('\n');
+                continue;
+            }
+            if (t[1].equals("class")) {
+                out.append(t[0]).append(" class ").append(type.apply(t[2])).append('\n');
+                continue;
+            }
+            if (t.length < 5) {
+                out.append(line).append('\n');
+                continue;
+            }
+            // The table names only what yarn and Mojang name differently: a member it leaves out keeps its name.
+            String name = members.getOrDefault(t[2] + " " + t[3] + " " + t[4], t[3]);
+            out.append(t[0]).append(' ').append(t[1]).append(' ').append(type.apply(t[2])).append(' ').append(name).append(' ').append(desc.apply(t[4])).append('\n');
+        }
+        // split keeps a last empty piece, so one line end too many was written.
+        return out.substring(0, out.length() - 1);
+    }
+
     // ---- Fabric to NeoForge ----------------------------------------------------------------------------
 
     void toNeoForge(String minecraft) throws Exception {
@@ -689,9 +983,13 @@ final class Convert {
             "NeoForge mod ids allow only a-z, 0-9 and _, so " + fabricId + " is " + modid + " on NeoForge; " +
             "its resources and registry ids keep the " + fabricId + " namespace, and neoforge.mods.toml keeps the Fabric id for the way back."
         );
+        // NeoForge is in Mojang's names: a yarn-named mod is renamed first, while its build is still Loom's.
+        if (yarnNames()) yarnToMojang(minecraft);
         Set<String> unbridged = unbridge();
         if (Versions.compare(minecraft, ONLY_IN_ERROR) >= 0) dropSideOnly();
         rewriteSources("fabric", "neoforge");
+        convertDataConditions(false);
+        convertDataIngredients(false);
         applyFabricBridge(meta, minecraft);
         Map<String, Object> entrypoints = new LinkedHashMap<>();
         if (meta.get("entrypoints") instanceof Map<?, ?>) for (var e : Json.object(meta.get("entrypoints")).entrySet()) {
@@ -777,7 +1075,7 @@ final class Convert {
             if (text.isEmpty()) leave(metaFile, 0, "accessWidener " + widener, "the file is not in src/main/resources");
             else {
                 // An access widener in yarn's names cannot become a transformer in Mojang's names.
-                boolean yarn = properties(read("gradle.properties")).keySet().stream().anyMatch(k -> k.startsWith("yarn_"));
+                boolean yarn = !renamedFromYarn && properties(read("gradle.properties")).keySet().stream().anyMatch(k -> k.startsWith("yarn_"));
                 List<String> unconverted = new ArrayList<>();
                 List<String> lines = widenerToTransformer(text, !yarn, unconverted);
                 // Members NeoForge's own access transformer opens need no line of the mod's (the way back from Fabric).
@@ -817,7 +1115,15 @@ final class Convert {
         write("src/main/resources/META-INF/neoforge.mods.toml", modsToml(meta, minecraft));
         delete(metaFile);
         buildToNeoForge(minecraft);
-        leftovers(List.of("net.fabricmc.", "com.terraformersmc.modmenu."));
+        String toml = read("src/main/resources/META-INF/neoforge.mods.toml");
+        String settled = unexpandedVersion(toml, exists("build.gradle") ? read("build.gradle") : "");
+        if (!settled.equals(toml)) {
+            write("src/main/resources/META-INF/neoforge.mods.toml", settled);
+            notes.add("Version: fabric.mod.json's version was a Gradle placeholder that no step of the converted build expands (it was in a script that needs Loom), so neoforge.mods.toml reads the jar's version (${file.jarVersion}).");
+        }
+        // Fabric's loader and API packages: net.fabricmc's libraries (mapping-io, tiny-remapper) are plain dependencies
+        // the build keeps, which compile on any loader.
+        leftovers(List.of("net.fabricmc.api.", "net.fabricmc.loader.", "net.fabricmc.fabric.", "com.terraformersmc.modmenu."));
     }
 
     // ---- the Fabric bridge on NeoForge ------------------------------------------------------------------------
@@ -879,6 +1185,10 @@ final class Convert {
             build.harness.resolve(Json.text(b, "folder", "")),
             layer == null ? null : build.harness.resolve(Json.text(layer, "folder", ""))
         );
+        // A version layer leaves out what its game's Fabric API or NeoForge lacks, and renames words (Identifier) in the rest.
+        List<String> layerDrops = layer == null ? List.of() : LoaderRules.strings(layer.get("drops"));
+        templates.keySet().removeIf(rel -> dropped(layerDrops, rel));
+        Map<String, Object> layerWords = layer != null && layer.get("rewrites") instanceof Map<?, ?> words ? Json.object(words) : Map.of();
         Set<String> classes = mirroredClasses(templates);
         String entry = null;
         if (meta.get("entrypoints") instanceof Map<?, ?> eps) for (String side : List.of("main", "client", "server")) {
@@ -941,7 +1251,7 @@ final class Convert {
         bridgeUsers = sourcesOutside(folder);
         for (var template : templates.entrySet()) write(
             folder + "/" + template.getKey(),
-            fillBridge(Files.readString(template.getValue(), StandardCharsets.UTF_8), pkg)
+            fillBridge(layerRewrites(Files.readString(template.getValue(), StandardCharsets.UTF_8), layerWords), pkg)
         );
         bridgeMixinConfig = bridgeMixins(b, layer, pkg, javaFiles().stream().filter(f -> !f.startsWith(folder + "/")).toList());
         notes.add(
@@ -1209,7 +1519,7 @@ final class Convert {
             leave(file, 0, "entrypoint " + name, "the class declaration was not found");
             return;
         }
-        if (text.contains("@Mod(")) {
+        if (text.contains("@Mod(") || text.contains("@net.neoforged.fml.common.Mod(")) {
             leave(
                 file,
                 LoaderRules.line(text, c.start()),
@@ -1231,9 +1541,12 @@ final class Convert {
         }
         String indent = c.group(1);
         String inner = indent + unit;
-        String annotation = dist == null
-            ? "@Mod(" + LoaderRules.quote(modid) + ")"
-            : "@Mod(value = " + LoaderRules.quote(modid) + ", dist = Dist." + dist + ")";
+        // A mod type of its own named Mod (imported, or in the same package) would be what @Mod names: the annotation is qualified.
+        String dir = file.substring(0, file.lastIndexOf('/') + 1);
+        boolean modShadowed = otherTypeNamed(text, "Mod", "net.neoforged.fml.common.Mod") || exists(dir + "Mod.java");
+        String annotation = (modShadowed ? "@net.neoforged.fml.common.Mod(" : "@Mod(") + (dist == null
+            ? LoaderRules.quote(modid) + ")"
+            : "value = " + LoaderRules.quote(modid) + ", dist = Dist." + dist + ")");
         // NeoForge loads a @Mod class before any registry is open. An entry class that registers in a static field
         // (a game rule, a block) must not be that class: a small generated holder runs it once registries are open.
         boolean holder = STATIC_REGISTRATION.matcher(text).find();
@@ -1318,9 +1631,8 @@ final class Convert {
         out = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.api\\." + api + "\\s*;[^\\n]*\\n?")
             .matcher(out)
             .replaceAll("");
-        List<String> needed = new ArrayList<>(
-            List.of("net.neoforged.fml.common.Mod", "net.neoforged.bus.api.IEventBus")
-        );
+        List<String> needed = new ArrayList<>(List.of("net.neoforged.bus.api.IEventBus"));
+        if (!modShadowed) needed.add("net.neoforged.fml.common.Mod");
         if (client) needed.add("net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent");
         else needed.addAll(
             List.of("net.neoforged.neoforge.registries.RegisterEvent", "net.minecraft.core.registries.Registries")
@@ -1468,16 +1780,20 @@ final class Convert {
             "Mod Menu API",
             "only getModConfigScreenFactory has a NeoForge counterpart (IConfigScreenFactory)"
         );
-        write(file, LoaderRules.modMenuToNeoForge(text));
-        for (String other : javaFiles()) {
-            String body = read(other);
-            String next = body.replace(".getModConfigScreenFactory().create(", ".getModConfigScreenFactory().apply(");
-            write(other, next);
+        // Mod Menu itself (or a mod shipping its API): ModMenuApi and ConfigScreenFactory are the mod's own types, kept.
+        boolean ownApi = javaFiles().stream().anyMatch(f -> f.contains("/com/terraformersmc/modmenu/api/"));
+        if (!ownApi) {
+            write(file, LoaderRules.modMenuToNeoForge(text));
+            for (String other : javaFiles()) {
+                String body = read(other);
+                String next = body.replace(".getModConfigScreenFactory().create(", ".getModConfigScreenFactory().apply(");
+                write(other, next);
+            }
         }
         String register =
             "container.registerExtensionPoint(IConfigScreenFactory.class, (modContainer, parent) -> new " +
             menu +
-            "().getModConfigScreenFactory().apply(parent));";
+            "().getModConfigScreenFactory()." + (ownApi ? "create" : "apply") + "(parent));";
         String client = null;
         for (Object item : Json.array(entrypoints.getOrDefault("client", List.of()))) client = item instanceof String s
             ? s
@@ -1583,6 +1899,11 @@ final class Convert {
         "modmenu"
     );
 
+    /** Fabric's loader and Fabric API, whole or one of its modules (fabric-screen-api-v1 ...): no NeoForge mod of that id. */
+    static boolean fabricOnly(String id) {
+        return FABRIC_ONLY.contains(id) || id.matches("fabric-[a-z0-9-]+-v\\d+");
+    }
+
     String modsToml(Map<String, Object> meta, String minecraft) {
         StringBuilder out = new StringBuilder();
         out.append("modLoader = \"javafml\"\nloaderVersion = \"[1,)\"\n");
@@ -1623,6 +1944,11 @@ final class Convert {
         out.append("description = ").append(tomlString(Json.text(meta, "description", ""))).append('\n');
         StringBuilder properties = new StringBuilder();
         if (!modid.equals(fabricId)) properties.append("fabricId = ").append(tomlString(fabricId)).append('\n');
+        // The side fabric.mod.json names, which the Fabric bridge's ModMetadata.getEnvironment reads.
+        if (meta.get("environment") instanceof String side && (side.equals("client") || side.equals("server"))) properties
+            .append("fabricEnvironment = ")
+            .append(tomlString(side))
+            .append('\n');
         for (var e : ownEntrypoints.entrySet()) properties
             .append(tomlString("fabric.entrypoints." + e.getKey()))
             .append(" = [")
@@ -1663,7 +1989,7 @@ final class Convert {
             if (!(meta.get(kind.getKey()) instanceof Map<?, ?>)) continue;
             for (var dep : Json.object(meta.get(kind.getKey())).entrySet()) {
                 String id = dep.getKey();
-                if (FABRIC_ONLY.contains(id)) continue;
+                if (fabricOnly(id)) continue;
                 if (id.equals("another-mod")) continue;
                 // A Fabric-only library the Fabric bridge carries in this mod (bridges[].replacesMods) is no dependency there.
                 if (fabricBridgePackage != null && fabricBridgeReplacedMods.contains(id)) {
@@ -1776,8 +2102,10 @@ final class Convert {
         );
         stable.sort((a, b) -> Versions.compare(b, a));
         String gradle = project.wrapperVersion(), newestNeeds = null;
+        boolean anyMetadata = false;
         for (String version : stable.subList(0, Math.min(12, stable.size()))) {
             String needs = null;
+            boolean metadata = true;
             try {
                 for (Object variant : Json.array(
                     Json.object(
@@ -1793,12 +2121,18 @@ final class Convert {
                     ) needs = String.valueOf(Json.object(attributes).get("org.gradle.plugin.api-version"));
                 }
             } catch (IOException | IllegalArgumentException noModule) {
-                // No Gradle module metadata: nothing says which Gradle it needs.
+                // No Gradle module metadata (yet: a release mid-publication has its jar before its .module): what it
+                // needs is unknown, so an older release that says is preferred.
+                metadata = false;
             }
+            if (!metadata) continue;
+            anyMetadata = true;
             if (needs == null || gradle == null || Versions.compare(gradle, needs) >= 0) return version;
             if (newestNeeds == null) newestNeeds = needs;
         }
         if (stable.isEmpty()) throw new IOException("No stable " + group + ":" + artifact + " release in " + repository + ".");
+        // No release says what it needs: the newest, as before.
+        if (!anyMetadata) return stable.get(0);
         // None runs on this Gradle: the newest release, and the wrapper moves to the Gradle its own metadata asks for.
         upgradeWrapper(newestNeeds, group + ":" + artifact + " " + stable.get(0));
         return stable.get(0);
@@ -2271,9 +2605,7 @@ final class Convert {
             .append("'\n")
             .append(unit)
             .append("exclude '.cache'\n}\n");
-        if (split) neoForge.append(
-            "\n// NeoForge has no split client source set: the client sources build with the rest.\nsourceSets.main.java.srcDir 'src/client/java'\nsourceSets.main.resources.srcDir 'src/client/resources'\n"
-        );
+        splitClient = split;
         gradle =
             gradle.substring(0, insertAt) +
             neoForge +
@@ -2351,6 +2683,24 @@ final class Convert {
         for (Matcher named = Pattern.compile("(?m)^.*fabricmc.*$").matcher(gradle); named.find(); ) {
             int at = gradle.indexOf("fabricmc", named.start());
             if (gradleCode[at]) leave("build.gradle", 0, named.group().strip(), "still names Fabric; no rule changes it");
+        }
+        // Loom puts the game on every source set, ModDevGradle on main only: each other set the build declares gets it,
+        // at the end of the build, where every set exists (a build may declare its sets after the neoForge block).
+        List<String> sets = declaredSourceSets(gradle);
+        sets.removeAll(List.of("main", "test"));
+        // NeoForge has no split client source set: the client set's sources (wherever the build put them) build with
+        // main, at the end of the build, where the build's own source set settings are final.
+        if (splitClient) {
+            sets.remove("client");
+            // What used the client classes uses main's now, which holds them.
+            gradle = gradle.replaceAll("(?<![\\w.])(sourceSets\\.)?client\\.output\\b", "$1main.output /* client.output on Fabric */");
+            gradle = gradle.stripTrailing() + "\n" + SPLIT_CLIENT;
+        }
+        if (!sets.isEmpty()) {
+            StringBuilder extra = new StringBuilder("\n// Loom gave every source set the game's classes; ModDevGradle gives them to main, and to these as asked.\nneoForge {\n");
+            for (String set : sets) extra.append("    addModdingDependenciesTo(sourceSets.").append(set).append(")\n");
+            gradle = gradle.stripTrailing() + "\n" + extra + "}\n";
+            notes.add("Build: the source sets " + String.join(", ", sets) + " get the game's classes from ModDevGradle (addModdingDependenciesTo), as Loom gave them.");
         }
         write("build.gradle", gradle.replaceAll("\\n{3,}", "\n\n"));
         Map<String, String> props = new LinkedHashMap<>();
@@ -2450,7 +2800,7 @@ final class Convert {
         for (String file : javaFiles()) {
             String text = read(file);
             Matcher annotation = Pattern.compile(
-                "@Mod\\(\\s*(?:value\\s*=\\s*)?([^,)]+?)\\s*(?:,\\s*dist\\s*=\\s*Dist\\.(\\w+)\\s*)?\\)"
+                "@(?:net\\.neoforged\\.fml\\.common\\.)?Mod\\(\\s*(?:value\\s*=\\s*)?([^,)]+?)\\s*(?:,\\s*dist\\s*=\\s*Dist\\.(\\w+)\\s*)?\\)"
             ).matcher(text);
             if (!annotation.find()) continue;
             String name = file.replaceFirst("^src/\\w+/java/", "").replaceAll("\\.java$", "").replace('/', '.');
@@ -2524,8 +2874,31 @@ final class Convert {
             entrypoints.computeIfAbsent("client", k -> new ArrayList<>()).add(name);
         }
         rewriteSources("neoforge", "fabric");
+        convertDataConditions(true);
+        convertDataIngredients(true);
         dropNeoForgeTabOrder();
+        // Before the bridge points NeoForge's names at its own classes and copies, which a mixin's descriptors then hide.
+        neoforgeParametersOutOfMixins();
         if (bridgeUsed) applyBridge();
+        if (bridgeUsed) setAsideDatagen();
+        setAsideTestMods();
+        lambdaMixinTargets(minecraft);
+        enumExtensionLookups();
+        superHookCalls();
+        // The members of NeoForge's copied classes that do not compile on Fabric come out once the rules have run, as
+        // bench/bridge_import.py measured them.
+        for (String file : copiedFiles) {
+            String name = NeoForgeSources.PREFIX + file.substring((bridgeFolder() + "/" + NeoForgeSources.FOLDER + "/").length(), file.length() - ".java".length()).replace('/', '.');
+            Set<String> gone = copiedMembersGone.get(name);
+            if (gone != null && exists(file)) write(file, NeoForgeSources.remove(read(file), gone));
+        }
+        // NeoForge generates data from GatherDataEvent listeners; Fabric from fabric-datagen entrypoints: the bridge's
+        // DataEntrypoint posts the event (when the bridge has it for this game version).
+        if (bridgeUsed && exists(bridgeFolder() + "/DataEntrypoint.java")) {
+            boolean generates = false;
+            for (String file : javaFiles()) if (!file.startsWith(bridgeFolder() + "/")) generates |= read(file).contains("GatherDataEvent");
+            if (generates) entrypoints.computeIfAbsent("fabric-datagen", k -> new ArrayList<>()).add(bridgePackage + ".DataEntrypoint");
+        }
         if (menu != null) {
             String file = classFile(menu);
             if (file != null) {
@@ -2546,10 +2919,12 @@ final class Convert {
         ) known.addAll(LoaderRules.strings(Json.object(at).get("neoforge")));
         // NeoForge's own access transformer opened members for every mod; those the code names stay open on Fabric.
         List<String> neoforgeAccess = usedNeoForgeAccess(minecraft);
-        if (exists(AT_FILE) || !neoforgeAccess.isEmpty()) {
+        // And the lines a rule's Fabric code needs (ShapedRecipePattern.MAX_SIZE for NeoForge's getMaxHeight()).
+        if (exists(AT_FILE) || !neoforgeAccess.isEmpty() || !accessTransformers.isEmpty()) {
             List<String> keep = new ArrayList<>();
             if (exists(AT_FILE)) for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
             for (String line : neoforgeAccess) if (!keep.contains(line)) keep.add(line);
+            for (String line : accessTransformers) if (!keep.contains(line)) keep.add(line);
             if (!neoforgeAccess.isEmpty()) notes.add(
                 "Access widener: " +
                 neoforgeAccess.size() +
@@ -2587,6 +2962,320 @@ final class Convert {
      * NeoForge adds withTabsBefore and withTabsAfter to the game's creative tab builder to order tabs; Fabric's builder has
      * neither, so the calls go (the tab keeps its items and title, and takes the next free place) and a note says so.
      */
+    /**
+     * A wildcard import of a NeoForge package (import net.neoforged.neoforge.client.event.*;) becomes an import of each
+     * mirrored class of that package the file names, as the package itself does not exist on Fabric; a class the bridge
+     * does not mirror is then named in the compiler's errors, as with an explicit import.
+     */
+    static String wildcardBridgeImports(String text, Map<String, Object> classes, List<String> drops, String bridgePackage) {
+        Matcher wild = Pattern.compile("(?m)^import\\s+(net\\.neoforged\\.[\\w.]+)\\.\\*\\s*;[ \\t]*\\n").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (wild.find()) {
+            StringBuilder imports = new StringBuilder();
+            // import ...ModConfigSpec.*; names a mirrored class's nested types: the bridge class's own.
+            Object mirrored = classes.get(wild.group(1));
+            if (mirrored != null && !dropped(drops, String.valueOf(mirrored).replace('.', '/') + ".java")) {
+                wild.appendReplacement(out, Matcher.quoteReplacement("import " + bridgePackage + "." + mirrored + ".*;\n"));
+                continue;
+            }
+            for (var c : classes.entrySet()) {
+                String name = c.getKey();
+                int dot = name.lastIndexOf('.');
+                if (!name.substring(0, dot).equals(wild.group(1))) continue;
+                if (dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) continue;
+                if (!Pattern.compile("(?<![\\w.])" + Pattern.quote(name.substring(dot + 1)) + "\\b").matcher(text).find()) continue;
+                imports.append("import ").append(bridgePackage).append('.').append(c.getValue()).append(";\n");
+            }
+            wild.appendReplacement(out, Matcher.quoteReplacement(imports.toString()));
+        }
+        wild.appendTail(out);
+        return out.toString();
+    }
+
+    /**
+     * A mod mixin whose target is a game method NeoForge's patches give an extra parameter (BlockRenderDispatcher's
+     * renderBreakingTexture with NeoForge's ModelData): on Fabric the game's method has no such parameter, so the NeoForge
+     * types leave the target's descriptor and the handler's parameters, and the mixin targets the game's own method.
+     */
+    void neoforgeParametersOutOfMixins() throws Exception {
+        for (String file : javaFiles()) {
+            String text = read(file);
+            if (!text.contains("@Mixin") || !text.contains("net/neoforged/") && !text.contains("net.neoforged.")) continue;
+            String out = neoforgeParametersOutOfMixin(text);
+            if (out.equals(text)) continue;
+            write(file, out);
+            applied.computeIfAbsent("mixin-neoforge-parameters", k -> new ArrayList<>()).add(file);
+            notes.add(file + ": NeoForge's own parameter types left this mixin's target descriptors and handlers (the game's method on Fabric has none).");
+        }
+    }
+
+    static String neoforgeParametersOutOfMixin(String text) {
+        // In a descriptor string: (...Lnet/neoforged/...;...) loses that parameter.
+        Matcher strings = Pattern.compile("\"([^\"\\n]*\\([^\"\\n]*\\)[^\"\\n]*)\"").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (strings.find()) {
+            String descriptor = strings.group(1);
+            int open = descriptor.indexOf('(');
+            int close = descriptor.indexOf(')');
+            if (open < 0 || close < open || !descriptor.contains("Lnet/neoforged/")) {
+                strings.appendReplacement(out, Matcher.quoteReplacement(strings.group()));
+                continue;
+            }
+            String params = descriptor.substring(open + 1, close).replaceAll("Lnet/neoforged/[\\w/$]+;", "");
+            strings.appendReplacement(out, Matcher.quoteReplacement("\"" + descriptor.substring(0, open + 1) + params + descriptor.substring(close) + "\""));
+        }
+        strings.appendTail(out);
+        // A handler's parameter of a NeoForge type, written out in full.
+        return out.toString().replaceAll(",\\s*(?:final\\s+)?net\\.neoforged\\.[\\w.]+\\s+\\w+(?=\\s*[,)])", "");
+    }
+
+    /**
+     * A mod mixin that targets a game lambda by the compiler's name (method = "lambda$registerTypes$0", the name NeoForge's
+     * development game keeps) targets it by Loom's name for it, the intermediary one (LambdaTargets): Mojang's mappings
+     * leave the game's lambdas out of Loom's names. Only for a game still shipped obfuscated (before 26.1).
+     */
+    void lambdaMixinTargets(String minecraft) throws Exception {
+        if (Versions.compare(minecraft, Route.FIRST_UNOBFUSCATED) >= 0) return;
+        String[] mappings = null;
+        for (String file : javaFiles()) {
+            String text = read(file);
+            if (!text.contains("@Mixin") || !text.contains("\"lambda$")) continue;
+            String owner = mixinOwner(text);
+            if (owner == null || !owner.startsWith("net.minecraft.")) continue;
+            if (mappings == null) mappings = gameAndIntermediaryMappings(minecraft);
+            String[] names = mappings;
+            Matcher lambda = Pattern.compile("\"(lambda\\$[\\w$]+?)(?=[\"(])").matcher(text);
+            StringBuilder out = new StringBuilder();
+            List<String> moved = new ArrayList<>();
+            while (lambda.find()) {
+                String name = LambdaTargets.intermediary(names[0], names[1], owner, lambda.group(1));
+                if (name != null) moved.add(lambda.group(1) + " -> " + name);
+                lambda.appendReplacement(out, Matcher.quoteReplacement("\"" + (name == null ? lambda.group(1) : name)));
+            }
+            lambda.appendTail(out);
+            if (moved.isEmpty()) continue;
+            write(file, out.toString());
+            applied.computeIfAbsent("mixin-lambda-targets", k -> new ArrayList<>()).add(file);
+            notes.add(file + ": mixin targets of the game's lambdas by Loom's names (" + String.join(", ", moved) + ").");
+        }
+    }
+
+    /**
+     * The constants a mod adds to the game's enums (its META-INF/enumextensions.json, which NeoForge builds into the enums
+     * at start) do not exist on Fabric: a lookup of one by name (RecipeBookCategories.valueOf("MOD_TAB")) becomes the
+     * bridge's EnumProxy.fallback, the game's constant that stands in for it, as the mod's EnumProxy fields give.
+     */
+    void enumExtensionLookups() throws Exception {
+        if (bridgePackage == null || !exists(bridgeFolder() + "/EnumProxy.java")) return;
+        List<String[]> entries = new ArrayList<>();
+        for (String file : List.of("src/main/resources/META-INF/enumextensions.json", "src/client/resources/META-INF/enumextensions.json")) {
+            if (!exists(file)) continue;
+            for (Object item : Json.array(Json.object(Json.parse(read(file))).get("entries"))) {
+                var entry = Json.object(item);
+                String type = Json.text(entry, "enum", "");
+                entries.add(new String[] { type.substring(type.lastIndexOf('/') + 1).replace('$', '.'), Json.text(entry, "name", "") });
+            }
+        }
+        if (entries.isEmpty()) return;
+        for (String file : javaFiles()) {
+            String text = read(file);
+            String out = enumExtensionLookups(text, entries, bridgePackage);
+            if (out.equals(text)) continue;
+            write(file, out);
+            applied.computeIfAbsent("enum-extension-lookups", k -> new ArrayList<>()).add(file);
+        }
+        notes.add("Enum constants the mod adds (META-INF/enumextensions.json) cannot be added on Fabric: lookups of them by name are the game's stand-in constant (EnumProxy.fallback).");
+    }
+
+    /**
+     * A rule that makes a NeoForge hook call a bridge helper (block.getLightEmission(...) to
+     * IBlockExtension.getLightEmission(block, ...)) has made super.hook(...) Helper.hook(super, ...), which is no Java. When
+     * the class's superclass is the mod's own and it (or a mod ancestor) declares the hook, the call stays super.hook(...);
+     * otherwise the superclass is the game's, whose hook is NeoForge's default, the helper's: Helper.hook(this, ...).
+     */
+    void superHookCalls() throws Exception {
+        if (bridgePackage == null) return;
+        Map<String, String> classes = new HashMap<>();
+        List<String> files = javaFiles().stream().filter(f -> !f.startsWith(bridgeFolder() + "/")).toList();
+        for (String file : files) classes.put(file.substring(file.lastIndexOf('/') + 1).replaceAll("\\.java$", ""), read(file));
+        Set<String> helpers = new HashSet<>();
+        for (String file : javaFiles()) if (file.startsWith(bridgeFolder() + "/")) helpers.add(file.substring(file.lastIndexOf('/') + 1).replaceAll("\\.java$", ""));
+        for (String file : files) {
+            String text = classes.get(file.substring(file.lastIndexOf('/') + 1).replaceAll("\\.java$", ""));
+            String out = superHookCalls(text, classes, helpers);
+            if (out.equals(text)) continue;
+            write(file, out);
+            applied.computeIfAbsent("neoforge-hook-super-calls", k -> new ArrayList<>()).add(file);
+        }
+    }
+
+    static String superHookCalls(String text, Map<String, String> modClasses, Set<String> helpers) {
+        Matcher call = Pattern.compile("\\b([A-Z]\\w*)\\.(\\w+)\\(\\s*super\\s*(,\\s*|(?=\\)))").matcher(text);
+        StringBuilder out = new StringBuilder();
+        boolean any = false;
+        while (call.find()) {
+            if (!helpers.contains(call.group(1))) continue;
+            any = true;
+            String method = call.group(2);
+            String replacement = declaresUpward(superclassOf(text), method, modClasses, new HashSet<>())
+                ? "super." + method + "("
+                : call.group(1) + "." + method + "(this" + call.group(3);
+            call.appendReplacement(out, Matcher.quoteReplacement(replacement));
+        }
+        if (!any) return text;
+        call.appendTail(out);
+        return out.toString();
+    }
+
+    /** The simple name of the first class's superclass in the text, or null. */
+    static String superclassOf(String text) {
+        Matcher m = Pattern.compile("\\bclass\\s+\\w+\\s*(?:<[^{]*?>)?\\s*extends\\s+([\\w.]+)").matcher(text);
+        return m.find() ? m.group(1).substring(m.group(1).lastIndexOf('.') + 1) : null;
+    }
+
+    /** Whether the mod's class of that simple name, or a mod ancestor of it, declares a method of that name. */
+    static boolean declaresUpward(String simple, String method, Map<String, String> modClasses, Set<String> seen) {
+        if (simple == null || !seen.add(simple)) return false;
+        String source = modClasses.get(simple);
+        if (source == null) return false;
+        if (Pattern.compile("(?m)^\\s*(?:@\\w+(?:\\([^)]*\\))?\\s+)*(?:public|protected)\\s[^;=(]*\\b" + Pattern.quote(method) + "\\s*\\(").matcher(source).find()) return true;
+        return declaresUpward(superclassOf(source), method, modClasses, seen);
+    }
+
+    static String enumExtensionLookups(String text, List<String[]> entries, String bridgePackage) {
+        String out = text;
+        for (String[] entry : entries) {
+            String simple = entry[0].substring(entry[0].lastIndexOf('.') + 1);
+            out = out.replaceAll(
+                "(?<![\\w.])((?:[\\w]+\\.)*" + Pattern.quote(simple) + ")\\.valueOf\\(\\s*\"" + Pattern.quote(entry[1]) + "\"\\s*\\)",
+                Matcher.quoteReplacement(bridgePackage) + ".EnumProxy.fallback($1.class)"
+            );
+        }
+        return out;
+    }
+
+    /** The class a mixin source targets (@Mixin(X.class), X resolved by its imports; or @Mixin(targets = "...")), in dots. */
+    static String mixinOwner(String text) {
+        Matcher named = Pattern.compile("@Mixin\\(\\s*(?:value\\s*=\\s*)?\\{?\\s*([\\w.]+)\\.class").matcher(text);
+        if (named.find()) {
+            String simple = named.group(1);
+            if (simple.contains(".")) return simple;
+            Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+\\." + Pattern.quote(simple) + ")\\s*;").matcher(text);
+            return imported.find() ? imported.group(1) : null;
+        }
+        Matcher targets = Pattern.compile("@Mixin\\(\\s*targets\\s*=\\s*\\{?\\s*\"([\\w.$/]+)\"").matcher(text);
+        return targets.find() ? targets.group(1).replace('/', '.') : null;
+    }
+
+    /** Mojang's client mappings and Fabric's intermediary mappings (tiny v2) of a game version, as text. */
+    String[] gameAndIntermediaryMappings(String minecraft) throws Exception {
+        var version = Json.object(Json.parse(Target.fetch(build, gameVersionUrl(minecraft))));
+        var downloads = Json.object(version.get("downloads"));
+        String mojang = Target.fetch(build, Json.text(Json.object(downloads.get("client_mappings")), "url", ""));
+        Path dir = Path.of(System.getProperty("user.home"), ".mmt", "minecraft", minecraft);
+        Path tiny = dir.resolve("intermediary.tiny");
+        if (!Files.isRegularFile(tiny)) {
+            Files.createDirectories(dir);
+            Path jar = dir.resolve("intermediary-v2.jar");
+            PackCheck.download("https://maven.fabricmc.net/net/fabricmc/intermediary/" + minecraft + "/intermediary-" + minecraft + "-v2.jar", jar, null);
+            try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+                var entry = zip.getEntry("mappings/mappings.tiny");
+                if (entry == null) throw new IOException(jar + " has no mappings/mappings.tiny");
+                try (var in = zip.getInputStream(entry)) {
+                    Files.write(tiny, in.readAllBytes());
+                }
+            }
+        }
+        return new String[] { mojang, Files.readString(tiny) };
+    }
+
+    /** Where setAsideDatagen keeps data generation code the bridge cannot build: a folder no source set compiles. */
+    static final String DATAGEN_ASIDE = "src/neoforge-datagen/java/";
+
+    /**
+     * Data generation code that needs NeoForge classes the bridge does not have for this game version (NeoForge 21.1's
+     * model generators) is moved out of the build, so the rest of the mod compiles: the classes reachable from the mod's
+     * GatherDataEvent listeners that nothing else in the mod uses (a recipe class kept in a datagen package but used by
+     * the game stays). The mod's generated resources are kept, so the game reads the same data; the move is listed.
+     */
+    void setAsideDatagen() throws Exception {
+        List<String> files = javaFiles().stream().filter(f -> f.startsWith("src/main/java/") && !f.startsWith(bridgeFolder() + "/")).toList();
+        Map<String, String> bySimple = new HashMap<>();
+        for (String f : files) bySimple.put(f.substring(f.lastIndexOf('/') + 1).replaceAll("\\.java$", ""), f);
+        // The bridge's registration of an @EventBusSubscriber class is not a use: it goes with the class.
+        Pattern subscribe = Pattern.compile("(?m)^[ \\t]*Bridge\\.subscribe\\(([\\w.]+)\\.class\\);[ \\t]*\\n");
+        Map<String, Set<String>> uses = new HashMap<>();
+        for (String f : files) {
+            Set<String> used = new HashSet<>();
+            Matcher word = Pattern.compile("\\b[A-Z]\\w*\\b").matcher(subscribe.matcher(read(f)).replaceAll(""));
+            while (word.find()) {
+                String other = bySimple.get(word.group());
+                if (other != null && !other.equals(f)) used.add(other);
+            }
+            uses.put(f, used);
+        }
+        Set<String> datagen = new LinkedHashSet<>();
+        Deque<String> todo = new ArrayDeque<>();
+        for (String f : files) if (read(f).contains("GatherDataEvent")) todo.add(f);
+        while (!todo.isEmpty()) {
+            String f = todo.poll();
+            if (datagen.add(f)) todo.addAll(uses.get(f));
+        }
+        // What the rest of the mod uses stays in the build, and so does what that uses.
+        for (boolean changed = true; changed; ) {
+            changed = false;
+            for (String f : files) if (!datagen.contains(f)) for (String used : uses.get(f)) changed |= datagen.remove(used);
+        }
+        Set<String> missing = new TreeSet<>();
+        for (String f : datagen) {
+            Matcher neoforge = Pattern.compile("(?m)^import\\s+(?:static\\s+)?(net\\.neoforged\\.[\\w.]+)\\s*;").matcher(read(f));
+            while (neoforge.find()) missing.add(neoforge.group(1));
+        }
+        if (missing.isEmpty()) return;
+        Set<String> moved = new TreeSet<>();
+        for (String f : datagen) {
+            write(DATAGEN_ASIDE + f.substring("src/main/java/".length()), read(f));
+            delete(f);
+            moved.add(f.substring("src/main/java/".length()).replaceAll("\\.java$", "").replace('/', '.'));
+        }
+        for (String f : javaFiles()) {
+            String text = read(f);
+            String out = subscribe.matcher(text).replaceAll(r -> moved.contains(r.group(1)) ? "" : Matcher.quoteReplacement(r.group()));
+            if (!out.equals(text)) write(f, out);
+        }
+        notes.add(
+            "Data generation: " + moved.size() + " class(es) used only to generate data need NeoForge classes the bridge does not have for this game (" +
+            String.join(", ", missing) + "), so they are kept in " + DATAGEN_ASIDE + " outside the build; the generated resources the mod ships are unchanged."
+        );
+        applied.computeIfAbsent("datagen-set-aside", k -> new ArrayList<>()).addAll(datagen);
+    }
+
+    /**
+     * A test source set that is a NeoForge test mod (an @Mod class of its own, which NeoForge loads beside the mod in a
+     * development game) is not converted: Loom builds no second mod from it. Its sources move out of the build to
+     * src/neoforge-SET/java, so the mod itself compiles, and the test mod is listed as left.
+     */
+    void setAsideTestMods() throws Exception {
+        Map<String, List<String>> sets = new TreeMap<>();
+        for (String f : testJavaFiles()) sets.computeIfAbsent(f.substring(0, f.indexOf("/java/") + "/java/".length()), k -> new ArrayList<>()).add(f);
+        for (var set : sets.entrySet()) {
+            String mod = null;
+            for (String f : set.getValue()) if (mod == null && Pattern.compile("(?m)^@Mod\\(").matcher(read(f)).find()) mod = f;
+            if (mod == null) continue;
+            String aside = set.getKey().replaceFirst("^src/", "src/neoforge-");
+            for (String f : set.getValue()) {
+                write(aside + f.substring(set.getKey().length()), read(f));
+                delete(f);
+            }
+            leave(
+                mod,
+                0,
+                "NeoForge test mod in " + set.getKey(),
+                "its " + set.getValue().size() + " source file(s) are kept in " + aside + " outside the build: Fabric's build makes no second mod of a test source set"
+            );
+        }
+    }
+
     void dropNeoForgeTabOrder() throws Exception {
         int dropped = 0;
         for (String file : javaFiles()) {
@@ -2642,7 +3331,7 @@ final class Convert {
         List<String> common = new ArrayList<>(), all = new ArrayList<>();
         Pattern pkg = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;");
         for (String text : sources) {
-            Matcher annotation = Pattern.compile("@Mod\\(([^)]*)\\)").matcher(text);
+            Matcher annotation = Pattern.compile("@(?:net\\.neoforged\\.fml\\.common\\.)?Mod\\(([^)]*)\\)").matcher(text);
             Matcher p = pkg.matcher(text);
             if (!annotation.find() || !p.find()) continue;
             all.add(p.group(1));
@@ -2720,7 +3409,13 @@ final class Convert {
         List<String> lines = neoforgeAccessTransformers(minecraft);
         if (lines.isEmpty()) return List.of();
         StringBuilder all = new StringBuilder();
-        for (String file : javaFiles()) if (bridgePackage == null || !file.startsWith(bridgeFolder() + "/")) all.append(read(file)).append('\n');
+        // NeoForge's copied classes and the bridge's constructor factories use the game as the mod's code does.
+        Set<String> factories = new HashSet<>();
+        if (bridge != null) for (Object f : Json.object(bridge.getOrDefault("constructors", Map.of())).values()) factories.add(bridgeFolder() + "/" + f + ".java");
+        for (String file : javaFiles()) {
+            boolean user = bridgePackage == null || !file.startsWith(bridgeFolder() + "/") || copiedFiles.contains(file) || factories.contains(file);
+            if (user) all.append(read(file)).append('\n');
+        }
         String code = all.toString();
         List<String> out = new ArrayList<>();
         for (String line : lines) {
@@ -2742,13 +3437,23 @@ final class Convert {
             boolean named = Pattern.compile("(?<![\\w$])" + Pattern.quote(owner) + "(?![\\w$])").matcher(code).find();
             boolean used;
             if (member.equals("<init>")) used = Pattern.compile("\\bnew\\s+(?:[\\w.]+\\.)?" + Pattern.quote(owner) + "\\s*[(<]").matcher(code).find();
-            else if (paren >= 0) used = named && Pattern.compile("(?:\\.|::)\\s*" + Pattern.quote(member) + "\\s*\\(?(?![\\w$])").matcher(code).find();
+            // A method is called on an object whose class the file need not name either (renderer.addLayer(...) on the
+            // renderer an event gives): a long enough name is taken on its own, as a field's is.
+            else if (paren >= 0) used = (named || member.length() >= 7) && Pattern.compile("(?:\\.|::)\\s*" + Pattern.quote(member) + "\\s*\\(?(?![\\w$])").matcher(code).find();
             else {
                 // A field is read on an instance whose class the file need not name (zombie.goalSelector): a long enough
                 // name is taken on its own, a short one (level) only where its class is named.
-                used = (named || member.length() >= 7) && Pattern.compile("\\.\\s*" + Pattern.quote(member) + "(?![\\w$(])").matcher(code).find();
+                // A subclass names an inherited field without a receiver (renderables.add in a Screen subclass).
+                used = (named || member.length() >= 7) && Pattern.compile("(?:\\.\\s*|(?<![\\w$.]))" + Pattern.quote(member) + "(?![\\w$(])").matcher(code).find();
             }
             if (used) out.add(line);
+        }
+        // A class the used members' descriptors name, which NeoForge also opens (new BlockEntityType<>(Supplier::new, ...)
+        // passes the private BlockEntityType$BlockEntitySupplier): the code needs it open to call them.
+        String descriptors = String.join(" ", out);
+        for (String line : lines) {
+            String[] t = line.split("\\s+");
+            if (t.length == 2 && !out.contains(line) && descriptors.contains("L" + t[1].replace('.', '/') + ";")) out.add(line);
         }
         return out;
     }
@@ -2775,7 +3480,12 @@ final class Convert {
                 return "";
             }
         }).toList());
+        // NeoForge's own classes the code names go in before the source rules run, which rewrite them as the mod's code.
+        if (bridgePackage != null) copied = copyNeoForgeSources(mirroredClasses(), LoaderRules.strings(bridgeLayer == null ? null : bridgeLayer.get("drops")));
         for (String file : javaFiles()) {
+            // NeoForge's own subscribers (in its copied classes) are NeoForge wiring itself up, which on Fabric is the
+            // bridge's job; many are package-private, so the mod's entrypoint could not name them anyway.
+            if (copiedFiles.contains(file)) continue;
             String text = read(file);
             Matcher mod = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
             Matcher s = Pattern.compile(
@@ -2894,17 +3604,20 @@ final class Convert {
      * reference or typed lambda get their event class written in (NeoForge reads it from the generic signature).
      */
     void applyBridge() throws Exception {
-        Map<String, Object> classes = Json.object(bridge.get("classes"));
         Path templates = build.harness.resolve(Json.text(bridge, "folder", ""));
         Set<String> attachmentFields = new TreeSet<>();
         for (String file : javaFiles()) for (Matcher f = ATTACHMENT_FIELD.matcher(read(file)); f.find(); ) attachmentFields.add(f.group(1));
         List<String> drops = LoaderRules.strings(bridgeLayer == null ? null : bridgeLayer.get("drops"));
+        Map<String, Object> classes = mirroredClasses();
+        // Wildcard imports of a package name its copied classes too.
+        Map<String, Object> named = new LinkedHashMap<>(classes);
+        for (String c : copied) named.put(c, NeoForgeSources.FOLDER + "." + c.substring(NeoForgeSources.PREFIX.length()));
         // The mod's tests use the same NeoForge classes as its code, so their imports and qualified names move too.
         List<String> sources = new ArrayList<>(javaFiles());
         sources.addAll(testJavaFiles());
         for (String file : sources) {
             String text = read(file);
-            String out = text;
+            String out = wildcardBridgeImports(text, named, drops, bridgePackage);
             // Plain, static and nested-class imports of a mirrored class (import static ...FluidType.BUCKET_VOLUME;).
             for (var c : classes.entrySet()) if (!dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) out = out.replaceAll(
                 "(?m)^import(\\s+static)?\\s+" + Pattern.quote(c.getKey()) + "((?:\\.\\w+)*(?:\\.\\*)?)\\s*;",
@@ -2914,6 +3627,18 @@ final class Convert {
                 "(?<![\\w.])" + Pattern.quote(c.getKey()) + "(?![\\w$])",
                 Matcher.quoteReplacement(bridgePackage + "." + c.getValue())
             );
+            if (!copied.isEmpty()) out = NeoForgeSources.point(out, copied, bridgePackage);
+            for (var c : Json.object(bridge.getOrDefault("constructors", Map.of())).entrySet()) if (!dropped(drops, c.getValue() + ".java")) {
+                out = constructorsToFactories(out, c.getKey(), String.valueOf(c.getValue()), bridgePackage);
+            }
+            // Static methods NeoForge's patches add to game classes: called on the bridge's class instead.
+            for (var s : Json.object(bridge.getOrDefault("statics", Map.of())).entrySet()) {
+                Map<String, Object> to = Json.object(s.getValue());
+                if (dropped(drops, Json.text(to, "to", "") + ".java")) continue;
+                String moved = staticsToBridge(out, s.getKey(), Json.text(to, "to", ""), bridgePackage);
+                if (!moved.equals(out)) for (String line : LoaderRules.strings(to.get("accessTransformers"))) if (!accessTransformers.contains(line)) accessTransformers.add(line);
+                out = moved;
+            }
             out = eventClassesInListeners(file, out);
             out = sideQueries(out);
             String held = attachmentCalls(out, attachmentFields);
@@ -2934,17 +3659,162 @@ final class Convert {
                 ") replaces the files whose game or Fabric API names differ there."
             );
         }
+        // NeoForge's own copied classes use the bridge as the mod's code does.
         bridgeUsers = sourcesOutside(bridgeFolder());
-        for (var template : files.entrySet()) write(
-            bridgeFolder() + "/" + template.getKey(),
-            fillBridge(Files.readString(template.getValue(), StandardCharsets.UTF_8), bridgePackage)
+        for (String file : copiedFiles) bridgeUsers += read(file) + "\n";
+        Map<String, Object> rewrites = bridgeLayer == null ? Map.of() : Json.object(bridgeLayer.getOrDefault("rewrites", Map.of()));
+        // The classes standing for NeoForge's constructors and static methods on game classes are written only for a mod
+        // that calls them: they open game members (an access widener line, which needs the game's mappings) that other
+        // mods never touch.
+        Set<String> onlyWhenCalled = new HashSet<>();
+        for (Object f : Json.object(bridge.getOrDefault("constructors", Map.of())).values()) onlyWhenCalled.add(f + ".java");
+        for (Object s : Json.object(bridge.getOrDefault("statics", Map.of())).values()) onlyWhenCalled.add(Json.text(Json.object(s), "to", "") + ".java");
+        for (String f : onlyWhenCalled) {
+            String name = f.replaceAll("\\.java$", "");
+            if (!Pattern.compile("\\b" + Pattern.quote(name) + "\\b").matcher(bridgeUsers).find()) files.remove(f);
+        }
+        dropUnusedGenerated(files);
+        for (var template : files.entrySet()) {
+            // For an older game, the layer's whole-word renames (Identifier is ResourceLocation there).
+            String text = layerRewrites(Files.readString(template.getValue(), StandardCharsets.UTF_8), rewrites);
+            write(bridgeFolder() + "/" + template.getKey(), fillBridge(text, bridgePackage));
+        }
+        bridgeMixinConfig = bridgeMixins(
+            bridge,
+            bridgeLayer,
+            bridgePackage,
+            javaFiles().stream().filter(f -> !f.startsWith(bridgeFolder() + "/") || copiedFiles.contains(f)).toList()
         );
-        bridgeMixinConfig = bridgeMixins(bridge, bridgeLayer, bridgePackage, javaFiles().stream().filter(f -> !f.startsWith(bridgeFolder() + "/")).toList());
         notes.add(
             "NeoForge bridge: " +
             bridgePackage +
             " holds NeoForge's registration, event bus, mod container, config and lifecycle events written on Fabric's API, for the code that uses them."
         );
+    }
+
+    /**
+     * The generated game-class methods (bench/bridge_generate.py: a mixin and the interface it adds, per game class) are
+     * written only for the game classes whose methods the code calls (the mixin's "uses"), with the generated interfaces
+     * those extend: a mod gets tens of them, not all 500.
+     */
+    void dropUnusedGenerated(Map<String, Path> files) throws IOException {
+        Object list = bridgeLayer != null && bridgeLayer.get("mixins") != null ? bridgeLayer.get("mixins") : bridge.get("mixins");
+        List<String> texts = new ArrayList<>();
+        for (String file : javaFiles()) if (!file.startsWith(bridgeFolder() + "/") || copiedFiles.contains(file)) texts.add(read(file));
+        Set<String> generated = new HashSet<>();
+        Deque<String> keep = new ArrayDeque<>();
+        for (Object item : LoaderRules.list(list)) {
+            var mixin = Json.object(item);
+            if (!Boolean.TRUE.equals(mixin.get("generated"))) continue;
+            String mixinFile = "mixin/" + Json.text(mixin, "mixin", "").replace('.', '/') + ".java";
+            generated.add(mixinFile);
+            List<String> interfaces = new ArrayList<>();
+            if (mixin.get("injects") instanceof Map<?, ?> injects) for (Object i : injects.values()) interfaces.add(String.valueOf(i).replace('.', '/') + ".java");
+            generated.addAll(interfaces);
+            if (uses(mixin.get("uses"), texts)) {
+                keep.add(mixinFile);
+                keep.addAll(interfaces);
+            }
+        }
+        Set<String> kept = new HashSet<>();
+        while (!keep.isEmpty()) {
+            String file = keep.poll();
+            if (!kept.add(file) || !files.containsKey(file)) continue;
+            String folder = file.substring(0, file.lastIndexOf('/') + 1);
+            for (Matcher m = Pattern.compile("\\b(\\w+Generated)\\b").matcher(Files.readString(files.get(file))); m.find(); ) keep.add(folder + m.group(1) + ".java");
+        }
+        files.keySet().removeIf(f -> generated.contains(f) && !kept.contains(f));
+    }
+
+    /** NeoForge's own source files convert copied into the bridge's package (NeoForgeSources), and their classes. */
+    final List<String> copiedFiles = new ArrayList<>();
+    Set<String> copied = Set.of();
+
+    /** The members of NeoForge's classes that do not compile on Fabric, which come out of their copies, by class. */
+    final Map<String, Set<String>> copiedMembersGone = new HashMap<>();
+
+    /**
+     * The NeoForge classes the bridge mirrors for this game: a class is mirrored only when the bridge or its version layer
+     * has its file (a class only the 1.21.1 layer writes is NeoForge's own copy on 26.1, or nothing).
+     */
+    Map<String, Object> mirroredClasses() throws IOException {
+        Path templates = build.harness.resolve(Json.text(bridge, "folder", ""));
+        Set<String> present = bridgeTemplates(templates, bridgeLayer == null ? null : build.harness.resolve(Json.text(bridgeLayer, "folder", ""))).keySet();
+        Map<String, Object> classes = new LinkedHashMap<>();
+        for (var c : Json.object(bridge.get("classes")).entrySet()) if (present.contains(String.valueOf(c.getValue()).replace('.', '/') + ".java")) classes.put(c.getKey(), c.getValue());
+        return classes;
+    }
+
+    /**
+     * NeoForge's own classes that the mod names and the bridge does not mirror, from NeoForge's published sources jar
+     * (bridges[].sources or its version layer's: a "published" key, read with the sources classifier), copied into the
+     * bridge's package when the bridge's folder lists them as compiling on Fabric (neoforge-sources.txt). The
+     * environment variable MMT_NEOFORGE_SOURCES=all copies every class the jar has, for bench/bridge_import.py to measure. Returns
+     * the copied classes by NeoForge name.
+     */
+    Set<String> copyNeoForgeSources(Map<String, Object> classes, List<String> drops) throws Exception {
+        Map<String, Object> from = bridgeLayer != null && bridgeLayer.get("sources") != null ? bridgeLayer : bridge;
+        String key = Json.text(from, "sources", "");
+        if (key.isEmpty()) return Set.of();
+        boolean all = "all".equals(System.getenv("MMT_NEOFORGE_SOURCES"));
+        Path list = build.harness.resolve(Json.text(from, "folder", "")).resolve("neoforge-sources.txt");
+        if (!all && !Files.isRegularFile(list)) return Set.of();
+        Set<String> mirrored = new TreeSet<>();
+        for (var c : classes.entrySet()) if (!dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) mirrored.add(c.getKey());
+        Set<String> allowed = new TreeSet<>();
+        // A line is a class, or a class and one of its members that does not compile on Fabric (NeoForgeSources.Member).
+        if (!all) for (String line : Files.readAllLines(list, StandardCharsets.UTF_8)) {
+            if (line.isBlank() || line.startsWith("#")) continue;
+            String[] parts = line.strip().split(" ", 2);
+            if (parts.length == 1) allowed.add(parts[0]);
+            else copiedMembersGone.computeIfAbsent(parts[0], k -> new TreeSet<>()).add(parts[1].replace("${package}", bridgePackage));
+        }
+        allowed.removeAll(mirrored);
+        List<String> texts = new ArrayList<>();
+        for (String file : javaFiles()) texts.add(read(file));
+        for (String file : testJavaFiles()) texts.add(read(file));
+        // Nothing the mod names is listed: no download.
+        if (!all && NeoForgeSources.closure(texts, Map.of(), allowed).isEmpty()) return Set.of();
+        Map<String, Object> entry = Json.object(Json.object(rules.get("published")).get(key));
+        String[] gav = Json.text(entry, "coordinate", "").split(":");
+        String url = Json.text(entry, "maven", "") + "/" + gav[0].replace('.', '/') + "/" + gav[1] + "/" + gav[2] + "/" + gav[1] + "-" + gav[2] + "-sources.jar";
+        Map<String, String> sources = NeoForgeSources.read(Target.download(build, url));
+        sources.keySet().removeAll(mirrored);
+        // NeoForge's own @Mod classes are NeoForge itself starting, never the converted mod's entrypoints: what else they
+        // hold (NeoForgeMod.MOD_ID) stays.
+        sources.replaceAll((name, text) -> text.replaceAll("(?m)^@Mod\\(.*\\)[ \\t]*\\r?\\n", ""));
+        // A copied class that needs a NeoForge patch's member (RegistryOps(RegistryOps)) is written on the game's own
+        // members instead (neoforge-patches.json: text replaced, and the access transformer lines that needs).
+        Path patchFile = list.resolveSibling("neoforge-patches.json");
+        if (!Files.isRegularFile(patchFile)) patchFile = build.harness.resolve(Json.text(bridge, "folder", "")).resolve("neoforge-patches.json");
+        Map<String, Object> patches = Files.isRegularFile(patchFile) ? Json.read(patchFile) : Map.of();
+        for (var p : patches.entrySet()) {
+            String text = sources.get(p.getKey());
+            if (text == null || p.getKey().startsWith("about")) continue;
+            for (Object pair : LoaderRules.list(Json.object(p.getValue()).get("replace"))) {
+                List<String> fromTo = LoaderRules.strings(pair);
+                text = text.replace(fromTo.get(0), fromTo.get(1));
+            }
+            sources.put(p.getKey(), text);
+        }
+        if (all) allowed.addAll(sources.keySet());
+        allowed.retainAll(sources.keySet());
+        Set<String> copied = all ? allowed : NeoForgeSources.closure(texts, sources, allowed);
+        for (String name : copied) if (patches.get(name) instanceof Map<?, ?> p) accessTransformers.addAll(LoaderRules.strings(p.get("accessTransformers")));
+        for (String name : copied) {
+            String file = bridgeFolder() + "/" + NeoForgeSources.FOLDER + "/" + name.substring(NeoForgeSources.PREFIX.length()).replace('.', '/') + ".java";
+            write(file, NeoForgeSources.relocate(sources.get(name).replace("\r\n", "\n"), bridgePackage, mirrored));
+            copiedFiles.add(file);
+        }
+        if (!copied.isEmpty()) {
+            notes.add(
+                "NeoForge bridge: " + copied.size() + " of NeoForge's own classes (LGPL-2.1, from " + url.substring(url.lastIndexOf('/') + 1) +
+                ") are copied into " + bridgePackage + "." + NeoForgeSources.FOLDER +
+                "; events among them are posted on Fabric only where the bridge posts them."
+            );
+            applied.computeIfAbsent("neoforge-sources", k -> new ArrayList<>()).addAll(copiedFiles);
+        }
+        return copied;
     }
 
     /**
@@ -2954,7 +3824,7 @@ final class Convert {
      */
     static String sideQueries(String text) {
         Matcher m = Pattern.compile(
-            "\\b(FMLEnvironment\\.getDist\\(\\)|FMLEnvironment\\.dist|FMLLoader\\.getCurrent\\(\\)\\.getDist\\(\\)|FMLLoader\\.getDist\\(\\)|FabricLoader\\.getInstance\\(\\)\\.getEnvironmentType\\(\\))\\.(isClient|isDedicatedServer)\\(\\)"
+            "(?<![\\w.])((?:[a-z]\\w*\\.)*(?:FMLEnvironment\\.getDist\\(\\)|FMLEnvironment\\.dist|FMLLoader\\.getCurrent\\(\\)\\.getDist\\(\\)|FMLLoader\\.getDist\\(\\)|FabricLoader\\.getInstance\\(\\)\\.getEnvironmentType\\(\\)))\\.(isClient|isDedicatedServer)\\(\\)"
         ).matcher(text);
         if (!m.find()) return text;
         String out = m.reset().replaceAll(r -> Matcher.quoteReplacement("(" + r.group(1) + " == EnvType." + (r.group(2).equals("isClient") ? "CLIENT" : "SERVER") + ")"));
@@ -3074,6 +3944,19 @@ final class Convert {
      * Whether a version layer leaves out one of the bridge's files (bridges[].layers[].drops: path prefixes under the
      * bridge folder, such as "transfer/"): parts of the bridge written for a newer game than the layer's.
      */
+    /**
+     * A version layer's "rewrites" (knowledge/loaders.json): whole-word renames applied to the bridge's base files for that
+     * game, for names that differ there and nothing else (Identifier for ResourceLocation), so such a file needs no copy.
+     */
+    static String layerRewrites(String text, Map<String, Object> rewrites) {
+        String out = text;
+        for (var r : rewrites.entrySet()) out = out.replaceAll(
+            "(?<![\\w$])" + Pattern.quote(r.getKey()) + "(?![\\w$])",
+            Matcher.quoteReplacement(String.valueOf(r.getValue()))
+        );
+        return out;
+    }
+
     static boolean dropped(List<String> drops, String rel) {
         for (String prefix : drops) if (rel.startsWith(prefix)) return true;
         return false;
@@ -3120,6 +4003,8 @@ final class Convert {
                 Pattern.compile("(?m)^import\\s+(?:static\\s+)?" + Pattern.quote(pkg + "." + target) + "\\b").matcher(text).find()
             ) needed = true;
             if (!needed) continue;
+            // A mixin of a game version this one does not have (its file is only in another version layer) is not listed.
+            if (!exists("src/main/java/" + pkg.replace('.', '/') + "/mixin/" + Json.text(mixin, "mixin", "").replace('.', '/') + ".java")) continue;
             (Boolean.TRUE.equals(mixin.get("client")) ? client : common).add(Json.text(mixin, "mixin", ""));
             // A mixin that adds one of the bridge's interfaces to a game class: Loom injects it for the mod's compile.
             if (mixin.get("injects") instanceof Map<?, ?> injects) for (var e : Json.object(injects).entrySet()) bridgeInjected
@@ -3318,6 +4203,94 @@ final class Convert {
     );
 
     /**
+     * NeoForge's patches add constructors to some of the game's generic classes (new BlockEntityType<>(factory, blocks...));
+     * on Fabric the bridge has a class of static of(...) overloads standing for every constructor NeoForge gives the class
+     * (bridges[].constructors: game class to bridge class), so new X<>(args) becomes Factory.of(args) and Java picks the
+     * overload as it picked the constructor. Only a class the source imports or names in full, never an anonymous subclass.
+     */
+    static String constructorsToFactories(String text, String game, String factory, String pkg) {
+        String simple = game.substring(game.lastIndexOf('.') + 1);
+        boolean imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
+        Matcher m = Pattern.compile("\\bnew\\s+(" + Pattern.quote(game) + (imported ? "|" + simple : "") + ")\\s*(<[^()]*>)?\\s*\\(").matcher(text);
+        boolean[] code = LoaderRules.code(text);
+        StringBuilder out = new StringBuilder();
+        boolean changed = false;
+        while (m.find()) {
+            if (!code[m.start()]) continue;
+            int close = closingParen(text, code, m.end() - 1);
+            int after = close + 1;
+            while (after < text.length() && Character.isWhitespace(text.charAt(after))) after++;
+            // An anonymous subclass needs the constructor itself.
+            if (close < 0 || after < text.length() && text.charAt(after) == '{') continue;
+            String args = m.group(2) == null || m.group(2).replaceAll("\\s", "").equals("<>") ? "" : m.group(2).strip();
+            m.appendReplacement(out, Matcher.quoteReplacement(factory + "." + args + "of("));
+            changed = true;
+        }
+        if (!changed) return text;
+        m.appendTail(out);
+        return LoaderRules.addImport(out.toString(), pkg + "." + factory);
+    }
+
+    /** The way back: Factory.of(args) is new X<>(args) again, and the import is the game class's. */
+    static String factoriesToConstructors(String text, String game, String factory, String pkg) {
+        Matcher imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(pkg + "." + factory) + "\\s*;[ \\t]*\\n?").matcher(text);
+        if (!imported.find()) return text;
+        String simple = game.substring(game.lastIndexOf('.') + 1);
+        boolean hasGame = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
+        String out = imported.replaceFirst(hasGame ? "" : Matcher.quoteReplacement("import " + game + ";\n"));
+        return Pattern.compile("(?<![\\w.])" + Pattern.quote(factory) + "\\.(<[^()]*>)?of\\(").matcher(out).replaceAll(
+            r -> Matcher.quoteReplacement("new " + simple + (r.group(1) == null ? "<>" : r.group(1)) + "(")
+        );
+    }
+
+    /**
+     * A static method NeoForge's patch adds to a game class (bridges[].statics, "game.Class#method"): Class.method(...) in a
+     * source that imports the class, or names it in full, calls the bridge's class of that name instead.
+     */
+    static String staticsToBridge(String text, String member, String to, String pkg) {
+        String game = member.substring(0, member.indexOf('#'));
+        String method = member.substring(member.indexOf('#') + 1);
+        String simple = game.substring(game.lastIndexOf('.') + 1);
+        boolean imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
+        String owner = Pattern.quote(game) + (imported ? "|" + Pattern.quote(simple) : "");
+        Matcher m = Pattern.compile("(?<![\\w.$])(?:" + owner + ")\\s*\\.\\s*(<[^()]*>\\s*)?" + Pattern.quote(method) + "\\s*\\(").matcher(text);
+        boolean[] code = LoaderRules.code(text);
+        StringBuilder out = new StringBuilder();
+        boolean changed = false;
+        while (m.find()) {
+            if (!code[m.start()]) continue;
+            m.appendReplacement(out, Matcher.quoteReplacement(to + "." + (m.group(1) == null ? "" : m.group(1).strip()) + method + "("));
+            changed = true;
+        }
+        if (!changed) return text;
+        m.appendTail(out);
+        return LoaderRules.addImport(out.toString(), pkg + "." + to);
+    }
+
+    /** The way back: the bridge's class is the game class again for that method. */
+    static String bridgeToStatics(String text, String member, String to, String pkg) {
+        Matcher imported = Pattern.compile("(?m)^import\\s+" + Pattern.quote(pkg + "." + to) + "\\s*;[ \\t]*\\n?").matcher(text);
+        if (!imported.find()) return text;
+        String game = member.substring(0, member.indexOf('#'));
+        String simple = game.substring(game.lastIndexOf('.') + 1);
+        boolean hasGame = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
+        String out = imported.replaceFirst(hasGame ? "" : Matcher.quoteReplacement("import " + game + ";\n"));
+        return out.replaceAll("(?<![\\w.])" + Pattern.quote(to) + "\\.", Matcher.quoteReplacement(simple + "."));
+    }
+
+    /** The index of the ')' that closes the '(' at open, or -1 (strings and comments skipped). */
+    static int closingParen(String text, boolean[] code, int open) {
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            if (!code[i]) continue;
+            char c = text.charAt(i);
+            if (c == '(') depth++;
+            else if (c == ')' && --depth == 0) return i;
+        }
+        return -1;
+    }
+
+    /**
      * A mod convert moved to Fabric through the NeoForge bridge, going back to NeoForge: every entrypoint the bridge made
      * of a @Mod class is that @Mod class again (its constructor takes back the IEventBus, ModContainer and Dist the bridge
      * supplied, without the bridge's own calls), imports of the bridge's classes name NeoForge's again, the event class
@@ -3362,6 +4335,11 @@ final class Convert {
                 "(?<![\\w.])" + Pattern.quote(pkg + "." + c.getKey()) + "(?![\\w$])",
                 Matcher.quoteReplacement(c.getValue())
             );
+            out = NeoForgeSources.back(out, pkg);
+            for (Object item : LoaderRules.list(rules.get("bridges"))) {
+                for (var c : Json.object(Json.object(item).getOrDefault("constructors", Map.of())).entrySet()) out = factoriesToConstructors(out, c.getKey(), String.valueOf(c.getValue()), pkg);
+                for (var s : Json.object(Json.object(item).getOrDefault("statics", Map.of())).entrySet()) out = bridgeToStatics(out, s.getKey(), Json.text(Json.object(s.getValue()), "to", ""), pkg);
+            }
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
             out = LoaderRules.dropImport(attachmentCallsBack(out), pkg + ".Attachments");
             // The side local of a common entrypoint read FMLLoader; the constructor takes Dist again.
@@ -3415,7 +4393,8 @@ final class Convert {
                 .replaceAll("\\bimplements\\s+" + api + "\\s*$", "")
                 .replaceAll("\\bimplements\\s+" + api + "\\s*,\\s*", "implements ")
                 .replaceAll(",\\s*" + api + "\\b", "");
-            String annotation = side == null ? "@Mod(" + id + ")" : "@Mod(value = " + id + ", dist = Dist." + side + ")";
+            String at = otherTypeNamed(out, "Mod", "net.neoforged.fml.common.Mod") ? "@net.neoforged.fml.common.Mod(" : "@Mod(";
+            String annotation = side == null ? at + id + ")" : at + "value = " + id + ", dist = Dist." + side + ")";
             out =
                 out.substring(0, c.start()) +
                 c.group(1) +
@@ -3431,8 +4410,25 @@ final class Convert {
             break;
         }
         out = LoaderRules.dropImport(out, "net.fabricmc.api." + api);
-        out = LoaderRules.addImport(out, "net.neoforged.fml.common.Mod");
+        if (!out.contains("@net.neoforged.fml.common.Mod(")) out = LoaderRules.addImport(out, "net.neoforged.fml.common.Mod");
         return side == null ? out : LoaderRules.addImport(out, "net.neoforged.api.distmarker.Dist");
+    }
+
+    /**
+     * neoforge.mods.toml whose mod version is a Gradle placeholder ($version, ${version}) that the build does not expand
+     * (no processResources expand of it): NeoForge refuses such a version, so it becomes NeoForge's own ${file.jarVersion}.
+     */
+    static String unexpandedVersion(String toml, String gradle) {
+        boolean expands = gradle.contains("neoforge.mods.toml") && gradle.contains("expand");
+        if (expands) return toml;
+        return toml.replaceAll("(?m)^(version\\s*=\\s*)\"\\$\\{?(?:project\\.)?version}?\"", "$1\"\\${file.jarVersion}\"");
+    }
+
+    /** Whether the file imports a type of that simple name other than the one given. */
+    static boolean otherTypeNamed(String text, String simple, String qualified) {
+        Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+\\." + Pattern.quote(simple) + ")\\s*;").matcher(text);
+        while (imported.find()) if (!imported.group(1).equals(qualified)) return true;
+        return false;
     }
 
     /** The class implements the Fabric entrypoint interface again, with @Override on its entry method. */
@@ -3556,6 +4552,70 @@ final class Convert {
         }
         if (custom != null) out.put("custom", custom);
         return pretty(out, "") + "\n";
+    }
+
+    /**
+     * The load conditions of every data file the mod ships (each source set's resources, generated ones too) moved to
+     * the other loader's form (DataConditions): the loader a file is not written for ignores the other's key and would
+     * load a file meant only for when another mod is present.
+     */
+    void convertDataConditions(boolean toFabric) throws Exception {
+        Path src = project.root.resolve("src");
+        if (!Files.isDirectory(src)) return;
+        String key = toFabric ? DataConditions.NEOFORGE : DataConditions.FABRIC;
+        DataConditions conditions = new DataConditions();
+        List<Path> files;
+        try (var walk = Files.walk(src)) {
+            // Data maps are NeoForge's own files, which the NeoForge bridge reads in NeoForge's form on Fabric too.
+            files = walk.filter(p -> p.toString().endsWith(".json") && p.toString().replace('\\', '/').contains("/resources/") && !p.toString().replace('\\', '/').contains("/data_maps/")).toList();
+        }
+        int converted = 0;
+        for (Path p : files) {
+            String rel = project.root.relativize(p).toString().replace('\\', '/');
+            String text = read(rel);
+            if (!text.contains(key)) continue;
+            Object parsed;
+            try {
+                parsed = Json.parse(text);
+            } catch (RuntimeException notJson) {
+                continue;
+            }
+            if (!(parsed instanceof Map<?, ?>)) continue;
+            Map<String, Object> out = conditions.convert(Json.object(parsed), toFabric, rel);
+            if (out == null) continue;
+            write(rel, pretty(out, "").replaceAll("\t", "  ") + "\n");
+            converted++;
+        }
+        for (String l : conditions.left) leave(l.substring(0, l.indexOf(": ")), 0, l.substring(l.indexOf(": ") + 2), "the other loader reads only its own condition types");
+        if (converted > 0) applied.computeIfAbsent("data-conditions", k -> new ArrayList<>()).add(converted + " data files");
+    }
+
+    /** Custom ingredients in the mod's recipe files, in the other loader's form (DataIngredients). */
+    void convertDataIngredients(boolean toFabric) throws Exception {
+        Path src = project.root.resolve("src");
+        if (!Files.isDirectory(src)) return;
+        List<Path> files;
+        try (var walk = Files.walk(src)) {
+            files = walk.filter(p -> p.toString().endsWith(".json") && p.toString().replace('\\', '/').matches(".*/resources/data/[^/]+/recipes?/.*")).toList();
+        }
+        int converted = 0;
+        for (Path p : files) {
+            String rel = project.root.relativize(p).toString().replace('\\', '/');
+            String text = read(rel);
+            if (!text.contains(toFabric ? "\"type\"" : "\"fabric:type\"")) continue;
+            Object parsed;
+            try {
+                parsed = Json.parse(text);
+            } catch (RuntimeException notJson) {
+                continue;
+            }
+            if (!(parsed instanceof Map<?, ?>)) continue;
+            Map<String, Object> out = DataIngredients.convert(Json.object(parsed), toFabric);
+            if (out == null) continue;
+            write(rel, pretty(out, "").replaceAll("\t", "  ") + "\n");
+            converted++;
+        }
+        if (converted > 0) applied.computeIfAbsent("data-ingredients", k -> new ArrayList<>()).add(converted + " recipe files");
     }
 
     /** JSON with one entry per line and tab indents, the way fabric.mod.json files are written. */
@@ -3777,6 +4837,24 @@ final class Convert {
         String coordinate = now.find() ? now.group(2) + ":" + now.group(3) : moved.strip();
         applied.computeIfAbsent("dependency-other-loader-build", k -> new ArrayList<>()).add("build.gradle: " + coordinate);
         return moved;
+    }
+
+    /**
+     * A mod dependency held in a variable (def ctDep = "...:CraftTweaker-fabric-...") and named by it (compileOnly ctDep):
+     * the configurations that name a variable whose value convert moved to the Fabric build become Loom's remapping ones.
+     */
+    static String remapVariableDependencies(String body) {
+        Matcher def = Pattern.compile("(?m)^\\s*def\\s+(\\w+)\\s*=\\s*[\"']([^\"']+)[\"']").matcher(body);
+        String out = body;
+        while (def.find()) {
+            String coordinate = def.group(2);
+            // On the way to Fabric, a variable whose coordinate names a Fabric build holds a Fabric mod.
+            if (!coordinate.toLowerCase(Locale.ROOT).contains("fabric")) continue;
+            out = Pattern.compile("(?m)^(\\s*)(implementation|compileOnly|runtimeOnly|localRuntime|api)(\\s*\\(?\\s*" + Pattern.quote(def.group(1)) + "\\b)")
+                .matcher(out)
+                .replaceAll(m -> Matcher.quoteReplacement(m.group(1) + "mod" + Character.toUpperCase(m.group(2).charAt(0)) + m.group(2).substring(1) + m.group(3)));
+        }
+        return out;
     }
 
     /** Loom's remapping configurations for a mod dependency (before 26.1): implementation becomes modImplementation and so on. */
@@ -4010,7 +5088,12 @@ final class Convert {
                 "\")\n}\n\n" +
                 gradle.substring(at);
         }
-        gradle = gradle.replaceAll("(?m)^// NeoForge has no split client source set[^\\n]*\\n", "");
+        // The way to NeoForge built the client sources with main (SPLIT_CLIENT, or the two srcDir lines before it).
+        gradle = gradle.replaceAll("(?s)\\n?// NeoForge has no split client source set[^\\n]*\\n.*?// End of the client sources\\.\\n", "\n");
+        gradle = gradle.replaceAll("(?m)^// NeoForge has no split client source set[^\\n]*\\n(sourceSets\\.main\\.(java|resources)\\.srcDir 'src/client/(java|resources)'\\n)*", "");
+        gradle = gradle.replace("main.output /* client.output on Fabric */", "client.output");
+        // ModDevGradle's game classes for the sets Loom gave them to anyway.
+        gradle = gradle.replaceAll("(?s)\\n?// Loom gave every source set the game's classes;[^\\n]*\\nneoForge \\{\\n(\\s*addModdingDependenciesTo\\([^)]*\\)\\n)*\\}\\n", "\n");
         int[] deps = block(gradle, "dependencies");
         String add =
             unit +
@@ -4043,11 +5126,12 @@ final class Convert {
                 body.append(raw);
             }
             if (body.length() > 0 && body.charAt(body.length() - 1) != '\n') body.append('\n');
+            String converted = remap ? remapVariableDependencies(body.toString()) : body.toString();
             gradle =
                 gradle.substring(0, deps[2] + 1) +
                 "\n" +
                 add +
-                body.toString().replaceAll("^\\n+", "") +
+                converted.replaceAll("^\\n+", "") +
                 gradle.substring(deps[3] - 1);
         } else gradle += "\ndependencies {\n" + add + "}\n";
         if (!restored.isEmpty()) {
@@ -4260,22 +5344,360 @@ final class Convert {
 
     void compile(Map<String, Object> result) throws Exception {
         Build fresh = new Build(project, build.harness, "", build.report);
-        Map<String, Object> model;
-        try {
-            model = fresh.model(true, false);
-        } catch (IOException failure) {
-            result.put("compiled", false);
-            result.put("ok", false);
-            result.put("compileError", failure.getMessage());
-            return;
+        Map<String, Object> model = null;
+        // Build logic written for Fabric's Loom that no rule moves (a third-party plugin that needs Loom, a shared remote
+        // script that applies it, a task only Loom creates) stops the converted build from loading. Gradle names the
+        // statement it stopped at; it is commented out with a note, listed, and the build is loaded again.
+        for (int attempt = 0; model == null; attempt++) {
+            try {
+                model = fresh.model(true, false);
+            } catch (IOException failure) {
+                Matcher log = Pattern.compile("\\nLog: (.+)$").matcher(failure.getMessage());
+                String gradle = log.find() && Files.isRegularFile(Path.of(log.group(1).strip())) ? Files.readString(Path.of(log.group(1).strip())) : "";
+                if (attempt >= 8 || !(nonTransitiveCompileOnly(gradle) || disableLoomOnlyStatement(gradle))) {
+                    result.put("compiled", false);
+                    result.put("ok", false);
+                    result.put("compileError", failure.getMessage());
+                    return;
+                }
+            }
         }
-        List<String> tasks = fresh.tasks(model, "classes");
+        List<String> tasks = new ArrayList<>(fresh.tasks(model, "classes"));
+        Map<String, String> unwired = unwiredSourceSets(model);
+        if (!unwired.isEmpty()) {
+            tasks.removeAll(unwired.keySet());
+            notes.add(
+                "Not compiled: source set(s) " + String.join(", ", unwired.values()) +
+                ", whose classpath the build declares with neither the game nor the mod's own classes (the original's declaration, unchanged), so no loader compiles them."
+            );
+        }
         Run.Result run = fresh.gradle(tasks, "convert-compile");
         boolean ok = run.exit() == 0;
+        // The original compiled on its own loader: an override the compiler now refuses is of a method that loader adds to
+        // a game class (a hook), which nothing here calls. It is kept as a plain method and listed (unhooked).
+        for (int attempt = 0; !ok && attempt < 4 && repairOverrides(Port.errors(run.log())) + repairKeyMappings(Port.errors(run.log())) > 0; attempt++) {
+            run = fresh.gradle(tasks, "convert-compile");
+            ok = run.exit() == 0;
+        }
+        if (!unhooked.isEmpty()) {
+            result.put("unhooked", new ArrayList<>(unhooked));
+            notes.add("Overrides of the other loader's hooks on game classes, which nothing calls here, kept as plain methods: " + String.join(", ", unhooked) + ".");
+        }
         result.put("compiled", ok);
         result.put("compileLog", run.log().toString());
         if (!ok) result.put("errors", Port.errors(run.log()));
         result.put("ok", ok && left.isEmpty());
+    }
+
+    /**
+     * Source sets besides main whose runtime classpath has neither a game jar nor main's output (a datagen set the
+     * build never wires up): the loader's plugin gives the game to main (and test) only, so neither loader's build
+     * compiles them. By classes task ("project:datagenClasses") to the set's name.
+     */
+    static Map<String, String> unwiredSourceSets(Map<String, Object> model) {
+        Map<String, String> unwired = new LinkedHashMap<>();
+        Pattern game = Pattern.compile("(?i)(minecraft|neoforge|forge)[^/\\\\]*\\.jar$");
+        for (Object item : Json.array(model.get("projects"))) {
+            var p = Json.object(item);
+            String prefix = p.get("path").equals(":") ? "" : String.valueOf(p.get("path"));
+            Set<String> mainOutput = new HashSet<>();
+            boolean resolved = false;
+            for (Object s : Json.array(p.get("sourceSets"))) if ("main".equals(Json.object(s).get("name"))) {
+                mainOutput.addAll(ProjectModel.strings(Json.object(s).get("output")));
+                resolved = !ProjectModel.strings(Json.object(s).get("runtime")).isEmpty();
+            }
+            // A model read without classpaths says nothing about wiring.
+            if (!resolved) continue;
+            for (Object s : Json.array(p.get("sourceSets"))) {
+                var set = Json.object(s);
+                String name = Json.text(set, "name", "");
+                String task = Json.text(set, "classesTask", "");
+                if (name.equals("main") || task.isEmpty()) continue;
+                List<String> runtime = ProjectModel.strings(set.get("runtime"));
+                boolean wired = runtime.stream().anyMatch(path -> mainOutput.contains(path) || game.matcher(path).find());
+                if (!wired) unwired.put(prefix + ":" + task, prefix.isEmpty() ? name : prefix + ":" + name);
+            }
+        }
+        return unwired;
+    }
+
+    /** The other loader's hooks the converted code overrides, which nothing calls here ("Class.method"). */
+    final Set<String> unhooked = new TreeSet<>();
+
+    /**
+     * Repairs the overrides the compiler refuses after conversion, which overrode what the original loader adds to game
+     * classes: "does not override" loses its @Override (the method stays, listed in unhooked), and an override narrower
+     * than the game's method ("cannot override", with weaker access) becomes public, as the other loader's access
+     * transformer had made the game's method narrower. Returns how many lines it changed.
+     */
+    int repairOverrides(List<Object> errors) throws IOException {
+        int changed = 0;
+        Map<Path, List<String>> files = new LinkedHashMap<>();
+        for (Object item : errors) {
+            var error = Json.object(item);
+            String message = String.valueOf(error.get("message"));
+            boolean notOverriding = message.startsWith("method does not override or implement a method from a supertype");
+            // javac's first line ("m() in A cannot override m() in B"); its reason (weaker access, was public) follows.
+            boolean narrower = message.matches(".*\\w+\\(.*\\) in \\S+ cannot override .*");
+            if (!notOverriding && !narrower) continue;
+            Path file = Path.of(String.valueOf(error.get("file")));
+            if (!Files.isRegularFile(file) || !file.toAbsolutePath().normalize().startsWith(project.root.toAbsolutePath().normalize())) continue;
+            List<String> lines = files.computeIfAbsent(file, f -> {
+                try {
+                    return new ArrayList<>(Files.readAllLines(f, StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    throw new java.io.UncheckedIOException(e);
+                }
+            });
+            int index = ((Number) error.get("line")).intValue() - 1;
+            if (index < 0 || index >= lines.size()) continue;
+            String line = lines.get(index);
+            String cls = file.getFileName().toString().replaceAll("\\.java$", "");
+            if (notOverriding && line.contains("@Override")) {
+                String rest = line.replaceFirst("@Override\\s*", "");
+                lines.set(index, rest.isBlank() ? null : rest);
+                for (int i = index; i < Math.min(lines.size(), index + 4); i++) {
+                    Matcher method = Pattern.compile("(\\w+)\\s*\\(").matcher(lines.get(i) == null ? "" : lines.get(i));
+                    if (method.find()) {
+                        unhooked.add(cls + "." + method.group(1));
+                        break;
+                    }
+                }
+                changed++;
+            } else if (narrower) {
+                String widened = line.replaceFirst("^(\\s*)(?:protected\\s+|private\\s+)?", "$1public ");
+                if (!widened.equals(line) && !line.trim().startsWith("public ")) {
+                    lines.set(index, widened);
+                    changed++;
+                }
+            }
+        }
+        for (var e : files.entrySet()) {
+            List<String> kept = e.getValue().stream().filter(java.util.Objects::nonNull).toList();
+            Files.writeString(e.getKey(), String.join("\n", kept) + "\n", StandardCharsets.UTF_8);
+        }
+        return changed;
+    }
+
+    /**
+     * NeoForge's KeyMapping constructors that take a conflict context held in a variable (the rules match only a written
+     * KeyConflictContext.X): javac refuses them on Fabric, whose KeyMapping has none ("X cannot be converted to Type", or no
+     * suitable constructor), and the NeoForge bridge's static KeyConflictContext.keyMapping(name, context, ...) makes them.
+     * Returns how many calls it changed.
+     */
+    int repairKeyMappings(List<Object> errors) throws IOException {
+        if (!bridgeUsed || !Files.isRegularFile(project.root.resolve(bridgeFolder() + "/KeyConflictContext.java"))) return 0;
+        Map<Path, Set<Integer>> lines = new LinkedHashMap<>();
+        for (Object item : errors) {
+            var error = Json.object(item);
+            String message = String.valueOf(error.get("message"));
+            if (!message.matches("incompatible types: \\S+ cannot be converted to (?:Type|Key)") && !message.startsWith("no suitable constructor found for KeyMapping(")) continue;
+            Path file = Path.of(String.valueOf(error.get("file")));
+            if (!Files.isRegularFile(file) || !file.toAbsolutePath().normalize().startsWith(project.root.toAbsolutePath().normalize())) continue;
+            lines.computeIfAbsent(file, f -> new TreeSet<>()).add(((Number) error.get("line")).intValue());
+        }
+        int changed = 0;
+        for (var e : lines.entrySet()) {
+            String text = Files.readString(e.getKey(), StandardCharsets.UTF_8);
+            String out = contextKeyMappings(text, e.getValue(), bridgePackage);
+            if (out.equals(text)) continue;
+            Files.writeString(e.getKey(), out, StandardCharsets.UTF_8);
+            changed++;
+            applied.computeIfAbsent("neoforge-key-mapping-context-variable", k -> new ArrayList<>()).add(project.root.relativize(e.getKey()).toString().replace('\\', '/'));
+        }
+        return changed;
+    }
+
+    /** The text with new KeyMapping( on the given lines (1-based) made the bridge's KeyConflictContext.keyMapping(, imported. */
+    static String contextKeyMappings(String text, Set<Integer> lineNumbers, String bridgePackage) {
+        List<String> lines = new ArrayList<>(List.of(text.split("\n", -1)));
+        boolean changed = false;
+        for (int number : lineNumbers) {
+            if (number < 1 || number > lines.size() || !lines.get(number - 1).contains("new KeyMapping(")) continue;
+            lines.set(number - 1, lines.get(number - 1).replaceFirst("new KeyMapping\\(", "KeyConflictContext.keyMapping("));
+            changed = true;
+        }
+        if (!changed) return text;
+        String out = String.join("\n", lines);
+        String own = "import " + bridgePackage + ".KeyConflictContext;";
+        boolean samePackage = Pattern.compile("(?m)^package\\s+" + Pattern.quote(bridgePackage) + "\\s*;").matcher(out).find();
+        if (samePackage || out.contains(own)) return out;
+        Matcher anchor = Pattern.compile("(?m)^(?:import\\s[^;]+;|package\\s[^;]+;)[ \\t]*$").matcher(out);
+        int at = -1;
+        while (anchor.find()) at = anchor.end();
+        return at < 0 ? own + "\n" + out : out.substring(0, at) + "\n" + own + out.substring(at);
+    }
+
+    /**
+     * The source sets a Gradle build declares: each name at the top level of a sourceSets { } block, and each
+     * sourceSets.create / register / maybeCreate. In the order declared.
+     */
+    static List<String> declaredSourceSets(String gradle) {
+        Set<String> out = new LinkedHashSet<>();
+        String code = gradle.replaceAll("(?m)//.*$", "");
+        Matcher block = Pattern.compile("(?m)^\\s*sourceSets\\s*\\{").matcher(code);
+        while (block.find()) {
+            int depth = 1;
+            int i = block.end();
+            int lineStart = i;
+            for (; i < code.length() && depth > 0; i++) {
+                char c = code.charAt(i);
+                if (c == '\n') lineStart = i + 1;
+                if (c == '{') depth++;
+                if (c == '}') depth--;
+                // A name that starts a line at depth 1: "client {" or a bare "codeGen".
+                if (depth == 1 && c == '\n') {
+                    int lineEnd = code.indexOf('\n', lineStart) < 0 ? code.length() : code.indexOf('\n', lineStart);
+                    Matcher name = Pattern.compile("^\\s*([A-Za-z_]\\w*)\\s*(\\{|\\r?$)").matcher(code.substring(lineStart, lineEnd));
+                    if (name.find() && !name.group(1).matches("java|resources|output|compileClasspath|runtimeClasspath")) out.add(name.group(1));
+                }
+            }
+        }
+        Matcher made = Pattern.compile("sourceSets\\.(?:create|register|maybeCreate)\\(\\s*['\"](\\w+)['\"]").matcher(code);
+        while (made.find()) out.add(made.group(1));
+        return new ArrayList<>(out);
+    }
+
+    /** Whether the Fabric build split its client sources off (Loom's splitEnvironmentSourceSets). */
+    boolean splitClient;
+
+    static final String SPLIT_CLIENT =
+        "\n// NeoForge has no split client source set: the client sources build with the rest.\n" +
+        "if (sourceSets.findByName('client') != null) {\n" +
+        "    sourceSets.main.java.srcDirs += sourceSets.client.java.srcDirs\n" +
+        "    sourceSets.main.resources.srcDirs += sourceSets.client.resources.srcDirs\n" +
+        "    sourceSets.client.java.srcDirs = []\n" +
+        "    sourceSets.client.resources.srcDirs = []\n" +
+        "    configurations.implementation.extendsFrom(configurations.clientImplementation)\n" +
+        "    configurations.compileOnly.extendsFrom(configurations.clientCompileOnly)\n" +
+        "    configurations.runtimeOnly.extendsFrom(configurations.clientRuntimeOnly)\n" +
+        "} else {\n" +
+        "    sourceSets.main.java.srcDir 'src/client/java'\n" +
+        "    sourceSets.main.resources.srcDir 'src/client/resources'\n" +
+        "}\n// End of the client sources.\n";
+
+    /** Set when the compile step commented out a statement of the build that needs Loom. */
+    boolean repairedBuild;
+
+    static final String LOOM_ONLY ="// mmt convert: needs Fabric's Loom, which a NeoForge build does not have: ";
+
+    /**
+     * A compile-only dependency whose own dependencies Gradle cannot find (the other loader's build of an integration mod,
+     * which needs libraries from a repository the build does not list): compiling against it needs only its own classes,
+     * so it is made non-transitive and listed. False when the failure names no compile-only dependency of build.gradle.
+     */
+    boolean nonTransitiveCompileOnly(String gradle) throws Exception {
+        if (!exists("build.gradle")) return false;
+        String text = read("build.gradle");
+        String out = nonTransitiveCompileOnly(gradle, text, properties(exists("gradle.properties") ? read("gradle.properties") : ""));
+        if (out == null) return false;
+        write("build.gradle", out);
+        repairedBuild = true;
+        applied.computeIfAbsent("compile-only-non-transitive", k -> new ArrayList<>()).add("build.gradle");
+        notes.add("Build: compile-only dependencies whose own dependencies Gradle could not find are compiled against without them (transitive = false).");
+        return true;
+    }
+
+    /** The build with each compile-only dependency a "Could not find ... Required by: root project ... > G:A:V" names made non-transitive, or null. */
+    static String nonTransitiveCompileOnly(String gradle, String build, Map<String, String> properties) {
+        Set<String> requirers = new LinkedHashSet<>();
+        Matcher by = Pattern.compile("root project '[^']*' > ([\\w.\\-]+):([\\w.\\-]+):").matcher(gradle);
+        while (by.find()) requirers.add(by.group(1) + ":" + by.group(2) + ":");
+        if (requirers.isEmpty()) return null;
+        Pattern call = Pattern.compile("^(\\s*)(\\w*[cC]ompileOnly\\w*)\\s*(?:\\(\\s*(([\"'])[^\"']+\\4)\\s*\\)|(([\"'])[^\"']+\\6))\\s*$");
+        String[] lines = build.split("\n", -1);
+        boolean changed = false;
+        for (int i = 0; i < lines.length; i++) {
+            Matcher m = call.matcher(lines[i].replaceAll("\\r$", ""));
+            if (!m.matches()) continue;
+            String quoted = m.group(3) != null ? m.group(3) : m.group(5);
+            String coordinate = quoted.substring(1, quoted.length() - 1);
+            Matcher variable = Pattern.compile("\\$\\{(\\w+)}|\\$(\\w+)").matcher(coordinate);
+            StringBuilder expanded = new StringBuilder();
+            while (variable.find()) {
+                String key = variable.group(1) != null ? variable.group(1) : variable.group(2);
+                variable.appendReplacement(expanded, Matcher.quoteReplacement(properties.getOrDefault(key, variable.group())));
+            }
+            variable.appendTail(expanded);
+            String resolved = expanded.toString();
+            if (requirers.stream().noneMatch(resolved::startsWith)) continue;
+            lines[i] = m.group(1) + m.group(2) + "(" + quoted + ") { transitive = false }";
+            changed = true;
+        }
+        return changed ? String.join("\n", lines) : null;
+    }
+
+    /**
+     * The statement of the build's own files at which Gradle stopped loading the converted build (its "* Where:" file and
+     * line), commented out with a note and listed as left: a plugin line inside plugins { } alone, any other statement
+     * with the block it opens. A failure inside a remote or shared script disables the project's apply from that names
+     * it. False when the failure names no statement of the project's files, or one already commented out.
+     */
+    boolean disableLoomOnlyStatement(String gradle) throws Exception {
+        Matcher where = Pattern.compile("\\* Where:\\s*\\n(?:Build file|Script|Settings file|Initialization script) '([^']+)' line: (\\d+)").matcher(gradle);
+        if (!where.find()) return false;
+        Matcher wrong = Pattern.compile("\\* What went wrong:\\s*\\r?\\n([^\\r\\n]+)(?:\\r?\\n> ([^\\r\\n]+))?").matcher(gradle);
+        String why = wrong.find() ? (wrong.group(2) != null ? wrong.group(2) : wrong.group(1)).strip() : "the build stopped loading here";
+        String where0 = where.group(1).replace('\\', '/');
+        int line = Integer.parseInt(where.group(2));
+        String file = null;
+        Path root = project.root.toAbsolutePath().normalize();
+        if (!where0.contains("://")) {
+            Path p = Path.of(where.group(1)).toAbsolutePath().normalize();
+            if (p.startsWith(root)) file = root.relativize(p).toString().replace('\\', '/');
+        }
+        if (file == null || file.startsWith(".mmt/") || file.startsWith(".gradle/")) {
+            // A shared script outside the project: the project's own apply from that names it.
+            // By the script's name, else (a script applied by another shared script) by the folder it was published in.
+            String name = where0.substring(where0.lastIndexOf('/') + 1);
+            String folder = where0.substring(0, where0.lastIndexOf('/') + 1);
+            for (String key : List.of(name, folder)) for (String candidate : List.of("build.gradle", "settings.gradle")) {
+                String[] lines = read(candidate).split("\n", -1);
+                for (int i = 0; i < lines.length; i++) if (lines[i].contains("apply") && lines[i].contains(key) && !lines[i].strip().startsWith("//")) {
+                    return disableLines(candidate, i, i, why);
+                }
+            }
+            return false;
+        }
+        String[] lines = read(file).split("\n", -1);
+        int start = line - 1;
+        if (start < 0 || start >= lines.length || lines[start].strip().startsWith("//")) return false;
+        int end = start;
+        if (!insidePlugins(lines, start)) {
+            int depth = 0;
+            for (end = start; end < lines.length; end++) {
+                String code = lines[end].replaceAll("//.*$", "").replaceAll("'[^']*'|\"[^\"]*\"", "");
+                for (char c : code.toCharArray()) depth += c == '{' || c == '(' ? 1 : c == '}' || c == ')' ? -1 : 0;
+                if (depth <= 0) break;
+            }
+            end = Math.min(end, lines.length - 1);
+        }
+        return disableLines(file, start, end, why);
+    }
+
+    boolean disableLines(String file, int start, int end, String why) throws Exception {
+        String[] lines = read(file).split("\n", -1);
+        String indent = lines[start].replaceAll("^(\\s*).*$", "$1");
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < lines.length; i++) {
+            if (i == start) out.append(indent).append(LOOM_ONLY).append(why.replaceAll("\\s+", " ")).append('\n');
+            out.append(i >= start && i <= end ? lines[i].replaceAll("^(\\s*)", "$1// ") : lines[i]);
+            if (i < lines.length - 1) out.append('\n');
+        }
+        write(file, out.toString());
+        repairedBuild = true;
+        leave(file, start + 1, lines[start].strip(), "needs Fabric's Loom, which a NeoForge build does not have (" + why + "); commented out");
+        return true;
+    }
+
+    static boolean insidePlugins(String[] lines, int index) {
+        int depth = 0;
+        for (int i = index - 1; i >= 0; i--) {
+            String code = lines[i].replaceAll("//.*$", "");
+            for (int c = code.length() - 1; c >= 0; c--) depth += code.charAt(c) == '}' ? 1 : code.charAt(c) == '{' ? -1 : 0;
+            if (depth < 0) return code.matches("\\s*plugins\\s*\\{.*");
+        }
+        return false;
     }
 
     static String text(Map<String, Object> result) {

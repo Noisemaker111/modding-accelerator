@@ -50,6 +50,23 @@ public final class ConvertTests {
             tested++;
         }
         check(tested >= 19, "every loader rule turns its Fabric test into its NeoForge test and back (" + tested + " rules)");
+        String nf = "package a;\nimport x.Gone;\n/** {not a brace */\npublic class A {\n    static final String S = \"}{\";\n    int f() {\n        return Gone.g();\n    }\n" +
+            "    static class B extends C {\n        @Override\n        void run() { Gone.h(); }\n    }\n    int f(int x) { return x; }\n}\n";
+        String bet = "import net.minecraft.world.level.block.entity.BlockEntityType;\nimport net.minecraft.commands.synchronization.ArgumentTypeInfos;\nclass R { Object a = new BlockEntityType<>(X::new, A, B); Object b = new BlockEntityType<T>(X::new, s) { }; String c = \"new BlockEntityType<>(\"; Object d = ArgumentTypeInfos.registerByClass(C.class, i); }\n";
+        String statics = "net.minecraft.commands.synchronization.ArgumentTypeInfos#registerByClass";
+        String factored = Convert.staticsToBridge(Convert.constructorsToFactories(bet, "net.minecraft.world.level.block.entity.BlockEntityType", "BlockEntityTypes", "p.loaderbridge"), statics, "ArgumentTypeInfosExtension", "p.loaderbridge");
+        check(
+            factored.contains("a = BlockEntityTypes.of(X::new, A, B)") && factored.contains("b = new BlockEntityType<T>(X::new, s) { }") && factored.contains("\"new BlockEntityType<>(\"") && factored.contains("import p.loaderbridge.BlockEntityTypes;") && factored.contains("d = ArgumentTypeInfosExtension.registerByClass(C.class, i)") &&
+                Convert.bridgeToStatics(Convert.factoriesToConstructors(factored, "net.minecraft.world.level.block.entity.BlockEntityType", "BlockEntityTypes", "p.loaderbridge"), statics, "ArgumentTypeInfosExtension", "p.loaderbridge").equals(bet),
+            "a constructor or static method NeoForge adds to a game class becomes the bridge's and back, never an anonymous subclass or a string: " + factored
+        );
+        List<String> around = new ArrayList<>();
+        for (int line : new int[] {2, 7, 11, 4}) around.add(String.valueOf(NeoForgeSources.around(nf, line) == null ? null : NeoForgeSources.around(nf, line).key()));
+        check(
+            around.equals(List.of("#import x.Gone", "A#f(0)", "A#B", "null")) &&
+                NeoForgeSources.remove(nf, around).equals("package a;\n/** {not a brace */\npublic class A {\n    static final String S = \"}{\";\n    int f(int x) { return x; }\n}\n"),
+            "a NeoForge class keeps what compiles on Fabric: an error takes out its import or member, an @Override one its nested class, one in the class header the file: " + around
+        );
         check(
             LoaderRules.find(
                 "String s = \"FabricLoader.getInstance().getGameDir()\"; // FabricLoader.getInstance().getGameDir()",
@@ -205,17 +222,18 @@ public final class ConvertTests {
             widener +
             widenerLeft
         );
-        Map<String, String> fieldTypes = Convert.mappingFieldTypes(
-            "# {\"fileName\":\"client.txt\"}\nnet.minecraft.client.renderer.block.ModelBlockRenderer -> fxx:\n" +
+        String mappings = "# {\"fileName\":\"client.txt\"}\nnet.minecraft.client.renderer.block.ModelBlockRenderer -> fxx:\n" +
             "    net.minecraft.client.color.block.BlockColors blockColors -> b\n    int[][] grid -> c\n" +
-            "    15:20:void <init>(net.minecraft.client.color.block.BlockColors) -> <init>\n"
-        );
+            "    15:20:void <init>(net.minecraft.client.color.block.BlockColors) -> <init>\n";
+        Map<String, String> fieldTypes = Convert.mappingFieldTypes(mappings);
+        String members = Convert.mappingMembers(mappings).get("net/minecraft/client/renderer/block/ModelBlockRenderer");
         List<String> typedLeft = new ArrayList<>();
         String typed = Convert.transformerToWidener(
-            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\npublic net.minecraft.A shut()V\npublic net.minecraft.A open()V\npublic net.minecraft.A gone\n",
+            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\npublic net.minecraft.A shut()V\npublic net.minecraft.A open()V\npublic net.minecraft.A gone\npublic net.minecraft.A *()\npublic net.minecraft.Gone *\n",
             false,
             typedLeft,
-            (owner, field) -> field.equals("shut()V") ? "access 2" : field.equals("open()V") ? "access 4" : field.equals("gone") ? "" : fieldTypes.get(owner + " " + field)
+            (owner, field) -> field.equals("*") ? (owner.equals("net/minecraft/A") ? "field f I\nmethod m ()V 2\nmethod <clinit> ()V 8\n" : "") :
+                field.equals("shut()V") ? "access 2" : field.equals("open()V") ? "access 4" : field.equals("gone") ? "" : fieldTypes.get(owner + " " + field)
         );
         check(
             fieldTypes.get("net/minecraft/client/renderer/block/ModelBlockRenderer grid").equals("[[I") &&
@@ -223,10 +241,64 @@ public final class ConvertTests {
             typed.equals(
                 "accessWidener v2 named\naccessible field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n" +
                 "mutable field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n" +
-                "accessible method net/minecraft/A shut ()V\nextendable method net/minecraft/A shut ()V\naccessible method net/minecraft/A open ()V\n"
+                "accessible method net/minecraft/A shut ()V\nextendable method net/minecraft/A shut ()V\naccessible method net/minecraft/A open ()V\n" +
+                "accessible method net/minecraft/A m ()V\nextendable method net/minecraft/A m ()V\n"
             ) &&
-            typedLeft.size() == 2 && typedLeft.get(1).startsWith("public net.minecraft.A gone (the game has no such field") && typedLeft.get(1).endsWith("; dropped)"),
-            "an access transformer field line becomes an access widener field with its type from Mojang's mappings, a private method stays overridable, and a field the game lacks is dropped:\n" + typed + typedLeft
+            members.equals("field blockColors Lnet/minecraft/client/color/block/BlockColors;\nfield grid [[I\nmethod <init> (Lnet/minecraft/client/color/block/BlockColors;)V\n") &&
+            typedLeft.size() == 3 && typedLeft.get(1).startsWith("public net.minecraft.A gone (the game has no such field") && typedLeft.get(2).contains("no such class"),
+            "an access transformer field line becomes an access widener field with its type from Mojang's mappings, a wildcard every member the game lists, a private method stays overridable, and a field or class the game lacks is dropped:\n" + typed + typedLeft + members
+        );
+        ConvertNamesTests.run();
+        String renamed = Convert.layerRewrites(
+            "import net.minecraft.resources.Identifier;\nimport org.jspecify.annotations.Nullable;\nIdentifier id = Identifier.parse(s); IdentifierCache c; my.Identifier x;",
+            Json.object(Json.parse("{\"org.jspecify.annotations.Nullable\":\"org.jetbrains.annotations.Nullable\",\"Identifier\":\"ResourceLocation\"}"))
+        );
+        check(
+            renamed.equals("import net.minecraft.resources.ResourceLocation;\nimport org.jetbrains.annotations.Nullable;\nResourceLocation id = ResourceLocation.parse(s); IdentifierCache c; my.ResourceLocation x;"),
+            "a version layer's rewrites rename whole words only, dotted names included: " + renamed
+        );
+        String wildcard = Convert.wildcardBridgeImports(
+            "import net.neoforged.neoforge.client.event.*;\nimport net.neoforged.neoforge.client.event.ScreenEvent.*;\nimport java.util.*;\nclass A { void a(RegisterMenuScreensEvent e, EntityRenderersEvent.RegisterRenderers r) {} }",
+            Json.object(Json.parse("{\"net.neoforged.neoforge.client.event.RegisterMenuScreensEvent\":\"RegisterMenuScreensEvent\",\"net.neoforged.neoforge.client.event.EntityRenderersEvent\":\"EntityRenderersEvent\",\"net.neoforged.neoforge.client.event.ScreenEvent\":\"ScreenEvent\",\"net.neoforged.neoforge.client.event.RenderGuiEvent\":\"RenderGuiEvent\"}")),
+            List.of("RenderGuiEvent.java"),
+            "demo.bridge"
+        );
+        check(
+            wildcard.startsWith("import demo.bridge.RegisterMenuScreensEvent;\nimport demo.bridge.EntityRenderersEvent;\nimport demo.bridge.ScreenEvent.*;\nimport java.util.*;\n") && !wildcard.contains("ScreenEvent;"),
+            "a wildcard import of a NeoForge package imports each mirrored class of it the file names, and no other; of a mirrored class, its nested types: " + wildcard
+        );
+        String variables = Convert.remapVariableDependencies(
+            "    def ctDep = \"com.blamejared:CraftTweaker-fabric-1.21.1:1\"\n    compileOnly ctDep\n    runtimeOnly(ctDep)\n    def lib = \"a:b:1\"\n    implementation lib\n"
+        );
+        check(
+            variables.contains("    modCompileOnly ctDep\n") && variables.contains("    modRuntimeOnly(ctDep)\n") && variables.contains("    implementation lib\n"),
+            "a Fabric mod held in a variable is named in Loom's remapping configurations, another library is not: " + variables
+        );
+        ConvertDataTests.run();
+        List<String> sets = Convert.declaredSourceSets(
+            "sourceSets {\n\tmain {\n\t\tjava.srcDirs = ['src/common/java']\n\t}\n\tclient {\n\t\tjava.srcDirs = ['src/main/java']\n\t}\n\tcodeGen\n\t// gone {\n\toldServerGametest {\n\t\tcompileClasspath += main.output\n\t}\n}\n" +
+            "sourceSets.create('extra')\n"
+        );
+        check(sets.equals(List.of("main", "client", "codeGen", "oldServerGametest", "extra")), "every source set a build declares is found (blocks, bare names, create), and nothing inside them: " + sets);
+        Path loomOnly = scratch.resolve("loom-only");
+        String loomGradle = "plugins {\n    id 'net.neoforged.moddev' version '2.0.148'\n    id 'io.github.ladysnake.chenille' version '0.13.0'\n}\n" +
+            "apply from: 'https://example.org/scripts/3.2/ferry.gradle'\n" +
+            "tasks.named('runOldServerClientGameTest') {\n    dependsOn clean\n}\nversion = '1.0'\n";
+        String wrapper = "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n";
+        Map<String, String> loomFiles = Map.of("build.gradle", loomGradle, "gradle/wrapper/gradle-wrapper.properties", wrapper);
+        Convert loomConvert = new Convert(new Build(fixture(loomOnly, loomFiles, Map.of()), home, "", new Mmt.Report(loomOnly, "convert")));
+        loomConvert.dryRun = true;
+        String loomRoot = loomOnly.toAbsolutePath().normalize().toString();
+        boolean task = loomConvert.disableLoomOnlyStatement("* Where:\r\nBuild file '" + loomRoot + "/build.gradle' line: 6\r\n\r\n* What went wrong:\r\nA problem occurred evaluating root project 'x'.\r\n> Task with name 'runOldServerClientGameTest' not found.\r\n");
+        boolean plugin = loomConvert.disableLoomOnlyStatement("* Where:\nBuild file '" + loomRoot + "/build.gradle' line: 3\n\n* What went wrong:\nAn exception occurred applying plugin request [id: 'io.github.ladysnake.chenille']\n");
+        boolean remote = loomConvert.disableLoomOnlyStatement("* Where:\nScript 'https://example.org/scripts/3.2/fabric-mod.gradle' line: 20\n\n* What went wrong:\nA problem occurred evaluating script.\n> Plugin with id 'net.fabricmc.fabric-loom' not found.\n");
+        boolean again = loomConvert.disableLoomOnlyStatement("* Where:\nBuild file '" + loomRoot + "/build.gradle' line: 3\n");
+        String loomOut = loomConvert.current("build.gradle");
+        check(
+            task && plugin && remote && !again && loomOut.contains("    // id 'io.github.ladysnake.chenille'") && loomOut.contains("    id 'net.neoforged.moddev'") &&
+            loomOut.contains("// apply from: 'https://example.org/scripts/3.2/ferry.gradle'") && loomOut.contains("// tasks.named('runOldServerClientGameTest') {\n    // dependsOn clean\n// }") &&
+            loomOut.contains("Loom, which a NeoForge build does not have: Task with name 'runOldServerClientGameTest' not found.") && loomOut.contains("\nversion = '1.0'") && loomConvert.left.size() == 3,
+            "build logic that needs Fabric's Loom is commented out where Gradle stopped (a plugin line alone, a block whole, the apply of a shared script that applies Loom), noted and listed:\n" + loomOut
         );
         String cleaned = Convert.dropUnusedImports(
             "import net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n",
