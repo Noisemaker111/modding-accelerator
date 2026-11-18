@@ -47,7 +47,7 @@ public final class RulesTest {
                 var apply = Json.object(rule.get("apply"));
                 // {symbol} stands for the name javac reported; the porter fills it in before it compiles the pattern.
                 if (apply.containsKey("find")) find = Pattern.compile(
-                    apply.get("find").toString().replace("{symbol}", "symbol")
+                    apply.get("find").toString().replace("{symbol}", "symbol").replace("{receiver}", "receiver")
                 );
                 else if (apply.containsKey("literal")) {
                     // The porter replaces the literal text with "replace". Any other shape is read as text that is never there.
@@ -115,6 +115,10 @@ public final class RulesTest {
                 } else if (Character.isDigit(next)) {
                     if (next - '0' > groups) return "uses $" + next + ", but the pattern has " + groups + " group(s)";
                     i++;
+                } else if (next == '^' && i + 2 < replace.length() && Character.isDigit(replace.charAt(i + 2))) {
+                    // $^N: group N in UPPER_SNAKE case (Port.expandReplacement).
+                    if (replace.charAt(i + 2) - '0' > groups) return "uses $^" + replace.charAt(i + 2) + ", but the pattern has " + groups + " group(s)";
+                    i += 2;
                 } else {
                     return "has a $ that is not a group ($" + next + "); write \\\\$ for a dollar sign";
                 }

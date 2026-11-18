@@ -16,6 +16,24 @@ def planning = System.getProperty('mmt.metadataMode', '') == 'plan'
 // Test hook for mmt's fallback: behave like an init script that registers too late
 // whenever Gradle is configuring on demand, so the retry without it can be exercised.
 def simulateMiss = System.getProperty('mmt.simulateCodMiss', '') == 'true' && gradle.startParameter.configureOnDemand
+// Plugin releases mmt pinned because the newest one in the build's range needs a newer Java (Build.pluginPin).
+def pluginPins = System.getProperty('mmt.pluginPins', '').split(',').findAll { it.contains('=') }.collectEntries { def kv = it.split('=', 2); [(kv[0]): kv[1]] }
+if (pluginPins) gradle.beforeSettings { s ->
+    s.pluginManagement.resolutionStrategy.eachPlugin { d -> if (pluginPins[d.requested.id.id]) d.useVersion(pluginPins[d.requested.id.id]) }
+}
+// Libraries mmt ported from source (LibraryPort) live in a local Maven repository; their versions end in -mmt-<game>.
+def portedLibraries = System.getProperty('mmt.portedLibraries', '')
+def settingsRepositories = false
+if (portedLibraries) {
+    gradle.settingsEvaluated { s ->
+        // Gradle before 6.8 has no settings repositories; projects declare their own there.
+        try { settingsRepositories = s.dependencyResolutionManagement.repositoriesMode.get().toString() != 'PREFER_PROJECT' } catch (Throwable older) { return }
+        if (settingsRepositories) s.dependencyResolutionManagement.repositories.maven { url = new File(portedLibraries).toURI(); content { includeVersionByRegex('.*', '.*', '.*-mmt-.*') } }
+    }
+    gradle.allprojects { p ->
+        if (!settingsRepositories) p.repositories.maven { url = new File(portedLibraries).toURI(); content { includeVersionByRegex('.*', '.*', '.*-mmt-.*') } }
+    }
+}
 def partFile = { File state, String path -> new File(state, 'model-parts/' + Base64.urlEncoder.withoutPadding().encodeToString(path.bytes) + '.json') }
 def metadataPath = { String path -> (path == ':' ? '' : path) + ':mmtProjectMetadata' }
 gradle.rootProject { root ->
@@ -31,7 +49,7 @@ gradle.rootProject { root ->
             def parts = targetPaths.collect { partFile(state, it) }
             def model = [schema: 1, mode: planning ? 'plan' : 'full', root: root.projectDir.absolutePath, gradle: gradle.gradleVersion,
                          java: System.getProperty('java.home'), projects: parts.collect { new JsonSlurper().parse(it) }]
-            def output = new File(state, planning ? 'plan-model.json' : 'model.json')
+            def output = new File(state, System.getProperty('mmt.modelFile', planning ? 'plan-model.json' : 'model.json'))
             output.text = JsonOutput.toJson(model)
             println 'MMT_MODEL ' + output.absolutePath
         }
@@ -158,10 +176,34 @@ gradle.afterProject { p ->
         }
         p.tasks.withType(org.gradle.language.jvm.tasks.ProcessResources).configureEach { outputs.upToDateWhen { false } }
     }
+    // mmt port-plan: the classpath and sources javac is actually given, written as the task runs. A build model can only name
+    // what Gradle resolves when it configures, and some plugins put the game jar in only at compile time (NeoGradle's
+    // placeholder neoforge jar).
+    def compileRecord = System.getProperty('mmt.recordCompile', '')
+    if (compileRecord) p.tasks.withType(JavaCompile).configureEach { t ->
+        if (t.name.toLowerCase(Locale.ROOT).contains('neoform') || t.name.toLowerCase(Locale.ROOT).contains('test')) return
+        t.doFirst {
+            def out = new File(compileRecord, (p.path + ':' + t.name).replaceAll('[^A-Za-z0-9]+', '_') + '.json')
+            out.parentFile.mkdirs()
+            out.text = JsonOutput.toJson([project: p.path, task: t.name, classpath: t.classpath.files*.absolutePath,
+                sources: t.source.files*.absolutePath, release: t.options.release.getOrNull()])
+        }
+    }
     // mixin-check prepares the client launch to apply mixins, never to render, so it skips the game's
     // sound and texture download (hundreds of MB on a cold machine). Off unless asked for.
     if (System.getProperty('mmt.skipAssets', '') == 'true') {
-        p.tasks.matching { it.name == 'downloadAssets' }.configureEach { enabled = false }
+        p.tasks.matching { it.name == 'downloadAssets' }.configureEach { t ->
+            enabled = false
+            // ModDevGradle's prepare*Run tasks take the download's properties file as an input and refuse to start without
+            // it: an empty one stands in (the task never ran, so a later real launch still downloads and rewrites it).
+            if (t.hasProperty('assetPropertiesFile')) {
+                def f = t.assetPropertiesFile.get().asFile
+                if (!f.exists()) {
+                    f.parentFile.mkdirs()
+                    f.text = 'asset_index=\nassets_root=\n'
+                }
+            }
+        }
     }
     def sets = p.extensions.findByName('sourceSets')
     if (sets?.findByName('test') && !p.tasks.findByName('mmtPure')) {

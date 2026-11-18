@@ -145,7 +145,74 @@ public final class PortTests {
         );
     }
 
+    /** A yarn source bridged to the game's names keeps the game's call-site rewrites, also keyed by its own yarn names. */
+    static void bridgeRewrites() {
+        Map<String, Object> names = Json.map(
+            "from", "1.21.1",
+            "classes", List.of(Json.map("from", "net.minecraft.registry.Registry", "to", "net.minecraft.core.Registry")),
+            "methods", List.of(Json.map("owner", "net.minecraft.registry.Registry", "from", "entryOf", "desc", "(Lnet/minecraft/registry/RegistryKey;)Lnet/minecraft/registry/entry/RegistryEntry$Reference;",
+                "to", "getHolderOrThrow", "newDesc", "(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Holder$Reference;"))
+        );
+        Map<String, Object> rewrite = Json.map("step", "1.21.1 -> 1.21.2", "owner", "net.minecraft.core.Registry", "from", "getHolderOrThrow",
+            "desc", "(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Holder$Reference;", "static", false,
+            "toOwner", "net.minecraft.core.HolderGetter", "to", "getOrThrow", "newDesc", "(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Holder$Reference;", "newStatic", false);
+        Map<String, Object> route = new LinkedHashMap<>(Json.map("to", "26.3", "classes", List.of(), "rewrites", List.of(rewrite)));
+        for (String list : List.of("classesRemoved", "methods", "methodsMoved", "signatures", "methodsRemoved", "fields", "fieldsRemoved")) route.put(list, List.of());
+        names = new LinkedHashMap<>(names);
+        names.put("fields", List.of());
+        List<Object> composed = Json.array(Port.composeMaps(names, route).get("rewrites"));
+        check(composed.size() == 2, "the rewrite is kept as it is and keyed by its yarn name: " + composed);
+        var yarn = Json.object(composed.get(1));
+        check("entryOf".equals(yarn.get("from")) && "net.minecraft.registry.Registry".equals(yarn.get("owner")) && "getOrThrow".equals(yarn.get("to")), "yarn key, game replacement");
+    }
+
+    /** A yarn route gets the game's rewrites in yarn: the removed member as the source names it, the replacement as the target names it. */
+    static void yarnRouteRewrites() {
+        Map<String, Object> rewrite = Json.map("step", "1.20.1 -> 1.20.2", "owner", "net.minecraft.network.FriendlyByteBuf", "from", "getVarIntSize", "desc", "(I)I", "static", true,
+            "toOwner", "net.minecraft.network.VarInt", "to", "getByteSize", "newDesc", "(I)I", "newStatic", true);
+        Map<String, Object> unnamed = Json.map("step", "1.20.1 -> 1.20.2", "owner", "net.minecraft.network.FriendlyByteBuf", "from", "gone", "desc", "()V", "static", true,
+            "toOwner", "net.minecraft.network.VarInt", "to", "notInYarn", "newDesc", "()V", "newStatic", true);
+        Map<String, Object> source = Json.map(
+            "classes", List.of(Json.map("from", "net.minecraft.network.PacketByteBuf", "to", "net.minecraft.network.FriendlyByteBuf")),
+            "methods", List.of(Json.map("owner", "net.minecraft.network.PacketByteBuf", "from", "getVarIntLength", "desc", "(I)I", "to", "getVarIntSize", "newDesc", "(I)I"),
+                Json.map("owner", "net.minecraft.network.PacketByteBuf", "from", "gone", "desc", "()V", "to", "gone", "newDesc", "()V")));
+        Map<String, Object> target = Json.map(
+            "classes", List.of(Json.map("from", "net.minecraft.network.encoding.VarInts", "to", "net.minecraft.network.VarInt")),
+            "methods", List.of(Json.map("owner", "net.minecraft.network.encoding.VarInts", "from", "getSizeInBytes", "desc", "(I)I", "to", "getByteSize", "newDesc", "(I)I")));
+        List<Object> yarn = Port.yarnRewrites(List.of(rewrite, unnamed), source, target);
+        check(yarn.size() == 1, "a rewrite whose replacement yarn cannot name is left out: " + yarn);
+        var r = Json.object(yarn.get(0));
+        check(
+            "net.minecraft.network.PacketByteBuf".equals(r.get("owner")) && "getVarIntLength".equals(r.get("from")) &&
+            "net.minecraft.network.encoding.VarInts".equals(r.get("toOwner")) && "getSizeInBytes".equals(r.get("to")),
+            "source yarn names for the removed member, target yarn names for its replacement: " + r
+        );
+    }
+
+    /** A mixin's never-run constructor calls its super constructor with typed placeholders for whatever it now takes. */
+    static void mixinPlaceholders() {
+        List<String> args = Port.placeholders("(Lnet/minecraft/world/level/storage/WritableLevelData;Lnet/minecraft/core/Holder$Reference;ZJF[I[Ljava/lang/String;CI)V");
+        check(
+            args.equals(List.of("(net.minecraft.world.level.storage.WritableLevelData) null", "(net.minecraft.core.Holder.Reference) null", "false", "0L", "0.0F", "(int[]) null", "(java.lang.String[]) null", "(char) 0", "0")),
+            "typed placeholders for every kind of parameter: " + args
+        );
+    }
+
+    /** Every item made from a food, through the mod's own helpers too, sets the consumable that food's builder described. */
+    static void foodUses() {
+        String items = "class ModItems {\n    static Item.Properties foodItem(FoodProperties food) {\n        return new Item.Properties().food(food);\n    }\n"
+            + "    static Item.Properties bowl() {\n        return new Item.Properties().stacksTo(16).food(FoodValues.STEW).food(a, b);\n    }\n}\n";
+        String used = Port.foodUses(items, "mod.FoodValues");
+        check(used.contains("new Item.Properties().food(food).component(net.minecraft.core.component.DataComponents.CONSUMABLE, mod.FoodValues.mmtConsumable(food));"), "a helper's food sets its consumable: " + used);
+        check(used.contains(".food(FoodValues.STEW).component(net.minecraft.core.component.DataComponents.CONSUMABLE, mod.FoodValues.mmtConsumable(FoodValues.STEW)).food(a, b);"), "one food each, and food(food, consumable) is left as it is");
+        check(used.split("\n", -1).length == items.split("\n", -1).length && Port.foodUses(used, "mod.FoodValues").equals(used), "lines kept, and a second round adds nothing");
+    }
+
     public static void main(String[] args) throws Exception {
+        mixinPlaceholders();
+        foodUses();
+        bridgeRewrites();
+        yarnRouteRewrites();
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
             Files.createDirectories(Path.of(args[1])),

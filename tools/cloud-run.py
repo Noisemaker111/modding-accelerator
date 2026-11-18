@@ -42,8 +42,20 @@ def gh_path():
     raise SystemExit("cloud-run needs the GitHub CLI (gh): https://cli.github.com, then gh auth login")
 
 
-def gh(*args, check=True):
-    done = subprocess.run([gh_path(), *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
+TRANSIENT = ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "timeout", "connection reset", "TLS handshake", "EOF")
+
+
+def transient(output):
+    """A GitHub hiccup worth retrying (a 5xx, a dropped connection), not an answer: a sweep hours long must not end on one."""
+    return any(sign.lower() in (output or "").lower() for sign in TRANSIENT)
+
+
+def gh(*args, check=True, tries=6, run=subprocess.run, sleep=time.sleep):
+    for attempt in range(tries):
+        done = run([gh_path(), *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if not done.returncode or not transient(done.stderr or done.stdout) or attempt == tries - 1:
+            break
+        sleep(min(60, 5 * 2 ** attempt))
     if check and done.returncode:
         raise SystemExit(f"gh {' '.join(args[:3])} failed: {(done.stderr or done.stdout).strip()[-800:]}")
     return done.stdout

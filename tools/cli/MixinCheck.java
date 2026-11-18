@@ -629,6 +629,18 @@ final class MixinCheck {
         );
         String main = launch.main();
         List<String> arguments = new ArrayList<>(launch.arguments());
+        if (main.equals(DEV_LAUNCH)) {
+            // ModDevGradle starts through NeoForge's DevLaunch: its arguments (with @-files expanded) are the real main
+            // class and that class's arguments, so the check reads past it to the launcher it knows.
+            List<String> expanded = new ArrayList<>();
+            for (String a : arguments) {
+                if (a.length() > 1 && a.startsWith("@")) expanded.addAll(argumentFile(launch.directory().resolve(a.substring(1))));
+                else expanded.add(a);
+            }
+            if (expanded.isEmpty()) throw new IOException("NeoForge's DevLaunch was recorded with no main class to start.");
+            main = expanded.remove(0);
+            arguments = expanded;
+        }
         if (loader.equals("fabric")) {
             main = fabricMain(launch, "MmtMixinCheck", command);
         } else if (main.startsWith(FML_STARTUP)) {

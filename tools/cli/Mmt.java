@@ -244,6 +244,7 @@ public final class Mmt {
         "port",
         "convert",
         "explain",
+        "port-plan",
         "dependencies",
         "mixin-check",
         "data-check",
@@ -499,6 +500,10 @@ public final class Mmt {
                     case "convert" -> {
                         result = preview ? Convert.preview(project.root, home, options) : new Convert(build).run(options);
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                    }
+                    case "port-plan" -> {
+                        result = PortPlan.run(build, model, options);
+                        exit = 0;
                     }
                     case "explain" -> {
                         result = new Explain(build, model).run(options);
@@ -934,6 +939,10 @@ public final class Mmt {
             "receipt): it lists each file that would change or be removed and what would be left, compiles nothing, and exits 0 when it ran.\n" +
             "A compile is not proof: check the mod in the game with ui-check or world-check and --assert.\n" +
             "Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
+            case "port-plan" -> "Every place a mod's code touches game or loader code, found by the compiler on the mod's own version, and with --map what\n" +
+            "a target version did to each (renamed, moved to another class, takes different arguments, the game shows the replacement, removed):\n" +
+            "  mmt port-plan --root SOURCE [--project :p] [--map CHANGE-MAP.json] [--json]\n" +
+            "The places are written to .mmt/portable/port-plan.json; bench/port_plans.py ranks them for the whole corpus.";
             case "explain" -> "Explain a port's compiler errors: mmt explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
             "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n" +
@@ -1050,6 +1059,7 @@ public final class Mmt {
             "  fast, test             logic tests, no game    mixin-check        Mixin applies the mixins, no game\n" +
             "  data-check             what the game loads for the mod (items, recipes, errors), no game\n" +
             "  port                   move to another version explain            explain compiler errors\n" +
+            "  port-plan              every place the mod touches game code, and what a target version did to it\n" +
             "  convert                move to another loader (Fabric <-> NeoForge), with undo\n" +
             "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n" +
             "  eval, reload           talk to the running game          game-status, game-stop\n" +

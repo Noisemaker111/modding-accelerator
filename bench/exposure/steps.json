@@ -1,0 +1,17 @@
+{
+ "from": "1.21.1",
+ "to": "1.21.2",
+ "updates": 1,
+ "gone": 3192,
+ "learned": 89,
+ "steps": [
+  {
+   "step": "1.21.1 -> 1.21.2",
+   "gone": 3192,
+   "learned": 89,
+   "rewrites": 68,
+   "chains": 10,
+   "classRewrites": 11
+  }
+ ]
+}

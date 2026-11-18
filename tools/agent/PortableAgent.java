@@ -306,6 +306,7 @@ public final class PortableAgent {
             Object target;
             try { target = call(client, "getFramebuffer", "getMainRenderTarget"); }
             catch (NoSuchMethodException changed) { target = call(field(client, "gameRenderer"), "mainRenderTarget"); }
+            followWindowSize(target);
             Class<?> screenshot = load("net.minecraft.client.util.ScreenshotRecorder", "net.minecraft.client.Screenshot");
             final Consumer<Object> save = new Consumer<Object>() { public void accept(Object image) {
                 try {
@@ -511,6 +512,21 @@ public final class PortableAgent {
     private static String gameDirectory() {
         try { return ((java.io.File) field(client, "gameDirectory", "runDirectory")).getAbsolutePath(); } catch (Exception unknown) { return ""; }
     }
+    /**
+     * 26.1.x resizes the main render target only on a frame that saw the window's one-frame resize flag, and a hidden
+     * window can miss that frame: the window was 1280x720 and the target stayed 854x480. When they differ, the target
+     * takes the window's framebuffer size, as the game's own resize would. Versions without RenderTarget.resize(int, int)
+     * under that name (obfuscated runtimes) are left as they are.
+     */
+    private static void followWindowSize(Object target) {
+        try {
+            Object window = call(client, "getWindow");
+            int width = ((Number)call(window, "getWidth")).intValue(), height = ((Number)call(window, "getHeight")).intValue();
+            if (((Number)field(target, "width")).intValue() == width && ((Number)field(target, "height")).intValue() == height) return;
+            target.getClass().getMethod("resize", int.class, int.class).invoke(target, width, height);
+        } catch (Throwable unsupported) {}
+    }
+
     private static Object optionalField(Object owner, String name) { try { return field(owner, name); } catch (Exception ignored) { return null; } }
     private static Class<?> load(String... names) throws ClassNotFoundException {
         for (String name : names) try { return Class.forName(name, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}

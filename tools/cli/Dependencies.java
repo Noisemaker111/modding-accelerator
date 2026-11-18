@@ -111,7 +111,10 @@ final class Dependencies {
                 // port depends on, so it is listed as unchecked instead of disappearing from the result.
                 Path mod = forgeModJar(setup.project, group, name, old);
                 if (gameVersioned(setup, group, name, old, mod, Json.text(dep, "configuration", ""))) continue;
-                if (mod != null) setup.unchecked.add(
+                // A NeoForge mod jar is looked up like a Fabric one (its file's hash on Modrinth): left on the old game, the
+                // loader refuses to start any mod (Corpse's OpenHUD 1.3.0+1.21.1 asked for Minecraft [1.21.1] exactly).
+                if (mod != null && loader.equals("neoforge") && setup.build != null) binary = mod;
+                else if (mod != null) setup.unchecked.add(
                     Json.map(
                         "artifact",
                         group + ":" + name,
@@ -131,11 +134,11 @@ final class Dependencies {
                         " still works"
                     )
                 );
-                continue;
+                if (binary == null) continue;
             }
             Selection selection = select(setup.selections, group, name, old);
             // A library released per game version (in its name or its version) is looked up by that before anything else.
-            if (selection == null && gameVersioned(setup, group, name, old, binary, Json.text(dep, "configuration", ""))) continue;
+            if (selection == null && !forgeMod(setup.project, group, name, old, binary) && gameVersioned(setup, group, name, old, binary, Json.text(dep, "configuration", ""))) continue;
             try {
                 if (selection != null && selection.disable()) disable(setup, group, name, old, binary, selection);
                 else if (selection != null) choose(setup, group, name, old, binary, selection);
@@ -165,6 +168,14 @@ final class Dependencies {
                 }
             } catch (IOException failure) {
                 String configuration = Json.text(dep, "configuration", "");
+                // A NeoForge mod jar Modrinth does not index: whether it has a target release is unknown, so it stays
+                // unchecked as before and the build decides; only a published project without one blocks.
+                if (selection == null && forgeMod(setup.project, group, name, old, binary) && failure.getMessage() != null
+                    && failure.getMessage().startsWith("its jar is not a published Modrinth release")) {
+                    setup.unchecked.add(Json.map("artifact", group + ":" + name, "version", old, "configuration", configuration, "file", binary.toString(),
+                        "reason", "a NeoForge mod Modrinth does not index; its " + setup.to + " release was not looked up, so the build decides whether " + old + " still works"));
+                    continue;
+                }
                 // A compile-only integration is never packaged or loaded with the mod, and authors often
                 // already compile against an older release of it. Keep it and let the compiler decide.
                 if (selection == null && compileOnly(configuration) && !(failure instanceof Target.LookupFailure)) {
@@ -204,6 +215,396 @@ final class Dependencies {
                 );
             }
         }
+        // The policy for a dependency with no target release: an optional one is disabled, a required one blocks the port.
+        for (var blocker : new ArrayList<>(setup.blockers)) if (disableOptional(setup, blocker)) setup.blockers.remove(blocker);
+        // What only arrives with a disabled dependency (JEI's core, lib and gui with its API) goes with it: same group and
+        // version, and declared in no build script.
+        for (var blocker : new ArrayList<>(setup.blockers)) {
+            String artifact = Json.text(blocker, "artifact", ""), version = Json.text(blocker, "version", "");
+            String group = artifact.contains(":") ? artifact.substring(0, artifact.indexOf(':')) : artifact;
+            Map<String, Object> with = null;
+            for (var done : setup.applied) {
+                boolean sameRelease = Json.text(done, "artifact", "").startsWith(group + ":") && version.equals(Json.text(done, "from", ""));
+                if (Boolean.TRUE.equals(done.get("disabled")) && sameRelease) with = done;
+            }
+            if (with == null || declaredAnywhere(setup, artifact)) continue;
+            setup.blockers.remove(blocker);
+            setup.applied.add(Json.map("artifact", artifact, "from", version, "disabled", true, "reason", "it only arrives with " + Json.text(with, "artifact", "") + ", which was disabled"));
+        }
+        for (var blocker : new ArrayList<>(setup.blockers)) if (portLibrary(setup, blocker, loader)) setup.blockers.remove(blocker);
+    }
+
+    /** Whether any build script of the project declares group:name, literally or through properties. */
+    static boolean declaredAnywhere(Target.Setup setup, String artifact) {
+        if (setup.build == null) return true;
+        try (var scripts = Files.walk(setup.build.project.root, 3)) {
+            for (Path script : scripts.filter(p -> p.getFileName().toString().matches("build\\.gradle(\\.kts)?") && !p.toString().contains(File.separator + "build" + File.separator)).toList()) {
+                if (!declarations(setup, script, artifact).isEmpty()) return true;
+            }
+        } catch (IOException unreadable) {
+            return true;
+        }
+        return false;
+    }
+
+    /** The game version the running port starts from; set by port --fix, which may port a library it needs. */
+    static String portFrom = null;
+
+    /** Whether binary is the NeoForge or Forge mod jar of group:name:old (already looked up by its game version). */
+    static boolean forgeMod(Map<String, Object> project, String group, String name, String old, Path binary) {
+        return binary != null && binary.equals(forgeModJar(project, group, name, old)) && artifact(project, group, name, old) == null;
+    }
+
+    /** The simple names of a jar's classes (nested ones by their own name). */
+    static Set<String> simpleNames(Path jar) throws IOException {
+        Set<String> names = new HashSet<>();
+        try (var zip = new ZipFile(jar.toFile())) {
+            for (var e : Collections.list(zip.entries())) {
+                String n = e.getName();
+                if (n.endsWith(".class")) names.add(n.substring(Math.max(n.lastIndexOf('/'), n.lastIndexOf('$')) + 1, n.length() - 6));
+            }
+        }
+        return names;
+    }
+
+    /** Whether a mod source outside the removed set names this source's class. */
+    static boolean calledElsewhere(Target.Setup setup, Path source, Set<Path> removed) throws IOException {
+        String cls = source.getFileName().toString().replaceFirst("\\.java$", "");
+        Pattern use = Pattern.compile("\\b" + Pattern.quote(cls) + "\\b");
+        for (Path other : Port.sources(setup.build.project)) {
+            if (removed.contains(other) || !other.toString().endsWith(".java")) continue;
+            if (use.matcher(Files.readString(other)).find()) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The class as it is when its optional mod is absent: same package and name, every static or instance method whose
+     * signature names nothing of the library, each returning false, 0 or null (a void one does nothing), and nothing
+     * else. Null when the class itself extends or implements something, or has no such method.
+     */
+    static String absentStub(String text, Set<String> library) {
+        Matcher head = Pattern.compile("(?m)^((?:public\\s+|final\\s+|abstract\\s+)*)class\\s+(\\w+)\\s*\\{").matcher(text);
+        Matcher pkg = Pattern.compile("(?m)^package\\s+[\\w.]+\\s*;").matcher(text);
+        if (!head.find() || !pkg.find()) return null;
+        int open = text.indexOf('{', head.start()), close = Port.closingBrace(text, open);
+        if (close < 0) return null;
+        StringBuilder out = new StringBuilder(pkg.group());
+        out.append("\n\n/** Written by mmt port: the optional mod this integrated with has no release for the target, so it is never present. */\n");
+        out.append(head.group(1)).append("class ").append(head.group(2)).append(" {\n");
+        Matcher method = Pattern.compile(
+            "(?m)^[ \\t]+((?:public|protected|private|static|final|synchronized|\\s)+)([\\w<>\\[\\]?, .]+?)\\s+(\\w+)\\s*\\(([^)]*)\\)\\s*(?:throws [\\w., ]+)?\\s*\\{"
+        ).matcher(text);
+        int kept = 0, at = open + 1;
+        while (method.find(at) && method.start() < close) {
+            int bodyClose = Port.closingBrace(text, method.end() - 1);
+            if (bodyClose < 0) break;
+            at = bodyClose + 1;
+            String type = method.group(2).strip(), signature = type + " " + method.group(4);
+            boolean namesLibrary = false;
+            for (Matcher word = Pattern.compile("\\b[A-Z]\\w*").matcher(signature); word.find();) namesLibrary |= library.contains(word.group());
+            if (namesLibrary || type.equals("class") || type.equals("new")) continue;
+            String value = switch (type) {
+                case "void" -> "";
+                case "boolean" -> "return false;";
+                case "int", "long", "short", "byte", "float", "double" -> "return 0;";
+                case "char" -> "return '\\0';";
+                default -> "return null;";
+            };
+            out.append("    ").append(method.group(1).strip()).append(' ').append(type).append(' ').append(method.group(3));
+            out.append('(').append(method.group(4).strip()).append(") {").append(value.isEmpty() ? "" : " " + value + " ").append("}\n\n");
+            kept++;
+        }
+        if (kept == 0) return null;
+        // Types the kept signatures use (a Screen, a ResourceKey) keep their imports; the library's go.
+        StringBuilder imports = new StringBuilder();
+        for (Matcher imp = Pattern.compile("(?m)^import\\s+(?:static\\s+)?([\\w.]+)\\s*;").matcher(text); imp.find();) {
+            String simple = imp.group(1).substring(imp.group(1).lastIndexOf('.') + 1);
+            boolean used = Pattern.compile("\\b" + Pattern.quote(simple) + "\\b").matcher(out).find();
+            if (!library.contains(simple) && used) imports.append(imp.group()).append('\n');
+        }
+        String body = out.toString().replaceFirst("\\n\\n$", "\n") + "}\n";
+        return body.replaceFirst("(?m)^(package\\s+[\\w.]+\\s*;)\\n", "$1\n\n" + Matcher.quoteReplacement(imports.toString()));
+    }
+
+    /**
+     * A required dependency with no target release is ported from its own source (LibraryPort) when the running port may
+     * do so, and the build then uses that port from the local repository. When it cannot be, the blocker says why.
+     */
+    static boolean portLibrary(Target.Setup setup, Map<String, Object> blocker, String loader) {
+        String artifact = Json.text(blocker, "artifact", ""), old = Json.text(blocker, "version", ""), file = Json.text(blocker, "file", "");
+        if (portFrom == null || setup.build == null || !artifact.contains(":")) return false;
+        String group = artifact.substring(0, artifact.indexOf(':')), name = artifact.substring(artifact.indexOf(':') + 1);
+        // A NeoForge mod dependency's blocker carries no file; its jar is in Gradle's cache under the old version.
+        if (file.isEmpty()) {
+            Path cached = cachedJar(artifact, old);
+            if (cached == null) return false;
+            file = cached.toString();
+        }
+        try {
+            var receipt = LibraryPort.ensure(setup, group, name, old, Path.of(file), portFrom, loader);
+            apply(setup, group, name, old, group, name, LibraryPort.version(old, setup.to), Path.of(file), receipt);
+            return true;
+        } catch (Exception failure) {
+            blocker.put("reason", Json.text(blocker, "reason", "") + "; mmt could not port it from source: " + failure.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * A dependency with no release for the target is disabled when the mod itself says it can run without it: it is run-time
+     * only (never compiled against, never shipped), or its jar's mod id is not a required dependency in the mod's own
+     * fabric.mod.json or neoforge.mods.toml. Its declaration is commented out, the sources that use it go with the port
+     * (and come back with its undo), and the receipt says why. A required one, a plain library (no mod id), a declaration
+     * the port cannot place, or one the mod's main or client entry class uses stays a blocker naming it. Never a guess.
+     */
+    static boolean disableOptional(Target.Setup setup, Map<String, Object> blocker) {
+        try {
+            String artifact = Json.text(blocker, "artifact", ""), version = Json.text(blocker, "version", "");
+            String configuration = Json.text(blocker, "configuration", ""), file = Json.text(blocker, "file", "");
+            if (artifact.isEmpty() || version.isEmpty() || setup.project.get("buildFile") == null) return false;
+            boolean runtimeOnly = configuration.matches("(?i)(mod)?(runtimeOnly|localRuntime)");
+            Path jar = file.isEmpty() ? cachedJar(artifact, version) : Path.of(file);
+            String modId = jar != null && Files.isRegularFile(jar) ? modId(jar) : null;
+            if (modId == null && artifact.matches(".*-api(?:-[\\w.]+)?")) {
+                // An API artifact carries no mod metadata; its mod is the same project's artifact without -api, same version.
+                Path mod = cachedJar(artifact.replaceFirst("-api(?=-[\\w.]+$|$)", ""), version);
+                if (mod != null) modId = modId(mod);
+            }
+            if (modId == null) modId = groupModId(artifact, version);
+            String why;
+            if (runtimeOnly) why = "a " + configuration + " dependency, never compiled against or shipped";
+            else if (modId == null) return false;
+            else if (requiredBy(setup, modId)) return false;
+            else why = "the mod's own metadata does not require " + modId;
+            Path script = Path.of(setup.project.get("buildFile").toString());
+            List<String> blocks = declarations(setup, script, artifact);
+            if (blocks.isEmpty()) {
+                // A multi-loader build declares it in a sibling module's script (JEI's fabric/build.gradle.kts).
+                Path own = script;
+                try (var scripts = Files.walk(setup.build.project.root, 3)) {
+                    for (Path other : scripts.filter(p -> p.getFileName().toString().matches("build\\.gradle(\\.kts)?")
+                        && !p.toString().contains(File.separator + "build" + File.separator) && !p.equals(own)).toList()) {
+                        List<String> found = declarations(setup, other, artifact);
+                        if (!found.isEmpty()) {
+                            script = other;
+                            blocks = found;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (blocks.isEmpty()) return false;
+            Set<Path> importers = runtimeOnly || jar == null ? Set.of() : importers(setup.build.project, jar);
+            for (Path source : importers) {
+                String text = Files.readString(source);
+                if (text.contains("@Mod(") || text.contains("implements ModInitializer") || text.contains("implements ClientModInitializer")) return false;
+            }
+            for (String block : blocks) setup.replace(script, block, comment(block));
+            // An integration class the rest of the mod still calls (Corpse: if (OpenHudIntegration.isLoaded()) ...) stays
+            // as a stub saying the optional mod is absent; the others go with the dependency.
+            Set<String> library = jar == null ? Set.of() : simpleNames(jar);
+            Set<Path> gone = new LinkedHashSet<>();
+            for (Path source : importers) {
+                String stub = calledElsewhere(setup, source, importers) ? absentStub(Files.readString(source), library) : null;
+                if (stub == null) gone.add(source);
+                else setup.replace(source, Files.readString(source), stub);
+            }
+            importers = gone;
+            setup.excluded.addAll(importers);
+            List<String> removed = importers.isEmpty() ? List.of() : entrypoints(setup, importers);
+            setup.applied.add(
+                Json.map(
+                    "artifact",
+                    artifact,
+                    "from",
+                    version,
+                    "disabled",
+                    true,
+                    "reason",
+                    "no " + setup.to + " release (" + Json.text(blocker, "reason", "") + "), and it is optional: " + why,
+                    "removedSources",
+                    importers.stream().map(p -> setup.build.project.root.relativize(p).toString().replace('\\', '/')).sorted().toList(),
+                    "removedEntrypoints",
+                    removed
+                )
+            );
+            return true;
+        } catch (Exception unplaceable) {
+            return false;
+        }
+    }
+
+    /**
+     * The declaration of group:name in the build script: written literally, or with the game version in its name made from a
+     * property (jei-${minecraft_version}-neoforge), as the build resolved it.
+     */
+    static String declaration(Target.Setup setup, Path script, String artifact) throws IOException {
+        String text = setup.text(script);
+        try {
+            return statement(text, artifact + ":", script);
+        } catch (IOException notLiteral) {
+            Matcher game = Pattern.compile("(?<![0-9.])\\d+\\.\\d+(?:\\.\\d+)?(?![0-9.])").matcher(artifact.substring(artifact.indexOf(':') + 1));
+            if (!game.find()) throw notLiteral;
+            String name = artifact.substring(artifact.indexOf(':') + 1);
+            Matcher written = Pattern.compile(
+                Pattern.quote(artifact.substring(0, artifact.indexOf(':') + 1) + name.substring(0, game.start())) +
+                "\\$\\{?[\\w.]+\\}?" +
+                Pattern.quote(name.substring(game.end()) + ":")
+            ).matcher(text);
+            if (!written.find()) throw notLiteral;
+            return statement(text, written.group(), script);
+        }
+    }
+
+    /**
+     * Every active declaration of the artifact (Cyclic declares Curios compileOnly and localRuntime): one statement, or, when
+     * there are several, each single-line one. Empty when a declaration cannot be placed exactly.
+     */
+    static List<String> declarations(Target.Setup setup, Path script, String artifact) throws IOException {
+        try {
+            return List.of(declaration(setup, script, artifact));
+        } catch (IOException several) {
+            if (several.getMessage() == null || !several.getMessage().startsWith("Multiple active")) return written(setup, script, artifact);
+            Matcher marker = Pattern.compile("Multiple active (.+) declarations in").matcher(several.getMessage());
+            if (!marker.find()) return List.of();
+            List<String> lines = new ArrayList<>();
+            for (String line : setup.text(script).split("\\r?\\n")) {
+                String trimmed = line.trim();
+                if (!line.contains(marker.group(1)) || trimmed.startsWith("//") || trimmed.startsWith("*")) continue;
+                if (line.chars().filter(c -> c == '(').count() != line.chars().filter(c -> c == ')').count() || line.contains("{")) return List.of();
+                if (!lines.contains(line)) lines.add(line);
+            }
+            return lines;
+        }
+    }
+
+    /**
+     * Declarations that name the artifact only once the build's properties are filled in ("mezz.jei:jei-${jei_mc_version}:
+     * ${jei_version}" with jei_mc_version=1.21.1-neoforge): each single-line, active one. Empty when there is none, or one
+     * spans lines and cannot be placed exactly.
+     */
+    static List<String> written(Target.Setup setup, Path script, String artifact) throws IOException {
+        java.util.Properties properties = new java.util.Properties();
+        // The script's own folder first, then up to the build's root (a subproject reads its root's properties too).
+        int depth = 0;
+        for (Path dir = script.toAbsolutePath().getParent(); dir != null && depth < 3; dir = dir.getParent(), depth++) {
+            Path file = dir.resolve("gradle.properties");
+            if (Files.isRegularFile(file)) {
+                for (var e : ProjectModel.properties(file).entrySet()) properties.putIfAbsent(e.getKey(), e.getValue());
+            }
+            if (Files.isRegularFile(dir.resolve("settings.gradle")) || Files.isRegularFile(dir.resolve("settings.gradle.kts"))) break;
+        }
+        List<String> lines = new ArrayList<>();
+        for (String line : setup.text(script).split("\\r?\\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("//") || trimmed.startsWith("*") || !line.contains("$")) continue;
+            Matcher reference = Pattern.compile("\\$\\{?([\\w.]+)\\}?").matcher(line);
+            StringBuilder resolved = new StringBuilder();
+            while (reference.find()) {
+                String value = properties.getProperty(reference.group(1));
+                reference.appendReplacement(resolved, Matcher.quoteReplacement(value == null ? reference.group() : value));
+            }
+            reference.appendTail(resolved);
+            if (!resolved.toString().contains(artifact + ":")) continue;
+            String plain = line.replaceAll("\\$\\{[\\w.]+\\}", "");
+            if (plain.chars().filter(c -> c == '(').count() != plain.chars().filter(c -> c == ')').count() || plain.contains("{")) return List.of();
+            if (!lines.contains(line)) lines.add(line);
+        }
+        return lines;
+    }
+
+    /** The jar Gradle downloaded for group:name:version, in its module cache, or null. */
+    static Path cachedJar(String artifact, String version) {
+        String[] parts = artifact.split(":");
+        if (parts.length != 2) return null;
+        Path home = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
+        Path dir = home.resolve("caches/modules-2/files-2.1").resolve(parts[0]).resolve(parts[1]).resolve(version);
+        if (!Files.isDirectory(dir)) return null;
+        try (var walk = Files.walk(dir, 2)) {
+            return walk.filter(p -> p.getFileName().toString().equals(parts[1] + "-" + version + ".jar")).findFirst().orElse(null);
+        } catch (IOException unreadable) {
+            return null;
+        }
+    }
+
+    /**
+     * The one mod id among the jars a project publishes with the same group and version (JEI's jei-1.21.1-common-api has
+     * none; its jei-1.21.1-fabric says jei), or null when they declare none or several.
+     */
+    static String groupModId(String artifact, String version) {
+        String[] parts = artifact.split(":");
+        if (parts.length != 2) return null;
+        Path home = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
+        Path group = home.resolve("caches/modules-2/files-2.1").resolve(parts[0]);
+        if (!Files.isDirectory(group)) return null;
+        Set<String> ids = new TreeSet<>();
+        try (var walk = Files.walk(group, 4)) {
+            for (Path jar : walk.filter(p -> p.getFileName().toString().endsWith("-" + version + ".jar") && p.getParent().getParent().getFileName().toString().equals(version)).toList()) {
+                String id = modId(jar);
+                if (id != null) ids.add(id);
+            }
+        } catch (IOException unreadable) {
+            return null;
+        }
+        return ids.size() == 1 ? ids.iterator().next() : null;
+    }
+
+    /** The mod id a mod jar declares (fabric.mod.json id, or the first modId of its mods.toml), or null for a plain library. */
+    static String modId(Path jar) {
+        try (var zip = new ZipFile(jar.toFile())) {
+            var fabric = zip.getEntry("fabric.mod.json");
+            if (fabric != null) return Json.text(Json.object(Json.parse(new String(zip.getInputStream(fabric).readAllBytes(), StandardCharsets.UTF_8))), "id", null);
+            for (String name : List.of("META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
+                var toml = zip.getEntry(name);
+                if (toml == null) continue;
+                Matcher id = Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"").matcher(new String(zip.getInputStream(toml).readAllBytes(), StandardCharsets.UTF_8));
+                if (id.find()) return id.group(1);
+            }
+        } catch (Exception unreadable) {}
+        return null;
+    }
+
+    /** Whether the project's own fabric.mod.json "depends" or neoforge.mods.toml names modId as a required dependency. */
+    static boolean requiredBy(Target.Setup setup, String modId) throws IOException {
+        for (Object set : Json.array(setup.project.get("sourceSets"))) for (String resources : ProjectModel.strings(Json.object(set).get("resources"))) {
+            Path dir = Path.of(resources);
+            Path fabric = dir.resolve("fabric.mod.json");
+            if (Files.isRegularFile(fabric) && requiredInFabric(Files.readString(fabric), modId)) return true;
+            for (String name : List.of("META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
+                Path toml = dir.resolve(name);
+                if (Files.isRegularFile(toml) && requiredInToml(Files.readString(toml), modId)) return true;
+            }
+        }
+        Object dir = setup.project.get("directory");
+        Path root = dir == null ? setup.build.project.root : Path.of(dir.toString());
+        for (String name : List.of("src/main/templates/META-INF/neoforge.mods.toml", "src/main/templates/META-INF/mods.toml")) {
+            Path toml = root.resolve(name);
+            if (Files.isRegularFile(toml) && requiredInToml(Files.readString(toml), modId)) return true;
+        }
+        return false;
+    }
+
+    static boolean requiredInFabric(String json, String modId) {
+        try {
+            return Json.object(Json.object(Json.parse(json)).getOrDefault("depends", Map.of())).containsKey(modId);
+        } catch (RuntimeException unreadable) {
+            return true; // cannot tell: treat it as required, never guess
+        }
+    }
+
+    /** A [[dependencies.X]] block with modId=modId whose type is "required" (or mandatory=true). */
+    static boolean requiredInToml(String toml, String modId) {
+        for (String block : toml.split("(?m)^\\s*\\[\\[")) {
+            if (!block.startsWith("dependencies")) continue;
+            if (!Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"" + Pattern.quote(modId) + "\"").matcher(block).find()) continue;
+            Matcher type = Pattern.compile("(?m)^\\s*type\\s*=\\s*\"(\\w+)\"").matcher(block);
+            Matcher mandatory = Pattern.compile("(?m)^\\s*mandatory\\s*=\\s*(\\w+)").matcher(block);
+            if (type.find()) return type.group(1).equalsIgnoreCase("required");
+            if (mandatory.find()) return mandatory.group(1).equals("true");
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -242,7 +643,7 @@ final class Dependencies {
             }
             String shape = old.replaceAll("[0-9]+", "0"), chosen = null;
             for (String v : versions) if (v.replaceAll("[0-9]+", "0").equals(shape) && (chosen == null || numbers(v).compareTo(numbers(chosen)) > 0)) chosen = v;
-            Set<String> owners = propertyKeys(setup.build.project, old);
+            Set<String> owners = propertyKeys(setup.build.project, old, group, name);
             if (chosen == null) {
                 // A compile-only integration written out by name keeps its old coordinate, as any compile-only one does
                 // (mods compile against JEI's API): the build decides whether it still compiles.
@@ -744,7 +1145,7 @@ final class Dependencies {
         record.put("to", version);
         record.put("sourceSha512", sha512(binary));
         boolean renamed = !group.equals(newGroup) || !name.equals(newName);
-        Set<String> keys = propertyKeys(setup.build.project, old);
+        Set<String> keys = propertyKeys(setup.build.project, old, group, name);
         if (!renamed && keys.size() == 1) {
             String key = keys.iterator().next(), previous = setup.replacements.putIfAbsent(key, version);
             setup.pins.putIfAbsent(key, old);
@@ -754,6 +1155,14 @@ final class Dependencies {
         } else if (keys.isEmpty()) {
             Path file = Path.of(setup.project.get("buildFile").toString());
             String declared = declaredLiteral(setup.text(file), group + ":" + name, file);
+            // A library mmt ported is written out as its literal version, whatever properties made the old one.
+            if (declared.contains("${") && version.contains("-mmt-")) {
+                String rest = declared.substring(group.length() + name.length() + 2);
+                String classifier = rest.contains(":") ? rest.substring(rest.indexOf(':')) : "";
+                setup.replace(file, declared, newGroup + ":" + newName + ":" + version + classifier);
+                setup.applied.add(record);
+                return;
+            }
             if (declared.contains("${")) throw new IOException(
                 "Dependency " +
                 group +
@@ -974,6 +1383,11 @@ final class Dependencies {
                 ) return file;
             } catch (IOException unreadable) {}
         }
+        // A dependency the model lists without its file (Corpse's maven.modrinth:openhud): Gradle's cache has the jar.
+        Path cached = cachedJar(group + ":" + name, version);
+        if (cached != null) try (var jar = new ZipFile(cached.toFile())) {
+            if (jar.getEntry("META-INF/neoforge.mods.toml") != null || jar.getEntry("META-INF/mods.toml") != null) return cached;
+        } catch (IOException unreadable) {}
         return null;
     }
 
@@ -1094,6 +1508,22 @@ final class Dependencies {
         }
         String base = published.split("\\+", 2)[0];
         return maven.contains(published) ? published : maven.contains(base) ? base : "";
+    }
+
+    /**
+     * The properties holding a dependency's version; when several hold the same value (bookshelf_version and prickle_version
+     * both 21.1.2), the ones named after the artifact.
+     */
+    static Set<String> propertyKeys(ProjectModel project, String version, String group, String name) throws IOException {
+        Set<String> keys = propertyKeys(project, version);
+        if (keys.size() < 2) return keys;
+        String artifact = (group + "." + name).toLowerCase(Locale.ROOT);
+        Set<String> named = new TreeSet<>();
+        for (String key : keys) {
+            String stem = key.replaceAll("(?i)[_.-]?version$", "").toLowerCase(Locale.ROOT);
+            if (stem.length() >= 3 && artifact.contains(stem)) named.add(key);
+        }
+        return named.isEmpty() ? keys : named;
     }
 
     static Set<String> propertyKeys(ProjectModel project, String version) throws IOException {
@@ -1265,7 +1695,15 @@ final class Dependencies {
             int first = type.indexOf('/'), second = first < 0 ? -1 : type.indexOf('/', first + 1);
             if (second > 0) prefixes.add(type.substring(0, second).replace('/', '.') + ".");
         }
-        for (Path file : Port.sources(project)) {
+        // A library by the mod's own author shares its vendor prefix (OpenHUD's de.maxhenkel. beside Corpse's
+        // de.maxhenkel.corpse): a prefix the mod's own packages start with says nothing about who uses the library.
+        List<Path> sources = Port.sources(project);
+        for (Path file : sources) {
+            if (!file.toString().endsWith(".java")) continue;
+            Matcher own = Pattern.compile("(?m)^\\s*package\\s+([\\w.]+)\\s*;").matcher(Files.readString(file));
+            if (own.find()) prefixes.removeIf(p -> (own.group(1) + ".").startsWith(p));
+        }
+        for (Path file : sources) {
             if (!file.toString().endsWith(".java")) continue;
             String text = Files.readString(file);
             boolean owns = false;
@@ -1348,8 +1786,15 @@ final class Dependencies {
             if (!unindexed.getMessage().contains("HTTP 404")) throw unindexed;
         }
         Map<String, Object> metadata;
-        try (var jar = new ZipFile(binary.toFile()); var input = jar.getInputStream(jar.getEntry("fabric.mod.json"))) {
-            metadata = Json.object(Json.parse(new String(input.readAllBytes(), StandardCharsets.UTF_8)));
+        try (var jar = new ZipFile(binary.toFile())) {
+            var entry = jar.getEntry("fabric.mod.json");
+            if (entry == null) {
+                // A NeoForge or Forge mod jar: its mods.toml names a repository, and LibraryPort reads it from there.
+                throw new IOException("its jar is not a published Modrinth release, so no " + to + " release of it was found");
+            }
+            try (var input = jar.getInputStream(entry)) {
+                metadata = Json.object(Json.parse(new String(input.readAllBytes(), StandardCharsets.UTF_8)));
+            }
         }
         var contact = Json.object(metadata.getOrDefault("contact", Map.of()));
         String source = Json.text(contact, "sources", "");
