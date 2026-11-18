@@ -812,7 +812,8 @@
    "explain": "bench/sweep.py run over the whole corpus (bench/sweep/corpus.json, every mod and target version): ports whose port builds with no edit by hand, out of the ports run. Measured on the cloud runners for a PR's result; locally between.",
    "points": [
     {"date": "2026-11-16", "value": 10, "n": 126, "source": "https://github.com/Noisemaker111/modding-accelerator/actions/runs/43813284276 (cloud sweep, PR #97 before 2026-11-17)"},
-    {"date": "2026-11-17", "value": 15, "n": 125, "note": "before the step-back; 33 ports crashed on a dependency bug fixed in bb1d85c", "source": "local sweep tag full1, .runs/sweep/runs/full1 (commit 102e396)"}
+    {"date": "2026-11-17", "value": 15, "n": 125, "note": "before the step-back; 33 ports crashed on a dependency bug fixed in bb1d85c", "source": "local sweep tag full1, .runs/sweep/runs/full1 (commit 102e396)"},
+    {"date": "2026-11-18", "value": 16, "n": 126, "note": "33 ports that crashed on the NeoForge dependency bug re-run after its fix", "source": "local sweeps full1 + full2 (.runs/sweep/runs), commit 102e396 + bb1d85c"}
    ],
    "target": {"value": 60, "by": "2026-12-22", "step": "41"}
   }
