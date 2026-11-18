@@ -495,14 +495,18 @@ final class Installation {
                 "-cp",
                 own.toString(),
                 // A suite may use a shared fixture class beside it (PackCheckFixtures), or a shared
-                // production helper beside tools/ (MixinTriage); javac compiles them on demand.
+                // production helper beside tools/ (MixinTriage); javac compiles them on demand. Agent
+                // sources resolve the same way (the frame-hook table in GameTests); their ASM import
+                // rides on the jar mmt ships for its own bytecode tools.
                 "-sourcepath",
-                harness.resolve("tools/tests").toString() + File.pathSeparator + harness.resolve("tools").toString(),
+                harness.resolve("tools/tests").toString() + File.pathSeparator + harness.resolve("tools").toString() + File.pathSeparator + harness.resolve("tools/agent").toString(),
                 "-d",
                 classes.toString()
             )
         );
         for (Suite suite : suites) javac.add(harness.resolve("tools/tests/" + suite.main() + ".java").toString());
+        Path bundledAsm = Game.bundledAsm(harness);
+        if (bundledAsm != null) javac.set(javac.indexOf("-cp") + 1, own + File.pathSeparator + bundledAsm);
         var compile = Run.command(javac, report.root, Map.of(), report.log("test-compile"), 120);
         report.stage("test-compile", compile, Map.of());
         if (compile.exit() != 0) throw new IOException(Run.tail(compile.log()));

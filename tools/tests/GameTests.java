@@ -65,6 +65,22 @@ public final class GameTests {
             !Game.argfilesOk(java8),
             "the Java 8 every 1.7.10 game records does not expand @ files, so its launches stay with Gradle"
         );
+        Map<String, String> hookShapes = new LinkedHashMap<>();
+        hookShapes.put("render (Z)V", PortableAgent.hookGetter("render", "(Z)V"));
+        hookShapes.put("runTick (Z)V", PortableAgent.hookGetter("runTick", "(Z)V"));
+        hookShapes.put("runTick ()V", PortableAgent.hookGetter("runTick", "()V"));
+        hookShapes.put("runTick ()I", PortableAgent.hookGetter("runTick", "()I"));
+        hookShapes.put("tick ()V", PortableAgent.hookGetter("tick", "()V"));
+        Map<String, String> wanted = new LinkedHashMap<>();
+        wanted.put("render (Z)V", "getInstance");
+        wanted.put("runTick (Z)V", "getInstance");
+        wanted.put("runTick ()V", "getMinecraft");
+        wanted.put("runTick ()I", null);
+        wanted.put("tick ()V", null);
+        check(
+            hookShapes.equals(wanted),
+            "the frame hook reaches modern clients through getInstance and 1.7.10 through getMinecraft, nothing else: " + hookShapes
+        );
         List<String> saved = Game.savedCommand(launch, scratch.resolve("saved classpath.args"));
         Process child = new ProcessBuilder(saved).redirectErrorStream(true).start();
         String output = new String(child.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
