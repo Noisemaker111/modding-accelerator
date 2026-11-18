@@ -115,11 +115,21 @@ def mod_references(folder):
 
     # A member the mod reaches through its own class (this.modLoc() in a subclass of NeoForge's BlockStateProvider) is
     # the first loader or game class's up its supertypes that the mod does not declare it in.
+    def declared_by_mod(owner, name, seen):
+        # Anywhere in the mod's own types above owner, its interfaces included (IFramedBlock's default getCamoDrops).
+        if owner in seen or owner not in own:
+            return False
+        seen.add(owner)
+        supers, declared = own[owner]
+        return name in declared or any(declared_by_mod(s, name, seen) for s in supers)
+
     def inherited(owner, name, seen):
         if owner in seen or owner not in own:
             return []
         seen.add(owner)
         supers, declared = own[owner]
+        if not seen - {owner} and declared_by_mod(owner, name, set()):
+            return []
         if name in declared:
             return []
         # The superclass only: an interface's method would be the class's own declaration's.
@@ -187,8 +197,17 @@ def bridge_provides(rules, frm, minecraft):
                 out.setdefault(cls, set()).update(DECLARED.findall(text))
                 header = re.search(r"\b(?:class|interface|record|enum)\s+\w+[^{]*\{", text)
                 supers.setdefault(cls, set()).update(re.findall(r"\b([A-Z]\w*)\b", re.sub(r"<[^{]*?>", "", header.group(0)).split(" ", 2)[-1]) if header else [])
+        # NeoForge's own classes convert copies when they compile on Fabric (neoforge-sources.txt, bench/bridge_import.py),
+        # with the members they declare there and their supertypes.
+        if frm == "neoforge":
+            for cls, members in copied_classes(folders, b).items():
+                out.setdefault(cls, set()).update(members)
+                supers.setdefault(cls, set()).update(COPY_SUPERS.get(cls, set()))
         # A member declared by another bridge class it extends or implements (DeferredItem's get is DeferredHolder's).
         by_simple = {c.rsplit("/", 1)[-1].split("$")[-1]: c for c in out}
+        BRIDGE_SUPERS.clear()
+        for cls in out:
+            BRIDGE_SUPERS[cls] = {x for x in supers.get(cls, ()) if x not in by_simple}
         for cls in out:
             if supers.get(cls, set()) & JDK:
                 out[cls].add("*")
@@ -199,11 +218,6 @@ def bridge_provides(rules, frm, minecraft):
                     seen.add(s)
                     out[cls] |= out[s]
                     todo.extend(supers.get(s, ()))
-        # NeoForge's own classes convert copies when they compile on Fabric (neoforge-sources.txt, bench/bridge_import.py),
-        # with the members they declare there.
-        if frm == "neoforge":
-            for cls, members in copied_classes(folders, b).items():
-                out.setdefault(cls, set()).update(members)
         # A bridge file NeoForge has under two names (a class it moved between versions) provides both.
         if frm == "neoforge":
             for full, simple in b.get("classes", {}).items():
@@ -245,7 +259,13 @@ def copied_classes(folders, bridge):
             except KeyError:
                 text = ""
             out[name.replace(".", "/")] = (set(DECLARED.findall(text)) or {"*"}) - dropped.get(name, set())
+            header = re.search(r"\b(?:class|interface|record|enum)\s+\w+[^{]*\{", text)
+            COPY_SUPERS[name.replace(".", "/")] = set(re.findall(r"\b([A-Z]\w*)\b", re.sub(r"<[^{]*?>", "", header.group(0)).split(" ", 2)[-1])) if header else set()
     return out
+
+
+COPY_SUPERS = {}
+BRIDGE_SUPERS = {}
 
 
 def by_package(result, blocked):
@@ -265,7 +285,8 @@ def by_package(result, blocked):
         for group, mods in groups.items():
             freed = sorted(m for m in mods if {level(p) for p in missing[m]} == {group})
             rows.append((group, sorted(mods), freed))
-    clean = sorted(m for m in blocked if not missing.get(m))
+    measured = {r["mod"] for r in result["mods"]}
+    clean = sorted(m for m in blocked & measured if not missing.get(m))
     return {"nothing missing already": clean, "missing": {m: sorted(p) for m, p in sorted(missing.items())},
             "groups": sorted({r[0]: r for r in rows}.values(), key=lambda r: (-len(r[2]), -len(r[1]), r[0]))}
 
@@ -353,7 +374,8 @@ def vanilla(minecraft):
 
 def declared_by_game(game, owner, name):
     """Whether the game declares name on owner or a supertype (with no supertypes known, on any game class)."""
-    if game is None:
+    # Object's and Enum's own methods (EquipmentSlot.ordinal), and names with a $ (a mod's own mixin methods, framedblocks$getCache).
+    if game is None or name in OBJECT_METHODS or "$" in name:
         return True
     seen, todo = set(), [owner]
     while todo:
@@ -417,6 +439,7 @@ def coverage(refs, rules, corpus, sweep=None):
         frm = mod["loader"]
         bridge = bridge_provides(rules, frm, r.get("minecraft", ""))
         prefixes = LOADER[frm]
+        game_index = vanilla(r.get("minecraft", "")) if r.get("minecraft") else None
         used = [c for c in r["classes"] if c.startswith(prefixes)]
         missing = []
         for c in used:
@@ -436,7 +459,10 @@ def coverage(refs, rules, corpus, sweep=None):
                 continue
             declared = (bridge or {}).get(owner)
             if declared is not None and declared and "*" not in declared and name not in declared and name not in ("<init>", "<clinit>", "values", "valueOf"):
-                missing.append(f"{owner}#{name}")
+                # A bridge class that extends a game class (ExtendedButton extends Button) has the game class's members.
+                game_supers = [g for g in (game_index or {}) if g.rsplit("/", 1)[-1] in BRIDGE_SUPERS.get(owner, ())]
+                if not any(declared_by_game(game_index, g, name) for g in game_supers):
+                    missing.append(f"{owner}#{name}")
         # Methods the loader adds to game classes: called on a game class that does not declare them.
         game = vanilla(r.get("minecraft", "")) if r.get("minecraft") else None
         added = extension_names(rules, frm, r.get("minecraft", "")) if game is not None else set()

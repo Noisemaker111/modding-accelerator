@@ -636,15 +636,16 @@
      "part": "Loader pairs",
      "status": "doing",
      "text": "List what blocks each of the 14 mods that do not compile yet, group the blockers by cause across all 14, and produce each group's fixes in one go from the loaders' own files (no per-mod fixes).",
-     "finish": "17 of 28 corpus mods convert, compile and load in the game: morered, naturesaura and framedblocks, the NeoForge mods whose missing symbols are all NeoForge files and whose builds have no other blocker",
-     "wrongIf": "bench/convert_coverage.py --blocked shows nothing missing for morered, naturesaura and framedblocks, yet fewer than two of them compile",
+     "finish": "17 of 28 corpus mods convert, compile and load in the game (16 if only morered and naturesaura clear): bench/convert_coverage.py --blocked measures morered missing 12 NeoForge symbols, naturesaura 11, framedblocks 30, each made from NeoForge's own sources",
+     "wrongIf": "the tool shows nothing missing for morered and naturesaura and either still fails to compile and load",
      "start": "2026-11-18",
      "target": "2026-11-25",
      "measures": [
       "loader.convert-corpus"
      ],
      "notes": [
-      "2026-11-18: the first plan (group 3: the generator using NeoForge's copied classes, protected methods and extension interfaces as supertypes, finish line 17 with group 2) failed its own test: it landed and naturesaura and morered still did not compile, and conversion became 5 times slower, so it was reverted. Its grouping counted the first errors javac printed; javac stops at the first layer, so fixing those exposed the next. Measured instead from each mod's compiled classes (bench/convert_coverage.py --blocked): every blocked mod misses 3 to 53 symbols across several packages, and no single package frees more than one mod."
+      "2026-11-18: the first plan (group 3: the generator using NeoForge's copied classes, protected methods and extension interfaces as supertypes, finish line 17 with group 2) failed its own test: it landed and naturesaura and morered still did not compile, and conversion became 5 times slower, so it was reverted. Its grouping counted the first errors javac printed; javac stops at the first layer, so fixing those exposed the next. Measured instead from each mod's compiled classes (bench/convert_coverage.py --blocked): every blocked mod misses 3 to 53 symbols across several packages, and no single package frees more than one mod.",
+      "2026-11-18: the measure had two blind spots, fixed: a member reached through a mod's own subclass was never traced to NeoForge, and framedblocks's own interface methods were charged to game classes (264 missing became 30)."
      ]
     },
     {
