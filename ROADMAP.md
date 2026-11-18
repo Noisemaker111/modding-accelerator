@@ -4,9 +4,9 @@
 > `python bench/bench_page.py --roadmap`. Edit those two files, not this one. The same roadmap with its timeline, charts and
 > porting map: **<https://noisemaker111.github.io/minecraft-modding-tools/>**
 
-**The goal:** a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
+**The goal:** Nobody should have to think about Minecraft versions or loaders: drop a mod in, pick the version and the loader you want, and get it back in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**27 of 50 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**27 of 51 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
@@ -15,7 +15,7 @@
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
 | **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;27 | 🔵 44 · The port worklist sees every mod and predicts the build<br>⚪ 47 · A rule names a game part and is applied only there |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
-| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;3&nbsp;of&nbsp;8 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first |
+| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `███░░░░░░░`&nbsp;3&nbsp;of&nbsp;9 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first |
 
 ## Goal 1 — Test a mod in seconds
 
@@ -320,6 +320,17 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 | 41 | NeoForge mods to Fabric through a bridge built from NeoForge's own files | 🟢 done | Nov 18 |
 | 42 | The blockers of the other 14 mods, by cause, produced from the loaders' files | ⚫ later | Nov 18 → Nov 25 |
 | 48 | What the most-downloaded mods need from the bridge, most-used first | ⚪ next | Nov 19 → Dec 5 |
+
+### One place for both
+
+| # | Step | Status | When |
+|---|---|---|---|
+| 49 | Drop a mod in, pick a version and a loader, get it back | ⚫ later | Dec 8 → Jan 15, 2027 |
+
+### Loader pairs
+
+| # | Step | Status | When |
+|---|---|---|---|
 | 19 | Forge → NeoForge and Fabric → Quilt | ⚫ later | Feb 1, 2027 → Feb 26, 2027 |
 
 ### Mods and plugins
@@ -345,6 +356,8 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 **42 · The blockers of the other 14 mods, by cause, produced from the loaders' files** (later). List what blocks each of the 14 mods that do not compile yet, group the blockers by cause across all 14, and produce each group's fixes in one go from the loaders' own files (no per-mod fixes). *So far:* Stopped at 15 of 28 (cloud run 44403521118; satin is new, from setting a Fabric mod's own test mod aside). The three target mods were not freed: two methods aimed at them failed (see notes) and the third was not built. What these 14 mods miss is now measured from their compiled classes (python bench/convert_coverage.py --blocked), and no package frees more than one of them: they are 14 unusual mods, not a list to steer by.
 
 **48 · What the most-downloaded mods need from the bridge, most-used first** (next). python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and lists every NeoForge class and member they use that the bridge lacks, in the order that clears the most mods soonest. 442 hold 82 mods back, and the list has a short head: the next 20 take the count from 68 to 94. Each one is added from NeoForge's own published files (.claude/skills/convert-a-mod), checked without a mod by python bench/bridge_check.py in about a minute and a half, and counted again by the same command. The list predicts the compiler on the corpus: all 15 mods it shows with nothing missing compiled after converting.
+
+**49 · Drop a mod in, pick a version and a loader, get it back** (later). Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod goes in, the person picks the Minecraft version and the loader they want, and the mod comes back on that version and loader, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.
 
 **19 · Forge → NeoForge and Fabric → Quilt** (later). Forge → NeoForge and Fabric → Quilt, which are close pairs.
 
@@ -373,7 +386,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 50 steps by Mar 26, 2027 | 49% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 51 steps by Mar 26, 2027 | 48% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
@@ -381,7 +394,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 ## Decisions
 
-<details><summary>17 decisions, oldest first</summary>
+<details><summary>18 decisions, oldest first</summary>
 
 | Date | Question | Choice |
 |---|---|---|
@@ -402,5 +415,6 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 | 2026-11-09 | Is moving between mods and plugins a goal? | Yes (Jon, 2026-11-09): Goal 4 covers every loader and platform, Paper included. Server-side code can be mapped between a loader's API and Bukkit's; client code and new blocks or items cannot run on a plugin server, and a port names them instead of dropping them (step 39) |
 | 2026-11-17 | How does the porter scale to any mod and any version? | Not by rules read from compiler error text (355 of 358 rules matched on it, 320 hand-written per version step and naming scheme; a day of them moved the corpus from 10 to 15 building ports of 125). Jon asked for a step-back on 2026-11-17; a blind second opinion and OpenRewrite's and Error Prone's own files agree: resolve the game member behind every site of the mod on its own version and apply every known change in one typed pass; generate the target build from the loader's own starter project instead of patching each build script; write each redesign once per changed game part, ranked by mods freed. PR #97 holds the numbers |
 | 2026-11-18 | What chooses the next piece of porting or converting work? | A list of what real mods use, and only after it has been checked against real builds (Jon asked on 2026-11-18 why progress was small and nothing was laid out). Three methods that day were each chosen from a list nobody had checked, and each missed: building ports from the loader's starter project freed 0 of 126 and lost 2 (PR #109); the port worklist cleared 21 ports of which 7 built, because it reads almost nothing in Fabric mods; three convert methods aimed at the 14 corpus mods that do not compile freed none of their three targets. The number to steer by is how many of the 150 most-downloaded mods have nothing left, read from their jars in a minute or two with no build (python bench/exposure.py run for porting, python bench/convert_coverage.py real for converting). The unit of work is one changed game part or one loader symbol, and the corpus sweep in the cloud is the proof at the end of a PR, never what chooses the work |
+| 2026-11-18 | Where is all of this going? | One place where someone drops a mod in, picks the version and the loader they want, and gets it back very quickly, so nobody has to worry about versions or loaders (Jon, 2026-11-18). It has to be designed for any mod anyone can make, so nothing is made by hand for one mod, because that does not scale: the porter learns a changed part of the game once and the converter a piece of a loader's API once, and every mod that uses it is covered. Porting and converting stay separate records and claims (2026-10-24), and step 49 joins them behind one front door |
 
 </details>
