@@ -26,14 +26,13 @@ the mod's own state asserted in a client (`--assert`, `--expect-value`), a plugi
 modpack's world made, filled and reopened on its own server, or a performance change measured against the unchanged mod
 with its output compared exactly.
 
-**Where this is going: nobody has to think about Minecraft versions or loaders.** You drop a mod's `.jar` in, from
-the command line or the desktop app, pick the version and the loader you want, and get a `.jar` back in minutes,
-checked in the game. That has to hold for any mod anyone makes, so nothing here is made for one mod: the porter learns
+**Where this is going: nobody has to think about Minecraft versions or loaders.** You drop a mod in, as its source folder or as its `.jar`, from the command line or the desktop app, pick the version
+and the loader you want, and get it back the same way in minutes, checked in the game. That has to hold for any mod anyone makes, so nothing here is made for one mod: the porter learns
 each changed part of the game once, the converter each piece of a loader's API once, and every mod that uses it is
 covered. It is not there yet. What stands between today and that, in order (each is a step in [ROADMAP.md](ROADMAP.md)):
 
-1. **A `.jar` goes in and a `.jar` comes out** (step 50). Today `port` and `convert` change a mod's source folder; a
-   compiled mod is only read, to count what it uses and to run it in a modpack.
+1. **A `.jar` works as well as source** (step 50). Today `port` and `convert` change a mod's source folder, which
+   only its author has; a compiled mod is only read, to count what it uses and to run it in a modpack.
 2. **The list of work is true for every mod** (step 44). The porter's worklist reads NeoForge mods and almost nothing
    in Fabric mods, and of the ports it called finished, a third built.
 3. **A fix names the part of the game it is for** (step 47). A port rule matches the compiler's error text today, so

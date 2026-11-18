@@ -1,6 +1,6 @@
 {
  "about": "The one roadmap: the four goals, each with its steps, dates and targets. ROADMAP.md and docs/index.html are generated from this file by python bench/bench_page.py. Every step belongs to one goal; 'part' groups steps inside a goal, 'headline' names the measures that say most about it, 'today' says in a sentence what works now, and 'try' is the commands the page shows for it. Status words: done (ran and checked), doing (being worked on), next, later. start/target/done are dates; a target is a proposal and may move, but the old one is kept in 'moved' when it does. measures are ids in coverage/measures.json.",
- "goal": "Nobody should have to think about Minecraft versions or loaders: drop a mod's .jar in, from the command line or the desktop app, pick the version and the loader you want, and get a .jar back in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.",
+ "goal": "Nobody should have to think about Minecraft versions or loaders: drop a mod in, as its source folder or as its .jar, from the command line or the desktop app, pick the version and the loader you want, and get it back the same way in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.",
  "targetsSet": "2026-11-06",
  "goals": [
   {
@@ -692,10 +692,10 @@
     },
     {
      "id": "50",
-     "title": "A mod's .jar goes in and a .jar comes out",
+     "title": "A mod's .jar works as well as its source",
      "part": "One place for both",
      "status": "next",
-     "text": "port and convert change a mod's source folder, which only its author has. A compiled mod is read today for two things only: to count what it uses of the game and of a loader (python bench/exposure.py, python bench/convert_coverage.py real) and to run it in a modpack on a real server (mmt pack-check). The mod has to go in and come out as a .jar. This step comes before the others because it decides their shape: the work is either done on the compiled classes themselves, or on source recovered from the .jar and built again, and the first job is to try both on mods the scoreboards already clear and keep the one whose results load in the game. If the compiled classes are changed directly, steps 44 and 47 are rewritten: the worklist is the .jar scoreboard, which has no source to be blind to, and a fix is applied where a class names the game part.",
+     "text": "port and convert change a mod's source folder, which only its author has. A compiled mod is read today for two things only: to count what it uses of the game and of a loader (python bench/exposure.py, python bench/convert_coverage.py real) and to run it in a modpack on a real server (mmt pack-check). Source stays: an author gets source back. A .jar has to work too, in and out, for everyone who has only the .jar. This step comes before the others because it decides their shape: the work is either done on the compiled classes themselves, or on source recovered from the .jar and built again, and the first job is to try both on mods the scoreboards already clear and keep the one whose results load in the game. If the compiled classes are changed directly, steps 44 and 47 are rewritten: the worklist is the .jar scoreboard, which has no source to be blind to, and a fix is applied where a class names the game part.",
      "finish": "Of the 42 most-downloaded NeoForge mods for 1.21.1 that the porting scoreboard clears and that need no other mod, 40 come back as a .jar for 1.21.2 that loads on a real 1.21.2 server (0 today: no command takes a .jar)",
      "wrongIf": "fewer than 30 of those 42 load, which would mean the scoreboard clears mods that are not ready",
      "start": "2026-11-19",
@@ -703,10 +703,10 @@
     },
     {
      "id": "49",
-     "title": "Drop a mod's .jar in, pick a version and a loader, get a .jar back",
+     "title": "Drop a mod in, pick a version and a loader, get it back",
      "part": "One place for both",
      "status": "later",
-     "text": "Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod's .jar goes in, the person picks the Minecraft version and the loader they want, and a .jar for that version and loader comes back, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on step 50 (a .jar in and out) and on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.",
+     "text": "Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod goes in as its source folder or its .jar, the person picks the Minecraft version and the loader they want, and it comes back the same way for that version and loader, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on step 50 (a .jar in and out) and on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.",
      "finish": "Through one command and one screen, 60 of the 150 most-downloaded NeoForge mods for 1.21.1 come back on Fabric for 1.21.2 needing nothing by hand. Not measured yet: 58 clear the port alone and 68 the conversion alone today, and 60 assumes steps 46 and 48 reach their 100; the first measurement of both together replaces it if it is far off",
      "wrongIf": "a mod that ports alone and converts alone fails when the two are chained",
      "start": "2026-12-08",
@@ -838,7 +838,7 @@
   },
   {
    "question": "What does someone hand over: the mod's source, or its .jar?",
-   "choice": "The .jar, through the command line and the desktop app (Jon, 2026-11-18). Until now port and convert took a source folder only, so only a mod's author could use them. Step 50 is the first step for that reason, and it decides whether the source-based steps 44 and 47 stay as written",
+   "choice": "Either (Jon, 2026-11-18): the mod's source folder, which comes back as source, or its .jar, which comes back as a .jar, through the command line and the desktop app. Until now port and convert took a source folder only, so only a mod's author could use them. Step 50 adds the .jar and comes first, because how it is done decides whether the source-based steps 44 and 47 stay as written",
    "date": "2026-11-18"
   }
  ]
