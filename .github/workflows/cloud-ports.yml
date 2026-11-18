@@ -18,6 +18,9 @@ on:
       cases:
         description: Case ids (board) or mod ids (sweep), comma-separated, or all
         default: all
+      starter_build:
+        description: sweep only; true ports from a build generated from the loader's starter project (mmt port --starter-build)
+        default: 'false'
       request:
         description: Set by tools/cloud-run to find the run it started
         default: ''
@@ -131,7 +134,9 @@ jobs:
           echo "DISPLAY=:99" >> "$GITHUB_ENV"
           ./mmt preferences --background on --quiet on
       - name: Port the mod over this jump, and start the port if it builds
-        run: python bench/sweep.py run --tag cloud --only "${CASE%@*}" --to "${CASE#*@}" --jobs 1 --timeout 4800
+        env:
+          STARTER: ${{ inputs.starter_build == 'true' && '--starter-build' || '' }}
+        run: python bench/sweep.py run --tag cloud --only "${CASE%@*}" --to "${CASE#*@}" --jobs 1 --timeout 4800 $STARTER
       - name: Runs and logs
         if: always()
         uses: actions/upload-artifact@v4
