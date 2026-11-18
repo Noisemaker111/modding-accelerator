@@ -6,14 +6,14 @@
 
 **The goal:** a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**27 of 45 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**27 of 48 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
 | Goal | Steps done | Now |
 |---|---|---|
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
-| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `███████░░░`&nbsp;16&nbsp;of&nbsp;23 | 🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>⚪ 16 · Name what moved in 26.3 |
+| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;26 | 🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>🔵 44 · Resolve what a mod uses, then port in one typed pass<br>⚪ 16 · Name what moved in 26.3<br>⚪ 45 · Generate the target build from the loader's starter project<br>⚪ 46 · One migration per redesigned game part, ranked by mods freed |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
 | **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;3&nbsp;of&nbsp;7 | ⚪ 42 · The blockers of the other 14 mods, by cause, produced from the loaders' files |
 
@@ -121,8 +121,9 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 
 One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.
 
-- **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Small jumps need no hand edits; big jumps stop with named errors.
-- **The number that says most:** Real mods with a port that works in the game is **8 mods**, target 6 mods by Dec 18, step 12
+- **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors. mmt port-plan lists, before any port, every place a mod touches changed game code.
+- **The number that says most:** Corpus ports that build with no hand edits is **16 updates**, target 60 updates by Dec 22, step 44
+- **Also:** Real mods with a port that works in the game is **8 mods**, target 6 mods by Dec 18, step 12
 - **Also:** Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm is **0 errors**, target 0 errors by Jan 15, 2027, step 17
 
 ### Neighbouring versions (1.21.x), Fabric and NeoForge
@@ -167,6 +168,14 @@ One command moves a mod's source from any version to any other, forward or back,
 |---|---|---|---|
 | 32 | Random Things as a Forge port case | ⚫ later | Jan 18, 2027 → Feb 5, 2027 |
 | 28 | Port a Paper plugin between versions | ⚫ later | Jan 4, 2027 → Jan 22, 2027 |
+
+### Port by changed game part
+
+| # | Step | Status | When |
+|---|---|---|---|
+| 44 | Resolve what a mod uses, then port in one typed pass | 🔵 doing | Nov 17 → Dec 1 |
+| 45 | Generate the target build from the loader's starter project | ⚪ next | Nov 24 → Dec 8 |
+| 46 | One migration per redesigned game part, ranked by mods freed | ⚪ next | Nov 24 → Dec 22 |
 
 <details><summary>What each step is, and how far it got</summary>
 
@@ -216,9 +225,15 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **28 · Port a Paper plugin between versions** (later). Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far).
 
+**44 · Resolve what a mod uses, then port in one typed pass** (doing). Compile the mod on its own version, record the game class, method, field, override and mixin target behind every site, join that with the step's change list, and apply every known change in one pass. Proves it wrong: under 70% of the errors left in the corpus ports that compile sit on a game part the change list names. *So far:* Half done in PR #97: mmt port-plan records every place a mod touches game code on its own version (the compiler resolves each one) and joins it with the game's change map; over the corpus (44 mods, 94 ports) that is 101,819 places, 35% handled by the porter's automatic steps, 15% by a rule, 49% by nothing yet. The one-pass rewrite from that list is not built.
+
+**45 · Generate the target build from the loader's starter project** (next). The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version.
+
+**46 · One migration per redesigned game part, ranked by mods freed** (next). What the game's own code cannot show (1.21.1 to 1.21.2: 378 redesigned parts, the most common used by 14 of 150 mods) gets one migration written from the game's API, ranked by how many mods it frees; a removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).
+
 </details>
 
-<details><summary>Every number for this goal (15)</summary>
+<details><summary>Every number for this goal (16)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -237,6 +252,7 @@ One command moves a mod's source from any version to any other, forward or back,
 | NeoForge 1.21.6 game setup (NeoForm), first mod on the machine, cold | — | 2.3 min (Nov 8) | — | Fact |
 | NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC, cold | — | 92.0 min (Nov 8) | — | Fact |
 | NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
+| Corpus ports that build with no hand edits | 10 updates (Nov 16) | 16 updates (Nov 18) | 60 updates by Dec 22, step 44 | 12% of the way |
 
 </details>
 
@@ -348,7 +364,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 45 steps by Mar 26, 2027 | 55% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 48 steps by Mar 26, 2027 | 51% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
@@ -356,7 +372,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 ## Decisions
 
-<details><summary>15 decisions, oldest first</summary>
+<details><summary>16 decisions, oldest first</summary>
 
 | Date | Question | Choice |
 |---|---|---|
@@ -375,5 +391,6 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 | 2026-11-08 | Run CI on a schedule? | No. Every input is pinned, so a scheduled run repeats the last answer: Stonecutter's nightly run failed one of its 100 jobs six nights in a row (Nov 2 to 7) with nobody looking. Slow checks run on demand when the code they test changes. The PR budget gate that failed a run over 300 s, queue time included, is gone too: a budget is not a check (Jon, 2026-11-08) |
 | 2026-11-09 | What are the goals, and in what order? | Four (Jon, 2026-11-09): 1 test a mod in seconds, 2 port any mod to any version automatically, 3 make modpacks work together, 4 change loader or platform. The roadmap is grouped by goal, not by phase: old Phases 5 and 7 are Goal 1, Phases 1 to 3 are Goal 2, Phase 6 is Goal 3 and Phase 4 is Goal 4. Step ids did not change; steps 28 and 32 moved to Goal 2 because they are version ports |
 | 2026-11-09 | Is moving between mods and plugins a goal? | Yes (Jon, 2026-11-09): Goal 4 covers every loader and platform, Paper included. Server-side code can be mapped between a loader's API and Bukkit's; client code and new blocks or items cannot run on a plugin server, and a port names them instead of dropping them (step 39) |
+| 2026-11-17 | How does the porter scale to any mod and any version? | Not by rules read from compiler error text (355 of 358 rules matched on it, 320 hand-written per version step and naming scheme; a day of them moved the corpus from 10 to 15 building ports of 125). Jon asked for a step-back on 2026-11-17; a blind second opinion and OpenRewrite's and Error Prone's own files agree: resolve the game member behind every site of the mod on its own version and apply every known change in one typed pass; generate the target build from the loader's own starter project instead of patching each build script; write each redesign once per changed game part, ranked by mods freed. PR #97 holds the numbers |
 
 </details>
