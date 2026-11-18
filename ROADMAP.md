@@ -6,16 +6,16 @@
 
 **The goal:** a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**27 of 48 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**27 of 50 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
 | Goal | Steps done | Now |
 |---|---|---|
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
-| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;26 | 🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>🔵 44 · Resolve what a mod uses, then port in one typed pass<br>⚪ 16 · Name what moved in 26.3<br>⚪ 45 · Generate the target build from the loader's starter project<br>⚪ 46 · One migration per redesigned game part, ranked by mods freed |
+| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;27 | 🔵 44 · The port worklist sees every mod and predicts the build<br>⚪ 47 · A rule names a game part and is applied only there |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
-| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;3&nbsp;of&nbsp;7 | Not started |
+| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;3&nbsp;of&nbsp;8 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first |
 
 ## Goal 1 — Test a mod in seconds
 
@@ -121,10 +121,10 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 
 One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.
 
-- **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors. mmt port-plan lists, before any port, every place a mod touches changed game code.
-- **The number that says most:** Corpus ports that build with no hand edits is **16 updates**, target 60 updates by Dec 22, step 44
+- **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. For one big update (1.21.1 to 1.21.2), 58 of the 150 most-downloaded NeoForge mods use nothing the porter cannot carry over. 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.
+- **The number that says most:** Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2 is **58 mods**, target 100 mods by Dec 22, step 46
+- **Also:** Corpus ports that build with no hand edits is **16 updates**, target 60 updates by Dec 22, step 44
 - **Also:** Real mods with a port that works in the game is **8 mods**, target 6 mods by Dec 18, step 12
-- **Also:** Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm is **0 errors**, target 0 errors by Jan 15, 2027, step 17
 
 ### Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -157,9 +157,9 @@ One command moves a mod's source from any version to any other, forward or back,
 
 | # | Step | Status | When |
 |---|---|---|---|
-| 14 | Yarn to the game's own names, whole tree | 🔵 doing | Oct 24 → Nov 27 |
-| 15 | The build switches with the version (26.x) | 🔵 doing | Oct 24 → Nov 20 |
-| 16 | Name what moved in 26.3 | ⚪ next | Nov 20 → Dec 4 |
+| 14 | Yarn to the game's own names, whole tree | ⚫ later | Oct 24 → Nov 27 |
+| 15 | The build switches with the version (26.x) | ⚫ later | Oct 24 → Nov 20 |
+| 16 | Name what moved in 26.3 | ⚫ later | Nov 20 → Dec 4 |
 | 17 | AppleSkin to 26.3, loaded in the client | 🟢 done | Nov 8 |
 
 ### Forge mods and Paper plugins
@@ -173,9 +173,10 @@ One command moves a mod's source from any version to any other, forward or back,
 
 | # | Step | Status | When |
 |---|---|---|---|
-| 44 | Resolve what a mod uses, then port in one typed pass | 🔵 doing | Nov 17 → Dec 1 |
-| 45 | Generate the target build from the loader's starter project | ⚪ next | Nov 24 → Dec 8 |
-| 46 | One migration per redesigned game part, ranked by mods freed | ⚪ next | Nov 24 → Dec 22 |
+| 44 | The port worklist sees every mod and predicts the build | 🔵 doing | Nov 17 → Dec 1 |
+| 47 | A rule names a game part and is applied only there | ⚪ next | Nov 24 → Dec 8 |
+| 45 | Generate the target build from the loader's starter project | ⚫ later | Nov 24 → Dec 8 |
+| 46 | One migration per redesigned game part, ranked by mods freed | ⚫ later | Nov 24 → Dec 22 |
 
 <details><summary>What each step is, and how far it got</summary>
 
@@ -213,11 +214,11 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **13 · Publish what each jump still needs** (later). Publish the family list each jump still needs, so a stop is a shopping list.
 
-**14 · Yarn to the game's own names, whole tree** (doing). Convert a source tree from yarn to the game's own names (works for one version already; needs a full-tree pass).
+**14 · Yarn to the game's own names, whole tree** (later). Convert a source tree from yarn to the game's own names (works for one version already; needs a full-tree pass). *So far:* Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18).
 
-**15 · The build switches with the version (26.x)** (doing). Switch the build with the version: Loom 1.17, Gradle 9.5, Java 25, no mappings.
+**15 · The build switches with the version (26.x)** (later). Switch the build with the version: Loom 1.17, Gradle 9.5, Java 25, no mappings. *So far:* Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18).
 
-**16 · Name what moved in 26.3** (next). Diff the old official names against the 26.3 jar to name what moved.
+**16 · Name what moved in 26.3** (later). Diff the old official names against the 26.3 jar to name what moved. *So far:* Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18).
 
 **17 · AppleSkin to 26.3, loaded in the client** (done). Port one mod to 26.3 to a build, then to a loaded client. AppleSkin NeoForge 1.21.6 → 26.3 reaches a packaged build with the mixin audit in 66s: build settings, NeoGradle, Java and 82 → 0 compile errors are handled by rules except the removed debug-text event, one hand-written file. Loading it in a real 26.3 client is the next rung. *So far:* AppleSkin NeoForge 1.21.6 → 26.3 ports with no hand-written file and passes its HUD behaviour check in the real 26.3 client: the estimate for a golden carrot (+12.000002) matches real regeneration (+12.000001), and the same check fails when the estimate is broken on purpose. The debug-text event became a rule; a stale Parchment setting that compiled the 26.3 game wrong is now moved or removed by the port.
 
@@ -225,15 +226,17 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **28 · Port a Paper plugin between versions** (later). Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far).
 
-**44 · Resolve what a mod uses, then port in one typed pass** (doing). Compile the mod on its own version, record the game class, method, field, override and mixin target behind every site, join that with the step's change list, and apply every known change in one pass. Proves it wrong: under 70% of the errors left in the corpus ports that compile sit on a game part the change list names. *So far:* Half done in PR #97: mmt port-plan records every place a mod touches game code on its own version (the compiler resolves each one) and joins it with the game's change map; over the corpus (44 mods, 94 ports) that is 101,819 places, 35% handled by the porter's automatic steps, 15% by a rule, 49% by nothing yet. The one-pass rewrite from that list is not built.
+**44 · The port worklist sees every mod and predicts the build** (doing). mmt port-plan compiles a mod on its own version and lists every place it touches game code, with the exact game method or field, joined with what the target version did to it. It has to be true before it chooses any work: it reads NeoForge mods (a median of 109 changed game parts per port) but almost nothing in Fabric mods (a median of 5; betterf3 has 5,289 lines and 28 places), and 32 of the 126 corpus ports have no plan at all. *So far:* Half done in PR #97: the plan exists and covers 94 ports of 44 mods, 101,819 places, almost all of them in the 47 NeoForge ports. 3,208 changes in 887 game classes are handled by nothing. Checked against the cloud sweep on 2026-11-18, it does not predict builds yet (see the finish line).
 
-**45 · Generate the target build from the loader's starter project** (next). The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version.
+**47 · A rule names a game part and is applied only there** (next). A port rule is a pattern on the compiler's error text plus a find-and-replace on the file (355 of 358 rules), so it cannot tell LocalPlayer.sendSystemMessage, removed in 1.21.2, from ServerPlayer.sendSystemMessage, which stayed: both read .sendSystemMessage( in the text. The worklist already holds each place's start, end and resolved game member. A rule's members are applied at exactly those places, in one pass before the first compile, and a rule's test compiles its before on the old game and its after on the new one, in seconds. That makes one changed game part a unit of work that can be checked without porting a mod.
 
-**46 · One migration per redesigned game part, ranked by mods freed** (next). What the game's own code cannot show (1.21.1 to 1.21.2: 378 redesigned parts, the most common used by 14 of 150 mods) gets one migration written from the game's API, ranked by how many mods it frees; a removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).
+**45 · Generate the target build from the loader's starter project** (later). The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version. *So far:* Tried on 2026-11-18 (PR #109, closed unmerged, branch generated-builds kept). 14 of the 16 building ports still build from a starter project, so it passed its own test, but over the whole corpus it freed none and lost 2: 14 of 125 build (cloud run 44382488417) against 16 of 126. 8 ports use Architectury, which rewrites the mod's code; 13 need a library with no release for the target version. Build scripts are not what holds the corpus back; steps 44 and 47 come first.
+
+**46 · One migration per redesigned game part, ranked by mods freed** (later). With steps 44 and 47 in, porting is one loop: python bench/exposure.py run ranks the changed game parts of an update by how many of the 150 most-downloaded mods use them; the top one gets a rule that names it, written from the game's own two versions; the same command shows the mods it freed. For 1.21.1 to 1.21.2 that is 637 changed parts, 313 of them used by one mod each: handled in the best order, 25 take the count from 58 to about 86 mods and 300 to about 109, so each part has to cost minutes, not a port run. A removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).
 
 </details>
 
-<details><summary>Every number for this goal (16)</summary>
+<details><summary>Every number for this goal (17)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -252,6 +255,7 @@ One command moves a mod's source from any version to any other, forward or back,
 | NeoForge 1.21.6 game setup (NeoForm), first mod on the machine, cold | — | 2.3 min (Nov 8) | — | Fact |
 | NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC, cold | — | 92.0 min (Nov 8) | — | Fact |
 | NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
+| Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2 | — | 58 mods (Nov 18) | 100 mods by Dec 22, step 46 | Baseline |
 | Corpus ports that build with no hand edits | 10 updates (Nov 16) | 16 updates (Nov 18) | 60 updates by Dec 22, step 44 | 12% of the way |
 
 </details>
@@ -302,8 +306,9 @@ A pack user points mmt at an installed pack or an export and gets its conflicts 
 
 The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims.
 
-- **Today:** mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. Of 28 real corpus mods it accepts, 14 compile and load in the game after converting, 10 of them with the same behaviour fingerprint as the original. Forge, Quilt and Paper are not converted yet.
-- **The number that says most:** Corpus mods that convert, compile and load in the game is **15 mods**, target 17 mods by Nov 25, step 42
+- **Today:** mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. 68 of the 150 most-downloaded NeoForge mods for 1.21.1 use nothing its NeoForge-on-Fabric bridge lacks. Of 28 real corpus mods it accepts, 15 compile and load in the game after converting, 10 with the same behaviour fingerprint as the original and 6 with nothing left out. Forge, Quilt and Paper are not converted yet.
+- **The number that says most:** Most-downloaded NeoForge mods for 1.21.1 that use nothing the NeoForge-on-Fabric bridge lacks is **68 mods**, target 100 mods by Dec 5, step 48
+- **Also:** Corpus mods that convert, compile and load in the game is **15 mods**, target 17 mods by Dec 5, step 48
 - **Also:** Loader or platform changes that work in the game is **2 pairs**, target 1 pair by Jan 29, 2027, step 18
 
 ### Loader pairs
@@ -314,6 +319,7 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 | 18 | Fabric → NeoForge on one mod | 🟢 done | Nov 14 |
 | 41 | NeoForge mods to Fabric through a bridge built from NeoForge's own files | 🟢 done | Nov 18 |
 | 42 | The blockers of the other 14 mods, by cause, produced from the loaders' files | ⚫ later | Nov 18 → Nov 25 |
+| 48 | What the most-downloaded mods need from the bridge, most-used first | ⚪ next | Nov 19 → Dec 5 |
 | 19 | Forge → NeoForge and Fabric → Quilt | ⚫ later | Feb 1, 2027 → Feb 26, 2027 |
 
 ### Mods and plugins
@@ -338,6 +344,8 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 **42 · The blockers of the other 14 mods, by cause, produced from the loaders' files** (later). List what blocks each of the 14 mods that do not compile yet, group the blockers by cause across all 14, and produce each group's fixes in one go from the loaders' own files (no per-mod fixes). *So far:* Stopped at 15 of 28 (cloud run 44403521118; satin is new, from setting a Fabric mod's own test mod aside). The three target mods were not freed: two methods aimed at them failed (see notes) and the third was not built. What these 14 mods miss is now measured from their compiled classes (python bench/convert_coverage.py --blocked), and no package frees more than one of them: they are 14 unusual mods, not a list to steer by.
 
+**48 · What the most-downloaded mods need from the bridge, most-used first** (next). python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and lists every NeoForge class and member they use that the bridge lacks, in the order that clears the most mods soonest. 442 hold 82 mods back, and the list has a short head: the next 20 take the count from 68 to 94. Each one is added from NeoForge's own published files (.claude/skills/convert-a-mod), checked without a mod by python bench/bridge_check.py in about a minute and a half, and counted again by the same command. The list predicts the compiler on the corpus: all 15 mods it shows with nothing missing compiled after converting.
+
 **19 · Forge → NeoForge and Fabric → Quilt** (later). Forge → NeoForge and Fabric → Quilt, which are close pairs.
 
 **39 · Mod ↔ plugin on one server-side project** (later). Move one server-side project across the mod and plugin line: a Forge or Fabric mod with no client code to a Paper plugin (events, commands, scheduler and config mapped to the Bukkit API), and a plugin the other way. Client code, mixins into the game and new blocks or items cannot exist on a plugin server, so the port stops and names each one instead of dropping it.
@@ -346,12 +354,13 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 </details>
 
-<details><summary>Every number for this goal (3)</summary>
+<details><summary>Every number for this goal (4)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
 | Loader or platform changes that work in the game | 0 pairs (Nov 9) | 2 pairs (Nov 14) | 1 pair by Jan 29, 2027, step 18 | Met |
-| Corpus mods that convert, compile and load in the game | 1 mod (Nov 14) | 15 mods (Nov 18) | 17 mods by Nov 25, step 42 | 88% of the way |
+| Most-downloaded NeoForge mods for 1.21.1 that use nothing the NeoForge-on-Fabric bridge lacks | — | 68 mods (Nov 18) | 100 mods by Dec 5, step 48 | Baseline |
+| Corpus mods that convert, compile and load in the game | 1 mod (Nov 14) | 15 mods (Nov 18) | 17 mods by Dec 5, step 48 | 88% of the way |
 | Loader-change rules, each with every class and member it names found in the loaders' published jars | — | 41 rules (Nov 14) | — | Fact |
 
 </details>
@@ -364,7 +373,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 48 steps by Mar 26, 2027 | 51% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 27 steps (Nov 18) | 50 steps by Mar 26, 2027 | 49% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
@@ -372,7 +381,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 ## Decisions
 
-<details><summary>16 decisions, oldest first</summary>
+<details><summary>17 decisions, oldest first</summary>
 
 | Date | Question | Choice |
 |---|---|---|
@@ -392,5 +401,6 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 | 2026-11-09 | What are the goals, and in what order? | Four (Jon, 2026-11-09): 1 test a mod in seconds, 2 port any mod to any version automatically, 3 make modpacks work together, 4 change loader or platform. The roadmap is grouped by goal, not by phase: old Phases 5 and 7 are Goal 1, Phases 1 to 3 are Goal 2, Phase 6 is Goal 3 and Phase 4 is Goal 4. Step ids did not change; steps 28 and 32 moved to Goal 2 because they are version ports |
 | 2026-11-09 | Is moving between mods and plugins a goal? | Yes (Jon, 2026-11-09): Goal 4 covers every loader and platform, Paper included. Server-side code can be mapped between a loader's API and Bukkit's; client code and new blocks or items cannot run on a plugin server, and a port names them instead of dropping them (step 39) |
 | 2026-11-17 | How does the porter scale to any mod and any version? | Not by rules read from compiler error text (355 of 358 rules matched on it, 320 hand-written per version step and naming scheme; a day of them moved the corpus from 10 to 15 building ports of 125). Jon asked for a step-back on 2026-11-17; a blind second opinion and OpenRewrite's and Error Prone's own files agree: resolve the game member behind every site of the mod on its own version and apply every known change in one typed pass; generate the target build from the loader's own starter project instead of patching each build script; write each redesign once per changed game part, ranked by mods freed. PR #97 holds the numbers |
+| 2026-11-18 | What chooses the next piece of porting or converting work? | A list of what real mods use, and only after it has been checked against real builds (Jon asked on 2026-11-18 why progress was small and nothing was laid out). Three methods that day were each chosen from a list nobody had checked, and each missed: building ports from the loader's starter project freed 0 of 126 and lost 2 (PR #109); the port worklist cleared 21 ports of which 7 built, because it reads almost nothing in Fabric mods; three convert methods aimed at the 14 corpus mods that do not compile freed none of their three targets. The number to steer by is how many of the 150 most-downloaded mods have nothing left, read from their jars in a minute or two with no build (python bench/exposure.py run for porting, python bench/convert_coverage.py real for converting). The unit of work is one changed game part or one loader symbol, and the corpus sweep in the cloud is the proof at the end of a PR, never what chooses the work |
 
 </details>
