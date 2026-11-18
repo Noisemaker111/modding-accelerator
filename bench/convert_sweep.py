@@ -736,6 +736,16 @@ def table(ranked, rates, limit=30):
     return "\n".join(lines)
 
 
+def table_command(label):
+    """The table of this checkout's runs, written to the coverage file; with no runs here, the saved sweep as it is."""
+    records = load_records()
+    if records or not OUT.is_file():
+        return table(*write(records, label))
+    # A fresh checkout has no runs: rebuilding the file from none replaced the saved sweep with an empty one.
+    saved = json.loads(OUT.read_text(encoding="utf-8"))
+    return table(saved["gaps"], saved["latest"]) + "\n\n" + "\n".join(f"{r['id']}: {r['outcome']}" for r in saved["runs"])
+
+
 def load_records():
     runs = WORK / "runs"
     return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(runs.glob("*.json"))] if runs.is_dir() else []
@@ -761,8 +771,7 @@ def main():
     t.add_argument("--label", default="latest")
     args = parser.parse_args()
     if args.command == "table":
-        ranked, rates = write(load_records(), args.label)
-        print(table(ranked, rates))
+        print(table_command(args.label))
         return 0
     if args.mmt:
         MMT[0] = str(Path(args.mmt).resolve() / ("mmt.cmd" if WINDOWS else "mmt"))

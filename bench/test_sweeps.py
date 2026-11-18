@@ -77,9 +77,28 @@ finally:
     C.run_one = real
 check(failed == ["bad"], f"a raising run is reported as failed: {failed}")
 
+# The table on a checkout with no runs of its own prints the saved sweep and leaves the file alone; with runs it writes it.
+import json  # noqa: E402
+import tempfile  # noqa: E402
+with tempfile.TemporaryDirectory() as tmp:
+    real_out, real_work = C.OUT, C.WORK
+    C.OUT, C.WORK = Path(tmp) / "convert.json", Path(tmp) / "work"
+    try:
+        rates = C.summarize([], "kept")[1]
+        saved = json.dumps({"latest": dict(rates, runs=35), "history": [], "gaps": [], "runs": [{"id": "krypton", "outcome": "loads"}]})
+        C.OUT.write_text(saved, encoding="utf-8")
+        shown = C.table_command("latest")
+        check(C.OUT.read_text(encoding="utf-8") == saved, "the table of a checkout with no runs leaves the saved sweep as it is")
+        check("35 runs" in shown and "krypton: loads" in shown, "and prints it: " + shown)
+        (C.WORK / "runs").mkdir(parents=True)
+        (C.WORK / "runs" / "x.json").write_text(json.dumps({"id": "x", "outcome": "refused", "concepts": {}}), encoding="utf-8")
+        C.table_command("latest")
+        check([r["id"] for r in json.loads(C.OUT.read_text(encoding="utf-8"))["runs"]] == ["x"], "a checkout with runs writes them")
+    finally:
+        C.OUT, C.WORK = real_out, real_work
+
 # The port sweep's error classes: "package Foo does not exist" for a game class used as a qualifier is not a missing
 # library, while one imported from a library is.
-import tempfile  # noqa: E402
 import sweep as S  # noqa: E402
 with tempfile.TemporaryDirectory() as tmp:
     src = Path(tmp) / "Gen.java"
