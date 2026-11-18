@@ -6,6 +6,7 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.jar.*;
+import java.util.regex.*;
 import java.util.zip.*;
 import javax.imageio.ImageIO;
 
@@ -1173,7 +1174,8 @@ final class Game {
             fingerprint.equals(Json.read(recipe).get("fingerprint")) &&
             task.equals(Json.read(recipe).get("task")) &&
             jbr == Boolean.TRUE.equals(Json.read(recipe).get("jbr")) &&
-            replayable(Json.read(recipe));
+            replayable(Json.read(recipe)) &&
+            argfilesOk(java != null ? java : Path.of(Json.read(recipe).get("executable").toString()));
         // A game Gradle launches is the Gradle daemon's child, not this command's, and outlives it. So Gradle only
         // prepares and records the launch, and this command starts the game itself, unless this task's last recipe
         // could not be replayed (NeoGradle 7, ForgeGradle 6): then preparing first would only cost a second Gradle run.
@@ -1365,6 +1367,26 @@ final class Game {
     }
 
     static final long GAME_START_SECONDS = 180, GAME_START_LIMIT_SECONDS = 20 * 60, GRADLE_PREPARE_SECONDS = 30 * 60;
+
+    /**
+     * The saved launch shortens the recorded classpath into an @ argument file, which only Java 9 and later
+     * expand. Every 1.7.10 game records a Java 8 executable, so those launches stay with Gradle, which starts
+     * the game itself the way it does for loaders that withhold the classpath. An executable that cannot even
+     * be probed fails the launch either way, so it is not saved either.
+     */
+    static boolean argfilesOk(Path executable) {
+        try {
+            Process probe = new ProcessBuilder(executable.toString(), "-version").redirectErrorStream(true).start();
+            String output = new String(probe.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            if (!probe.waitFor(1, TimeUnit.MINUTES) || probe.exitValue() != 0) return false;
+            Matcher version = Pattern.compile("version \"(\\d+)(?:\\.(\\d+))?").matcher(output);
+            if (!version.find()) return false;
+            if (!version.group(1).equals("1")) return true;
+            return Integer.parseInt(version.group(2)) > 8;
+        } catch (Exception failed) {
+            return false;
+        }
+    }
 
     /**
      * Waits for the client's first frame. The game fails to start when its log stops moving for 180 s, or after 20

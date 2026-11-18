@@ -50,6 +50,21 @@ public final class GameTests {
             "the portable agent falls back to mmt's own ASM when the build names none: " + bundled
         );
         check(Game.bundledAsm(scratch) == null, "a harness without the perf lib offers no fallback ASM");
+        Path running = Path.of(
+            System.getProperty("java.home"),
+            "bin",
+            Runtimes.WINDOWS ? "java.exe" : "java"
+        );
+        check(Game.argfilesOk(running), "the running modern Java expands @ files, so its launches can be saved");
+        check(
+            !Game.argfilesOk(scratch.resolve("missing-java")),
+            "an executable that cannot even be probed is not a saved-launch runner"
+        );
+        Path java8 = Path.of("C:/Users/aditya/.gradle/jdks/azul_systems__inc_-8-amd64-windows.2/bin/java.exe");
+        if (Files.isRegularFile(java8)) check(
+            !Game.argfilesOk(java8),
+            "the Java 8 every 1.7.10 game records does not expand @ files, so its launches stay with Gradle"
+        );
         List<String> saved = Game.savedCommand(launch, scratch.resolve("saved classpath.args"));
         Process child = new ProcessBuilder(saved).redirectErrorStream(true).start();
         String output = new String(child.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
