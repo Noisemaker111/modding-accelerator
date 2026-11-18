@@ -3536,7 +3536,7 @@ final class Port {
         for (Path transaction : transactions(project)) {
             Map<String, Object> state;
             try {
-                state = Json.read(transaction.resolve("transaction.json"));
+                state = withJournal(transaction, Json.read(transaction.resolve("transaction.json")));
             } catch (IOException | IllegalArgumentException unreadable) {
                 continue;
             }
@@ -3568,6 +3568,35 @@ final class Port {
     }
 
     /** Backed-up files that now differ from their backup, or are gone. */
+    /** The journal a run appends each file to before it first writes it (tracked.tsv: path, tab, hash or empty when new). */
+    static final String JOURNAL = "tracked.tsv";
+
+    /**
+     * An unfinished run's record with the files its journal lists: convert appends a line per file instead of saving the
+     * whole record before every write (which grew with the square of the files it writes). Undo restores or deletes them.
+     */
+    static Map<String, Object> withJournal(Path transaction, Map<String, Object> state) throws IOException {
+        Path journal = transaction.resolve(JOURNAL);
+        if (!"in-progress".equals(state.get("status")) || !Files.isRegularFile(journal)) return state;
+        Map<String, Object> before = new LinkedHashMap<>(Json.object(state.get("before")));
+        Map<String, Object> plan = new LinkedHashMap<>(Json.object(state.getOrDefault("plan", Map.of())));
+        List<String> edits = new ArrayList<>(ProjectModel.strings(plan.get("edits")));
+        for (String line : Files.readAllLines(journal, StandardCharsets.UTF_8)) {
+            int tab = line.indexOf('\t');
+            if (tab < 0) continue;
+            String relative = line.substring(0, tab);
+            String hash = line.substring(tab + 1).strip();
+            if (before.containsKey(relative)) continue;
+            before.put(relative, hash.isEmpty() ? null : hash);
+            edits.add(relative);
+        }
+        Map<String, Object> out = new LinkedHashMap<>(state);
+        out.put("before", before);
+        plan.put("edits", edits);
+        out.put("plan", plan);
+        return out;
+    }
+
     static List<String> changedSince(ProjectModel project, Map<String, Object> state) throws Exception {
         List<String> changed = new ArrayList<>();
         for (var entry : Json.object(state.get("before")).entrySet()) {
@@ -3617,7 +3646,7 @@ final class Port {
             project.state().resolve(folder) +
             "."
         );
-        var state = Json.read(transaction.resolve("transaction.json"));
+        var state = withJournal(transaction, Json.read(transaction.resolve("transaction.json")));
         if (!project.root.toString().equals(state.get("root"))) throw new IOException(
             "Undo belongs to a different project."
         );

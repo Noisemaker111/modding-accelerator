@@ -572,7 +572,9 @@ final class Convert {
             Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
             before.put(relative, Fingerprints.bytes(Files.readAllBytes(file)));
         } else before.put(relative, null);
-        saveInProgress();
+        // Appended, not the whole record saved again: undo after an interruption reads it (Port.withJournal).
+        String hash = before.get(relative) == null ? "" : String.valueOf(before.get(relative));
+        Files.writeString(transaction.resolve(Port.JOURNAL), relative + "\t" + hash + "\n", StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 
     /** Files whose lines end in CRLF: they are read with LF and written back with CRLF. */
@@ -3633,9 +3635,9 @@ final class Convert {
             for (var s : Json.object(bridge.getOrDefault("statics", Map.of())).entrySet()) {
                 Map<String, Object> to = Json.object(s.getValue());
                 if (dropped(drops, Json.text(to, "to", "") + ".java")) continue;
-                out = staticsToBridge(out, s.getKey(), Json.text(to, "to", ""), bridgePackage);
-                // The bridge's class is written for every mod, so what it needs opened is opened for every mod.
-                for (String line : LoaderRules.strings(to.get("accessTransformers"))) if (!accessTransformers.contains(line)) accessTransformers.add(line);
+                String moved = staticsToBridge(out, s.getKey(), Json.text(to, "to", ""), bridgePackage);
+                if (!moved.equals(out)) for (String line : LoaderRules.strings(to.get("accessTransformers"))) if (!accessTransformers.contains(line)) accessTransformers.add(line);
+                out = moved;
             }
             out = eventClassesInListeners(file, out);
             out = sideQueries(out);
@@ -3661,6 +3663,17 @@ final class Convert {
         bridgeUsers = sourcesOutside(bridgeFolder());
         for (String file : copiedFiles) bridgeUsers += read(file) + "\n";
         Map<String, Object> rewrites = bridgeLayer == null ? Map.of() : Json.object(bridgeLayer.getOrDefault("rewrites", Map.of()));
+        // The classes standing for NeoForge's constructors and static methods on game classes are written only for a mod
+        // that calls them: they open game members (an access widener line, which needs the game's mappings) that other
+        // mods never touch.
+        Set<String> onlyWhenCalled = new HashSet<>();
+        for (Object f : Json.object(bridge.getOrDefault("constructors", Map.of())).values()) onlyWhenCalled.add(f + ".java");
+        for (Object s : Json.object(bridge.getOrDefault("statics", Map.of())).values()) onlyWhenCalled.add(Json.text(Json.object(s), "to", "") + ".java");
+        for (String f : onlyWhenCalled) {
+            String name = f.replaceAll("\\.java$", "");
+            if (!Pattern.compile("\\b" + Pattern.quote(name) + "\\b").matcher(bridgeUsers).find()) files.remove(f);
+        }
+        dropUnusedGenerated(files);
         for (var template : files.entrySet()) {
             // For an older game, the layer's whole-word renames (Identifier is ResourceLocation there).
             String text = layerRewrites(Files.readString(template.getValue(), StandardCharsets.UTF_8), rewrites);
@@ -3677,6 +3690,40 @@ final class Convert {
             bridgePackage +
             " holds NeoForge's registration, event bus, mod container, config and lifecycle events written on Fabric's API, for the code that uses them."
         );
+    }
+
+    /**
+     * The generated game-class methods (bench/bridge_generate.py: a mixin and the interface it adds, per game class) are
+     * written only for the game classes whose methods the code calls (the mixin's "uses"), with the generated interfaces
+     * those extend: a mod gets tens of them, not all 500.
+     */
+    void dropUnusedGenerated(Map<String, Path> files) throws IOException {
+        Object list = bridgeLayer != null && bridgeLayer.get("mixins") != null ? bridgeLayer.get("mixins") : bridge.get("mixins");
+        List<String> texts = new ArrayList<>();
+        for (String file : javaFiles()) if (!file.startsWith(bridgeFolder() + "/") || copiedFiles.contains(file)) texts.add(read(file));
+        Set<String> generated = new HashSet<>();
+        Deque<String> keep = new ArrayDeque<>();
+        for (Object item : LoaderRules.list(list)) {
+            var mixin = Json.object(item);
+            if (!Boolean.TRUE.equals(mixin.get("generated"))) continue;
+            String mixinFile = "mixin/" + Json.text(mixin, "mixin", "").replace('.', '/') + ".java";
+            generated.add(mixinFile);
+            List<String> interfaces = new ArrayList<>();
+            if (mixin.get("injects") instanceof Map<?, ?> injects) for (Object i : injects.values()) interfaces.add(String.valueOf(i).replace('.', '/') + ".java");
+            generated.addAll(interfaces);
+            if (uses(mixin.get("uses"), texts)) {
+                keep.add(mixinFile);
+                keep.addAll(interfaces);
+            }
+        }
+        Set<String> kept = new HashSet<>();
+        while (!keep.isEmpty()) {
+            String file = keep.poll();
+            if (!kept.add(file) || !files.containsKey(file)) continue;
+            String folder = file.substring(0, file.lastIndexOf('/') + 1);
+            for (Matcher m = Pattern.compile("\\b(\\w+Generated)\\b").matcher(Files.readString(files.get(file))); m.find(); ) keep.add(folder + m.group(1) + ".java");
+        }
+        files.keySet().removeIf(f -> generated.contains(f) && !kept.contains(f));
     }
 
     /** NeoForge's own source files convert copied into the bridge's package (NeoForgeSources), and their classes. */
