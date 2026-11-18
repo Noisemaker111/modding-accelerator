@@ -28,6 +28,9 @@ work only after it predicts the result:** the mods it clears build, and the ones
 
 ## What comes first: two jobs on the tool
 
+Read roadmap step 50 before either: the mod is to go in and come out as a `.jar` (Jon, 2026-11-18), and how that is
+done decides whether these two jobs stay as written. Until step 50 has chosen, don't start them.
+
 These are roadmap steps 44 and 47 (`coverage/roadmap.json`, Goal 2). Each needs someone who can change
 `tools/cli/Port.java` and `tools/cli/PortPlan.java` safely. If that is not you, say so to Jon and stop; adding rules
 instead is the mistake in the first row above.
