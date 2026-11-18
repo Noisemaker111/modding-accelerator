@@ -79,6 +79,10 @@ and every new session started from it. These four steps keep that from happening
 
 ## What every change is for: compounding tooling
 
+The destination: someone drops a mod in, picks the Minecraft version and the loader they want, and gets it back in
+minutes, so nobody has to think about versions or loaders. It must work for any mod anyone makes, including ones we
+have never seen, which rules out anything made by hand for one mod.
+
 Whatever mod you work on, the real product is making the *next* mod better, even a totally different kind of mod.
 A speedup to one mod, a port or a loader conversion is only half done until it leaves something behind for every
 other mod:
