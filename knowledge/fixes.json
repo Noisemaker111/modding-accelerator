@@ -7286,6 +7286,44 @@
         "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.client.IModGuiFactory;\n\n */\npublic class ConfigScreenFactory implements IModGuiFactory {\n    \n",
         "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ConfigScreenFactory.java:12"
       }
+    },
+    {
+      "id": "nf1710-gui-graphics-import-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}class GuiGraphics",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.client\\.gui\\.GuiGraphics;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.minecraft\\.client\\.gui\\.GuiGraphics;",
+      "note": "GuiGraphics does not exist at 1.7.10; the import dies. Files that call its draw methods need their own recipe.",
+      "test": {
+        "error": "InGameHudMixin.java:4: error: cannot find symbolclass GuiGraphics\n",
+        "before": "package de.smallinger.cinematiczoom.mixin;\n\nimport net.minecraft.client.gui.Gui;\nimport net.minecraft.client.gui.GuiGraphics;\nimport net.minecraft.client.DeltaTracker;\n",
+        "after": "package de.smallinger.cinematiczoom.mixin;\n\nimport net.minecraft.client.gui.Gui;\nimport net.minecraft.client.DeltaTracker;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/mixin/InGameHudMixin.java:4"
+      }
+    },
+    {
+      "id": "nf1710-key-isdown",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+method isDown\\(\\)",
+      "apply": {
+        "find": "\\.isDown\\(\\)",
+        "replace": ".getIsKeyPressed()"
+      },
+      "scope": "log",
+      "when": "KeyBinding",
+      "note": "Held-key polling is getIsKeyPressed at 1.7.10 (isPressed is edge-triggered). Same-file custom isDown calls would need their own recipe.",
+      "test": {
+        "error": "ClientProxy.java:296: error: cannot find symbol\n  symbol: method isDown()\n",
+        "before": "package snownee.jade.util;\n\n\tpublic static KeyMapping registerKeyBinding(String desc, int defaultKey) {\n\tpublic static boolean isShowDetailsPressed() {\n\t\treturn JadeClient.showDetails.isDown();\n\t}\n",
+        "after": "package snownee.jade.util;\n\n\tpublic static KeyMapping registerKeyBinding(String desc, int defaultKey) {\n\tpublic static boolean isShowDetailsPressed() {\n\t\treturn JadeClient.showDetails.getIsKeyPressed();\n\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/util/ClientProxy.java:296"
+      }
     }
   ]
 }
