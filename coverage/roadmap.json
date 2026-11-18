@@ -473,9 +473,9 @@
      "id": "45",
      "title": "Generate the target build from the loader's starter project",
      "part": "Port by changed game part",
-     "status": "next",
-     "text": "The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version.",
-     "start": "2026-11-24",
+     "status": "doing",
+     "text": "The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Finish line: 22 of 126 corpus ports build with no hand edits (16 today; 27 of the 55 ports that stop before the compiler stop on build-script problems a generated build removes). Proves it wrong: under 70% of the 16 ports that build today still build from a generated build on their own version.",
+     "start": "2026-11-18",
      "target": "2026-12-08"
     },
     {
