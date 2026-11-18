@@ -13,9 +13,11 @@ If an instruction pulls against the latest decision, say so to Jon before follow
 
 **The method (decided 2026-11-17).** Progress grew one port at a time while the porter read compiler error text
 (355 of 358 rules matched on it). The way forward scales with changed game parts and versions, not with mods:
-1. **Resolve, then one typed pass.** Compile the mod on its own version, record the game member behind every site
-   (calls, fields, overrides, mixin targets), join that with the step's change list (`coverage/changes/`, GameDiff's
-   map) and apply every known change at once. A fix is stored once per changed game part.
+1. **Resolve, then one typed pass.** `mmt port-plan --root MOD [--map CHANGE-MAP]` compiles the mod on its own version
+   and lists every place it touches game code, with what the target did to each. `python bench/port_plans.py run`
+   then `report --left` ranks, over the whole corpus, the changes no automatic step or rule handles, by ports blocked:
+   that list is the work, top first. Still to build: apply every known change at those places in one pass, before
+   the first compile. A fix is stored once per changed game part.
 2. **Generate the build.** The target build comes from the loader's own starter project for that version; the mod's
    code, resources and dependencies move into it.
 3. **Redesigns, once each, ranked by mods freed** (`python bench/exposure.py run`): a migration written from the

@@ -183,10 +183,11 @@
    "title": "Port a mod to any Minecraft version",
    "intro": "One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.",
    "headline": [
+    "port.corpus-builds",
     "port.mods-working",
     "port.errors.zaa-neoforge-1.21.1-26.3"
    ],
-   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Small jumps need no hand edits; big jumps stop with named errors.",
+   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors. mmt port-plan lists, before any port, every place a mod touches changed game code.",
    "try": [
     {
      "say": "move to another Minecraft version; every edit can be undone",
@@ -465,7 +466,8 @@
      "status": "doing",
      "text": "Compile the mod on its own version, record the game class, method, field, override and mixin target behind every site, join that with the step's change list, and apply every known change in one pass. Proves it wrong: under 70% of the errors left in the corpus ports that compile sit on a game part the change list names.",
      "start": "2026-11-17",
-     "target": "2026-12-01"
+     "target": "2026-12-01",
+     "result": "Half done in PR #97: mmt port-plan records every place a mod touches game code on its own version (the compiler resolves each one) and joins it with the game's change map; over the corpus (44 mods, 94 ports) that is 101,819 places, 35% handled by the porter's automatic steps, 15% by a rule, 49% by nothing yet. The one-pass rewrite from that list is not built."
     },
     {
      "id": "42",
