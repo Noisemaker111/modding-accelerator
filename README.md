@@ -8,16 +8,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Noisemaker111/modding-accelerator/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/Noisemaker111/modding-accelerator?include_prereleases&label=download&color=5d9c3f"></a>
-  <a href="https://github.com/Noisemaker111/modding-accelerator/actions/workflows/portable.yml"><img alt="Checks" src="https://github.com/Noisemaker111/modding-accelerator/actions/workflows/portable.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/Noisemaker111/minecraft-modding-tools?include_prereleases&label=download&color=5d9c3f"></a>
+  <a href="https://github.com/Noisemaker111/minecraft-modding-tools/actions/workflows/portable.yml"><img alt="Checks" src="https://github.com/Noisemaker111/minecraft-modding-tools/actions/workflows/portable.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-lightgrey"></a>
 </p>
 
 <p align="center">
-  <a href="https://noisemaker111.github.io/modding-accelerator/"><b>Website</b></a> ·
-  <a href="https://noisemaker111.github.io/modding-accelerator/#porting">Porting map</a> ·
+  <a href="https://noisemaker111.github.io/minecraft-modding-tools/"><b>Website</b></a> ·
+  <a href="https://noisemaker111.github.io/minecraft-modding-tools/#porting">Porting map</a> ·
   <a href="SCOPE.md">What works where</a> ·
-  <a href="https://github.com/Noisemaker111/modding-accelerator/issues">Issues</a>
+  <a href="https://github.com/Noisemaker111/minecraft-modding-tools/issues">Issues</a>
 </p>
 
 **The foundation: a mod counts as working only when the game shows it working.** A build that compiles, or a client
@@ -44,7 +44,7 @@ network-model calls; its rules are plain data in `knowledge/`.
 
 ## Quick start
 
-1. Download the portable ZIP from the [latest release](https://github.com/Noisemaker111/modding-accelerator/releases/latest) and check it against its `.sha256`.
+1. Download the portable ZIP from the [latest release](https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest) and check it against its `.sha256`.
 2. Extract it anywhere. It needs Java 17 or newer; on Windows, a machine with no Java downloads a checked runtime once.
 3. Point it at your mod's source folder (the one with `gradlew`):
 
@@ -169,5 +169,5 @@ To build it, install Rust and run `cargo build --release` in `app/`; `mmt packag
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): how to help, and how much freedom you have.
 - [`AGENTS.md`](AGENTS.md): how to work in this repo. [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md): setup traps.
 - [`bench/README.md`](bench/README.md): recording receipts and comparing measurements.
-- Plans, status and findings live in [issues](https://github.com/Noisemaker111/modding-accelerator/issues) and
-  [pull requests](https://github.com/Noisemaker111/modding-accelerator/pulls).
+- Plans, status and findings live in [issues](https://github.com/Noisemaker111/minecraft-modding-tools/issues) and
+  [pull requests](https://github.com/Noisemaker111/minecraft-modding-tools/pulls).
