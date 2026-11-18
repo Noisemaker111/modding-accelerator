@@ -799,6 +799,13 @@ final class Desugar {
             return body.substring(1, body.length() - 1);
         }
 
+        /** A standalone sealed word, not part of a longer identifier. */
+        private boolean sealedBoundary(String masked, int sealedAt, int wordEnd) {
+            boolean sealedStart = sealedAt == 0 || !Character.isJavaIdentifierPart(masked.charAt(sealedAt - 1));
+            boolean sealedEnd = wordEnd >= masked.length() || !Character.isJavaIdentifierPart(masked.charAt(wordEnd));
+            return sealedStart && sealedEnd;
+        }
+
         /** Strips sealed from a class and permits from its header; non-sealed becomes a plain class. */
         private void sealedEdit(ClassTree tree) {
             ModifiersTree modifiers = tree.getModifiers();
@@ -811,7 +818,7 @@ final class Desugar {
                     int wordEnd = sealedAt + 6;
                     if (nonSealed) {
                         edits.add(new Edit(sealedAt - 4, wordEnd, ""));
-                    } else if ((sealedAt == 0 || !Character.isJavaIdentifierPart(masked.charAt(sealedAt - 1))) && (wordEnd >= masked.length() || !Character.isJavaIdentifierPart(masked.charAt(wordEnd)))) {
+                    } else if (sealedBoundary(masked, sealedAt, wordEnd)) {
                         edits.add(new Edit(sealedAt, wordEnd, ""));
                     }
                     sealedAt = masked.indexOf("sealed", wordEnd);

@@ -846,9 +846,12 @@ public final class Mmt {
             );
             if (loaders.isEmpty()) continue;
             Object minecraft = null;
-            if (p.get("pins") instanceof Map<?, ?> pins) for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version", "mcVersion")) if (pins.get(key) != null) {
-                minecraft = pins.get(key);
-                break;
+            if (p.get("pins") instanceof Map<?, ?> pins) {
+                for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version", "mcVersion")) {
+                    if (pins.get(key) == null) continue;
+                    minecraft = pins.get(key);
+                    break;
+                }
             }
             mods.add(
                 p.get("path") +

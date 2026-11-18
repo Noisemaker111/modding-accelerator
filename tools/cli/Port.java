@@ -2399,9 +2399,11 @@ final class Port {
             if (route != null && covered.isEmpty()) continue;
             Object transform = Json.object(rule.get("apply")).get("transform");
             if ("accessor".equals(transform) || "payload-bytes".equals(transform) || "neo-config".equals(transform) || "neo-entry".equals(transform)) {
-                if (
-                    "accessor".equals(transform) ? applyAccessor(rule, errors) : "payload-bytes".equals(transform) ? applyPayloadBytes(rule, errors) : "neo-config".equals(transform) ? applyNeoConfig(rule, errors) : applyNeoEntry(rule, errors)
-                ) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
+                boolean applied = "neo-entry".equals(transform) ? applyNeoEntry(rule, errors)
+                    : "neo-config".equals(transform) ? applyNeoConfig(rule, errors)
+                    : "payload-bytes".equals(transform) ? applyPayloadBytes(rule, errors)
+                    : applyAccessor(rule, errors);
+                if (applied) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
                 continue;
             }
             if ("line".equals(rule.get("scope"))) {
