@@ -23,6 +23,10 @@ public interface BlockEntityGenerated {
     default void requestModelDataUpdate() {
     }
 
+    default ${package}.neoforge.model.data.ModelData getModelData() {
+        throw new UnsupportedOperationException("NeoForge's BlockEntity.getModelData has no Fabric counterpart in the bridge yet");
+    }
+
     default void invalidateCapabilities() {
     }
 

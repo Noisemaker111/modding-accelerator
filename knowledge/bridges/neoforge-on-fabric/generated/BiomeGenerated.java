@@ -6,6 +6,10 @@ package ${package}.generated;
  */
 public interface BiomeGenerated {
 
+    default ${package}.neoforge.common.world.ModifiableBiomeInfo modifiableBiomeInfo() {
+        throw new UnsupportedOperationException("NeoForge's Biome.modifiableBiomeInfo has no Fabric counterpart in the bridge yet");
+    }
+
     default net.minecraft.world.level.biome.BiomeSpecialEffects getModifiedSpecialEffects() {
         throw new UnsupportedOperationException("NeoForge's Biome.getModifiedSpecialEffects has no Fabric counterpart in the bridge yet");
     }

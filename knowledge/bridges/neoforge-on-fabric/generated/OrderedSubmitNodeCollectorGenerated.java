@@ -8,4 +8,7 @@ public interface OrderedSubmitNodeCollectorGenerated {
 
     default void submitMultiLayerBlockModel(com.mojang.blaze3d.vertex.PoseStack arg0, java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> arg1, boolean arg2, int[] arg3, int arg4, int arg5, int arg6) {
     }
+
+    default <T extends net.minecraft.client.renderer.feature.submit.SubmitNode, S extends T> void submitSpecial(${package}.neoforge.client.submit.RenderPhaseKey<T> arg0, S arg1) {
+    }
 }

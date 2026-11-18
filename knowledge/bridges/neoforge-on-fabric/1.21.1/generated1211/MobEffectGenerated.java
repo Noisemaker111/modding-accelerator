@@ -10,6 +10,9 @@ public interface MobEffectGenerated {
         throw new UnsupportedOperationException("NeoForge's MobEffect.addAttributeModifier has no Fabric counterpart in the bridge yet");
     }
 
+    default void initializeClient(java.util.function.Consumer<${package}.neoforge.client.extensions.common.IClientMobEffectExtensions> arg0) {
+    }
+
     default int getSortOrder(net.minecraft.world.effect.MobEffectInstance arg0) {
         throw new UnsupportedOperationException("NeoForge's MobEffect.getSortOrder has no Fabric counterpart in the bridge yet");
     }

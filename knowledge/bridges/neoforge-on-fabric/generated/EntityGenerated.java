@@ -6,6 +6,12 @@ package ${package}.generated;
  */
 public interface EntityGenerated {
 
+    default void playCombinationStepSounds(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.block.state.BlockState arg1, net.minecraft.core.BlockPos arg2, net.minecraft.core.BlockPos arg3) {
+    }
+
+    default void playMuffledStepSound(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.core.BlockPos arg1) {
+    }
+
     default boolean isEyeInFluid(${package}.fluids.FluidType arg0) {
         throw new UnsupportedOperationException("NeoForge's Entity.isEyeInFluid has no Fabric counterpart in the bridge yet");
     }
@@ -20,10 +26,6 @@ public interface EntityGenerated {
 
     default java.util.Collection<net.minecraft.world.entity.item.ItemEntity> captureDrops(java.util.Collection<net.minecraft.world.entity.item.ItemEntity> arg0) {
         throw new UnsupportedOperationException("NeoForge's Entity.captureDrops has no Fabric counterpart in the bridge yet");
-    }
-
-    default net.minecraft.nbt.CompoundTag getPersistentData() {
-        throw new UnsupportedOperationException("NeoForge's Entity.getPersistentData has no Fabric counterpart in the bridge yet");
     }
 
     default boolean canTrample(net.minecraft.server.level.ServerLevel arg0, net.minecraft.world.level.block.state.BlockState arg1, net.minecraft.core.BlockPos arg2, double arg3) {
@@ -82,6 +84,10 @@ public interface EntityGenerated {
         throw new UnsupportedOperationException("NeoForge's Entity.isInFluidType has no Fabric counterpart in the bridge yet");
     }
 
+    default boolean isInFluidType(${package}.neoforge.fluids.InFluidPredicate<net.minecraft.world.entity.Entity> arg0) {
+        throw new UnsupportedOperationException("NeoForge's Entity.isInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean isInFluidType() {
         throw new UnsupportedOperationException("NeoForge's Entity.isInFluidType has no Fabric counterpart in the bridge yet");
     }
@@ -120,6 +126,10 @@ public interface EntityGenerated {
 
     default boolean canHydrateInFluidType(${package}.fluids.FluidType arg0) {
         throw new UnsupportedOperationException("NeoForge's Entity.canHydrateInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.sounds.SoundEvent getSoundFromFluidType(${package}.fluids.FluidType arg0, ${package}.neoforge.common.SoundAction arg1) {
+        throw new UnsupportedOperationException("NeoForge's Entity.getSoundFromFluidType has no Fabric counterpart in the bridge yet");
     }
 
     default void sendPairingData(net.minecraft.server.level.ServerPlayer arg0, java.util.function.Consumer<net.minecraft.network.protocol.common.custom.CustomPacketPayload> arg1) {

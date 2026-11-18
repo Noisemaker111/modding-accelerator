@@ -9,6 +9,9 @@ public interface MappedRegistryGenerated extends RegistryGenerated {
     default void unfreeze() {
     }
 
+    default void clear(boolean arg0) {
+    }
+
     default int getId(net.minecraft.resources.ResourceLocation arg0) {
         throw new UnsupportedOperationException("NeoForge's MappedRegistry.getId has no Fabric counterpart in the bridge yet");
     }

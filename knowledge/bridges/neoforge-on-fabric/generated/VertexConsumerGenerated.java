@@ -9,4 +9,10 @@ public interface VertexConsumerGenerated {
     default com.mojang.blaze3d.vertex.VertexConsumer misc(com.mojang.renderpearl.api.vertex.VertexFormatElement arg0, int... arg1) {
         throw new UnsupportedOperationException("NeoForge's VertexConsumer.misc has no Fabric counterpart in the bridge yet");
     }
+
+    default void putMutableQuad(com.mojang.blaze3d.vertex.PoseStack.Pose arg0, ${package}.neoforge.client.model.quad.MutableQuad arg1, com.mojang.blaze3d.vertex.QuadInstance arg2) {
+    }
+
+    default void applyBakedNormals(org.joml.Vector3f arg0, ${package}.neoforge.client.model.quad.BakedNormals arg1, int arg2, org.joml.Matrix3f arg3) {
+    }
 }

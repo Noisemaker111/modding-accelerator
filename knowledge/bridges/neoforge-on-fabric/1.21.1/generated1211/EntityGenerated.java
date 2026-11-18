@@ -6,6 +6,12 @@ package ${package}.generated1211;
  */
 public interface EntityGenerated {
 
+    default void playCombinationStepSounds(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.block.state.BlockState arg1, net.minecraft.core.BlockPos arg2, net.minecraft.core.BlockPos arg3) {
+    }
+
+    default void playMuffledStepSound(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.core.BlockPos arg1) {
+    }
+
     default void updateFluidHeightAndDoFluidPushing() {
     }
 
@@ -15,10 +21,6 @@ public interface EntityGenerated {
 
     default java.util.Collection<net.minecraft.world.entity.item.ItemEntity> captureDrops(java.util.Collection<net.minecraft.world.entity.item.ItemEntity> arg0) {
         throw new UnsupportedOperationException("NeoForge's Entity.captureDrops has no Fabric counterpart in the bridge yet");
-    }
-
-    default net.minecraft.nbt.CompoundTag getPersistentData() {
-        throw new UnsupportedOperationException("NeoForge's Entity.getPersistentData has no Fabric counterpart in the bridge yet");
     }
 
     default boolean canTrample(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.core.BlockPos arg1, float arg2) {
@@ -36,6 +38,9 @@ public interface EntityGenerated {
     }
 
     default void revive() {
+    }
+
+    default void setFluidTypeHeight(${package}.fluids.FluidType arg0, double arg1) {
     }
 
     default double getFluidTypeHeight(${package}.fluids.FluidType arg0) {
@@ -130,6 +135,10 @@ public interface EntityGenerated {
 
     default boolean canHydrateInFluidType(${package}.fluids.FluidType arg0) {
         throw new UnsupportedOperationException("NeoForge's Entity.canHydrateInFluidType has no Fabric counterpart in the bridge yet");
+    }
+
+    default net.minecraft.sounds.SoundEvent getSoundFromFluidType(${package}.fluids.FluidType arg0, ${package}.neoforge.common.SoundAction arg1) {
+        throw new UnsupportedOperationException("NeoForge's Entity.getSoundFromFluidType has no Fabric counterpart in the bridge yet");
     }
 
     default boolean hasCustomOutlineRendering(net.minecraft.world.entity.player.Player arg0) {

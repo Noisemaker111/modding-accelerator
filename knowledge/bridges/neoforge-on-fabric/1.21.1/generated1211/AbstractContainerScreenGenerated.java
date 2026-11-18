@@ -6,6 +6,12 @@ package ${package}.generated1211;
  */
 public interface AbstractContainerScreenGenerated {
 
+    default void renderSlotHighlight(net.minecraft.client.gui.GuiGraphics arg0, net.minecraft.world.inventory.Slot arg1, int arg2, int arg3, float arg4) {
+    }
+
+    default void renderSlotContents(net.minecraft.client.gui.GuiGraphics arg0, net.minecraft.world.item.ItemStack arg1, net.minecraft.world.inventory.Slot arg2, java.lang.String arg3) {
+    }
+
     default int getSlotColor(int arg0) {
         throw new UnsupportedOperationException("NeoForge's AbstractContainerScreen.getSlotColor has no Fabric counterpart in the bridge yet");
     }

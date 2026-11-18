@@ -10,6 +10,10 @@ public interface ModelManagerGenerated {
         throw new UnsupportedOperationException("NeoForge's ModelManager.getModelBakery has no Fabric counterpart in the bridge yet");
     }
 
+    default <T> T getStandaloneModel(${package}.neoforge.client.model.standalone.StandaloneModelKey<T> arg0) {
+        throw new UnsupportedOperationException("NeoForge's ModelManager.getStandaloneModel has no Fabric counterpart in the bridge yet");
+    }
+
     default net.minecraft.client.resources.model.ModelBakery.MissingModels getMissingModels() {
         throw new UnsupportedOperationException("NeoForge's ModelManager.getMissingModels has no Fabric counterpart in the bridge yet");
     }

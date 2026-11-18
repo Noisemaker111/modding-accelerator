@@ -6,6 +6,10 @@ package ${package}.generated1211;
  */
 public interface AbstractMinecartGenerated extends EntityGenerated {
 
+    default ${package}.neoforge.common.IMinecartCollisionHandler getCollisionHandler() {
+        throw new UnsupportedOperationException("NeoForge's AbstractMinecart.getCollisionHandler has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean canUseRail() {
         throw new UnsupportedOperationException("NeoForge's AbstractMinecart.canUseRail has no Fabric counterpart in the bridge yet");
     }

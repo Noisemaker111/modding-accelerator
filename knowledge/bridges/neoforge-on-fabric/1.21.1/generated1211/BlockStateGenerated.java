@@ -14,10 +14,6 @@ public interface BlockStateGenerated {
         throw new UnsupportedOperationException("NeoForge's BlockState.hasDynamicLightEmission has no Fabric counterpart in the bridge yet");
     }
 
-    default int getLightEmission(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1) {
-        throw new UnsupportedOperationException("NeoForge's BlockState.getLightEmission has no Fabric counterpart in the bridge yet");
-    }
-
     default boolean ignitedByLava(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1, net.minecraft.core.Direction arg2) {
         throw new UnsupportedOperationException("NeoForge's BlockState.ignitedByLava has no Fabric counterpart in the bridge yet");
     }
@@ -64,16 +60,8 @@ public interface BlockStateGenerated {
         throw new UnsupportedOperationException("NeoForge's BlockState.addRunningEffects has no Fabric counterpart in the bridge yet");
     }
 
-    default ${package}.TriState canSustainPlant(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1, net.minecraft.core.Direction arg2, net.minecraft.world.level.block.state.BlockState arg3) {
-        throw new UnsupportedOperationException("NeoForge's BlockState.canSustainPlant has no Fabric counterpart in the bridge yet");
-    }
-
     default boolean onTreeGrow(net.minecraft.world.level.LevelReader arg0, java.util.function.BiConsumer<net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState> arg1, net.minecraft.util.RandomSource arg2, net.minecraft.core.BlockPos arg3, net.minecraft.world.level.levelgen.feature.configurations.TreeConfiguration arg4) {
         throw new UnsupportedOperationException("NeoForge's BlockState.onTreeGrow has no Fabric counterpart in the bridge yet");
-    }
-
-    default boolean isFertile(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1) {
-        throw new UnsupportedOperationException("NeoForge's BlockState.isFertile has no Fabric counterpart in the bridge yet");
     }
 
     default boolean isConduitFrame(net.minecraft.world.level.LevelReader arg0, net.minecraft.core.BlockPos arg1, net.minecraft.core.BlockPos arg2) {
@@ -150,10 +138,6 @@ public interface BlockStateGenerated {
         throw new UnsupportedOperationException("NeoForge's BlockState.isFireSource has no Fabric counterpart in the bridge yet");
     }
 
-    default boolean canEntityDestroy(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.entity.Entity arg2) {
-        throw new UnsupportedOperationException("NeoForge's BlockState.canEntityDestroy has no Fabric counterpart in the bridge yet");
-    }
-
     default boolean isBurning(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1) {
         throw new UnsupportedOperationException("NeoForge's BlockState.isBurning has no Fabric counterpart in the bridge yet");
     }
@@ -204,12 +188,12 @@ public interface BlockStateGenerated {
     default void onBlockStateChange(net.minecraft.world.level.LevelReader arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.block.state.BlockState arg2) {
     }
 
-    default boolean canBeHydrated(net.minecraft.world.level.BlockGetter arg0, net.minecraft.core.BlockPos arg1, net.minecraft.world.level.material.FluidState arg2, net.minecraft.core.BlockPos arg3) {
-        throw new UnsupportedOperationException("NeoForge's BlockState.canBeHydrated has no Fabric counterpart in the bridge yet");
-    }
-
     default boolean isEmpty() {
         throw new UnsupportedOperationException("NeoForge's BlockState.isEmpty has no Fabric counterpart in the bridge yet");
+    }
+
+    default ${package}.neoforge.common.enums.BubbleColumnDirection getBubbleColumnDirection() {
+        throw new UnsupportedOperationException("NeoForge's BlockState.getBubbleColumnDirection has no Fabric counterpart in the bridge yet");
     }
 
     default boolean shouldHideAdjacentFluidFace(net.minecraft.core.Direction arg0, net.minecraft.world.level.material.FluidState arg1) {

@@ -9,4 +9,8 @@ public interface OrderedBlockMatcherGenerated extends BlockMatcherGenerated {
     default net.minecraft.world.level.blockscan.BlockMatcher filterPosition(java.util.function.BiPredicate<net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos> arg0) {
         throw new UnsupportedOperationException("NeoForge's OrderedBlockMatcher.filterPosition has no Fabric counterpart in the bridge yet");
     }
+
+    default boolean anyMatched(java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> arg0, java.util.function.BiPredicate<net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos> arg1) {
+        throw new UnsupportedOperationException("NeoForge's OrderedBlockMatcher.anyMatched has no Fabric counterpart in the bridge yet");
+    }
 }

@@ -135,10 +135,6 @@ public interface ItemGenerated {
         throw new UnsupportedOperationException("NeoForge's Item.canContinueUsing has no Fabric counterpart in the bridge yet");
     }
 
-    default java.lang.String getCreatorModId(net.minecraft.core.HolderLookup.Provider arg0, net.minecraft.world.item.ItemStack arg1) {
-        throw new UnsupportedOperationException("NeoForge's Item.getCreatorModId has no Fabric counterpart in the bridge yet");
-    }
-
     default int getBurnTime(net.minecraft.world.item.ItemStack arg0, net.minecraft.world.item.crafting.RecipeType<?> arg1, net.minecraft.world.level.block.entity.FuelValues arg2) {
         throw new UnsupportedOperationException("NeoForge's Item.getBurnTime has no Fabric counterpart in the bridge yet");
     }

@@ -6,6 +6,10 @@ package ${package}.generated261;
  */
 public interface StructureGenerated {
 
+    default ${package}.neoforge.common.world.ModifiableStructureInfo modifiableStructureInfo() {
+        throw new UnsupportedOperationException("NeoForge's Structure.modifiableStructureInfo has no Fabric counterpart in the bridge yet");
+    }
+
     default net.minecraft.world.level.levelgen.structure.Structure.StructureSettings getModifiedStructureSettings() {
         throw new UnsupportedOperationException("NeoForge's Structure.getModifiedStructureSettings has no Fabric counterpart in the bridge yet");
     }

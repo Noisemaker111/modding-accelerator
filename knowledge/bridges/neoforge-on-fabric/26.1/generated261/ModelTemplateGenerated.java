@@ -9,4 +9,8 @@ public interface ModelTemplateGenerated {
     default com.google.gson.JsonObject createBaseTemplate(net.minecraft.resources.Identifier arg0, java.util.Map<net.minecraft.client.data.models.model.TextureSlot, net.minecraft.client.resources.model.sprite.Material> arg1) {
         throw new UnsupportedOperationException("NeoForge's ModelTemplate.createBaseTemplate has no Fabric counterpart in the bridge yet");
     }
+
+    default ${package}.neoforge.client.model.generators.template.ExtendedModelTemplateBuilder extend() {
+        throw new UnsupportedOperationException("NeoForge's ModelTemplate.extend has no Fabric counterpart in the bridge yet");
+    }
 }

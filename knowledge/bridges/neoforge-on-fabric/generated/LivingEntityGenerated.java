@@ -10,6 +10,10 @@ public interface LivingEntityGenerated extends EntityGenerated {
         ((net.minecraft.world.entity.LivingEntity) (Object) this).setItemSlot(arg0, arg1);
     }
 
+    default boolean canGlide(boolean arg0) {
+        throw new UnsupportedOperationException("NeoForge's LivingEntity.canGlide has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean randomTeleport(double arg0, double arg1, double arg2, boolean arg3, net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> arg4, net.minecraft.world.item.ItemStack arg5) {
         return ((net.minecraft.world.entity.LivingEntity) (Object) this).randomTeleport(arg0, arg1, arg2, arg3, arg4);
     }
@@ -38,5 +42,8 @@ public interface LivingEntityGenerated extends EntityGenerated {
 
     default boolean moveInFluid(${package}.fluids.FluidType arg0, net.minecraft.world.phys.Vec3 arg1, double arg2) {
         throw new UnsupportedOperationException("NeoForge's LivingEntity.moveInFluid has no Fabric counterpart in the bridge yet");
+    }
+
+    default void onDamageTaken(${package}.neoforge.common.damagesource.DamageContainer arg0) {
     }
 }

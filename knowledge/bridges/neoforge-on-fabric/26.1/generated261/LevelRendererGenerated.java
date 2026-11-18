@@ -12,4 +12,8 @@ public interface LevelRendererGenerated {
 
     default void iterateVisibleBlockEntities(java.util.function.Consumer<net.minecraft.world.level.block.entity.BlockEntity> arg0) {
     }
+
+    default java.lang.Iterable<? extends ${package}.neoforge.client.IRenderableSection> getRenderableSections() {
+        throw new UnsupportedOperationException("NeoForge's LevelRenderer.getRenderableSections has no Fabric counterpart in the bridge yet");
+    }
 }

@@ -19,6 +19,10 @@ public interface EntityFluidInteractionGenerated {
         throw new UnsupportedOperationException("NeoForge's EntityFluidInteraction.getFluidHeight has no Fabric counterpart in the bridge yet");
     }
 
+    default <E extends net.minecraft.world.entity.Entity> double getMaxFluidHeightMatching(E arg0, ${package}.neoforge.fluids.InFluidPredicate<E> arg1) {
+        throw new UnsupportedOperationException("NeoForge's EntityFluidInteraction.getMaxFluidHeightMatching has no Fabric counterpart in the bridge yet");
+    }
+
     default ${package}.fluids.FluidType getMaxHeightFluidType() {
         throw new UnsupportedOperationException("NeoForge's EntityFluidInteraction.getMaxHeightFluidType has no Fabric counterpart in the bridge yet");
     }
@@ -35,8 +39,16 @@ public interface EntityFluidInteractionGenerated {
         throw new UnsupportedOperationException("NeoForge's EntityFluidInteraction.isInAnyFluid has no Fabric counterpart in the bridge yet");
     }
 
+    default <E extends net.minecraft.world.entity.Entity> boolean isInFluidMatching(E arg0, ${package}.neoforge.fluids.InFluidPredicate<E> arg1) {
+        throw new UnsupportedOperationException("NeoForge's EntityFluidInteraction.isInFluidMatching has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean isEyeInFluid(${package}.fluids.FluidType arg0) {
         throw new UnsupportedOperationException("NeoForge's EntityFluidInteraction.isEyeInFluid has no Fabric counterpart in the bridge yet");
+    }
+
+    default <E extends net.minecraft.world.entity.Entity> boolean isEyeInFluidMatching(E arg0, ${package}.neoforge.fluids.InFluidPredicate<E> arg1) {
+        throw new UnsupportedOperationException("NeoForge's EntityFluidInteraction.isEyeInFluidMatching has no Fabric counterpart in the bridge yet");
     }
 
     default ${package}.fluids.FluidType getFirstEyeInFluid() {

@@ -6,6 +6,9 @@ package ${package}.generated1211;
  */
 public interface CameraGenerated {
 
+    default void setRotation(float arg0, float arg1, float arg2) {
+    }
+
     default float getRoll() {
         throw new UnsupportedOperationException("NeoForge's Camera.getRoll has no Fabric counterpart in the bridge yet");
     }

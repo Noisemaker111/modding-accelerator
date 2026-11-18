@@ -23,6 +23,10 @@ public interface BlockEntityGenerated {
     default void requestModelDataUpdate() {
     }
 
+    default ${package}.neoforge.client.model.data.ModelData getModelData() {
+        throw new UnsupportedOperationException("NeoForge's BlockEntity.getModelData has no Fabric counterpart in the bridge yet");
+    }
+
     default boolean hasCustomOutlineRendering(net.minecraft.world.entity.player.Player arg0) {
         throw new UnsupportedOperationException("NeoForge's BlockEntity.hasCustomOutlineRendering has no Fabric counterpart in the bridge yet");
     }

@@ -6,6 +6,10 @@ package ${package}.generated;
  */
 public interface BlockItemGenerated extends ItemGenerated {
 
+    default net.minecraft.sounds.SoundEvent getPlaceSound(net.minecraft.world.level.block.state.BlockState arg0, net.minecraft.world.level.Level arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.entity.player.Player arg3) {
+        throw new UnsupportedOperationException("NeoForge's BlockItem.getPlaceSound has no Fabric counterpart in the bridge yet");
+    }
+
     default void onBlockPlacedBy(net.minecraft.world.item.context.BlockPlaceContext arg0, net.minecraft.world.level.Level arg1, net.minecraft.core.BlockPos arg2, net.minecraft.world.level.block.state.BlockState arg3, net.minecraft.world.entity.player.Player arg4, net.minecraft.world.item.ItemStack arg5) {
     }
 }

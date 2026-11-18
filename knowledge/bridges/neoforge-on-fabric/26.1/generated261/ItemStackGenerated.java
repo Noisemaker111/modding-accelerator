@@ -37,10 +37,6 @@ public interface ItemStackGenerated extends DataComponentHolderGenerated, ItemIn
         throw new UnsupportedOperationException("NeoForge's ItemStack.getAllEnchantments has no Fabric counterpart in the bridge yet");
     }
 
-    default net.minecraft.world.entity.EquipmentSlot getEquipmentSlot() {
-        throw new UnsupportedOperationException("NeoForge's ItemStack.getEquipmentSlot has no Fabric counterpart in the bridge yet");
-    }
-
     default boolean onEntitySwing(net.minecraft.world.entity.LivingEntity arg0, net.minecraft.world.InteractionHand arg1) {
         throw new UnsupportedOperationException("NeoForge's ItemStack.onEntitySwing has no Fabric counterpart in the bridge yet");
     }

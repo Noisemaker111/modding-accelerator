@@ -2856,6 +2856,15 @@ final class Convert {
                 .add(name);
             applied.computeIfAbsent("entrypoint-" + api, k -> new ArrayList<>()).add(file);
         }
+        // NeoForge's copied classes live in the bridge's package: with no bridge (a mod coming back to Fabric), none.
+        if (!bridgeUsed && !copiedFiles.isEmpty()) {
+            // Made by this run: gone again, not a removal undo would restore.
+            for (String file : copiedFiles) Files.deleteIfExists(project.root.resolve(file));
+            copiedFiles.clear();
+            copied = Set.of();
+            applied.remove("neoforge-sources");
+            notes.removeIf(n -> n.startsWith("NeoForge bridge: ") && n.contains("of NeoForge's own classes"));
+        }
         if (bridgeUsed && !clientEntry) {
             // NeoForge posts FMLClientSetupEvent and runs client subscribers without a client @Mod class; Fabric needs an entrypoint for that.
             String name = bridgePackage + ".ClientEntrypoint";
@@ -3382,11 +3391,18 @@ final class Convert {
             Map<String, Object> layer = bridgeLayer(b, minecraft);
             if (Versions.compare(minecraft, Json.text(b, "minecraft", "99")) < 0 && layer == null) continue;
             List<String> out = new ArrayList<>();
+            // The methods NeoForge's patches make public (bench/bridge_generate.py), from this version's own folder.
+            Path patched = build.harness.resolve(Json.text(layer == null ? b : layer, "folder", "")).resolve(PATCH_ACCESS);
+            List<String> opened = new ArrayList<>();
+            if (Files.isRegularFile(patched)) for (String line : Files.readString(patched, StandardCharsets.UTF_8).lines().toList()) {
+                String stripped = line.replaceAll("#.*$", "").strip();
+                if (!stripped.isEmpty()) opened.add(stripped);
+            }
             for (Map<String, Object> from : layer == null ? List.of(b) : List.of(layer, b)) {
                 Path folder = build.harness.resolve(Json.text(from, "folder", ""));
                 if (!Files.isDirectory(folder)) continue;
                 try (var files = Files.list(folder)) {
-                    for (Path cfg : files.filter(p -> p.getFileName().toString().endsWith(".cfg")).sorted().toList()) {
+                    for (Path cfg : files.filter(p -> p.getFileName().toString().endsWith(".cfg") && !p.getFileName().toString().equals(PATCH_ACCESS)).sorted().toList()) {
                         for (String line : Files.readString(cfg, StandardCharsets.UTF_8).lines().toList()) {
                             String stripped = line.replaceAll("#.*$", "").strip();
                             if (!stripped.isEmpty()) out.add(stripped);
@@ -3394,12 +3410,16 @@ final class Convert {
                     }
                 }
                 // A version layer's own file stands in for the bridge's.
-                if (!out.isEmpty()) return out;
+                if (!out.isEmpty()) break;
             }
+            out.addAll(opened);
             return out;
         }
         return List.of();
     }
+
+    /** The bridge's file of game methods NeoForge's patches make public, per version folder (bench/bridge_generate.py). */
+    static final String PATCH_ACCESS = "patchaccess.cfg";
 
     /**
      * NeoForge's own access transformer lines for the members the converted code names (.member, ::member, or new
@@ -3615,6 +3635,15 @@ final class Convert {
         // The mod's tests use the same NeoForge classes as its code, so their imports and qualified names move too.
         List<String> sources = new ArrayList<>(javaFiles());
         sources.addAll(testJavaFiles());
+        // Methods protected on a game class that its generated interface gives as public (bridge_generate.py "protected").
+        Set<String> protectedGenerated = new HashSet<>();
+        List<String> modTexts = new ArrayList<>();
+        for (String file : sources) modTexts.add(read(file));
+        Object mixinList = bridgeLayer != null && bridgeLayer.get("mixins") != null ? bridgeLayer.get("mixins") : bridge.get("mixins");
+        for (Object item : LoaderRules.list(mixinList)) {
+            var mixin = Json.object(item);
+            if (mixin.get("protected") != null && uses(mixin.get("uses"), modTexts)) protectedGenerated.addAll(LoaderRules.strings(mixin.get("protected")));
+        }
         for (String file : sources) {
             String text = read(file);
             String out = wildcardBridgeImports(text, named, drops, bridgePackage);
@@ -3628,6 +3657,7 @@ final class Convert {
                 Matcher.quoteReplacement(bridgePackage + "." + c.getValue())
             );
             if (!copied.isEmpty()) out = NeoForgeSources.point(out, copied, bridgePackage);
+            out = publicOverrides(out, protectedGenerated);
             for (var c : Json.object(bridge.getOrDefault("constructors", Map.of())).entrySet()) if (!dropped(drops, c.getValue() + ".java")) {
                 out = constructorsToFactories(out, c.getKey(), String.valueOf(c.getValue()), bridgePackage);
             }
@@ -3698,11 +3728,24 @@ final class Convert {
      * those extend: a mod gets tens of them, not all 500.
      */
     void dropUnusedGenerated(Map<String, Path> files) throws IOException {
-        Object list = bridgeLayer != null && bridgeLayer.get("mixins") != null ? bridgeLayer.get("mixins") : bridge.get("mixins");
         List<String> texts = new ArrayList<>();
         for (String file : javaFiles()) if (!file.startsWith(bridgeFolder() + "/") || copiedFiles.contains(file)) texts.add(read(file));
+        dropUnusedGenerated(files, texts);
+    }
+
+    /** The generated files the texts need (their mixin's "uses"), with the generated interfaces those extend; the rest go. */
+    static final Pattern CALLED = Pattern.compile("\\b([A-Za-z_$][\\w$]*)\\s*\\(");
+
+    /** bench/bridge_generate.py's "uses" pattern: \b(?:name|name...)\s*\( */
+    static final Pattern GENERATED_USES = Pattern.compile("\\\\b\\(\\?:([\\w$|]+)\\)\\\\s\\*\\\\\\(");
+
+    Set<String> dropUnusedGenerated(Map<String, Path> files, List<String> texts) throws IOException {
+        Object list = bridgeLayer != null && bridgeLayer.get("mixins") != null ? bridgeLayer.get("mixins") : bridge.get("mixins");
         Set<String> generated = new HashSet<>();
         Deque<String> keep = new ArrayDeque<>();
+        // Every name the code calls, once: a generated mixin's "uses" is one list of method names called.
+        Set<String> called = new HashSet<>();
+        for (String text : texts) for (Matcher m = CALLED.matcher(text); m.find(); ) called.add(m.group(1));
         for (Object item : LoaderRules.list(list)) {
             var mixin = Json.object(item);
             if (!Boolean.TRUE.equals(mixin.get("generated"))) continue;
@@ -3711,7 +3754,12 @@ final class Convert {
             List<String> interfaces = new ArrayList<>();
             if (mixin.get("injects") instanceof Map<?, ?> injects) for (Object i : injects.values()) interfaces.add(String.valueOf(i).replace('.', '/') + ".java");
             generated.addAll(interfaces);
-            if (uses(mixin.get("uses"), texts)) {
+            List<String> alternatives = LoaderRules.strings(LoaderRules.list(mixin.get("uses")).isEmpty() ? null : LoaderRules.list(mixin.get("uses")).get(0));
+            Matcher names = alternatives.size() == 1 ? GENERATED_USES.matcher(alternatives.get(0)) : null;
+            boolean needed = names != null && names.matches()
+                ? Arrays.stream(names.group(1).split("\\|")).anyMatch(called::contains)
+                : uses(mixin.get("uses"), texts);
+            if (needed) {
                 keep.add(mixinFile);
                 keep.addAll(interfaces);
             }
@@ -3724,6 +3772,21 @@ final class Convert {
             for (Matcher m = Pattern.compile("\\b(\\w+Generated)\\b").matcher(Files.readString(files.get(file))); m.find(); ) keep.add(folder + m.group(1) + ".java");
         }
         files.keySet().removeIf(f -> generated.contains(f) && !kept.contains(f));
+        kept.retainAll(files.keySet());
+        return kept;
+    }
+
+    /** The bridge's files for this game version, without the ones its layer drops. */
+    Map<String, Path> generatedTemplates(List<String> drops) throws IOException {
+        Path folder = build.harness.resolve(Json.text(bridge, "folder", ""));
+        Map<String, Path> templates = bridgeTemplates(folder, bridgeLayer == null ? null : build.harness.resolve(Json.text(bridgeLayer, "folder", "")));
+        templates.keySet().removeIf(rel -> dropped(drops, rel));
+        return templates;
+    }
+
+    /** A bridge file with NeoForge's own names for the copies it names, as the copy step reads mod code. */
+    static String asNeoForgeNames(Path template) throws IOException {
+        return Files.readString(template).replace("${package}." + NeoForgeSources.FOLDER + ".", NeoForgeSources.PREFIX);
     }
 
     /** NeoForge's own source files convert copied into the bridge's package (NeoForgeSources), and their classes. */
@@ -3773,6 +3836,10 @@ final class Convert {
         List<String> texts = new ArrayList<>();
         for (String file : javaFiles()) texts.add(read(file));
         for (String file : testJavaFiles()) texts.add(read(file));
+        // The generated game-class methods the mod will get can name NeoForge's classes too (an extension interface, a
+        // parameter type): those are copied with the ones the mod names.
+        Map<String, Path> templates = all ? Map.of() : generatedTemplates(drops);
+        for (String f : dropUnusedGenerated(new HashMap<>(templates), texts)) texts.add(asNeoForgeNames(templates.get(f)));
         // Nothing the mod names is listed: no download.
         if (!all && NeoForgeSources.closure(texts, Map.of(), allowed).isEmpty()) return Set.of();
         Map<String, Object> entry = Json.object(Json.object(rules.get("published")).get(key));
@@ -3800,6 +3867,18 @@ final class Convert {
         if (all) allowed.addAll(sources.keySet());
         allowed.retainAll(sources.keySet());
         Set<String> copied = all ? allowed : NeoForgeSources.closure(texts, sources, allowed);
+        // The copies call game-class methods too, which can need more generated files, which can name more copies:
+        // until nothing new is needed.
+        if (!templates.isEmpty()) {
+            for (int round = 0; round < 8; round++) {
+                List<String> withCopies = new ArrayList<>(texts);
+                for (String c : copied) withCopies.add(sources.get(c));
+                for (String f : dropUnusedGenerated(new HashMap<>(templates), withCopies)) withCopies.add(asNeoForgeNames(templates.get(f)));
+                Set<String> more = NeoForgeSources.closure(withCopies, sources, allowed);
+                if (more.equals(copied)) break;
+                copied = more;
+            }
+        }
         for (String name : copied) if (patches.get(name) instanceof Map<?, ?> p) accessTransformers.addAll(LoaderRules.strings(p.get("accessTransformers")));
         for (String name : copied) {
             String file = bridgeFolder() + "/" + NeoForgeSources.FOLDER + "/" + name.substring(NeoForgeSources.PREFIX.length()).replace('.', '/') + ".java";
@@ -4276,6 +4355,20 @@ final class Convert {
         boolean hasGame = Pattern.compile("(?m)^import\\s+" + Pattern.quote(game) + "\\s*;").matcher(text).find();
         String out = imported.replaceFirst(hasGame ? "" : Matcher.quoteReplacement("import " + game + ";\n"));
         return out.replaceAll("(?<![\\w.])" + Pattern.quote(to) + "\\.", Matcher.quoteReplacement(simple + "."));
+    }
+
+    /**
+     * A mod's @Override of a method NeoForge's patch adds to a game class as protected, made public: on Fabric the
+     * method comes from the bridge's generated interface, whose methods are public, and an override may not narrow it.
+     */
+    static String publicOverrides(String text, Set<String> names) {
+        if (names.isEmpty()) return text;
+        Pattern p = Pattern.compile("(@Override\\s+(?:@[\\w.]+(?:\\([^)]*\\))?\\s+)*)protected(\\s+(?:final\\s+)?(?:<[^>]+>\\s+)?[\\w<>\\[\\],.? ]+?\\s+(\\w+)\\s*\\()");
+        Matcher m = p.matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) m.appendReplacement(out, Matcher.quoteReplacement(names.contains(m.group(3)) ? m.group(1) + "public" + m.group(2) : m.group()));
+        m.appendTail(out);
+        return out.toString();
     }
 
     /** The index of the ')' that closes the '(' at open, or -1 (strings and comments skipped). */
