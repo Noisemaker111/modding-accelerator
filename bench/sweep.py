@@ -39,6 +39,7 @@ WORK = ROOT / ".runs" / "sweep"
 INDEX = ROOT / "coverage" / "changes" / "index.json"
 WINDOWS = os.name == "nt"
 MMT = [str(ROOT / ("mmt.cmd" if WINDOWS else "mmt"))]
+PORT_OPTIONS = []
 KEEP = (".gradle", "build", ".mmt", ".runs", "run", "runs")
 CLASSES = ("missing-mapping", "signature-change", "semantic-api-change", "dependency-unavailable", "build-tooling",
            "mixin-target-change", "access-transformer", "resource-format", "tool-crash", "other")
@@ -207,6 +208,7 @@ def port_run(mod, to, kind, tag, timeout, game, jobs, base=None):
             cmd = MMT + ["port", "--root", work, "--from", mod["from"], "--to", to, "--fix", "--json"]
             if mod.get("project"):
                 cmd += ["--project", mod["project"]]
+            cmd += PORT_OPTIONS
             code, out, err = sh(cmd, timeout=timeout)
             if "being used by another process" in out + err:
                 # Two jobs set up the same game in Loom's shared cache at once (Windows file lock): not the port's result.
@@ -676,6 +678,7 @@ def main(argv=None):
     p.add_argument("--resume", action="store_true", help="skip runs this tag already has")
     p.add_argument("--timeout", type=int, default=5400)
     p.add_argument("--mmt", type=Path, help="the mmt launcher to test (default: this checkout's); another worktree's to sweep a fixed tool while this one changes")
+    p.add_argument("--starter-build", action="store_true", help="port from a build generated from the loader's starter project")
     p = sub.add_parser("summary")
     p.add_argument("--tag", required=True)
     p.add_argument("--compare", help="other tags to show beside it, oldest first")
@@ -714,6 +717,8 @@ def main(argv=None):
             (RESULTS / f"{args.tag}.json").write_text(json.dumps(doc, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         return 0
 
+    if args.starter_build:
+        PORT_OPTIONS.append("--starter-build")
     if args.mmt:
         MMT[:] = [str(args.mmt.resolve())]
     mods = load_corpus(args.only)

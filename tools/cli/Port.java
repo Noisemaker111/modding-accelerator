@@ -8,7 +8,8 @@ import java.util.regex.*;
 /** Bounded repairs use the existing typed mapper and rule owner, with byte-exact guarded undo. */
 final class Port {
 
-    final Build build;
+    /** Not final: a starter build (--starter-build) replaces the project's build, and the port goes on with the new one. */
+    Build build;
     Map<String, Object> model;
     String targetVersion = "";
     /** The hub route this port walks (null for the one-jump path), its source namespace, and the rules that changed a file. */
@@ -132,7 +133,36 @@ final class Port {
     }
 
     /** Puts back what removeDevPlugin changed when no port transaction took it over. */
+    /** Files a change before the transaction created (a starter build's), one relative path per line: undo deletes them. */
+    static Path pendingCreated(ProjectModel project) {
+        return project.state().resolve("ports/pending-created.txt");
+    }
+
+    /** Saves a file's original (or that it did not exist) before a change made ahead of the port's transaction. */
+    static void savePending(ProjectModel project, Path file) {
+        try {
+            Path relative = project.root.relativize(file.toAbsolutePath().normalize());
+            String name = relative.toString().replace('\\', '/');
+            Path saved = pendingOriginals(project).resolve(relative.toString()), created = pendingCreated(project);
+            if (Files.exists(saved) || Files.isRegularFile(created) && Files.readAllLines(created).contains(name)) return;
+            if (Files.isRegularFile(file)) {
+                Files.createDirectories(saved.getParent());
+                Files.copy(file, saved);
+            } else {
+                Files.createDirectories(created.getParent());
+                Files.writeString(created, name + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     static void restorePending(ProjectModel project) throws IOException {
+        Path created = pendingCreated(project);
+        if (Files.isRegularFile(created)) {
+            for (String name : Files.readAllLines(created)) if (!name.isBlank()) Files.deleteIfExists(project.root.resolve(name));
+            Files.delete(created);
+        }
         Path pending = pendingOriginals(project);
         if (!Files.isDirectory(pending)) return;
         List<Path> files;
@@ -144,6 +174,7 @@ final class Port {
     }
 
     static void deletePending(ProjectModel project) throws IOException {
+        Files.deleteIfExists(pendingCreated(project));
         Path pending = pendingOriginals(project);
         if (!Files.isDirectory(pending)) return;
         List<Path> all;
@@ -695,7 +726,7 @@ final class Port {
             if (!Files.isRegularFile(target)) continue;
             // Every use in the mod follows, not only the ones javac reported this round.
             for (Path user : sources(build.project)) {
-                if (user.equals(target)) continue;
+                if (user.equals(target) || !user.toString().endsWith(".java")) continue;
                 String before = Files.readString(user);
                 String uses = outer == null
                     ? before.replaceAll("(?m)^import\\s+" + Pattern.quote(pkg + "." + simple) + "\\s*;", "import " + home + "." + name + ";")
@@ -1076,6 +1107,32 @@ final class Port {
                 " with --project (mmt setup lists them). Nothing was changed."
             );
         }
+        // --starter-build: the mod's own build is replaced by its loader's starter project for the version it builds on now,
+        // and the port goes on from that build (StarterBuild). Each replaced or removed file waits in the pending originals
+        // until the transaction takes it over, so undo restores the old build.
+        List<String> starterNotes = List.of();
+        if (options.has("starter-build") && options.has("fix") && !options.has("dry-run")) {
+            Map<String, Object> chosen = null;
+            String loader = null;
+            for (Object p : Json.array(model.get("projects"))) {
+                var candidate = Json.object(p);
+                Set<String> loaders = Support.loaders(candidate);
+                if (loaders.contains("neoforge") && !"neoforge".equals(loader)) {
+                    chosen = candidate;
+                    loader = "neoforge";
+                } else if (loaders.contains("fabric") && chosen == null) {
+                    chosen = candidate;
+                    loader = "fabric";
+                }
+            }
+            if (chosen == null) throw new IOException("--starter-build needs a Fabric or NeoForge project; this build has neither.");
+            var made = StarterBuild.apply(build.project.root, chosen, loader, from, file -> savePending(build.project, file));
+            starterNotes = made.notes();
+            build = new Build(new ProjectModel(build.project.root), build.harness, "", build.report);
+            model = build.model(true, true);
+            actual = versions(model);
+            build.report.stages.add(Json.map("name", "starter-build", "loader", loader, "version", from, "notes", starterNotes));
+        }
         Path selectionFile = selectionFile(options);
         List<Dependencies.Selection> selections = Dependencies.selections(selectionFile);
         long targetStart = System.nanoTime();
@@ -1371,6 +1428,14 @@ final class Port {
         this.transaction = transaction;
         Map<String, Object> before = this.before;
         Set<Path> backupPaths = new TreeSet<>(sources(build.project));
+        // Files a starter build replaced or removed ahead of the transaction are backed up from their saved originals.
+        Path pendingDir = pendingOriginals(build.project);
+        if (Files.isDirectory(pendingDir)) try (var walk = Files.walk(pendingDir)) {
+            for (Path saved : walk.filter(Files::isRegularFile).toList()) backupPaths.add(build.project.root.resolve(pendingDir.relativize(saved).toString()));
+        }
+        List<String> createdBefore = Files.isRegularFile(pendingCreated(build.project))
+            ? Files.readAllLines(pendingCreated(build.project)).stream().filter(n -> !n.isBlank()).toList()
+            : List.of();
         for (Target.Edit edit : target) {
             Path file = edit.file().toRealPath();
             if (!file.startsWith(build.project.root)) throw new IOException(
@@ -1392,6 +1457,10 @@ final class Port {
             before.put(relative.toString().replace('\\', '/'), Fingerprints.bytes(Files.readAllBytes(source)));
         }
         planned.addAll(takenOver);
+        for (String name : createdBefore) {
+            before.putIfAbsent(name, null);
+            planned.add(name);
+        }
         deletePending(build.project);
         // The restore plan is on disk before the first edit: an interrupted port still knows what it may have changed.
         for (Target.Edit edit : target) planned.add(
@@ -4934,8 +5003,9 @@ final class Port {
             String hash = Fingerprints.bytes(Files.readAllBytes(file));
             if (!hash.equals(before.get(relative))) {
                 after.put(relative, hash);
-                String old = created ? "" : Files.readString(transaction.resolve("before").resolve(relative)), now =
-                    Files.readString(file);
+                // Lenient: a generated build replaces binary files too (the Gradle wrapper jar).
+                String old = created ? "" : new String(Files.readAllBytes(transaction.resolve("before").resolve(relative)), StandardCharsets.UTF_8), now =
+                    new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
                 patch
                     .append("diff --git a/")
                     .append(relative)

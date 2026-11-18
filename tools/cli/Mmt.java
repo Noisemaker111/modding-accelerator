@@ -98,6 +98,7 @@ public final class Mmt {
             "prepare",
             "no-hooks",
             "learn-from-mods",
+            "starter-build",
             "intermediary",
             "no-heap",
             "allow-hidden",
