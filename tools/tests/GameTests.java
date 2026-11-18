@@ -44,6 +44,12 @@ public final class GameTests {
         check(failure.size() == 3 && failure.get(1).startsWith("java.lang.IllegalStateException") && failure.get(2).contains("DioramaClientTest.overlays"),
             "a game test run whose log says the suite failed is a failure, with its exception and the test's own frame: " + failure);
         check(Game.gameTestFailure(List.of("[Test thread/INFO] (diorama) Map warm-up done", "Stopping!")).isEmpty(), "a clean game test log is no failure");
+        Path bundled = Game.bundledAsm(home);
+        check(
+            bundled != null && Files.isRegularFile(bundled),
+            "the portable agent falls back to mmt's own ASM when the build names none: " + bundled
+        );
+        check(Game.bundledAsm(scratch) == null, "a harness without the perf lib offers no fallback ASM");
         List<String> saved = Game.savedCommand(launch, scratch.resolve("saved classpath.args"));
         Process child = new ProcessBuilder(saved).redirectErrorStream(true).start();
         String output = new String(child.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);

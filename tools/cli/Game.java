@@ -1463,6 +1463,18 @@ final class Game {
         );
     }
 
+    /** The ASM mmt ships for its own bytecode tools, when the mod's build names none (every 1.7.10 game). */
+    static Path bundledAsm(Path harness) throws IOException {
+        Path lib = harness.resolve("tools/perf/lib");
+        if (!Files.isDirectory(lib)) return null;
+        try (var jars = Files.list(lib)) {
+            for (Path jar : jars.toList()) {
+                if (jar.getFileName().toString().matches("asm-[0-9].*\\.jar")) return jar;
+            }
+        }
+        return null;
+    }
+
     Path agent() throws Exception {
         Set<String> jars = new LinkedHashSet<>();
         for (Object p : Json.array(model.get("projects"))) for (Object c : Json.array(
@@ -1473,6 +1485,7 @@ final class Game {
             asm = Path.of(path);
             break;
         }
+        if (asm == null) asm = bundledAsm(build.harness);
         if (asm == null) throw new IOException(
             "No ASM library in the actual build classpath; this client cannot use the portable agent yet."
         );
