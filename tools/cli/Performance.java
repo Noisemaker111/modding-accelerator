@@ -171,7 +171,15 @@ final class Performance {
 
     /** The source session for --root, started when none runs; hidden when the background preference is on. */
     static Map<String, Object> rootSession(Path home, Mmt.Options options, Mmt.Report receipt) throws Exception {
-        ProjectModel project = new ProjectModel(Path.of(options.get("root", ".")));
+        Path root = Path.of(options.get("root", ".")).toAbsolutePath().normalize();
+        // A pack client pack-run started: profile it while it runs; only pack-run starts one.
+        if (PackClient.instance(root)) {
+            Path file = root.resolve(".mmt/portable/agent.json");
+            Map<String, Object> session = Files.isRegularFile(file) ? Json.read(file) : null;
+            if (session == null || !Game.alive(session)) throw new IOException("No client of this pack is running in " + root + "; start it with mmt pack-run --pack PACK.");
+            return session;
+        }
+        ProjectModel project = new ProjectModel(root);
         project.requireGradleBuild();
         try (ProjectLock ignored = ProjectLock.acquire(project, "perf")) {
             Build build = new Build(project, home, options.get("project", ""), receipt);

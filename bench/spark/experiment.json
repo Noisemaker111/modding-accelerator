@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "project": ":spark-forge",
+  "pack": {
+    "input": "../../.runs/atm9/atm9-1.1.1-fixed.zip",
+    "without": "journeymap",
+    "task": ":spark-forge:reobfShadowJar",
+    "jar": "spark-forge/build/libs/spark-*-forge.jar",
+    "memory": "10G"
+  },
+  "jit": "full",
+  "frames": 60,
+  "setup": [
+    {
+      "file": "monitor.java",
+      "thread": "control",
+      "expect": "true"
+    }
+  ],
+  "measure": {
+    "seconds": 20,
+    "warmup": 10,
+    "metric": {
+      "threadCpu": "^spark-monitoring-thread"
+    }
+  },
+  "gates": [
+    {
+      "name": "monitoring",
+      "file": "monitor.java",
+      "thread": "control",
+      "compare": "expect",
+      "expect": "true"
+    },
+    {
+      "name": "same-load",
+      "file": "agrees.java",
+      "thread": "control",
+      "compare": "expect",
+      "expect": "true"
+    }
+  ]
+}

@@ -481,6 +481,7 @@ public final class PerfAgent {
                 } catch (Throwable ignored) { }
             }
             save(out.resolve("classes.properties"), classes);
+            save(out.resolve("mixins.properties"), mixins(inst));
             save(out.resolve("features.properties"), features(inst));
             if (request.getProperty("heap", "on").equals("on")) heapHistogram(out, status);
             Properties env = new Properties();
@@ -525,6 +526,38 @@ public final class PerfAgent {
     }
 
     /** Feature kind of each loaded non-game class, from its own superclass and interface chain; no class is loaded. */
+    /**
+     * Where each mixin handler merged into a game class comes from: Mixin marks every merged method @MixinMerged(mixin =
+     * "the.mixin.Class"), and the game class's loader finds that mixin's class file in its mod's jar. Key: game class and
+     * handler name ("net.minecraft.world.entity.Entity.handler$abc000$tick"); value: the jar's location, as in classes.properties.
+     */
+    private static Properties mixins(Instrumentation inst) {
+        Properties out = new Properties();
+        for (Class<?> cls : inst.getAllLoadedClasses()) {
+            String name = cls.getName();
+            if (!name.startsWith("net.minecraft.") && !name.startsWith("com.mojang.")) continue;
+            java.lang.reflect.Method[] methods;
+            try {
+                methods = cls.getDeclaredMethods();
+            } catch (Throwable unresolvable) {
+                continue;
+            }
+            for (java.lang.reflect.Method method : methods) {
+                if (method.getName().indexOf('$') < 0) continue;
+                try {
+                    for (java.lang.annotation.Annotation a : method.getDeclaredAnnotations()) {
+                        if (!a.annotationType().getName().endsWith(".MixinMerged")) continue;
+                        String mixin = String.valueOf(a.annotationType().getMethod("mixin").invoke(a));
+                        ClassLoader loader = cls.getClassLoader();
+                        java.net.URL file = loader == null ? null : loader.getResource(mixin.replace('.', '/') + ".class");
+                        if (file != null) out.setProperty(name + "." + method.getName(), file.toString());
+                    }
+                } catch (Throwable unreadable) { }
+            }
+        }
+        return out;
+    }
+
     private static Properties features(Instrumentation inst) {
         Properties kinds = new Properties();
         for (Class<?> cls : inst.getAllLoadedClasses()) {

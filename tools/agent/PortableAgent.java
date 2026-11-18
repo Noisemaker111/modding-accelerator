@@ -53,10 +53,13 @@ public final class PortableAgent {
                 try {
                     ClassReader reader = new ClassReader(bytes); final ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
                     final int[] hooks = {0};
+                    // The singleton getter by its run-time name: getInstance, or m_91087_ in a shipped Forge client
+                    // before 1.20.2 (SRG names), whose frame method is m_91383_.
+                    final String getter = singleton(reader, name);
                     reader.accept(new ClassVisitor(Opcodes.ASM9, writer) {
                         @Override public MethodVisitor visitMethod(int access, String method, String desc, String signature, String[] exceptions) {
                             MethodVisitor delegate = super.visitMethod(access, method, desc, signature, exceptions);
-                            if ((method.equals("render") || method.equals("runTick")) && desc.equals("(Z)V")) {
+                            if ((method.equals("render") || method.equals("runTick") || method.equals("m_91383_")) && desc.equals("(Z)V")) {
                                 hooks[0]++;
                                 return new MethodVisitor(Opcodes.ASM9, delegate) {
                                     @Override public void visitInsn(int opcode) {
@@ -68,7 +71,7 @@ public final class PortableAgent {
                                             // Not ALOAD 0: the shipped game's stack frames mark `this` dead before some
                                             // returns, and with no mixin recomputing them (a mod without Fabric API) the
                                             // verifier rejects the class. The singleton getter needs no local.
-                                            super.visitMethodInsn(Opcodes.INVOKESTATIC, name, "getInstance", "()L" + name + ";", false);
+                                            super.visitMethodInsn(Opcodes.INVOKESTATIC, name, getter, "()L" + name + ";", false);
                                             super.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/function/Consumer", "accept", "(Ljava/lang/Object;)V", true);
                                         }
                                         super.visitInsn(opcode);
@@ -84,12 +87,24 @@ public final class PortableAgent {
             }
         });
     }
+    /** The class's static no-argument method that returns its own type; getInstance when there is more than one. */
+    static String singleton(ClassReader reader, final String name) {
+        final List<String> found = new ArrayList<String>();
+        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override public MethodVisitor visitMethod(int access, String method, String desc, String signature, String[] exceptions) {
+                if ((access & Opcodes.ACC_STATIC) != 0 && desc.equals("()L" + name + ";")) found.add(method);
+                return null;
+            }
+        }, ClassReader.SKIP_CODE);
+        return found.isEmpty() || found.contains("getInstance") ? "getInstance" : found.get(0);
+    }
+
     public static void frame(Object game) {
         if (!started) {
             client = game; started = true;
             try {
                 pauseOptions = field(client, "options");
-                pauseField = pauseOptions.getClass().getField("pauseOnLostFocus");
+                pauseField = publicField(pauseOptions.getClass(), named("pauseOnLostFocus"));
                 originalPauseOnLostFocus = pauseField.getBoolean(pauseOptions);
                 pauseField.setBoolean(pauseOptions, false);
             } catch (Exception error) { pauseControlError = cause(error); System.err.println("MMT_PAUSE_CONTROL_ERROR " + pauseControlError); }
@@ -226,7 +241,7 @@ public final class PortableAgent {
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
                     "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
                     "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume(),
-                    "backgroundApplied", System.getProperty("mmt.background.applied", ""), "backgroundError", System.getProperty("mmt.background.error", ""), "frozen", System.getProperty("mmt.frozen", "")));
+                    "backgroundApplied", System.getProperty("mmt.background.applied", ""), "backgroundError", System.getProperty("mmt.background.error", ""), "frozen", System.getProperty("mmt.frozen", ""), "quietApplied", System.getProperty("mmt.quiet.applied", "")));
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
@@ -480,7 +495,7 @@ public final class PortableAgent {
     private static boolean inWorld() { return optionalField(client, "player") != null && worldLevel() != null; }
     private static String worldPath(Object server) throws Exception {
         Class<?> resource = load("net.minecraft.world.level.storage.LevelResource", "net.minecraft.util.WorldSavePath");
-        Object root = resource.getField("ROOT").get(null);
+        Object root = publicField(resource, named("ROOT")).get(null);
         Object path = invoke(server, new String[]{"getWorldPath", "getSavePath"}, root);
         return ((Path)path).toAbsolutePath().normalize().toString();
     }
@@ -511,6 +526,10 @@ public final class PortableAgent {
     private static String gameDirectory() {
         try { return ((java.io.File) field(client, "gameDirectory", "runDirectory")).getAbsolutePath(); } catch (Exception unknown) { return ""; }
     }
+    private static Field publicField(Class<?> type, String[] names) throws NoSuchFieldException {
+        for (String name : names) try { return type.getField(name); } catch (NoSuchFieldException next) { }
+        throw new NoSuchFieldException(type.getName() + " " + Arrays.toString(names));
+    }
     private static Object optionalField(Object owner, String name) { try { return field(owner, name); } catch (Exception ignored) { return null; } }
     private static Class<?> load(String... names) throws ClassNotFoundException {
         for (String name : names) try { return Class.forName(name, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}
@@ -536,14 +555,43 @@ public final class PortableAgent {
     private static boolean titleFading(Object title) {
         try { return Boolean.TRUE.equals(field(title, "fading")); } catch (Exception unknown) { return true; }
     }
-    private static Object field(Object owner, String... names) throws Exception {
+    /**
+     * The SRG names (shipped Forge before 1.20.2) of the Mojang-named members this agent reaches, from Forge's own
+     * 1.20.1 mappings (MCP config). SRG ids are unique across the game, so trying one on another class finds nothing.
+     */
+    static final Map<String, String[]> SRG = new HashMap<String, String[]>();
+    static {
+        String[] pairs = {
+            "options", "f_91066_", "gui", "f_91065_", "player", "f_91074_", "level", "f_91073_,f_19853_,m_9236_", "overlay", "f_91081_",
+            "mouseHandler", "f_91067_", "keyboardHandler", "f_91068_", "gameRenderer", "f_91063_", "gameDirectory", "f_91069_",
+            "screen", "f_91080_", "getWindow", "m_91268_,m_85439_", "getSingleplayerServer", "m_91092_", "stop", "m_91395_",
+            "getMainRenderTarget", "m_91385_", "createWorldOpenFlows", "m_231466_", "hideGui", "f_92062_", "narrator", "f_231803_",
+            "renderDebug", "f_92063_", "getX", "m_20185_,m_252754_", "getY", "m_20186_,m_252907_", "getZ", "m_20189_",
+            "dimension", "m_46472_", "overworld", "m_129783_", "visible", "f_93624_", "active", "f_93623_", "getMessage", "m_6035_",
+            "getWidth", "m_5711_,m_84982_", "getHeight", "m_93694_,m_85084_", "children", "m_6702_", "width", "f_96543_",
+            "height", "f_96544_", "fading", "f_96714_", "location", "m_135782_", "pauseOnLostFocus", "f_92126_",
+            "ROOT", "f_78182_", "getWorldPath", "m_129843_"
+        };
+        for (int i = 0; i < pairs.length; i += 2) SRG.put(pairs[i], pairs[i + 1].split(","));
+    }
+
+    /** The names given, then their SRG names. */
+    static String[] named(String... names) {
+        List<String> all = new ArrayList<String>(Arrays.asList(names));
+        for (String name : names) if (SRG.containsKey(name)) all.addAll(Arrays.asList(SRG.get(name)));
+        return all.toArray(new String[0]);
+    }
+
+    private static Object field(Object owner, String... given) throws Exception {
+        String[] names = named(given);
         for (String name : names) for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass()) try {
             Field field = type.getDeclaredField(name); field.setAccessible(true); return field.get(owner);
         } catch (NoSuchFieldException ignored) {}
         throw new NoSuchFieldException(owner.getClass().getName() + " " + Arrays.toString(names));
     }
     private static Object call(Object owner, String... names) throws Exception { return invoke(owner, names, new Object[0]); }
-    private static Object invoke(Object owner, String[] names, Object... arguments) throws Exception {
+    private static Object invoke(Object owner, String[] given, Object... arguments) throws Exception {
+        String[] names = named(given);
         Class<?> type = owner instanceof Class ? (Class<?>)owner : owner.getClass();
         for (String name : names) for (Method method : type.getMethods()) {
             if (!method.getName().equals(name) || method.getParameterTypes().length != arguments.length) continue;

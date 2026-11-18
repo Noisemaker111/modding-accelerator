@@ -28,7 +28,7 @@ public final class CheckoutDataTest {
     }
 
     /**
-     * Every experiment under bench/ names only files the checkout has; only its save is made once per machine. A file the
+     * Every experiment under bench/ names only files the checkout has; only its save and its modpack are made once per machine. A file the
      * repository ignores (Pipez's options.txt was) passes on the machine that made it and fails on every other. Nested
      * experiments count too: Diorama's is bench/diorama/play. Files copied out of the save are made by its prepare step.
      */
@@ -45,6 +45,8 @@ public final class CheckoutDataTest {
             for (Object item : Json.array(result.get("problems"))) {
                 String problem = item.toString();
                 if (problem.startsWith("worldSource ")) continue;
+                // A modpack is downloaded (and repaired) on each machine, never committed: bench/MOD/README.md says how.
+                if (problem.startsWith("pack.input ")) continue;
                 if (problem.startsWith("files: ") && file.getParent().resolve(problem.substring(7, problem.indexOf(" (for "))).normalize().startsWith(save)) continue;
                 problems.add(problem);
             }

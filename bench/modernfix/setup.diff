@@ -1,0 +1,75 @@
+commit ed0d870825ac4b2a0304a311b0ef8442983b5be5
+Author: mmt <mmt@localhost>
+Date:   Mon Nov 16 02:34:49 2026 -0800
+
+    Fixed version, no git reads at build time (mmt setup, shared by both arms)
+
+diff --git a/build.gradle b/build.gradle
+index 650ad0d1..22183fdc 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -37,31 +37,7 @@ tasks.withType(JavaCompile).configureEach {
+      */
+ }
+ 
+-tasks.register('generateChangelog', se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
+-    def details = versionDetails();
+-    def theVersionRef
+-    if (details.commitDistance > 0) {
+-        theVersionRef = details.lastTag;
+-    } else {
+-        def secondLastTagCmd = "git describe --abbrev=0 " + details.lastTag + "^"
+-        def secondLastTag = secondLastTagCmd.execute().text.trim()
+-        theVersionRef = secondLastTag;
+-    }
+-
+-    fromRef = theVersionRef
+-
+-    file = new File("${rootDir}/CHANGELOG.md");
+-    templateContent = new File("${rootDir}/gradle/changelog.mustache").getText('UTF-8').replace("[[modernFixVersionRef]]", theVersionRef);
+-    toCommit = "HEAD";
+-}
+-
+-tasks.register('checkCleanTag') {
+-    doLast {
+-        def details = versionDetails()
+-        if (!details.isCleanTag || versionDetails().commitDistance != 0) {
+-            throw new GradleException('Not a clean tree.')
+-        }
+-    }
+-}
++// mmt setup (shared by both arms): no changelog or clean-tag tasks; they read git, which JGit cannot open in a worktree.
++tasks.register('generateChangelog') {}
+ 
+ println "ModernFix: " + version
+diff --git a/buildSrc/src/main/groovy/modernfix.common-conventions.gradle b/buildSrc/src/main/groovy/modernfix.common-conventions.gradle
+index 7416970a..be390aa7 100644
+--- a/buildSrc/src/main/groovy/modernfix.common-conventions.gradle
++++ b/buildSrc/src/main/groovy/modernfix.common-conventions.gradle
+@@ -16,23 +16,9 @@ architectury {
+ }
+ 
+ group = 'org.embeddedt'
+-// extract base version from tag, generate other metadata ourselves
+-def details = versionDetails()
+-def plusIndex = details.lastTag.indexOf("+")
+-if(plusIndex == -1) {
+-    plusIndex = details.lastTag.length()
+-}
+-def baseVersion = details.lastTag.substring(0, plusIndex)
+-def dirtyMarker = grgit.status().clean ? "" : ".dirty"
+-def commitHashMarker = details.commitDistance > 0 ? ("." + details.gitHash.substring(0, Math.min(4, details.gitHash.length()))) : ""
+-def preMarker = (details.commitDistance > 0 || !details.isCleanTag) ? ("-beta." + details.commitDistance) : ""
+-if(preMarker.length() > 0) {
+-    // bump to next patch release
+-    def versionParts = baseVersion.tokenize(".")
+-    baseVersion = "${versionParts[0]}.${versionParts[1]}.${versionParts[2].toInteger() + 1}"
+-}
+-def versionString = "${baseVersion}${preMarker}+mc${minecraft_version}${commitHashMarker}${dirtyMarker}"
+-version = versionString
++// mmt setup (shared by both arms): perf-optimize builds in git worktrees, where JGit cannot read the repository;
++// the version All the Mods 9 ships, fixed.
++version = "5.24.4+mc${minecraft_version}"
+ archivesBaseName = rootProject.archives_base_name + '-' + project.name
+ 
+ sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17

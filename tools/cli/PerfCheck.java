@@ -61,6 +61,16 @@ final class PerfCheck {
                 problems.add("worldSource " + source + " is not a save folder with level.dat; make the world once and copy it there");
             }
         }
+        // "pack": the mod measured inside a modpack's client (pack-run), each arm's own build of the mod in place of the pack's.
+        if (experiment.get("pack") instanceof Map<?, ?> given) {
+            Map<String, Object> pack = Json.object(given);
+            if (!Files.exists(dir.resolve(Json.text(pack, "input", "")))) problems.add("pack.input " + pack.get("input") + " is no pack (an export, .mrpack or instance)");
+            if (Json.text(pack, "task", "").isBlank()) problems.add("pack.task names the build task that makes the mod's jar, such as :jar or :reobfJar");
+            if (Json.text(pack, "jar", "").isBlank()) problems.add("pack.jar is the glob, inside the checkout, of the jar that task makes");
+            for (Object item : Json.array(experiment.get("gates"))) if (Boolean.TRUE.equals(Json.object(item).get("frame"))) {
+                problems.add("gate " + Json.object(item).get("name") + ": frame gates are not available in a pack yet");
+            }
+        }
         Set<String> timed = probes(measure);
         List<Map<String, Object>> metrics = new ArrayList<>();
         metrics.add(Json.object(measure.get("metric")));

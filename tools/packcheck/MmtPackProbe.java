@@ -83,6 +83,14 @@ public final class MmtPackProbe {
                     Thread.sleep(fingerprint ? 2 : 250);
                     if (System.nanoTime() - since > TimeUnit.MINUTES.toNanos(60)) return;
                 }
+                if (mode.equals("crowd")) {
+                    // Stand-in players on a server left running (pack-run --server), in MmtCrowd when the jar has it.
+                    Class<?> crowd;
+                    try { crowd = Class.forName("mmt.packprobe.MmtCrowd"); }
+                    catch (ClassNotFoundException absent) { throw new IllegalStateException("This probe was built without stand-in players (MmtCrowd did not compile for this game version)"); }
+                    crowd.getMethod("run", MinecraftServer.class, JsonObject.class).invoke(null, server, result);
+                    return;
+                }
                 if (fingerprint) {
                     // The behaviour fingerprint (MmtFingerprint), run from this thread; it writes its own record.
                     result.addProperty("mode", mode);
@@ -285,7 +293,11 @@ public final class MmtPackProbe {
             } catch (ClassNotFoundException | LinkageError absent) { /* next */ }
         }
         // No loader fake player (a Fabric pack without Fabric API): a plain player that is never added to the world.
-        com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(UUID.fromString("41c82c87-7afb-4024-ba57-13d2c99cae77"), "[mmt]");
+        return player(level, new com.mojang.authlib.GameProfile(UUID.fromString("41c82c87-7afb-4024-ba57-13d2c99cae77"), "[mmt]"));
+    }
+
+    /** A new ServerPlayer with this profile, through whichever constructor this game version has. */
+    static ServerPlayer player(ServerLevel level, com.mojang.authlib.GameProfile profile) throws ReflectiveOperationException {
         for (java.lang.reflect.Constructor<?> constructor : ServerPlayer.class.getConstructors()) {
             Class<?>[] types = constructor.getParameterTypes();
             if (types.length == 3) return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile);
@@ -302,7 +314,7 @@ public final class MmtPackProbe {
             try { return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile, null); }
             catch (ReflectiveOperationException | RuntimeException refused) { /* the next constructor */ }
         }
-        throw new IllegalStateException("no way to make a player for placing blocks");
+        throw new IllegalStateException("no way to make a player");
     }
 
     static BlockPos origin(ServerLevel level) {

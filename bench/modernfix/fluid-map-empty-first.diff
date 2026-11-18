@@ -1,0 +1,57 @@
+diff --git a/common/src/main/resources/assets/modernfix/lang/en_us.json b/common/src/main/resources/assets/modernfix/lang/en_us.json
+index 918d98ed..aca859bd 100644
+--- a/common/src/main/resources/assets/modernfix/lang/en_us.json
++++ b/common/src/main/resources/assets/modernfix/lang/en_us.json
+@@ -133,6 +133,7 @@
+   "modernfix.option.mixin.bugfix.unsafe_modded_shape_caches": "Fixes various ConcurrentModificationExceptions that can occur in content mods when computing block shapes",
+   "modernfix.option.mixin.feature.stalled_chunk_load_detection": "This option may help to detect the cause of chunkloading freezes. However, leaving it enabled may cause slightly worse performance.",
+   "modernfix.option.mixin.perf.fix_loop_spin_waiting": "Fixes Minecraft's built-in wait function consuming excessive amounts of CPU resources.",
++  "modernfix.option.mixin.perf.fluid_pushing_alloc": "Stops every entity from allocating a map sized to every fluid type in the game each tick while Forge checks which fluids push it.",
+   "modernfix.option.mixin.perf.forge_cap_retrieval": "Small micro-optimization that makes retrieving custom entity data slightly more efficient on Forge.",
+   "modernfix.option.mixin.perf.forge_registry_lambda": "Fixes oversights in Forge that lead to excessive allocation in hot registry methods.",
+   "modernfix.option.mixin.bugfix.restore_old_dragon_movement": "Fixes MC-272431, which tracks the ender dragon being unable to dive to the portal as it did in 1.13 and older. This causes the dragon to fly quite a bit differently from what modern players are used to and also patches out one-cycling, so it's not enabled by default. Thanks to Jukitsu for identifying the regression in the vanilla code.",
+diff --git a/forge/src/main/java/org/embeddedt/modernfix/forge/mixin/perf/fluid_pushing_alloc/EntityMixin.java b/forge/src/main/java/org/embeddedt/modernfix/forge/mixin/perf/fluid_pushing_alloc/EntityMixin.java
+new file mode 100644
+index 00000000..431c9a47
+--- /dev/null
++++ b/forge/src/main/java/org/embeddedt/modernfix/forge/mixin/perf/fluid_pushing_alloc/EntityMixin.java
+@@ -0,0 +1,25 @@
++package org.embeddedt.modernfix.forge.mixin.perf.fluid_pushing_alloc;
++
++import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
++import net.minecraft.world.entity.Entity;
++import org.embeddedt.modernfix.forge.util.FluidPushingMaps;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Redirect;
++
++import java.util.function.Predicate;
++
++@Mixin(Entity.class)
++public class EntityMixin {
++    /**
++     * @author mmt
++     * @reason Forge sizes the per-call map of fluid types an entity touches to the number of registered fluid types,
++     * so every entity allocates two arrays that long every tick, though most touch no fluid and the rest one or two.
++     * An empty map shares fastutil's empty arrays and grows as fluids are found, keeping their insertion order.
++     */
++    @Redirect(method = "updateFluidHeightAndDoFluidPushing(Ljava/util/function/Predicate;)V",
++            at = @At(value = "NEW", target = "(I)Lit/unimi/dsi/fastutil/objects/Object2ObjectArrayMap;"), remap = false)
++    private Object2ObjectArrayMap<?, ?> mfix$emptyFluidMap(int capacity) {
++        return FluidPushingMaps.EMPTY_FIRST ? new Object2ObjectArrayMap<>() : new Object2ObjectArrayMap<>(capacity);
++    }
++}
+diff --git a/forge/src/main/java/org/embeddedt/modernfix/forge/util/FluidPushingMaps.java b/forge/src/main/java/org/embeddedt/modernfix/forge/util/FluidPushingMaps.java
+new file mode 100644
+index 00000000..bc55afb9
+--- /dev/null
++++ b/forge/src/main/java/org/embeddedt/modernfix/forge/util/FluidPushingMaps.java
+@@ -0,0 +1,8 @@
++package org.embeddedt.modernfix.forge.util;
++
++/** Switch for the fluid_pushing_alloc mixin: start each entity's map of touched fluid types empty instead of full size. */
++public final class FluidPushingMaps {
++    public static boolean EMPTY_FIRST = true;
++
++    private FluidPushingMaps() {}
++}

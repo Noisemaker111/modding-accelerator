@@ -1,0 +1,48 @@
+diff --git a/spark-common/src/main/java/me/lucko/spark/common/monitor/cpu/CpuMonitor.java b/spark-common/src/main/java/me/lucko/spark/common/monitor/cpu/CpuMonitor.java
+index b4ab831..aa795ad 100644
+--- a/spark-common/src/main/java/me/lucko/spark/common/monitor/cpu/CpuMonitor.java
++++ b/spark-common/src/main/java/me/lucko/spark/common/monitor/cpu/CpuMonitor.java
+@@ -116,9 +116,34 @@ public enum CpuMonitor {
+      * a negative value if not available.
+      */
+     public static double processLoad() {
+-        return BEAN.getProcessCpuLoad();
++        if (!FROM_CPU_TIME) {
++            return BEAN.getProcessCpuLoad();
++        }
++        // The CPU time the process used since the last reading over the time that passed, on every processor: what
++        // getProcessCpuLoad reports. On Windows that call queries a performance counter of every process on the machine
++        // (200 ms of CPU a call with a few hundred processes running); the process's own CPU time is a cheap system call.
++        long cpu = BEAN.getProcessCpuTime();
++        if (cpu < 0) {
++            return BEAN.getProcessCpuLoad();
++        }
++        synchronized (CpuMonitor.class) {
++            long now = System.nanoTime();
++            double load = -1;
++            if (lastCpuTime >= 0 && now > lastReading) {
++                load = Math.max(0, Math.min(1, (double) (cpu - lastCpuTime) / ((double) (now - lastReading) * PROCESSORS)));
++            }
++            lastCpuTime = cpu;
++            lastReading = now;
++            return load;
++        }
+     }
+ 
++    /** Process load from the process's CPU time instead of the platform's load counter. */
++    public static boolean FROM_CPU_TIME = true;
++    private static final int PROCESSORS = Runtime.getRuntime().availableProcessors();
++    private static long lastCpuTime = -1;
++    private static long lastReading;
++
+     public static double processLoad10SecAvg() {
+         return PROCESS_AVERAGE_10_SEC.mean();
+     }
+@@ -168,6 +193,7 @@ public enum CpuMonitor {
+     public interface OperatingSystemMXBean {
+         double getSystemCpuLoad();
+         double getProcessCpuLoad();
++        long getProcessCpuTime();
+     }
+ 
+ }

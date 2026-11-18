@@ -32,6 +32,17 @@ minutes; delete it when the cause is gone.
 - Fix: until it reads the project's own `gradle.properties`, set `"fingerprint": false` in the experiment. A client-only
   mod that changes no world state (a map) gains nothing from the gate anyway.
 
+## perf-optimize: an arm's build fails with "Failed in invoke method" while Gradle loads it
+- Cause: each arm is a `git worktree`, whose `.git` is a file. A build that reads its version from git with JGit
+  (palantir `versionDetails()`, `grgit.status()`; ModernFix) cannot open it. Builds that run the `git` command work.
+- Fix: in the one local commit both arms share, set the version the pack ships instead of reading git.
+
+## perf-optimize: an arm's jar has no mixin refmap ("No refMap loaded", "could not find any targets")
+- Cause: ForgeGradle and NeoGradle 6 builds write the refmap from javac's annotation processor, which is not a
+  declared output of compileJava; a compile restored from Gradle's build cache leaves it out (Lionfish API).
+- Fix: in the shared setup commit, `tasks.named('compileJava') { outputs.cacheIf { false } }`. perf-optimize now stops
+  at the build when a jar lacks a refmap its mixin config names.
+
 ## `gh: command not found` on Windows
 - Fix: `export PATH="/c/Program Files/GitHub CLI:$PATH"`.
 

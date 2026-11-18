@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "note": "Optimizations mmt perf-optimize accepted, as reusable patterns. symptom.when is a condition over a perf report's attribution row for one mod: every clause must hold, and a clause holds when the samples of the entries in `in` (methods, features or threads) whose name matches the regex `matches` are at least `minShare` of the mod's samples. mmt perf lists the patterns a capture's hotspots match. change is what was changed; gain is the measured speedup with its 95% interval for cold and warm captures; gate is the equivalence gate that proved the output unchanged; provenIn names the mod, version, loader, scope and the kept run in coverage/perf-runs.json. test holds two attribution rows: fires must match the symptom and quiet must not (self-test runs both).",
+ "note": "Optimizations mmt perf-optimize accepted, as reusable patterns. symptom.when is a condition over a perf report's attribution row for one mod: every clause must hold, and a clause holds when the samples of the entries in `in` (methods, features or threads) whose name matches the regex `matches` are at least `minShare` of the mod's samples, or, for `in: threadCpu`, when the operating system's CPU time of the mod's threads whose names match is at least `minMsPerSecond` (time in native code, which samples barely see). mmt perf lists the patterns a capture's hotspots match. change is what was changed; gain is the measured speedup with its 95% interval for cold and warm captures; gate is the equivalence gate that proved the output unchanged; provenIn names the mod, version, loader, scope and the kept run in coverage/perf-runs.json. test holds two attribution rows: fires must match the symptom and quiet must not (self-test runs both).",
  "patterns": [
   {
    "id": "carry-derived-data-to-replacement-snapshots",
@@ -983,6 +983,223 @@
       {
        "name": "m.Mesher.build(I)V",
        "samples": 99
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "process-load-from-cpu-time",
+   "symptom": {
+    "text": "A mod's monitoring or statistics thread uses tens of milliseconds of CPU a second with almost no execution samples: its time is in native code. On Windows, OperatingSystemMXBean.getProcessCpuLoad() (and a JFR or JMX reading of it) queries a performance counter of every process on the machine, about 200 ms of CPU a call with a few hundred processes running.",
+    "when": [
+     {
+      "in": "threadCpu",
+      "matches": "(?i)monitor|metric|stat",
+      "minMsPerSecond": 50
+     }
+    ]
+   },
+   "change": "Compute the process load from the process's CPU time: (getProcessCpuTime() now - at the last reading) / (nanoTime now - at the last reading) / availableProcessors, clamped to [0, 1], negative before a first reading, as getProcessCpuLoad() measures it since its last call. getProcessCpuTime() is one system call. Keep getProcessCpuLoad() when CPU time is unavailable (-1). Read the system load as before (cheap there).",
+   "gain": {
+    "scope": "spark-monitoring-thread CPU ms a second (operating system's thread CPU time), All the Mods 9 1.1.1 client at the title screen, Windows 11, both arms at once",
+    "cold": {
+     "geometricMean": 97.9,
+     "low": 63.55,
+     "high": 123.05,
+     "pairs": 3
+    },
+    "warm": {
+     "geometricMean": 117.07,
+     "low": 106.99,
+     "high": 126.0,
+     "pairs": 3
+    },
+    "note": "the candidate is floored at one 15.6 ms CPU clock tick over the 20 s window (about 0.8 ms a second): the ratios are a lower bound"
+   },
+   "gate": {
+    "name": "monitoring + same-load",
+    "compare": "expect",
+    "detail": "spark's monitor runs and reports a fraction of the machine; spark's own 10-second process load average is within 5 points of the process's CPU time over the same 10 s, read without any load counter, in every launch of both arms. Same game before: 20 shared one-second windows averaged 7.65% (CPU time) and 7.55% (getProcessCpuLoad)"
+   },
+   "provenIn": {
+    "mod": "spark",
+    "version": "1.10.53",
+    "loader": "forge",
+    "scope": "spark-monitoring-thread",
+    "record": "2026-11-16T09-51-22.409782400Z-eb67dc2f",
+    "patch": "bench/spark/process-load-from-cpu-time.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 11,
+     "percentOfSamples": 0.7,
+     "methods": [
+      {
+       "name": "m.Monitor.poll()V",
+       "samples": 3
+      }
+     ],
+     "threadCpu": [
+      {
+       "name": "m-monitoring-thread",
+       "msPerSecond": 142.5
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 11,
+     "percentOfSamples": 0.7,
+     "methods": [
+      {
+       "name": "m.Monitor.poll()V",
+       "samples": 3
+      }
+     ],
+     "threadCpu": [
+      {
+       "name": "m-monitoring-thread",
+       "msPerSecond": 0.8
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "size-per-call-maps-to-what-they-hold",
+   "symptom": {
+    "text": "Each entity's fluid pushing (or any per-entity, per-tick check) builds a map or array sized to a whole registry (Forge: new Object2ObjectArrayMap(FluidType.SIZE - 1), 759 fluid types in All the Mods 9, two 758-slot arrays a call) though a call holds a few entries: allocation in the millions of bytes a second that grows with the entity count, and young collections with it.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "(?i)\\.\\w*(FluidPushing|FluidHeight|updateInWaterState)\\w*\\(",
+      "minShare": 0.05
+     }
+    ]
+   },
+   "change": "Start the per-call map empty (Object2ObjectArrayMap() shares fastutil's empty arrays) and let it grow as entries arrive; an array map keeps insertion order, so iterating it afterwards visits the same entries in the same order. In a mod, redirect the NEW of the pre-sized map (here a ModernFix mixin on Forge's Entity.updateFluidHeightAndDoFluidPushing(Predicate)).",
+   "gain": {
+    "scope": "whole-game allocation bytes a second (estimatedAllocationBytesPerSecond), All the Mods 9 1.1.1 client with 300 cows penned beside the player, both arms at once",
+    "cold": {
+     "geometricMean": 1.64,
+     "low": 1.62,
+     "high": 1.67,
+     "pairs": 3
+    },
+    "warm": {
+     "geometricMean": 1.67,
+     "low": 1.62,
+     "high": 1.71,
+     "pairs": 3
+    },
+    "note": "217 to 132 MB/s cold; with the player alone in new land the same change was 0.97x (rejected, 2026-11-16T10-42-29.157326400Z-886caed6): it pays with entities"
+   },
+   "gate": {
+    "name": "fluid-pushing",
+    "compare": "exact",
+    "detail": "a fixed rig 300 high over the player (still water, a flowing slope, lava) built on the server thread; seven armor stands in it run the method once from rest; their water and lava heights and push vectors are the same text in every launch of both arms"
+   },
+   "provenIn": {
+    "mod": "modernfix",
+    "version": "5.24.4",
+    "loader": "forge",
+    "scope": "estimatedAllocationBytesPerSecond",
+    "record": "2026-11-16T11-34-14.350867800Z-bf11b30f",
+    "patch": "bench/modernfix/fluid-map-empty-first.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.MobEntity.updateFluidHeightAndDoFluidPushing(Ljava/util/function/Predicate;)V",
+       "samples": 20
+      },
+      {
+       "name": "m.MobEntity.tick()V",
+       "samples": 80
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.MobEntity.tick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "probe-each-block-once",
+   "symptom": {
+    "text": "A per-entity, per-tick check (a mixin on Entity.move, a living-tick handler) probes the blocks around the entity through a list of fractional offsets added to its block position: offsets that floor to the same block look it up again (Lionfish API's fluid standing: 12 offsets, 6 distinct blocks, a fluid lookup each), and the offset table and BlockPos objects are allocated every call. Cost grows with the mob count: 4.4 ms of each server tick with four players' farms in All the Mods 9.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "(?i)\\.\\w*(fluidCollision|standOnFluid|StandOnFluid|fluidStanding)\\w*\\(",
+      "minShare": 0.05
+     }
+    ]
+   },
+   "change": "Floor the offsets once by hand and keep the distinct block offsets, in the order the original first reaches them, in a static table; walk it with one MutableBlockPos and build any per-entity shape (the inflated bounding box) lazily, only when a block qualifies. A repeat of an already-visited block never wins a strict comparison, so the result is the same.",
+   "gain": {
+    "scope": "CPU of Lionfish API's Entity.move handler with it on the stack (cpuMsPerSecond), All the Mods 9 1.1.1 client with 900 cows penned beside the player, both arms at once",
+    "cold": {
+     "geometricMean": 2.66,
+     "low": 2.16,
+     "high": 3.29,
+     "pairs": 4
+    },
+    "warm": {
+     "geometricMean": 2.36,
+     "low": 1.91,
+     "high": 2.94,
+     "pairs": 4
+    },
+    "note": "9.65 to 3.68 ms/s cold; the mod's allocation 4.97x (cold) and 6.09x (warm) less; the whole integrated-server tick 0.98x (95% 0.95-1.01), within launch-to-launch spread. Pre-screen (perf-toggle, 1,008 armor stand spots, whole Entity.move): 1.20x (99% 1.05-1.37), same results"
+   },
+   "gate": {
+    "name": "fluid-standing",
+    "compare": "exact",
+    "detail": "a fixed rig 300 high over the player (a lava pool, still water, a flowing slope, stone) built on the server thread; armor stands at whole, half and odd spots over it, bare and in Cataclysm's Ignitium Boots (the one listener, which lets its wearer stand on lava), each moved down once through Entity.move; heights, ground flags and fall distances are the same text in every launch of both arms"
+   },
+   "provenIn": {
+    "mod": "lionfishapi",
+    "version": "2.7",
+    "loader": "forge",
+    "scope": "cpuMsPerSecond",
+    "record": "2026-11-16T18-36-39.784348200Z-bd57704f",
+    "patch": "bench/lionfish/distinct-blocks.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.mixin.EntityMixin.fluidCollision(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/Vec3;",
+       "samples": 30
+      },
+      {
+       "name": "m.MobEntity.tick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.MobEntity.tick()V",
+       "samples": 100
       }
      ]
     }

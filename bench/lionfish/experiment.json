@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "project": ":",
+  "pack": {
+    "input": "../../.runs/atm9/atm9-1.1.1-fixed.zip",
+    "without": "journeymap",
+    "task": ":reobfJar",
+    "jar": "build/libs/lionfishapi-*.jar",
+    "memory": "10G"
+  },
+  "world": "perf",
+  "worldSource": "../../.runs/atm9/perf-world",
+  "jit": "full",
+  "measure": {
+    "seconds": 30,
+    "warmup": 10,
+    "metric": {
+      "mod": "lionfishapi",
+      "method": "fluidCollision"
+    },
+    "scopes": [
+      {
+        "name": "lionfish-allocation",
+        "mod": "lionfishapi",
+        "statistic": "allocationBytesPerSecond"
+      },
+      {
+        "name": "tick-ms",
+        "report": "metrics.tick_ms.mean"
+      }
+    ]
+  },
+  "gates": [
+    {
+      "name": "fluid-standing",
+      "file": "standing.java",
+      "thread": "control",
+      "compare": "exact"
+    }
+  ],
+  "setup": [
+    {
+      "file": "farm.java",
+      "thread": "control",
+      "expect": "true"
+    }
+  ]
+}

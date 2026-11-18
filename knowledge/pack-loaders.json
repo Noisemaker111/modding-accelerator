@@ -39,6 +39,7 @@
       "versionPrefix": "{mc}-",
       "installer": "https://maven.minecraftforge.net/net/minecraftforge/forge/{mc}-{version}/forge-{mc}-{version}-installer.jar",
       "install": ["--installServer", "{dir}"],
+      "clientInstall": ["--installClient", "{dir}"],
       "metadata": [{ "file": "META-INF/mods.toml" }],
       "builtIn": ["forge", "javafml", "lowcodefml", "mixin"],
       "failed": ["Mod Loading has failed", "Failed to complete lifecycle event"],
@@ -52,6 +53,7 @@
       "versionPrefix": "{neoforge}.",
       "installer": "https://maven.neoforged.net/releases/net/neoforged/neoforge/{version}/neoforge-{version}-installer.jar",
       "install": ["--installServer", "{dir}"],
+      "clientInstall": ["--installClient", "{dir}"],
       "byMinecraft": {
         "1.20.1": {
           "about": "NeoForge for 1.20.1 is a Forge 47 fork published under Forge's coordinates.",

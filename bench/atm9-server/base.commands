@@ -1,0 +1,21 @@
+# A lived-in spot beside each stand-in player (mmt pack-run --players N --commands FILE): run once per player when
+# their land has loaded. {x} {y} {z} are the player's spot; "N* cmd" repeats with {n}, {n%K}, {n/K}.
+# Vanilla things only, so it works in any pack of 1.20.1 and later; what a pack's mods add on top of them (hooks on
+# every entity tick, mob AI, drops) is what gets measured.
+
+# An animal farm: a glass pen 24 x 24 east of the player, 200 animals.
+execute positioned {x} {y} {z} run fill ~8 ~-1 ~-12 ~31 ~3 ~11 minecraft:glass hollow
+50* execute positioned {x} {y} {z} positioned ~10 ~ ~-11 run summon minecraft:cow ~{n%20} ~ ~{n/20} {PersistenceRequired:1b}
+50* execute positioned {x} {y} {z} positioned ~10 ~ ~-6 run summon minecraft:sheep ~{n%20} ~ ~{n/20} {PersistenceRequired:1b}
+50* execute positioned {x} {y} {z} positioned ~10 ~ ~-1 run summon minecraft:pig ~{n%20} ~ ~{n/20} {PersistenceRequired:1b}
+50* execute positioned {x} {y} {z} positioned ~10 ~ ~4 run summon minecraft:chicken ~{n%20} ~ ~{n/20} {PersistenceRequired:1b}
+
+# A trading hall: a glass room west of the player with 30 villagers.
+execute positioned {x} {y} {z} run fill ~-24 ~-1 ~-8 ~-8 ~3 ~8 minecraft:glass hollow
+30* execute positioned {x} {y} {z} positioned ~-22 ~ ~-6 run summon minecraft:villager ~{n%10} ~ ~{n/10} {PersistenceRequired:1b}
+
+# Storage: a line of 32 hoppers north of the player feeding into a chest, with a stack moving through them.
+execute positioned {x} {y} {z} run fill ~-16 ~-1 ~-20 ~16 ~-1 ~-20 minecraft:glass
+execute positioned {x} {y} {z} run fill ~-16 ~ ~-20 ~15 ~ ~-20 minecraft:hopper[facing=east]
+execute positioned {x} {y} {z} run setblock ~16 ~ ~-20 minecraft:chest
+execute positioned {x} {y} {z} run item replace block ~-16 ~ ~-20 container.0 with minecraft:cobblestone 64

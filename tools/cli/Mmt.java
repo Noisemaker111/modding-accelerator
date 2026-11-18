@@ -163,7 +163,8 @@ public final class Mmt {
             "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
             "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick",
-            "jar", "ticks", "every", "namespaces", "radius", "a", "b"
+            "jar", "ticks", "every", "namespaces", "radius", "a", "b", "without", "dir", "mod",
+            "players", "moving", "speed", "spacing", "commands", "hours", "view-distance"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -262,6 +263,7 @@ public final class Mmt {
         "preferences",
         "legacy-agent",
         "pack-check",
+        "pack-run",
         "fingerprint",
         "fingerprint-diff",
         "help"
@@ -359,7 +361,37 @@ public final class Mmt {
                 );
                 System.exit(exit);
             }
+            if (options.command.equals("pack-run")) {
+                report = new Report(PackCheck.receipts(), options.command);
+                Map<String, Object> result = options.values.containsKey("players") ? PackServer.run(home, options, report) : PackClient.run(home, options, report);
+                exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.println(String.valueOf(result.getOrDefault("details", "")).strip() + "\nReceipt: " + output.get("receipt"));
+                System.exit(exit);
+            }
             Path root = Path.of(options.get("root", "."));
+            // A pack server pack-run started: game-status and game-stop.
+            if (PackServer.instance(root) && Set.of("game-status", "game-stop").contains(options.command)) {
+                report = new Report(PackCheck.receipts(), options.command);
+                Map<String, Object> result = PackServer.control(root, options.command);
+                exit = 0;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.println(String.valueOf(result.getOrDefault("details", "")).strip());
+                System.exit(exit);
+            }
+            // A pack client pack-run started: no Gradle build, only the commands that talk to the running game.
+            if (PackClient.instance(root) && Set.of("eval", "game-status", "game-stop").contains(options.command)) {
+                ProjectModel instance = new ProjectModel(root);
+                report = new Report(instance.root, options.command);
+                Map<String, Object> result = new Game(new Build(instance, home, report), Json.map()).run(options);
+                exit = 0;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.println(String.valueOf(result.getOrDefault("details", "")).strip());
+                System.exit(exit);
+            }
             if (
                 Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar")
             ) throw new IllegalArgumentException(
@@ -1021,6 +1053,19 @@ public final class Mmt {
             "compared, after the game's renames (knowledge/fingerprint-normalise.json, or --map). Prints each differing section and the first leaves.\n" +
             "--baseline B1.json,B2.json --candidate C1.json,C2.json decides perf-optimize's fingerprint gate on recorded launches: leaves the baselines\n" +
             "disagree on are left out and named, and every other leaf of each candidate must equal its paired baseline's.";
+            case "pack-run" -> "Start a modpack's game client the way a player's launcher does, and leave it running: mmt pack-run --pack PACK [--without MODID,MODID] [--mod JAR,JAR] [--world SAVE] [--memory 10G] [--dir FOLDER] [--json]\n" +
+                "PACK is anything pack-check reads. The loader's installer installs its client once; the game's libraries, natives and assets come from\n" +
+                "Mojang's version file; the pack's mods (every jar, as a launcher installs them) and configs go into an instance folder that keeps its saves.\n" +
+                "--without leaves out the jars providing those mod ids and every mod that requires them. --mod JAR starts that build of a mod (a\n" +
+                "candidate change) in place of the pack's jar with the same mod id. --world SAVE opens that save of the instance\n" +
+                "at start (quick play). The client is offline, with the official launcher's JVM options, hidden and muted as mmt preferences say.\n" +
+                "Then eval, game-status, perf-toggle and game-stop take --root INSTANCE, and perf --instance INSTANCE --allow-hidden profiles it.\n" +
+                "A pack with files its host no longer serves needs pack-check --fix first; start the fixed copy.\n" +
+                "--players N starts the pack's dedicated server instead, with N stand-in players joined (offline, creative, flying), each\n" +
+                "--spacing 512 blocks from spawn in their own direction; the first --moving M fly outwards at --speed 10 blocks/s loading new\n" +
+                "land, the rest stay. --commands FILE runs each line once per player when their land has loaded ({player} {i} {x} {y} {z}),\n" +
+                "to build what they would have built. Also --view-distance 10, --seed, --world SAVE (copied fresh each start), --hours 3\n" +
+                "(then it saves and stops). Profile it with perf --instance INSTANCE; game-status and game-stop take --root INSTANCE.";
             case "pack-check" -> "Check a modpack the way its players run it: mmt pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--focus MODID,MODID] [--fix] [--json]\n" +
             "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
             "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +
@@ -1054,6 +1099,7 @@ public final class Mmt {
             "  plugin-check           Paper/Bukkit plugin on a fake Paper server (MockBukkit), no real server\n" +
             "  server-check           plugin on a real Paper server with a bot player and a scenario\n" +
             "  pack-check             a modpack on its real Forge/NeoForge/Fabric/Quilt server: crashes, conflicts, worlds that will not reopen\n" +
+            "  pack-run               a modpack's game client, started as a launcher does and left running for eval and perf\n" +
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
             "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
