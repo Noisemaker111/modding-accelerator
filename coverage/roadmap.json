@@ -183,11 +183,11 @@
    "title": "Port a mod to any Minecraft version",
    "intro": "One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.",
    "headline": [
+    "port.real-mods-clear",
     "port.corpus-builds",
-    "port.mods-working",
-    "port.errors.zaa-neoforge-1.21.1-26.3"
+    "port.mods-working"
    ],
-   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors. mmt port-plan lists, before any port, every place a mod touches changed game code.",
+   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. For one big update (1.21.1 to 1.21.2), 58 of the 150 most-downloaded NeoForge mods use nothing the porter cannot carry over. 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.",
    "try": [
     {
      "say": "move to another Minecraft version; every edit can be undone",
@@ -401,28 +401,31 @@
      "id": "14",
      "title": "Yarn to the game's own names, whole tree",
      "part": "26.x, the unobfuscated game",
-     "status": "doing",
+     "status": "later",
      "text": "Convert a source tree from yarn to the game's own names (works for one version already; needs a full-tree pass).",
      "start": "2026-10-24",
-     "target": "2026-11-27"
+     "target": "2026-11-27",
+     "result": "Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18)."
     },
     {
      "id": "15",
      "title": "The build switches with the version (26.x)",
      "part": "26.x, the unobfuscated game",
-     "status": "doing",
+     "status": "later",
      "text": "Switch the build with the version: Loom 1.17, Gradle 9.5, Java 25, no mappings.",
      "start": "2026-10-24",
-     "target": "2026-11-20"
+     "target": "2026-11-20",
+     "result": "Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18)."
     },
     {
      "id": "16",
      "title": "Name what moved in 26.3",
      "part": "26.x, the unobfuscated game",
-     "status": "next",
+     "status": "later",
      "text": "Diff the old official names against the 26.3 jar to name what moved.",
      "start": "2026-11-20",
-     "target": "2026-12-04"
+     "target": "2026-12-04",
+     "result": "Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18)."
     },
     {
      "id": "17",
@@ -461,31 +464,53 @@
     },
     {
      "id": "44",
-     "title": "Resolve what a mod uses, then port in one typed pass",
+     "title": "The port worklist sees every mod and predicts the build",
      "part": "Port by changed game part",
      "status": "doing",
-     "text": "Compile the mod on its own version, record the game class, method, field, override and mixin target behind every site, join that with the step's change list, and apply every known change in one pass. Proves it wrong: under 70% of the errors left in the corpus ports that compile sit on a game part the change list names.",
+     "text": "mmt port-plan compiles a mod on its own version and lists every place it touches game code, with the exact game method or field, joined with what the target version did to it. It has to be true before it chooses any work: it reads NeoForge mods (a median of 109 changed game parts per port) but almost nothing in Fabric mods (a median of 5; betterf3 has 5,289 lines and 28 places), and 32 of the 126 corpus ports have no plan at all.",
      "start": "2026-11-17",
      "target": "2026-12-01",
-     "result": "Half done in PR #97: mmt port-plan records every place a mod touches game code on its own version (the compiler resolves each one) and joins it with the game's change map; over the corpus (44 mods, 94 ports) that is 101,819 places, 35% handled by the porter's automatic steps, 15% by a rule, 49% by nothing yet. The one-pass rewrite from that list is not built."
+     "result": "Half done in PR #97: the plan exists and covers 94 ports of 44 mods, 101,819 places, almost all of them in the 47 NeoForge ports. 3,208 changes in 887 game classes are handled by nothing. Checked against the cloud sweep on 2026-11-18, it does not predict builds yet (see the finish line).",
+     "finish": "No corpus port the worklist clears stops on compiler errors (8 of its 21 cleared ports do today; 7 build, 6 stop on a library or the build), and Fabric ports list changed game code at the rate NeoForge ports do",
+     "wrongIf": "with Fabric mods read, under 70% of the compiler errors left in the corpus sit at a place the worklist names"
+    },
+    {
+     "id": "47",
+     "title": "A rule names a game part and is applied only there",
+     "part": "Port by changed game part",
+     "status": "next",
+     "text": "A port rule is a pattern on the compiler's error text plus a find-and-replace on the file (355 of 358 rules), so it cannot tell LocalPlayer.sendSystemMessage, removed in 1.21.2, from ServerPlayer.sendSystemMessage, which stayed: both read .sendSystemMessage( in the text. The worklist already holds each place's start, end and resolved game member. A rule's members are applied at exactly those places, in one pass before the first compile, and a rule's test compiles its before on the old game and its after on the new one, in seconds. That makes one changed game part a unit of work that can be checked without porting a mod.",
+     "finish": "The 63 rules that name their game parts are applied at the places the compiler resolved (0 today), each with a test that compiles on both game versions",
+     "wrongIf": "the 16 corpus ports that build today no longer build with their rules applied this way",
+     "start": "2026-11-24",
+     "target": "2026-12-08",
+     "measures": [
+      "port.corpus-builds"
+     ]
     },
     {
      "id": "45",
      "title": "Generate the target build from the loader's starter project",
      "part": "Port by changed game part",
-     "status": "next",
+     "status": "later",
      "text": "The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version.",
      "start": "2026-11-24",
-     "target": "2026-12-08"
+     "target": "2026-12-08",
+     "result": "Tried on 2026-11-18 (PR #109, closed unmerged, branch generated-builds kept). 14 of the 16 building ports still build from a starter project, so it passed its own test, but over the whole corpus it freed none and lost 2: 14 of 125 build (cloud run 44382488417) against 16 of 126. 8 ports use Architectury, which rewrites the mod's code; 13 need a library with no release for the target version. Build scripts are not what holds the corpus back; steps 44 and 47 come first."
     },
     {
      "id": "46",
      "title": "One migration per redesigned game part, ranked by mods freed",
      "part": "Port by changed game part",
-     "status": "next",
-     "text": "What the game's own code cannot show (1.21.1 to 1.21.2: 378 redesigned parts, the most common used by 14 of 150 mods) gets one migration written from the game's API, ranked by how many mods it frees; a removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).",
+     "status": "later",
+     "text": "With steps 44 and 47 in, porting is one loop: python bench/exposure.py run ranks the changed game parts of an update by how many of the 150 most-downloaded mods use them; the top one gets a rule that names it, written from the game's own two versions; the same command shows the mods it freed. For 1.21.1 to 1.21.2 that is 637 changed parts, 313 of them used by one mod each: handled in the best order, 25 take the count from 58 to about 86 mods and 300 to about 109, so each part has to cost minutes, not a port run. A removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).",
      "start": "2026-11-24",
-     "target": "2026-12-22"
+     "target": "2026-12-22",
+     "finish": "100 of the 150 most-downloaded NeoForge mods have nothing left for 1.21.1 to 1.21.2 (58 today); then the same for the next update",
+     "wrongIf": "25 parts handled from the top of the list free fewer than 10 mods",
+     "measures": [
+      "port.real-mods-clear"
+     ]
     }
    ]
   },
@@ -757,6 +782,11 @@
    "question": "How does the porter scale to any mod and any version?",
    "choice": "Not by rules read from compiler error text (355 of 358 rules matched on it, 320 hand-written per version step and naming scheme; a day of them moved the corpus from 10 to 15 building ports of 125). Jon asked for a step-back on 2026-11-17; a blind second opinion and OpenRewrite's and Error Prone's own files agree: resolve the game member behind every site of the mod on its own version and apply every known change in one typed pass; generate the target build from the loader's own starter project instead of patching each build script; write each redesign once per changed game part, ranked by mods freed. PR #97 holds the numbers",
    "date": "2026-11-17"
+  },
+  {
+   "question": "What chooses the next piece of porting or converting work?",
+   "choice": "A list of what real mods use, and only after it has been checked against real builds (Jon asked on 2026-11-18 why progress was small and nothing was laid out). Three methods that day were each chosen from a list nobody had checked, and each missed: building ports from the loader's starter project freed 0 of 126 and lost 2 (PR #109); the port worklist cleared 21 ports of which 7 built, because it reads almost nothing in Fabric mods; three convert methods aimed at the 14 corpus mods that do not compile freed none of their three targets. The number to steer by is how many of the 150 most-downloaded mods have nothing left, read from their jars in a minute or two with no build (python bench/exposure.py run for porting, python bench/convert_coverage.py real for converting). The unit of work is one changed game part or one loader symbol, and the corpus sweep in the cloud is the proof at the end of a PR, never what chooses the work",
+   "date": "2026-11-18"
   }
  ]
 }

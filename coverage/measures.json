@@ -818,6 +818,18 @@
    "info": true
   },
   {
+   "id": "port.real-mods-clear",
+   "area": "port",
+   "name": "Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and counts the ones that use no game class, method or field the porter cannot carry to 1.21.2 (unchanged, renamed, moved, rewritten from the game's own code, or named by a rule). No mod is built; it takes about half a minute.",
+   "points": [
+    {"date": "2026-11-18", "value": 58, "n": 150, "note": "637 changed game parts hold the other 92; 313 of them are used by one mod each", "source": "python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/neoforge-1.21.1-1.21.2.json)"}
+   ],
+   "target": {"value": 100, "by": "2026-12-22", "step": "46"}
+  },
+  {
    "id": "port.corpus-builds",
    "area": "port",
    "name": "Corpus ports that build with no hand edits",
