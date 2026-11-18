@@ -89,7 +89,7 @@ def references(data):
 
 def mod_references(folder):
     """What every class file under folder (a mod's build/classes, or jars there) names of the loaders and the game."""
-    classes, members = set(), set()
+    classes, members, own = set(), set(), {}
     for f in Path(folder).rglob("*"):
         datas = []
         # Windows refuses paths over 260 characters unless they are given in their \\?\ form.
@@ -106,7 +106,30 @@ def mod_references(folder):
                 continue
             classes |= c
             members |= m
+            try:
+                name, supers, declared = class_header(data)
+                own[name] = (supers, set(declared))
+            except (ValueError, IndexError, KeyError, struct.error):
+                pass
     keep = lambda name: name.startswith(LOADER["fabric"] + LOADER["neoforge"] + GAME)
+
+    # A member the mod reaches through its own class (this.modLoc() in a subclass of NeoForge's BlockStateProvider) is
+    # the first loader or game class's up its supertypes that the mod does not declare it in.
+    def inherited(owner, name, seen):
+        if owner in seen or owner not in own:
+            return []
+        seen.add(owner)
+        supers, declared = own[owner]
+        if name in declared:
+            return []
+        # The superclass only: an interface's method would be the class's own declaration's.
+        if not supers:
+            return []
+        return [supers[0]] if keep(supers[0]) else inherited(supers[0], name, seen)
+    for o, n, k in list(members):
+        if o in own and n not in ("<init>", "<clinit>"):
+            for loader_class in inherited(o, n, set()):
+                members.add((loader_class, n, k))
     return {
         "classes": sorted(c for c in classes if keep(c)),
         "members": sorted(f"{o}#{n}:{k}" for o, n, k in members if keep(o)),
