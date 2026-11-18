@@ -26,10 +26,21 @@ the mod's own state asserted in a client (`--assert`, `--expect-value`), a plugi
 modpack's world made, filled and reopened on its own server, or a performance change measured against the unchanged mod
 with its output compared exactly.
 
-**Where this is going: nobody has to think about Minecraft versions or loaders.** You drop a mod in, pick the version
-and the loader you want, and get it back in minutes, checked in the game. That has to hold for any mod anyone makes,
-so nothing here is made for one mod: the porter learns each changed part of the game once, the converter each piece of
-a loader's API once, and every mod that uses it is covered. It is not there yet; the table says how far each part is.
+**Where this is going: nobody has to think about Minecraft versions or loaders.** You drop a mod's `.jar` in, from
+the command line or the desktop app, pick the version and the loader you want, and get a `.jar` back in minutes,
+checked in the game. That has to hold for any mod anyone makes, so nothing here is made for one mod: the porter learns
+each changed part of the game once, the converter each piece of a loader's API once, and every mod that uses it is
+covered. It is not there yet. What stands between today and that, in order (each is a step in [ROADMAP.md](ROADMAP.md)):
+
+1. **A `.jar` goes in and a `.jar` comes out** (step 50). Today `port` and `convert` change a mod's source folder; a
+   compiled mod is only read, to count what it uses and to run it in a modpack.
+2. **The list of work is true for every mod** (step 44). The porter's worklist reads NeoForge mods and almost nothing
+   in Fabric mods, and of the ports it called finished, a third built.
+3. **A fix names the part of the game it is for** (step 47). A port rule matches the compiler's error text today, so
+   it cannot tell two methods with the same name apart.
+4. **Then the two loops**: each changed game part once (step 46), each missing piece of a loader's API once (step 48),
+   steered by how many of the 150 most-downloaded mods need nothing more.
+5. **One front door** (step 49): a mod, a version and a loader, in the command line and the app.
 
 ## What it does
 
@@ -164,7 +175,8 @@ To build it, install Rust and run `cargo build --release` in `app/`; `mmt packag
 
 ## Limits
 
-- **Source only.** A compiled mod JAR can't be ported or converted; compiled mods are read only when a modpack is checked.
+- **Source only, for now.** A compiled mod JAR can't be ported or converted yet; compiled mods are read only when a
+  modpack is checked. Taking the JAR itself is where this is going (step 50 of the roadmap).
 - **Platforms.** Game checks are proven on Windows and partly on Linux, not on macOS. Forge, Quilt and Paper plugins
   are not ported or converted. Java 8/11 games are not measured by `perf`. Details per platform: [SCOPE.md](SCOPE.md).
 
