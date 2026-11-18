@@ -682,7 +682,7 @@
    "better": "higher",
    "explain": "python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 (python bench/exposure.py fetch) and counts the ones whose every NeoForge class and member, and every method NeoForge adds to a game class, is in the bridge or rewritten by a rule. No mod is built; it takes about two minutes. It predicts that a mod compiles after converting, not that it behaves the same.",
    "points": [
-    {"date": "2026-11-18", "value": 69, "n": 150, "note": "324 classes and members hold the other 81; the next 22 on the list would make it 101", "source": "python bench/convert_coverage.py real --loader neoforge --version 1.21.1"}
+    {"date": "2026-11-18", "value": 72, "n": 150, "note": "326 classes and members hold the other 78; the next 22 on the list would make it 101", "source": "python bench/convert_coverage.py real --loader neoforge --version 1.21.1"}
    ],
    "target": {"value": 100, "by": "2026-12-05", "step": "48"}
   },

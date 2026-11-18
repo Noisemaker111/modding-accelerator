@@ -84,6 +84,22 @@ check({"TRUE", "FALSE", "isTrue"} <= C.declared("public enum TriState {\n    TRU
       "an enum's constants are members it declares")
 check("TRUE" not in C.declared("class A {\n    void f() {\n        TRUE,\n    }\n}\n"), "a bare name in a class that is no enum is not a member")
 
+# An obfuscated release: supertypes come from the jar, names from the mappings, so a method a game class inherits from
+# a library is the game's and one nothing in the chain declares is the loader's.
+import io  # noqa: E402
+import zipfile  # noqa: E402
+jar = io.BytesIO()
+with zipfile.ZipFile(jar, "w") as z:
+    z.writestr("a.class", class_file("a", [("m", "b", "x", "()V")]))
+mappings = b"net.minecraft.util.EnumCodec -> a:\n    int size() -> c\nnet.minecraft.util.Base -> b:\n    void own() -> d\n"
+old_game = C.named_game(jar.getvalue(), mappings)
+check(list(old_game) == ["net/minecraft/util/EnumCodec"] and "size" in old_game["net/minecraft/util/EnumCodec"][1],
+      f"an obfuscated class is listed under Mojang's name with its members: {old_game}")
+old_game["net/minecraft/util/EnumCodec"][0] = ["com/mojang/serialization/Codec"]
+check(C.declared_by_game(old_game, "net/minecraft/util/EnumCodec", "fieldOf"), "a method inherited from a library supertype is not the loader's")
+old_game["net/minecraft/util/EnumCodec"][0] = ["java/lang/Object"]
+check(not C.declared_by_game(old_game, "net/minecraft/util/EnumCodec", "fieldOf"), "with no such supertype it is the loader's")
+
 # real: published jars are read like corpus mods; a mod that uses only what the bridge has is clear, and what the others
 # miss comes in the order that clears mods soonest.
 import tempfile  # noqa: E402

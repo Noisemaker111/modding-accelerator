@@ -363,11 +363,13 @@ def class_header(data):
 
 def vanilla(minecraft):
     """{class: [supertypes, member names]} of the game release, cached under .runs/loader-api. From 26.1 the client jar
-    is unobfuscated, so it is read as it is; an older release has only its member names (Mojang's client mappings),
-    without supertypes. None when the release cannot be read."""
+    is unobfuscated, so it is read as it is; an older release's classes are read from its obfuscated jar (their
+    supertypes) and named by Mojang's client mappings (which also give the member names). Without supertypes a method
+    a game class inherits from a library (EnumCodec.fieldOf, which is Codec's) read as one the loader added. None when
+    the release cannot be read."""
     # Mojang names a release 26.2, never 26.2.0.
     minecraft = re.sub(r"^(\d+\.\d+)\.0$", r"\1", minecraft)
-    cache = loader_api.CACHE / f"vanilla-{minecraft}.json"
+    cache = loader_api.CACHE / f"game-{minecraft}.json"
     if cache.is_file():
         return json.loads(cache.read_text(encoding="utf-8"))
     out = {}
@@ -380,14 +382,35 @@ def vanilla(minecraft):
                         name, supers, members = class_header(jar.read(e))
                         out[name] = [supers, sorted(members)]
         else:
-            _, _, data = loader_api.fetch(f"minecraft-{minecraft}", {"manifest": True, "version": minecraft, "mojangMappings": True})
-            for name, members in loader_api.index_mappings(data, {}).items():
-                out[name.replace(".", "/")] = [None, sorted(members)]
+            _, _, mappings = loader_api.fetch(f"minecraft-{minecraft}", {"manifest": True, "version": minecraft, "mojangMappings": True})
+            _, _, data = loader_api.fetch(f"minecraft-{minecraft}", {"manifest": True, "version": minecraft})
+            out = named_game(data, mappings)
     except Exception as e:  # noqa: BLE001 (an unreachable release reads as unknown, never as covered)
         print(f"no game index for {minecraft}: {e}", file=sys.stderr)
         return None
     loader_api.CACHE.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(out), encoding="utf-8")
+    return out
+
+
+def named_game(jar_bytes, mappings):
+    """{class: [supertypes, member names]} of an obfuscated release, in Mojang's names: the supertypes from the jar's
+    class files, the names from the mappings (a line "net.minecraft.Foo -> abc:" names class abc)."""
+    named = {}
+    for line in mappings.decode("utf-8").splitlines():
+        if line and not line.startswith((" ", "#")) and " -> " in line:
+            name, obfuscated = line.rstrip(":").split(" -> ")
+            named[obfuscated.strip().replace(".", "/")] = name.strip().replace(".", "/")
+    members = loader_api.index_mappings(mappings, {})
+    out = {}
+    with zipfile.ZipFile(io.BytesIO(jar_bytes)) as jar:
+        for e in jar.namelist():
+            if not e.endswith(".class"):
+                continue
+            obfuscated, supers, _ = class_header(jar.read(e))
+            name = named.get(obfuscated)
+            if name:
+                out[name] = [[named.get(s, s) for s in supers], sorted(members.get(name.replace("/", "."), ()))]
     return out
 
 
@@ -411,7 +434,8 @@ def declared_by_game(game, owner, name):
     if not seen or name in OBJECT_METHODS:
         return True
     # A supertype outside the game other than Java's base classes (a library, a JDK interface) may declare it.
-    outside = {s for c in seen for s in (game[c][0] or []) if s and not s.startswith(GAME)}
+    # Mojang's own libraries (com.mojang.serialization.Codec, Brigadier) are outside the game jar too.
+    outside = {s for c in seen for s in (game[c][0] or []) if s and s not in game}
     return bool(outside - {"java/lang/Object", "java/lang/Enum", "java/lang/Record"})
 
 
