@@ -2395,9 +2395,9 @@ final class Port {
                 : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null && covered.isEmpty()) continue;
             Object transform = Json.object(rule.get("apply")).get("transform");
-            if ("accessor".equals(transform) || "payload-bytes".equals(transform)) {
+            if ("accessor".equals(transform) || "payload-bytes".equals(transform) || "neo-config".equals(transform) || "neo-entry".equals(transform)) {
                 if (
-                    "accessor".equals(transform) ? applyAccessor(rule, errors) : applyPayloadBytes(rule, errors)
+                    "accessor".equals(transform) ? applyAccessor(rule, errors) : "payload-bytes".equals(transform) ? applyPayloadBytes(rule, errors) : "neo-config".equals(transform) ? applyNeoConfig(rule, errors) : applyNeoEntry(rule, errors)
                 ) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
                 continue;
             }
@@ -2707,6 +2707,352 @@ final class Port {
         return true;
     }
 
+    /** Runs a "neo-config" rule: a ModConfigSpec holder becomes plain Configuration-backed fields with a sync method. */
+    boolean applyNeoConfig(Map<String, Object> rule, String errors) throws Exception {
+        Pattern match = Pattern.compile(rule.get("match").toString());
+        boolean changed = false;
+        for (Path file : reportedLines(errors, match).keySet()) {
+            String original = Files.readString(file);
+            String text = neoConfigConvert(original);
+            if (!text.equals(original)) {
+                Files.writeString(file, deferImports(file, original, text));
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    /** The ModConfigSpec value kinds the converter keeps: double, int, bool, or define for the inferred kind. */
+    static String configKind(String type, String rest) {
+        if (type.equals("DoubleValue")) return "double";
+        if (type.equals("IntValue")) return "int";
+        if (type.equals("BooleanValue")) return "bool";
+        if (type.equals("ConfigValue") && rest.contains(".define(")) return defineKind(rest);
+        return "";
+    }
+
+    /** A define default's kind from its literal: boolean, integer, quoted string, or double. */
+    static String defineKind(String rest) {
+        Matcher def = Pattern.compile("\\.define\\(\"\\w+\", ([^)]+?)\\)").matcher(rest);
+        if (!def.find()) return "";
+        String literal = def.group(1).strip();
+        if (literal.equals("true") || literal.equals("false")) return "bool";
+        if (literal.matches("\\d+")) return "int";
+        if (literal.startsWith("\"") && literal.endsWith("\"")) return "string";
+        return "double";
+    }
+
+    /** The field assignment for one converted entry, with a float suffix where a float field needs one. */
+    static String configDefault(String kind, String def) {
+        if (kind.equals("double") && def.matches("\\d+\\.\\d+")) return def + "f";
+        return def;
+    }
+
+    /** The Configuration getter call that loads one entry, with its range only where defineInRange gave one. */
+    static String configLoad(String kind, String name, String key, String def, String range, String comment) {
+        String get = "config.get(Configuration.CATEGORY_GENERAL, \"" + key + "\", " + def + ", \"" + comment + "\"" + range + ")";
+        if (kind.equals("bool")) return name + " = " + get + ".getBoolean();";
+        if (kind.equals("int")) return name + " = " + get + ".getInt();";
+        if (kind.equals("string")) return name + " = " + get + ".getString();";
+        return name + " = (float) " + get + ".getDouble();";
+    }
+
+    /** One ModConfigSpec value line becomes a plain field, queuing its Configuration load; empty when unknown. */
+    static String configField(String type, String name, String rest, List<String> loads) {
+        String kind = configKind(type, rest);
+        if (kind.isEmpty()) return "";
+        Matcher range = Pattern.compile("\\.comment\\(\"((?:[^\"\\\\\\n]|\\\\.)*)\"\\)|\\.defineInRange\\(\"(\\w+)\", ([^,]+?), ([^,]+?), ([^)]+?)\\)|\\.define\\(\"(\\w+)\", ([^)]+?)\\)").matcher(rest);
+        String comment = "", key = "", def = "", min = "", max = "";
+        while (range.find()) {
+            if (range.group(1) != null) comment = range.group(1).replace("\\", "\\\\").replace("\"", "\\\"");
+            if (range.group(2) != null) {
+                key = range.group(2);
+                def = range.group(3).strip();
+                min = range.group(4).strip();
+                max = range.group(5).strip();
+            }
+            if (range.group(6) != null) {
+                key = range.group(6);
+                def = range.group(7).strip();
+            }
+        }
+        if (key.isEmpty()) return "";
+        boolean ranged = rest.contains(".defineInRange(");
+        if (ranged && min.isEmpty()) return "";
+        if (kind.equals("bool") && ranged) return "";
+        loads.add(configLoad(kind, name, key, def, ranged ? ", " + min + ", " + max : "", comment));
+        String field = kind.equals("double") ? "float" : kind.equals("int") ? "int" : kind.equals("bool") ? "boolean" : "String";
+        return "public static " + field + " " + name + " = " + configDefault(kind, def) + ";";
+    }
+
+    /** A ModConfigSpec holder with only understood entries becomes 1.7.10 Configuration fields plus sync; else unchanged. */
+    static String neoConfigConvert(String text) {
+        if (!text.contains("ModConfigSpec")) return text;
+        List<String> loads = new ArrayList<>();
+        StringBuffer fields = new StringBuffer();
+        Matcher decl = Pattern.compile("^(\\s*)public static final ModConfigSpec\\.(\\w+) (\\w+) = BUILDER(.*?\\)\\s*;)", Pattern.MULTILINE | Pattern.DOTALL).matcher(text);
+        while (decl.find()) {
+            String flat = decl.group(4).replaceAll("\\s+", " ");
+            String entry = configField(decl.group(2), decl.group(3), flat, loads);
+            if (entry.isEmpty()) return text;
+            decl.appendReplacement(fields, Matcher.quoteReplacement(decl.group(1) + entry));
+        }
+        decl.appendTail(fields);
+        String[] lines = fields.toString().split("\n", -1);
+        List<String> out = new ArrayList<>();
+        boolean spec = false;
+        for (String line : lines) {
+            if (line.matches("\\s*private static final ModConfigSpec\\.Builder BUILDER = .*")) continue;
+            if (line.contains("ModConfigSpec SPEC = BUILDER.build()")) {
+                String indent = line.substring(0, line.length() - line.stripLeading().length());
+                out.add(indent + "public static void sync(Configuration config) {");
+                for (String load : loads) out.add(indent + "    " + load);
+                out.add(indent + "    if (config.hasChanged()) config.save();");
+                out.add(indent + "}");
+                spec = true;
+                continue;
+            }
+            out.add(line);
+        }
+        if (!spec || loads.isEmpty()) return text;
+        String joined = String.join("\n", out);
+        joined = joined.replaceFirst("(?m)^import net\\.neoforged\\.neoforge\\.common\\.ModConfigSpec;\\n?", "");
+        return addImport(joined, "net.minecraftforge.common.config.Configuration");
+    }
+
+    /** The Forge event subscriber that replaces one convertible @Mixin method. */
+    static String subscriberMethod(String shape, String owner) {
+        if (shape.equals("fov")) {
+            return "    @SubscribeEvent\n" +
+                "    public void onFov(FOVUpdateEvent event) {\n" +
+                "        " + owner + ".frameUpdate();\n" +
+                "        Minecraft client = Minecraft.getMinecraft();\n" +
+                "        if (client.currentScreen != null) return;\n" +
+                "        double fov = event.fov;\n" +
+                "        double mul = " + owner + ".getCurrentFovMul();\n" +
+                "        if (mul != 1.0) event.newfov = (float) (fov * mul);\n" +
+                "    }\n";
+        }
+        if (shape.equals("overlay")) {
+            return "    @SubscribeEvent\n" +
+                "    public void onOverlay(RenderGameOverlayEvent.Post event) {\n" +
+                "        if (event.type != RenderGameOverlayEvent.ElementType.ALL) return;\n" +
+                "        " + owner + ".renderBars();\n" +
+                "    }\n";
+        }
+        return "    @SubscribeEvent\n" +
+            "    public void onMouse(MouseEvent event) {\n" +
+            "        if (event.dwheel == 0) return;\n" +
+            "        Minecraft mc = Minecraft.getMinecraft();\n" +
+            "        if (mc == null || mc.currentScreen != null) return;\n" +
+            "        if (" + owner + ".onWheel(event.dwheel)) event.setCanceled(true);\n" +
+            "    }\n";
+    }
+
+    /** The matching close for the bracket at open, skipping strings, chars and comments; -1 when unbalanced. */
+    static int matchForward(String text, int open) {
+        int depth = 0;
+        boolean line = false;
+        boolean block = false;
+        char quote = 0;
+        for (int i = open; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (line) {
+                if (c == '\n') line = false;
+                continue;
+            }
+            if (block) {
+                if (c == '*' && i + 1 < text.length() && text.charAt(i + 1) == '/') {
+                    block = false;
+                    i++;
+                }
+                continue;
+            }
+            if (quote != 0) {
+                if (c == '\\') i++;
+                else if (c == quote) quote = 0;
+                continue;
+            }
+            if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '/') {
+                line = true;
+                i++;
+                continue;
+            }
+            if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '*') {
+                block = true;
+                i++;
+                continue;
+            }
+            if (c == '"' || c == '\'') {
+                quote = c;
+                continue;
+            }
+            if (c == '(' || c == '{' || c == '[') depth++;
+            if (c == ')' || c == '}' || c == ']') {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
+    }
+
+    /** The [start, end) span of the single @Inject handler, or null when the shape is unfamiliar. */
+    static int[] injectSpan(String text) {
+        int at = text.indexOf("@Inject(");
+        if (at < 0 || at != text.lastIndexOf("@Inject(")) return null;
+        int line = text.lastIndexOf('\n', at) + 1;
+        int annotationEnd = matchForward(text, text.indexOf('(', at));
+        if (annotationEnd < 0) return null;
+        int start = text.indexOf("private void ", annotationEnd);
+        if (start < 0) return null;
+        int body = text.indexOf('{', start);
+        if (body < 0) return null;
+        int end = matchForward(text, body);
+        if (end < 0) return null;
+        int stop = end + 1 < text.length() && text.charAt(end + 1) == '\n' ? end + 2 : end + 1;
+        return new int[]{line, stop};
+    }
+
+    /** A convertible @Mixin file becomes a 1.7.10 Forge event subscriber; anything else returns unchanged. */
+    static String neoSubscriberConvert(String text) {
+        if (!text.contains("@Mixin(")) return text;
+        String shape = "";
+        if (text.contains("GameRenderer.class") && text.contains("getFov") && text.contains("CallbackInfoReturnable<Double>")) shape = "fov";
+        if (text.contains("Gui.class") && text.contains("GuiGraphics") && text.contains("renderBars(")) shape = "overlay";
+        if (text.contains("MouseHandler.class") && text.contains("onScroll") && text.contains("onWheel(")) shape = "scroll";
+        if (shape.isEmpty()) return text;
+        String call = shape.equals("fov") ? "frameUpdate" : shape.equals("overlay") ? "renderBars" : "onWheel";
+        Matcher manager = Pattern.compile("([\\w.]+)\\." + call + "\\(").matcher(text);
+        if (!manager.find()) return text;
+        int[] span = injectSpan(text);
+        if (span == null) return text;
+        String out = text.substring(0, span[0]) + subscriberMethod(shape, manager.group(1)) + text.substring(span[1]);
+        out = out.replaceFirst("(?m)^@Mixin\\(.*\\)\\n", "");
+        out = out.replaceAll("(?m)^\\s*@Shadow[^\\n]*\\n", "");
+        out = out.replaceAll("(?m)^import [\\w.]*spongepowered[\\w.]*;\\n?", "");
+        if (shape.equals("fov")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.renderer\\.GameRenderer;\\n?", "");
+        if (shape.equals("fov")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.Camera;\\n?", "");
+        if (shape.equals("overlay")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.gui\\.Gui;\\n?", "");
+        if (shape.equals("overlay")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.gui\\.GuiGraphics;\\n?", "");
+        if (shape.equals("overlay")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.DeltaTracker;\\n?", "");
+        if (shape.equals("scroll")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.MouseHandler;\\n?", "");
+        out = addImport(out, "cpw.mods.fml.common.eventhandler.SubscribeEvent");
+        if (shape.equals("fov")) out = addImport(out, "net.minecraftforge.client.event.FOVUpdateEvent");
+        if (shape.equals("overlay")) out = addImport(out, "net.minecraftforge.client.event.RenderGameOverlayEvent");
+        if (shape.equals("scroll")) out = addImport(out, "net.minecraftforge.client.event.MouseEvent");
+        if (shape.equals("scroll")) out = addImport(out, "net.minecraft.client.Minecraft");
+        return out;
+    }
+
+    /** The 1.7.10 form of a GuiGraphics bar overlay: ScaledResolution plus Gui.drawRect. */
+    static String barsModern(String text) {
+        Matcher m = Pattern.compile("(?s)public static void renderBars\\(GuiGraphics \\w+\\)\\s*\\{\\n(.*?)\\n    \\}").matcher(text);
+        if (!m.find()) return text;
+        if (!m.group(1).contains(".guiWidth()") || !m.group(1).contains(".fill(")) return text;
+        String modern = "    public static void renderBars() {\n" +
+            "        if (currentBarsPct <= 0.0001f) return;\n" +
+            "        Minecraft mc = Minecraft.getMinecraft();\n" +
+            "        ScaledResolution res = new ScaledResolution(mc);\n" +
+            "        int sw = res.getScaledWidth();\n" +
+            "        int sh = res.getScaledHeight();\n" +
+            "        int h = Math.round(sh * (currentBarsPct / 100f));\n" +
+            "        if (h <= 0) return;\n" +
+            "        Gui.drawRect(0, 0, sw, h, 0xFF000000);\n" +
+            "        Gui.drawRect(0, sh - h, sw, sh, 0xFF000000);\n" +
+            "    }\n";
+        String out = m.replaceFirst(Matcher.quoteReplacement(modern));
+        out = addImport(out, "net.minecraft.client.Minecraft");
+        out = addImport(out, "net.minecraft.client.gui.Gui");
+        out = addImport(out, "net.minecraft.client.gui.ScaledResolution");
+        return out;
+    }
+
+    /** The first project source whose text holds the needle, or null. */
+    Path findSource(String needle) throws Exception {
+        for (Path file : sources(build.project)) {
+            if (!file.toString().endsWith(".java") || !Files.isRegularFile(file)) continue;
+            if (Files.readString(file).contains(needle)) return file;
+        }
+        return null;
+    }
+
+    /** Runs a "neo-entry" rule: convertible @Mixin files become subscribers and the @Mod entry wires them. */
+    boolean applyNeoEntry(Map<String, Object> rule, String errors) throws Exception {
+        Pattern match = Pattern.compile(rule.get("match").toString());
+        boolean changed = false;
+        List<String> subscribers = new ArrayList<>();
+        String overlayOwner = "";
+        for (Path file : reportedLines(errors, match).keySet()) {
+            String original = Files.readString(file);
+            String text = neoSubscriberConvert(original);
+            if (text.equals(original)) continue;
+            Files.writeString(file, deferImports(file, original, text));
+            changed = true;
+            Matcher name = Pattern.compile("(?m)^package ([\\w.]+);[\\s\\S]*?public class (\\w+)").matcher(text);
+            if (name.find()) subscribers.add(name.group(1) + "." + name.group(2));
+            if (text.contains(".renderBars();")) {
+                Matcher owner = Pattern.compile("([\\w.]+)\\.renderBars\\(\\);").matcher(text);
+                if (owner.find()) overlayOwner = owner.group(1);
+            }
+        }
+        if (!overlayOwner.isEmpty()) {
+            Path manager = null;
+            String tail = overlayOwner.replace('.', '/') + ".java";
+            for (Path file : sources(build.project)) {
+                if (!file.toString().endsWith(".java") || !Files.isRegularFile(file)) continue;
+                if (file.toString().replace('\\', '/').endsWith("/" + tail)) {
+                    manager = file;
+                    break;
+                }
+            }
+            if (manager != null) {
+                String original = Files.readString(manager);
+                String text = barsModern(original);
+                if (!text.equals(original)) {
+                    Files.writeString(manager, deferImports(manager, original, text));
+                    changed = true;
+                }
+            }
+        }
+        Path mod = findSource("@Mod(");
+        if (mod != null && (!subscribers.isEmpty() || overlayOwner.isEmpty())) {
+            String original = Files.readString(mod);
+            String text = wireModEntry(original, mod, subscribers);
+            if (!text.equals(original)) {
+                Files.writeString(mod, deferImports(mod, original, text));
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    /** The @Mod entry gains subscriber registrations, its client handler, and a config factory it can see. */
+    String wireModEntry(String text, Path mod, List<String> subscribers) throws Exception {
+        Matcher cls = Pattern.compile("public class (\\w+)").matcher(text);
+        if (!cls.find()) return text;
+        String client = cls.group(1) + "Client";
+        String factory = "";
+        for (Path file : sources(build.project)) {
+            if (!file.toString().endsWith(".java") || !Files.isRegularFile(file) || file.equals(mod)) continue;
+            if (Files.readString(file).contains("implements IModGuiFactory")) {
+                Matcher name = Pattern.compile("(?m)^package ([\\w.]+);[\\s\\S]*?public class (\\w+)").matcher(Files.readString(file));
+                if (name.find()) factory = name.group(1) + "." + name.group(2);
+            }
+        }
+        Matcher pre = Pattern.compile("(public void preInit\\(FMLPreInitializationEvent \\w+\\)\\s*\\{\\n)").matcher(text);
+        if (!pre.find()) return text;
+        StringBuilder lines = new StringBuilder();
+        if (Files.isRegularFile(mod.getParent().resolve(client + ".java"))) lines.append("        new ").append(client).append("();\n");
+        for (String subscriber : subscribers) {
+            lines.append("        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new ").append(subscriber).append("());\n");
+        }
+        String out = pre.replaceFirst(Matcher.quoteReplacement(pre.group(1) + lines.toString()));
+        if (!factory.isEmpty() && !out.contains("guiFactory")) {
+            out = out.replaceFirst("@Mod\\(modid = ([^)]+?)\\)", "@Mod(modid = $1, guiFactory = \"" + factory + "\")");
+        }
+        return out;
+    }
+
     /** Each project file javac reported an error in whose block the pattern fits, with those lines and the symbol each error names. */
     Map<Path, Map<Integer, String>> reportedLines(String errors, Pattern match) {
         Map<Path, Map<Integer, String>> sites = new LinkedHashMap<>();
@@ -2738,6 +3084,9 @@ final class Port {
         String when = Json.text(rule, "when", "");
         if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return original;
         if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
+        // A rule's test for a loader-swap transform converts one file: the entry-point wiring has no single-file form.
+        else if ("neo-config".equals(apply.get("transform"))) text = neoConfigConvert(text);
+        else if ("neo-entry".equals(apply.get("transform"))) text = neoSubscriberConvert(text);
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(
             text,
