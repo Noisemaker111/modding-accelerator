@@ -715,7 +715,7 @@ final class Target {
             "            name = \"GTNH Maven\"",
             "            url = uri(\"https://nexus.gtnewhorizons.com/repository/public/\")",
             "            mavenContent {",
-            "                includeGroupByRegex(\"com\\.gtnewhorizons\\..+\")",
+            "                includeGroupByRegex(\"com\\\\.gtnewhorizons\\\\..+\")",
             "                includeGroup(\"com.gtnewhorizons\")",
             "            }",
             "        }",
