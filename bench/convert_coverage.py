@@ -251,8 +251,10 @@ def copied_classes(folders, bridge):
     coordinate = rules["published"][key]["coordinate"].split(":")[2]
     jars = sorted((ROOT / ".runs/loader-api").glob(f"*{coordinate}-sources.jar"))
     out = {}
+    import contextlib
     import zipfile
-    with zipfile.ZipFile(jars[0]) if jars else None as jar:
+    # Without NeoForge's sources jar (a fresh checkout) a listed class is taken to provide every member.
+    with (zipfile.ZipFile(jars[0]) if jars else contextlib.nullcontext()) as jar:
         for name in listed:
             try:
                 text = jar.read(name.replace(".", "/") + ".java").decode("utf-8", "replace") if jar else ""
