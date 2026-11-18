@@ -2,7 +2,7 @@
 <#
   install-mmt.ps1 - one call, no admin, no clone.
 
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://github.com/Noisemaker111/modding-accelerator/releases/latest/download/install-mmt.ps1 | iex"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest/download/install-mmt.ps1 | iex"
 
   It downloads the harness release zip (or a zip you point it at), extracts it to
   %LOCALAPPDATA%\mmt, writes the mmt.cmd shim into %LOCALAPPDATA%\mmt\bin, adds that
@@ -19,7 +19,7 @@
 param(
 	[Parameter(Position = 0)][string]$Zip = '',
 	[string]$Install = '',
-	[string]$Repo = 'Noisemaker111/modding-accelerator',
+	[string]$Repo = 'Noisemaker111/minecraft-modding-tools',
 	[switch]$NoPath
 )
 

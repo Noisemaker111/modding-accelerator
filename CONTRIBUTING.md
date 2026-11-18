@@ -13,8 +13,8 @@ Check, in this order, and only then ask:
 
 1. **The code.** `README.md` (what it does and the rules it follows), `SCOPE.md` (what works where), `AGENTS.md` (how
    to work here). Anything the maker has fixed is written there or in the code. Anything not written is your call.
-2. **[Issues](https://github.com/Noisemaker111/modding-accelerator/issues) and
-   [pull requests](https://github.com/Noisemaker111/modding-accelerator/pulls)**, open and closed. Someone may already
+2. **[Issues](https://github.com/Noisemaker111/minecraft-modding-tools/issues) and
+   [pull requests](https://github.com/Noisemaker111/minecraft-modding-tools/pulls)**, open and closed. Someone may already
    have the plan, the answer, or the same change in flight. Plans live there, not in docs.
 
 ## How much freedom you have
@@ -43,6 +43,36 @@ Do whatever the licences and terms of service allow, and nothing past them.
 - **Contributions are under this repo's MIT licence.**
 - **When unsure, don't commit it.** Derive it at run time, or open an issue.
 
+## How the work runs
+
+The plan is the roadmap: `coverage/roadmap.json`, shown as `ROADMAP.md` and on the website. There is no other plan.
+In November 2026 the method for porting, converting and pack speed was each worked out mid-session and kept only in
+chat and in draft PRs that stayed open for days, so `main` went on teaching the method that had just been replaced
+and every new session started from it. These four steps keep that from happening.
+
+1. **Pick a roadmap step.** Take the goal's `doing` step, or its first `next`. Work that has no step gets one first,
+   in the same PR. A step names its finish line before the work starts: one number, the value that ends the step,
+   and the result that would prove the method wrong.
+2. **Follow the goal's workflow.** Each kind of work has one written workflow, and it is the current method:
+
+   | Work | Workflow | Whole-goal number |
+   |---|---|---|
+   | Try mmt on a new mod or plugin | `.claude/skills/bench-new-mod` | commands that pass on it, before/after loop time |
+   | Port between game versions | `.claude/skills/port-a-mod` | corpus ports that build, load and behave, no hand edits |
+   | Convert between loaders | `.claude/skills/convert-a-mod` | corpus mods that compile, load and behave like the original |
+   | Modpacks | `tools/packcheck/CONTRIBUTING.md` | packs that pass as shipped, and with repairs |
+   | Make a mod faster | `.claude/skills/optimize-a-mod` | accepted speedups with exact gates, patterns saved |
+
+3. **Find the method before the first fix.** List the whole job from a source that names all of it (the game's
+   change list between two versions, a loader's published API, a pack-wide profile), rank it by how many mods each
+   item frees, and fix a whole kind at once from the game's and loaders' own files. The third hand fix of the same
+   kind means stop and find what produces them. A day of one-error-at-a-time port rules moved the corpus from 10 to
+   15 of 125 ports; the ranked list that replaced it covers 101,819 places in 44 mods at once.
+4. **Land it at the finish line.** One step is one PR. When the number reaches the finish line and is proven, merge.
+   The same PR marks the step done in `coverage/roadmap.json`, records the number, names the next step, and updates
+   the workflow if the method changed, so `main` always holds the current method. A PR open for more than a few days
+   had its finish line too far away: land what is proven and make the rest the next step.
+
 ## What every change is for: compounding tooling
 
 Whatever mod you work on, the real product is making the *next* mod better, even a totally different kind of mod.
@@ -58,10 +88,9 @@ only helps the mod it was made on is a partial result: say so, and say what woul
 
 ## Making a change
 
-- **One goal, one PR, however long the work takes.** A session spent making one mod faster, or moving porting
-  forward, ends in one PR, not a string of PRs along the way. Open it as a draft when you start, push every step to
-  it, and mark it ready when the goal is met and proven. Open a second PR only for a separate goal someone could
-  merge or reject on its own. A tool you built along the way belongs in the same PR as the work that needed it.
+- **One roadmap step, one PR.** Not a string of PRs along the way, and not one PR that never ends. Open it as a
+  draft once there is a real result, push every commit of that step to it, and merge when its finish line is met
+  and proven. A tool you built along the way belongs in the same PR as the work that needed it.
 - **Title it like a line in the release notes, because it becomes one.** Say what a user can now do, in plain words,
   under about 50 characters: "Diorama builds maps 2-3x faster", "Convert more Fabric mods to NeoForge".
   - No round or batch numbers.
@@ -69,7 +98,9 @@ only helps the mod it was made on is a partial result: say so, and say what woul
   - No tool or class names ("bridge mirrors", "store gate", "yarn").
 
   Numbers and details go in the description.
-- Use the PR template, including its **Carries over** line: what the next mod gets for free from your work.
+- Use the PR template. It keeps the latest state only (step, approach, number now); a description that grows a new
+  "update" section each day is a log nobody can steer by. Its **Carries over** line says what the next mod gets for
+  free from your work.
 - Prove it the way a user would see it, at the smallest real scope. `AGENTS.md` has the commands. A change that can't
   be run in the game says so plainly instead of claiming it works.
 - Keep tests few and meaningful: each proves something users depend on and fails on a wrong answer.

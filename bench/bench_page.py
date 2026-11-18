@@ -366,7 +366,7 @@ def roadmap_md(book):
     out = ["# Roadmap", "",
            "> Generated from [`coverage/roadmap.json`](coverage/roadmap.json) and [`coverage/measures.json`](coverage/measures.json) by",
            "> `python bench/bench_page.py --roadmap`. Edit those two files, not this one. The same roadmap with its timeline, charts and",
-           "> porting map: **<https://noisemaker111.github.io/modding-accelerator/>**", "",
+           "> porting map: **<https://noisemaker111.github.io/minecraft-modding-tools/>**", "",
            f"**The goal:** {r['goal']}", "",
            f"**{sum(s['status'] == 'done' for s in steps)} of {len(steps)} steps done.** A step is {MARK['done']} only when it ran and was checked; the others are "
            f"{MARK['doing']}, {MARK['next']} or {MARK['later']}, each with a target date. Targets were set on {M.day(r['targetsSet'])}, and one that moves keeps its old date.", "",
@@ -501,7 +501,7 @@ TEMPLATE = r"""<!doctype html>
 <main id="top">
 <header class="top">
   <a class="brand" href="#top"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>mmt</a>
-  <nav>{NAV}<a href="https://github.com/Noisemaker111/modding-accelerator">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
+  <nav>{NAV}<a href="https://github.com/Noisemaker111/minecraft-modding-tools">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
 </header>
 
 <section class="hero">
@@ -509,7 +509,7 @@ TEMPLATE = r"""<!doctype html>
     <p class="eyebrow">Minecraft Modding Tools · beta {VERSION}</p>
     <h1><span>Test a Minecraft mod in seconds.</span> <span>Port it to any version.</span></h1>
     <p class="lede">One command for mod, plugin and modpack work. It runs your checks in the real game without you opening it, moves your source between Minecraft versions, and finds what breaks a modpack.</p>
-    <div class="cta"><a class="btn primary" href="https://github.com/Noisemaker111/modding-accelerator/releases/latest">Download the beta</a><a class="btn" href="https://github.com/Noisemaker111/modding-accelerator#quick-start">Quick start</a></div>
+    <div class="cta"><a class="btn primary" href="https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest">Download the beta</a><a class="btn" href="https://github.com/Noisemaker111/minecraft-modding-tools#quick-start">Quick start</a></div>
     <p class="small">Needs Java 17 or newer. Windows, Linux and macOS. Fabric, NeoForge, Forge and Paper.</p>
   </div>
   <pre class="term" aria-label="Example commands"><code>{TERMINAL}</code></pre>
@@ -545,7 +545,7 @@ TEMPLATE = r"""<!doctype html>
 </tbody></table>
 {EVIDENCE}
 
-<p class="foot">Made by <span class="mono">bench/bench_page.py</span> from <span class="mono">coverage/roadmap.json</span>, <span class="mono">coverage/measures.json</span>, <span class="mono">coverage/ledger.json</span>, <span class="mono">coverage/changes/index.json</span>, <span class="mono">bench/port/results.json</span> and <span class="mono">bench/mods/results.json</span>. The same roadmap as text: <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/ROADMAP.md">ROADMAP.md</a>.</p>
+<p class="foot">Made by <span class="mono">bench/bench_page.py</span> from <span class="mono">coverage/roadmap.json</span>, <span class="mono">coverage/measures.json</span>, <span class="mono">coverage/ledger.json</span>, <span class="mono">coverage/changes/index.json</span>, <span class="mono">bench/port/results.json</span> and <span class="mono">bench/mods/results.json</span>. The same roadmap as text: <a href="https://github.com/Noisemaker111/minecraft-modding-tools/blob/main/ROADMAP.md">ROADMAP.md</a>.</p>
 </main>
 <script>
 /*THEME*/
