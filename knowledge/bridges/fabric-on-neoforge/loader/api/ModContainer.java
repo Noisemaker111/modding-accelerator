@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import ${package}.loader.api.metadata.ModMetadata;
+import ${package}.loader.api.metadata.ModOrigin;
 
 /**
  * Fabric Loader's net.fabricmc.loader.api.ModContainer for a mod NeoForge loaded: its metadata from neoforge.mods.toml,
@@ -61,6 +62,42 @@ public final class ModContainer {
             if (Files.exists(path)) return Optional.of(path);
         }
         return Optional.empty();
+    }
+
+    /** NeoForge does not say which mod a jar-in-jar mod came in: none here. */
+    public Optional<ModContainer> getContainingMod() {
+        return Optional.empty();
+    }
+
+    public java.util.Collection<ModContainer> getContainedMods() {
+        return List.of();
+    }
+
+    /** The mod's own file (its jar, or its folders in development). */
+    public ModOrigin getOrigin() {
+        var file = container.getModInfo().getOwningFile();
+        List<Path> paths = file == null ? List.of() : List.of(file.getFile().getFilePath());
+        return new ModOrigin() {
+            @Override
+            public Kind getKind() {
+                return paths.isEmpty() ? Kind.UNKNOWN : Kind.PATH;
+            }
+
+            @Override
+            public List<Path> getPaths() {
+                return paths;
+            }
+
+            @Override
+            public String getParentModId() {
+                throw new UnsupportedOperationException("not a nested mod");
+            }
+
+            @Override
+            public String getParentSubLocation() {
+                throw new UnsupportedOperationException("not a nested mod");
+            }
+        };
     }
 
     public Path getPath(String file) {

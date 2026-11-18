@@ -37,7 +37,7 @@ final class MixinCheck {
         "net.fabricmc.loader.launch.knot.KnotClient",
         "net.fabricmc.loader.launch.knot.KnotServer"
     );
-    static final String NEO_MAIN = "cpw.mods.bootstraplauncher.BootstrapLauncher", FML_STARTUP = "net.neoforged.fml.startup.";
+    static final String NEO_MAIN = "cpw.mods.bootstraplauncher.BootstrapLauncher", FML_STARTUP = "net.neoforged.fml.startup.", DEV_LAUNCH = "net.neoforged.devlaunch.Main";
     static final int TIMEOUT_SECONDS = 600;
 
     final Build build;
@@ -536,6 +536,16 @@ final class MixinCheck {
         List<String> arguments = new ArrayList<>(
             Arrays.asList(command).subList(Math.min(1, command.length), command.length)
         );
+        String main = command.length == 0 ? "" : command[0];
+        // ModDevGradle 2 starts NeoForge through its devlaunch.Main, whose @file names the real main class first.
+        if (main.equals(DEV_LAUNCH) && !arguments.isEmpty() && arguments.get(0).startsWith("@")) {
+            List<String> real = argumentFile(Path.of(arguments.get(0).substring(1)));
+            real.addAll(arguments.subList(1, arguments.size()));
+            if (!real.isEmpty()) {
+                main = real.remove(0);
+                arguments = real;
+            }
+        }
         Map<String, Object> environment = Files.isRegularFile(launchFile)
             ? Json.object(Json.read(launchFile).get("environment"))
             : Map.of();
@@ -547,7 +557,7 @@ final class MixinCheck {
             "classPath",
             Json.text(jvm, "classPath", ""),
             "main",
-            command.length == 0 ? "" : command[0],
+            main,
             "arguments",
             arguments,
             "directory",

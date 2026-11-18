@@ -77,4 +77,16 @@ finally:
     C.run_one = real
 check(failed == ["bad"], f"a raising run is reported as failed: {failed}")
 
+import tempfile  # noqa: E402
+
+with tempfile.TemporaryDirectory() as tmp:
+    gradle = 'dependencies {\n    implementation "a:b:1"\n    runtimeOnly "mekanism:Mekanism:1"\n    localRuntime("x:y:2")\n}\n'
+    (Path(tmp) / "build.gradle").write_text(gradle, encoding="utf-8")
+    left = C.without_runtime_mods(tmp)
+    text = (Path(tmp) / "build.gradle").read_text(encoding="utf-8")
+    check(len(left) == 2 and '\n    implementation "a:b:1"' in text and "\n    runtimeOnly" not in text and "\n    localRuntime(" not in text,
+          f"the original's runtime-only mods are left out for the behaviour check, its own dependencies kept: {text}")
+    C.restore_runtime_mods(tmp, left)
+    check((Path(tmp) / "build.gradle").read_text(encoding="utf-8") == gradle, "and put back as they were")
+
 print(f"{checks} sweep checks passed")

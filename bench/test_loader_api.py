@@ -113,4 +113,31 @@ for key in {L.split(s)[0] for syms in want.values() for s in syms}:
     pinned = rules["published"][key]
     check(len(art.get("sha256", "")) == 64 and (pinned.get("manifest") or art.get("coordinate") == pinned["coordinate"]), f"{key} was read at the pinned release, with its SHA-256")
 check(not (L.OUT / "sources.json").exists(), "no list of other people's mods is read for loader rules")
+
+# ---- generated bridge mirrors (bench/bridge_mirror.py) ----------------------------------------------
+
+import subprocess  # noqa: E402
+import tempfile  # noqa: E402
+import bridge_mirror as M  # noqa: E402
+
+check(M.unglued(rules) == [], "every generated bridge mirror has its events posted and no Fabric internals left: python bench/bridge_mirror.py --unglued")
+with tempfile.TemporaryDirectory() as tmp:
+    tmp = Path(tmp)
+    (tmp / "known.txt").write_text("net.fabricmc.fabric.api.event.Event\nnet.fabricmc.fabric.api.event.EventFactory", encoding="utf-8")
+    (tmp / "Ticks.java").write_text(
+        "/* licence */\npackage net.fabricmc.fabric.api.demo.v1;\n\nimport net.fabricmc.fabric.api.event.Event;\nimport net.fabricmc.fabric.api.event.EventFactory;\n"
+        "import net.fabricmc.fabric.impl.demo.TicksImpl;\nimport net.fabricmc.fabric.api.other.v1.Other;\n\npublic final class Ticks {\n"
+        "\tpublic static final Event<Tick> TICK = EventFactory.createArrayBacked(Tick.class, cs -> (a, b) -> { for (Tick c : cs) c.tick(a, b); });\n"
+        "\tpublic static int count() { return TicksImpl.count(); }\n\tpublic static int twice(int n) { return n * 2; }\n"
+        "\t@FunctionalInterface public interface Tick { void tick(String a, int b); }\n}\n", encoding="utf-8")
+    run = subprocess.run(["java", str(M.SKELETON), str(tmp / "Ticks.java"), str(tmp / "out.java"), str(tmp / "known.txt")], capture_output=True, text=True)
+    check(run.returncode == 0, "the mirror skeleton generator runs: " + run.stderr[-2000:])
+    report, out = json.loads(run.stdout), (tmp / "out.java").read_text(encoding="utf-8")
+    check(out.startswith("package ${package}.fabric.api.demo.v1;") and "licence" not in out and "import ${package}.fabric.api.event.Event;" in out, "a mirror keeps Fabric's package and imports under ${package}, without the licence header")
+    check("TicksImpl" not in out.split("// STUBBED")[-1].split("\n", 1)[1] and "return n * 2;" in out and "createArrayBacked(Tick.class" in out, "a body using Fabric's internals is stubbed; public-API bodies and event fields stay as they are:\n" + out)
+    check(report["needs"] == ["net.fabricmc.fabric.api.other.v1.Other"] and report["stubbed"] == ["net.fabricmc.fabric.api.demo.v1.Ticks#count"], "the report names the classes still to mirror and the stubs: " + run.stdout)
+    check("// UNGLUED: Ticks.TICK Event<Tick>" in out and report["callbacks"] == {"net.fabricmc.fabric.api.demo.v1.Ticks$Tick": 2}, "each event is marked UNGLUED and its callback's arity is known for the test stub")
+    check("net.fabricmc.fabric.api.demo.v1.Ticks$Tick#tick" in report["symbols"] and "net.fabricmc.fabric.api.demo.v1.Ticks#TICK" in report["symbols"], "every public member goes to the symbols loader_api verify checks")
+    stub = M.test_stub("net.fabricmc.fabric.api.demo.v1.Ticks", report)
+    check("Ticks.TICK.register((a0, a1) -> { });" in stub["from"] and "import demo.fabricbridge.fabric.api.demo.v1.Ticks;" in stub["to"], "the before/after test registers on every event, on Fabric and on the bridge")
 print(f"{checks} loader rule checks passed")

@@ -2,6 +2,7 @@ package ${package};
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -10,7 +11,8 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * NeoForge's net.neoforged.neoforge.event.entity.player.PlayerEvent and the player events this bridge posts from
  * Fabric's: logged in and out (ServerPlayConnectionEvents JOIN and DISCONNECT), respawn and clone (ServerPlayerEvents
- * AFTER_RESPAWN and COPY_FROM) and dimension change (the server's player level change event).
+ * AFTER_RESPAWN and COPY_FROM), dimension change (the server's player level change event) and the start and stop of
+ * tracking an entity (EntityTrackingEvents, after the entity's spawn packet as NeoForge's).
  */
 public abstract class PlayerEvent extends LivingEvent {
 
@@ -127,6 +129,34 @@ public abstract class PlayerEvent extends LivingEvent {
 
         public void setCanHarvest(boolean success) {
             this.success = success;
+        }
+    }
+
+    public static class StartTracking extends PlayerEvent {
+
+        private final Entity target;
+
+        public StartTracking(Player player, Entity target) {
+            super(player);
+            this.target = target;
+        }
+
+        public Entity getTarget() {
+            return target;
+        }
+    }
+
+    public static class StopTracking extends PlayerEvent {
+
+        private final Entity target;
+
+        public StopTracking(Player player, Entity target) {
+            super(player);
+            this.target = target;
+        }
+
+        public Entity getTarget() {
+            return target;
         }
     }
 }

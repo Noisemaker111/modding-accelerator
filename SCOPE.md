@@ -32,7 +32,7 @@ Windows and partly on Linux, not on macOS.
 |---|---|---|---|
 | Ports proven in the game, no hand edits | 3 mods, 7 routes | All pass their own in-game check | `coverage/ledger.json` |
 | Port sweep | 46 mods, 126 routes | 9 build, 7 load, 1 passes its behaviour check | `bench/sweep/results/after2.json` |
-| Convert sweep | 35 mods | 28 not refused, 5 compile, 5 match the original's behaviour in the game, 5 convert back | `coverage/sweeps/convert.json` |
+| Convert sweep | 35 mods | 28 not refused, 14 compile and load in the game, 10 behave the same as the original (fingerprint), 9 convert back | `coverage/sweeps/convert.json` |
 | Pack sweep | 24 packs, 1.16.5 to 26.3 | 21 pass as shipped, 24 with repairs | `coverage/sweeps/pack.json` |
 | Accepted speedups, exact gates | 4 mods | Cyclic 15.7×, Simple Storage Network 5–6×, Diorama 1.6–2.2×, Pipez 1.2–1.3× | `coverage/perf-runs.json` |
 

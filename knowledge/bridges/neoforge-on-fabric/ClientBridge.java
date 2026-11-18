@@ -18,6 +18,10 @@ public final class ClientBridge {
         Bus.INSTANCE.post(new RegisterClientPayloadHandlersEvent());
         for (var handler : PayloadRegistrar.CLIENT_HANDLERS.entrySet()) receive(handler.getKey(), handler.getValue());
         PayloadRegistrar.CLIENT_HANDLERS.clear();
+        Bus.INSTANCE.post(new RegisterParticleProvidersEvent());
+        RegisterClientTooltipComponentFactoriesEvent tooltips = new RegisterClientTooltipComponentFactoriesEvent();
+        Bus.INSTANCE.post(tooltips);
+        tooltips.hook();
         Bus.INSTANCE.post(new FMLClientSetupEvent(Bridge.container(modid)));
     }
 
@@ -31,7 +35,12 @@ public final class ClientBridge {
         if (hooked) return;
         hooked = true;
         ClientGameEvents.hook();
+        LevelStages.hook();
         ClientTickEvents.START_CLIENT_TICK.register(client -> Bus.INSTANCE.post(new ClientTickEvent.Pre()));
         ClientTickEvents.END_CLIENT_TICK.register(client -> Bus.INSTANCE.post(new ClientTickEvent.Post()));
+        // NeoForge's BlockEntity.onLoad on the client too (only with the bridge's BlockEntityHooksMixin).
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientBlockEntityEvents.BLOCK_ENTITY_LOAD.register((blockEntity, level) -> {
+            if (blockEntity instanceof ${package}.extensions.BlockEntityHooks hooks) hooks.onLoad();
+        });
     }
 }

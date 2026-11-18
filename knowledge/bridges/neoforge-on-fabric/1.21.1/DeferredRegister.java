@@ -37,6 +37,17 @@ public class DeferredRegister<T> {
     final Map<DeferredHolder<T, ? extends T>, Function<ResourceLocation, ? extends T>> entries = new LinkedHashMap<>();
     boolean registered;
 
+    /**
+     * NeoForge's addAlias: worlds saved with the old id load as the new one. Fabric's registries keep no aliases, so the
+     * alias is only recorded (ALIASES); an old id in a world reads as missing, as on Fabric.
+     */
+    public void addAlias(net.minecraft.resources.ResourceLocation from, net.minecraft.resources.ResourceLocation to) {
+        ALIASES.put(from, to);
+    }
+
+    /** The aliases mods asked for (addAlias), old id to new. */
+    public static final java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.resources.ResourceLocation> ALIASES = new java.util.concurrent.ConcurrentHashMap<>();
+
     public static <T> DeferredRegister<T> create(Registry<T> registry, String namespace) {
         return new DeferredRegister<>(registry.key(), namespace);
     }
