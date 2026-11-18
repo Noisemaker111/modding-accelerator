@@ -89,7 +89,7 @@ def references(data):
 
 def mod_references(folder):
     """What every class file under folder (a mod's build/classes, or jars there) names of the loaders and the game."""
-    classes, members = set(), set()
+    classes, members, own = set(), set(), {}
     for f in Path(folder).rglob("*"):
         datas = []
         # Windows refuses paths over 260 characters unless they are given in their \\?\ form.
@@ -106,7 +106,40 @@ def mod_references(folder):
                 continue
             classes |= c
             members |= m
+            try:
+                name, supers, declared = class_header(data)
+                own[name] = (supers, set(declared))
+            except (ValueError, IndexError, KeyError, struct.error):
+                pass
     keep = lambda name: name.startswith(LOADER["fabric"] + LOADER["neoforge"] + GAME)
+
+    # A member the mod reaches through its own class (this.modLoc() in a subclass of NeoForge's BlockStateProvider) is
+    # the first loader or game class's up its supertypes that the mod does not declare it in.
+    def declared_by_mod(owner, name, seen):
+        # Anywhere in the mod's own types above owner, its interfaces included (IFramedBlock's default getCamoDrops).
+        if owner in seen or owner not in own:
+            return False
+        seen.add(owner)
+        supers, declared = own[owner]
+        return name in declared or any(declared_by_mod(s, name, seen) for s in supers)
+
+    def inherited(owner, name, seen):
+        if owner in seen or owner not in own:
+            return []
+        seen.add(owner)
+        supers, declared = own[owner]
+        if not seen - {owner} and declared_by_mod(owner, name, set()):
+            return []
+        if name in declared:
+            return []
+        # The superclass only: an interface's method would be the class's own declaration's.
+        if not supers:
+            return []
+        return [supers[0]] if keep(supers[0]) else inherited(supers[0], name, seen)
+    for o, n, k in list(members):
+        if o in own and n not in ("<init>", "<clinit>"):
+            for loader_class in inherited(o, n, set()):
+                members.add((loader_class, n, k))
     return {
         "classes": sorted(c for c in classes if keep(c)),
         "members": sorted(f"{o}#{n}:{k}" for o, n, k in members if keep(o)),
@@ -164,8 +197,17 @@ def bridge_provides(rules, frm, minecraft):
                 out.setdefault(cls, set()).update(DECLARED.findall(text))
                 header = re.search(r"\b(?:class|interface|record|enum)\s+\w+[^{]*\{", text)
                 supers.setdefault(cls, set()).update(re.findall(r"\b([A-Z]\w*)\b", re.sub(r"<[^{]*?>", "", header.group(0)).split(" ", 2)[-1]) if header else [])
+        # NeoForge's own classes convert copies when they compile on Fabric (neoforge-sources.txt, bench/bridge_import.py),
+        # with the members they declare there and their supertypes.
+        if frm == "neoforge":
+            for cls, members in copied_classes(folders, b).items():
+                out.setdefault(cls, set()).update(members)
+                supers.setdefault(cls, set()).update(COPY_SUPERS.get(cls, set()))
         # A member declared by another bridge class it extends or implements (DeferredItem's get is DeferredHolder's).
         by_simple = {c.rsplit("/", 1)[-1].split("$")[-1]: c for c in out}
+        BRIDGE_SUPERS.clear()
+        for cls in out:
+            BRIDGE_SUPERS[cls] = {x for x in supers.get(cls, ()) if x not in by_simple}
         for cls in out:
             if supers.get(cls, set()) & JDK:
                 out[cls].add("*")
@@ -187,6 +229,75 @@ def bridge_provides(rules, frm, minecraft):
                         out[cls + nested[len(main):]] = out[nested]
         return out
     return None
+
+
+def copied_classes(folders, bridge):
+    """{class (slash form): member names} of NeoForge's classes convert copies for this bridge version: the listed ones
+    (the layer's neoforge-sources.txt, else the bridge's), each with what its source declares less what does not compile."""
+    lists = [f / "neoforge-sources.txt" for f in reversed(folders) if (f / "neoforge-sources.txt").is_file()]
+    if not lists:
+        return {}
+    listed, dropped = [], defaultdict(set)
+    for line in lists[0].read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        name, _, member = line.strip().partition(" ")
+        if member:
+            dropped[name].add(member.split("#", 1)[-1].split("(")[0])
+        else:
+            listed.append(name)
+    rules = json.loads((ROOT / "knowledge/loaders.json").read_text(encoding="utf-8"))
+    key = next((l.get("sources") for l in bridge.get("layers", []) if ROOT / l["folder"] == lists[0].parent and l.get("sources")), bridge.get("sources"))
+    coordinate = rules["published"][key]["coordinate"].split(":")[2]
+    jars = sorted((ROOT / ".runs/loader-api").glob(f"*{coordinate}-sources.jar"))
+    out = {}
+    import contextlib
+    import zipfile
+    # Without NeoForge's sources jar (a fresh checkout) a listed class is taken to provide every member.
+    with (zipfile.ZipFile(jars[0]) if jars else contextlib.nullcontext()) as jar:
+        for name in listed:
+            try:
+                text = jar.read(name.replace(".", "/") + ".java").decode("utf-8", "replace") if jar else ""
+            except KeyError:
+                text = ""
+            out[name.replace(".", "/")] = (set(DECLARED.findall(text)) or {"*"}) - dropped.get(name, set())
+            header = re.search(r"\b(?:class|interface|record|enum)\s+\w+[^{]*\{", text)
+            COPY_SUPERS[name.replace(".", "/")] = set(re.findall(r"\b([A-Z]\w*)\b", re.sub(r"<[^{]*?>", "", header.group(0)).split(" ", 2)[-1])) if header else set()
+    return out
+
+
+COPY_SUPERS = {}
+BRIDGE_SUPERS = {}
+
+
+def by_package(result, blocked):
+    """For each package (and each top-level package family) of what the blocked mods miss, the mods that would miss
+    nothing if all of it were there."""
+    missing = defaultdict(set)
+    for x in result["missing"]:
+        for mod in x["mods"]:
+            if mod in blocked:
+                missing[mod].add(package_of(x["symbol"]))
+    rows = []
+    for level in (lambda p: p, lambda p: ".".join(p.split(".")[:4]) if not p.startswith("game") else p):
+        groups = defaultdict(set)
+        for mod, packages in missing.items():
+            for p in packages:
+                groups[level(p)].add(mod)
+        for group, mods in groups.items():
+            freed = sorted(m for m in mods if {level(p) for p in missing[m]} == {group})
+            rows.append((group, sorted(mods), freed))
+    measured = {r["mod"] for r in result["mods"]}
+    clean = sorted(m for m in blocked & measured if not missing.get(m))
+    return {"nothing missing already": clean, "missing": {m: sorted(p) for m, p in sorted(missing.items())},
+            "groups": sorted({r[0]: r for r in rows}.values(), key=lambda r: (-len(r[2]), -len(r[1]), r[0]))}
+
+
+def package_of(symbol):
+    if "(added by" in symbol:
+        return "game classes: methods the loader adds"
+    owner = symbol.split("#")[0].split("$")[0]
+    return owner.rsplit(".", 1)[0]
 
 
 def rule_provides(rules, frm):
@@ -265,7 +376,8 @@ def vanilla(minecraft):
 
 def declared_by_game(game, owner, name):
     """Whether the game declares name on owner or a supertype (with no supertypes known, on any game class)."""
-    if game is None:
+    # Object's and Enum's own methods (EquipmentSlot.ordinal), and names with a $ (a mod's own mixin methods, framedblocks$getCache).
+    if game is None or name in OBJECT_METHODS or "$" in name:
         return True
     seen, todo = set(), [owner]
     while todo:
@@ -329,6 +441,7 @@ def coverage(refs, rules, corpus, sweep=None):
         frm = mod["loader"]
         bridge = bridge_provides(rules, frm, r.get("minecraft", ""))
         prefixes = LOADER[frm]
+        game_index = vanilla(r.get("minecraft", "")) if r.get("minecraft") else None
         used = [c for c in r["classes"] if c.startswith(prefixes)]
         missing = []
         for c in used:
@@ -348,7 +461,10 @@ def coverage(refs, rules, corpus, sweep=None):
                 continue
             declared = (bridge or {}).get(owner)
             if declared is not None and declared and "*" not in declared and name not in declared and name not in ("<init>", "<clinit>", "values", "valueOf"):
-                missing.append(f"{owner}#{name}")
+                # A bridge class that extends a game class (ExtendedButton extends Button) has the game class's members.
+                game_supers = [g for g in (game_index or {}) if g.rsplit("/", 1)[-1] in BRIDGE_SUPERS.get(owner, ())]
+                if not any(declared_by_game(game_index, g, name) for g in game_supers):
+                    missing.append(f"{owner}#{name}")
         # Methods the loader adds to game classes: called on a game class that does not declare them.
         game = vanilla(r.get("minecraft", "")) if r.get("minecraft") else None
         added = extension_names(rules, frm, r.get("minecraft", "")) if game is not None else set()
@@ -378,6 +494,7 @@ def main(argv=None):
     p.add_argument("--out")
     p.add_argument("--json", action="store_true")
     p.add_argument("--top", type=int, default=30)
+    p.add_argument("--blocked", help="comma-separated mod ids: rank what they miss by package, and the mods each package frees")
     a = p.parse_args(argv)
     if a.command == "refs":
         out = mod_references(a.folder)
@@ -403,6 +520,17 @@ def main(argv=None):
     sweep_file = ROOT / "coverage" / "sweeps" / "convert.json"
     sweep = json.loads(sweep_file.read_text(encoding="utf-8")) if sweep_file.is_file() else None
     result = coverage(refs, loader_api.load_rules(), json.loads(CORPUS.read_text(encoding="utf-8")), sweep)
+    if a.blocked:
+        blocked = set(a.blocked.split(","))
+        ranked = by_package(result, blocked)
+        if a.json:
+            print(json.dumps(ranked, indent=1))
+            return 0
+        print(f"no references (original not built): {', '.join(sorted(blocked - set(refs['mods'])))}")
+        print(f"nothing missing already: {', '.join(ranked['nothing missing already'])}")
+        for group, mods, freed in ranked["groups"][:a.top]:
+            print(f"  frees {len(freed)}  missed by {len(mods):2}  {group}  freed: {', '.join(freed)}")
+        return 0
     if a.json:
         print(json.dumps(result, indent=1))
         return 0

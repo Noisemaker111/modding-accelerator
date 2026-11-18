@@ -987,6 +987,7 @@ final class Convert {
         if (yarnNames()) yarnToMojang(minecraft);
         Set<String> unbridged = unbridge();
         if (Versions.compare(minecraft, ONLY_IN_ERROR) >= 0) dropSideOnly();
+        setAsideTestMods("fabric");
         rewriteSources("fabric", "neoforge");
         convertDataConditions(false);
         convertDataIngredients(false);
@@ -2881,7 +2882,7 @@ final class Convert {
         neoforgeParametersOutOfMixins();
         if (bridgeUsed) applyBridge();
         if (bridgeUsed) setAsideDatagen();
-        setAsideTestMods();
+        setAsideTestMods("neoforge");
         lambdaMixinTargets(minecraft);
         enumExtensionLookups();
         superHookCalls();
@@ -3251,18 +3252,22 @@ final class Convert {
     }
 
     /**
-     * A test source set that is a NeoForge test mod (an @Mod class of its own, which NeoForge loads beside the mod in a
-     * development game) is not converted: Loom builds no second mod from it. Its sources move out of the build to
-     * src/neoforge-SET/java, so the mod itself compiles, and the test mod is listed as left.
+     * A test source set that is a test mod of the loader the mod comes from (a NeoForge @Mod class, or a Fabric mod
+     * initializer, which the loader starts beside the mod in a development game) is not converted: the other loader's
+     * build makes no second mod of it. Its sources move out of the build to src/LOADER-SET/java, so the mod itself
+     * compiles, and the test mod is listed as left.
      */
-    void setAsideTestMods() throws Exception {
+    void setAsideTestMods(String loader) throws Exception {
+        Pattern entry = loader.equals("neoforge")
+            ? Pattern.compile("(?m)^@Mod\\(")
+            : Pattern.compile("\\bimplements\\s+[^{]*\\b(?:Client|DedicatedServer)?ModInitializer\\b");
         Map<String, List<String>> sets = new TreeMap<>();
         for (String f : testJavaFiles()) sets.computeIfAbsent(f.substring(0, f.indexOf("/java/") + "/java/".length()), k -> new ArrayList<>()).add(f);
         for (var set : sets.entrySet()) {
             String mod = null;
-            for (String f : set.getValue()) if (mod == null && Pattern.compile("(?m)^@Mod\\(").matcher(read(f)).find()) mod = f;
+            for (String f : set.getValue()) if (mod == null && entry.matcher(read(f)).find()) mod = f;
             if (mod == null) continue;
-            String aside = set.getKey().replaceFirst("^src/", "src/neoforge-");
+            String aside = set.getKey().replaceFirst("^src/", "src/" + loader + "-");
             for (String f : set.getValue()) {
                 write(aside + f.substring(set.getKey().length()), read(f));
                 delete(f);
@@ -3270,8 +3275,8 @@ final class Convert {
             leave(
                 mod,
                 0,
-                "NeoForge test mod in " + set.getKey(),
-                "its " + set.getValue().size() + " source file(s) are kept in " + aside + " outside the build: Fabric's build makes no second mod of a test source set"
+                (loader.equals("neoforge") ? "NeoForge" : "Fabric") + " test mod in " + set.getKey(),
+                "its " + set.getValue().size() + " source file(s) are kept in " + aside + " outside the build: the other loader's build makes no second mod of a test source set"
             );
         }
     }
