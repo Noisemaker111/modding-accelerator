@@ -176,6 +176,11 @@ def bridge_provides(rules, frm, minecraft):
                     seen.add(s)
                     out[cls] |= out[s]
                     todo.extend(supers.get(s, ()))
+        # NeoForge's own classes convert copies when they compile on Fabric (neoforge-sources.txt, bench/bridge_import.py),
+        # with the members they declare there.
+        if frm == "neoforge":
+            for cls, members in copied_classes(folders, b).items():
+                out.setdefault(cls, set()).update(members)
         # A bridge file NeoForge has under two names (a class it moved between versions) provides both.
         if frm == "neoforge":
             for full, simple in b.get("classes", {}).items():
@@ -187,6 +192,66 @@ def bridge_provides(rules, frm, minecraft):
                         out[cls + nested[len(main):]] = out[nested]
         return out
     return None
+
+
+def copied_classes(folders, bridge):
+    """{class (slash form): member names} of NeoForge's classes convert copies for this bridge version: the listed ones
+    (the layer's neoforge-sources.txt, else the bridge's), each with what its source declares less what does not compile."""
+    lists = [f / "neoforge-sources.txt" for f in reversed(folders) if (f / "neoforge-sources.txt").is_file()]
+    if not lists:
+        return {}
+    listed, dropped = [], defaultdict(set)
+    for line in lists[0].read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        name, _, member = line.strip().partition(" ")
+        if member:
+            dropped[name].add(member.split("#", 1)[-1].split("(")[0])
+        else:
+            listed.append(name)
+    rules = json.loads((ROOT / "knowledge/loaders.json").read_text(encoding="utf-8"))
+    key = next((l.get("sources") for l in bridge.get("layers", []) if ROOT / l["folder"] == lists[0].parent and l.get("sources")), bridge.get("sources"))
+    coordinate = rules["published"][key]["coordinate"].split(":")[2]
+    jars = sorted((ROOT / ".runs/loader-api").glob(f"*{coordinate}-sources.jar"))
+    out = {}
+    import zipfile
+    with zipfile.ZipFile(jars[0]) if jars else None as jar:
+        for name in listed:
+            try:
+                text = jar.read(name.replace(".", "/") + ".java").decode("utf-8", "replace") if jar else ""
+            except KeyError:
+                text = ""
+            out[name.replace(".", "/")] = (set(DECLARED.findall(text)) or {"*"}) - dropped.get(name, set())
+    return out
+
+
+def by_package(result, blocked):
+    """For each package (and each top-level package family) of what the blocked mods miss, the mods that would miss
+    nothing if all of it were there."""
+    missing = defaultdict(set)
+    for x in result["missing"]:
+        for mod in x["mods"]:
+            if mod in blocked:
+                missing[mod].add(package_of(x["symbol"]))
+    rows = []
+    for level in (lambda p: p, lambda p: ".".join(p.split(".")[:4]) if not p.startswith("game") else p):
+        groups = defaultdict(set)
+        for mod, packages in missing.items():
+            for p in packages:
+                groups[level(p)].add(mod)
+        for group, mods in groups.items():
+            freed = sorted(m for m in mods if {level(p) for p in missing[m]} == {group})
+            rows.append((group, sorted(mods), freed))
+    clean = sorted(m for m in blocked if not missing.get(m))
+    return {"nothing missing already": clean, "missing": {m: sorted(p) for m, p in sorted(missing.items())},
+            "groups": sorted({r[0]: r for r in rows}.values(), key=lambda r: (-len(r[2]), -len(r[1]), r[0]))}
+
+
+def package_of(symbol):
+    if "(added by" in symbol:
+        return "game classes: methods the loader adds"
+    owner = symbol.split("#")[0].split("$")[0]
+    return owner.rsplit(".", 1)[0]
 
 
 def rule_provides(rules, frm):
@@ -378,6 +443,7 @@ def main(argv=None):
     p.add_argument("--out")
     p.add_argument("--json", action="store_true")
     p.add_argument("--top", type=int, default=30)
+    p.add_argument("--blocked", help="comma-separated mod ids: rank what they miss by package, and the mods each package frees")
     a = p.parse_args(argv)
     if a.command == "refs":
         out = mod_references(a.folder)
@@ -403,6 +469,17 @@ def main(argv=None):
     sweep_file = ROOT / "coverage" / "sweeps" / "convert.json"
     sweep = json.loads(sweep_file.read_text(encoding="utf-8")) if sweep_file.is_file() else None
     result = coverage(refs, loader_api.load_rules(), json.loads(CORPUS.read_text(encoding="utf-8")), sweep)
+    if a.blocked:
+        blocked = set(a.blocked.split(","))
+        ranked = by_package(result, blocked)
+        if a.json:
+            print(json.dumps(ranked, indent=1))
+            return 0
+        print(f"no references (original not built): {', '.join(sorted(blocked - set(refs['mods'])))}")
+        print(f"nothing missing already: {', '.join(ranked['nothing missing already'])}")
+        for group, mods, freed in ranked["groups"][:a.top]:
+            print(f"  frees {len(freed)}  missed by {len(mods):2}  {group}  freed: {', '.join(freed)}")
+        return 0
     if a.json:
         print(json.dumps(result, indent=1))
         return 0
