@@ -15,7 +15,7 @@
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
 | **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;26 | 🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>🔵 44 · Resolve what a mod uses, then port in one typed pass<br>⚪ 16 · Name what moved in 26.3<br>⚪ 45 · Generate the target build from the loader's starter project<br>⚪ 46 · One migration per redesigned game part, ranked by mods freed |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
-| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;3&nbsp;of&nbsp;7 | ⚪ 42 · The blockers of the other 14 mods, by cause, produced from the loaders' files |
+| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;3&nbsp;of&nbsp;7 | Not started |
 
 ## Goal 1 — Test a mod in seconds
 
@@ -303,7 +303,7 @@ A pack user points mmt at an installed pack or an export and gets its conflicts 
 The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims.
 
 - **Today:** mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. Of 28 real corpus mods it accepts, 14 compile and load in the game after converting, 10 of them with the same behaviour fingerprint as the original. Forge, Quilt and Paper are not converted yet.
-- **The number that says most:** Corpus mods that convert, compile and load in the game is **14 mods**, target 17 mods by Nov 25, step 42
+- **The number that says most:** Corpus mods that convert, compile and load in the game is **15 mods**, target 17 mods by Nov 25, step 42
 - **Also:** Loader or platform changes that work in the game is **2 pairs**, target 1 pair by Jan 29, 2027, step 18
 
 ### Loader pairs
@@ -313,7 +313,7 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 | 40 | Loader rules from the loaders' own APIs | 🟢 done | Nov 14 |
 | 18 | Fabric → NeoForge on one mod | 🟢 done | Nov 14 |
 | 41 | NeoForge mods to Fabric through a bridge built from NeoForge's own files | 🟢 done | Nov 18 |
-| 42 | The blockers of the other 14 mods, by cause, produced from the loaders' files | ⚪ next | Nov 18 → Nov 25 |
+| 42 | The blockers of the other 14 mods, by cause, produced from the loaders' files | ⚫ later | Nov 18 → Nov 25 |
 | 19 | Forge → NeoForge and Fabric → Quilt | ⚫ later | Feb 1, 2027 → Feb 26, 2027 |
 
 ### Mods and plugins
@@ -336,7 +336,7 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 **41 · NeoForge mods to Fabric through a bridge built from NeoForge's own files** (done). Cover NeoForge's whole published API on Fabric instead of fixing mods one at a time: a coverage check against NeoForge's jars and patches (bench/bridge_coverage.py), the methods its patches add to game classes generated for 26.3, 26.1 and 1.21.1 (bench/bridge_generate.py), and NeoForge's own LGPL classes copied into the converted mod when they compile on Fabric, with failing members left out (bench/bridge_import.py). *So far:* 14 of 28 compile and load in the game (was 10 on 2026-11-16), 10 with the same behaviour fingerprint as the original; curios is new. 720 of NeoForge's classes compile on Fabric for 26.3, 714 for 26.1, 568 for 1.21.1.
 
-**42 · The blockers of the other 14 mods, by cause, produced from the loaders' files** (next). List what blocks each of the 14 mods that do not compile yet, group the blockers by cause across all 14, and produce each group's fixes in one go from the loaders' own files (no per-mod fixes).
+**42 · The blockers of the other 14 mods, by cause, produced from the loaders' files** (later). List what blocks each of the 14 mods that do not compile yet, group the blockers by cause across all 14, and produce each group's fixes in one go from the loaders' own files (no per-mod fixes). *So far:* Stopped at 15 of 28 (cloud run 44403521118; satin is new, from setting a Fabric mod's own test mod aside). The three target mods were not freed: two methods aimed at them failed (see notes) and the third was not built. What these 14 mods miss is now measured from their compiled classes (python bench/convert_coverage.py --blocked), and no package frees more than one of them: they are 14 unusual mods, not a list to steer by.
 
 **19 · Forge → NeoForge and Fabric → Quilt** (later). Forge → NeoForge and Fabric → Quilt, which are close pairs.
 
@@ -351,7 +351,7 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
 | Loader or platform changes that work in the game | 0 pairs (Nov 9) | 2 pairs (Nov 14) | 1 pair by Jan 29, 2027, step 18 | Met |
-| Corpus mods that convert, compile and load in the game | 1 mod (Nov 14) | 14 mods (Nov 17) | 17 mods by Nov 25, step 42 | 81% of the way |
+| Corpus mods that convert, compile and load in the game | 1 mod (Nov 14) | 15 mods (Nov 18) | 17 mods by Nov 25, step 42 | 88% of the way |
 | Loader-change rules, each with every class and member it names found in the loaders' published jars | — | 41 rules (Nov 14) | — | Fact |
 
 </details>
