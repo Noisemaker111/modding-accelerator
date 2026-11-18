@@ -59,6 +59,8 @@ python bench/diorama/play/prepare_world.py --root .runs/diorama
   to have gone round it during the flight and to read nothing stale once it goes round again.
 - `bake-bench.java` times those functions in one client (descriptive), and `toggle-setup.java`
   is the input `mmt perf-toggle` compares switchable variants of one build on, in the same JVM.
+  `import-toggle-setup.java` does the same for the saved-chunk import's work: every chunk read from the frozen
+  save again each round, then meshed, traced and picked, as the import draws a tile after a rejoin.
 
 ### Exact optimizations for ordinary play
 
