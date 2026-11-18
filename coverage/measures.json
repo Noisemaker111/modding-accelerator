@@ -685,7 +685,8 @@
     {"date": "2026-11-14", "value": 1, "note": "first full sweep, 12 not refused", "source": "coverage/sweeps/convert.json history baseline"},
     {"date": "2026-11-15", "value": 5, "note": "28 not refused", "source": "coverage/sweeps/convert.json history round-2"},
     {"date": "2026-11-16", "value": 10, "note": "bridge methods generated from NeoForge's jars", "source": "coverage/sweeps/convert.json history after"},
-    {"date": "2026-11-17", "value": 14, "note": "NeoForge's own LGPL classes copied with failing members left out; curios is new", "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44178034767"}
+    {"date": "2026-11-17", "value": 14, "note": "NeoForge's own LGPL classes copied with failing members left out; curios is new", "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44178034767"},
+    {"date": "2026-11-18", "value": 15, "n": 28, "note": "a Fabric mod's own test mod is set aside instead of converted; satin is new", "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44403521118"}
    ]
   },
   {
