@@ -1220,7 +1220,8 @@ final class Game {
                 (jbr ? "--jbr" : "--java") +
                 "."
             );
-            saved = replayable(Json.read(recipe));
+            saved = replayable(Json.read(recipe)) &&
+                argfilesOk(java != null ? java : Path.of(Json.read(recipe).get("executable").toString()));
         }
         if (saved) {
             var launch = Json.read(recipe);
