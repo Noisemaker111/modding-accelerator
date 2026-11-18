@@ -176,6 +176,19 @@ gradle.afterProject { p ->
         }
         p.tasks.withType(org.gradle.language.jvm.tasks.ProcessResources).configureEach { outputs.upToDateWhen { false } }
     }
+    // mmt uses: the classpath and sources javac is actually given, written as the task runs. A build model can only name
+    // what Gradle resolves when it configures, and some plugins put the game jar in only at compile time (NeoGradle's
+    // placeholder neoforge jar).
+    def compileRecord = System.getProperty('mmt.recordCompile', '')
+    if (compileRecord) p.tasks.withType(JavaCompile).configureEach { t ->
+        if (t.name.toLowerCase(Locale.ROOT).contains('neoform') || t.name.toLowerCase(Locale.ROOT).contains('test')) return
+        t.doFirst {
+            def out = new File(compileRecord, (p.path + ':' + t.name).replaceAll('[^A-Za-z0-9]+', '_') + '.json')
+            out.parentFile.mkdirs()
+            out.text = JsonOutput.toJson([project: p.path, task: t.name, classpath: t.classpath.files*.absolutePath,
+                sources: t.source.files*.absolutePath, release: t.options.release.getOrNull()])
+        }
+    }
     // mixin-check prepares the client launch to apply mixins, never to render, so it skips the game's
     // sound and texture download (hundreds of MB on a cold machine). Off unless asked for.
     if (System.getProperty('mmt.skipAssets', '') == 'true') {
