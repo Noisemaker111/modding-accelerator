@@ -302,6 +302,40 @@ public final class PortTests {
         );
     }
 
+    /** Converted subscribers leave their mixin config: entries die, and the file when nothing remains. */
+    static void mixinConfigChecks() {
+        String config = "{\n\t\"required\": true,\n\t\"package\": \"de.smallinger.cinematiczoom.mixin\",\n\t\"client\": [\n\t\t\"GameRendererMixin\",\n\t\t\"MouseMixin\",\n\t\t\"InGameHudMixin\"\n\t]\n}";
+        String stripped = Port.stripConvertedMixins(
+            config,
+            "de.smallinger.cinematiczoom.mixin",
+            List.of("GameRendererMixin", "MouseMixin", "InGameHudMixin")
+        );
+        check(
+            !Port.mixinsRemain(stripped) && !stripped.contains("Mixin"),
+            "converting every listed mixin empties its config: " + stripped.replace('\n', ' ')
+        );
+        String partial = Port.stripConvertedMixins(config, "de.smallinger.cinematiczoom.mixin", List.of("MouseMixin"));
+        check(
+            Port.mixinsRemain(partial) &&
+            partial.contains("\"GameRendererMixin\"") &&
+            partial.contains("\"InGameHudMixin\"") &&
+            !partial.contains("MouseMixin") &&
+            !partial.contains(",]") &&
+            !partial.contains(",\n]"),
+            "a partial conversion keeps the remaining mixins in valid JSON"
+        );
+        check(
+            Port.stripConvertedMixins(config, "other.mixin", List.of("GameRendererMixin")).equals(config),
+            "a config for another package passes through untouched"
+        );
+        String single = "{ \"package\": \"example.mixin\", \"client\": [\"OnlyMixin\"] }";
+        String emptied = Port.stripConvertedMixins(single, "example.mixin", List.of("OnlyMixin"));
+        check(
+            !Port.mixinsRemain(emptied) && emptied.contains("\"client\": []"),
+            "a single-entry inline array empties cleanly: " + emptied
+        );
+    }
+
     public static void main(String[] args) throws Exception {
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
@@ -432,6 +466,7 @@ public final class PortTests {
         versionsChecks();
         planningDegradeChecks(home, scratch);
         triageChecks();
+        mixinConfigChecks();
         for (var groups : List.of(
             List.of("net.minecraftforge"),
             List.of("net.fabricmc", "net.neoforged"),

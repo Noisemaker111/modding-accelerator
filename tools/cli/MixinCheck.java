@@ -68,6 +68,7 @@ final class MixinCheck {
         Map<String, Object> mods = modMixins(null);
         @SuppressWarnings("unchecked")
         List<String> configs = (List<String>) mods.get("configs");
+        if (configs.isEmpty() && loader.isEmpty()) return noMixins(mods, loader);
         if (loader.isEmpty()) return unchecked(
             "This build has neither Fabric Loader nor NeoForge among its evaluated dependencies, so there is no loader to apply mixins with.",
             mods
@@ -85,24 +86,7 @@ final class MixinCheck {
             List<String> again = (List<String>) mods.get("configs");
             configs = again;
         }
-        if (configs.isEmpty()) return Json.map(
-            "ok",
-            true,
-            "tier",
-            "no-mixins",
-            "checkedBy",
-            "the mod's metadata",
-            "loader",
-            loader,
-            "mixins",
-            Json.map("total", 0),
-            "metadata",
-            mods.get("metadata"),
-            "details",
-            "The mod declares no mixin configs (" + mods.get("metadata") + "), so there is nothing for Mixin to apply.",
-            "gameVerified",
-            false
-        );
+        if (configs.isEmpty()) return noMixins(mods, loader);
         if (task == null) return unchecked(
             "No client run task (runClient) in the selected project, so there is no dev launch to apply the mixins in. Select --project, or pass --client-task.",
             mods
@@ -128,6 +112,28 @@ final class MixinCheck {
         result.put("launch", Json.map("task", task, "recorded", launch.recorded, "mode", launch.mode));
         result.put("seconds", (System.nanoTime() - begin) / 1e9);
         return result;
+    }
+
+    /** Nothing declares a mixin config, so there is nothing for any loader to apply. */
+    static Map<String, Object> noMixins(Map<String, Object> mods, String loader) {
+        return Json.map(
+            "ok",
+            true,
+            "tier",
+            "no-mixins",
+            "checkedBy",
+            "the mod's metadata",
+            "loader",
+            loader,
+            "mixins",
+            Json.map("total", 0),
+            "metadata",
+            mods.get("metadata"),
+            "details",
+            "The mod declares no mixin configs (" + mods.get("metadata") + "), so there is nothing for Mixin to apply.",
+            "gameVerified",
+            false
+        );
     }
 
     Map<String, Object> unchecked(String reason, Map<String, Object> mods) {

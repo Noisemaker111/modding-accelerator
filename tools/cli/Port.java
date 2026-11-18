@@ -20,6 +20,8 @@ final class Port {
     final Map<String, Object> before = new LinkedHashMap<>();
     final List<String> planned = new ArrayList<>();
     List<String> plannedRemovals = List.of();
+    /** Mixin configs the repair deleted after converting their last mixin: undo restores them from backup. */
+    final List<String> repairedAway = new ArrayList<>();
 
     void saveInProgress() throws IOException {
         Json.save(
@@ -1224,6 +1226,7 @@ final class Port {
                 failure
             );
         } finally {
+            removed.addAll(repairedAway);
             finishTransaction(build.project, transaction, before, removed);
         }
     }
@@ -3023,7 +3026,73 @@ final class Port {
                 changed = true;
             }
         }
+        if (!subscribers.isEmpty() && forgetConvertedMixins(subscribers)) changed = true;
         return changed;
+    }
+
+    /**
+     * A mixin class the port rewrote as an event subscriber is no longer a mixin: its entry dies in any
+     * mixin config for its package, and the config file itself when nothing it lists is a mixin anymore.
+     * Tracked, so undo restores the config.
+     */
+    boolean forgetConvertedMixins(List<String> subscribers) throws Exception {
+        Path resources = build.project.root.resolve("src/main/resources");
+        if (!Files.isDirectory(resources)) return false;
+        Map<String, List<String>> byPackage = new LinkedHashMap<>();
+        for (String subscriber : subscribers) {
+            int dot = subscriber.lastIndexOf('.');
+            if (dot < 0) continue;
+            String pack = subscriber.substring(0, dot);
+            if (!byPackage.containsKey(pack)) byPackage.put(pack, new ArrayList<>());
+            byPackage.get(pack).add(subscriber.substring(dot + 1));
+        }
+        boolean changed = false;
+        List<Path> configs = new ArrayList<>();
+        try (var files = Files.list(resources)) {
+            for (Path file : files.toList()) {
+                if (file.getFileName().toString().endsWith(".mixins.json")) configs.add(file);
+            }
+        }
+        for (Path config : configs) {
+            String original = Files.readString(config);
+            String text = original;
+            for (Map.Entry<String, List<String>> entry : byPackage.entrySet()) {
+                text = stripConvertedMixins(text, entry.getKey(), entry.getValue());
+            }
+            if (text.equals(original)) continue;
+            track(config);
+            if (mixinsRemain(text)) Files.writeString(config, text);
+            else {
+                Files.delete(config);
+                repairedAway.add(build.project.root.relativize(config).toString().replace('\\', '/'));
+            }
+            changed = true;
+        }
+        return changed;
+    }
+
+    /** Drops the converted classes from a mixin config of their package; other packages pass through. */
+    static String stripConvertedMixins(String text, String mixinPackage, List<String> simpleNames) {
+        Matcher pack = Pattern.compile("\"package\"\\s*:\\s*\"([\\w.]+)\"").matcher(text);
+        if (!pack.find() || !pack.group(1).equals(mixinPackage)) return text;
+        String out = text;
+        for (String name : simpleNames) {
+            String quoted = Pattern.quote(name);
+            out = Pattern.compile("(?m)^\\s*\"" + quoted + "\"\\s*,\\s*$").matcher(out).replaceAll("");
+            out = Pattern.compile("\"" + quoted + "\"\\s*,").matcher(out).replaceAll("");
+            out = Pattern.compile(",?\\s*\"" + quoted + "\"").matcher(out).replaceAll("");
+            out = out.replaceAll(",\\s*\\]", "]");
+        }
+        return out;
+    }
+
+    /** Whether a mixin config still lists any mixin class. */
+    static boolean mixinsRemain(String text) {
+        Matcher arrays = Pattern.compile("\"(client|server|mixins)\"\\s*:\\s*\\[([^\\]]*)\\]").matcher(text);
+        while (arrays.find()) {
+            if (arrays.group(2).contains("\"")) return true;
+        }
+        return false;
     }
 
     /** The @Mod entry gains subscriber registrations, its client handler, and a config factory it can see. */
