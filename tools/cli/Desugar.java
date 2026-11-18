@@ -293,6 +293,66 @@ final class Desugar {
         }
 
         @Override
+        public Void visitMethod(MethodTree tree, Void unused) {
+            if (!spanOk(tree)) {
+                return null;
+            }
+            interfacePrivateEdit(tree);
+            return super.visitMethod(tree, unused);
+        }
+
+        /**
+         * Private interface methods predate the legacy release; a private static helper becomes a
+         * plain static one and a private instance helper becomes a default method. Both keep their
+         * bodies and call sites, widening only the visibility. Bodiless declarations are already
+         * legacy-legal and stay untouched.
+         */
+        private void interfacePrivateEdit(MethodTree tree) {
+            if (tree.getBody() == null) {
+                return;
+            }
+            boolean isPrivate = false;
+            boolean isStatic = false;
+            for (Modifier flag : tree.getModifiers().getFlags()) {
+                if (flag == Modifier.PRIVATE) {
+                    isPrivate = true;
+                }
+                if (flag == Modifier.STATIC) {
+                    isStatic = true;
+                }
+            }
+            if (!isPrivate) {
+                return;
+            }
+            TreePath parent = getCurrentPath().getParentPath();
+            if (parent == null || !(parent.getLeaf() instanceof ClassTree)) {
+                return;
+            }
+            if (((ClassTree) parent.getLeaf()).getKind() != Tree.Kind.INTERFACE) {
+                return;
+            }
+            int from = start(tree.getModifiers());
+            int to = end(tree.getModifiers());
+            if (from < 0 || to < 0 || to < from) {
+                return;
+            }
+            String modifierText = masked.substring(from, to);
+            java.util.regex.Matcher match = java.util.regex.Pattern.compile("\\bprivate\\b").matcher(modifierText);
+            if (!match.find()) {
+                return;
+            }
+            if (isStatic) {
+                int end = from + match.end();
+                if (end < masked.length() && masked.charAt(end) == ' ') {
+                    end++;
+                }
+                edits.add(new Edit(from + match.start(), end, ""));
+            } else {
+                edits.add(new Edit(from + match.start(), from + match.end(), "default"));
+            }
+        }
+
+        @Override
         public Void visitInstanceOf(InstanceOfTree tree, Void unused) {
             if (!spanOk(tree)) {
                 return null;
@@ -457,9 +517,12 @@ final class Desugar {
                 return;
             }
             String modifiers = text(tree.getModifiers());
+            if (modifiers == null) {
+                modifiers = "";
+            }
             String typeParams = typeParameters(tree);
             String impl = implementsClause(tree);
-            if (modifiers == null || typeParams == null || impl == null) {
+            if (typeParams == null || impl == null) {
                 return;
             }
             boolean permits = !tree.getPermitsClause().isEmpty();
@@ -945,7 +1008,12 @@ final class Desugar {
                 if (outer == null) {
                     return null;
                 }
-                Scope scope = continuationScope(outer, outer.getLeaf(), top);
+                if (outer.getLeaf().getKind() == Tree.Kind.CONDITIONAL_OR) {
+                    Scope inner = new Scope(new ArrayList<>());
+                    inner.spans.add(new int[] {from, end(top)});
+                    return inner;
+                }
+                Scope scope = continuationScope(outer, outer.getLeaf(), tree);
                 if (scope == null) {
                     return null;
                 }
@@ -1016,12 +1084,19 @@ final class Desugar {
             return new int[] {start(tree), end(tree)};
         }
 
-        /** True when the scope declares its own variable of that name, which ends the propagation. */
+        /** True when the scope declares its own variable of that name, which ends the propagation. A
+         * statement keyword before the name is not a type: return, throw, and yield statements use
+         * the name instead of declaring it. */
         private boolean declares(Scope scope, String variable) {
+            java.util.regex.Pattern declaration = java.util.regex.Pattern.compile("(?s).*\\b([A-Za-z_][\\w$]*)(<[^;{}]*>)?(\\[\\])*\\s+" + variable + "\\s*[=;,)].*");
             for (int[] span : scope.spans) {
                 String region = masked.substring(span[0], span[1]);
-                if (region.matches("(?s).*\\b[A-Za-z_][\\w$]*(<[^;{}]*>)?(\\[\\])*\\s+" + variable + "\\s*[=;,)].*")) {
-                    return true;
+                java.util.regex.Matcher match = declaration.matcher(region);
+                if (match.matches()) {
+                    String typeWord = match.group(1);
+                    if (!typeWord.equals("return") && !typeWord.equals("throw") && !typeWord.equals("yield")) {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -1033,9 +1108,56 @@ final class Desugar {
             String region = masked.substring(from, to);
             java.util.regex.Matcher use = java.util.regex.Pattern.compile("\\b" + variable + "\\b").matcher(region);
             while (use.find()) {
+                if (!isVariableRead(region, from, use.start(), use.end())) {
+                    continue;
+                }
                 out.add(new Edit(from + use.start(), from + use.end(), "((" + type + ")" + tested + ")"));
             }
             return out;
+        }
+
+        /**
+         * True when the match reads the variable. Field selects, annotations, method references,
+         * calls, labels, assignments, increments, lambdas, and switch arrows name something else
+         * that merely shares the spelling; rewriting those corrupts the file.
+         */
+        private boolean isVariableRead(String region, int from, int start, int end) {
+            char before = start > 0 ? region.charAt(start - 1) : from > 0 ? masked.charAt(from - 1) : 0;
+            char beforeTwo = start > 1 ? region.charAt(start - 2) : 0;
+            int afterIndex = end;
+            while (afterIndex < region.length() && Character.isWhitespace(region.charAt(afterIndex))) {
+                afterIndex++;
+            }
+            char after = afterIndex < region.length() ? region.charAt(afterIndex) : 0;
+            char afterTwo = afterIndex + 1 < region.length() ? region.charAt(afterIndex + 1) : 0;
+            if (before == '.' || before == '@' || before == ':') {
+                return false;
+            }
+            if ((before == '+' || before == '-') && beforeTwo == before) {
+                return false;
+            }
+            if (after == '(' || after == ':') {
+                return false;
+            }
+            if (after == '-' && afterTwo == '>') {
+                return false;
+            }
+            if (after == '=' && afterTwo != '=') {
+                return false;
+            }
+            if ((after == '+' || after == '-') && (afterTwo == '=' || afterTwo == after)) {
+                return false;
+            }
+            if ((after == '*' || after == '/' || after == '%' || after == '&' || after == '|' || after == '^') && afterTwo == '=') {
+                return false;
+            }
+            if ((after == '<' && afterTwo == '<') || (after == '>' && afterTwo == '>')) {
+                return false;
+            }
+            if (region.substring(0, start).matches("(?s).*\\b(break|continue|case)\\s+")) {
+                return false;
+            }
+            return true;
         }
 
         /**

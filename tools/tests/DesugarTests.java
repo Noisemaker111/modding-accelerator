@@ -100,6 +100,16 @@ public final class DesugarTests {
             !statics.contains("Codec UNIT){"),
             "a static field stays a member instead of becoming a component"
         );
+        String pkg = lower(
+            "Pkg.java",
+            "record Pkg(String id) {\\n    void run() {\\n    }\\n}\\n"
+        );
+        check(
+            pkg.contains("final class Pkg{private final String id;") &&
+            pkg.contains("Pkg(String id){this.id = id;}") &&
+            !pkg.contains("record Pkg"),
+            "a package-private record lowers with a package-private constructor"
+        );
     }
 
     static void patternChecks() throws Exception {
@@ -133,6 +143,34 @@ public final class DesugarTests {
             chained.contains("if (a instanceof String && ((String)a).length() > 0 && b instanceof Integer) {") &&
             chained.contains("return ((String)a).length() + ((Integer)b);"),
             "an && chain binds each pattern from its own test onward"
+        );
+        String bare = lower(
+            "Bare.java",
+            "class Bare {\\n    Object f(Object ctx) {\\n        if (ctx instanceof String p) return p;\\n        return null;\\n    }\\n}\\n"
+        );
+        check(
+            bare.contains("if (ctx instanceof String) return ((String)ctx);"),
+            "an unbraced return of the binding becomes a return of the cast"
+        );
+        String orHeaded = lower(
+            "OrHead.java",
+            "class OrHead {\\n    boolean f(Object other) {\\n        return this == other || other instanceof String s && s.isEmpty();\\n    }\\n}\\n"
+        );
+        check(
+            orHeaded.contains("other instanceof String && ((String)other).isEmpty();"),
+            "an ||-headed && chain lowers the guarded remainder"
+        );
+        check(
+            lower("OrHead.java", orHeaded).equals(orHeaded),
+            "a lowered ||-headed chain is stable"
+        );
+        String field = lower(
+            "Field.java",
+            "class Field {\\n    int target;\\n    int f(Object o) {\\n        if (o instanceof String target) {\\n            return this.target;\\n        }\\n        return -1;\\n    }\\n}\\n"
+        );
+        check(
+            field.contains("if (o instanceof String) {") && field.contains("return this.target;"),
+            "a field select keeps its qualifier instead of taking the cast"
         );
     }
 
@@ -224,12 +262,35 @@ public final class DesugarTests {
         );
     }
 
+    static void ifaceChecks() throws Exception {
+        String ifaces = lower(
+            "Ifaces.java",
+            "interface Ifaces {\\n    void use();\\n    private static void helper() {\\n    }\\n    private void more() {\\n    }\\n    void plain();\\n}\\n"
+        );
+        check(
+            ifaces.contains("static void helper() {") && !ifaces.contains("private static void helper()") &&
+            ifaces.contains("default void more() {") && !ifaces.contains("private void more()") &&
+            ifaces.contains("void plain();"),
+            "private interface helpers become static or default methods"
+        );
+        check(
+            lower("Ifaces.java", ifaces).equals(ifaces),
+            "a lowered interface is stable"
+        );
+        String klass = "class Klass {\\n    private void m() {\\n    }\\n}\\n";
+        check(
+            lower("Klass.java", klass).equals(klass),
+            "a private class method is already legacy-legal and stays"
+        );
+    }
+
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]);
         scratch = Files.createTempDirectory(Files.createDirectories(Path.of(args[1])), "run-");
         recordChecks();
         patternChecks();
         switchChecks();
+        ifaceChecks();
         smallChecks();
         System.out.println(count + " desugar checks passed");
     }
