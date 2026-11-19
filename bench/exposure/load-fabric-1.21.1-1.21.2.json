@@ -25,5 +25,12 @@
   "resourceful-config--resourcefulconfig-fabric-1.21-3.0.11.jar": "loaded",
   "rhino--rhino-2101.2.7-build.85.jar": "loaded",
   "yosbr--yosbr-0.1.2.jar": "loaded"
- }
+ },
+ "client": {
+  "mods": 0,
+  "loaded": 0,
+  "verdicts": {},
+  "notRun": "pack-check --side client has no fabric client installer yet"
+ },
+ "loadedOnServerFailedInClient": []
 }

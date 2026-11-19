@@ -711,7 +711,9 @@ def load(loader, frm, to, save):
                 print(f"  {name}: loads with the others on its own start")
             else:
                 (pack / "mods" / name).rename(pack / "dropped" / name)
-    client = client_starts(loader, to, pack, [n for n, v in verdicts.items() if v == "loaded" or v.startswith("client-only")])
+    # pack-check installs a loader's client from its installer (knowledge/pack-loaders.json "installClient"): NeoForge's so far.
+    client = (client_starts(loader, to, pack, [n for n, v in verdicts.items() if v == "loaded" or v.startswith("client-only")]) if loader == "neoforge"
+              else {"mods": 0, "loaded": 0, "verdicts": {}, "notRun": f"pack-check --side client has no {loader} client installer yet"})
     loaded = [n for n, v in verdicts.items() if v == "loaded"]
     summary = {
         "loader": loader, "from": frm, "to": to, "mods": len(chosen), "loaded": len(loaded),
