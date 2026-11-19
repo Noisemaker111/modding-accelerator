@@ -855,7 +855,8 @@
     {"date": "2026-11-18", "value": 30, "n": 150, "note": "after review fixes: access, changed signatures, removed interfaces, new abstract methods and mixin accessors now checked", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"},
     {"date": "2026-11-18", "value": 31, "n": 150, "note": "the game's own replacements applied in classes (calls switched, added arguments filled, chains, narrower fields): 5,640 broken uses down to 5,234; blit's default learned from the new game's own calls", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"},
     {"date": "2026-11-18", "value": 41, "n": 150, "note": "port rules carry inClass replacements JarPort compiles into the class (57 on 33 rules); broken uses 5,234 -> 4,147", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"},
-    {"date": "2026-11-19", "value": 43, "n": 150, "note": "porter fixes that need nothing learned (step 47b): mixin @Inject moved to a target's new signature, override bridges, access transformers opened or cleaned; broken references 5,191 -> 4,556; on 1.21.4 -> 1.21.5 33 -> 36", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json), PR #120"}
+    {"date": "2026-11-19", "value": 43, "n": 150, "note": "porter fixes that need nothing learned (step 47b): mixin @Inject moved to a target's new signature, override bridges, access transformers opened or cleaned; broken references 5,191 -> 4,556; on 1.21.4 -> 1.21.5 33 -> 36", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json), PR #120"},
+    {"date": "2026-11-19", "value": 45, "n": 150, "note": "GameDiff's Learner on top of #120: the game's own replacement for any expression, applied like a rule's inClass; frees Controlling and TerraBlender; broken references 4,556 -> 4,425", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json), PR #121"}
    ],
    "target": {"value": 50, "by": "2026-12-08", "step": "47"}
   },
@@ -1373,7 +1374,8 @@
        150
       ]
      }
-    }
+    },
+    {"date": "2026-11-19", "value": 5302, "n": 9149, "note": "GameDiff's Learner: the game's own replacement for any expression, every update; fabric 3,820, neoforge 1,482; no update lower, up to +6 on one", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44540189228 (bench/exposure/all.json), PR #121"}
    ],
    "history": []
   },
@@ -1388,7 +1390,8 @@
     {"date": "2026-11-18", "value": 28, "n": 35, "note": "6 failed on game code 1.21.2 changed, all 6 flagged by the link check; 1 client-only; 13 link and all 13 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
     {"date": "2026-11-18", "value": 29, "n": 35, "note": "Jade now loads: calls whose parameters changed are no longer given a descriptor their stack does not fit; 12 link and all 12 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
     {"date": "2026-11-18", "value": 30, "n": 35, "note": "19 link and all 19 load; mru loads once its event subscriber is put on the mod bus", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
-    {"date": "2026-11-19", "value": 30, "n": 35, "note": "21 link, 20 load, 1 client-only, none fails; on 1.21.5 25 of 29 load, 19 link, 18 load, 1 client-only, none fails", "source": "python bench/exposure.py load (bench/exposure/load-neoforge-1.21.1-1.21.2.json, load-neoforge-1.21.4-1.21.5.json), PR #120"}
+    {"date": "2026-11-19", "value": 30, "n": 35, "note": "21 link, 20 load, 1 client-only, none fails; on 1.21.5 25 of 29 load, 19 link, 18 load, 1 client-only, none fails", "source": "python bench/exposure.py load (bench/exposure/load-neoforge-1.21.1-1.21.2.json, load-neoforge-1.21.4-1.21.5.json), PR #120"},
+    {"date": "2026-11-19", "value": 34, "n": 39, "note": "the 35 run clears plus every standalone mod that links (Dungeons and Taverns left out: its data does not parse on 1.21.2) and Controlling with Searchables; 26 link, 24 load, 1 client-only; TerraBlender links but fails on a biome data file 1.21.2 cannot parse, the same error as before it linked", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json), PR #121"}
    ],
    "target": {"value": 33, "by": "2026-12-08", "step": "47"}
   },
@@ -1404,6 +1407,20 @@
     {"date": "2026-11-19", "value": 23, "n": 25, "note": "after #120: 25 standalone mods link; 23 load, cubes-without-borders is client-only, and Dungeons and Taverns, which has no code, fails on its data (an enchantment effect 1.21.2 removed); none fails on code", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 --save load-linked-neoforge-1.21.1-1.21.2 (bench/exposure/load-linked-neoforge-1.21.1-1.21.2.json)"}
    ],
    "history": []
+  },
+  {
+   "id": "port.game-learned",
+   "area": "port",
+   "name": "Game members with no counterpart in the next release that the game's own code gives a replacement, all 43 updates",
+   "unit": "items",
+   "better": "higher",
+   "of": 49503,
+   "explain": "python bench/exposure.py steps links every release from 1.14.4 to 26.3 to the next from the game's own bytecode and counts the classes, methods and fields with no counterpart (49,503), and how many of them the porter has a replacement for, read from how the game ported its own uses of them: a call switched, a chain, a class replaced, or any expression the game's new code computes from the old operands (GameDiff's Learner). Each member counts once. About four minutes; no mods.",
+   "points": [
+    {"date": "2026-11-18", "value": 1413, "n": 49503, "note": "call rewrites, chains and class replacements only", "source": "python bench/exposure.py steps (bench/exposure/steps.json)"},
+    {"date": "2026-11-19", "value": 2462, "n": 49503, "note": "the learner: what the game's new code computes in place of the member, written over its operands and applied like a rule's inClass; uses it cannot read count against it", "source": "python bench/exposure.py steps (bench/exposure/steps.json), PR #121"}
+   ],
+   "target": {"value": 2462, "by": "2026-11-26", "step": "54"}
   },
   {
    "id": "port.corpus-builds",

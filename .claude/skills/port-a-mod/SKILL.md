@@ -16,7 +16,7 @@ that part is fixed with it. Read this whole file before the first command: it is
   and `port.jar-links.every-update`. It also ranks what holds the most mods back across every update. Run it on your
   PR's last commit and put the before and after in the PR (#120 moved it from 5,018).
 - One update: `python bench/exposure.py jars --loader neoforge|fabric --from 1.21.1 --to 1.21.2` (about 2 minutes):
-  NeoForge 43 of 150 link, Fabric 40. Fabric jars are read in Mojang's names through intermediary first
+  NeoForge 45 of 150 link, Fabric 40. Fabric jars are read in Mojang's names through intermediary first
   (tools/ModNames.java). Each line of its list says what the game's own code did about that reference.
 - `python bench/exposure.py load ...` is the proof: the standalone mods `jars` says link are ported and started on a
   real 1.21.2 server; 23 of 25 load, one is client-only and one has no code (its data uses an effect 1.21.2 removed).
@@ -35,6 +35,7 @@ that part is fixed with it. Read this whole file before the first command: it is
 | A rule with `inClass` for each top-ranked changed member of 1.21.2 (Nov 18, PR #118, 57 replacements) | 31 to 41 of 150 link. The rest are held back by 1.21.2's rendering and recipe rewrites (render states, toasts, recipe book), which one-member replacements cannot express; fixing every mixin signature change would add about 4 |
 | JarPort fixes that need nothing learned, every update (Nov 18, step 47b): mixin @Inject moved to a target's new signature, override bridges, access transformers opened or cleaned | 41 to 43 of 150 link on 1.21.2, 33 to 36 on 1.21.5. What is left is learned replacements and redesigned APIs; the other mixin signature changes capture locals, wrap the changed call, or inject where the new method no longer has the point |
 | Choosing work from `mmt port-plan`'s list (Nov 18) | of the 21 ports it said had nothing left, 7 built. It reads NeoForge mods (109 changed game parts a port) but almost nothing in Fabric mods (5 a port) |
+| GameDiff's Learner: what the game's new code computes at each use of a changed member, as an `inClass` expression (Nov 19, PR #121) | 1,413 -> 2,462 of 49,503 gone members get a replacement over all 43 updates; 43 -> 45 of 150 link. What is left is mostly redesigns, mixins, overrides and value-to-value changes (`false` -> `TriState.DEFAULT`) an expression cannot say |
 
 What they share: the work was chosen from a list nobody had checked against real builds. **A list may choose the
 work only after it predicts the result:** the mods it clears build, and the ones it doesn't have errors where it says.
@@ -62,6 +63,8 @@ the first row above.
 2. Take the top part whose line says the game shows the answer (`game: replaced`, `split`, `linked`, `template`).
    The detail names what the game's own code calls now. Skip `redesigned` and `unused` unless you can read both
    versions of the game class and say what replaces it; if you can't, leave it. A wrong rule is worse than none.
+   Before writing a rule, see why the learner gave none: run GameDiff with `-Dgamediff.learnlog=PREFIX` and read the
+   member's line (game uses lined up, uses read, votes, readings). A fix to the learner frees every update; a rule one.
 3. Write one rule in `knowledge/fixes.json` with `members` naming that game part, then
    `python bench/rule_test.py --only ID --write`. Copy the nearest rule that has `members`; never name a mod.
 4. Run step 1 again. The part must be gone from the list and the mods count must not drop. If neither moved, the rule
