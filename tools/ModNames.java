@@ -466,9 +466,7 @@ public final class ModNames {
                             hit = inherited(e.getKey(), bare, desc);
                         }
                         if (hit != null) {
-                            String full = name.substring(0, name.length() - bare.length()) + hit;
-                            renamed.put(e.getKey() + "." + m, full);
-                            above(e.getKey(), m, full, new HashSet<>());
+                            above(e.getKey(), m, name.substring(0, name.length() - bare.length()) + hit, new HashSet<>());
                         }
                     }
                 }

@@ -63,8 +63,8 @@ final class JarPortFabricTest {
         Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(files), "m5.jar", results));
         List<String> unlinked = Json.array(results.get(0).get("unlinked")).stream().map(String::valueOf).toList();
 
-        JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("g5.Base.<init>")),
-            "a constructor the mod's access widener makes extendable (protected) links from its subclass: " + unlinked);
+        JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("g5.Base.<init>")) && !new String(ported.get("m5.accesswidener"), StandardCharsets.UTF_8).contains("<init>"),
+            "a constructor the mod's access widener makes extendable (protected) links from its subclass, with no line added: " + unlinked);
         JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("Recipe.matches")),
             "a generic method the game implements with narrower parameters counts as written: " + unlinked);
         JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("Clock")) && calls(ported.get("m5/Timer.class")).stream().anyMatch(c -> c.startsWith("m5/Timer.mmt$fix")),

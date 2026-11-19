@@ -507,6 +507,23 @@ def fabric_meta(jar):
             return None
 
 
+def fabric_api(version):
+    """Fabric API's newest release for a game version, from Modrinth (kept in ~/.mmt/exposure/platform/), or None."""
+    folder = HOME / "platform"
+    have = sorted(folder.glob(f"fabric-api-for-{version}--*.jar"))
+    if have:
+        return have[-1]
+    versions = api("project/fabric-api/version", {"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([version])}) or []
+    files = [f for v in versions for f in v.get("files", []) if f.get("primary")]
+    if not files:
+        return None
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / f"fabric-api-for-{version}--{files[0]['filename']}"
+    with urllib.request.urlopen(urllib.request.Request(files[0]["url"], headers=AGENT), timeout=120) as r:
+        target.write_bytes(r.read())
+    return target
+
+
 def standalone(jar):
     """A mod whose metadata asks for no other mod and no other language loader (NeoForge, Forge or Fabric)."""
     import tomllib
@@ -516,11 +533,7 @@ def standalone(jar):
         own = {meta.get("id")} | set(meta.get("provides") or [])
         if any(e.get("adapter", "default") != "default" for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
             return False
-        # Fabric API used without being listed is still another mod the jar needs, unless it bundles its modules.
-        with zipfile.ZipFile(jar) as z:
-            bundled = any("fabric-api" in n or n.startswith("META-INF/jars/fabric-") for n in z.namelist())
-            uses_api = any(n.endswith(".class") and b"net/fabricmc/fabric/" in z.read(n) for n in z.namelist())
-        return (bundled or not uses_api) and all(d in ("minecraft", "fabricloader", "java") or d in own for d in (meta.get("depends") or {}))
+        return all(d in ("minecraft", "fabricloader", "java") or d in own for d in (meta.get("depends") or {}))
     with zipfile.ZipFile(jar) as z:
         names = [n for n in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml") if n in z.namelist()]
         if not names:
@@ -642,6 +655,14 @@ def load(loader, frm, to, save):
     report = jar_port(loader, frm, to, read, pack / "mods", pack / "report.json", runtime=loader == "fabric")
     links = {m["mod"]: not m.get("unlinked") and "error" not in m for m in report["mods"]}
     (pack / "dropped").mkdir()
+    platform = []
+    if loader == "fabric":
+        # Fabric API is the platform nearly every Fabric pack has, as NeoForge's own classes are to a NeoForge mod: mods
+        # that call it optionally, or without listing it, start as they would for players. It is not counted.
+        api_jar = fabric_api(to)
+        if api_jar:
+            shutil.copy(api_jar, pack / "mods" / api_jar.name)
+            platform.append(api_jar.name)
     mmt = str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))
     verdicts = {}
     for attempt in range(len(chosen) + 1):
@@ -650,7 +671,7 @@ def load(loader, frm, to, save):
         text = done.stdout[done.stdout.find("{"):]
         result = json.loads(text) if text else {}
         res = result.get("result", {})
-        present = sorted(p.name for p in (pack / "mods").glob("*.jar"))
+        present = sorted(p.name for p in (pack / "mods").glob("*.jar") if p.name not in platform)
         for name, why in (res.get("game", {}).get("leftOut") or {}).items():
             verdicts[name] = "client-only: " + str(why)[:200]
         if result.get("ok"):
