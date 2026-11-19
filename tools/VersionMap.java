@@ -294,6 +294,7 @@ public final class VersionMap {
         if (Files.isRegularFile(p) && Files.size(p) > 0) {
             return p;
         }
+        Files.deleteIfExists(p); // an empty file left by a failed write
         Files.createDirectories(cache);
         HttpResponse<byte[]> r = HTTP.send(
             HttpRequest.newBuilder(URI.create(url)).build(),
@@ -304,7 +305,11 @@ public final class VersionMap {
         }
         Path tmp = Files.createTempFile(cache, "dl", ".part");
         Files.write(tmp, r.body());
-        Files.move(tmp, p, StandardCopyOption.REPLACE_EXISTING);
+        try {
+            Files.move(tmp, p);
+        } catch (FileAlreadyExistsException another) {
+            Files.delete(tmp); // a run beside this one fetched the same file first; replacing it could break its reads
+        }
         return p;
     }
 

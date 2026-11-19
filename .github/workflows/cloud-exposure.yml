@@ -1,0 +1,85 @@
+name: Cloud jar scoreboard
+# The jar scoreboard (python bench/exposure.py all) on GitHub's runners: one ubuntu-latest job per update and loader
+# (python bench/exposure.py updates), each downloading its release's pinned mods (bench/exposure/mods/), porting them
+# with JarPort and linking them against the next release; the summary job joins them into the all-updates table
+# (python bench/exposure.py join). Dispatch with tools/cloud-run exposure [-f only=fabric:1.21.1,neoforge:1.21.1].
+# No caches: a job downloads about 1 GB (the game twice, its loader, 150 mods) in under a minute.
+run-name: "Cloud jar scoreboard: ${{ inputs.only || 'every update' }} ${{ inputs.request }}"
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: LOADER:FROM updates, comma-separated (empty for every update of both loaders)
+        default: ''
+      request:
+        description: Set by tools/cloud-run to find the run it started
+        default: ''
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      updates: ${{ steps.plan.outputs.updates }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          ONLY: ${{ inputs.only }}
+        run: echo "updates=$(python3 bench/exposure.py updates ${ONLY:+--only "$ONLY"})" >> "$GITHUB_OUTPUT"
+  update:
+    needs: plan
+    name: ${{ matrix.update }}
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        update: ${{ fromJSON(needs.plan.outputs.updates) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      UPDATE: ${{ matrix.update }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Port and link this update's mods
+        run: |
+          IFS=: read -r LOADER FROM TO <<< "$UPDATE"
+          mkdir -p summary
+          python bench/exposure.py jars --loader "$LOADER" --from "$FROM" --to "$TO" --out "summary/$LOADER-$FROM-$TO.json" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exposure-${{ strategy.job-index }}
+          path: summary/
+          if-no-files-found: ignore
+          retention-days: 14
+  summary:
+    needs: update
+    if: always() && needs.update.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: exposure-*
+          path: artifacts
+      - name: Join every update into one table
+        run: |
+          python3 bench/exposure.py join artifacts --save | tee summary.md >> "$GITHUB_STEP_SUMMARY"
+          cp bench/exposure/all.json all.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: summary
+          path: |
+            summary.md
+            all.json
+          retention-days: 14

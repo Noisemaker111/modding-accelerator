@@ -6,16 +6,21 @@ description: Make mmt port carry any mod across Minecraft versions with no hand 
 You never work on "this mod's errors". You teach the porter one changed part of the game, and every mod that uses
 that part is fixed with it. Read this whole file before the first command: it is short, and each part was measured.
 
-## Where porting stands (2026-11-18)
+## Where porting stands (2026-11-19)
 
 - A mod comes in as source or as a `.jar`. `mmt port --jar MOD.jar --to 1.21.2` (tools/JarPort.java) moves a compiled
   NeoForge mod with no source and no build, and names every reference that does not link instead of guessing.
-- `python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2` (90 s) ports the 150 most-downloaded
-  NeoForge mods that way: **43 link against 1.21.2**, and it ranks what holds the others back. This is the number to
-  move. `exposure.py run` says 58, but it cannot see mixins, field types or access transformers: of the 35 standalone
-  mods it cleared, 6 failed on a real server, and the link check had named all 6.
-- `python bench/exposure.py load ...` is the proof: those 35 ported jars start on a real 1.21.2 server, 30 load, and
-  every mod the link check says links loads. A server never runs client code, so a client proof is step 51.
+- **The number to move:** `tools/cloud-run exposure` (8 minutes; `python bench/exposure.py all` runs the same here)
+  ports the 150 most-downloaded mods of each release to the next and links them, for 43 Fabric updates from 1.14.4
+  and 18 NeoForge updates from 1.20.5: **5,258 of 9,149 mod ports link (57.5%)**, table in `bench/exposure/all.json`
+  and `port.jar-links.every-update`. It also ranks what holds the most mods back across every update. Run it on your
+  PR's last commit and put the before and after in the PR (#120 moved it from 5,018).
+- One update: `python bench/exposure.py jars --loader neoforge|fabric --from 1.21.1 --to 1.21.2` (about 2 minutes):
+  NeoForge 43 of 150 link, Fabric 40. Fabric jars are read in Mojang's names through intermediary first
+  (tools/ModNames.java). Each line of its list says what the game's own code did about that reference.
+- `python bench/exposure.py load ...` is the proof: the standalone mods `jars` says link are ported and started on a
+  real 1.21.2 server; 23 of 25 load, one is client-only and one has no code (its data uses an effect 1.21.2 removed).
+  A server never runs client code, so a client proof is step 51.
 - 16 of the 126 corpus ports build (`python bench/measures.py table port.corpus-builds`). 23 of the 126 are mods
   whose untouched original does not build on the runner, and 72 cross many updates at once, so this number only
   moves after single updates work. Use it as the proof at the end of a PR, never to choose what to do next.
@@ -34,25 +39,26 @@ that part is fixed with it. Read this whole file before the first command: it is
 What they share: the work was chosen from a list nobody had checked against real builds. **A list may choose the
 work only after it predicts the result:** the mods it clears build, and the ones it doesn't have errors where it says.
 
-## What comes first: two jobs on the tool
+## What comes first: jobs on the tool
 
-Step 50 is done: a `.jar` is ported by changing its classes, so these two are now about jars (`coverage/roadmap.json`,
-Goal 2). Each needs someone who can change `tools/JarPort.java`, `tools/Exposure.java` and `bench/exposure.py`
-safely. If that is not you, say so to Jon and stop; adding text rules instead is the mistake in the first row above.
+Step 50 is done: a `.jar` is ported by changing its classes. Step 44 is done: one scoreboard, read from jars, for every
+update and both loaders. What remains on the tool (`coverage/roadmap.json`, Goal 2) needs someone who can change
+`tools/JarPort.java` safely. If that is not you, say so to Jon and stop; adding text rules instead is the mistake in
+the first row above.
 
-1. **Step 44: one worklist, read from jars, for every loader.** `exposure.py jars` replaces `exposure.py run`, and
-   reads Fabric mods too: they ship in intermediary names, so they are read through the game's own mappings to
-   Mojang's names. Done when `run` is gone and the count covers the 150 most-downloaded Fabric mods as well.
-2. **Step 47 (doing): a fix names a game part and is applied in the class.** What the game's own change map knows
+1. **Step 47 (doing): a fix names a game part and is applied in the class.** What the game's own change map knows
    (calls switched, added arguments, chains, narrower fields) and every rule's `inClass` (a Java expression for the
    old member, compiled by JarPort against the new release, see `tools/FixExpr.java`) are applied in classes. Still to
    do: the source port applies the same `inClass` where the compiler resolved the member, instead of a regex.
+2. **Step 52: `mmt port --jar` ports Fabric mods too.** The scoreboard reads them; the port must hand them back in
+   the names Fabric runs.
 
-## The loop, once steps 44 and 47 are in. One changed game part per turn
+## The loop. One changed game part per turn
 
-1. `python bench/exposure.py jars --loader neoforge --from A --to B --save NAME`. On a new PC first:
-   `python bench/exposure.py fetch --loader neoforge --version A`. It prints the mods that link, and the references
-   that do not, ranked by how many mods they hold back; `exposure.py run` adds what the game's own code did about each.
+1. `python bench/exposure.py jars --loader neoforge|fabric --from A --to B --save NAME`. It downloads the pinned mods
+   the first time, prints the mods that link, and the references that do not, ranked by how many mods they hold back,
+   each with what the game's own code did about it. To pick the update, read the ranked list across every update in
+   `bench/exposure/all.json`.
 2. Take the top part whose line says the game shows the answer (`game: replaced`, `split`, `linked`, `template`).
    The detail names what the game's own code calls now. Skip `redesigned` and `unused` unless you can read both
    versions of the game class and say what replaces it; if you can't, leave it. A wrong rule is worse than none.
