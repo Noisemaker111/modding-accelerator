@@ -338,8 +338,8 @@ def join(folder, save):
         s = json.loads(f.read_text(encoding="utf-8"))
         if {"loader", "from", "to", "modsRead"} <= s.keys():
             rows.append(s)
-    order = {u: i for lo in FIRST for i, u in enumerate(updates(lo))}
-    rows.sort(key=lambda s: (s["loader"], order.get((s["from"], s["to"]), 999)))
+    order = {(lo, *u): i for lo in FIRST for i, u in enumerate(updates(lo))}
+    rows.sort(key=lambda s: (s["loader"], order.get((s["loader"], s["from"], s["to"]), 999)))
     total = {"mods": sum(s["modsRead"] for s in rows), "link": sum(s["modsThatLink"] for s in rows)}
     loaders = {}
     for s in rows:
@@ -352,6 +352,7 @@ def join(folder, save):
     missing = [f"{lo} {a} -> {b}" for lo in FIRST for a, b in updates(lo) if not any(s["loader"] == lo and s["from"] == a for s in rows)]
     table = {
         "date": date.today().isoformat(), "total": total, "loaders": loaders, "missing": missing,
+        "notRead": "NeoForge 1.20.2 to 1.20.5: its mods name game members by SRG ids, not yet read in Mojang's names",
         "updates": [{k: s[k] for k in ("loader", "from", "to", "modsRead", "modsThatLink", "brokenUses")} for s in rows],
         "top": top,
     }
@@ -394,6 +395,27 @@ def standalone(jar):
     return True
 
 
+def mod_ids(jar):
+    """The mod ids a NeoForge or Forge jar declares."""
+    import tomllib
+    import zipfile
+    with zipfile.ZipFile(jar) as z:
+        for name in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml"):
+            if name in z.namelist():
+                try:
+                    return {m.get("modId") for m in tomllib.loads(z.read(name).decode("utf-8", "replace")).get("mods", [])}
+                except tomllib.TOMLDecodeError:
+                    return set()
+    return set()
+
+
+def has_code(jar):
+    """Whether any class of the jar (nested jars aside) names the game."""
+    import zipfile
+    with zipfile.ZipFile(jar) as z:
+        return any(n.endswith(".class") and b"net/minecraft/" in z.read(n) for n in z.namelist())
+
+
 def load(loader, frm, to, save):
     """The mods the jar scoreboard says link that need no other mod, ported as jars and started on a real server of the new release.
 
@@ -431,7 +453,7 @@ def load(loader, frm, to, save):
             if finding.get("severity") != "problem":
                 continue
             for s in finding.get("suspects", []):
-                top = s.get("jar", "").split("!")[0]
+                top = s.get("jar", "").split("!")[0] or next((n for n in present if s.get("mod") in mod_ids(pack / "mods" / n)), "")
                 if top in present:
                     blamed.setdefault(top, "; ".join(s.get("why", []))[:400])
         if not blamed:
@@ -463,11 +485,14 @@ def load(loader, frm, to, save):
     summary = {
         "loader": loader, "from": frm, "to": to, "mods": len(chosen), "loaded": len(loaded),
         "linkedAndLoaded": sum(1 for n in loaded if links.get(n)), "linked": sum(links.values()),
-        "failedButLinked": sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n)),
+        "failedButLinked": sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n) and has_code(folder / n)),
+        # A mod with no game code links trivially; what fails it is its data, which the link check does not read.
+        "failedDataOnly": sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n) and not has_code(folder / n)),
         "verdicts": verdicts,
     }
     print(f"{summary['loaded']}/{summary['mods']} load on a real {to} server; {summary['linked']} link, "
-          f"{summary['linkedAndLoaded']} of them load; failed although they link: {summary['failedButLinked'] or 'none'}")
+          f"{summary['linkedAndLoaded']} of them load; failed although they link: {summary['failedButLinked'] or 'none'}"
+          + (f"; failed on their data, with no game code: {summary['failedDataOnly']}" if summary["failedDataOnly"] else ""))
     if save:
         path = ROOT / "bench" / "exposure" / f"{save}.json"
         path.write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")

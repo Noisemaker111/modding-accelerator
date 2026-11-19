@@ -836,7 +836,7 @@
    "name": "Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2",
    "unit": "mods",
    "better": "higher",
-   "explain": "python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and counts the ones that use no game class, method or field the porter cannot carry to 1.21.2 (unchanged, renamed, moved, rewritten from the game's own code, or named by a rule). No mod is built; it takes about half a minute.",
+   "explain": "Retired with python bench/exposure.py run on 2026-11-19 (step 44): it read what mods use without porting them and could not see mixins, field types or access transformers. The jar scoreboard counts this now: port.jar-links for 1.21.1 to 1.21.2, port.jar-links.every-update for every update. python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and counts the ones that use no game class, method or field the porter cannot carry to 1.21.2 (unchanged, renamed, moved, rewritten from the game's own code, or named by a rule). No mod is built; it takes about half a minute.",
    "points": [
     {"date": "2026-11-18", "value": 58, "n": 150, "note": "637 changed game parts hold the other 92; 313 of them are used by one mod each", "source": "python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/neoforge-1.21.1-1.21.2.json)"}
    ],
@@ -860,12 +860,277 @@
    "target": {"value": 50, "by": "2026-12-08", "step": "47"}
   },
   {
+   "id": "port.jar-links.every-update",
+   "area": "port",
+   "name": "Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py all (or tools/cloud-run exposure, about 7 minutes) ports the 150 most-downloaded mods of each release (pinned in bench/exposure/mods/) to the next release with mmt port --jar's tools/JarPort.java and links every reference to the game, for each of the 43 Fabric updates from 1.14.4 and the 18 NeoForge updates from 1.20.5. Fabric jars are read in Mojang's names through intermediary first (tools/ModNames.java). Counts the mod ports that link, out of every one read; byUpdate holds each update's count. NeoForge 1.20.2 to 1.20.5 is not read yet (SRG names).",
+   "info": true,
+   "points": [
+    {
+     "date": "2026-11-19",
+     "value": 5018,
+     "n": 9149,
+     "note": "54.8% over 61 updates; Fabric 3734/6449, NeoForge 1284/2700; NeoForge 1.21.1 -> 1.21.2 is 41 as in port.jar-links",
+     "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44464554330 (bench/exposure/all.json)",
+     "byUpdate": {
+      "fabric 1.14.4 -> 1.15": [
+       75,
+       150
+      ],
+      "fabric 1.15 -> 1.15.1": [
+       143,
+       150
+      ],
+      "fabric 1.15.1 -> 1.15.2": [
+       141,
+       150
+      ],
+      "fabric 1.15.2 -> 1.16": [
+       59,
+       150
+      ],
+      "fabric 1.16 -> 1.16.1": [
+       139,
+       150
+      ],
+      "fabric 1.16.1 -> 1.16.2": [
+       119,
+       150
+      ],
+      "fabric 1.16.2 -> 1.16.3": [
+       137,
+       150
+      ],
+      "fabric 1.16.3 -> 1.16.4": [
+       136,
+       150
+      ],
+      "fabric 1.16.4 -> 1.16.5": [
+       137,
+       150
+      ],
+      "fabric 1.16.5 -> 1.17": [
+       36,
+       150
+      ],
+      "fabric 1.17 -> 1.17.1": [
+       130,
+       150
+      ],
+      "fabric 1.17.1 -> 1.18": [
+       99,
+       150
+      ],
+      "fabric 1.18 -> 1.18.1": [
+       128,
+       150
+      ],
+      "fabric 1.18.1 -> 1.18.2": [
+       101,
+       150
+      ],
+      "fabric 1.18.2 -> 1.19": [
+       32,
+       150
+      ],
+      "fabric 1.19 -> 1.19.1": [
+       102,
+       150
+      ],
+      "fabric 1.19.1 -> 1.19.2": [
+       116,
+       149
+      ],
+      "fabric 1.19.2 -> 1.19.3": [
+       29,
+       150
+      ],
+      "fabric 1.19.3 -> 1.19.4": [
+       55,
+       150
+      ],
+      "fabric 1.19.4 -> 1.20": [
+       36,
+       150
+      ],
+      "fabric 1.20 -> 1.20.1": [
+       125,
+       150
+      ],
+      "fabric 1.20.1 -> 1.20.2": [
+       47,
+       150
+      ],
+      "fabric 1.20.2 -> 1.20.3": [
+       80,
+       150
+      ],
+      "fabric 1.20.3 -> 1.20.4": [
+       132,
+       150
+      ],
+      "fabric 1.20.4 -> 1.20.5": [
+       32,
+       150
+      ],
+      "fabric 1.20.5 -> 1.20.6": [
+       131,
+       150
+      ],
+      "fabric 1.20.6 -> 1.21": [
+       27,
+       150
+      ],
+      "fabric 1.21 -> 1.21.1": [
+       124,
+       150
+      ],
+      "fabric 1.21.1 -> 1.21.2": [
+       38,
+       150
+      ],
+      "fabric 1.21.2 -> 1.21.3": [
+       125,
+       150
+      ],
+      "fabric 1.21.3 -> 1.21.4": [
+       77,
+       150
+      ],
+      "fabric 1.21.4 -> 1.21.5": [
+       33,
+       150
+      ],
+      "fabric 1.21.5 -> 1.21.6": [
+       40,
+       150
+      ],
+      "fabric 1.21.6 -> 1.21.7": [
+       130,
+       150
+      ],
+      "fabric 1.21.7 -> 1.21.8": [
+       129,
+       150
+      ],
+      "fabric 1.21.8 -> 1.21.9": [
+       32,
+       150
+      ],
+      "fabric 1.21.9 -> 1.21.10": [
+       130,
+       150
+      ],
+      "fabric 1.21.10 -> 1.21.11": [
+       38,
+       150
+      ],
+      "fabric 1.21.11 -> 26.1": [
+       41,
+       150
+      ],
+      "fabric 26.1 -> 26.1.1": [
+       94,
+       150
+      ],
+      "fabric 26.1.1 -> 26.1.2": [
+       97,
+       150
+      ],
+      "fabric 26.1.2 -> 26.2": [
+       38,
+       150
+      ],
+      "fabric 26.2 -> 26.3": [
+       44,
+       150
+      ],
+      "neoforge 1.20.5 -> 1.20.6": [
+       117,
+       150
+      ],
+      "neoforge 1.20.6 -> 1.21": [
+       38,
+       150
+      ],
+      "neoforge 1.21 -> 1.21.1": [
+       104,
+       150
+      ],
+      "neoforge 1.21.1 -> 1.21.2": [
+       41,
+       150
+      ],
+      "neoforge 1.21.2 -> 1.21.3": [
+       120,
+       150
+      ],
+      "neoforge 1.21.3 -> 1.21.4": [
+       65,
+       150
+      ],
+      "neoforge 1.21.4 -> 1.21.5": [
+       33,
+       150
+      ],
+      "neoforge 1.21.5 -> 1.21.6": [
+       44,
+       150
+      ],
+      "neoforge 1.21.6 -> 1.21.7": [
+       97,
+       150
+      ],
+      "neoforge 1.21.7 -> 1.21.8": [
+       106,
+       150
+      ],
+      "neoforge 1.21.8 -> 1.21.9": [
+       34,
+       150
+      ],
+      "neoforge 1.21.9 -> 1.21.10": [
+       112,
+       150
+      ],
+      "neoforge 1.21.10 -> 1.21.11": [
+       40,
+       150
+      ],
+      "neoforge 1.21.11 -> 26.1": [
+       45,
+       150
+      ],
+      "neoforge 26.1 -> 26.1.1": [
+       107,
+       150
+      ],
+      "neoforge 26.1.1 -> 26.1.2": [
+       105,
+       150
+      ],
+      "neoforge 26.1.2 -> 26.2": [
+       32,
+       150
+      ],
+      "neoforge 26.2 -> 26.3": [
+       44,
+       150
+      ]
+     }
+    }
+   ],
+   "history": []
+  },
+  {
    "id": "port.jar-loads",
    "area": "port",
    "name": "Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2",
    "unit": "mods",
    "better": "higher",
-   "explain": "python bench/exposure.py load: the mods port.real-mods-clear clears that need no other mod are ported with mmt port --jar and started together on a real NeoForge 1.21.2 server (mmt pack-check: a new world, every block item placed, the world opened again); a failed start drops the mod its log names. Counts the ones that load, out of the ones chosen.",
+   "explain": "python bench/exposure.py load: the 35 standalone mods exposure.py run cleared (retired 2026-11-19; port.jar-loads.linked carries on from the jar scoreboard's list) are ported with mmt port --jar and started together on a real NeoForge 1.21.2 server (mmt pack-check: a new world, every block item placed, the world opened again); a failed start drops the mod its log names. Counts the ones that load, out of the ones chosen.",
    "points": [
     {"date": "2026-11-18", "value": 28, "n": 35, "note": "6 failed on game code 1.21.2 changed, all 6 flagged by the link check; 1 client-only; 13 link and all 13 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
     {"date": "2026-11-18", "value": 29, "n": 35, "note": "Jade now loads: calls whose parameters changed are no longer given a descriptor their stack does not fit; 12 link and all 12 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
@@ -873,6 +1138,19 @@
     {"date": "2026-11-19", "value": 30, "n": 35, "note": "21 link, 20 load, 1 client-only, none fails; on 1.21.5 25 of 29 load, 19 link, 18 load, 1 client-only, none fails", "source": "python bench/exposure.py load (bench/exposure/load-neoforge-1.21.1-1.21.2.json, load-neoforge-1.21.4-1.21.5.json), PR #120"}
    ],
    "target": {"value": 33, "by": "2026-12-08", "step": "47"}
+  },
+  {
+   "id": "port.jar-loads.linked",
+   "area": "port",
+   "name": "Standalone mods the jar scoreboard says link whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py load: the mods python bench/exposure.py jars says link that need no other mod are ported with mmt port --jar and started together on a real NeoForge 1.21.2 server (mmt pack-check: a new world, every block item placed, the world opened again); a failed start drops the mod its log names. Counts the ones that load, out of the ones chosen. A mod with no game code links trivially, so one that fails on its data is reported apart (failedDataOnly).",
+   "info": true,
+   "points": [
+    {"date": "2026-11-19", "value": 22, "n": 23, "note": "now the standalone mods the jar scoreboard says link (exposure.py run is retired): 22 of 23 load, none failed on code; Dungeons and Taverns, which has no code, failed on its data (an enchantment effect 1.21.2 removed)", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"}
+   ],
+   "history": []
   },
   {
    "id": "port.corpus-builds",
