@@ -4,8 +4,8 @@
  "to": "1.21.2",
  "mods": 35,
  "loaded": 30,
- "linkedAndLoaded": 19,
- "linked": 19,
+ "linkedAndLoaded": 20,
+ "linked": 21,
  "failedButLinked": [],
  "verdicts": {
   "cubes-without-borders--cwb-5.0.0+1.21.0.neoforge.jar": "client-only: a server start showed it reaches client-only code",
