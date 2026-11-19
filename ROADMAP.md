@@ -13,7 +13,7 @@
 | Goal | Steps done | Now |
 |---|---|---|
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
-| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;28 | ⚪ 44 · One porting worklist, read from jars, for every loader<br>⚪ 47 · A fix names a game part and is applied in the class<br>⚪ 51 · A ported jar is proven in a game client too |
+| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;16&nbsp;of&nbsp;28 | 🔵 47 · A fix names a game part and is applied in the class<br>⚪ 44 · One porting worklist, read from jars, for every loader<br>⚪ 51 · A ported jar is proven in a game client too |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
 | **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;4&nbsp;of&nbsp;10 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first |
 
@@ -174,7 +174,7 @@ One command moves a mod's source from any version to any other, forward or back,
 | # | Step | Status | When |
 |---|---|---|---|
 | 44 | One porting worklist, read from jars, for every loader | ⚪ next | Nov 19 → Nov 26 |
-| 47 | A fix names a game part and is applied in the class | ⚪ next | Nov 24 → Dec 8 |
+| 47 | A fix names a game part and is applied in the class | 🔵 doing | Nov 24 → Dec 8 |
 | 51 | A ported jar is proven in a game client too | ⚪ next | Nov 24 → Dec 4 |
 | 45 | Generate the target build from the loader's starter project | ⚫ later | Nov 24 → Dec 8 |
 | 46 | One migration per redesigned game part, ranked by mods freed | ⚫ later | Nov 24 → Dec 22 |
@@ -229,7 +229,7 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **44 · One porting worklist, read from jars, for every loader** (next). python bench/exposure.py jars links what each of the 150 most-downloaded mods references (classes, mixins, access transformers) against the target release, as the JVM and Mixin will, and ranks what does not link by the mods it holds back. It replaces exposure.py run as the list that chooses porting work: run cleared 58 NeoForge mods and the link check 32, and every mod that failed on a real server was one run cleared and the link check did not. Fabric jars ship in intermediary names, so the link check reads them through the game's own mappings to Mojang's names, and the source porter's worklist (port-plan) is read the same way.
 
-**47 · A fix names a game part and is applied in the class** (next). A porting rule is text: a pattern on the compiler's error and a find-and-replace on the source (355 of 358 rules), so it cannot reach a .jar and cannot tell LocalPlayer.sendSystemMessage from ServerPlayer.sendSystemMessage. A rule names the game member it replaces and what replaces it (a call, a call chain, a field read through a method), and JarPort applies it where a class references that member; a source port applies the same rule at the places the compiler resolved. A rule's test links its before against the old release and its after against the new one, in seconds, with no mod. The jar scoreboard's top entries are the order: GuiGraphics.blit (52 mods), RenderSystem.setShader (43), InteractionResult's fields (28), Registry.getTag (29).
+**47 · A fix names a game part and is applied in the class** (doing). A porting rule is text: a pattern on the compiler's error and a find-and-replace on the source (355 of 358 rules), so it cannot reach a .jar and cannot tell LocalPlayer.sendSystemMessage from ServerPlayer.sendSystemMessage. A rule names the game member it replaces and what replaces it (a call, a call chain, a field read through a method), and JarPort applies it where a class references that member; a source port applies the same rule at the places the compiler resolved. A rule's test links its before against the old release and its after against the new one, in seconds, with no mod. The jar scoreboard's top entries are the order: GuiGraphics.blit (52 mods), RenderSystem.setShader (43), InteractionResult's fields (28), Registry.getTag (29). *So far:* So far (2026-11-18): JarPort applies in the class what the game's own code shows (calls switched, added arguments such as GuiGraphics.blit's RenderType::guiTextured, chains, narrower fields) and every port rule's inClass: a Java expression for the old member, compiled against the new release like javac would, or a dropped class mapped to its replacement. 57 replacements on 33 rules. 41 of 150 link (30 before), broken uses 5,640 -> 4,147; on a real 1.21.2 server 30 of 35 load and all 19 that link load. The rest are held back by 1.21.2's rendering and recipe rewrites (render states, toasts, recipe book), which one-member replacements cannot express: every remaining mixin signature change would add about 4. Next: the source port applies inClass too.
 
 **51 · A ported jar is proven in a game client too** (next). mmt pack-check proves a ported jar on a real server, and a server never runs client code: 15 of the 28 jars that loaded on 1.21.2 still reference rendering and screen code that does not link there. A client start with the ported jars (the loader's own client install, a world opened and a screen shown, hidden and muted) proves the rest, and makes the load proof cover client-only mods, which a server leaves out.
 
@@ -259,8 +259,8 @@ One command moves a mod's source from any version to any other, forward or back,
 | NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC, cold | — | 92.0 min (Nov 8) | — | Fact |
 | NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
 | Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2 | — | 58 mods (Nov 18) | 100 mods by Dec 22, step 46 | Baseline |
-| Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2 | 32 mods (Nov 18) | 30 mods (Nov 18) | 50 mods by Dec 8, step 47 | 0% of the way |
-| Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | 28 mods (Nov 18) | 29 mods (Nov 18) | 33 mods by Dec 8, step 47 | 20% of the way |
+| Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2 | 32 mods (Nov 18) | 41 mods (Nov 18) | 50 mods by Dec 8, step 47 | 50% of the way |
+| Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | 28 mods (Nov 18) | 30 mods (Nov 18) | 33 mods by Dec 8, step 47 | 40% of the way |
 | Corpus ports that build with no hand edits | 10 updates (Nov 16) | 16 updates (Nov 18) | 60 updates by Dec 22, step 44 | 12% of the way |
 
 </details>
