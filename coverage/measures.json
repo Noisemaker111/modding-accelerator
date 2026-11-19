@@ -851,7 +851,8 @@
    "of": 150,
    "explain": "python bench/exposure.py jars ports the jars of the 150 most-downloaded NeoForge mods for 1.21.1 with mmt port --jar's tools/JarPort.java and counts the ones in which every reference to the game (calls, fields with their types, method references, overrides, mixin shadows and targets, access transformers, nested mods too) links against 1.21.2. About a minute and a half; no build. It is stricter than port.real-mods-clear, which cannot see mixins, field types or access transformers.",
    "points": [
-    {"date": "2026-11-18", "value": 32, "n": 150, "note": "1 of them keeps an override 1.21.2 no longer calls; the old scoreboard clears 58", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"}
+    {"date": "2026-11-18", "value": 32, "n": 150, "note": "1 of them keeps an override 1.21.2 no longer calls; the old scoreboard clears 58", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-18", "value": 30, "n": 150, "note": "after review fixes: access, changed signatures, removed interfaces, new abstract methods and mixin accessors now checked", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"}
    ],
    "target": {"value": 50, "by": "2026-12-08", "step": "47"}
   },
@@ -863,7 +864,8 @@
    "better": "higher",
    "explain": "python bench/exposure.py load: the mods port.real-mods-clear clears that need no other mod are ported with mmt port --jar and started together on a real NeoForge 1.21.2 server (mmt pack-check: a new world, every block item placed, the world opened again); a failed start drops the mod its log names. Counts the ones that load, out of the ones chosen.",
    "points": [
-    {"date": "2026-11-18", "value": 28, "n": 35, "note": "6 failed on game code 1.21.2 changed, all 6 flagged by the link check; 1 client-only; 13 link and all 13 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"}
+    {"date": "2026-11-18", "value": 28, "n": 35, "note": "6 failed on game code 1.21.2 changed, all 6 flagged by the link check; 1 client-only; 13 link and all 13 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-18", "value": 29, "n": 35, "note": "Jade now loads: calls whose parameters changed are no longer given a descriptor their stack does not fit; 12 link and all 12 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"}
    ],
    "target": {"value": 33, "by": "2026-12-08", "step": "47"}
   },

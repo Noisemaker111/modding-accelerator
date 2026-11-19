@@ -11,10 +11,10 @@ that part is fixed with it. Read this whole file before the first command: it is
 - A mod comes in as source or as a `.jar`. `mmt port --jar MOD.jar --to 1.21.2` (tools/JarPort.java) moves a compiled
   NeoForge mod with no source and no build, and names every reference that does not link instead of guessing.
 - `python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2` (90 s) ports the 150 most-downloaded
-  NeoForge mods that way: **32 link against 1.21.2**, and it ranks what holds the others back. This is the number to
+  NeoForge mods that way: **30 link against 1.21.2**, and it ranks what holds the others back. This is the number to
   move. `exposure.py run` says 58, but it cannot see mixins, field types or access transformers: of the 35 standalone
   mods it cleared, 6 failed on a real server, and the link check had named all 6.
-- `python bench/exposure.py load ...` is the proof: those 35 ported jars start on a real 1.21.2 server, 28 load, and
+- `python bench/exposure.py load ...` is the proof: those 35 ported jars start on a real 1.21.2 server, 29 load, and
   every mod the link check says links loads. A server never runs client code, so a client proof is step 51.
 - 16 of the 126 corpus ports build (`python bench/measures.py table port.corpus-builds`). 23 of the 126 are mods
   whose untouched original does not build on the runner, and 72 cross many updates at once, so this number only

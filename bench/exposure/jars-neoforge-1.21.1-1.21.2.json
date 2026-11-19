@@ -3,8 +3,8 @@
  "from": "1.21.1",
  "to": "1.21.2",
  "modsRead": 150,
- "modsThatLink": 32,
- "silentOnly": 1,
+ "modsThatLink": 30,
+ "silentOnly": 0,
  "top": [
   {
    "mods": 52,
@@ -63,6 +63,18 @@
    "member": "call: net.minecraft.core.RegistryAccess.registry(Lnet/minecraft/resources/ResourceKey;)Ljava/util/Optional;"
   },
   {
+   "mods": 21,
+   "member": "class gone: net.minecraft.world.InteractionResultHolder"
+  },
+  {
+   "mods": 20,
+   "member": "call: com.mojang.blaze3d.platform.NativeImage.getPixelRGBA(II)I"
+  },
+  {
+   "mods": 20,
+   "member": "call: com.mojang.blaze3d.platform.NativeImage.setPixelRGBA(III)V"
+  },
+  {
    "mods": 20,
    "member": "call: net.minecraft.core.Registry.getHolder(Lnet/minecraft/resources/ResourceKey;)Ljava/util/Optional;"
   },
@@ -72,11 +84,23 @@
   },
   {
    "mods": 19,
+   "member": "call: net.minecraft.world.item.crafting.RecipeHolder.id()Lnet/minecraft/resources/ResourceLocation;"
+  },
+  {
+   "mods": 19,
+   "member": "class gone: net.minecraft.client.renderer.block.model.ItemOverrides"
+  },
+  {
+   "mods": 19,
    "member": "method reference: net.minecraft.client.renderer.GameRenderer.getPositionColorShader()Lnet/minecraft/client/renderer/ShaderInstance;"
   },
   {
    "mods": 18,
    "member": "call: net.minecraft.client.gui.GuiGraphics.blit(Lnet/minecraft/resources/ResourceLocation;IIIIFFIIII)V"
+  },
+  {
+   "mods": 18,
+   "member": "call: net.minecraft.world.entity.EntityType.create(Lnet/minecraft/world/level/Level;)Lnet/minecraft/world/entity/Entity;"
   },
   {
    "mods": 18,
@@ -95,6 +119,10 @@
    "member": "mixin target changed signature: net.minecraft.client.renderer.LevelRenderer.renderLevel(Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/GameRenderer;Lnet/minecraft/client/renderer/LightTexture;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
   },
   {
+   "mods": 17,
+   "member": "class gone: net.minecraft.world.ItemInteractionResult"
+  },
+  {
    "mods": 16,
    "member": "call: net.minecraft.client.renderer.RenderStateShard$TextureStateShard.<init>(Lnet/minecraft/resources/ResourceLocation;ZZ)V"
   },
@@ -108,11 +136,23 @@
   },
   {
    "mods": 15,
+   "member": "abstract method not written: net.minecraft.client.renderer.entity.EntityRenderer.createRenderState()Lnet/minecraft/client/renderer/entity/state/EntityRenderState;"
+  },
+  {
+   "mods": 15,
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.setProjectionMatrix(Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/vertex/VertexSorting;)V"
+  },
+  {
+   "mods": 15,
    "member": "call: net.minecraft.client.gui.GuiGraphics.blit(Lnet/minecraft/resources/ResourceLocation;IIIFFIIII)V"
   },
   {
    "mods": 15,
    "member": "call: net.minecraft.core.Registry.getTagNames()Ljava/util/stream/Stream;"
+  },
+  {
+   "mods": 15,
+   "member": "call: net.minecraft.world.entity.EntityType$Builder.build(Ljava/lang/String;)Lnet/minecraft/world/entity/EntityType;"
   },
   {
    "mods": 15,
@@ -124,47 +164,7 @@
   },
   {
    "mods": 14,
-   "member": "call: net.minecraft.client.renderer.entity.EntityRenderDispatcher.render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"
-  },
-  {
-   "mods": 14,
-   "member": "call: net.minecraft.core.Registry.asLookup()Lnet/minecraft/core/HolderLookup$RegistryLookup;"
-  },
-  {
-   "mods": 14,
-   "member": "call: net.minecraft.world.item.crafting.Recipe.getIngredients()Lnet/minecraft/core/NonNullList;"
-  },
-  {
-   "mods": 13,
-   "member": "call: net.minecraft.client.player.LocalPlayer.sendSystemMessage(Lnet/minecraft/network/chat/Component;)V"
-  },
-  {
-   "mods": 13,
-   "member": "call: net.minecraft.world.InteractionResultHolder.fail(Ljava/lang/Object;)Lnet/minecraft/world/InteractionResultHolder;"
-  },
-  {
-   "mods": 13,
-   "member": "call: net.minecraft.world.InteractionResultHolder.pass(Ljava/lang/Object;)Lnet/minecraft/world/InteractionResultHolder;"
-  },
-  {
-   "mods": 13,
-   "member": "call: net.minecraft.world.InteractionResultHolder.sidedSuccess(Ljava/lang/Object;Z)Lnet/minecraft/world/InteractionResultHolder;"
-  },
-  {
-   "mods": 13,
-   "member": "call: net.minecraft.world.item.crafting.Ingredient.isEmpty()Z"
-  },
-  {
-   "mods": 13,
-   "member": "call: net.minecraft.world.item.crafting.Ingredient.of(Lnet/minecraft/tags/TagKey;)Lnet/minecraft/world/item/crafting/Ingredient;"
-  },
-  {
-   "mods": 12,
-   "member": "call: net.minecraft.client.multiplayer.ClientLevel.getRecipeManager()Lnet/minecraft/world/item/crafting/RecipeManager;"
-  },
-  {
-   "mods": 12,
-   "member": "call: net.minecraft.client.renderer.RenderStateShard$ShaderStateShard.<init>(Ljava/util/function/Supplier;)V"
+   "member": "abstract method not written: net.minecraft.client.renderer.entity.layers.RenderLayer.render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/renderer/entity/state/EntityRenderState;FF)V"
   }
  ]
 }
