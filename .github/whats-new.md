@@ -13,6 +13,8 @@
   the same. So far: Cyclic's auto-crafter 15.7x, Simple Storage Network 5-6x, Diorama 1.6-2.2x faster.
 - **Porting goes further on its own.** `mmt port --fix` uses name maps built from the game's own releases, so more
   mods reach a working build with no hand edits.
+- **Port Fabric mods from their .jar.** `mmt port --jar` now takes Fabric mods (1.14.4 and newer) as well as NeoForge
+  ones and hands them back in the names Fabric runs, ready to drop into a Fabric game.
 - **Ported jars keep their mixins and overrides.** `mmt port --jar` follows game methods that only changed their
   parameters into a mod's mixin hooks and overrides, and opens game members a new release made private through the
   mod's own access transformer.
