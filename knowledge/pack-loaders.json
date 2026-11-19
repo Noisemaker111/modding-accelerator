@@ -42,7 +42,7 @@
       "metadata": [{ "file": "META-INF/mods.toml" }],
       "builtIn": ["forge", "javafml", "lowcodefml", "mixin"],
       "failed": ["Mod Loading has failed", "Failed to complete lifecycle event"],
-      "modNamed": ["Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)", "Mod ([a-z0-9_.\\-]+) requires "],
+      "modNamed": ["Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)", "Mod ([a-z0-9_.\\-]+) requires ", "Attempted to load class (?<class>[\\w/$.]+) for invalid dist"],
       "clientOnly": ["for invalid dist DEDICATED_SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client."]
     },
     "neoforge": {
@@ -71,7 +71,10 @@
         "Mod ([a-z0-9_.\\-]+) requires ",
         "Mod ([a-z0-9_.\\-]+) failed to load correctly",
         "\\(([a-z0-9_.\\-]+)\\) has failed to load correctly",
-        "mod ([a-z0-9_.\\-]+) failed to"
+        "mod ([a-z0-9_.\\-]+) failed to",
+        "Mod File \\S*?(?<file>[^\\\\/\\s]+\\.jar) needs ",
+        "Attempted to load class (?<class>[\\w/$.]+) for invalid dist",
+        "Failed to parse \\S+ from pack mod/([a-z0-9_.\\-]+)"
       ],
       "clientOnly": ["for invalid dist DEDICATED_SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client."]
     },

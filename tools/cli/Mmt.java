@@ -360,11 +360,22 @@ public final class Mmt {
                 );
                 System.exit(exit);
             }
+            if (options.command.equals("port") && options.values.containsKey("jar")) {
+                // A compiled mod, not a source checkout: no Gradle build and no project lock.
+                report = new Report(Path.of(System.getProperty("user.home"), ".mmt", "jar-port"), options.command);
+                Map<String, Object> result = PortJar.run(home, options, report);
+                exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.println(String.valueOf(result.get("details")) + "\nReceipt: " + output.get("receipt"));
+                System.exit(exit);
+            }
             Path root = Path.of(options.get("root", "."));
             if (
                 Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar")
             ) throw new IllegalArgumentException(
-                "--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run mmt discover --root SOURCE."
+                "--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run mmt discover --root SOURCE" +
+                (options.command.equals("port") ? ", or move the compiled NeoForge mod with mmt port --jar FILE --to VERSION." : ".")
             );
             if (!COMMANDS.contains(options.command)) throw new IllegalArgumentException(
                 unknownCommand(options.command)
@@ -915,7 +926,11 @@ public final class Mmt {
             "Background keeps the client hidden and prevents cursor capture (default off).\n" +
             "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off,\n" +
             "and the next game gets back the sound, narrator and first-launch options quiet changed in its folder.";
-            case "port" -> "Port a Gradle mod source checkout (not a JAR):\n" +
+            case "port" -> "Port a compiled NeoForge mod (1.20.5 and newer), no source and no build:\n" +
+            "  mmt port --jar MOD.jar --to 1.21.2 [--from 1.21.1] [--out PORTED.jar] [--json]\n" +
+            "Every reference its classes and mixins make to the game is relinked against the new release; what does not link is named,\n" +
+            "never guessed, and the command fails. --from comes from the jar's metadata when it names one release.\n" +
+            "Port a Gradle mod source checkout:\n" +
             "  mmt discover --root SOURCE\n" +
             "  mmt dependencies --root SOURCE --to 1.21.6 --json\n" +
             "  mmt port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n" +
