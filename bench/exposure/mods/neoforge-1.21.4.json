@@ -1,1207 +1,152 @@
-{
-"loader": "neoforge",
-"version": "1.21.4",
-"date": "2026-11-18",
-"mods": [
-{
-"slug": "sodium",
-"project": "AANobbMI",
-"version": "XgEfENfn",
-"file": "sodium-neoforge-0.6.13+mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/AANobbMI/versions/XgEfENfn/sodium-neoforge-0.6.13%2Bmc1.21.4.jar",
-"sha1": "3983693715e20e3c1c9294a034b5b6b56215a7ec"
-},
-{
-"slug": "iris",
-"project": "YL57xq9U",
-"version": "FNc0XYTL",
-"file": "iris-neoforge-1.8.8+mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/YL57xq9U/versions/FNc0XYTL/iris-neoforge-1.8.8%2Bmc1.21.4.jar",
-"sha1": "dad7229a302126503fb8651d7f101949c2c57184"
-},
-{
-"slug": "entityculling",
-"project": "NNAgCjsB",
-"version": "QIZKSbc6",
-"file": "entityculling-neoforge-1.12.1-mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/NNAgCjsB/versions/QIZKSbc6/entityculling-neoforge-1.12.1-mc1.21.4.jar",
-"sha1": "4bc3a482507fb2698f5b7c400ea7398db7bbde94"
-},
-{
-"slug": "cloth-config",
-"project": "9s6osm5g",
-"version": "dWfheG9X",
-"file": "cloth-config-17.0.144-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/9s6osm5g/versions/dWfheG9X/cloth-config-17.0.144-neoforge.jar",
-"sha1": "af9a6e52015098fd3d97d996dafbb66bbe495691"
-},
-{
-"slug": "ferrite-core",
-"project": "uXXizFIs",
-"version": "joOID027",
-"file": "ferritecore-7.1.3-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/uXXizFIs/versions/joOID027/ferritecore-7.1.3-neoforge.jar",
-"sha1": "2cd2f63b724b4178648d85eb2a3123d51ba1c5cd"
-},
-{
-"slug": "lithium",
-"project": "gvQqBUqZ",
-"version": "lP2Expzz",
-"file": "lithium-neoforge-0.15.3+mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/lP2Expzz/lithium-neoforge-0.15.3%2Bmc1.21.4.jar",
-"sha1": "9346a3af485cbc1c9a159684aa773cc6df7007bb"
-},
-{
-"slug": "immediatelyfast",
-"project": "5ZwdcRci",
-"version": "akEJ6o1m",
-"file": "ImmediatelyFast-NeoForge-1.8.7+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/akEJ6o1m/ImmediatelyFast-NeoForge-1.8.7%2B1.21.4.jar",
-"sha1": "0468d5957a39114f0fb34c739dbaf9e0b4fcb289"
-},
-{
-"slug": "yacl",
-"project": "1eAoo2KR",
-"version": "U3RHt3Tk",
-"file": "yet_another_config_lib_v3-3.8.2+1.21.4-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/U3RHt3Tk/yet_another_config_lib_v3-3.8.2%2B1.21.4-neoforge.jar",
-"sha1": "81742c8454b14eb9fe9e366ba83204f320a96023"
-},
-{
-"slug": "xaeros-minimap",
-"project": "1bokaNcj",
-"version": "UmbZGoNN",
-"file": "xaerominimap-neoforge-1.21.4-26.5.0.jar",
-"url": "https://cdn.modrinth.com/data/1bokaNcj/versions/UmbZGoNN/xaerominimap-neoforge-1.21.4-26.5.0.jar",
-"sha1": "d5a5f136ffe7807ea7919b6a38b2fd8df519666d"
-},
-{
-"slug": "entitytexturefeatures",
-"project": "BVzZfTc1",
-"version": "CJWqQHGD",
-"file": "entity_texture_features-7.2.7-1.21.4-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/BVzZfTc1/versions/CJWqQHGD/entity_texture_features-7.2.7-1.21.4-neoforge.jar",
-"sha1": "c81ba83b7961367657980ab10384a7efd9df1c4d"
-},
-{
-"slug": "architectury-api",
-"project": "lhGA9TYQ",
-"version": "qOJoTaPQ",
-"file": "architectury-15.0.3-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/lhGA9TYQ/versions/qOJoTaPQ/architectury-15.0.3-neoforge.jar",
-"sha1": "ab24fc1c199e328ec4d13fe496cb4b7f0263a9f2"
-},
-{
-"slug": "sodium-extra",
-"project": "PtjYWJkn",
-"version": "fDDbhNOX",
-"file": "sodium-extra-neoforge-0.6.1+mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/PtjYWJkn/versions/fDDbhNOX/sodium-extra-neoforge-0.6.1%2Bmc1.21.4.jar",
-"sha1": "33f61977917b67e046da9a7f02771c04a67f005f"
-},
-{
-"slug": "xaeros-world-map",
-"project": "NcUtCpym",
-"version": "VlQLmGAM",
-"file": "xaeroworldmap-neoforge-1.21.4-1.46.0.jar",
-"url": "https://cdn.modrinth.com/data/NcUtCpym/versions/VlQLmGAM/xaeroworldmap-neoforge-1.21.4-1.46.0.jar",
-"sha1": "cc2f2aaff8cf16610bb186d44ef77239660717f7"
-},
-{
-"slug": "entity-model-features",
-"project": "4I1XuqiY",
-"version": "7VRIArUW",
-"file": "entity_model_features-3.3.12-1.21.4-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/4I1XuqiY/versions/7VRIArUW/entity_model_features-3.3.12-1.21.4-neoforge.jar",
-"sha1": "9b8ff00aa5a338cb42079c08931fe843ae8e8b47"
-},
-{
-"slug": "appleskin",
-"project": "EsAfCjCV",
-"version": "6OIEi4xY",
-"file": "appleskin-neoforge-mc1.21.3-3.0.8.jar",
-"url": "https://cdn.modrinth.com/data/EsAfCjCV/versions/6OIEi4xY/appleskin-neoforge-mc1.21.3-3.0.8.jar",
-"sha1": "1cf3492688c9eaf87539ac4a4ad27a32b9cfdc0f"
-},
-{
-"slug": "not-enough-animations",
-"project": "MPCX6s5C",
-"version": "qN9o6wwH",
-"file": "notenoughanimations-neoforge-1.12.7-mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/MPCX6s5C/versions/qN9o6wwH/notenoughanimations-neoforge-1.12.7-mc1.21.4.jar",
-"sha1": "c71638d95a0877e01bcd74502165a8451f9fb89f"
-},
-{
-"slug": "reeses-sodium-options",
-"project": "Bh37bMuy",
-"version": "xAiCe6w8",
-"file": "reeses-sodium-options-neoforge-1.8.3+mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/Bh37bMuy/versions/xAiCe6w8/reeses-sodium-options-neoforge-1.8.3%2Bmc1.21.4.jar",
-"sha1": "b03d05495be28d8cef7a34872941bb8d703d60e6"
-},
-{
-"slug": "jei",
-"project": "u6dRKJwZ",
-"version": "V5vS77Gp",
-"file": "jei-1.21.4-neoforge-20.0.0.4.jar",
-"url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/V5vS77Gp/jei-1.21.4-neoforge-20.0.0.4.jar",
-"sha1": "6c89376dcaae60c6a9908c93bb2fc7a78705bb30"
-},
-{
-"slug": "3dskinlayers",
-"project": "zV5r3pPn",
-"version": "VRi82jks",
-"file": "skinlayers3d-neoforge-1.11.4-mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/zV5r3pPn/versions/VRi82jks/skinlayers3d-neoforge-1.11.4-mc1.21.4.jar",
-"sha1": "0420dcca8faec0823585fdc02f0d548bf1b3bc8f"
-},
-{
-"slug": "modernfix",
-"project": "nmDcB62a",
-"version": "xbg7UvQT",
-"file": "modernfix-neoforge-5.20.3+mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/nmDcB62a/versions/xbg7UvQT/modernfix-neoforge-5.20.3%2Bmc1.21.4.jar",
-"sha1": "0353510f51f377a0c54da7a7f26f68bc83721c3d"
-},
-{
-"slug": "geckolib",
-"project": "8BmcQJ2H",
-"version": "eQtABRub",
-"file": "geckolib-neoforge-1.21.4-4.8.5.jar",
-"url": "https://cdn.modrinth.com/data/8BmcQJ2H/versions/eQtABRub/geckolib-neoforge-1.21.4-4.8.5.jar",
-"sha1": "54a80363a5fea8911c6d57563bb2c355c8b57262"
-},
-{
-"slug": "simple-voice-chat",
-"project": "9eGKb6K1",
-"version": "ToSd9euK",
-"file": "voicechat-neoforge-1.21.4-2.6.27.jar",
-"url": "https://cdn.modrinth.com/data/9eGKb6K1/versions/ToSd9euK/voicechat-neoforge-1.21.4-2.6.27.jar",
-"sha1": "d4b6a335fd4bc8609f5486f04e3c18bc90d059af"
-},
-{
-"slug": "moreculling",
-"project": "51shyZVL",
-"version": "ST43Fz5s",
-"file": "moreculling-neoforge-1.21.4-1.2.10.jar",
-"url": "https://cdn.modrinth.com/data/51shyZVL/versions/ST43Fz5s/moreculling-neoforge-1.21.4-1.2.10.jar",
-"sha1": "93f374d5fffaddc83cd498fc6dcaa13d647a9421"
-},
-{
-"slug": "jade",
-"project": "nvQzSEkH",
-"version": "Rpe14jmy",
-"file": "Jade-1.21.4-NeoForge-17.3.0.jar",
-"url": "https://cdn.modrinth.com/data/nvQzSEkH/versions/Rpe14jmy/Jade-1.21.4-NeoForge-17.3.0.jar",
-"sha1": "3740422a2589cd99c1e6d06a00cbd8813c9da823"
-},
-{
-"slug": "dynamic-fps",
-"project": "LQ3K71Q1",
-"version": "2LlAYmFQ",
-"file": "dynamic-fps-3.11.8+minecraft-1.21.2-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/LQ3K71Q1/versions/2LlAYmFQ/dynamic-fps-3.11.8%2Bminecraft-1.21.2-neoforge.jar",
-"sha1": "e6352436729a021c52b5645f8e36e72ba95bc71a"
-},
-{
-"slug": "forge-config-api-port",
-"project": "ohNO6lps",
-"version": "DjGnsAnc",
-"file": "ForgeConfigAPIPort-v21.4.3-1.21.4-NeoForge.jar",
-"url": "https://cdn.modrinth.com/data/ohNO6lps/versions/DjGnsAnc/ForgeConfigAPIPort-v21.4.3-1.21.4-NeoForge.jar",
-"sha1": "368dc150d7351eab4ea33e881d40d9d2d7bee293"
-},
-{
-"slug": "collective",
-"project": "e0M1UDsY",
-"version": "I5jY2gQ2",
-"file": "collective-1.21.4-8.3.jar",
-"url": "https://cdn.modrinth.com/data/e0M1UDsY/versions/I5jY2gQ2/collective-1.21.4-8.3.jar",
-"sha1": "ad74bd823d10b777c0c5ef247667bcd5270a789c"
-},
-{
-"slug": "fancymenu",
-"project": "Wq5SjeWM",
-"version": "C84Hz0YM",
-"file": "fancymenu_neoforge_3.7.1_MC_1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/Wq5SjeWM/versions/C84Hz0YM/fancymenu_neoforge_3.7.1_MC_1.21.4.jar",
-"sha1": "aa0d8f6b44a1a49fb14285f3266e31980821d8f8"
-},
-{
-"slug": "puzzles-lib",
-"project": "QAGBst4M",
-"version": "HOC9OUuE",
-"file": "PuzzlesLib-v21.4.14-1.21.4-NeoForge.jar",
-"url": "https://cdn.modrinth.com/data/QAGBst4M/versions/HOC9OUuE/PuzzlesLib-v21.4.14-1.21.4-NeoForge.jar",
-"sha1": "f9dfe0dc263a8f74706d88c06bb90ac654450a32"
-},
-{
-"slug": "konkrete",
-"project": "J81TRJWm",
-"version": "1ZCnjysV",
-"file": "konkrete_neoforge_1.9.9_MC_1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/J81TRJWm/versions/1ZCnjysV/konkrete_neoforge_1.9.9_MC_1.21.4.jar",
-"sha1": "b27734af021674bad3533784d0c6346bdacc9c69"
-},
-{
-"slug": "mouse-tweaks",
-"project": "aC3cM3Vq",
-"version": "pctLmzqC",
-"file": "MouseTweaks-neoforge-mc1.21.3-2.26.1.jar",
-"url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/pctLmzqC/MouseTweaks-neoforge-mc1.21.3-2.26.1.jar",
-"sha1": "6d16a4457330201b5c455587f2bb4757da70eb56"
-},
-{
-"slug": "balm",
-"project": "MBAkmtvl",
-"version": "1C3tVoOk",
-"file": "balm-neoforge-1.21.4-21.4.42.jar",
-"url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/1C3tVoOk/balm-neoforge-1.21.4-21.4.42.jar",
-"sha1": "d7b7dd5845950c081c8dc8297da287a21c92a219"
-},
-{
-"slug": "no-chat-reports",
-"project": "qQyHxfxd",
-"version": "SbnUzNb3",
-"file": "NoChatReports-NEOFORGE-1.21.4-v2.11.0.jar",
-"url": "https://cdn.modrinth.com/data/qQyHxfxd/versions/SbnUzNb3/NoChatReports-NEOFORGE-1.21.4-v2.11.0.jar",
-"sha1": "fa38a2085daa9d9dbd190d4fcbd5f824427aafd5"
-},
-{
-"slug": "sound-physics-remastered",
-"project": "qyVF9oeo",
-"version": "thfTQpK3",
-"file": "sound-physics-remastered-neoforge-1.21.4-1.5.1.jar",
-"url": "https://cdn.modrinth.com/data/qyVF9oeo/versions/thfTQpK3/sound-physics-remastered-neoforge-1.21.4-1.5.1.jar",
-"sha1": "6a9abe848102297375e4968838082fd279dee16f"
-},
-{
-"slug": "creativecore",
-"project": "OsZiaDHq",
-"version": "TBspwP11",
-"file": "CreativeCore_NEOFORGE_v2.12.35_mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/OsZiaDHq/versions/TBspwP11/CreativeCore_NEOFORGE_v2.12.35_mc1.21.4.jar",
-"sha1": "64ba606a343b29b75cb615d22b0f7d877243e654"
-},
-{
-"slug": "kotlin-for-forge",
-"project": "ordsPcFz",
-"version": "9ZlVvei8",
-"file": "kotlinforforge-5.13.0-all.jar",
-"url": "https://cdn.modrinth.com/data/ordsPcFz/versions/9ZlVvei8/kotlinforforge-5.13.0-all.jar",
-"sha1": "b1d5563f4e3db9ec4a4a2b371560aa171d6de237"
-},
-{
-"slug": "melody",
-"project": "CVT4pFB2",
-"version": "efcdRVZP",
-"file": "melody_neoforge_1.0.10_MC_1.21.jar",
-"url": "https://cdn.modrinth.com/data/CVT4pFB2/versions/efcdRVZP/melody_neoforge_1.0.10_MC_1.21.jar",
-"sha1": "e83052a92c4ca0016bcfe7f0207273983dc84698"
-},
-{
-"slug": "chat-heads",
-"project": "Wb5oqrBJ",
-"version": "HJx0n8ZM",
-"file": "chat_heads-0.15.6-neoforge-1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/Wb5oqrBJ/versions/HJx0n8ZM/chat_heads-0.15.6-neoforge-1.21.4.jar",
-"sha1": "8e4b674560d373175772cc17a45f78ea3d37a194"
-},
-{
-"slug": "owo-lib",
-"project": "ccKDOlHs",
-"version": "p9vm8HDx",
-"file": "owo-lib-neoforge-0.12.19-beta.2+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/ccKDOlHs/versions/p9vm8HDx/owo-lib-neoforge-0.12.19-beta.2%2B1.21.4.jar",
-"sha1": "4203bafacf79d2f20225019a0177a07542cd4901"
-},
-{
-"slug": "essential",
-"project": "k2ZPuTBm",
-"version": "7L6KZs89",
-"file": "Essential_1-5-2_neoforge_1-21-4.jar",
-"url": "https://cdn.modrinth.com/data/k2ZPuTBm/versions/7L6KZs89/Essential_1-5-2_neoforge_1-21-4.jar",
-"sha1": "5169ef4c810e3548f979a88ac1e72f2c96a7a500"
-},
-{
-"slug": "badoptimizations",
-"project": "g96Z4WVZ",
-"version": "KsC2V6FQ",
-"file": "BadOptimizations-2.4.1-1.21.2-21.5.jar",
-"url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/KsC2V6FQ/BadOptimizations-2.4.1-1.21.2-21.5.jar",
-"sha1": "f3ac49d4866a6fde8623c0021481285dc1d3d2b8"
-},
-{
-"slug": "fzzy-config",
-"project": "hYykXjDp",
-"version": "81mqutcg",
-"file": "fzzy_config-0.7.7+fix1+1.21.3+neoforge.jar",
-"url": "https://cdn.modrinth.com/data/hYykXjDp/versions/81mqutcg/fzzy_config-0.7.7%2Bfix1%2B1.21.3%2Bneoforge.jar",
-"sha1": "7fb44102c2b94e637f03cabefba919c300b152e2"
-},
-{
-"slug": "terrablender",
-"project": "kkmrDlKT",
-"version": "CmOWA4e9",
-"file": "TerraBlender-neoforge-1.21.4-4.3.0.2.jar",
-"url": "https://cdn.modrinth.com/data/kkmrDlKT/versions/CmOWA4e9/TerraBlender-neoforge-1.21.4-4.3.0.2.jar",
-"sha1": "7beb0723948a75d3f6ed221752dfbeb5e9aab8fd"
-},
-{
-"slug": "clumps",
-"project": "Wnxd13zP",
-"version": "2zQSp93Z",
-"file": "Clumps-neoforge-1.21.4-22.0.0.1.jar",
-"url": "https://cdn.modrinth.com/data/Wnxd13zP/versions/2zQSp93Z/Clumps-neoforge-1.21.4-22.0.0.1.jar",
-"sha1": "adb1292d71bb358b074ee9116be98939e1786fb0"
-},
-{
-"slug": "searchables",
-"project": "fuuu3xnx",
-"version": "gYDrOD6p",
-"file": "Searchables-neoforge-1.21.4-1.0.5.jar",
-"url": "https://cdn.modrinth.com/data/fuuu3xnx/versions/gYDrOD6p/Searchables-neoforge-1.21.4-1.0.5.jar",
-"sha1": "4f447fb4dd1b08d9d405b5d03c067c21fd7e8a9b"
-},
-{
-"slug": "controlling",
-"project": "xv94TkTM",
-"version": "12sYUzqU",
-"file": "Controlling-neoforge-1.21.4-22.0.5.jar",
-"url": "https://cdn.modrinth.com/data/xv94TkTM/versions/12sYUzqU/Controlling-neoforge-1.21.4-22.0.5.jar",
-"sha1": "8f53c9a7b20393329c16204eb04d56294ce91e9f"
-},
-{
-"slug": "inventory-profiles-next",
-"project": "O7RBXm3n",
-"version": "gAFF0TDo",
-"file": "InventoryProfilesNext-neoforge-1.21.4-2.1.9.jar",
-"url": "https://cdn.modrinth.com/data/O7RBXm3n/versions/gAFF0TDo/InventoryProfilesNext-neoforge-1.21.4-2.1.9.jar",
-"sha1": "cc4eebaa5f746d3b57f4631e500f57c73d942c79"
-},
-{
-"slug": "shulkerboxtooltip",
-"project": "2M01OLQq",
-"version": "eGROc5cK",
-"file": "shulkerboxtooltip-neoforge-5.2.6+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/2M01OLQq/versions/eGROc5cK/shulkerboxtooltip-neoforge-5.2.6%2B1.21.4.jar",
-"sha1": "658d47bb0efcfeadc1ccb45a3218d8d68c4bb6ef"
-},
-{
-"slug": "ambientsounds",
-"project": "fM515JnW",
-"version": "6cKHw6QR",
-"file": "AmbientSounds_NEOFORGE_v6.1.5_mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/fM515JnW/versions/6cKHw6QR/AmbientSounds_NEOFORGE_v6.1.5_mc1.21.4.jar",
-"sha1": "b26eb0012fa73794f5a13a4b98d46d5f387f0448"
-},
-{
-"slug": "enchantment-descriptions",
-"project": "UVtY3ZAC",
-"version": "5RwpkUHf",
-"file": "enchdesc-neoforge-1.21.4-21.4.1.jar",
-"url": "https://cdn.modrinth.com/data/UVtY3ZAC/versions/5RwpkUHf/enchdesc-neoforge-1.21.4-21.4.1.jar",
-"sha1": "12f2b6f40137bb7d898e0b5d0f61ac81ed4659c6"
-},
-{
-"slug": "biomes-o-plenty",
-"project": "HXF82T3G",
-"version": "mV8kmoPp",
-"file": "BiomesOPlenty-neoforge-1.21.4-21.4.0.23.jar",
-"url": "https://cdn.modrinth.com/data/HXF82T3G/versions/mV8kmoPp/BiomesOPlenty-neoforge-1.21.4-21.4.0.23.jar",
-"sha1": "92af80a107a0b2276b17be05100d0602fcda6865"
-},
-{
-"slug": "iceberg",
-"project": "5faXoLqX",
-"version": "LXZoNxtR",
-"file": "Iceberg-1.21.4-neoforge-1.2.13.jar",
-"url": "https://cdn.modrinth.com/data/5faXoLqX/versions/LXZoNxtR/Iceberg-1.21.4-neoforge-1.2.13.jar",
-"sha1": "7d16647ba8ba0e7c65b529a582d8765da89b306a"
-},
-{
-"slug": "distanthorizons",
-"project": "uCdwusMi",
-"version": "SSfzA0Av",
-"file": "DistantHorizons-3.3.3-1.21.4-fabric-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/uCdwusMi/versions/SSfzA0Av/DistantHorizons-3.3.3-1.21.4-fabric-neoforge.jar",
-"sha1": "88154dd94106c9f94472a36bf92538b2b8086366"
-},
-{
-"slug": "embeddium",
-"project": "sk9rgfiA",
-"version": "vsgK3r0g",
-"file": "embeddium-1.0.12-beta.9999+mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/sk9rgfiA/versions/vsgK3r0g/embeddium-1.0.12-beta.9999%2Bmc1.21.4.jar",
-"sha1": "7eff48150c6e97f1284e90dfb17eb32217173303"
-},
-{
-"slug": "resourceful-lib",
-"project": "G1hIVOrD",
-"version": "fn2lsIfq",
-"file": "ResourcefulLib-neoforge-1.21.4-3.4.5.jar",
-"url": "https://cdn.modrinth.com/data/G1hIVOrD/versions/fn2lsIfq/ResourcefulLib-neoforge-1.21.4-3.4.5.jar",
-"sha1": "dfa8be284b69e8a8db4b37eb9ad391afab4bba4b"
-},
-{
-"slug": "yungs-api",
-"project": "Ua7DFN59",
-"version": "FVhw2zf8",
-"file": "YungsApi-1.21.4-NeoForge-5.4.0.jar",
-"url": "https://cdn.modrinth.com/data/Ua7DFN59/versions/FVhw2zf8/YungsApi-1.21.4-NeoForge-5.4.0.jar",
-"sha1": "25af9278b26cd6008b382205d58a2da6681ca455"
-},
-{
-"slug": "libipn",
-"project": "onSQdWhM",
-"version": "hyELuKr4",
-"file": "libIPN-neoforge-1.21.4-6.5.1.jar",
-"url": "https://cdn.modrinth.com/data/onSQdWhM/versions/hyELuKr4/libIPN-neoforge-1.21.4-6.5.1.jar",
-"sha1": "8a808608954ab8482986974a2f27b8b94a009441"
-},
-{
-"slug": "betterf3",
-"project": "8shC1gFX",
-"version": "qQsaCBRd",
-"file": "BetterF3-13.0.0-NeoForge-1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/8shC1gFX/versions/qQsaCBRd/BetterF3-13.0.0-NeoForge-1.21.4.jar",
-"sha1": "f767b07b41db1db789edc0da5bed1738249465f2"
-},
-{
-"slug": "supermartijn642s-config-lib",
-"project": "LN9BxssP",
-"version": "qKL9jM75",
-"file": "supermartijn642configlib-1.1.8-neoforge-mc1.21.jar",
-"url": "https://cdn.modrinth.com/data/LN9BxssP/versions/qKL9jM75/supermartijn642configlib-1.1.8-neoforge-mc1.21.jar",
-"sha1": "07452242e389975e8a88b97066f4bae6a4ebe574"
-},
-{
-"slug": "cherished-worlds",
-"project": "3azQ6p0W",
-"version": "SGC8rWLc",
-"file": "cherishedworlds-neoforge-11.0.0+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/3azQ6p0W/versions/SGC8rWLc/cherishedworlds-neoforge-11.0.0%2B1.21.4.jar",
-"sha1": "d90fbc953abca622672ab222b20493d910b30ccc"
-},
-{
-"slug": "modelfix",
-"project": "QdG47OkI",
-"version": "tgaRyAbD",
-"file": "modelfix-1.21.3-1.11.jar",
-"url": "https://cdn.modrinth.com/data/QdG47OkI/versions/tgaRyAbD/modelfix-1.21.3-1.11.jar",
-"sha1": "db14fd195ccfbd11325f1ba9ca33771c23a4ef50"
-},
-{
-"slug": "curios",
-"project": "vvuO3ImH",
-"version": "jtt92CXj",
-"file": "curios-neoforge-10.0.1+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/vvuO3ImH/versions/jtt92CXj/curios-neoforge-10.0.1%2B1.21.4.jar",
-"sha1": "a9cb1b4b9ec089955a6b4f8995c4227010bf1824"
-},
-{
-"slug": "coroutil",
-"project": "rLLJ1OZM",
-"version": "Z8sJH8Jq",
-"file": "coroutil-neoforge-1.21.4-1.3.8.jar",
-"url": "https://cdn.modrinth.com/data/rLLJ1OZM/versions/Z8sJH8Jq/coroutil-neoforge-1.21.4-1.3.8.jar",
-"sha1": "339766b765b915c23d701a10a15dbd7fa0eb56f9"
-},
-{
-"slug": "packet-fixer",
-"project": "c7m1mi73",
-"version": "2C41Q8WX",
-"file": "packetfixer-3.3.1-1.20.5-1.21.X-merged.jar",
-"url": "https://cdn.modrinth.com/data/c7m1mi73/versions/2C41Q8WX/packetfixer-3.3.1-1.20.5-1.21.X-merged.jar",
-"sha1": "a8bb6e25807682e72c23bf4065f3cd5f6373ece3"
-},
-{
-"slug": "midnightlib",
-"project": "codAaoxh",
-"version": "GSkLYfct",
-"file": "midnightlib-neoforge-1.10.0+1.21.5.jar",
-"url": "https://cdn.modrinth.com/data/codAaoxh/versions/GSkLYfct/midnightlib-neoforge-1.10.0%2B1.21.5.jar",
-"sha1": "dc73b248bdbddf5473584aba159aa4df6e296832"
-},
-{
-"slug": "cubes-without-borders",
-"project": "ETlrkaYF",
-"version": "FcNHjyMR",
-"file": "cwb-5.0.0+1.21.2.neoforge.jar",
-"url": "https://cdn.modrinth.com/data/ETlrkaYF/versions/FcNHjyMR/cwb-5.0.0%2B1.21.2.neoforge.jar",
-"sha1": "db1b1fc3d92b43b0035eb305ffcf517fdffc9b1b"
-},
-{
-"slug": "euphoria-patches",
-"project": "4H6sumDB",
-"version": "Gkv3fLVg",
-"file": "EuphoriaPatcher-1.11.1-r5.10-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/4H6sumDB/versions/Gkv3fLVg/EuphoriaPatcher-1.11.1-r5.10-neoforge.jar",
-"sha1": "ea16de899b121f72be048a9410f72af0181337d1"
-},
-{
-"slug": "rrls",
-"project": "ZP7xHXtw",
-"version": "F65Bnrrh",
-"file": "rrls-5.1.2+mc1.21.4-forge.jar",
-"url": "https://cdn.modrinth.com/data/ZP7xHXtw/versions/F65Bnrrh/rrls-5.1.2%2Bmc1.21.4-forge.jar",
-"sha1": "f9f319895d33dd1c900d39575415c3608a8a874f"
-},
-{
-"slug": "playeranimator",
-"project": "gedNE4y2",
-"version": "CSMvN349",
-"file": "player-animation-lib-forge-2.0.5+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/gedNE4y2/versions/CSMvN349/player-animation-lib-forge-2.0.5%2B1.21.4.jar",
-"sha1": "75ccef5532d834303d672d26239e8e47168996fb"
-},
-{
-"slug": "carry-on",
-"project": "joEfVgkn",
-"version": "pjOcWEjw",
-"file": "carryon-neoforge-1.21.4-2.3.0.29.jar",
-"url": "https://cdn.modrinth.com/data/joEfVgkn/versions/pjOcWEjw/carryon-neoforge-1.21.4-2.3.0.29.jar",
-"sha1": "12e288f92844c7f029e6a372df4ea62d388fec18"
-},
-{
-"slug": "waystones",
-"project": "LOpKHB2A",
-"version": "fuEeXjq1",
-"file": "waystones-neoforge-1.21.4-21.4.19.jar",
-"url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/fuEeXjq1/waystones-neoforge-1.21.4-21.4.19.jar",
-"sha1": "71ea93d2910382800ec4e503b6d670ab6d31b0a8"
-},
-{
-"slug": "better-advancements",
-"project": "Q2OqKxDG",
-"version": "4rFFE7Vm",
-"file": "BetterAdvancements-NeoForge-1.21.4-0.4.6.62.jar",
-"url": "https://cdn.modrinth.com/data/Q2OqKxDG/versions/4rFFE7Vm/BetterAdvancements-NeoForge-1.21.4-0.4.6.62.jar",
-"sha1": "ae68eb154c2ee609d9c34326e340ed247fc2aec0"
-},
-{
-"slug": "natures-compass",
-"project": "fPetb5Kh",
-"version": "J03HgGZ8",
-"file": "NaturesCompass-1.21.4-3.0.4-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/fPetb5Kh/versions/J03HgGZ8/NaturesCompass-1.21.4-3.0.4-neoforge.jar",
-"sha1": "d57205a18f0a34421a7f5c802afcb3a8fb5d9d82"
-},
-{
-"slug": "puzzle",
-"project": "3IuO68q1",
-"version": "N1QLfcVF",
-"file": "puzzle-neoforge-2.3.0+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/3IuO68q1/versions/N1QLfcVF/puzzle-neoforge-2.3.0%2B1.21.4.jar",
-"sha1": "0defeb60fba3dc975eb752e9b7251ab5a2f1ffe9"
-},
-{
-"slug": "rei",
-"project": "nfn13YXA",
-"version": "OI8dVs3y",
-"file": "RoughlyEnoughItems-18.0.815-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/nfn13YXA/versions/OI8dVs3y/RoughlyEnoughItems-18.0.815-neoforge.jar",
-"sha1": "3c2c61a78df09df5af2f45e2ce6a931b1b5f7975"
-},
-{
-"slug": "visual-workbench",
-"project": "kfqD1JRw",
-"version": "R96kEpJG",
-"file": "VisualWorkbench-v21.4.1-1.21.4-NeoForge.jar",
-"url": "https://cdn.modrinth.com/data/kfqD1JRw/versions/R96kEpJG/VisualWorkbench-v21.4.1-1.21.4-NeoForge.jar",
-"sha1": "8010fe69fca8b997898d1405f1e810ad7cf253f0"
-},
-{
-"slug": "resourceful-config",
-"project": "M1953qlQ",
-"version": "3miFv5jx",
-"file": "resourcefulconfig-neoforge-1.21.4-3.4.3.jar",
-"url": "https://cdn.modrinth.com/data/M1953qlQ/versions/3miFv5jx/resourcefulconfig-neoforge-1.21.4-3.4.3.jar",
-"sha1": "859aff6c932284725ca1ab24e6dc492a0811c995"
-},
-{
-"slug": "e4mc",
-"project": "qANg5Jrr",
-"version": "HXD8kS5O",
-"file": "e4mc-neoforge-6.2.3.jar",
-"url": "https://cdn.modrinth.com/data/qANg5Jrr/versions/HXD8kS5O/e4mc-neoforge-6.2.3.jar",
-"sha1": "7127478b19531091257b3f58cd734a638200e481"
-},
-{
-"slug": "fast-ip-ping",
-"project": "9mtu0sUO",
-"version": "H4eQRk7D",
-"file": "fast-ip-ping-v1.0.12-mc1.21.4-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/9mtu0sUO/versions/H4eQRk7D/fast-ip-ping-v1.0.12-mc1.21.4-neoforge.jar",
-"sha1": "60b661377b190a9f00d7563d776d1eef6d37e1ed"
-},
-{
-"slug": "netherportalfix",
-"project": "nPZr02ET",
-"version": "Vs09Rou7",
-"file": "netherportalfix-neoforge-1.21.4-21.4.1.jar",
-"url": "https://cdn.modrinth.com/data/nPZr02ET/versions/Vs09Rou7/netherportalfix-neoforge-1.21.4-21.4.1.jar",
-"sha1": "efd72d2bb481a2601638c05a2481b2fac7bab14a"
-},
-{
-"slug": "lithostitched",
-"project": "XaDC71GB",
-"version": "sidG8iZo",
-"file": "lithostitched-neoforge-1.21.4-1.4.5.jar",
-"url": "https://cdn.modrinth.com/data/XaDC71GB/versions/sidG8iZo/lithostitched-neoforge-1.21.4-1.4.5.jar",
-"sha1": "d0e67ebaabaee5d45715646937f343df94f1ec1c"
-},
-{
-"slug": "lmd",
-"project": "vE2FN5qn",
-"version": "fgcMDg9B",
-"file": "letmedespawn-1.21.x-neoforge-1.5.0.jar",
-"url": "https://cdn.modrinth.com/data/vE2FN5qn/versions/fgcMDg9B/letmedespawn-1.21.x-neoforge-1.5.0.jar",
-"sha1": "576fe2edaa96e7e71015287457bd52f87646d968"
-},
-{
-"slug": "controlify",
-"project": "DOUdJVEm",
-"version": "5lPsihJa",
-"file": "controlify-3.0.1+lts+1.21.4-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/5lPsihJa/controlify-3.0.1%2Blts%2B1.21.4-neoforge.jar",
-"sha1": "2fd82dd86dc082d311d51f954ad364b1a5125210"
-},
-{
-"slug": "sodium-shadowy-path-blocks",
-"project": "EIa1eiMm",
-"version": "FpMmigWq",
-"file": "sodium-shadowy-path-blocks-neoforge-4.1.0.jar",
-"url": "https://cdn.modrinth.com/data/EIa1eiMm/versions/FpMmigWq/sodium-shadowy-path-blocks-neoforge-4.1.0.jar",
-"sha1": "315891dcf8459a53fe263d985073bef619c360d0"
-},
-{
-"slug": "glitchcore",
-"project": "s3dmwKy5",
-"version": "EvRmueqK",
-"file": "GlitchCore-neoforge-1.21.4-2.3.0.4.jar",
-"url": "https://cdn.modrinth.com/data/s3dmwKy5/versions/EvRmueqK/GlitchCore-neoforge-1.21.4-2.3.0.4.jar",
-"sha1": "b97dd897ff9d94366510ec5f1af96fb85eb35309"
-},
-{
-"slug": "customskinloader",
-"project": "idMHQ4n2",
-"version": "yyYvYfZI",
-"file": "CustomSkinLoader_Universal-15.1.jar",
-"url": "https://cdn.modrinth.com/data/idMHQ4n2/versions/yyYvYfZI/CustomSkinLoader_Universal-15.1.jar",
-"sha1": "324e6921ecd576e44875981466e7f22170b6541a"
-},
-{
-"slug": "athena-ctm",
-"project": "b1ZV3DIJ",
-"version": "tkm0BT7X",
-"file": "athena-neoforge-1.21.4-4.2.1.jar",
-"url": "https://cdn.modrinth.com/data/b1ZV3DIJ/versions/tkm0BT7X/athena-neoforge-1.21.4-4.2.1.jar",
-"sha1": "265815d23cbeb5d29f32f7fe21135f78b76a2407"
-},
-{
-"slug": "terralith",
-"project": "8oi3bsk5",
-"version": "MuJMtPGQ",
-"file": "Terralith_1.21.x_v2.5.8.jar",
-"url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/MuJMtPGQ/Terralith_1.21.x_v2.5.8.jar",
-"sha1": "bee0cfb1a8cd4bf3d96bccea224fb45d74de9085"
-},
-{
-"slug": "physicsmod",
-"project": "Xy8aRQKS",
-"version": "i5GPxBXN",
-"file": "physics-mod-3.0.24-mc-1.21.4-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/Xy8aRQKS/versions/i5GPxBXN/physics-mod-3.0.24-mc-1.21.4-neoforge.jar",
-"sha1": "7fe9c15ef20945e884a5df98f5909127de984221"
-},
-{
-"slug": "chatanimation",
-"project": "DnNYdJsx",
-"version": "Rwa5CSn5",
-"file": "chatanimation-neoforge-1.3.5+mc1.21.3.jar",
-"url": "https://cdn.modrinth.com/data/DnNYdJsx/versions/Rwa5CSn5/chatanimation-neoforge-1.3.5%2Bmc1.21.3.jar",
-"sha1": "16c799dfc5464732b289719ab2a10add7897fa89"
-},
-{
-"slug": "comforts",
-"project": "SaCpeal4",
-"version": "MQWPsBgO",
-"file": "comforts-neoforge-10.0.0+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/SaCpeal4/versions/MQWPsBgO/comforts-neoforge-10.0.0%2B1.21.4.jar",
-"sha1": "9b617739d33fc4da479a2e1745c1bf5e054dfd51"
-},
-{
-"slug": "spark",
-"project": "l6YH9Als",
-"version": "2E68cgve",
-"file": "spark-1.10.121-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/l6YH9Als/versions/2E68cgve/spark-1.10.121-neoforge.jar",
-"sha1": "001f5471712c18c85e2b978f263d6897a159a56a"
-},
-{
-"slug": "lootr",
-"project": "EltpO5cN",
-"version": "Z0vjfoTl",
-"file": "lootr-neoforge-1.21.4-1.13.36.89.jar",
-"url": "https://cdn.modrinth.com/data/EltpO5cN/versions/Z0vjfoTl/lootr-neoforge-1.21.4-1.13.36.89.jar",
-"sha1": "703343e137f6e07d8bb7deaa37878df066a589e2"
-},
-{
-"slug": "yungs-better-nether-fortresses",
-"project": "Z2mXHnxP",
-"version": "VGGj4FAD",
-"file": "YungsBetterNetherFortresses-1.21.4-NeoForge-3.4.1.jar",
-"url": "https://cdn.modrinth.com/data/Z2mXHnxP/versions/VGGj4FAD/YungsBetterNetherFortresses-1.21.4-NeoForge-3.4.1.jar",
-"sha1": "d967b4553c9b7bfd3fd89deabbae89f614327fdb"
-},
-{
-"slug": "open-parties-and-claims",
-"project": "gF3BGWvG",
-"version": "6RMefXwx",
-"file": "open-parties-and-claims-neoforge-1.21.4-0.31.6.jar",
-"url": "https://cdn.modrinth.com/data/gF3BGWvG/versions/6RMefXwx/open-parties-and-claims-neoforge-1.21.4-0.31.6.jar",
-"sha1": "237dce04746a4f5242f42240d011df214cc500dc"
-},
-{
-"slug": "rhino",
-"project": "sk9knFPE",
-"version": "SqkDvOLG",
-"file": "rhino-2101.2.8-build.91.jar",
-"url": "https://cdn.modrinth.com/data/sk9knFPE/versions/SqkDvOLG/rhino-2101.2.8-build.91.jar",
-"sha1": "56eab1d464ed0811c64040c64bd047df5cbc3aad"
-},
-{
-"slug": "drippy-loading-screen",
-"project": "v3CYg2V9",
-"version": "WS1rUug0",
-"file": "drippyloadingscreen_neoforge_3.0.12_MC_1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/v3CYg2V9/versions/WS1rUug0/drippyloadingscreen_neoforge_3.0.12_MC_1.21.4.jar",
-"sha1": "2b2566137dec91b85f02682d18f893a3f2e8bf8a"
-},
-{
-"slug": "attributefix",
-"project": "lOOpEntO",
-"version": "t91BkZH1",
-"file": "attributefix-neoforge-1.21.4-21.4.2.jar",
-"url": "https://cdn.modrinth.com/data/lOOpEntO/versions/t91BkZH1/attributefix-neoforge-1.21.4-21.4.2.jar",
-"sha1": "609fc0d2e2f8772256144b198125f9c23f09fab2"
-},
-{
-"slug": "freecam",
-"project": "XeEZ3fK2",
-"version": "ZgduhqT3",
-"file": "freecam-neoforge-1.3.2+mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/XeEZ3fK2/versions/ZgduhqT3/freecam-neoforge-1.3.2%2Bmc1.21.4.jar",
-"sha1": "054851c2f9e6b1123416fe24114181cc4c66858d"
-},
-{
-"slug": "yungs-better-dungeons",
-"project": "o1C1Dkj5",
-"version": "XH5CZtOR",
-"file": "YungsBetterDungeons-1.21.4-NeoForge-5.4.0.jar",
-"url": "https://cdn.modrinth.com/data/o1C1Dkj5/versions/XH5CZtOR/YungsBetterDungeons-1.21.4-NeoForge-5.4.0.jar",
-"sha1": "aa0a81a53aaffa0dafbd5327aa69eb21b64fe123"
-},
-{
-"slug": "modern-ui",
-"project": "3sjzyvGR",
-"version": "2vVY2KJN",
-"file": "ModernUI-NeoForge-1.21.4-3.12.0.3-universal.jar",
-"url": "https://cdn.modrinth.com/data/3sjzyvGR/versions/2vVY2KJN/ModernUI-NeoForge-1.21.4-3.12.0.3-universal.jar",
-"sha1": "17cf978719e7aa678a17556e07265da0664a3126"
-},
-{
-"slug": "yungs-better-ocean-monuments",
-"project": "3dT9sgt4",
-"version": "MrBSbUVj",
-"file": "YungsBetterOceanMonuments-1.21.4-NeoForge-4.4.0.jar",
-"url": "https://cdn.modrinth.com/data/3dT9sgt4/versions/MrBSbUVj/YungsBetterOceanMonuments-1.21.4-NeoForge-4.4.0.jar",
-"sha1": "6094e93ddd4eaf9a22043a35e12142fe5cf3d50c"
-},
-{
-"slug": "particle-rain",
-"project": "nrikgvxm",
-"version": "RX5XL0dm",
-"file": "particlerain-4.0.0-beta.7+1.21.4-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/nrikgvxm/versions/RX5XL0dm/particlerain-4.0.0-beta.7%2B1.21.4-neoforge.jar",
-"sha1": "8806fc138322a08f3d22786bf41ce4576a170405"
-},
-{
-"slug": "almanac",
-"project": "Gi02250Z",
-"version": "94xVVOZF",
-"file": "Almanac-1.21.3-4-neoforge-1.5.0.jar",
-"url": "https://cdn.modrinth.com/data/Gi02250Z/versions/94xVVOZF/Almanac-1.21.3-4-neoforge-1.5.0.jar",
-"sha1": "ab9812a7cd400cef76e7b42b14527074b4edd81d"
-},
-{
-"slug": "better-third-person",
-"project": "G1s2WpNo",
-"version": "OyWrVzG0",
-"file": "BetterThirdPerson-neoforge-1.9.0.jar",
-"url": "https://cdn.modrinth.com/data/G1s2WpNo/versions/OyWrVzG0/BetterThirdPerson-neoforge-1.9.0.jar",
-"sha1": "f0f10bb7891eb40a51deaf2a4ad765c1b038922b"
-},
-{
-"slug": "dynamiccrosshair",
-"project": "ZcR9weSm",
-"version": "vUhTtwV6",
-"file": "dynamiccrosshair-9.11+1.21.3-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/ZcR9weSm/versions/vUhTtwV6/dynamiccrosshair-9.11%2B1.21.3-neoforge.jar",
-"sha1": "c3931a3a83f83936ea912d0391ddabbf10f2a8e6"
-},
-{
-"slug": "dungeons-and-taverns",
-"project": "tpehi7ww",
-"version": "pdZA8oTu",
-"file": "dungeons-and-taverns-v4.6.3.jar",
-"url": "https://cdn.modrinth.com/data/tpehi7ww/versions/pdZA8oTu/dungeons-and-taverns-v4.6.3.jar",
-"sha1": "1a2d43d96a7e198513e460286c4da308f218ab8f"
-},
-{
-"slug": "travelersbackpack",
-"project": "rlloIFEV",
-"version": "nLe8wldk",
-"file": "travelersbackpack-neoforge-1.21.4-10.4.11.jar",
-"url": "https://cdn.modrinth.com/data/rlloIFEV/versions/nLe8wldk/travelersbackpack-neoforge-1.21.4-10.4.11.jar",
-"sha1": "18357b708baf9d9deca06c66dba135a9a76e7e1c"
-},
-{
-"slug": "mru",
-"project": "SNVQ2c0g",
-"version": "UPKYU8WO",
-"file": "mru-1.0.17+1.21.5+neoforge.jar",
-"url": "https://cdn.modrinth.com/data/SNVQ2c0g/versions/UPKYU8WO/mru-1.0.17%2B1.21.5%2Bneoforge.jar",
-"sha1": "2c6d991cf7549262b2477e7c05894766e9a8fc40"
-},
-{
-"slug": "crash-assistant",
-"project": "ix1qq8Ux",
-"version": "18SR4EJw",
-"file": "CrashAssistant-neoforge-1.20.6-1.21.4-1.11.12.jar",
-"url": "https://cdn.modrinth.com/data/ix1qq8Ux/versions/18SR4EJw/CrashAssistant-neoforge-1.20.6-1.21.4-1.11.12.jar",
-"sha1": "ec9e35065ce3a49ecec6bd6ff7fec6992476f7bb"
-},
-{
-"slug": "yungs-better-mineshafts",
-"project": "HjmxVlSr",
-"version": "dBjAqiH9",
-"file": "YungsBetterMineshafts-1.21.4-NeoForge-5.4.0.jar",
-"url": "https://cdn.modrinth.com/data/HjmxVlSr/versions/dBjAqiH9/YungsBetterMineshafts-1.21.4-NeoForge-5.4.0.jar",
-"sha1": "821b39c1e852f4ef69bda437318937d47e365426"
-},
-{
-"slug": "sodium-options-api",
-"project": "Es5v4eyq",
-"version": "iHnIE3TX",
-"file": "sodiumoptionsapi-neoforge-1.0.10-1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/Es5v4eyq/versions/iHnIE3TX/sodiumoptionsapi-neoforge-1.0.10-1.21.4.jar",
-"sha1": "de485ebe7b6cae12b34b17c57a046edcc853454d"
-},
-{
-"slug": "yungs-better-jungle-temples",
-"project": "z9Ve58Ih",
-"version": "4oIlQrO2",
-"file": "YungsBetterJungleTemples-1.21.4-NeoForge-3.4.0.jar",
-"url": "https://cdn.modrinth.com/data/z9Ve58Ih/versions/4oIlQrO2/YungsBetterJungleTemples-1.21.4-NeoForge-3.4.0.jar",
-"sha1": "aabfb6b3f1afdb09c5d354de365c66d3a786faa8"
-},
-{
-"slug": "toms-storage",
-"project": "XZNI4Cpy",
-"version": "cERcDmW2",
-"file": "toms_storage-1.21.4-2.3.3.jar",
-"url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/cERcDmW2/toms_storage-1.21.4-2.3.3.jar",
-"sha1": "97a71b8028e6748e5739e769bb7da7933f4d834e"
-},
-{
-"slug": "sophisticated-backpacks",
-"project": "TyCTlI4b",
-"version": "dqO5nftG",
-"file": "sophisticatedbackpacks-1.21.4-3.27.2.2166.jar",
-"url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/dqO5nftG/sophisticatedbackpacks-1.21.4-3.27.2.2166.jar",
-"sha1": "5ef666e32e001db0ec94eae18fe7b901775865bb"
-},
-{
-"slug": "yungs-better-end-island",
-"project": "2BwBOmBQ",
-"version": "Y0718nVU",
-"file": "YungsBetterEndIsland-1.21.4-NeoForge-3.4.0.jar",
-"url": "https://cdn.modrinth.com/data/2BwBOmBQ/versions/Y0718nVU/YungsBetterEndIsland-1.21.4-NeoForge-3.4.0.jar",
-"sha1": "44abf51b224e3396a2e35db1c35d6facb7d9461d"
-},
-{
-"slug": "sophisticated-core",
-"project": "nmoqTijg",
-"version": "Y1qJG9xs",
-"file": "sophisticatedcore-1.21.4-1.5.1.2350.jar",
-"url": "https://cdn.modrinth.com/data/nmoqTijg/versions/Y1qJG9xs/sophisticatedcore-1.21.4-1.5.1.2350.jar",
-"sha1": "6362d363e2a4d2035fe2069ee4eb7218b4032f88"
-},
-{
-"slug": "chunky",
-"project": "fALzjamp",
-"version": "D99gXKQD",
-"file": "Chunky-NeoForge-1.4.27.jar",
-"url": "https://cdn.modrinth.com/data/fALzjamp/versions/D99gXKQD/Chunky-NeoForge-1.4.27.jar",
-"sha1": "715bb944cf8d10cf9787915455916a35c2f49419"
-},
-{
-"slug": "enhancedvisuals",
-"project": "KjL0jE2w",
-"version": "dcq6vYxR",
-"file": "EnhancedVisuals_NEOFORGE_v1.8.17_mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/KjL0jE2w/versions/dcq6vYxR/EnhancedVisuals_NEOFORGE_v1.8.17_mc1.21.4.jar",
-"sha1": "ac85ea6a82a744722ced999dfed08734c44179d8"
-},
-{
-"slug": "yeetus-experimentus",
-"project": "HaaH232J",
-"version": "Pp0TjcvD",
-"file": "yeetusexperimentus-neoforge-87.0.0.jar",
-"url": "https://cdn.modrinth.com/data/HaaH232J/versions/Pp0TjcvD/yeetusexperimentus-neoforge-87.0.0.jar",
-"sha1": "7132c346103d75a7c84da64b35b92e3a6f1ce3da"
-},
-{
-"slug": "sodium-dynamic-lights",
-"project": "PxQSWIcD",
-"version": "K1JyJpov",
-"file": "sodiumdynamiclights-neoforge-1.0.10-1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/PxQSWIcD/versions/K1JyJpov/sodiumdynamiclights-neoforge-1.0.10-1.21.4.jar",
-"sha1": "777723404da2cf396abed1d1e0e7f59122afdb67"
-},
-{
-"slug": "sound",
-"project": "ZouiUX7t",
-"version": "2CEJkTj2",
-"file": "sounds-2.4.8+1.21.4+neoforge.jar",
-"url": "https://cdn.modrinth.com/data/ZouiUX7t/versions/2CEJkTj2/sounds-2.4.8%2B1.21.4%2Bneoforge.jar",
-"sha1": "9d2bb5ab0fdcc607dd03a55b3c1fda979c975ba4"
-},
-{
-"slug": "polytone",
-"project": "3qAYkBMB",
-"version": "jzMhMCRv",
-"file": "polytone-1.21.4-3.3.24.jar",
-"url": "https://cdn.modrinth.com/data/3qAYkBMB/versions/jzMhMCRv/polytone-1.21.4-3.3.24.jar",
-"sha1": "1144e37359b4f7c8ba3d4b688d5ce9971d3bfb06"
-},
-{
-"slug": "cristel-lib",
-"project": "cl223EMc",
-"version": "nvBbYALa",
-"file": "cristellib-neoforge-2.0.2.jar",
-"url": "https://cdn.modrinth.com/data/cl223EMc/versions/nvBbYALa/cristellib-neoforge-2.0.2.jar",
-"sha1": "23db9585b429106530b9de598e7b02361b888ef7"
-},
-{
-"slug": "yungs-better-strongholds",
-"project": "kidLKymU",
-"version": "jCEcgyYA",
-"file": "YungsBetterStrongholds-1.21.4-NeoForge-5.4.0.jar",
-"url": "https://cdn.modrinth.com/data/kidLKymU/versions/jCEcgyYA/YungsBetterStrongholds-1.21.4-NeoForge-5.4.0.jar",
-"sha1": "c4c42f5d7333a59e289568807619a39d6b4a3beb"
-},
-{
-"slug": "supermartijn642s-core-lib",
-"project": "rOUBggPv",
-"version": "VOXt0lid",
-"file": "supermartijn642corelib-1.1.26b-neoforge-mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/rOUBggPv/versions/VOXt0lid/supermartijn642corelib-1.1.26b-neoforge-mc1.21.4.jar",
-"sha1": "1123b6c9bb59c98479962ce1269a798d6a45e94b"
-},
-{
-"slug": "default-options",
-"project": "WEg59z5b",
-"version": "PTnvHaO1",
-"file": "defaultoptions-neoforge-1.21.4-21.4.6.jar",
-"url": "https://cdn.modrinth.com/data/WEg59z5b/versions/PTnvHaO1/defaultoptions-neoforge-1.21.4-21.4.6.jar",
-"sha1": "591db6a610a39927bbc8009a243f5a6feebd7f39"
-},
-{
-"slug": "cut-through",
-"project": "Dk6su9JN",
-"version": "tx8EN5Jn",
-"file": "CutThrough-v21.4.0-1.21.4-NeoForge.jar",
-"url": "https://cdn.modrinth.com/data/Dk6su9JN/versions/tx8EN5Jn/CutThrough-v21.4.0-1.21.4-NeoForge.jar",
-"sha1": "d424e045633cdf73b2e17b654fbe2b499475713c"
-},
-{
-"slug": "wavey-capes",
-"project": "kYuIpRLv",
-"version": "LxJbV10P",
-"file": "waveycapes-neoforge-1.11.3-mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/kYuIpRLv/versions/LxJbV10P/waveycapes-neoforge-1.11.3-mc1.21.4.jar",
-"sha1": "a27b1c5279991101d5017940188b32632469c231"
-},
-{
-"slug": "servercore",
-"project": "4WWQxlQP",
-"version": "vCnDCHyg",
-"file": "servercore-neoforge-1.5.8+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/4WWQxlQP/versions/vCnDCHyg/servercore-neoforge-1.5.8%2B1.21.4.jar",
-"sha1": "edc990444040ed4b62a09559b7a3cff85c32c4c0"
-},
-{
-"slug": "prism-lib",
-"project": "1OE8wbN0",
-"version": "AM3oL6VK",
-"file": "Prism-1.21.4-neoforge-1.0.10.jar",
-"url": "https://cdn.modrinth.com/data/1OE8wbN0/versions/AM3oL6VK/Prism-1.21.4-neoforge-1.0.10.jar",
-"sha1": "6bbd770690090eb1e78665c08f9bd2fe83c4e970"
-},
-{
-"slug": "particle-core",
-"project": "RSeLon5O",
-"version": "PEmbKEfv",
-"file": "particle_core-0.3.3+1.21.4+neoforge.jar",
-"url": "https://cdn.modrinth.com/data/RSeLon5O/versions/PEmbKEfv/particle_core-0.3.3%2B1.21.4%2Bneoforge.jar",
-"sha1": "813b30815686ac500697ff4623596f96e5686f96"
-},
-{
-"slug": "towns-and-towers",
-"project": "DjLobEOy",
-"version": "HEqgNPcC",
-"file": "t_and_t-fabric-neoforge-1.13.5.jar",
-"url": "https://cdn.modrinth.com/data/DjLobEOy/versions/HEqgNPcC/t_and_t-fabric-neoforge-1.13.5.jar",
-"sha1": "ed60a2679d0e125e73247a12199c00aa95502f37"
-},
-{
-"slug": "yungs-better-witch-huts",
-"project": "t5FRdP87",
-"version": "O4kCyQUo",
-"file": "YungsBetterWitchHuts-1.21.4-NeoForge-4.4.0.jar",
-"url": "https://cdn.modrinth.com/data/t5FRdP87/versions/O4kCyQUo/YungsBetterWitchHuts-1.21.4-NeoForge-4.4.0.jar",
-"sha1": "aa877c2669aab8800853e4c3fb4b06d28fcbd5bd"
-},
-{
-"slug": "advancement-plaques",
-"project": "9NM0dXub",
-"version": "XjKZ3q9W",
-"file": "AdvancementPlaques-1.21.4-neoforge-1.6.9.jar",
-"url": "https://cdn.modrinth.com/data/9NM0dXub/versions/XjKZ3q9W/AdvancementPlaques-1.21.4-neoforge-1.6.9.jar",
-"sha1": "622ac4265ad424e07f486fc3553d9545b66f7bb7"
-},
-{
-"slug": "i18nupdatemod",
-"project": "PWERr14M",
-"version": "EsMILcyc",
-"file": "I18nUpdateMod-3.8.0-all.jar",
-"url": "https://cdn.modrinth.com/data/PWERr14M/versions/EsMILcyc/I18nUpdateMod-3.8.0-all.jar",
-"sha1": "80ac47b656a422c4e0f0c411ef96f784e21aedc0"
-},
-{
-"slug": "item-highlighter",
-"project": "cVNW5lr6",
-"version": "ie1okMfr",
-"file": "Highlighter-1.21.4-neoforge-1.1.11.jar",
-"url": "https://cdn.modrinth.com/data/cVNW5lr6/versions/ie1okMfr/Highlighter-1.21.4-neoforge-1.1.11.jar",
-"sha1": "1c68938b608da8604789162d6f41ea34be9c3d43"
-},
-{
-"slug": "invmove",
-"project": "REfW2AEX",
-"version": "LA88Ilun",
-"file": "InvMove-0.9.3+1.21.8-NeoForge.jar",
-"url": "https://cdn.modrinth.com/data/REfW2AEX/versions/LA88Ilun/InvMove-0.9.3%2B1.21.8-NeoForge.jar",
-"sha1": "2632f524705457f690add81bdf608756bdef814f"
-},
-{
-"slug": "tectonic",
-"project": "lWDHr9jE",
-"version": "SEh7nPmu",
-"file": "tectonic-neoforge-1.21.4-2.4.3.jar",
-"url": "https://cdn.modrinth.com/data/lWDHr9jE/versions/SEh7nPmu/tectonic-neoforge-1.21.4-2.4.3.jar",
-"sha1": "47e62f696527d3e77e3fad66f847e3caf1db1f37"
-},
-{
-"slug": "easy-anvils",
-"project": "OZBR5JT5",
-"version": "znA9vlFD",
-"file": "EasyAnvils-v21.4.1-1.21.4-NeoForge.jar",
-"url": "https://cdn.modrinth.com/data/OZBR5JT5/versions/znA9vlFD/EasyAnvils-v21.4.1-1.21.4-NeoForge.jar",
-"sha1": "ccc47f1733f3ae303b98717dc3b582b82934d24c"
-},
-{
-"slug": "shatterbyte-lib",
-"project": "RH2KUdKJ",
-"version": "HldYrvf2",
-"file": "OctoLib-NEOFORGE-0.5.0.3+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/RH2KUdKJ/versions/HldYrvf2/OctoLib-NEOFORGE-0.5.0.3%2B1.21.4.jar",
-"sha1": "53148f07327951bee3107133338d04a7f24cce40"
-},
-{
-"slug": "better-combat",
-"project": "5sy6g3kz",
-"version": "ytvdpzua",
-"file": "bettercombat-neoforge-2.3.0+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/5sy6g3kz/versions/ytvdpzua/bettercombat-neoforge-2.3.0%2B1.21.4.jar",
-"sha1": "a2b6185f2dbd0a8ea0585e0895b5e1c4790b7f45"
-},
-{
-"slug": "yungs-better-desert-temples",
-"project": "XNlO7sBv",
-"version": "eUMO4Bdh",
-"file": "YungsBetterDesertTemples-1.21.4-NeoForge-4.4.0.jar",
-"url": "https://cdn.modrinth.com/data/XNlO7sBv/versions/eUMO4Bdh/YungsBetterDesertTemples-1.21.4-NeoForge-4.4.0.jar",
-"sha1": "ae16232fd5f4de23550e9e2cfd5d83658360c3e8"
-},
-{
-"slug": "citadel",
-"project": "jJfV67b1",
-"version": "ZkgKf4xj",
-"file": "citadel-2.7.1-1.21.1.jar",
-"url": "https://cdn.modrinth.com/data/jJfV67b1/versions/ZkgKf4xj/citadel-2.7.1-1.21.1.jar",
-"sha1": "9d7873f74b418f4f83adf2ae41af75d2e8217cd6"
-},
-{
-"slug": "libjf",
-"project": "WKwQAwke",
-"version": "3RAR4Rzx",
-"file": "libjf-3.18.4+forge.jar",
-"url": "https://cdn.modrinth.com/data/WKwQAwke/versions/3RAR4Rzx/libjf-3.18.4%2Bforge.jar",
-"sha1": "fba3f8b7d5b2e9941b13828aa5b6b7350b880244"
-},
-{
-"slug": "pick-up-notifier",
-"project": "ZX66K16c",
-"version": "gTyini9o",
-"file": "PickUpNotifier-v21.4.0-1.21.4-NeoForge.jar",
-"url": "https://cdn.modrinth.com/data/ZX66K16c/versions/gTyini9o/PickUpNotifier-v21.4.0-1.21.4-NeoForge.jar",
-"sha1": "548382cd7bad222ce533f13a2d1f586c5902f72a"
-},
-{
-"slug": "notenoughcrashes",
-"project": "yM94ont6",
-"version": "3ouZ6jFG",
-"file": "notenoughcrashes-neoforge-4.4.8+1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/yM94ont6/versions/3ouZ6jFG/notenoughcrashes-neoforge-4.4.8%2B1.21.4.jar",
-"sha1": "0f811b5952e0e365158de0d81654a2edc950a492"
-},
-{
-"slug": "yungs-bridges",
-"project": "Ht4BfYp6",
-"version": "kXaKq5O0",
-"file": "YungsBridges-1.21.4-NeoForge-5.4.0.jar",
-"url": "https://cdn.modrinth.com/data/Ht4BfYp6/versions/kXaKq5O0/YungsBridges-1.21.4-NeoForge-5.4.0.jar",
-"sha1": "1d84199c749dfc1c30879a2bfe1ccd6a44a37cdc"
-},
-{
-"slug": "ixeris",
-"project": "p8RJPJIC",
-"version": "Z2Th77NP",
-"file": "Ixeris-4.6.11+1.21.8-neoforge.jar",
-"url": "https://cdn.modrinth.com/data/p8RJPJIC/versions/Z2Th77NP/Ixeris-4.6.11%2B1.21.8-neoforge.jar",
-"sha1": "16fa15edd1ba90410e24667c52c0ab98d95e4faf"
-},
-{
-"slug": "fusion-connected-textures",
-"project": "p19vrgc2",
-"version": "7Bj2Z4U3",
-"file": "fusion-1.3.16-neoforge-mc1.21.4.jar",
-"url": "https://cdn.modrinth.com/data/p19vrgc2/versions/7Bj2Z4U3/fusion-1.3.16-neoforge-mc1.21.4.jar",
-"sha1": "9e6a9adcea697c76454ea8742a86745742bd6723"
-}
-]
-}
+{"loader": "neoforge", "version": "1.21.4", "date": "2026-11-18", "mods": [
+{"slug": "sodium", "project": "AANobbMI", "version": "XgEfENfn", "file": "sodium-neoforge-0.6.13+mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/AANobbMI/versions/XgEfENfn/sodium-neoforge-0.6.13%2Bmc1.21.4.jar", "sha1": "3983693715e20e3c1c9294a034b5b6b56215a7ec"},
+{"slug": "iris", "project": "YL57xq9U", "version": "FNc0XYTL", "file": "iris-neoforge-1.8.8+mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/YL57xq9U/versions/FNc0XYTL/iris-neoforge-1.8.8%2Bmc1.21.4.jar", "sha1": "dad7229a302126503fb8651d7f101949c2c57184"},
+{"slug": "entityculling", "project": "NNAgCjsB", "version": "QIZKSbc6", "file": "entityculling-neoforge-1.12.1-mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/NNAgCjsB/versions/QIZKSbc6/entityculling-neoforge-1.12.1-mc1.21.4.jar", "sha1": "4bc3a482507fb2698f5b7c400ea7398db7bbde94"},
+{"slug": "cloth-config", "project": "9s6osm5g", "version": "dWfheG9X", "file": "cloth-config-17.0.144-neoforge.jar", "url": "https://cdn.modrinth.com/data/9s6osm5g/versions/dWfheG9X/cloth-config-17.0.144-neoforge.jar", "sha1": "af9a6e52015098fd3d97d996dafbb66bbe495691"},
+{"slug": "ferrite-core", "project": "uXXizFIs", "version": "joOID027", "file": "ferritecore-7.1.3-neoforge.jar", "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/joOID027/ferritecore-7.1.3-neoforge.jar", "sha1": "2cd2f63b724b4178648d85eb2a3123d51ba1c5cd"},
+{"slug": "lithium", "project": "gvQqBUqZ", "version": "lP2Expzz", "file": "lithium-neoforge-0.15.3+mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/lP2Expzz/lithium-neoforge-0.15.3%2Bmc1.21.4.jar", "sha1": "9346a3af485cbc1c9a159684aa773cc6df7007bb"},
+{"slug": "immediatelyfast", "project": "5ZwdcRci", "version": "akEJ6o1m", "file": "ImmediatelyFast-NeoForge-1.8.7+1.21.4.jar", "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/akEJ6o1m/ImmediatelyFast-NeoForge-1.8.7%2B1.21.4.jar", "sha1": "0468d5957a39114f0fb34c739dbaf9e0b4fcb289"},
+{"slug": "yacl", "project": "1eAoo2KR", "version": "U3RHt3Tk", "file": "yet_another_config_lib_v3-3.8.2+1.21.4-neoforge.jar", "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/U3RHt3Tk/yet_another_config_lib_v3-3.8.2%2B1.21.4-neoforge.jar", "sha1": "81742c8454b14eb9fe9e366ba83204f320a96023"},
+{"slug": "xaeros-minimap", "project": "1bokaNcj", "version": "UmbZGoNN", "file": "xaerominimap-neoforge-1.21.4-26.5.0.jar", "url": "https://cdn.modrinth.com/data/1bokaNcj/versions/UmbZGoNN/xaerominimap-neoforge-1.21.4-26.5.0.jar", "sha1": "d5a5f136ffe7807ea7919b6a38b2fd8df519666d"},
+{"slug": "entitytexturefeatures", "project": "BVzZfTc1", "version": "CJWqQHGD", "file": "entity_texture_features-7.2.7-1.21.4-neoforge.jar", "url": "https://cdn.modrinth.com/data/BVzZfTc1/versions/CJWqQHGD/entity_texture_features-7.2.7-1.21.4-neoforge.jar", "sha1": "c81ba83b7961367657980ab10384a7efd9df1c4d"},
+{"slug": "architectury-api", "project": "lhGA9TYQ", "version": "qOJoTaPQ", "file": "architectury-15.0.3-neoforge.jar", "url": "https://cdn.modrinth.com/data/lhGA9TYQ/versions/qOJoTaPQ/architectury-15.0.3-neoforge.jar", "sha1": "ab24fc1c199e328ec4d13fe496cb4b7f0263a9f2"},
+{"slug": "sodium-extra", "project": "PtjYWJkn", "version": "fDDbhNOX", "file": "sodium-extra-neoforge-0.6.1+mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/PtjYWJkn/versions/fDDbhNOX/sodium-extra-neoforge-0.6.1%2Bmc1.21.4.jar", "sha1": "33f61977917b67e046da9a7f02771c04a67f005f"},
+{"slug": "xaeros-world-map", "project": "NcUtCpym", "version": "VlQLmGAM", "file": "xaeroworldmap-neoforge-1.21.4-1.46.0.jar", "url": "https://cdn.modrinth.com/data/NcUtCpym/versions/VlQLmGAM/xaeroworldmap-neoforge-1.21.4-1.46.0.jar", "sha1": "cc2f2aaff8cf16610bb186d44ef77239660717f7"},
+{"slug": "entity-model-features", "project": "4I1XuqiY", "version": "7VRIArUW", "file": "entity_model_features-3.3.12-1.21.4-neoforge.jar", "url": "https://cdn.modrinth.com/data/4I1XuqiY/versions/7VRIArUW/entity_model_features-3.3.12-1.21.4-neoforge.jar", "sha1": "9b8ff00aa5a338cb42079c08931fe843ae8e8b47"},
+{"slug": "appleskin", "project": "EsAfCjCV", "version": "6OIEi4xY", "file": "appleskin-neoforge-mc1.21.3-3.0.8.jar", "url": "https://cdn.modrinth.com/data/EsAfCjCV/versions/6OIEi4xY/appleskin-neoforge-mc1.21.3-3.0.8.jar", "sha1": "1cf3492688c9eaf87539ac4a4ad27a32b9cfdc0f"},
+{"slug": "not-enough-animations", "project": "MPCX6s5C", "version": "qN9o6wwH", "file": "notenoughanimations-neoforge-1.12.7-mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/MPCX6s5C/versions/qN9o6wwH/notenoughanimations-neoforge-1.12.7-mc1.21.4.jar", "sha1": "c71638d95a0877e01bcd74502165a8451f9fb89f"},
+{"slug": "reeses-sodium-options", "project": "Bh37bMuy", "version": "xAiCe6w8", "file": "reeses-sodium-options-neoforge-1.8.3+mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/Bh37bMuy/versions/xAiCe6w8/reeses-sodium-options-neoforge-1.8.3%2Bmc1.21.4.jar", "sha1": "b03d05495be28d8cef7a34872941bb8d703d60e6"},
+{"slug": "jei", "project": "u6dRKJwZ", "version": "V5vS77Gp", "file": "jei-1.21.4-neoforge-20.0.0.4.jar", "url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/V5vS77Gp/jei-1.21.4-neoforge-20.0.0.4.jar", "sha1": "6c89376dcaae60c6a9908c93bb2fc7a78705bb30"},
+{"slug": "3dskinlayers", "project": "zV5r3pPn", "version": "VRi82jks", "file": "skinlayers3d-neoforge-1.11.4-mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/zV5r3pPn/versions/VRi82jks/skinlayers3d-neoforge-1.11.4-mc1.21.4.jar", "sha1": "0420dcca8faec0823585fdc02f0d548bf1b3bc8f"},
+{"slug": "modernfix", "project": "nmDcB62a", "version": "xbg7UvQT", "file": "modernfix-neoforge-5.20.3+mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/xbg7UvQT/modernfix-neoforge-5.20.3%2Bmc1.21.4.jar", "sha1": "0353510f51f377a0c54da7a7f26f68bc83721c3d"},
+{"slug": "geckolib", "project": "8BmcQJ2H", "version": "eQtABRub", "file": "geckolib-neoforge-1.21.4-4.8.5.jar", "url": "https://cdn.modrinth.com/data/8BmcQJ2H/versions/eQtABRub/geckolib-neoforge-1.21.4-4.8.5.jar", "sha1": "54a80363a5fea8911c6d57563bb2c355c8b57262"},
+{"slug": "simple-voice-chat", "project": "9eGKb6K1", "version": "ToSd9euK", "file": "voicechat-neoforge-1.21.4-2.6.27.jar", "url": "https://cdn.modrinth.com/data/9eGKb6K1/versions/ToSd9euK/voicechat-neoforge-1.21.4-2.6.27.jar", "sha1": "d4b6a335fd4bc8609f5486f04e3c18bc90d059af"},
+{"slug": "moreculling", "project": "51shyZVL", "version": "ST43Fz5s", "file": "moreculling-neoforge-1.21.4-1.2.10.jar", "url": "https://cdn.modrinth.com/data/51shyZVL/versions/ST43Fz5s/moreculling-neoforge-1.21.4-1.2.10.jar", "sha1": "93f374d5fffaddc83cd498fc6dcaa13d647a9421"},
+{"slug": "jade", "project": "nvQzSEkH", "version": "Rpe14jmy", "file": "Jade-1.21.4-NeoForge-17.3.0.jar", "url": "https://cdn.modrinth.com/data/nvQzSEkH/versions/Rpe14jmy/Jade-1.21.4-NeoForge-17.3.0.jar", "sha1": "3740422a2589cd99c1e6d06a00cbd8813c9da823"},
+{"slug": "dynamic-fps", "project": "LQ3K71Q1", "version": "2LlAYmFQ", "file": "dynamic-fps-3.11.8+minecraft-1.21.2-neoforge.jar", "url": "https://cdn.modrinth.com/data/LQ3K71Q1/versions/2LlAYmFQ/dynamic-fps-3.11.8%2Bminecraft-1.21.2-neoforge.jar", "sha1": "e6352436729a021c52b5645f8e36e72ba95bc71a"},
+{"slug": "forge-config-api-port", "project": "ohNO6lps", "version": "DjGnsAnc", "file": "ForgeConfigAPIPort-v21.4.3-1.21.4-NeoForge.jar", "url": "https://cdn.modrinth.com/data/ohNO6lps/versions/DjGnsAnc/ForgeConfigAPIPort-v21.4.3-1.21.4-NeoForge.jar", "sha1": "368dc150d7351eab4ea33e881d40d9d2d7bee293"},
+{"slug": "collective", "project": "e0M1UDsY", "version": "I5jY2gQ2", "file": "collective-1.21.4-8.3.jar", "url": "https://cdn.modrinth.com/data/e0M1UDsY/versions/I5jY2gQ2/collective-1.21.4-8.3.jar", "sha1": "ad74bd823d10b777c0c5ef247667bcd5270a789c"},
+{"slug": "fancymenu", "project": "Wq5SjeWM", "version": "C84Hz0YM", "file": "fancymenu_neoforge_3.7.1_MC_1.21.4.jar", "url": "https://cdn.modrinth.com/data/Wq5SjeWM/versions/C84Hz0YM/fancymenu_neoforge_3.7.1_MC_1.21.4.jar", "sha1": "aa0d8f6b44a1a49fb14285f3266e31980821d8f8"},
+{"slug": "puzzles-lib", "project": "QAGBst4M", "version": "HOC9OUuE", "file": "PuzzlesLib-v21.4.14-1.21.4-NeoForge.jar", "url": "https://cdn.modrinth.com/data/QAGBst4M/versions/HOC9OUuE/PuzzlesLib-v21.4.14-1.21.4-NeoForge.jar", "sha1": "f9dfe0dc263a8f74706d88c06bb90ac654450a32"},
+{"slug": "konkrete", "project": "J81TRJWm", "version": "1ZCnjysV", "file": "konkrete_neoforge_1.9.9_MC_1.21.4.jar", "url": "https://cdn.modrinth.com/data/J81TRJWm/versions/1ZCnjysV/konkrete_neoforge_1.9.9_MC_1.21.4.jar", "sha1": "b27734af021674bad3533784d0c6346bdacc9c69"},
+{"slug": "mouse-tweaks", "project": "aC3cM3Vq", "version": "pctLmzqC", "file": "MouseTweaks-neoforge-mc1.21.3-2.26.1.jar", "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/pctLmzqC/MouseTweaks-neoforge-mc1.21.3-2.26.1.jar", "sha1": "6d16a4457330201b5c455587f2bb4757da70eb56"},
+{"slug": "balm", "project": "MBAkmtvl", "version": "1C3tVoOk", "file": "balm-neoforge-1.21.4-21.4.42.jar", "url": "https://cdn.modrinth.com/data/MBAkmtvl/versions/1C3tVoOk/balm-neoforge-1.21.4-21.4.42.jar", "sha1": "d7b7dd5845950c081c8dc8297da287a21c92a219"},
+{"slug": "no-chat-reports", "project": "qQyHxfxd", "version": "SbnUzNb3", "file": "NoChatReports-NEOFORGE-1.21.4-v2.11.0.jar", "url": "https://cdn.modrinth.com/data/qQyHxfxd/versions/SbnUzNb3/NoChatReports-NEOFORGE-1.21.4-v2.11.0.jar", "sha1": "fa38a2085daa9d9dbd190d4fcbd5f824427aafd5"},
+{"slug": "sound-physics-remastered", "project": "qyVF9oeo", "version": "thfTQpK3", "file": "sound-physics-remastered-neoforge-1.21.4-1.5.1.jar", "url": "https://cdn.modrinth.com/data/qyVF9oeo/versions/thfTQpK3/sound-physics-remastered-neoforge-1.21.4-1.5.1.jar", "sha1": "6a9abe848102297375e4968838082fd279dee16f"},
+{"slug": "creativecore", "project": "OsZiaDHq", "version": "TBspwP11", "file": "CreativeCore_NEOFORGE_v2.12.35_mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/OsZiaDHq/versions/TBspwP11/CreativeCore_NEOFORGE_v2.12.35_mc1.21.4.jar", "sha1": "64ba606a343b29b75cb615d22b0f7d877243e654"},
+{"slug": "kotlin-for-forge", "project": "ordsPcFz", "version": "9ZlVvei8", "file": "kotlinforforge-5.13.0-all.jar", "url": "https://cdn.modrinth.com/data/ordsPcFz/versions/9ZlVvei8/kotlinforforge-5.13.0-all.jar", "sha1": "b1d5563f4e3db9ec4a4a2b371560aa171d6de237"},
+{"slug": "melody", "project": "CVT4pFB2", "version": "efcdRVZP", "file": "melody_neoforge_1.0.10_MC_1.21.jar", "url": "https://cdn.modrinth.com/data/CVT4pFB2/versions/efcdRVZP/melody_neoforge_1.0.10_MC_1.21.jar", "sha1": "e83052a92c4ca0016bcfe7f0207273983dc84698"},
+{"slug": "chat-heads", "project": "Wb5oqrBJ", "version": "HJx0n8ZM", "file": "chat_heads-0.15.6-neoforge-1.21.4.jar", "url": "https://cdn.modrinth.com/data/Wb5oqrBJ/versions/HJx0n8ZM/chat_heads-0.15.6-neoforge-1.21.4.jar", "sha1": "8e4b674560d373175772cc17a45f78ea3d37a194"},
+{"slug": "owo-lib", "project": "ccKDOlHs", "version": "p9vm8HDx", "file": "owo-lib-neoforge-0.12.19-beta.2+1.21.4.jar", "url": "https://cdn.modrinth.com/data/ccKDOlHs/versions/p9vm8HDx/owo-lib-neoforge-0.12.19-beta.2%2B1.21.4.jar", "sha1": "4203bafacf79d2f20225019a0177a07542cd4901"},
+{"slug": "essential", "project": "k2ZPuTBm", "version": "7L6KZs89", "file": "Essential_1-5-2_neoforge_1-21-4.jar", "url": "https://cdn.modrinth.com/data/k2ZPuTBm/versions/7L6KZs89/Essential_1-5-2_neoforge_1-21-4.jar", "sha1": "5169ef4c810e3548f979a88ac1e72f2c96a7a500"},
+{"slug": "badoptimizations", "project": "g96Z4WVZ", "version": "KsC2V6FQ", "file": "BadOptimizations-2.4.1-1.21.2-21.5.jar", "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/KsC2V6FQ/BadOptimizations-2.4.1-1.21.2-21.5.jar", "sha1": "f3ac49d4866a6fde8623c0021481285dc1d3d2b8"},
+{"slug": "fzzy-config", "project": "hYykXjDp", "version": "81mqutcg", "file": "fzzy_config-0.7.7+fix1+1.21.3+neoforge.jar", "url": "https://cdn.modrinth.com/data/hYykXjDp/versions/81mqutcg/fzzy_config-0.7.7%2Bfix1%2B1.21.3%2Bneoforge.jar", "sha1": "7fb44102c2b94e637f03cabefba919c300b152e2"},
+{"slug": "terrablender", "project": "kkmrDlKT", "version": "CmOWA4e9", "file": "TerraBlender-neoforge-1.21.4-4.3.0.2.jar", "url": "https://cdn.modrinth.com/data/kkmrDlKT/versions/CmOWA4e9/TerraBlender-neoforge-1.21.4-4.3.0.2.jar", "sha1": "7beb0723948a75d3f6ed221752dfbeb5e9aab8fd"},
+{"slug": "clumps", "project": "Wnxd13zP", "version": "2zQSp93Z", "file": "Clumps-neoforge-1.21.4-22.0.0.1.jar", "url": "https://cdn.modrinth.com/data/Wnxd13zP/versions/2zQSp93Z/Clumps-neoforge-1.21.4-22.0.0.1.jar", "sha1": "adb1292d71bb358b074ee9116be98939e1786fb0"},
+{"slug": "searchables", "project": "fuuu3xnx", "version": "gYDrOD6p", "file": "Searchables-neoforge-1.21.4-1.0.5.jar", "url": "https://cdn.modrinth.com/data/fuuu3xnx/versions/gYDrOD6p/Searchables-neoforge-1.21.4-1.0.5.jar", "sha1": "4f447fb4dd1b08d9d405b5d03c067c21fd7e8a9b"},
+{"slug": "controlling", "project": "xv94TkTM", "version": "12sYUzqU", "file": "Controlling-neoforge-1.21.4-22.0.5.jar", "url": "https://cdn.modrinth.com/data/xv94TkTM/versions/12sYUzqU/Controlling-neoforge-1.21.4-22.0.5.jar", "sha1": "8f53c9a7b20393329c16204eb04d56294ce91e9f"},
+{"slug": "inventory-profiles-next", "project": "O7RBXm3n", "version": "gAFF0TDo", "file": "InventoryProfilesNext-neoforge-1.21.4-2.1.9.jar", "url": "https://cdn.modrinth.com/data/O7RBXm3n/versions/gAFF0TDo/InventoryProfilesNext-neoforge-1.21.4-2.1.9.jar", "sha1": "cc4eebaa5f746d3b57f4631e500f57c73d942c79"},
+{"slug": "shulkerboxtooltip", "project": "2M01OLQq", "version": "eGROc5cK", "file": "shulkerboxtooltip-neoforge-5.2.6+1.21.4.jar", "url": "https://cdn.modrinth.com/data/2M01OLQq/versions/eGROc5cK/shulkerboxtooltip-neoforge-5.2.6%2B1.21.4.jar", "sha1": "658d47bb0efcfeadc1ccb45a3218d8d68c4bb6ef"},
+{"slug": "ambientsounds", "project": "fM515JnW", "version": "6cKHw6QR", "file": "AmbientSounds_NEOFORGE_v6.1.5_mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/fM515JnW/versions/6cKHw6QR/AmbientSounds_NEOFORGE_v6.1.5_mc1.21.4.jar", "sha1": "b26eb0012fa73794f5a13a4b98d46d5f387f0448"},
+{"slug": "enchantment-descriptions", "project": "UVtY3ZAC", "version": "5RwpkUHf", "file": "enchdesc-neoforge-1.21.4-21.4.1.jar", "url": "https://cdn.modrinth.com/data/UVtY3ZAC/versions/5RwpkUHf/enchdesc-neoforge-1.21.4-21.4.1.jar", "sha1": "12f2b6f40137bb7d898e0b5d0f61ac81ed4659c6"},
+{"slug": "biomes-o-plenty", "project": "HXF82T3G", "version": "mV8kmoPp", "file": "BiomesOPlenty-neoforge-1.21.4-21.4.0.23.jar", "url": "https://cdn.modrinth.com/data/HXF82T3G/versions/mV8kmoPp/BiomesOPlenty-neoforge-1.21.4-21.4.0.23.jar", "sha1": "92af80a107a0b2276b17be05100d0602fcda6865"},
+{"slug": "iceberg", "project": "5faXoLqX", "version": "LXZoNxtR", "file": "Iceberg-1.21.4-neoforge-1.2.13.jar", "url": "https://cdn.modrinth.com/data/5faXoLqX/versions/LXZoNxtR/Iceberg-1.21.4-neoforge-1.2.13.jar", "sha1": "7d16647ba8ba0e7c65b529a582d8765da89b306a"},
+{"slug": "distanthorizons", "project": "uCdwusMi", "version": "SSfzA0Av", "file": "DistantHorizons-3.3.3-1.21.4-fabric-neoforge.jar", "url": "https://cdn.modrinth.com/data/uCdwusMi/versions/SSfzA0Av/DistantHorizons-3.3.3-1.21.4-fabric-neoforge.jar", "sha1": "88154dd94106c9f94472a36bf92538b2b8086366"},
+{"slug": "embeddium", "project": "sk9rgfiA", "version": "vsgK3r0g", "file": "embeddium-1.0.12-beta.9999+mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/sk9rgfiA/versions/vsgK3r0g/embeddium-1.0.12-beta.9999%2Bmc1.21.4.jar", "sha1": "7eff48150c6e97f1284e90dfb17eb32217173303"},
+{"slug": "resourceful-lib", "project": "G1hIVOrD", "version": "fn2lsIfq", "file": "ResourcefulLib-neoforge-1.21.4-3.4.5.jar", "url": "https://cdn.modrinth.com/data/G1hIVOrD/versions/fn2lsIfq/ResourcefulLib-neoforge-1.21.4-3.4.5.jar", "sha1": "dfa8be284b69e8a8db4b37eb9ad391afab4bba4b"},
+{"slug": "yungs-api", "project": "Ua7DFN59", "version": "FVhw2zf8", "file": "YungsApi-1.21.4-NeoForge-5.4.0.jar", "url": "https://cdn.modrinth.com/data/Ua7DFN59/versions/FVhw2zf8/YungsApi-1.21.4-NeoForge-5.4.0.jar", "sha1": "25af9278b26cd6008b382205d58a2da6681ca455"},
+{"slug": "libipn", "project": "onSQdWhM", "version": "hyELuKr4", "file": "libIPN-neoforge-1.21.4-6.5.1.jar", "url": "https://cdn.modrinth.com/data/onSQdWhM/versions/hyELuKr4/libIPN-neoforge-1.21.4-6.5.1.jar", "sha1": "8a808608954ab8482986974a2f27b8b94a009441"},
+{"slug": "betterf3", "project": "8shC1gFX", "version": "qQsaCBRd", "file": "BetterF3-13.0.0-NeoForge-1.21.4.jar", "url": "https://cdn.modrinth.com/data/8shC1gFX/versions/qQsaCBRd/BetterF3-13.0.0-NeoForge-1.21.4.jar", "sha1": "f767b07b41db1db789edc0da5bed1738249465f2"},
+{"slug": "supermartijn642s-config-lib", "project": "LN9BxssP", "version": "qKL9jM75", "file": "supermartijn642configlib-1.1.8-neoforge-mc1.21.jar", "url": "https://cdn.modrinth.com/data/LN9BxssP/versions/qKL9jM75/supermartijn642configlib-1.1.8-neoforge-mc1.21.jar", "sha1": "07452242e389975e8a88b97066f4bae6a4ebe574"},
+{"slug": "cherished-worlds", "project": "3azQ6p0W", "version": "SGC8rWLc", "file": "cherishedworlds-neoforge-11.0.0+1.21.4.jar", "url": "https://cdn.modrinth.com/data/3azQ6p0W/versions/SGC8rWLc/cherishedworlds-neoforge-11.0.0%2B1.21.4.jar", "sha1": "d90fbc953abca622672ab222b20493d910b30ccc"},
+{"slug": "modelfix", "project": "QdG47OkI", "version": "tgaRyAbD", "file": "modelfix-1.21.3-1.11.jar", "url": "https://cdn.modrinth.com/data/QdG47OkI/versions/tgaRyAbD/modelfix-1.21.3-1.11.jar", "sha1": "db14fd195ccfbd11325f1ba9ca33771c23a4ef50"},
+{"slug": "curios", "project": "vvuO3ImH", "version": "jtt92CXj", "file": "curios-neoforge-10.0.1+1.21.4.jar", "url": "https://cdn.modrinth.com/data/vvuO3ImH/versions/jtt92CXj/curios-neoforge-10.0.1%2B1.21.4.jar", "sha1": "a9cb1b4b9ec089955a6b4f8995c4227010bf1824"},
+{"slug": "coroutil", "project": "rLLJ1OZM", "version": "Z8sJH8Jq", "file": "coroutil-neoforge-1.21.4-1.3.8.jar", "url": "https://cdn.modrinth.com/data/rLLJ1OZM/versions/Z8sJH8Jq/coroutil-neoforge-1.21.4-1.3.8.jar", "sha1": "339766b765b915c23d701a10a15dbd7fa0eb56f9"},
+{"slug": "packet-fixer", "project": "c7m1mi73", "version": "2C41Q8WX", "file": "packetfixer-3.3.1-1.20.5-1.21.X-merged.jar", "url": "https://cdn.modrinth.com/data/c7m1mi73/versions/2C41Q8WX/packetfixer-3.3.1-1.20.5-1.21.X-merged.jar", "sha1": "a8bb6e25807682e72c23bf4065f3cd5f6373ece3"},
+{"slug": "midnightlib", "project": "codAaoxh", "version": "GSkLYfct", "file": "midnightlib-neoforge-1.10.0+1.21.5.jar", "url": "https://cdn.modrinth.com/data/codAaoxh/versions/GSkLYfct/midnightlib-neoforge-1.10.0%2B1.21.5.jar", "sha1": "dc73b248bdbddf5473584aba159aa4df6e296832"},
+{"slug": "cubes-without-borders", "project": "ETlrkaYF", "version": "FcNHjyMR", "file": "cwb-5.0.0+1.21.2.neoforge.jar", "url": "https://cdn.modrinth.com/data/ETlrkaYF/versions/FcNHjyMR/cwb-5.0.0%2B1.21.2.neoforge.jar", "sha1": "db1b1fc3d92b43b0035eb305ffcf517fdffc9b1b"},
+{"slug": "euphoria-patches", "project": "4H6sumDB", "version": "Gkv3fLVg", "file": "EuphoriaPatcher-1.11.1-r5.10-neoforge.jar", "url": "https://cdn.modrinth.com/data/4H6sumDB/versions/Gkv3fLVg/EuphoriaPatcher-1.11.1-r5.10-neoforge.jar", "sha1": "ea16de899b121f72be048a9410f72af0181337d1"},
+{"slug": "rrls", "project": "ZP7xHXtw", "version": "F65Bnrrh", "file": "rrls-5.1.2+mc1.21.4-forge.jar", "url": "https://cdn.modrinth.com/data/ZP7xHXtw/versions/F65Bnrrh/rrls-5.1.2%2Bmc1.21.4-forge.jar", "sha1": "f9f319895d33dd1c900d39575415c3608a8a874f"},
+{"slug": "playeranimator", "project": "gedNE4y2", "version": "CSMvN349", "file": "player-animation-lib-forge-2.0.5+1.21.4.jar", "url": "https://cdn.modrinth.com/data/gedNE4y2/versions/CSMvN349/player-animation-lib-forge-2.0.5%2B1.21.4.jar", "sha1": "75ccef5532d834303d672d26239e8e47168996fb"},
+{"slug": "carry-on", "project": "joEfVgkn", "version": "pjOcWEjw", "file": "carryon-neoforge-1.21.4-2.3.0.29.jar", "url": "https://cdn.modrinth.com/data/joEfVgkn/versions/pjOcWEjw/carryon-neoforge-1.21.4-2.3.0.29.jar", "sha1": "12e288f92844c7f029e6a372df4ea62d388fec18"},
+{"slug": "waystones", "project": "LOpKHB2A", "version": "fuEeXjq1", "file": "waystones-neoforge-1.21.4-21.4.19.jar", "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/fuEeXjq1/waystones-neoforge-1.21.4-21.4.19.jar", "sha1": "71ea93d2910382800ec4e503b6d670ab6d31b0a8"},
+{"slug": "better-advancements", "project": "Q2OqKxDG", "version": "4rFFE7Vm", "file": "BetterAdvancements-NeoForge-1.21.4-0.4.6.62.jar", "url": "https://cdn.modrinth.com/data/Q2OqKxDG/versions/4rFFE7Vm/BetterAdvancements-NeoForge-1.21.4-0.4.6.62.jar", "sha1": "ae68eb154c2ee609d9c34326e340ed247fc2aec0"},
+{"slug": "natures-compass", "project": "fPetb5Kh", "version": "J03HgGZ8", "file": "NaturesCompass-1.21.4-3.0.4-neoforge.jar", "url": "https://cdn.modrinth.com/data/fPetb5Kh/versions/J03HgGZ8/NaturesCompass-1.21.4-3.0.4-neoforge.jar", "sha1": "d57205a18f0a34421a7f5c802afcb3a8fb5d9d82"},
+{"slug": "puzzle", "project": "3IuO68q1", "version": "N1QLfcVF", "file": "puzzle-neoforge-2.3.0+1.21.4.jar", "url": "https://cdn.modrinth.com/data/3IuO68q1/versions/N1QLfcVF/puzzle-neoforge-2.3.0%2B1.21.4.jar", "sha1": "0defeb60fba3dc975eb752e9b7251ab5a2f1ffe9"},
+{"slug": "rei", "project": "nfn13YXA", "version": "OI8dVs3y", "file": "RoughlyEnoughItems-18.0.815-neoforge.jar", "url": "https://cdn.modrinth.com/data/nfn13YXA/versions/OI8dVs3y/RoughlyEnoughItems-18.0.815-neoforge.jar", "sha1": "3c2c61a78df09df5af2f45e2ce6a931b1b5f7975"},
+{"slug": "visual-workbench", "project": "kfqD1JRw", "version": "R96kEpJG", "file": "VisualWorkbench-v21.4.1-1.21.4-NeoForge.jar", "url": "https://cdn.modrinth.com/data/kfqD1JRw/versions/R96kEpJG/VisualWorkbench-v21.4.1-1.21.4-NeoForge.jar", "sha1": "8010fe69fca8b997898d1405f1e810ad7cf253f0"},
+{"slug": "resourceful-config", "project": "M1953qlQ", "version": "3miFv5jx", "file": "resourcefulconfig-neoforge-1.21.4-3.4.3.jar", "url": "https://cdn.modrinth.com/data/M1953qlQ/versions/3miFv5jx/resourcefulconfig-neoforge-1.21.4-3.4.3.jar", "sha1": "859aff6c932284725ca1ab24e6dc492a0811c995"},
+{"slug": "e4mc", "project": "qANg5Jrr", "version": "HXD8kS5O", "file": "e4mc-neoforge-6.2.3.jar", "url": "https://cdn.modrinth.com/data/qANg5Jrr/versions/HXD8kS5O/e4mc-neoforge-6.2.3.jar", "sha1": "7127478b19531091257b3f58cd734a638200e481"},
+{"slug": "fast-ip-ping", "project": "9mtu0sUO", "version": "H4eQRk7D", "file": "fast-ip-ping-v1.0.12-mc1.21.4-neoforge.jar", "url": "https://cdn.modrinth.com/data/9mtu0sUO/versions/H4eQRk7D/fast-ip-ping-v1.0.12-mc1.21.4-neoforge.jar", "sha1": "60b661377b190a9f00d7563d776d1eef6d37e1ed"},
+{"slug": "netherportalfix", "project": "nPZr02ET", "version": "Vs09Rou7", "file": "netherportalfix-neoforge-1.21.4-21.4.1.jar", "url": "https://cdn.modrinth.com/data/nPZr02ET/versions/Vs09Rou7/netherportalfix-neoforge-1.21.4-21.4.1.jar", "sha1": "efd72d2bb481a2601638c05a2481b2fac7bab14a"},
+{"slug": "lithostitched", "project": "XaDC71GB", "version": "sidG8iZo", "file": "lithostitched-neoforge-1.21.4-1.4.5.jar", "url": "https://cdn.modrinth.com/data/XaDC71GB/versions/sidG8iZo/lithostitched-neoforge-1.21.4-1.4.5.jar", "sha1": "d0e67ebaabaee5d45715646937f343df94f1ec1c"},
+{"slug": "lmd", "project": "vE2FN5qn", "version": "fgcMDg9B", "file": "letmedespawn-1.21.x-neoforge-1.5.0.jar", "url": "https://cdn.modrinth.com/data/vE2FN5qn/versions/fgcMDg9B/letmedespawn-1.21.x-neoforge-1.5.0.jar", "sha1": "576fe2edaa96e7e71015287457bd52f87646d968"},
+{"slug": "controlify", "project": "DOUdJVEm", "version": "5lPsihJa", "file": "controlify-3.0.1+lts+1.21.4-neoforge.jar", "url": "https://cdn.modrinth.com/data/DOUdJVEm/versions/5lPsihJa/controlify-3.0.1%2Blts%2B1.21.4-neoforge.jar", "sha1": "2fd82dd86dc082d311d51f954ad364b1a5125210"},
+{"slug": "sodium-shadowy-path-blocks", "project": "EIa1eiMm", "version": "FpMmigWq", "file": "sodium-shadowy-path-blocks-neoforge-4.1.0.jar", "url": "https://cdn.modrinth.com/data/EIa1eiMm/versions/FpMmigWq/sodium-shadowy-path-blocks-neoforge-4.1.0.jar", "sha1": "315891dcf8459a53fe263d985073bef619c360d0"},
+{"slug": "glitchcore", "project": "s3dmwKy5", "version": "EvRmueqK", "file": "GlitchCore-neoforge-1.21.4-2.3.0.4.jar", "url": "https://cdn.modrinth.com/data/s3dmwKy5/versions/EvRmueqK/GlitchCore-neoforge-1.21.4-2.3.0.4.jar", "sha1": "b97dd897ff9d94366510ec5f1af96fb85eb35309"},
+{"slug": "customskinloader", "project": "idMHQ4n2", "version": "yyYvYfZI", "file": "CustomSkinLoader_Universal-15.1.jar", "url": "https://cdn.modrinth.com/data/idMHQ4n2/versions/yyYvYfZI/CustomSkinLoader_Universal-15.1.jar", "sha1": "324e6921ecd576e44875981466e7f22170b6541a"},
+{"slug": "athena-ctm", "project": "b1ZV3DIJ", "version": "tkm0BT7X", "file": "athena-neoforge-1.21.4-4.2.1.jar", "url": "https://cdn.modrinth.com/data/b1ZV3DIJ/versions/tkm0BT7X/athena-neoforge-1.21.4-4.2.1.jar", "sha1": "265815d23cbeb5d29f32f7fe21135f78b76a2407"},
+{"slug": "terralith", "project": "8oi3bsk5", "version": "MuJMtPGQ", "file": "Terralith_1.21.x_v2.5.8.jar", "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/MuJMtPGQ/Terralith_1.21.x_v2.5.8.jar", "sha1": "bee0cfb1a8cd4bf3d96bccea224fb45d74de9085"},
+{"slug": "physicsmod", "project": "Xy8aRQKS", "version": "i5GPxBXN", "file": "physics-mod-3.0.24-mc-1.21.4-neoforge.jar", "url": "https://cdn.modrinth.com/data/Xy8aRQKS/versions/i5GPxBXN/physics-mod-3.0.24-mc-1.21.4-neoforge.jar", "sha1": "7fe9c15ef20945e884a5df98f5909127de984221"},
+{"slug": "chatanimation", "project": "DnNYdJsx", "version": "Rwa5CSn5", "file": "chatanimation-neoforge-1.3.5+mc1.21.3.jar", "url": "https://cdn.modrinth.com/data/DnNYdJsx/versions/Rwa5CSn5/chatanimation-neoforge-1.3.5%2Bmc1.21.3.jar", "sha1": "16c799dfc5464732b289719ab2a10add7897fa89"},
+{"slug": "comforts", "project": "SaCpeal4", "version": "MQWPsBgO", "file": "comforts-neoforge-10.0.0+1.21.4.jar", "url": "https://cdn.modrinth.com/data/SaCpeal4/versions/MQWPsBgO/comforts-neoforge-10.0.0%2B1.21.4.jar", "sha1": "9b617739d33fc4da479a2e1745c1bf5e054dfd51"},
+{"slug": "spark", "project": "l6YH9Als", "version": "2E68cgve", "file": "spark-1.10.121-neoforge.jar", "url": "https://cdn.modrinth.com/data/l6YH9Als/versions/2E68cgve/spark-1.10.121-neoforge.jar", "sha1": "001f5471712c18c85e2b978f263d6897a159a56a"},
+{"slug": "lootr", "project": "EltpO5cN", "version": "Z0vjfoTl", "file": "lootr-neoforge-1.21.4-1.13.36.89.jar", "url": "https://cdn.modrinth.com/data/EltpO5cN/versions/Z0vjfoTl/lootr-neoforge-1.21.4-1.13.36.89.jar", "sha1": "703343e137f6e07d8bb7deaa37878df066a589e2"},
+{"slug": "yungs-better-nether-fortresses", "project": "Z2mXHnxP", "version": "VGGj4FAD", "file": "YungsBetterNetherFortresses-1.21.4-NeoForge-3.4.1.jar", "url": "https://cdn.modrinth.com/data/Z2mXHnxP/versions/VGGj4FAD/YungsBetterNetherFortresses-1.21.4-NeoForge-3.4.1.jar", "sha1": "d967b4553c9b7bfd3fd89deabbae89f614327fdb"},
+{"slug": "open-parties-and-claims", "project": "gF3BGWvG", "version": "6RMefXwx", "file": "open-parties-and-claims-neoforge-1.21.4-0.31.6.jar", "url": "https://cdn.modrinth.com/data/gF3BGWvG/versions/6RMefXwx/open-parties-and-claims-neoforge-1.21.4-0.31.6.jar", "sha1": "237dce04746a4f5242f42240d011df214cc500dc"},
+{"slug": "rhino", "project": "sk9knFPE", "version": "SqkDvOLG", "file": "rhino-2101.2.8-build.91.jar", "url": "https://cdn.modrinth.com/data/sk9knFPE/versions/SqkDvOLG/rhino-2101.2.8-build.91.jar", "sha1": "56eab1d464ed0811c64040c64bd047df5cbc3aad"},
+{"slug": "drippy-loading-screen", "project": "v3CYg2V9", "version": "WS1rUug0", "file": "drippyloadingscreen_neoforge_3.0.12_MC_1.21.4.jar", "url": "https://cdn.modrinth.com/data/v3CYg2V9/versions/WS1rUug0/drippyloadingscreen_neoforge_3.0.12_MC_1.21.4.jar", "sha1": "2b2566137dec91b85f02682d18f893a3f2e8bf8a"},
+{"slug": "attributefix", "project": "lOOpEntO", "version": "t91BkZH1", "file": "attributefix-neoforge-1.21.4-21.4.2.jar", "url": "https://cdn.modrinth.com/data/lOOpEntO/versions/t91BkZH1/attributefix-neoforge-1.21.4-21.4.2.jar", "sha1": "609fc0d2e2f8772256144b198125f9c23f09fab2"},
+{"slug": "freecam", "project": "XeEZ3fK2", "version": "ZgduhqT3", "file": "freecam-neoforge-1.3.2+mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/XeEZ3fK2/versions/ZgduhqT3/freecam-neoforge-1.3.2%2Bmc1.21.4.jar", "sha1": "054851c2f9e6b1123416fe24114181cc4c66858d"},
+{"slug": "yungs-better-dungeons", "project": "o1C1Dkj5", "version": "XH5CZtOR", "file": "YungsBetterDungeons-1.21.4-NeoForge-5.4.0.jar", "url": "https://cdn.modrinth.com/data/o1C1Dkj5/versions/XH5CZtOR/YungsBetterDungeons-1.21.4-NeoForge-5.4.0.jar", "sha1": "aa0a81a53aaffa0dafbd5327aa69eb21b64fe123"},
+{"slug": "modern-ui", "project": "3sjzyvGR", "version": "2vVY2KJN", "file": "ModernUI-NeoForge-1.21.4-3.12.0.3-universal.jar", "url": "https://cdn.modrinth.com/data/3sjzyvGR/versions/2vVY2KJN/ModernUI-NeoForge-1.21.4-3.12.0.3-universal.jar", "sha1": "17cf978719e7aa678a17556e07265da0664a3126"},
+{"slug": "yungs-better-ocean-monuments", "project": "3dT9sgt4", "version": "MrBSbUVj", "file": "YungsBetterOceanMonuments-1.21.4-NeoForge-4.4.0.jar", "url": "https://cdn.modrinth.com/data/3dT9sgt4/versions/MrBSbUVj/YungsBetterOceanMonuments-1.21.4-NeoForge-4.4.0.jar", "sha1": "6094e93ddd4eaf9a22043a35e12142fe5cf3d50c"},
+{"slug": "particle-rain", "project": "nrikgvxm", "version": "RX5XL0dm", "file": "particlerain-4.0.0-beta.7+1.21.4-neoforge.jar", "url": "https://cdn.modrinth.com/data/nrikgvxm/versions/RX5XL0dm/particlerain-4.0.0-beta.7%2B1.21.4-neoforge.jar", "sha1": "8806fc138322a08f3d22786bf41ce4576a170405"},
+{"slug": "almanac", "project": "Gi02250Z", "version": "94xVVOZF", "file": "Almanac-1.21.3-4-neoforge-1.5.0.jar", "url": "https://cdn.modrinth.com/data/Gi02250Z/versions/94xVVOZF/Almanac-1.21.3-4-neoforge-1.5.0.jar", "sha1": "ab9812a7cd400cef76e7b42b14527074b4edd81d"},
+{"slug": "better-third-person", "project": "G1s2WpNo", "version": "OyWrVzG0", "file": "BetterThirdPerson-neoforge-1.9.0.jar", "url": "https://cdn.modrinth.com/data/G1s2WpNo/versions/OyWrVzG0/BetterThirdPerson-neoforge-1.9.0.jar", "sha1": "f0f10bb7891eb40a51deaf2a4ad765c1b038922b"},
+{"slug": "dynamiccrosshair", "project": "ZcR9weSm", "version": "vUhTtwV6", "file": "dynamiccrosshair-9.11+1.21.3-neoforge.jar", "url": "https://cdn.modrinth.com/data/ZcR9weSm/versions/vUhTtwV6/dynamiccrosshair-9.11%2B1.21.3-neoforge.jar", "sha1": "c3931a3a83f83936ea912d0391ddabbf10f2a8e6"},
+{"slug": "dungeons-and-taverns", "project": "tpehi7ww", "version": "pdZA8oTu", "file": "dungeons-and-taverns-v4.6.3.jar", "url": "https://cdn.modrinth.com/data/tpehi7ww/versions/pdZA8oTu/dungeons-and-taverns-v4.6.3.jar", "sha1": "1a2d43d96a7e198513e460286c4da308f218ab8f"},
+{"slug": "travelersbackpack", "project": "rlloIFEV", "version": "nLe8wldk", "file": "travelersbackpack-neoforge-1.21.4-10.4.11.jar", "url": "https://cdn.modrinth.com/data/rlloIFEV/versions/nLe8wldk/travelersbackpack-neoforge-1.21.4-10.4.11.jar", "sha1": "18357b708baf9d9deca06c66dba135a9a76e7e1c"},
+{"slug": "mru", "project": "SNVQ2c0g", "version": "UPKYU8WO", "file": "mru-1.0.17+1.21.5+neoforge.jar", "url": "https://cdn.modrinth.com/data/SNVQ2c0g/versions/UPKYU8WO/mru-1.0.17%2B1.21.5%2Bneoforge.jar", "sha1": "2c6d991cf7549262b2477e7c05894766e9a8fc40"},
+{"slug": "crash-assistant", "project": "ix1qq8Ux", "version": "18SR4EJw", "file": "CrashAssistant-neoforge-1.20.6-1.21.4-1.11.12.jar", "url": "https://cdn.modrinth.com/data/ix1qq8Ux/versions/18SR4EJw/CrashAssistant-neoforge-1.20.6-1.21.4-1.11.12.jar", "sha1": "ec9e35065ce3a49ecec6bd6ff7fec6992476f7bb"},
+{"slug": "yungs-better-mineshafts", "project": "HjmxVlSr", "version": "dBjAqiH9", "file": "YungsBetterMineshafts-1.21.4-NeoForge-5.4.0.jar", "url": "https://cdn.modrinth.com/data/HjmxVlSr/versions/dBjAqiH9/YungsBetterMineshafts-1.21.4-NeoForge-5.4.0.jar", "sha1": "821b39c1e852f4ef69bda437318937d47e365426"},
+{"slug": "sodium-options-api", "project": "Es5v4eyq", "version": "iHnIE3TX", "file": "sodiumoptionsapi-neoforge-1.0.10-1.21.4.jar", "url": "https://cdn.modrinth.com/data/Es5v4eyq/versions/iHnIE3TX/sodiumoptionsapi-neoforge-1.0.10-1.21.4.jar", "sha1": "de485ebe7b6cae12b34b17c57a046edcc853454d"},
+{"slug": "yungs-better-jungle-temples", "project": "z9Ve58Ih", "version": "4oIlQrO2", "file": "YungsBetterJungleTemples-1.21.4-NeoForge-3.4.0.jar", "url": "https://cdn.modrinth.com/data/z9Ve58Ih/versions/4oIlQrO2/YungsBetterJungleTemples-1.21.4-NeoForge-3.4.0.jar", "sha1": "aabfb6b3f1afdb09c5d354de365c66d3a786faa8"},
+{"slug": "toms-storage", "project": "XZNI4Cpy", "version": "cERcDmW2", "file": "toms_storage-1.21.4-2.3.3.jar", "url": "https://cdn.modrinth.com/data/XZNI4Cpy/versions/cERcDmW2/toms_storage-1.21.4-2.3.3.jar", "sha1": "97a71b8028e6748e5739e769bb7da7933f4d834e"},
+{"slug": "sophisticated-backpacks", "project": "TyCTlI4b", "version": "dqO5nftG", "file": "sophisticatedbackpacks-1.21.4-3.27.2.2166.jar", "url": "https://cdn.modrinth.com/data/TyCTlI4b/versions/dqO5nftG/sophisticatedbackpacks-1.21.4-3.27.2.2166.jar", "sha1": "5ef666e32e001db0ec94eae18fe7b901775865bb"},
+{"slug": "yungs-better-end-island", "project": "2BwBOmBQ", "version": "Y0718nVU", "file": "YungsBetterEndIsland-1.21.4-NeoForge-3.4.0.jar", "url": "https://cdn.modrinth.com/data/2BwBOmBQ/versions/Y0718nVU/YungsBetterEndIsland-1.21.4-NeoForge-3.4.0.jar", "sha1": "44abf51b224e3396a2e35db1c35d6facb7d9461d"},
+{"slug": "sophisticated-core", "project": "nmoqTijg", "version": "Y1qJG9xs", "file": "sophisticatedcore-1.21.4-1.5.1.2350.jar", "url": "https://cdn.modrinth.com/data/nmoqTijg/versions/Y1qJG9xs/sophisticatedcore-1.21.4-1.5.1.2350.jar", "sha1": "6362d363e2a4d2035fe2069ee4eb7218b4032f88"},
+{"slug": "chunky", "project": "fALzjamp", "version": "D99gXKQD", "file": "Chunky-NeoForge-1.4.27.jar", "url": "https://cdn.modrinth.com/data/fALzjamp/versions/D99gXKQD/Chunky-NeoForge-1.4.27.jar", "sha1": "715bb944cf8d10cf9787915455916a35c2f49419"},
+{"slug": "enhancedvisuals", "project": "KjL0jE2w", "version": "dcq6vYxR", "file": "EnhancedVisuals_NEOFORGE_v1.8.17_mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/KjL0jE2w/versions/dcq6vYxR/EnhancedVisuals_NEOFORGE_v1.8.17_mc1.21.4.jar", "sha1": "ac85ea6a82a744722ced999dfed08734c44179d8"},
+{"slug": "yeetus-experimentus", "project": "HaaH232J", "version": "Pp0TjcvD", "file": "yeetusexperimentus-neoforge-87.0.0.jar", "url": "https://cdn.modrinth.com/data/HaaH232J/versions/Pp0TjcvD/yeetusexperimentus-neoforge-87.0.0.jar", "sha1": "7132c346103d75a7c84da64b35b92e3a6f1ce3da"},
+{"slug": "sodium-dynamic-lights", "project": "PxQSWIcD", "version": "K1JyJpov", "file": "sodiumdynamiclights-neoforge-1.0.10-1.21.4.jar", "url": "https://cdn.modrinth.com/data/PxQSWIcD/versions/K1JyJpov/sodiumdynamiclights-neoforge-1.0.10-1.21.4.jar", "sha1": "777723404da2cf396abed1d1e0e7f59122afdb67"},
+{"slug": "sound", "project": "ZouiUX7t", "version": "2CEJkTj2", "file": "sounds-2.4.8+1.21.4+neoforge.jar", "url": "https://cdn.modrinth.com/data/ZouiUX7t/versions/2CEJkTj2/sounds-2.4.8%2B1.21.4%2Bneoforge.jar", "sha1": "9d2bb5ab0fdcc607dd03a55b3c1fda979c975ba4"},
+{"slug": "polytone", "project": "3qAYkBMB", "version": "jzMhMCRv", "file": "polytone-1.21.4-3.3.24.jar", "url": "https://cdn.modrinth.com/data/3qAYkBMB/versions/jzMhMCRv/polytone-1.21.4-3.3.24.jar", "sha1": "1144e37359b4f7c8ba3d4b688d5ce9971d3bfb06"},
+{"slug": "cristel-lib", "project": "cl223EMc", "version": "nvBbYALa", "file": "cristellib-neoforge-2.0.2.jar", "url": "https://cdn.modrinth.com/data/cl223EMc/versions/nvBbYALa/cristellib-neoforge-2.0.2.jar", "sha1": "23db9585b429106530b9de598e7b02361b888ef7"},
+{"slug": "yungs-better-strongholds", "project": "kidLKymU", "version": "jCEcgyYA", "file": "YungsBetterStrongholds-1.21.4-NeoForge-5.4.0.jar", "url": "https://cdn.modrinth.com/data/kidLKymU/versions/jCEcgyYA/YungsBetterStrongholds-1.21.4-NeoForge-5.4.0.jar", "sha1": "c4c42f5d7333a59e289568807619a39d6b4a3beb"},
+{"slug": "supermartijn642s-core-lib", "project": "rOUBggPv", "version": "VOXt0lid", "file": "supermartijn642corelib-1.1.26b-neoforge-mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/rOUBggPv/versions/VOXt0lid/supermartijn642corelib-1.1.26b-neoforge-mc1.21.4.jar", "sha1": "1123b6c9bb59c98479962ce1269a798d6a45e94b"},
+{"slug": "default-options", "project": "WEg59z5b", "version": "PTnvHaO1", "file": "defaultoptions-neoforge-1.21.4-21.4.6.jar", "url": "https://cdn.modrinth.com/data/WEg59z5b/versions/PTnvHaO1/defaultoptions-neoforge-1.21.4-21.4.6.jar", "sha1": "591db6a610a39927bbc8009a243f5a6feebd7f39"},
+{"slug": "cut-through", "project": "Dk6su9JN", "version": "tx8EN5Jn", "file": "CutThrough-v21.4.0-1.21.4-NeoForge.jar", "url": "https://cdn.modrinth.com/data/Dk6su9JN/versions/tx8EN5Jn/CutThrough-v21.4.0-1.21.4-NeoForge.jar", "sha1": "d424e045633cdf73b2e17b654fbe2b499475713c"},
+{"slug": "wavey-capes", "project": "kYuIpRLv", "version": "LxJbV10P", "file": "waveycapes-neoforge-1.11.3-mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/kYuIpRLv/versions/LxJbV10P/waveycapes-neoforge-1.11.3-mc1.21.4.jar", "sha1": "a27b1c5279991101d5017940188b32632469c231"},
+{"slug": "servercore", "project": "4WWQxlQP", "version": "vCnDCHyg", "file": "servercore-neoforge-1.5.8+1.21.4.jar", "url": "https://cdn.modrinth.com/data/4WWQxlQP/versions/vCnDCHyg/servercore-neoforge-1.5.8%2B1.21.4.jar", "sha1": "edc990444040ed4b62a09559b7a3cff85c32c4c0"},
+{"slug": "prism-lib", "project": "1OE8wbN0", "version": "AM3oL6VK", "file": "Prism-1.21.4-neoforge-1.0.10.jar", "url": "https://cdn.modrinth.com/data/1OE8wbN0/versions/AM3oL6VK/Prism-1.21.4-neoforge-1.0.10.jar", "sha1": "6bbd770690090eb1e78665c08f9bd2fe83c4e970"},
+{"slug": "particle-core", "project": "RSeLon5O", "version": "PEmbKEfv", "file": "particle_core-0.3.3+1.21.4+neoforge.jar", "url": "https://cdn.modrinth.com/data/RSeLon5O/versions/PEmbKEfv/particle_core-0.3.3%2B1.21.4%2Bneoforge.jar", "sha1": "813b30815686ac500697ff4623596f96e5686f96"},
+{"slug": "towns-and-towers", "project": "DjLobEOy", "version": "HEqgNPcC", "file": "t_and_t-fabric-neoforge-1.13.5.jar", "url": "https://cdn.modrinth.com/data/DjLobEOy/versions/HEqgNPcC/t_and_t-fabric-neoforge-1.13.5.jar", "sha1": "ed60a2679d0e125e73247a12199c00aa95502f37"},
+{"slug": "yungs-better-witch-huts", "project": "t5FRdP87", "version": "O4kCyQUo", "file": "YungsBetterWitchHuts-1.21.4-NeoForge-4.4.0.jar", "url": "https://cdn.modrinth.com/data/t5FRdP87/versions/O4kCyQUo/YungsBetterWitchHuts-1.21.4-NeoForge-4.4.0.jar", "sha1": "aa877c2669aab8800853e4c3fb4b06d28fcbd5bd"},
+{"slug": "advancement-plaques", "project": "9NM0dXub", "version": "XjKZ3q9W", "file": "AdvancementPlaques-1.21.4-neoforge-1.6.9.jar", "url": "https://cdn.modrinth.com/data/9NM0dXub/versions/XjKZ3q9W/AdvancementPlaques-1.21.4-neoforge-1.6.9.jar", "sha1": "622ac4265ad424e07f486fc3553d9545b66f7bb7"},
+{"slug": "i18nupdatemod", "project": "PWERr14M", "version": "EsMILcyc", "file": "I18nUpdateMod-3.8.0-all.jar", "url": "https://cdn.modrinth.com/data/PWERr14M/versions/EsMILcyc/I18nUpdateMod-3.8.0-all.jar", "sha1": "80ac47b656a422c4e0f0c411ef96f784e21aedc0"},
+{"slug": "item-highlighter", "project": "cVNW5lr6", "version": "ie1okMfr", "file": "Highlighter-1.21.4-neoforge-1.1.11.jar", "url": "https://cdn.modrinth.com/data/cVNW5lr6/versions/ie1okMfr/Highlighter-1.21.4-neoforge-1.1.11.jar", "sha1": "1c68938b608da8604789162d6f41ea34be9c3d43"},
+{"slug": "invmove", "project": "REfW2AEX", "version": "LA88Ilun", "file": "InvMove-0.9.3+1.21.8-NeoForge.jar", "url": "https://cdn.modrinth.com/data/REfW2AEX/versions/LA88Ilun/InvMove-0.9.3%2B1.21.8-NeoForge.jar", "sha1": "2632f524705457f690add81bdf608756bdef814f"},
+{"slug": "tectonic", "project": "lWDHr9jE", "version": "SEh7nPmu", "file": "tectonic-neoforge-1.21.4-2.4.3.jar", "url": "https://cdn.modrinth.com/data/lWDHr9jE/versions/SEh7nPmu/tectonic-neoforge-1.21.4-2.4.3.jar", "sha1": "47e62f696527d3e77e3fad66f847e3caf1db1f37"},
+{"slug": "easy-anvils", "project": "OZBR5JT5", "version": "znA9vlFD", "file": "EasyAnvils-v21.4.1-1.21.4-NeoForge.jar", "url": "https://cdn.modrinth.com/data/OZBR5JT5/versions/znA9vlFD/EasyAnvils-v21.4.1-1.21.4-NeoForge.jar", "sha1": "ccc47f1733f3ae303b98717dc3b582b82934d24c"},
+{"slug": "shatterbyte-lib", "project": "RH2KUdKJ", "version": "HldYrvf2", "file": "OctoLib-NEOFORGE-0.5.0.3+1.21.4.jar", "url": "https://cdn.modrinth.com/data/RH2KUdKJ/versions/HldYrvf2/OctoLib-NEOFORGE-0.5.0.3%2B1.21.4.jar", "sha1": "53148f07327951bee3107133338d04a7f24cce40"},
+{"slug": "better-combat", "project": "5sy6g3kz", "version": "ytvdpzua", "file": "bettercombat-neoforge-2.3.0+1.21.4.jar", "url": "https://cdn.modrinth.com/data/5sy6g3kz/versions/ytvdpzua/bettercombat-neoforge-2.3.0%2B1.21.4.jar", "sha1": "a2b6185f2dbd0a8ea0585e0895b5e1c4790b7f45"},
+{"slug": "yungs-better-desert-temples", "project": "XNlO7sBv", "version": "eUMO4Bdh", "file": "YungsBetterDesertTemples-1.21.4-NeoForge-4.4.0.jar", "url": "https://cdn.modrinth.com/data/XNlO7sBv/versions/eUMO4Bdh/YungsBetterDesertTemples-1.21.4-NeoForge-4.4.0.jar", "sha1": "ae16232fd5f4de23550e9e2cfd5d83658360c3e8"},
+{"slug": "citadel", "project": "jJfV67b1", "version": "ZkgKf4xj", "file": "citadel-2.7.1-1.21.1.jar", "url": "https://cdn.modrinth.com/data/jJfV67b1/versions/ZkgKf4xj/citadel-2.7.1-1.21.1.jar", "sha1": "9d7873f74b418f4f83adf2ae41af75d2e8217cd6"},
+{"slug": "libjf", "project": "WKwQAwke", "version": "3RAR4Rzx", "file": "libjf-3.18.4+forge.jar", "url": "https://cdn.modrinth.com/data/WKwQAwke/versions/3RAR4Rzx/libjf-3.18.4%2Bforge.jar", "sha1": "fba3f8b7d5b2e9941b13828aa5b6b7350b880244"},
+{"slug": "pick-up-notifier", "project": "ZX66K16c", "version": "gTyini9o", "file": "PickUpNotifier-v21.4.0-1.21.4-NeoForge.jar", "url": "https://cdn.modrinth.com/data/ZX66K16c/versions/gTyini9o/PickUpNotifier-v21.4.0-1.21.4-NeoForge.jar", "sha1": "548382cd7bad222ce533f13a2d1f586c5902f72a"},
+{"slug": "notenoughcrashes", "project": "yM94ont6", "version": "3ouZ6jFG", "file": "notenoughcrashes-neoforge-4.4.8+1.21.4.jar", "url": "https://cdn.modrinth.com/data/yM94ont6/versions/3ouZ6jFG/notenoughcrashes-neoforge-4.4.8%2B1.21.4.jar", "sha1": "0f811b5952e0e365158de0d81654a2edc950a492"},
+{"slug": "yungs-bridges", "project": "Ht4BfYp6", "version": "kXaKq5O0", "file": "YungsBridges-1.21.4-NeoForge-5.4.0.jar", "url": "https://cdn.modrinth.com/data/Ht4BfYp6/versions/kXaKq5O0/YungsBridges-1.21.4-NeoForge-5.4.0.jar", "sha1": "1d84199c749dfc1c30879a2bfe1ccd6a44a37cdc"},
+{"slug": "ixeris", "project": "p8RJPJIC", "version": "Z2Th77NP", "file": "Ixeris-4.6.11+1.21.8-neoforge.jar", "url": "https://cdn.modrinth.com/data/p8RJPJIC/versions/Z2Th77NP/Ixeris-4.6.11%2B1.21.8-neoforge.jar", "sha1": "16fa15edd1ba90410e24667c52c0ab98d95e4faf"},
+{"slug": "fusion-connected-textures", "project": "p19vrgc2", "version": "7Bj2Z4U3", "file": "fusion-1.3.16-neoforge-mc1.21.4.jar", "url": "https://cdn.modrinth.com/data/p19vrgc2/versions/7Bj2Z4U3/fusion-1.3.16-neoforge-mc1.21.4.jar", "sha1": "9e6a9adcea697c76454ea8742a86745742bd6723"}
+]}

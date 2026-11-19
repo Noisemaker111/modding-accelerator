@@ -117,9 +117,15 @@ def pin(loader, version, count=COUNT):
                     break
     path = PINS / f"{loader}-{version}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"loader": loader, "version": version, "date": date.today().isoformat(), "mods": mods}, indent=0) + "\n", encoding="utf-8")
+    write_pin(path, {"loader": loader, "version": version, "date": date.today().isoformat(), "mods": mods})
     print(f"pinned {len(mods)} {loader} mods for {version} in {path.relative_to(ROOT)}")
     return path
+
+
+def write_pin(path, pin):
+    """One mod a line, so a repinned release reads as the mods that changed."""
+    head = json.dumps({k: v for k, v in pin.items() if k != "mods"})[:-1]
+    path.write_text(head + ', "mods": [\n' + ",\n".join(json.dumps(m) for m in pin["mods"]) + "\n]}\n", encoding="utf-8")
 
 
 def fetch(loader, version, repin=False):
