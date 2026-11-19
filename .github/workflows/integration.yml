@@ -173,3 +173,73 @@ jobs:
           path: ${{ runner.temp }}/real-mods-results
           if-no-files-found: ignore
           retention-days: 7
+  report-red-main:
+    needs: [plugins, server-check, stonecutter]
+    if: always() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TITLE: Integration red on main
+      PLUGINS_RESULT: ${{ needs.plugins.result }}
+      SERVER_CHECK_RESULT: ${{ needs.server-check.result }}
+      STONECUTTER_RESULT: ${{ needs.stonecutter.result }}
+    steps:
+      - name: Update or close red-main issue
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          short_sha="${GITHUB_SHA:0:7}"
+          failed=()
+          for pair in "plugins:${PLUGINS_RESULT}" "server-check:${SERVER_CHECK_RESULT}" "stonecutter:${STONECUTTER_RESULT}"; do
+            job="${pair%%:*}"
+            res="${pair#*:}"
+            if [ "$res" = "failure" ]; then
+              failed+=("$job")
+            fi
+          done
+          issues_json=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues?state=open&per_page=100")
+          mapfile -t open_issues < <(
+            printf '%s\n' "$issues_json" \
+              | jq -rs --arg t "$TITLE" '[.[][] | select(.pull_request == null and .title == $t)] | sort_by(.number) | .[].number'
+          )
+          if [ "${#failed[@]}" -gt 0 ]; then
+            failed_list=$(printf '%s, ' "${failed[@]}")
+            failed_list="${failed_list%, }"
+            body=$(printf 'Integration is red on `main` at commit %s (`%s`).\n\n- Run: %s\n- Failed: %s\n- `plugins`: %s\n- `server-check`: %s\n- `stonecutter`: %s\n' \
+              "$GITHUB_SHA" "$short_sha" "$run_url" "$failed_list" "$PLUGINS_RESULT" "$SERVER_CHECK_RESULT" "$STONECUTTER_RESULT")
+            if [ "${#open_issues[@]}" -eq 0 ]; then
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/issues" \
+                -f title="$TITLE" \
+                -f body="$body" >/dev/null
+              echo "Opened issue '${TITLE}' for ${short_sha} (failed: ${failed_list})."
+            else
+              issue="${open_issues[0]}"
+              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/${issue}" \
+                -f body="$body" >/dev/null
+              comment=$(printf 'Still red on `main` at commit %s (`%s`): failed %s.\n\n- Run: %s\n- `plugins`: %s\n- `server-check`: %s\n- `stonecutter`: %s\n' \
+                "$GITHUB_SHA" "$short_sha" "$failed_list" "$run_url" "$PLUGINS_RESULT" "$SERVER_CHECK_RESULT" "$STONECUTTER_RESULT")
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" \
+                -f body="$comment" >/dev/null
+              echo "Updated issue #${issue} for ${short_sha} (failed: ${failed_list})."
+            fi
+          elif [ "${PLUGINS_RESULT}" = "success" ] && [ "${SERVER_CHECK_RESULT}" = "success" ] && [ "${STONECUTTER_RESULT}" = "success" ]; then
+            if [ "${#open_issues[@]}" -eq 0 ]; then
+              echo "Integration is green on main and no open '${TITLE}' issue exists."
+              exit 0
+            fi
+            comment=$(printf 'Integration is green again on `main` at commit %s (`%s`).\n\n- Run: %s\n- `plugins`: %s\n- `server-check`: %s\n- `stonecutter`: %s\n' \
+              "$GITHUB_SHA" "$short_sha" "$run_url" "$PLUGINS_RESULT" "$SERVER_CHECK_RESULT" "$STONECUTTER_RESULT")
+            for issue in "${open_issues[@]}"; do
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" \
+                -f body="$comment" >/dev/null
+              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/${issue}" \
+                -f state="closed" \
+                -f state_reason="completed" >/dev/null
+              echo "Closed issue #${issue} after green run on ${short_sha}."
+            done
+          else
+            echo "No failure and not all jobs succeeded (plugins=${PLUGINS_RESULT}, server-check=${SERVER_CHECK_RESULT}, stonecutter=${STONECUTTER_RESULT}); leaving issues unchanged."
+          fi
