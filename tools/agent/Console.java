@@ -174,9 +174,11 @@ final class Console {
                 return source;
             }
         };
+        // A loader's production launch keeps the game in a module layer, off the class path: mmt.classpath names its jars.
+        String extra = System.getProperty("mmt.classpath", "");
         List<String> options = Arrays.asList(
             "-classpath",
-            System.getProperty("java.class.path"),
+            System.getProperty("java.class.path") + (extra.isEmpty() ? "" : File.pathSeparator + extra),
             "-proc:none",
             "-g",
             "-nowarn"

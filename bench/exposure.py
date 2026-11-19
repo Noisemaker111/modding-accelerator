@@ -25,8 +25,15 @@ hold the most mods back across every update. join does the joining for summaries
 tools/cloud-run exposure). --save keeps the table in bench/exposure/all.json.
 
 load is the proof that the list predicts the game: the mods jars says link that need no other mod are ported and
-started together on a real server of the new release (mmt pack-check); a failed start drops the mod its log names and
-starts again. It reports how many load, and whether any mod failed that jars said links.
+started together on a real server of the new release (mmt pack-check), then in a real client of it (pack-check --side
+client: the title screen, a world, the inventory and every creative tab), since a server never runs client code; a
+failed start drops the mod its log names and starts again. It reports each mod's server and client verdicts side by
+side, and any mod that loaded on the server and failed in the client.
+
+jars also checks each mod's data files against the new release: a built-in game id (an enchantment effect type, a loot
+function, a data component) that the old release registers and the new one does not, read from each release's own
+data generator report. A server refuses such a file, which the link check cannot see; modsThatLinkAndData counts the
+mods that pass both.
 
 steps measures the porter on every update at once, with no mods: GameDiff links each release to the next from the
 game's own code, and for every update it counts the classes, methods and fields with no counterpart in the next release (renames,
@@ -282,6 +289,98 @@ def game_says(loader, frm, to, report):
     return json.loads(out.read_text(encoding="utf-8"))
 
 
+def registry_ids(version):
+    """Every id the release registers in its built-in registries, by registry, from its own data generator's report
+    (the vanilla server run with --reports), kept in ~/.mmt/exposure/registries/; None when that release's generator does
+    not run here."""
+    cache = HOME / "registries" / f"{version}.json"
+    if cache.is_file():
+        return json.loads(cache.read_text(encoding="utf-8"))
+    manifest = json.load(urllib.request.urlopen(urllib.request.Request("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json", headers=AGENT), timeout=60))
+    url = next(v["url"] for v in manifest["versions"] if v["id"] == version)
+    meta = json.load(urllib.request.urlopen(urllib.request.Request(url, headers=AGENT), timeout=60))
+    work = ROOT / ".runs" / "exposure" / "registries" / version
+    shutil.rmtree(work, ignore_errors=True)
+    work.mkdir(parents=True)
+    server = work / "server.jar"
+    with urllib.request.urlopen(urllib.request.Request(meta["downloads"]["server"]["url"], headers=AGENT), timeout=300) as r:
+        server.write_bytes(r.read())
+    import zipfile
+    with zipfile.ZipFile(server) as z:
+        bundled = "META-INF/versions.list" in z.namelist()
+    # From 1.18 the server jar is a bundler that names the class to run; before, the generator is on its class path.
+    command = ([java(), "-DbundlerMainClass=net.minecraft.data.Main", "-jar", str(server)] if bundled
+               else [java(), "-cp", str(server), "net.minecraft.data.Main"]) + ["--reports", "--output", str(work / "generated")]
+    done = subprocess.run(command, cwd=work, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    report = work / "generated" / "reports" / "registries.json"
+    if done.returncode or not report.is_file():
+        return None
+    ids = {name: sorted(entry["entries"]) for name, entry in json.loads(report.read_text(encoding="utf-8")).items()}
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(ids), encoding="utf-8")
+    return ids
+
+
+GAME_ID = re.compile(r"^minecraft:[a-z0-9_./-]+$")
+# Keys whose value a codec looks up in a built-in registry, by the game's own data format: the dispatch keys of every
+# typed object (an enchantment effect, a feature, a placement), a loot function and a loot or predicate condition. Any
+# other string may name something data-driven or of another kind, so it is not judged.
+DECODED_BY = {"type", "function", "condition"}
+
+
+def data_check(frm, to, mods):
+    """What each mod's data files (and its nested mods') name of the game that the new release no longer registers: a
+    built-in id of the old release (an enchantment effect type, a data component, a loot function ...) that is in no
+    registry of the new one. The server refuses such a file when it loads the mod's data, which the link check cannot see.
+    None when either release's registry report is not available."""
+    old, new = registry_ids(frm), registry_ids(to)
+    if old is None or new is None:
+        return None
+    gone = {}
+    present = {i for ids in new.values() for i in ids}
+    for registry, ids in old.items():
+        for i in ids:
+            if i not in present:
+                gone.setdefault(i, registry)
+    import io
+    import zipfile
+
+    def scan(data, name, found):
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            for entry in z.namelist():
+                if entry.endswith(".jar") and entry.startswith(("META-INF/jarjar/", "META-INF/jars/")):
+                    scan(z.read(entry), name, found)
+                elif entry.startswith("data/") and entry.endswith(".json") and "/tags/" not in entry:
+                    # A tag naming a missing entry is skipped with a warning; the files below are refused.
+                    try:
+                        value = json.loads(z.read(entry).decode("utf-8-sig"))
+                    except (ValueError, UnicodeDecodeError):
+                        continue
+                    stack = [(None, value)]
+                    while stack:
+                        key, v = stack.pop()
+                        if isinstance(v, dict):
+                            for k, item in v.items():
+                                # A data component is named by its key ("minecraft:food" in an item's components).
+                                if key == "components" and k.lstrip("!") in gone:
+                                    found.setdefault(f"data id gone: {gone[k.lstrip('!')]} {k.lstrip('!')}", entry)
+                                stack.append((k, item))
+                        elif isinstance(v, list):
+                            stack.extend((key, item) for item in v)
+                        elif key in DECODED_BY and isinstance(v, str) and GAME_ID.match(v) and v in gone:
+                            found.setdefault(f"data id gone: {gone[v]} {v}", entry)
+
+    out = {}
+    for jar in mods:
+        found = {}
+        try:
+            scan(jar.read_bytes(), jar.name, found)
+        except (OSError, zipfile.BadZipFile):
+            continue
+        out[jar.name] = sorted(f"{ref} (in {where})" for ref, where in found.items())
+    return out
+
+
 def jars(loader, frm, to, save=None, out=None, quiet=False):
     """The jar scoreboard: what every top mod's classes and mixins reference, linked against the new release as the JVM and Mixin do."""
     mods, unread = mojang_names(loader, frm, fetch(loader, frm))
@@ -290,8 +389,16 @@ def jars(loader, frm, to, save=None, out=None, quiet=False):
     shutil.rmtree(work / "mods", ignore_errors=True)  # only the report is read; load ports the mods it starts itself
     said = game_says(loader, frm, to, work / "report.json") if report["unlinkedByMods"] else {}
     rows = [m for m in report["mods"] if "error" not in m]
+    data = data_check(frm, to, fetch(loader, frm))
+    data_by = {}
+    for mod, refs in (data or {}).items():
+        for ref in refs:
+            data_by.setdefault(re.sub(r" \(in [^)]*\)$", "", ref), set()).add(mod)
     summary = {
         "loader": loader, "from": frm, "to": to, "modsRead": len(rows), "modsThatLink": report["linked"],
+        # Linking and naming nothing in their data that the new release dropped: the stricter count, when the reports ran.
+        "modsThatLinkAndData": None if data is None else sum(1 for m in rows if not m["unlinked"] and not data.get(m["mod"])),
+        "dataTop": sorted(({"member": k, "mods": len(v)} for k, v in data_by.items()), key=lambda r: -r["mods"])[:20],
         "silentOnly": sum(1 for m in rows if not m["unlinked"] and m["silent"]),
         "brokenUses": sum(r["mods"] for r in report["unlinkedByMods"]),  # distinct references, a mod and its nested jars once
         "unreadable": {**unread, **{m["mod"]: m["error"] for m in report["mods"] if "error" in m}},
@@ -299,7 +406,10 @@ def jars(loader, frm, to, save=None, out=None, quiet=False):
     }
     if not quiet:
         print(f"{summary['modsThatLink']}/{summary['modsRead']} {loader} mods link against {to} after the port "
-              f"({summary['brokenUses']} broken uses; {summary['silentOnly']} keep an override the game no longer calls)")
+              f"({summary['brokenUses']} broken uses; {summary['silentOnly']} keep an override the game no longer calls)"
+              + ("" if data is None else f"; {summary['modsThatLinkAndData']} of them also name nothing in their data that {to} dropped"))
+        for row in summary["dataTop"][:5]:
+            print(f"  {row['mods']:>4} mods  {row['member']}")
         for row in summary["top"][:20]:
             print(f"  {row['mods']:>4} mods  {row['member']}  (game: {row.get('game', '?')})")
     for path in [p for p in (out, ROOT / "bench" / "exposure" / f"{save}.json" if save else None) if p]:
@@ -347,6 +457,9 @@ def join(folder, save):
     order = {(lo, *u): i for lo in FIRST for i, u in enumerate(updates(lo))}
     rows.sort(key=lambda s: (s["loader"], order.get((s["loader"], s["from"], s["to"]), 999)))
     total = {"mods": sum(s["modsRead"] for s in rows), "link": sum(s["modsThatLink"] for s in rows)}
+    checked = [s for s in rows if s.get("modsThatLinkAndData") is not None]
+    # Over the updates whose registry reports ran: mods that link and also name nothing in their data the new release dropped.
+    total["data"] = {"updates": len(checked), "link": sum(s["modsThatLink"] for s in checked), "linkAndData": sum(s["modsThatLinkAndData"] for s in checked)}
     loaders = {}
     for s in rows:
         t = loaders.setdefault(s["loader"], {"updates": 0, "mods": 0, "link": 0})
@@ -359,15 +472,18 @@ def join(folder, save):
     table = {
         "date": date.today().isoformat(), "total": total, "loaders": loaders, "missing": missing,
         "notRead": "NeoForge 1.20.2 to 1.20.5: its mods name game members by SRG ids, not yet read in Mojang's names",
-        "updates": [{k: s[k] for k in ("loader", "from", "to", "modsRead", "modsThatLink", "brokenUses")} for s in rows],
+        "updates": [{k: s.get(k) for k in ("loader", "from", "to", "modsRead", "modsThatLink", "modsThatLinkAndData", "brokenUses")} for s in rows],
         "top": top,
     }
     share = total["link"] / total["mods"] if total["mods"] else 0
-    print(f"| Loader | Update | Mods that link |\n|---|---|---|")
+    print(f"| Loader | Update | Mods that link | And their data |\n|---|---|---|---|")
     for s in rows:
-        print(f"| {s['loader']} | {s['from']} -> {s['to']} | {s['modsThatLink']}/{s['modsRead']} |")
+        data = "-" if s.get("modsThatLinkAndData") is None else s["modsThatLinkAndData"]
+        print(f"| {s['loader']} | {s['from']} -> {s['to']} | {s['modsThatLink']}/{s['modsRead']} | {data} |")
     print(f"\n{total['link']} of {total['mods']} mod ports link ({share:.1%}) across {len(rows)} updates"
           + "".join(f"; {lo} {t['link']}/{t['mods']}" for lo, t in loaders.items()) + (f"; not run: {', '.join(missing)}" if missing else ""))
+    d = total["data"]
+    print(f"over the {d['updates']} updates whose registry reports ran, {d['link'] - d['linkAndData']} of {d['link']} mods that link name a game id in their data the new release dropped")
     print("\nWhat holds the most mods back, every update:")
     for r in top[:15]:
         print(f"  {r['mods']:>4} mods  {r['loader']} {r['update']}  {r['member']}  (game: {r.get('game', '?')})")
@@ -422,8 +538,67 @@ def has_code(jar):
         return any(n.endswith(".class") and b"net/minecraft/" in z.read(n) for n in z.namelist())
 
 
+def client_starts(loader, to, server_pack, names):
+    """The same ported jars in a real client of the new release (mmt pack-check --side client): the title screen, a world, the
+    inventory and every creative tab. A start that fails drops the jar its log names and starts again; each mod ends loaded or
+    failed (with why). A server never runs client code, so this is where rendering and screen code is proven."""
+    pack = server_pack.with_name(server_pack.name + "-client")
+    if pack.exists():
+        shutil.rmtree(pack)
+    (pack / "mods").mkdir(parents=True)
+    (pack / "dropped").mkdir()
+    for name in names:
+        source = next((d / name for d in (server_pack / "mods", server_pack / "dropped") if (d / name).is_file()), None)
+        if source:
+            shutil.copy2(source, pack / "mods" / name)
+    mmt = str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))
+    verdicts = {}
+
+    def start():
+        done = subprocess.run([mmt, "pack-check", "--pack", str(pack), "--minecraft", to, "--loader", loader, "--side", "client", "--json"],
+                              capture_output=True, text=True, encoding="utf-8", errors="replace")
+        at = done.stdout.find("{")
+        return json.loads(done.stdout[at:]) if at >= 0 else {}, done
+
+    for attempt in range(len(names) + 1):
+        result, done = start()
+        res = result.get("result", {})
+        present = sorted(p.name for p in (pack / "mods").glob("*.jar"))
+        if res.get("client", {}).get("opened"):
+            for name in present:
+                verdicts.setdefault(name, "loaded")
+            break
+        blamed = {}
+        for finding in res.get("findings", []):
+            if finding.get("severity") != "problem" or finding.get("kind") != "client-start":
+                continue
+            for s in finding.get("suspects", []):
+                top = s.get("jar", "").split("!")[0] or next((n for n in present if s.get("mod") in mod_ids(pack / "mods" / n)), "")
+                if top in present:
+                    blamed.setdefault(top, "; ".join(s.get("why", []))[:400] + " | " + str(res.get("client", {}).get("failure", ""))[:300])
+        if not blamed:
+            print(res.get("details", done.stdout[-2000:]))
+            raise SystemExit(f"a client start failed and named no mod; receipt {result.get('receipt')}")
+        for name, why in blamed.items():
+            verdicts[name] = "failed: " + why
+            (pack / "mods" / name).rename(pack / "dropped" / name)
+            print(f"  {name}: failed in the client")
+    # As on the server, a dropped mod gets one more start with the mods that loaded: a log can name a bystander.
+    for name in sorted(n for n, v in verdicts.items() if v.startswith("failed")):
+        (pack / "dropped" / name).rename(pack / "mods" / name)
+        again, _ = start()
+        if again.get("result", {}).get("client", {}).get("opened"):
+            verdicts[name] = "loaded"
+            print(f"  {name}: loads in the client with the others on its own start")
+        else:
+            (pack / "mods" / name).rename(pack / "dropped" / name)
+    loaded = sorted(n for n, v in verdicts.items() if v == "loaded")
+    return {"mods": len(names), "loaded": len(loaded), "verdicts": verdicts}
+
+
 def load(loader, frm, to, save):
-    """The mods the jar scoreboard says link that need no other mod, ported as jars and started on a real server of the new release.
+    """The mods the jar scoreboard says link that need no other mod, ported as jars and started on a real server of the new release,
+    then in a real client of it (client_starts), with both verdicts side by side.
 
     One start holds them all; a start that fails drops the jar its log names and starts again, until a start opens a world,
     places every block item and opens it again. Each mod ends loaded, failed (with why) or left out as client-only."""
@@ -487,6 +662,7 @@ def load(loader, frm, to, save):
                 print(f"  {name}: loads with the others on its own start")
             else:
                 (pack / "mods" / name).rename(pack / "dropped" / name)
+    client = client_starts(loader, to, pack, [n for n, v in verdicts.items() if v == "loaded" or v.startswith("client-only")])
     loaded = [n for n, v in verdicts.items() if v == "loaded"]
     summary = {
         "loader": loader, "from": frm, "to": to, "mods": len(chosen), "loaded": len(loaded),
@@ -495,7 +671,15 @@ def load(loader, frm, to, save):
         # A mod with no game code links trivially; what fails it is its data, which the link check does not read.
         "failedDataOnly": sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n) and not has_code(folder / n)),
         "verdicts": verdicts,
+        "client": client,
+        # What the roadmap's step 51 says would prove the server proof wrong: a mod that loads on the server and links, and fails in the client.
+        "loadedOnServerFailedInClient": sorted(n for n, v in client["verdicts"].items() if v.startswith("failed") and verdicts.get(n) == "loaded" and links.get(n)),
     }
+    print(f"{'mod':<60} {'server':<12} client")
+    for name in sorted(verdicts):
+        print(f"{name[:60]:<60} {verdicts[name].split(':')[0]:<12} {client['verdicts'].get(name, 'not started').split(':')[0]}")
+    print(f"client: {client['loaded']}/{client['mods']} load in a real {to} client; loaded on the server and failed in the client: "
+          f"{summary['loadedOnServerFailedInClient'] or 'none'}")
     print(f"{summary['loaded']}/{summary['mods']} load on a real {to} server; {summary['linked']} link, "
           f"{summary['linkedAndLoaded']} of them load; failed although they link: {summary['failedButLinked'] or 'none'}"
           + (f"; failed on their data, with no game code: {summary['failedDataOnly']}" if summary["failedDataOnly"] else ""))

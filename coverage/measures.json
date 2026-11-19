@@ -1375,7 +1375,260 @@
       ]
      }
     },
-    {"date": "2026-11-19", "value": 5302, "n": 9149, "note": "GameDiff's Learner: the game's own replacement for any expression, every update; fabric 3,820, neoforge 1,482; no update lower, up to +6 on one", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44540189228 (bench/exposure/all.json), PR #121"}
+    {"date": "2026-11-19", "value": 5302, "n": 9149, "note": "GameDiff's Learner: the game's own replacement for any expression, every update; fabric 3,820, neoforge 1,482; no update lower, up to +6 on one", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44540189228 (bench/exposure/all.json), PR #121"},
+    {
+     "date": "2026-11-19",
+     "value": 5302,
+     "n": 9149,
+     "note": "58.0% on main after #121; 5,285 of them also name no game id in their data the new release dropped (17 do)",
+     "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44596651341 (bench/exposure/all.json)",
+     "byUpdate": {
+      "fabric 1.14.4 -> 1.15": [
+       83,
+       150
+      ],
+      "fabric 1.15 -> 1.15.1": [
+       144,
+       150
+      ],
+      "fabric 1.15.1 -> 1.15.2": [
+       142,
+       150
+      ],
+      "fabric 1.15.2 -> 1.16": [
+       61,
+       150
+      ],
+      "fabric 1.16 -> 1.16.1": [
+       140,
+       150
+      ],
+      "fabric 1.16.1 -> 1.16.2": [
+       120,
+       150
+      ],
+      "fabric 1.16.2 -> 1.16.3": [
+       137,
+       150
+      ],
+      "fabric 1.16.3 -> 1.16.4": [
+       136,
+       150
+      ],
+      "fabric 1.16.4 -> 1.16.5": [
+       137,
+       150
+      ],
+      "fabric 1.16.5 -> 1.17": [
+       38,
+       150
+      ],
+      "fabric 1.17 -> 1.17.1": [
+       133,
+       150
+      ],
+      "fabric 1.17.1 -> 1.18": [
+       99,
+       150
+      ],
+      "fabric 1.18 -> 1.18.1": [
+       128,
+       150
+      ],
+      "fabric 1.18.1 -> 1.18.2": [
+       101,
+       150
+      ],
+      "fabric 1.18.2 -> 1.19": [
+       34,
+       150
+      ],
+      "fabric 1.19 -> 1.19.1": [
+       103,
+       150
+      ],
+      "fabric 1.19.1 -> 1.19.2": [
+       116,
+       149
+      ],
+      "fabric 1.19.2 -> 1.19.3": [
+       30,
+       150
+      ],
+      "fabric 1.19.3 -> 1.19.4": [
+       55,
+       150
+      ],
+      "fabric 1.19.4 -> 1.20": [
+       41,
+       150
+      ],
+      "fabric 1.20 -> 1.20.1": [
+       127,
+       150
+      ],
+      "fabric 1.20.1 -> 1.20.2": [
+       50,
+       150
+      ],
+      "fabric 1.20.2 -> 1.20.3": [
+       82,
+       150
+      ],
+      "fabric 1.20.3 -> 1.20.4": [
+       134,
+       150
+      ],
+      "fabric 1.20.4 -> 1.20.5": [
+       35,
+       150
+      ],
+      "fabric 1.20.5 -> 1.20.6": [
+       134,
+       150
+      ],
+      "fabric 1.20.6 -> 1.21": [
+       30,
+       150
+      ],
+      "fabric 1.21 -> 1.21.1": [
+       127,
+       150
+      ],
+      "fabric 1.21.1 -> 1.21.2": [
+       42,
+       150
+      ],
+      "fabric 1.21.2 -> 1.21.3": [
+       132,
+       150
+      ],
+      "fabric 1.21.3 -> 1.21.4": [
+       81,
+       150
+      ],
+      "fabric 1.21.4 -> 1.21.5": [
+       34,
+       150
+      ],
+      "fabric 1.21.5 -> 1.21.6": [
+       41,
+       150
+      ],
+      "fabric 1.21.6 -> 1.21.7": [
+       130,
+       150
+      ],
+      "fabric 1.21.7 -> 1.21.8": [
+       130,
+       150
+      ],
+      "fabric 1.21.8 -> 1.21.9": [
+       35,
+       150
+      ],
+      "fabric 1.21.9 -> 1.21.10": [
+       132,
+       150
+      ],
+      "fabric 1.21.10 -> 1.21.11": [
+       40,
+       150
+      ],
+      "fabric 1.21.11 -> 26.1": [
+       43,
+       150
+      ],
+      "fabric 26.1 -> 26.1.1": [
+       97,
+       150
+      ],
+      "fabric 26.1.1 -> 26.1.2": [
+       100,
+       150
+      ],
+      "fabric 26.1.2 -> 26.2": [
+       41,
+       150
+      ],
+      "fabric 26.2 -> 26.3": [
+       45,
+       150
+      ],
+      "neoforge 1.20.5 -> 1.20.6": [
+       126,
+       150
+      ],
+      "neoforge 1.20.6 -> 1.21": [
+       54,
+       150
+      ],
+      "neoforge 1.21 -> 1.21.1": [
+       118,
+       150
+      ],
+      "neoforge 1.21.1 -> 1.21.2": [
+       45,
+       150
+      ],
+      "neoforge 1.21.2 -> 1.21.3": [
+       134,
+       150
+      ],
+      "neoforge 1.21.3 -> 1.21.4": [
+       79,
+       150
+      ],
+      "neoforge 1.21.4 -> 1.21.5": [
+       36,
+       150
+      ],
+      "neoforge 1.21.5 -> 1.21.6": [
+       48,
+       150
+      ],
+      "neoforge 1.21.6 -> 1.21.7": [
+       112,
+       150
+      ],
+      "neoforge 1.21.7 -> 1.21.8": [
+       131,
+       150
+      ],
+      "neoforge 1.21.8 -> 1.21.9": [
+       41,
+       150
+      ],
+      "neoforge 1.21.9 -> 1.21.10": [
+       132,
+       150
+      ],
+      "neoforge 1.21.10 -> 1.21.11": [
+       45,
+       150
+      ],
+      "neoforge 1.21.11 -> 26.1": [
+       50,
+       150
+      ],
+      "neoforge 26.1 -> 26.1.1": [
+       123,
+       150
+      ],
+      "neoforge 26.1.1 -> 26.1.2": [
+       121,
+       150
+      ],
+      "neoforge 26.1.2 -> 26.2": [
+       39,
+       150
+      ],
+      "neoforge 26.2 -> 26.3": [
+       48,
+       150
+      ]
+     }
+    }
    ],
    "history": []
   },
@@ -1405,6 +1658,19 @@
    "info": true,
    "points": [
     {"date": "2026-11-19", "value": 23, "n": 25, "note": "after #120: 25 standalone mods link; 23 load, cubes-without-borders is client-only, and Dungeons and Taverns, which has no code, fails on its data (an enchantment effect 1.21.2 removed); none fails on code", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 --save load-linked-neoforge-1.21.1-1.21.2 (bench/exposure/load-linked-neoforge-1.21.1-1.21.2.json)"}
+   ],
+   "history": []
+  },
+  {
+   "id": "port.jar-loads.client",
+   "area": "port",
+   "name": "Ported mods that load in a real game client, NeoForge 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py load, after its server starts: the mods that loaded on the 1.21.2 server, and the ones it left out as client-only, start together in NeoForge's own 1.21.2 client (mmt pack-check --side client: installed by NeoForge's installer, hidden and muted, the title screen, a flat world, the inventory and every creative tab). A failed start drops the mod its log names. Counts the ones that load, out of the ones started.",
+   "info": true,
+   "points": [
+    {"date": "2026-11-19", "value": 23, "n": 24, "note": "Puzzle loads on the server and links but fails in the client: its splash-screen injection points at RenderSystem.blendFunc inside LoadingOverlay.render, which 1.21.2 no longer calls there; cubes-without-borders, client-only on the server, loads", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 --save load-linked-neoforge-1.21.1-1.21.2 (bench/exposure/load-linked-neoforge-1.21.1-1.21.2.json)"}
    ],
    "history": []
   },

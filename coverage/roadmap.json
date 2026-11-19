@@ -537,12 +537,28 @@
      "id": "51",
      "title": "A ported jar is proven in a game client too",
      "part": "Port by changed game part",
-     "status": "next",
+     "status": "done",
      "text": "mmt pack-check proves a ported jar on a real server, and a server never runs client code: 15 of the 28 jars that loaded on 1.21.2 still reference rendering and screen code that does not link there. A client start with the ported jars (the loader's own client install, a world opened and a screen shown, hidden and muted) proves the rest, and makes the load proof cover client-only mods, which a server leaves out.",
      "start": "2026-11-24",
-     "target": "2026-12-04",
      "finish": "python bench/exposure.py load starts the ported jars in a real 1.21.2 client as well as on a server, and reports both",
-     "wrongIf": "a mod that loads on the server and links fails in the client"
+     "wrongIf": "a mod that loads on the server and links fails in the client",
+     "done": "2026-11-19",
+     "measures": [
+      "port.jar-loads.client",
+      "port.jar-loads.linked"
+     ],
+     "result": "mmt pack-check --side client installs the loader's own client with its installer (NeoForge's --install-client), builds the launch from its version files as a launcher does, and starts the pack hidden and muted with mmt's agent: the title screen, a flat world the vanilla server makes, the inventory and every creative tab, which draws every item each mod adds. python bench/exposure.py load runs it after the server and reports both side by side. NeoForge 1.21.1 to 1.21.2: on the server 23 of 25 load; in the client 23 of 24, including cubes-without-borders, which the server left out as client-only. The step's wrongIf happened once: Puzzle loads on the server and links, and fails in the client, because its injection point (RenderSystem.blendFunc inside LoadingOverlay.render) is a call 1.21.2 no longer makes there; the member still exists, so the link check passes it (step 55). The jar scoreboard also checks mods' data now: 17 of 5,302 linked mod ports over all 61 updates name a built-in game id their new release dropped, Dungeons and Taverns' enchantment effect among them. Not covered: a mod's own screens and keys, Fabric's client."
+    },
+    {
+     "id": "55",
+     "title": "The link check sees an injection's point inside its target",
+     "part": "Port by changed game part",
+     "status": "next",
+     "text": "A mixin's @At names a call or field use inside its target method (INVOKE, FIELD). JarPort checks that the named member exists in the new release, not that the new target method still uses it, so an injection whose point moved out of the method links and fails at start (Puzzle on 1.21.2: RenderSystem.blendFunc is no longer called in LoadingOverlay.render). GameDiff has every method's references in both releases, so the check can read the new body; a point that moved to a method the target calls is where a retarget would come from.",
+     "start": "2026-11-20",
+     "target": "2026-11-27",
+     "finish": "exposure.py jars reports Puzzle's injection on 1.21.1 to 1.21.2 as unlinked, and exposure.py load finds no mod that links and fails in the client",
+     "wrongIf": "the new check reports an injection point that Mixin finds"
     },
     {
      "id": "54",
