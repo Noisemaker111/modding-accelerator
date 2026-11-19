@@ -118,6 +118,15 @@ public final class JarPort {
                 chains.put(key, new Chain(Exposure.Route.internal(Json.text(w, "newOwner", "")), Json.text(w, "steps", "")));
             }
         }
+        // What the game's own code computes in place of a member (GameDiff's Learner), applied as a rule's inClass is.
+        for (Object o : Json.array(raw.getOrDefault("learned", List.of()))) {
+            var w = Json.object(o);
+            String desc = Json.text(w, "desc", "");
+            if (majority(w) && Json.text(w, "step", "").equals(a.version + " -> " + b.version)) {
+                fixes.computeIfAbsent(Exposure.Route.internal(Json.text(w, "owner", "")), k -> new ArrayList<>()).add(new Fix("game " + a.version + " -> " + b.version,
+                    Pattern.compile(Pattern.quote(Json.text(w, "from", ""))), desc.isEmpty() ? null : desc.substring(0, desc.indexOf(')') + 1), Json.text(w, "expr", "")));
+            }
+        }
     }
 
     /** A replacement the game's own code shows in more than half of the places it changed. */

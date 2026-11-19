@@ -255,6 +255,7 @@ public final class GameDiff {
         String loaderVersion;
         final Map<String, Cls> classes = new LinkedHashMap<>();
         final Set<String> fixPairs = new HashSet<>(); // "old\0new" ids from the game's own datafixes
+        final Map<String, Origin> origins = new HashMap<>(); // class -> its bytes, so Learner can read a body again
 
         Snap(String version) {
             this.version = version;
@@ -302,8 +303,12 @@ public final class GameDiff {
         final List<String> lambdas = new ArrayList<>(); // name + desc in the same class
     }
 
+    /** Where a class of a snapshot came from: its bytes and how its references are named and resolved. */
+    record Origin(byte[] bytes, Map<String, RawCls> raw, Map<String, RawCls> fallback, Names names, Map<String, Ref> resolved) {}
+
     static final class RawCls {
 
+        byte[] bytes;
         String name;
         int flags;
         String sup;
@@ -331,6 +336,7 @@ public final class GameDiff {
     static RawCls parse(byte[] bytes) {
         ClassModel cm = ClassFile.of().parse(bytes);
         RawCls rc = new RawCls();
+        rc.bytes = bytes;
         rc.name = cm.thisClass().asInternalName();
         rc.flags = cm.flags().flagsMask();
         rc.sup = cm.superclass().map(ClassEntry::asInternalName).orElse(null);
@@ -655,8 +661,9 @@ public final class GameDiff {
                 return c;
             })
             .toList();
-        for (Cls c : made) {
-            s.classes.put(c.name, c);
+        for (int i = 0; i < made.size(); i++) {
+            s.classes.put(made.get(i).name, made.get(i));
+            s.origins.put(made.get(i).name, new Origin(keep.get(i).bytes, raw, fallback, names, resolved));
         }
     }
 
@@ -2993,6 +3000,1127 @@ public final class GameDiff {
     // ------------------------------------------------------------------ ids and tables
 
     /** Walks the chain one release at a time, carrying ids forward, and hands VersionMap.Chain one table per release. */
+    // ------------------------------------------------------------------ replacements learned from the game's own code
+
+    /**
+     * One value or statement of a method body, rebuilt from its bytecode. op: p a parameter (value: its slot), l a local
+     * nothing was stored to, k a constant, n null, g a static field, f an instance field, s a static call, v an instance
+     * call, w new (ref: the constructor), u an object not constructed yet, t a checkcast, x a primitive conversion, y a
+     * lambda or method reference (value: the interface method), o any other operation (value: its name), S a statement
+     * (value: its kind). type is the value's descriptor, in the snapshot's names.
+     */
+    static final class Node {
+
+        final char op;
+        final Ref ref;
+        final Object value;
+        final String type;
+        final Node[] kids;
+        String body; // a lambda of the method's own class: its raw name + desc
+
+        Node(char op, Ref ref, Object value, String type, Node... kids) {
+            this.op = op;
+            this.ref = ref;
+            this.value = value;
+            this.type = type;
+            this.kids = kids;
+        }
+    }
+
+    /** A method body as statements, a local's value written into where it is read; and its own lambda bodies, in order. */
+    static final class Body {
+
+        final List<Node> statements = new ArrayList<>();
+        final List<String> lambdas = new ArrayList<>(); // raw name + desc in the same class
+    }
+
+    /** Stack machine over one method's bytecode: builds each value as a tree of what it is computed from. */
+    static final class Decoder {
+
+        final Origin o;
+        final String self;
+        final Body body = new Body();
+        final Map<Integer, Node> locals = new HashMap<>();
+        final Map<Label, List<Node>> saved = new HashMap<>();
+        List<Node> stack = new ArrayList<>();
+        boolean live = true;
+
+        Decoder(Origin o, String self) {
+            this.o = o;
+            this.self = self;
+        }
+
+        static String kind(TypeKind k) {
+            return k.upperBound().descriptorString();
+        }
+
+        static boolean wide(Node n) {
+            return n.type.equals("J") || n.type.equals("D");
+        }
+
+        Node pop() {
+            if (stack.isEmpty()) {
+                throw new IllegalStateException("stack underflow");
+            }
+            return stack.remove(stack.size() - 1);
+        }
+
+        Node[] pop(int n) {
+            Node[] out = new Node[n];
+            for (int i = n - 1; i >= 0; i--) {
+                out[i] = pop();
+            }
+            return out;
+        }
+
+        void push(Node n) {
+            stack.add(n);
+        }
+
+        void statement(String kind, Ref ref, Node... kids) {
+            body.statements.add(new Node('S', ref, kind, "V", kids));
+        }
+
+        void save(Label l) {
+            List<Node> have = saved.get(l);
+            saved.put(l, have == null ? new ArrayList<>(stack) : merge(have, stack));
+        }
+
+        static List<Node> merge(List<Node> x, List<Node> y) {
+            if (x.size() != y.size()) {
+                throw new IllegalStateException("stack heights differ");
+            }
+            List<Node> out = new ArrayList<>();
+            for (int i = 0; i < x.size(); i++) {
+                out.add(x.get(i) == y.get(i) ? x.get(i) : new Node('o', null, "phi", x.get(i).type));
+            }
+            return out;
+        }
+
+        Ref member(char kind, String owner, String name, String desc) {
+            return resolve(new RawRef(kind, owner, name, desc), o.raw(), o.fallback(), o.names(), o.resolved());
+        }
+
+        Ref cls(String raw) {
+            return new Ref('c', o.names().cls(raw), null, null);
+        }
+
+        String desc(String raw) {
+            return o.names().desc(raw);
+        }
+
+        Body run(MethodModel mm) {
+            CodeModel code = mm.code().orElse(null);
+            if (code == null) {
+                return null;
+            }
+            int slot = 0;
+            if ((mm.flags().flagsMask() & ACC_STATIC) == 0) {
+                locals.put(slot++, new Node('p', null, 0, "L" + o.names().cls(self) + ";"));
+            }
+            for (ClassDesc p : mm.methodTypeSymbol().parameterList()) {
+                locals.put(slot, new Node('p', null, slot, desc(p.descriptorString())));
+                slot += p.descriptorString().equals("J") || p.descriptorString().equals("D") ? 2 : 1;
+            }
+            Set<Label> handlers = new HashSet<>();
+            for (ExceptionCatch c : code.exceptionHandlers()) {
+                handlers.add(c.handler());
+            }
+            try {
+                for (CodeElement el : code) {
+                    if (el instanceof LabelTarget lt) {
+                        List<Node> s = saved.remove(lt.label());
+                        if (handlers.contains(lt.label())) {
+                            stack = new ArrayList<>(List.of(new Node('o', null, "catch", "Ljava/lang/Throwable;")));
+                        } else if (!live) {
+                            stack = s == null ? new ArrayList<>() : new ArrayList<>(s);
+                        } else if (s != null) {
+                            stack = merge(stack, s);
+                        }
+                        live = true;
+                    } else if (el instanceof Instruction ins && live) {
+                        step(ins);
+                    }
+                }
+            } catch (IllegalStateException | IllegalArgumentException unreadable) {
+                return body.statements.isEmpty() ? null : body;
+            }
+            return body;
+        }
+
+        void step(Instruction ins) {
+            switch (ins) {
+                case LoadInstruction li -> {
+                    Node v = locals.get(li.slot());
+                    push(v != null ? v : new Node('l', null, li.slot(), kind(li.typeKind())));
+                }
+                case StoreInstruction si -> {
+                    Node v = pop();
+                    locals.put(si.slot(), v);
+                    statement("store", null, v);
+                }
+                case IncrementInstruction ii -> locals.put(ii.slot(), new Node('o', null, "iinc", "I"));
+                case ConstantInstruction ci -> {
+                    ConstantDesc v = ci.constantValue();
+                    if (ci.opcode() == Opcode.ACONST_NULL) {
+                        push(new Node('n', null, null, "null"));
+                    } else if (v instanceof Integer || v instanceof Long || v instanceof Float || v instanceof Double) {
+                        push(new Node('k', null, v, kind(ci.typeKind())));
+                    } else if (v instanceof String s) {
+                        push(new Node('k', null, s, "Ljava/lang/String;"));
+                    } else if (v instanceof ClassDesc cd) {
+                        push(new Node('o', cls(internal(cd)), "class", "Ljava/lang/Class;"));
+                    } else {
+                        push(new Node('o', null, "ldc", kind(ci.typeKind())));
+                    }
+                }
+                case StackInstruction si -> stack(si.opcode());
+                case OperatorInstruction oi -> {
+                    String name = oi.opcode().name();
+                    int n = name.endsWith("NEG") || name.equals("ARRAYLENGTH") ? 1 : 2;
+                    boolean compare = name.equals("ARRAYLENGTH") || name.endsWith("CMP") || name.endsWith("CMPL") || name.endsWith("CMPG");
+                    push(new Node('o', null, name, compare ? "I" : kind(oi.typeKind()), pop(n)));
+                }
+                case ConvertInstruction ci -> push(new Node('x', null, null, kind(ci.toType()), pop()));
+                case FieldInstruction fi -> {
+                    Ref r = member('f', fi.owner().asInternalName(), fi.name().stringValue(), fi.type().stringValue());
+                    switch (fi.opcode()) {
+                        case GETSTATIC -> push(new Node('g', r, null, r.desc()));
+                        case GETFIELD -> push(new Node('f', r, null, r.desc(), pop()));
+                        case PUTFIELD -> statement("put", r, pop(2));
+                        default -> statement("put", r, pop());
+                    }
+                }
+                case InvokeInstruction ii -> invoke(ii);
+                case InvokeDynamicInstruction di -> {
+                    Node[] args = pop(di.typeSymbol().parameterCount());
+                    String type = desc(di.typeSymbol().returnType().descriptorString());
+                    if (di.bootstrapMethod().owner().descriptorString().equals("Ljava/lang/invoke/LambdaMetafactory;")
+                        && di.bootstrapArgs().size() > 1 && di.bootstrapArgs().get(1) instanceof DirectMethodHandleDesc h) {
+                        String owner = internal(h.owner());
+                        if (owner.equals(self) && h.methodName().startsWith("lambda$")) {
+                            body.lambdas.add(h.methodName() + h.lookupDescriptor());
+                            Node lambda = new Node('y', null, di.name().stringValue(), type, args);
+                            lambda.body = h.methodName() + h.lookupDescriptor();
+                            push(lambda);
+                        } else {
+                            push(new Node('y', member('m', owner, h.methodName(), h.lookupDescriptor()), di.name().stringValue(), type, args));
+                        }
+                    } else {
+                        push(new Node('o', null, "indy:" + di.bootstrapMethod().methodName(), type, args));
+                    }
+                }
+                case NewObjectInstruction ni -> push(new Node('u', cls(ni.className().asInternalName()), null, "L" + o.names().cls(ni.className().asInternalName()) + ";"));
+                case NewPrimitiveArrayInstruction na -> push(new Node('o', null, "newarray", "[" + kind(na.typeKind()), pop()));
+                case NewReferenceArrayInstruction na -> push(new Node('o', cls(na.componentType().asInternalName()), "anewarray", "[Ljava/lang/Object;", pop()));
+                case NewMultiArrayInstruction na -> push(new Node('o', cls(na.arrayType().asInternalName()), "multianewarray", desc(na.arrayType().asInternalName()), pop(na.dimensions())));
+                case ArrayLoadInstruction al -> push(new Node('o', null, al.opcode().name(), kind(al.typeKind()), pop(2)));
+                case ArrayStoreInstruction as -> statement("astore", null, pop(3));
+                case TypeCheckInstruction tc -> {
+                    Ref c = cls(tc.type().asInternalName());
+                    String t = c.owner().startsWith("[") ? c.owner() : "L" + c.owner() + ";";
+                    push(tc.opcode() == Opcode.CHECKCAST ? new Node('t', c, null, t, pop()) : new Node('o', c, "instanceof", "I", pop()));
+                }
+                case BranchInstruction bi -> {
+                    String name = bi.opcode().name();
+                    if (name.startsWith("GOTO")) {
+                        save(bi.target());
+                        live = false;
+                        return;
+                    }
+                    int n = name.startsWith("IF_") ? 2 : 1;
+                    statement("if:" + name, null, pop(n));
+                    save(bi.target());
+                }
+                case LookupSwitchInstruction ls -> {
+                    statement("switch", null, pop());
+                    save(ls.defaultTarget());
+                    ls.cases().forEach(c -> save(c.target()));
+                    live = false;
+                }
+                case TableSwitchInstruction ts -> {
+                    statement("switch", null, pop());
+                    save(ts.defaultTarget());
+                    ts.cases().forEach(c -> save(c.target()));
+                    live = false;
+                }
+                case ReturnInstruction ri -> {
+                    if (ri.typeKind() == TypeKind.VOID) {
+                        statement("return", null);
+                    } else {
+                        statement("return", null, pop());
+                    }
+                    live = false;
+                }
+                case ThrowInstruction ti -> {
+                    statement("throw", null, pop());
+                    live = false;
+                }
+                case MonitorInstruction mi -> statement("monitor", null, pop());
+                case NopInstruction nop -> {
+                }
+                default -> throw new IllegalStateException("not read: " + ins.opcode());
+            }
+        }
+
+        void invoke(InvokeInstruction ii) {
+            MethodTypeDesc t = ii.typeSymbol();
+            String name = ii.name().stringValue();
+            Ref r = member('m', ii.owner().asInternalName(), name, ii.type().stringValue());
+            Node[] args = pop(t.parameterCount());
+            String ret = desc(t.returnType().descriptorString());
+            if (ii.opcode() == Opcode.INVOKESTATIC) {
+                result(new Node('s', r, null, ret, args));
+                return;
+            }
+            Node receiver = pop();
+            if (name.equals("<init>") && receiver.op == 'u') {
+                Node made = new Node('w', r, null, receiver.type, args);
+                stack.replaceAll(n -> n == receiver ? made : n);
+                locals.replaceAll((k, n) -> n == receiver ? made : n);
+                return;
+            }
+            Node[] all = new Node[args.length + 1];
+            all[0] = receiver;
+            System.arraycopy(args, 0, all, 1, args.length);
+            if (name.equals("<init>")) {
+                statement("init", r, all);
+                return;
+            }
+            result(new Node('v', r, ii.opcode() == Opcode.INVOKESPECIAL ? "special" : null, ret, all));
+        }
+
+        void result(Node call) {
+            if (call.type.equals("V")) {
+                statement("expr", null, call);
+            } else {
+                push(call);
+            }
+        }
+
+        void stack(Opcode op) {
+            switch (op) {
+                case POP -> discard(pop());
+                case POP2 -> {
+                    Node v = pop();
+                    discard(v);
+                    if (!wide(v)) {
+                        discard(pop());
+                    }
+                }
+                case DUP -> {
+                    Node v = pop();
+                    push(v);
+                    push(v);
+                }
+                case DUP_X1 -> {
+                    Node v1 = pop(), v2 = pop();
+                    push(v1);
+                    push(v2);
+                    push(v1);
+                }
+                case DUP_X2 -> {
+                    Node v1 = pop(), v2 = pop();
+                    if (wide(v2)) {
+                        push(v1);
+                        push(v2);
+                        push(v1);
+                    } else {
+                        Node v3 = pop();
+                        push(v1);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    }
+                }
+                case DUP2 -> {
+                    Node v1 = pop();
+                    if (wide(v1)) {
+                        push(v1);
+                        push(v1);
+                    } else {
+                        Node v2 = pop();
+                        push(v2);
+                        push(v1);
+                        push(v2);
+                        push(v1);
+                    }
+                }
+                case DUP2_X1 -> {
+                    Node v1 = pop();
+                    if (wide(v1)) {
+                        Node v2 = pop();
+                        push(v1);
+                        push(v2);
+                        push(v1);
+                    } else {
+                        Node v2 = pop(), v3 = pop();
+                        push(v2);
+                        push(v1);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    }
+                }
+                case DUP2_X2 -> throw new IllegalStateException("dup2_x2");
+                case SWAP -> {
+                    Node v1 = pop(), v2 = pop();
+                    push(v1);
+                    push(v2);
+                }
+                default -> throw new IllegalStateException("stack op " + op);
+            }
+        }
+
+        /** A value computed and dropped: a call made for what it does is a statement. */
+        void discard(Node v) {
+            if (v.op == 's' || v.op == 'v' || v.op == 'w') {
+                statement("expr", null, v);
+            }
+        }
+    }
+
+    /**
+     * Replacements for changed or removed game members, learned from how the game ported its own code. In every pair of
+     * linked methods where a uses such a member, both bodies are rebuilt as statements of value trees (Decoder) and
+     * lined up statement by statement through the links. Where a statement of a differs from its counterpart in b only
+     * at a use of the member, what b computes there is the replacement; written over the member's own operands (its
+     * receiver $0 and arguments $1..), it is kept as a Java expression (FixExpr, in b's names) when it reads nothing
+     * else of the method: only operands, constants, static fields, and calls, fields, constructors, casts and static
+     * method references over those. Every use that lines up is a vote, and the game's own uses must agree.
+     */
+    static final class Learner {
+
+        /** A replacement for old (a member of a); linked: the member has a counterpart whose signature changed. */
+        record Learned(String owner, String name, String desc, boolean field, boolean linked, String expr, int votes, int of) {
+
+            /** Its line in the route map's "learned" list, which JarPort reads. */
+            String json(String step) {
+                return "{ \"step\": " + VersionMap.Diff.q(step) + ", \"owner\": " + VersionMap.Diff.q(owner) + ", \"from\": " + VersionMap.Diff.q(name) +
+                    ", \"desc\": " + VersionMap.Diff.q(desc) + ", \"field\": " + field + ", \"linked\": " + linked + ", \"expr\": " + VersionMap.Diff.q(expr) +
+                    ", \"votes\": " + votes + ", \"of\": " + of + " }";
+            }
+        }
+
+        final Hop h;
+        final Map<String, ClassModel> models = new HashMap<>();
+        final Map<Node, Long> hashA = new IdentityHashMap<>(), hashB = new IdentityHashMap<>();
+        final Map<Ref, Boolean> brokenRefs = new HashMap<>();
+        final Map<Node, Boolean> holed = new IdentityHashMap<>();
+        final Map<String, Map<Node, Set<String>>> sites = new HashMap<>(); // member key -> use in a -> its readings in b
+        final Map<String, Ref> keys = new HashMap<>();
+        int budget;
+
+        Learner(Hop h) {
+            this.h = h;
+        }
+
+        List<Learned> learn() {
+            for (var e : h.mAB.entrySet()) {
+                Meth x = e.getKey(), y = e.getValue();
+                if (!x.hasCode || !y.hasCode) {
+                    continue;
+                }
+                boolean uses = false;
+                for (Ref r : x.refs) {
+                    if (broken(r)) {
+                        uses = true;
+                        String key = r.owner() + "." + r.name() + (r.kind() == 'm' ? r.desc() : "");
+                        keys.putIfAbsent(key, r);
+                        sites.computeIfAbsent(key, k -> new IdentityHashMap<>());
+                    }
+                }
+                if (uses) {
+                    Body bx = decode(h.a, x.owner.name, x.name + x.desc, false);
+                    Body by = decode(h.b, y.owner.name, y.name + y.desc, false);
+                    pair(x.owner.name, bx, y.owner.name, by, 0);
+                }
+            }
+            List<Learned> out = new ArrayList<>();
+            StringBuilder log = LEARN_LOG.isEmpty() ? null : new StringBuilder();
+            for (var e : sites.entrySet()) {
+                Ref old = keys.get(e.getKey());
+                int[] tally = new int[2];
+                String best = vote(e.getValue().values(), tally);
+                int top = tally[0], of = tally[1];
+                boolean agreed = top >= 2 && top * 10 >= of * 8 || top == 1 && of == 1 && usesAll(best, old, operands(old));
+                if (log != null) {
+                    log.append(e.getKey()).append('\t').append(e.getValue().size()).append('\t').append(of).append('\t').append(top).append('\t')
+                        .append(agreed).append('\t').append(best == null ? "" : best).append('\t');
+                    e.getValue().values().stream().flatMap(Set::stream).distinct().limit(4).forEach(r -> log.append(r.replace(OPEN, '{').replace(OR, '|').replace(CLOSE, '}')).append(" ;; "));
+                    log.append('\n');
+                }
+                if (best == null || !agreed) {
+                    continue;
+                }
+                boolean field = old.kind() == 'f';
+                boolean linked = field ? h.fAB.containsKey(h.a.field(old.owner(), old.name())) : h.mAB.containsKey(h.a.method(old.owner(), old.name(), old.desc()));
+                out.add(new Learned(old.owner().replace('/', '.'), old.name(), field ? "" : old.desc(), field, linked, best, top, of));
+            }
+            out.addAll(overrides(out));
+            out.sort(Comparator.comparing(Learned::owner).thenComparing(Learned::name).thenComparing(Learned::desc));
+            if (log != null) {
+                try {
+                    Files.writeString(Path.of(LEARN_LOG + "-" + h.a.version + "-" + h.b.version + ".tsv"), log, StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+            return out;
+        }
+
+        /**
+         * A call names the class it was made on, which may override the method the game's code was read for (a mod calls
+         * clientLevel.getRecipeManager(), the game level.getRecipeManager()). An override that changed the same way and
+         * has no reading of its own takes its nearest supertype's: the call dispatches the same way in both releases.
+         */
+        List<Learned> overrides(List<Learned> found) {
+            Map<String, Learned> byKey = new HashMap<>();
+            for (Learned l : found) {
+                if (!l.field()) {
+                    byKey.put(l.owner().replace('.', '/') + "." + l.name() + l.desc(), l);
+                }
+            }
+            List<Learned> out = new ArrayList<>();
+            for (Cls c : h.a.classes.values()) {
+                for (Meth m : c.methods.values()) {
+                    String key = c.name + "." + m.name + m.desc;
+                    if (m.isStatic() || m.special() || byKey.containsKey(key) || !broken(new Ref('m', c.name, m.name, m.desc))) {
+                        continue;
+                    }
+                    Learned up = null;
+                    Deque<String> todo = new ArrayDeque<>(supertypes(c));
+                    Set<String> seen = new HashSet<>();
+                    while (up == null && !todo.isEmpty()) {
+                        String s = todo.poll();
+                        Cls sc = h.a.classes.get(s);
+                        if (sc == null || !seen.add(s)) {
+                            continue;
+                        }
+                        up = byKey.get(s + "." + m.name + m.desc);
+                        todo.addAll(supertypes(sc));
+                    }
+                    if (up != null) {
+                        out.add(new Learned(c.name.replace('/', '.'), m.name, m.desc, false, h.mAB.containsKey(m), up.expr(), up.votes(), up.of()));
+                    }
+                }
+            }
+            return out;
+        }
+
+        /** -Dgamediff.learnlog=PREFIX: every member's uses lined up, uses read, votes and readings, one file per update. */
+        static final String LEARN_LOG = System.getProperty("gamediff.learnlog", "");
+
+        /** A choice inside a reading: a constant b passes that an operand also held, or code two operands share. */
+        static final char OPEN = '\u0001', OR = '\u0002', CLOSE = '\u0003';
+        static final Pattern CHOICE = Pattern.compile(OPEN + "([^" + CLOSE + "]*)" + CLOSE);
+
+        /** Every operand and constant is a choice, even of one option, so uses that pass a constant and uses that pass code share a shape. */
+        static String choice(List<String> options) {
+            return options.isEmpty() ? null : OPEN + String.join(String.valueOf(OR), options) + CLOSE;
+        }
+
+        /**
+         * The reading most uses agree on. Uses are grouped by the reading's shape (choices left open); in the shape most
+         * uses have, each choice takes the option most of them allow (an operand before a constant, then the next operand
+         * in order), and a use agrees when it allows every option taken. tally: {agreeing uses, uses read}.
+         */
+        static String vote(Collection<Set<String>> uses, int[] tally) {
+            Map<String, Integer> shapes = new HashMap<>();
+            int of = 0;
+            for (Set<String> readings : uses) {
+                if (!readings.isEmpty()) {
+                    of++;
+                    readings.stream().map(r -> CHOICE.matcher(r).replaceAll(OPEN + "" + CLOSE)).distinct().forEach(s -> shapes.merge(s, 1, Integer::sum));
+                }
+            }
+            tally[1] = of;
+            String shape = shapes.entrySet().stream().max(Map.Entry.<String, Integer>comparingByValue().thenComparing(Map.Entry::getKey, Comparator.reverseOrder()))
+                .map(Map.Entry::getKey).orElse(null);
+            if (shape == null) {
+                return null;
+            }
+            // For each use with this shape, the options it allows at each choice.
+            List<List<Set<String>>> allowed = new ArrayList<>();
+            for (Set<String> readings : uses) {
+                List<Set<String>> per = null;
+                for (String r : readings) {
+                    if (!CHOICE.matcher(r).replaceAll(OPEN + "" + CLOSE).equals(shape)) {
+                        continue;
+                    }
+                    Matcher m = CHOICE.matcher(r);
+                    List<Set<String>> mine = new ArrayList<>();
+                    while (m.find()) {
+                        mine.add(new HashSet<>(List.of(m.group(1).split(String.valueOf(OR)))));
+                    }
+                    if (per == null) {
+                        per = mine;
+                    } else {
+                        for (int i = 0; i < per.size(); i++) {
+                            per.get(i).addAll(mine.get(i));
+                        }
+                    }
+                }
+                if (per != null) {
+                    allowed.add(per);
+                }
+            }
+            int choices = allowed.get(0).size();
+            List<String> taken = new ArrayList<>();
+            int lastOperand = -1;
+            for (int i = 0; i < choices; i++) {
+                Map<String, Integer> count = new HashMap<>();
+                for (List<Set<String>> per : allowed) {
+                    per.get(i).forEach(o -> count.merge(o, 1, Integer::sum));
+                }
+                int last = lastOperand;
+                String pick = count.entrySet().stream().max(Comparator
+                    .<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue)
+                    .thenComparing(o -> o.getKey().contains("$"))
+                    .thenComparing(o -> operandIndex(o.getKey()) > last)
+                    .thenComparing(o -> -operandIndex(o.getKey()))).get().getKey();
+                taken.add(pick);
+                lastOperand = Math.max(lastOperand, operandIndex(pick));
+            }
+            int agree = 0;
+            for (List<Set<String>> per : allowed) {
+                boolean all = true;
+                for (int i = 0; i < choices && all; i++) {
+                    all = per.get(i).contains(taken.get(i));
+                }
+                agree += all ? 1 : 0;
+            }
+            tally[0] = agree;
+            Matcher m = Pattern.compile(OPEN + "" + CLOSE).matcher(shape);
+            StringBuilder out = new StringBuilder();
+            int i = 0;
+            while (m.find()) {
+                m.appendReplacement(out, Matcher.quoteReplacement(taken.get(i++)));
+            }
+            return m.appendTail(out).toString();
+        }
+
+        static int operandIndex(String option) {
+            Matcher m = Pattern.compile("\\$(\\d+)").matcher(option);
+            return m.find() ? Integer.parseInt(m.group(1)) : -1;
+        }
+
+        /** The old member's operands: its receiver (unless static) and its arguments. */
+        int operands(Ref old) {
+            if (old.kind() == 'f') {
+                Fld f = h.a.field(old.owner(), old.name());
+                return f == null || (f.flags & ACC_STATIC) != 0 ? 0 : 1;
+            }
+            Meth m = h.a.method(old.owner(), old.name(), old.desc());
+            int n = MethodTypeDesc.ofDescriptor(old.desc()).parameterCount();
+            return m == null || m.isStatic() || m.special() ? n : n + 1;
+        }
+
+        /** A reading seen once is kept only when it uses every operand and takes no constant: nothing in it is a guess. */
+        boolean usesAll(String expr, Ref old, int operands) {
+            Meth m = old.kind() == 'm' ? h.a.method(old.owner(), old.name(), old.desc()) : null;
+            int first = old.kind() == 'f' || m != null && !m.isStatic() && !m.special() ? 0 : 1;
+            for (int i = first; i < first + operands; i++) {
+                if (!Pattern.compile("\\$" + i + "(?!\\d)").matcher(expr).find()) {
+                    return false;
+                }
+            }
+            return !Pattern.compile("(^|[(, ])(-?\\d|\"|true|false|null)").matcher(expr).find();
+        }
+
+        ClassModel model(Snap s, String cls) {
+            Origin o = s.origins.get(cls);
+            if (o == null) {
+                return null;
+            }
+            return models.computeIfAbsent((s == h.a ? "a:" : "b:") + cls, k -> ClassFile.of().parse(o.bytes()));
+        }
+
+        /** One method's body, by its Mojang name + desc, or by its raw name + desc (a lambda of the same class). */
+        Body decode(Snap s, String cls, String key, boolean raw) {
+            ClassModel cm = model(s, cls);
+            if (cm == null) {
+                return null;
+            }
+            Origin o = s.origins.get(cls);
+            String self = cm.thisClass().asInternalName();
+            for (MethodModel mm : cm.methods()) {
+                String rn = mm.methodName().stringValue(), rd = mm.methodType().stringValue();
+                String k = raw ? rn + rd : o.names().method(self, rn, rd) + o.names().desc(rd);
+                if (k.equals(key)) {
+                    return new Decoder(o, self).run(mm);
+                }
+            }
+            return null;
+        }
+
+        /** Lines up two bodies and reads a replacement at every use of a changed member that lines up; then their lambdas. */
+        void pair(String ca, Body x, String cb, Body y, int depth) {
+            if (x == null || y == null) {
+                return;
+            }
+            long[] ta = new long[x.statements.size()], tb = new long[y.statements.size()];
+            for (int i = 0; i < ta.length; i++) {
+                ta[i] = hash(x.statements.get(i), true);
+            }
+            for (int j = 0; j < tb.length; j++) {
+                tb[j] = hash(y.statements.get(j), false);
+            }
+            List<int[]> same = matches(ta, tb);
+            // Lambdas are paired where the statements that make them line up; the game renumbers them freely.
+            Map<String, String> lambdas = new LinkedHashMap<>();
+            for (int[] p : same) {
+                lambdas(x.statements.get(p[0]), y.statements.get(p[1]), lambdas);
+            }
+            List<int[]> bounds = new ArrayList<>(same);
+            bounds.add(new int[] { ta.length, tb.length });
+            int i0 = 0, j0 = 0;
+            for (int[] p : bounds) {
+                int na = p[0] - i0, nb = p[1] - j0;
+                for (int i = i0; i < p[0] && nb > 0; i++) {
+                    Node sa = x.statements.get(i);
+                    if (!holed(sa)) {
+                        continue;
+                    }
+                    // A statement that is only the use (a call made for what it does, a value stored) has no context to
+                    // line up by: only the statement in the same place of a gap of the same length counts.
+                    boolean bare = sa.kids.length == 1 && hole(sa.kids[0]) && (sa.value.equals("expr") || sa.value.equals("store"));
+                    for (int j = j0; j < p[1]; j++) {
+                        if (bare && !(na == nb && j - j0 == i - i0 || nb == 1)) {
+                            continue;
+                        }
+                        Map<Node, Node> holes = new IdentityHashMap<>();
+                        budget = 20_000;
+                        if (match(sa, y.statements.get(j), holes)) {
+                            holes.forEach(this::read);
+                            lambdas(sa, y.statements.get(j), lambdas);
+                        }
+                    }
+                }
+                i0 = p[0] + 1;
+                j0 = p[1] + 1;
+            }
+            if (x.lambdas.size() == y.lambdas.size()) {
+                Set<String> taken = new HashSet<>(lambdas.values());
+                for (int i = 0; i < x.lambdas.size(); i++) {
+                    if (!lambdas.containsKey(x.lambdas.get(i)) && !taken.contains(y.lambdas.get(i))) {
+                        lambdas.put(x.lambdas.get(i), y.lambdas.get(i));
+                    }
+                }
+            }
+            if (depth < 3) {
+                lambdas.forEach((la, lb) -> pair(ca, decode(h.a, ca, la, true), cb, decode(h.b, cb, lb, true), depth + 1));
+            }
+        }
+
+        /** The lambdas two lined-up trees make at the same place (not inside a use of a changed member). */
+        void lambdas(Node x, Node y, Map<String, String> out) {
+            if (hole(x) || x.kids.length != y.kids.length) {
+                return;
+            }
+            if (x.body != null && y.body != null) {
+                out.putIfAbsent(x.body, y.body);
+            }
+            for (int i = 0; i < x.kids.length; i++) {
+                lambdas(x.kids[i], y.kids[i], out);
+            }
+        }
+
+        /**
+         * Index pairs of statements that are the same on both sides, in order: common start and end, then the longest
+         * common subsequence when that is small enough, else statements found exactly once on each side as anchors (in
+         * increasing order on both), and the same again between anchors.
+         */
+        static List<int[]> matches(long[] ta, long[] tb) {
+            List<int[]> out = new ArrayList<>();
+            matches(ta, 0, ta.length, tb, 0, tb.length, out, 0);
+            return out;
+        }
+
+        static void matches(long[] ta, int a0, int a1, long[] tb, int b0, int b1, List<int[]> out, int depth) {
+            List<int[]> tail = new ArrayList<>();
+            while (a0 < a1 && b0 < b1 && ta[a0] == tb[b0]) {
+                out.add(new int[] { a0++, b0++ });
+            }
+            while (a0 < a1 && b0 < b1 && ta[a1 - 1] == tb[b1 - 1]) {
+                tail.add(0, new int[] { --a1, --b1 });
+            }
+            int n = a1 - a0, m = b1 - b0;
+            if (n > 0 && m > 0 && (long) n * m <= 250_000) {
+                int[][] l = new int[n + 1][m + 1];
+                for (int i = n - 1; i >= 0; i--) {
+                    for (int j = m - 1; j >= 0; j--) {
+                        l[i][j] = ta[a0 + i] == tb[b0 + j] ? l[i + 1][j + 1] + 1 : Math.max(l[i + 1][j], l[i][j + 1]);
+                    }
+                }
+                for (int i = 0, j = 0; i < n && j < m;) {
+                    if (ta[a0 + i] == tb[b0 + j]) {
+                        out.add(new int[] { a0 + i++, b0 + j++ });
+                    } else if (l[i + 1][j] >= l[i][j + 1]) {
+                        i++;
+                    } else {
+                        j++;
+                    }
+                }
+            } else if (n > 0 && m > 0 && depth < 8) {
+                Map<Long, int[]> once = new HashMap<>(); // hash -> {count a, index a, count b, index b}
+                for (int i = a0; i < a1; i++) {
+                    int[] c = once.computeIfAbsent(ta[i], k -> new int[4]);
+                    c[0]++;
+                    c[1] = i;
+                }
+                for (int j = b0; j < b1; j++) {
+                    int[] c = once.computeIfAbsent(tb[j], k -> new int[4]);
+                    c[2]++;
+                    c[3] = j;
+                }
+                List<int[]> anchors = new ArrayList<>();
+                for (int[] c : once.values()) {
+                    if (c[0] == 1 && c[2] == 1) {
+                        anchors.add(new int[] { c[1], c[3] });
+                    }
+                }
+                anchors.sort(Comparator.comparingInt(p -> p[0]));
+                // Longest run increasing on b as well (patience sorting).
+                int[] prev = new int[anchors.size()];
+                List<Integer> piles = new ArrayList<>();
+                for (int k = 0; k < anchors.size(); k++) {
+                    int lo = 0, hi = piles.size();
+                    while (lo < hi) {
+                        int mid = (lo + hi) >>> 1;
+                        if (anchors.get(piles.get(mid))[1] < anchors.get(k)[1]) {
+                            lo = mid + 1;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                    prev[k] = lo == 0 ? -1 : piles.get(lo - 1);
+                    if (lo == piles.size()) {
+                        piles.add(k);
+                    } else {
+                        piles.set(lo, k);
+                    }
+                }
+                List<int[]> chain = new ArrayList<>();
+                for (int k = piles.isEmpty() ? -1 : piles.get(piles.size() - 1); k >= 0; k = prev[k]) {
+                    chain.add(0, anchors.get(k));
+                }
+                int i = a0, j = b0;
+                for (int[] p : chain) {
+                    matches(ta, i, p[0], tb, j, p[1], out, depth + 1);
+                    out.add(p);
+                    i = p[0] + 1;
+                    j = p[1] + 1;
+                }
+                if (!chain.isEmpty()) {
+                    matches(ta, i, a1, tb, j, b1, out, depth + 1);
+                }
+            }
+            out.addAll(tail);
+        }
+
+        /** b computes m where a used the changed member in use: every way to write m over use's operands. */
+        void read(Node use, Node m) {
+            String key = use.ref.owner() + "." + use.ref.name() + (use.ref.kind() == 'm' ? use.ref.desc() : "");
+            keys.putIfAbsent(key, use.ref);
+            Set<String> readings = sites.computeIfAbsent(key, k -> new IdentityHashMap<>()).computeIfAbsent(use, k -> new LinkedHashSet<>());
+            int first = use.op == 'v' || use.op == 'f' ? 0 : 1;
+            if (!fits(m.type, use.type)) {
+                return;
+            }
+            String reading = express(m, use.kids, first, use.type, 0);
+            if (reading != null) {
+                readings.add(reading);
+            }
+        }
+
+        /** b's value of type got can stand where a's code had a value of type had: anything for nothing, else the same type or a subtype. */
+        boolean fits(String got, String had) {
+            if (had.equals("V")) {
+                return true;
+            }
+            if (got.equals("null")) {
+                return had.startsWith("L") || had.startsWith("[");
+            }
+            if (h.descBA(got).equals(had)) {
+                return true;
+            }
+            if (!got.startsWith("L") || !had.startsWith("L")) {
+                return false;
+            }
+            String old = had.substring(1, had.length() - 1);
+            Cls ca = h.a.classes.get(old);
+            Cls cb = ca == null ? null : h.cAB.get(ca);
+            if (cb == null && ca != null) {
+                cb = classRewrites().get(ca);
+            }
+            return h.subtypeB(got.substring(1, got.length() - 1), cb != null ? cb.name : old);
+        }
+
+        Map<Cls, Cls> rewritten;
+
+        /** Classes b dropped and the class the game's own code uses in their place: a mod's values of one become the other. */
+        Map<Cls, Cls> classRewrites() {
+            if (rewritten == null) {
+                rewritten = new HashMap<>();
+                for (Hop.ClassRewrite r : h.classRewrites()) {
+                    rewritten.put(r.from(), r.to());
+                }
+            }
+            return rewritten;
+        }
+
+        /** Whether a's reference names a member a mod could use that b dropped or gave another signature. */
+        boolean broken(Ref r) {
+            if (r == null || r.kind() != 'm' && r.kind() != 'f') {
+                return false;
+            }
+            Boolean known = brokenRefs.get(r);
+            if (known != null) {
+                return known;
+            }
+            boolean out = false;
+            if (r.kind() == 'm') {
+                Meth m = h.a.method(r.owner(), r.name(), r.desc());
+                if (m != null && (m.flags & ACC_PRIVATE) == 0 && !m.name.equals("<clinit>")) {
+                    Meth y = h.mAB.get(m);
+                    out = y == null || y.isStatic() != m.isStatic() || !h.descBA(y.desc).equals(m.desc) || closed(m.flags, y.flags);
+                }
+            } else {
+                Fld f = h.a.field(r.owner(), r.name());
+                if (f != null && (f.flags & ACC_PRIVATE) == 0) {
+                    Fld y = h.fAB.get(f);
+                    out = y == null || ((y.flags ^ f.flags) & ACC_STATIC) != 0 || !h.descBA(y.desc).equals(f.desc) || closed(f.flags, y.flags);
+                }
+            }
+            brokenRefs.put(r, out);
+            return out;
+        }
+
+        /** A member a mod could reach (public or protected) that b made private or package-private (1.21.2's PartPose.x). */
+        static boolean closed(int before, int after) {
+            return (before & (ACC_PUBLIC | 0x0004)) != 0 && (after & (ACC_PUBLIC | 0x0004)) == 0;
+        }
+
+        boolean hole(Node n) {
+            return (n.op == 'g' || n.op == 'f' || n.op == 's' || n.op == 'v' || n.op == 'w') && broken(n.ref);
+        }
+
+        boolean holed(Node n) {
+            Boolean known = holed.get(n);
+            if (known != null) {
+                return known;
+            }
+            boolean out = hole(n);
+            for (int i = 0; i < n.kids.length && !out; i++) {
+                out = holed(n.kids[i]);
+            }
+            holed.put(n, out);
+            return out;
+        }
+
+        String head(Node n, boolean sideA) {
+            return switch (n.op) {
+                case 'g', 'f', 's', 'v', 'w', 't' -> h.token(n.ref, sideA);
+                case 'y' -> (n.ref == null ? "lambda" : h.token(n.ref, sideA)) + n.value;
+                case 'k' -> n.type + ":" + n.value;
+                case 'x' -> n.type;
+                case 'o', 'S' -> n.value + (n.ref == null ? "" : h.token(n.ref, sideA));
+                case 'p', 'l' -> n.value + ":" + (sideA ? n.type : h.descBA(n.type));
+                default -> "";
+            };
+        }
+
+        /** A tree's hash in a's names; a use of a changed member hashes to itself alone, so it never equals b's code. */
+        long hash(Node n, boolean sideA) {
+            Map<Node, Long> memo = sideA ? hashA : hashB;
+            Long known = memo.get(n);
+            if (known != null) {
+                return known;
+            }
+            long x;
+            if (sideA && hole(n)) {
+                x = 0x9E3779B97F4A7C15L * (System.identityHashCode(n) + 1L);
+            } else {
+                x = fnv(n.op + head(n, sideA));
+                for (Node k : n.kids) {
+                    x = x * 1_000_003L + hash(k, sideA);
+                }
+            }
+            memo.put(n, x);
+            return x;
+        }
+
+        /** a's x and b's y are the same code but where x uses a changed member; holes gets each such use and b's code there. */
+        boolean match(Node x, Node y, Map<Node, Node> holes) {
+            if (--budget < 0) {
+                return false;
+            }
+            if (holes != null && hole(x)) {
+                Node had = holes.putIfAbsent(x, y);
+                return had == null || had == y;
+            }
+            if (hash(x, true) == hash(y, false)) {
+                return true;
+            }
+            if (x.op != y.op || x.kids.length != y.kids.length || !head(x, true).equals(head(y, false))) {
+                return false;
+            }
+            for (int i = 0; i < x.kids.length; i++) {
+                if (!match(x.kids[i], y.kids[i], holes)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * b's value m written over the old member's operands ($first.. for ops), or null: an operand where m is that
+         * operand's code, a constant as itself or as an operand that held the same number (a choice, settled by vote);
+         * nothing that reads the method's parameters, locals or a member a mod may not use.
+         */
+        String express(Node m, Node[] ops, int first, String want, int depth) {
+            List<String> same = new ArrayList<>();
+            for (int i = 0; i < ops.length; i++) {
+                budget = 2_000;
+                if (match(ops[i], m, null)) {
+                    same.add("$" + (i + first));
+                }
+            }
+            if (m.op == 'k') {
+                String p = primitive(m.type);
+                for (int i = 0; i < ops.length; i++) {
+                    if (ops[i].op == 'k' && !ops[i].type.equals(m.type) && p != null && ops[i].value instanceof Number u && m.value instanceof Number v
+                        && u.doubleValue() == v.doubleValue()) {
+                        same.add("(" + p + ") $" + (i + first));
+                    }
+                }
+                String lit = literal(m, want);
+                if (lit != null) {
+                    same.add(lit);
+                }
+                return choice(same);
+            }
+            if (!same.isEmpty() || depth > 8) {
+                return choice(same);
+            }
+            return switch (m.op) {
+                case 'n' -> "null";
+                case 'g' -> open(m.ref, true) ? dotted(m.ref.owner()) + "." + m.ref.name() : null;
+                case 'f' -> {
+                    String t = open(m.ref, false) ? express(m.kids[0], ops, first, null, depth + 1) : null;
+                    yield t == null ? null : receiver(t) + "." + m.ref.name();
+                }
+                case 's', 'w' -> {
+                    String args = open(m.ref, m.op == 's') ? arguments(m, 0, ops, first, depth) : null;
+                    yield args == null ? null : (m.op == 's' ? dotted(m.ref.owner()) + "." + m.ref.name() : "new " + dotted(m.ref.owner())) + "(" + args + ")";
+                }
+                case 'v' -> {
+                    String t = open(m.ref, false) && m.value == null ? express(m.kids[0], ops, first, null, depth + 1) : null;
+                    String args = t == null ? null : arguments(m, 1, ops, first, depth);
+                    yield args == null ? null : receiver(t) + "." + m.ref.name() + "(" + args + ")";
+                }
+                case 't' -> {
+                    String t = m.ref.owner().startsWith("[") ? null : express(m.kids[0], ops, first, null, depth + 1);
+                    yield t == null ? null : "(" + dotted(m.ref.owner()) + ") " + t;
+                }
+                case 'x' -> {
+                    String p = primitive(m.type);
+                    String t = p == null ? null : express(m.kids[0], ops, first, null, depth + 1);
+                    if (t != null && t.charAt(0) == OPEN && t.indexOf(CLOSE) == t.length() - 1) {
+                        // A converted operand is one choice, as a constant that operand held would be: (float) $2.
+                        yield OPEN + "(" + p + ") " + t.substring(1, t.length() - 1).replace(String.valueOf(OR), OR + "(" + p + ") ") + CLOSE;
+                    }
+                    yield t == null ? null : "(" + p + ") " + t;
+                }
+                case 'y' -> {
+                    Meth impl = m.ref == null || m.kids.length > 0 ? null : h.b.method(m.ref.owner(), m.ref.name(), m.ref.desc());
+                    yield impl != null && impl.isStatic() && open(m.ref, true) ? dotted(m.ref.owner()) + "::" + m.ref.name() : null;
+                }
+                default -> null;
+            };
+        }
+
+        /** A call's arguments (m's kids from index from), each typed for its parameter, or null. */
+        String arguments(Node m, int from, Node[] ops, int first, int depth) {
+            List<ClassDesc> params = MethodTypeDesc.ofDescriptor(m.ref.desc()).parameterList();
+            StringJoiner out = new StringJoiner(", ");
+            for (int i = from; i < m.kids.length; i++) {
+                int p = i - from;
+                String one = express(m.kids[i], ops, first, p < params.size() ? params.get(p).descriptorString() : null, depth + 1);
+                if (one == null) {
+                    return null;
+                }
+                out.add(one);
+            }
+            return out.toString();
+        }
+
+        /** A member of b a mod may name: b's own and not private, or the JDK's. */
+        boolean open(Ref r, boolean wantStatic) {
+            if (r.name() != null && r.name().contains("$")) {
+                return false;
+            }
+            if (r.kind() == 'm') {
+                Meth m = h.b.method(r.owner(), r.name(), r.desc());
+                if (m == null) {
+                    return r.owner().startsWith("java/");
+                }
+                return (m.flags & (ACC_PUBLIC | 0x0004)) != 0 && (m.flags & ACC_SYNTHETIC) == 0 && (m.special() || m.isStatic() == wantStatic) && !m.name.equals("<clinit>");
+            }
+            Fld f = h.b.field(r.owner(), r.name());
+            if (f == null) {
+                return r.owner().startsWith("java/");
+            }
+            return (f.flags & (ACC_PUBLIC | 0x0004)) != 0 && ((f.flags & ACC_STATIC) != 0) == wantStatic;
+        }
+
+        static String dotted(String internal) {
+            return internal.replace('/', '.');
+        }
+
+        /** A cast written as a receiver needs its own parentheses: ((T) x).m(). */
+        static String receiver(String t) {
+            return t.startsWith("(") ? "(" + t + ")" : t;
+        }
+
+        static String primitive(String desc) {
+            return switch (desc) {
+                case "Z" -> "boolean";
+                case "C" -> "char";
+                case "B" -> "byte";
+                case "S" -> "short";
+                case "I" -> "int";
+                case "J" -> "long";
+                case "F" -> "float";
+                case "D" -> "double";
+                default -> null;
+            };
+        }
+
+        /** A constant as FixExpr reads it, typed for where it goes (an int constant passed as a boolean is true or false). */
+        static String literal(Node k, String want) {
+            Object v = k.value;
+            if (v instanceof String s) {
+                return s.chars().anyMatch(c -> c < 0x20) ? null : "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+            }
+            if (v instanceof Integer i) {
+                if ("Z".equals(want)) {
+                    return i == 0 ? "false" : i == 1 ? "true" : null;
+                }
+                if ("C".equals(want) || "B".equals(want) || "S".equals(want)) {
+                    return "(" + primitive(want) + ") " + i;
+                }
+                return Integer.toString(i);
+            }
+            if (v instanceof Long l) {
+                return l + "L";
+            }
+            String text = v instanceof Float f ? Float.toString(f) + "F" : v instanceof Double d ? Double.toString(d) + "D" : null;
+            return text == null || text.contains("E") || text.contains("N") || text.contains("I") ? null : text;
+        }
+    }
+
     static final class Driver implements VersionMap.Chain.Loader {
 
         final List<String> versions;
@@ -3011,6 +4139,8 @@ public final class GameDiff {
         final List<String> siblings = new ArrayList<>();
         /** Parameters the game added with one value its own code always passes (Hop.argDefaults). */
         final List<String> argDefaults = new ArrayList<>();
+        /** Replacements written as expressions over the old member's operands (Learner), applied like a rule's inClass. */
+        final List<String> learned = new ArrayList<>();
         Snap prev;
         Path prevLoaderJar;
         String prevLoaderVersion;
@@ -3146,6 +4276,9 @@ public final class GameDiff {
                         ", \"votes\": " + c.votes() + ", \"of\": " + c.of() + " }"
                     );
                 }
+                for (Learner.Learned l : new Learner(h).learn()) {
+                    learned.add(l.json(prev.version + " -> " + s.version));
+                }
                 for (Hop.ClassRewrite r : h.classRewrites()) {
                     classRewrites.add(
                         "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
@@ -3242,6 +4375,11 @@ public final class GameDiff {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(classRewrites.get(i));
             }
             head.append(classRewrites.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"learned\": [");
+            for (int i = 0; i < learned.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(learned.get(i));
+            }
+            head.append(learned.isEmpty() ? "],\n" : "\n  ],\n");
             if (loader != null) {
                 head.append("  \"loader\": { \"name\": \"neoforge\", \"source\": ").append(VersionMap.Diff.q(NEOFORGE)).append(", \"versions\": {");
                 int i = 0;

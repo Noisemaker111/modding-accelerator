@@ -1,17 +1,239 @@
 {
- "from": "1.21.1",
- "to": "1.21.2",
- "updates": 1,
- "gone": 3192,
- "learned": 89,
+ "from": "1.14.4",
+ "to": "26.3",
+ "updates": 43,
+ "gone": 49503,
+ "learned": 2789,
  "steps": [
+  {
+   "step": "1.14.4 -> 1.15",
+   "gone": 2332,
+   "learned": 151,
+   "rewrites": 66,
+   "chains": 2,
+   "classRewrites": 8
+  },
+  {
+   "step": "1.15 -> 1.15.1",
+   "gone": 3,
+   "learned": 2
+  },
+  {
+   "step": "1.15.1 -> 1.15.2",
+   "gone": 58,
+   "learned": 9,
+   "rewrites": 6
+  },
+  {
+   "step": "1.15.2 -> 1.16",
+   "gone": 3356,
+   "learned": 458,
+   "rewrites": 115,
+   "chains": 10,
+   "classRewrites": 19
+  },
+  {
+   "step": "1.16.1 -> 1.16.2",
+   "gone": 1366,
+   "learned": 195,
+   "rewrites": 15,
+   "chains": 2,
+   "classRewrites": 22
+  },
+  {
+   "step": "1.16.3 -> 1.16.4",
+   "gone": 7,
+   "learned": 2
+  },
+  {
+   "step": "1.16.5 -> 1.17",
+   "gone": 2271,
+   "learned": 247,
+   "rewrites": 80,
+   "chains": 17,
+   "classRewrites": 12
+  },
+  {
+   "step": "1.17 -> 1.17.1",
+   "gone": 59,
+   "learned": 6,
+   "rewrites": 4,
+   "classRewrites": 1
+  },
+  {
+   "step": "1.17.1 -> 1.18",
+   "gone": 2662,
+   "learned": 83,
+   "rewrites": 25,
+   "chains": 3,
+   "classRewrites": 9
+  },
+  {
+   "step": "1.18 -> 1.18.1",
+   "gone": 17,
+   "learned": 2,
+   "rewrites": 1
+  },
+  {
+   "step": "1.18.1 -> 1.18.2",
+   "gone": 625,
+   "learned": 105,
+   "rewrites": 22,
+   "classRewrites": 3
+  },
+  {
+   "step": "1.18.2 -> 1.19",
+   "gone": 1940,
+   "learned": 353,
+   "rewrites": 38,
+   "chains": 5,
+   "classRewrites": 13
+  },
+  {
+   "step": "1.19 -> 1.19.1",
+   "gone": 335,
+   "learned": 19,
+   "rewrites": 1
+  },
+  {
+   "step": "1.19.1 -> 1.19.2",
+   "gone": 10,
+   "learned": 3
+  },
+  {
+   "step": "1.19.2 -> 1.19.3",
+   "gone": 2934,
+   "learned": 197,
+   "rewrites": 39,
+   "chains": 1,
+   "classRewrites": 6
+  },
+  {
+   "step": "1.19.3 -> 1.19.4",
+   "gone": 974,
+   "learned": 104,
+   "rewrites": 42,
+   "chains": 6,
+   "classRewrites": 4
+  },
+  {
+   "step": "1.19.4 -> 1.20",
+   "gone": 1020,
+   "learned": 53,
+   "rewrites": 44,
+   "classRewrites": 4
+  },
+  {
+   "step": "1.20.1 -> 1.20.2",
+   "gone": 2004,
+   "learned": 117,
+   "rewrites": 30,
+   "chains": 7,
+   "classRewrites": 3
+  },
+  {
+   "step": "1.20.2 -> 1.20.3",
+   "gone": 900,
+   "learned": 107,
+   "rewrites": 14,
+   "chains": 5,
+   "classRewrites": 3
+  },
+  {
+   "step": "1.20.4 -> 1.20.5",
+   "gone": 2384,
+   "learned": 368,
+   "rewrites": 48,
+   "chains": 3,
+   "classRewrites": 6
+  },
+  {
+   "step": "1.20.6 -> 1.21",
+   "gone": 1119,
+   "learned": 98,
+   "rewrites": 33,
+   "chains": 3,
+   "classRewrites": 4
+  },
+  {
+   "step": "1.21 -> 1.21.1",
+   "gone": 1,
+   "learned": 1
+  },
   {
    "step": "1.21.1 -> 1.21.2",
    "gone": 3192,
-   "learned": 89,
-   "rewrites": 68,
+   "learned": 363,
+   "rewrites": 65,
    "chains": 10,
    "classRewrites": 11
+  },
+  {
+   "step": "1.21.3 -> 1.21.4",
+   "gone": 881,
+   "learned": 69,
+   "rewrites": 20,
+   "chains": 4,
+   "classRewrites": 6
+  },
+  {
+   "step": "1.21.4 -> 1.21.5",
+   "gone": 3236,
+   "learned": 208,
+   "rewrites": 83,
+   "chains": 10,
+   "classRewrites": 9
+  },
+  {
+   "step": "1.21.5 -> 1.21.6",
+   "gone": 1139,
+   "learned": 68,
+   "rewrites": 44,
+   "classRewrites": 5
+  },
+  {
+   "step": "1.21.6 -> 1.21.7",
+   "gone": 4,
+   "learned": 1
+  },
+  {
+   "step": "1.21.8 -> 1.21.9",
+   "gone": 2292,
+   "learned": 167,
+   "rewrites": 33,
+   "chains": 9,
+   "classRewrites": 3
+  },
+  {
+   "step": "1.21.10 -> 1.21.11",
+   "gone": 1604,
+   "learned": 185,
+   "rewrites": 25,
+   "classRewrites": 7
+  },
+  {
+   "step": "1.21.11 -> 26.1",
+   "gone": 2900,
+   "learned": 233,
+   "rewrites": 64,
+   "chains": 10,
+   "classRewrites": 9
+  },
+  {
+   "step": "26.1.2 -> 26.2",
+   "gone": 2910,
+   "learned": 270,
+   "rewrites": 30,
+   "chains": 22,
+   "classRewrites": 9
+  },
+  {
+   "step": "26.2 -> 26.3",
+   "gone": 4968,
+   "learned": 322,
+   "rewrites": 90,
+   "chains": 2,
+   "classRewrites": 28
   }
  ]
 }

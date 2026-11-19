@@ -517,11 +517,15 @@ def steps(frm, to):
         target.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run([java(), "-Xmx10g", "-cp", str(classes), "GameDiff", "--chain", ",".join(versions), "--out", str(target)], check=True)
     route = json.loads(target.read_text(encoding="utf-8"))
-    learned = {}
-    for section in ("rewrites", "chains", "classRewrites"):
+    # Rows per kind of replacement, and each member with no counterpart counted once whatever gave it one ("learned"
+    # also lists members whose signature changed: those have a counterpart, so they are not in "gone").
+    learned, members = {}, {}
+    for section in ("rewrites", "chains", "classRewrites", "learned"):
         for r in route.get(section, []):
             learned.setdefault(r["step"], {}).setdefault(section, 0)
             learned[r["step"]][section] += 1
+            if not r.get("linked"):
+                members.setdefault(r["step"], set()).add((r.get("owner", ""), r["from"], r.get("desc", "")))
     rows, gone, taught = [], 0, 0
     for step, line in route.get("hops", {}).items():
         m = HOP.search(line)
@@ -529,7 +533,7 @@ def steps(frm, to):
             continue
         n = list(map(int, m.groups()))
         unlinked = (n[1] - n[0]) + (n[3] - n[2]) + (n[5] - n[4])
-        learnt = sum(learned.get(step, {}).values())
+        learnt = len(members.get(step, ()))
         if unlinked:
             rows.append({"step": step, "gone": unlinked, "learned": learnt, **learned.get(step, {})})
         gone, taught = gone + unlinked, taught + learnt
