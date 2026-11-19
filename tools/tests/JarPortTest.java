@@ -24,7 +24,8 @@ public final class JarPortTest {
         Path map = scratch.resolve("route.json");
         Files.writeString(map, """
             {"classes": [{"from": "g.Old", "to": "g.New"}],
-             "methods": [{"owner": "g.Block", "from": "foo", "desc": "()V", "to": "bar", "newDesc": "()V"}],
+             "methods": [{"owner": "g.Block", "from": "foo", "desc": "()V", "to": "bar", "newDesc": "()V"},
+                         {"owner": "g.Block", "from": "sig", "desc": "()V", "to": "sig", "newDesc": "(I)V"}],
              "fields": [{"owner": "g.Block", "from": "old", "desc": "I", "to": "renamed", "newDesc": "I"}],
              "rewrites": [{"owner": "g.Block", "from": "gone", "desc": "()V", "toOwner": "", "to": "", "newDesc": ""}]}
             """);
@@ -47,8 +48,30 @@ public final class JarPortTest {
         expect(mixin.get("method onFoo()V").contains("method=bar"), "an injection's target method string is moved to the new name: " + mixin.get("method onFoo()V"));
 
         Map<String, Object> mine = results.get(results.size() - 1);
-        List<Object> unlinked = Json.array(mine.get("unlinked"));
-        expect(unlinked.size() == 1 && unlinked.get(0).toString().contains("g.Block.missing()V"), "only what does not link in the new release is reported: " + unlinked);
+        List<String> unlinked = Json.array(mine.get("unlinked")).stream().map(String::valueOf).toList();
+        expect(unlinked.equals(List.of(
+            "abstract method not written: g.Shape.area()D (in m.Square)",
+            "call: g.Block.closed()V",
+            "call: g.Block.missing()V",
+            "call: g.Block.sig()V",
+            "class gone: g.GoneIface (in m.Impl)"
+        )), "only what does not link in the new release is reported: " + unlinked);
+        expect(run.contains("call g/Block.sig()V"), "a call whose parameters changed is left as written, not given a descriptor its stack does not fit: " + run);
+        expect(run.contains("call g/Block.prot()V"), "a protected method stays callable from a subclass (not reported above)");
+        Map<String, String> child = members(entries.get("m/MyChild.class"));
+        expect(child.containsKey("method bar()V") && !child.containsKey("method foo()V"), "a second-level override follows the rename too: " + child.keySet());
+        Map<String, String> byName = members(entries.get("m/OldMixin.class"));
+        expect("g.New".equals(byName.get("annotation targets")), "@Mixin(targets = ...) names the renamed class: " + byName);
+        Map<String, String> accessor = members(entries.get("m/BlockAccessor.class"));
+        expect(accessor.get("method value()I").contains("value=renamed"), "an @Accessor with a value names the field's new name: " + accessor.get("method value()I"));
+        expect(accessor.get("method getOld()I").contains("value=renamed"), "an @Accessor with no value gets the new name written in: " + accessor.get("method getOld()I"));
+        expect(accessor.get("method callFoo()V").contains("value=bar"), "an @Invoker names the method's new name: " + accessor.get("method callFoo()V"));
+        try {
+            port.port(jar(Map.of("../escape.txt", new byte[] { 1 })), "bad.jar", new ArrayList<>());
+            expect(false, "an entry that points outside the jar is refused");
+        } catch (IOException refused) {
+            expect(refused.getMessage().contains("../escape.txt"), "an entry that points outside the jar is refused: " + refused.getMessage());
+        }
 
         String toml = new String(entries.get("META-INF/neoforge.mods.toml"), StandardCharsets.UTF_8);
         expect(toml.contains("versionRange=\"[2.0]\"") && toml.contains("versionRange=\"[2.0,)\"") && toml.contains("[1,)"),
@@ -64,7 +87,7 @@ public final class JarPortTest {
         if (failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port: 15 checks passed");
+        System.out.println("jar-port: 23 checks passed");
     }
 
     static void expect(boolean ok, String what) {
@@ -74,19 +97,65 @@ public final class JarPortTest {
         }
     }
 
-    /** One release: g/Block with a method and a field, gone() and missing() only in the old one, and the class Old or New. */
+    /**
+     * One release: g/Block with a method and a field (renamed between the two), gone() and missing() and the interface
+     * GoneIface only in the old one, sig() taking an int in the new one, closed() made private, protected prot() in both,
+     * the interface Shape with a new abstract area(), and the class Old or New.
+     */
     static GameDiff.Snap game(String version, String method, String field, String cls) {
+        boolean old = version.equals("1.0");
         GameDiff.Snap s = new GameDiff.Snap(version);
         GameDiff.Cls block = new GameDiff.Cls("g/Block", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
         block.methods.put(method + "()V", new GameDiff.Meth(block, method, "()V", Opcodes.ACC_PUBLIC));
         block.fields.put(field, new GameDiff.Fld(block, field, "I", Opcodes.ACC_PUBLIC));
-        if (version.equals("1.0")) {
+        block.methods.put("prot()V", new GameDiff.Meth(block, "prot", "()V", Opcodes.ACC_PROTECTED));
+        block.methods.put("closed()V", new GameDiff.Meth(block, "closed", "()V", old ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PRIVATE));
+        String sig = old ? "()V" : "(I)V";
+        block.methods.put("sig" + sig, new GameDiff.Meth(block, "sig", sig, Opcodes.ACC_PUBLIC));
+        int iface = Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT;
+        GameDiff.Cls shape = new GameDiff.Cls("g/Shape", iface, "java/lang/Object", List.of(), false);
+        if (old) {
             block.methods.put("gone()V", new GameDiff.Meth(block, "gone", "()V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
             block.methods.put("missing()V", new GameDiff.Meth(block, "missing", "()V", Opcodes.ACC_PUBLIC));
+            s.classes.put("g/GoneIface", new GameDiff.Cls("g/GoneIface", iface, "java/lang/Object", List.of(), false));
+        } else {
+            shape.methods.put("area()D", new GameDiff.Meth(shape, "area", "()D", Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT));
         }
         s.classes.put(block.name, block);
+        s.classes.put(shape.name, shape);
         s.classes.put(cls, new GameDiff.Cls(cls, Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false));
         return s;
+    }
+
+    /** A class with no members beyond what its header says. */
+    static byte[] empty(String name, int access, String sup, String... ifaces) {
+        ClassWriter w = new ClassWriter(0);
+        w.visit(Opcodes.V21, access, name, null, sup, ifaces.length == 0 ? null : ifaces);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    static void abstractMethod(ClassWriter w, String name, String desc, String annotation, String value) {
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, name, desc, null, null);
+        AnnotationVisitor av = m.visitAnnotation(annotation, false);
+        if (value != null) {
+            av.visit("value", value);
+        }
+        av.visitEnd();
+        m.visitEnd();
+    }
+
+    static byte[] mixin(String name, int access, String key, Object target, java.util.function.Consumer<ClassWriter> body) {
+        ClassWriter w = new ClassWriter(0);
+        w.visit(Opcodes.V21, access, name, null, "java/lang/Object", null);
+        AnnotationVisitor at = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor list = at.visitArray(key);
+        list.visit(null, target);
+        list.visitEnd();
+        at.visitEnd();
+        body.accept(w);
+        w.visitEnd();
+        return w.toByteArray();
     }
 
     static byte[] modJar() throws IOException {
@@ -108,6 +177,10 @@ public final class JarPortTest {
         run.visitMethodInsn(Opcodes.INVOKESTATIC, "g/Block", "gone", "()V", false);
         run.visitVarInsn(Opcodes.ALOAD, 0);
         run.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g/Block", "missing", "()V", false);
+        for (String call : List.of("sig", "closed", "prot")) {
+            run.visitVarInsn(Opcodes.ALOAD, 0);
+            run.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g/Block", call, "()V", false);
+        }
         run.visitInsn(Opcodes.RETURN);
         run.visitMaxs(0, 1);
         run.visitEnd();
@@ -173,6 +246,24 @@ public final class JarPortTest {
         files.put("META-INF/jars/lib.jar", nested);
         files.put("m/MyBlock.class", w.toByteArray());
         files.put("m/BlockMixin.class", mx.toByteArray());
+        ClassWriter child = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        child.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m/MyChild", null, "m/MyBlock", null);
+        MethodVisitor childFoo = child.visitMethod(Opcodes.ACC_PUBLIC, "foo", "()V", null, null);
+        childFoo.visitCode();
+        childFoo.visitInsn(Opcodes.RETURN);
+        childFoo.visitMaxs(0, 1);
+        childFoo.visitEnd();
+        child.visitEnd();
+        files.put("m/MyChild.class", child.toByteArray());
+        files.put("m/Impl.class", empty("m/Impl", Opcodes.ACC_PUBLIC, "java/lang/Object", "g/GoneIface"));
+        files.put("m/Square.class", empty("m/Square", Opcodes.ACC_PUBLIC, "java/lang/Object", "g/Shape"));
+        int abstractClass = Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT;
+        files.put("m/OldMixin.class", mixin("m/OldMixin", abstractClass, "targets", "g.Old", w2 -> { }));
+        files.put("m/BlockAccessor.class", mixin("m/BlockAccessor", abstractClass | Opcodes.ACC_INTERFACE, "value", Type.getObjectType("g/Block"), w2 -> {
+            abstractMethod(w2, "value", "()I", "Lorg/spongepowered/asm/mixin/gen/Accessor;", "old");
+            abstractMethod(w2, "getOld", "()I", "Lorg/spongepowered/asm/mixin/gen/Accessor;", null);
+            abstractMethod(w2, "callFoo", "()V", "Lorg/spongepowered/asm/mixin/gen/Invoker;", "foo");
+        }));
         return jar(files);
     }
 
@@ -203,6 +294,21 @@ public final class JarPortTest {
         Map<String, String> out = new LinkedHashMap<>();
         new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
+            public AnnotationVisitor visitAnnotation(String d, boolean visible) {
+                return new AnnotationVisitor(Opcodes.ASM9) {
+                    @Override
+                    public AnnotationVisitor visitArray(String n) {
+                        return new AnnotationVisitor(Opcodes.ASM9) {
+                            @Override
+                            public void visit(String x, Object v) {
+                                out.put("annotation " + n, String.valueOf(v));
+                            }
+                        };
+                    }
+                };
+            }
+
+            @Override
             public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                 out.put("field " + name, desc);
                 return null;
@@ -226,6 +332,11 @@ public final class JarPortTest {
                     @Override
                     public AnnotationVisitor visitAnnotation(String d, boolean visible) {
                         return new AnnotationVisitor(Opcodes.ASM9) {
+                            @Override
+                            public void visit(String n, Object v) {
+                                body.append(n).append('=').append(v).append('\n');
+                            }
+
                             @Override
                             public AnnotationVisitor visitArray(String n) {
                                 return new AnnotationVisitor(Opcodes.ASM9) {
