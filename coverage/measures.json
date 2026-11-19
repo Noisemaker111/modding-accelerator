@@ -1964,7 +1964,7 @@
    "better": "higher",
    "explain": "python bench/exposure.py load --loader fabric: the standalone mods the jar scoreboard says link are ported with mmt port --jar, handed back in the target release's intermediary, and started together on a real Fabric server with Fabric API (mmt pack-check). Counts the ones that load, of those a server runs (client-only mods are left out by the server).",
    "points": [
-    {"date": "2026-11-19", "value": 8, "n": 8, "note": "8 more are client-only; on 1.20.6 -> 1.21 10 of 10 load (9 client-only); none fails", "source": "python bench/exposure.py load --loader fabric --from 1.21.1 --to 1.21.2 (bench/exposure/load-fabric-1.21.1-1.21.2.json, load-fabric-1.20.6-1.21.json)"}
+    {"date": "2026-11-19", "value": 8, "n": 8, "note": "8 more are client-only; on 1.20.6 -> 1.21 10 of 10 load (11 client-only); none fails", "source": "python bench/exposure.py load --loader fabric --from 1.21.1 --to 1.21.2 (bench/exposure/load-fabric-1.21.1-1.21.2.json, load-fabric-1.20.6-1.21.json)"}
    ],
    "target": {"value": 8, "by": "2026-11-26", "step": "52"}
   }

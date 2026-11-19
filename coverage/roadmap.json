@@ -493,7 +493,7 @@
      "measures": [
       "port.fabric-jar-loads"
      ],
-     "result": "mmt port --jar takes Fabric jars: read in Mojang's names (ModNames), ported, and handed back in the target release's intermediary with overrides, calls, mixin strings, accessors, the access widener, refmaps and nested jars written for it. On a real Fabric server with Fabric API, every standalone mod that links and runs on a server loads: 8 of 8 on 1.21.1 -> 1.21.2 (8 more are client-only), 10 of 10 on 1.20.6 -> 1.21 (9 client-only), mixin-heavy ones included (ferrite-core, packet-fixer). Scoreboard: 42 of 150 Fabric mods link on 1.21.2 (40 before). Client-only mods need a client start (step 51); 26.1 and later run Mojang's names and are handed back as ported."
+     "result": "mmt port --jar takes Fabric jars: read in Mojang's names (ModNames), ported, and handed back in the target release's intermediary with overrides, calls, mixin strings, accessors, the access widener, refmaps and nested jars written for it. On a real Fabric server with Fabric API, every standalone mod that links and runs on a server loads: 8 of 8 on 1.21.1 -> 1.21.2 (8 more are client-only), 10 of 10 on 1.20.6 -> 1.21 (11 client-only), mixin-heavy ones included (ferrite-core, packet-fixer). Scoreboard: 42 of 150 Fabric mods link on 1.21.2 (40 before). Client-only mods need a client start (step 51); 26.1 and later run Mojang's names and are handed back as ported."
     },
     {
      "id": "53",

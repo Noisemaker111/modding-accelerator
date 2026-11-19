@@ -2,85 +2,66 @@
  "loader": "fabric",
  "from": "1.20.6",
  "to": "1.21",
- "modsRead": 132,
- "modsThatLink": 35,
+ "modsRead": 150,
+ "modsThatLink": 43,
  "silentOnly": 0,
- "brokenUses": 975,
- "unreadable": {
-  "fabrishot--fabrishot-1.13.1.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\fabrishot--fabrishot-1.13.1.jar",
-  "polytone--polytone-1.20.6-2.0.2-fabric.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\polytone--polytone-1.20.6-2.0.2-fabric.jar",
-  "replaymod--replaymod-1.20.6-2.6.23.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\replaymod--replaymod-1.20.6-2.6.23.jar",
-  "cristel-lib--cristellib-fabric-1.2.5.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\cristel-lib--cristellib-fabric-1.2.5.jar",
-  "supermartijn642s-core-lib--supermartijn642corelib-1.1.26b-fabric-mc1.20.6.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\supermartijn642s-core-lib--supermartijn642corelib-1.1.26b-fabric-mc1.20.6.jar",
-  "default-options--defaultoptions-fabric-1.20.6-20.6.4.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\default-options--defaultoptions-fabric-1.20.6-20.6.4.jar",
-  "wavey-capes--waveycapes-fabric-1.11.3-mc1.20.6.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\wavey-capes--waveycapes-fabric-1.11.3-mc1.20.6.jar",
-  "servercore--servercore-fabric-1.5.3+1.20.6.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\servercore--servercore-fabric-1.5.3+1.20.6.jar",
-  "prism-lib--Prism-1.20.5-fabric-1.0.7.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\prism-lib--Prism-1.20.5-fabric-1.0.7.jar",
-  "particle-core--particle_core-0.2.5+1.20.6.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\particle-core--particle_core-0.2.5+1.20.6.jar",
-  "towns-and-towers--t_and_t-1.13.1.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\towns-and-towers--t_and_t-1.13.1.jar",
-  "paginatedadvancements--paginatedadvancements-2.4.2.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\paginatedadvancements--paginatedadvancements-2.4.2.jar",
-  "bettergrassify--BetterGrassify-1.4.4+fabric.1.20.6.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\bettergrassify--BetterGrassify-1.4.4+fabric.1.20.6.jar",
-  "advancement-plaques--AdvancementPlaques-1.20.6-fabric-1.6.2.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\advancement-plaques--AdvancementPlaques-1.20.6-fabric-1.6.2.jar",
-  "main-menu-credits--main-menu-credits-1.2.0.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\main-menu-credits--main-menu-credits-1.2.0.jar",
-  "vmp-fabric--vmp-fabric-mc1.20.6-0.2.0+beta.7.155-all.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\vmp-fabric--vmp-fabric-mc1.20.6-0.2.0+beta.7.155-all.jar",
-  "i18nupdatemod--I18nUpdateMod-3.8.0-all.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\i18nupdatemod--I18nUpdateMod-3.8.0-all.jar",
-  "item-highlighter--Highlighter-1.20.6-fabric-1.1.10.jar": "java.nio.file.NoSuchFileException: C:\\Users\\Jk101\\.mmt\\exposure\\mojang\\fabric-1.20.6\\item-highlighter--Highlighter-1.20.6-fabric-1.1.10.jar"
- },
+ "brokenUses": 1070,
+ "unreadable": {},
  "top": [
   {
-   "mods": 72,
+   "mods": 78,
    "member": "call: net.minecraft.resources.ResourceLocation.<init>(Ljava/lang/String;)V",
    "game": "template",
    "gameDetail": "m net.minecraft.resources.ResourceLocation.withDefaultNamespace(Ljava.lang.String;)Lnet.minecraft.resources.ResourceLocation; at 189 of 220 rewritten uses (1206 uses)",
    "portable": false
   },
   {
-   "mods": 48,
+   "mods": 52,
    "member": "call: com.mojang.blaze3d.vertex.VertexConsumer.endVertex()V",
    "game": "template",
    "gameDetail": " at 263 of 285 rewritten uses (404 uses)",
    "portable": false
   },
   {
-   "mods": 39,
+   "mods": 43,
    "member": "call: com.mojang.blaze3d.vertex.Tesselator.getBuilder()Lcom/mojang/blaze3d/vertex/BufferBuilder;",
    "game": "template",
    "gameDetail": " at 17 of 18 rewritten uses (20 uses)",
    "portable": false
   },
   {
-   "mods": 38,
+   "mods": 42,
    "member": "call: com.mojang.blaze3d.vertex.BufferBuilder.begin(Lcom/mojang/blaze3d/vertex/VertexFormat$Mode;Lcom/mojang/blaze3d/vertex/VertexFormat;)V",
    "game": "split",
    "gameDetail": "m com.mojang.blaze3d.vertex.BufferBuilder.<init>(Lcom.mojang.blaze3d.vertex.ByteBufferBuilder;Lcom.mojang.blaze3d.vertex.VertexFormat$Mode;Lcom.mojang.blaze3d.vertex.VertexFormat;)V ; f net.minecraft.client.renderer.MultiBufferSource$BufferSource.lastSharedType ; f net.minecraft.client.renderer.MultiBufferSource$BufferSource.startedBuilders ; m java.util.Map.put(Ljava.lang.Object;Ljava.lang.Object;)Ljava.lang.Object; at 1 of 2 rewritten uses (25 uses)",
    "portable": false
   },
   {
-   "mods": 25,
+   "mods": 28,
    "member": "call: com.mojang.blaze3d.vertex.Tesselator.end()V",
    "game": "template",
    "gameDetail": "m com.mojang.blaze3d.vertex.BufferBuilder.buildOrThrow()Lcom.mojang.blaze3d.vertex.MeshData; ; m com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(Lcom.mojang.blaze3d.vertex.MeshData;)V at 2 of 2 rewritten uses (10 uses)",
    "portable": false
   },
   {
-   "mods": 21,
+   "mods": 22,
    "member": "call: com.mojang.blaze3d.vertex.BufferVertexConsumer.vertex(DDD)Lcom/mojang/blaze3d/vertex/VertexConsumer;",
    "game": "split",
    "gameDetail": "m com.mojang.blaze3d.vertex.BufferBuilder.addVertex(FFF)Lcom.mojang.blaze3d.vertex.VertexConsumer; at 4 of 7 rewritten uses (107 uses)",
    "portable": false
   },
   {
-   "mods": 18,
-   "member": "call: net.minecraft.client.Minecraft.getFrameTime()F",
-   "game": "split",
-   "gameDetail": " at 1 of 3 rewritten uses (3 uses)",
-   "portable": false
-  },
-  {
-   "mods": 18,
+   "mods": 21,
    "member": "mixin target changed signature: net.minecraft.client.renderer.GameRenderer.render(FJZ)V",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 20,
+   "member": "call: net.minecraft.client.Minecraft.getFrameTime()F",
+   "game": "split",
+   "gameDetail": " at 1 of 3 rewritten uses (3 uses)",
    "portable": false
   },
   {
@@ -91,18 +72,29 @@
    "portable": false
   },
   {
-   "mods": 13,
+   "mods": 14,
    "member": "call: net.minecraft.client.Minecraft.getDeltaFrameTime()F",
    "game": "template",
    "gameDetail": "m net.minecraft.client.DeltaTracker.getRealtimeDeltaTicks()F at 2 of 3 rewritten uses (3 uses)",
    "portable": false
   },
   {
-   "mods": 11,
+   "mods": 14,
    "member": "mixin target changed signature: net.minecraft.client.renderer.LevelRenderer.renderLevel(FJZLnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/GameRenderer;Lnet/minecraft/client/renderer/LightTexture;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
    "portable": false
+  },
+  {
+   "mods": 10,
+   "member": "method reference: net.minecraft.resources.ResourceLocation.<init>(Ljava/lang/String;)V",
+   "game": "template",
+   "gameDetail": "m net.minecraft.resources.ResourceLocation.withDefaultNamespace(Ljava.lang.String;)Lnet.minecraft.resources.ResourceLocation; at 189 of 220 rewritten uses (1206 uses)",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "abstract method not written: com.mojang.blaze3d.vertex.VertexConsumer.addVertex(FFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;"
   },
   {
    "mods": 8,
@@ -113,6 +105,13 @@
   },
   {
    "mods": 8,
+   "member": "call: com.mojang.blaze3d.vertex.VertexFormat.getIntegerSize()I",
+   "game": "redesigned",
+   "gameDetail": "1 uses, 0 in methods b kept, none line up",
+   "portable": true
+  },
+  {
+   "mods": 8,
    "member": "call: net.minecraft.world.item.ItemStack.enchant(Lnet/minecraft/world/item/enchantment/Enchantment;I)V",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
@@ -120,9 +119,9 @@
   },
   {
    "mods": 8,
-   "member": "method reference: net.minecraft.resources.ResourceLocation.<init>(Ljava/lang/String;)V",
-   "game": "template",
-   "gameDetail": "m net.minecraft.resources.ResourceLocation.withDefaultNamespace(Ljava.lang.String;)Lnet.minecraft.resources.ResourceLocation; at 189 of 220 rewritten uses (1206 uses)",
+   "member": "field: net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT",
+   "game": "split",
+   "gameDetail": " at 1 of 2 rewritten uses (10 uses)",
    "portable": false
   },
   {
@@ -134,27 +133,9 @@
   },
   {
    "mods": 7,
-   "member": "abstract method not written: com.mojang.blaze3d.vertex.VertexConsumer.addVertex(FFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;"
-  },
-  {
-   "mods": 7,
-   "member": "call: com.mojang.blaze3d.vertex.VertexFormat.getIntegerSize()I",
-   "game": "redesigned",
-   "gameDetail": "1 uses, 0 in methods b kept, none line up",
-   "portable": true
-  },
-  {
-   "mods": 7,
    "member": "call: net.minecraft.client.model.geom.ModelPart.render(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;IIFFFF)V",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
-   "portable": false
-  },
-  {
-   "mods": 7,
-   "member": "field: net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT",
-   "game": "split",
-   "gameDetail": " at 1 of 2 rewritten uses (10 uses)",
    "portable": false
   },
   {
@@ -180,6 +161,20 @@
   },
   {
    "mods": 5,
+   "member": "call: com.mojang.blaze3d.vertex.VertexFormat.getElements()Lcom/google/common/collect/ImmutableList;",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 5,
+   "member": "call: net.minecraft.CrashReport.getFriendlyReport()Ljava/lang/String;",
+   "game": "template",
+   "gameDetail": "f net.minecraft.ReportType.CRASH ; m net.minecraft.CrashReport.getFriendlyReport(Lnet.minecraft.ReportType;)Ljava.lang.String; at 4 of 6 rewritten uses (7 uses)",
+   "portable": false
+  },
+  {
+   "mods": 5,
    "member": "call: net.minecraft.client.gui.components.MultiLineLabel.create(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/FormattedText;I)Lnet/minecraft/client/gui/components/MultiLineLabel;",
    "game": "replaced",
    "gameDetail": "net.minecraft.client.gui.components.MultiLineLabel.create(Lnet.minecraft.client.gui.Font;Lnet.minecraft.network.chat.Component;I)Lnet.minecraft.client.gui.components.MultiLineLabel; at 10 of 10 aligned uses (11 uses)",
@@ -197,6 +192,20 @@
    "member": "class gone: net.minecraft.world.item.RecordItem",
    "game": "redesigned",
    "gameDetail": "23 uses, 20 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 5,
+   "member": "class gone: net.minecraft.world.level.portal.PortalInfo",
+   "game": "redesigned",
+   "gameDetail": "4 uses, 0 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 5,
+   "member": "field: net.minecraft.core.registries.BuiltInRegistries.PAINTING_VARIANT",
+   "game": "split",
+   "gameDetail": "m net.minecraft.world.level.Level.registryAccess()Lnet.minecraft.core.RegistryAccess; ; f net.minecraft.core.registries.Registries.PAINTING_VARIANT ; m net.minecraft.core.RegistryAccess.registryOrThrow(Lnet.minecraft.resources.ResourceKey;)Lnet.minecraft.core.Registry; at 1 of 2 rewritten uses (5 uses)",
    "portable": false
   },
   {
@@ -235,6 +244,13 @@
    "portable": false
   },
   {
+   "mods": 5,
+   "member": "mixin target gone: net.minecraft.client.resources.model.ModelBakery.cacheAndQueueDependencies(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/UnbakedModel;)V",
+   "game": "redesigned",
+   "gameDetail": "2 uses, 0 in methods b kept, none line up",
+   "portable": false
+  },
+  {
    "mods": 4,
    "member": "call: com.mojang.blaze3d.vertex.VertexConsumer.defaultColor(IIII)V",
    "game": "redesigned",
@@ -257,13 +273,6 @@
   },
   {
    "mods": 4,
-   "member": "call: com.mojang.blaze3d.vertex.VertexFormat.getElements()Lcom/google/common/collect/ImmutableList;",
-   "game": "linked",
-   "gameDetail": "the map follows it; the new signature differs",
-   "portable": false
-  },
-  {
-   "mods": 4,
    "member": "call: com.mojang.blaze3d.vertex.VertexFormatElement.getByteSize()I",
    "game": "redesigned",
    "gameDetail": "2 uses, 1 in methods b kept, none line up",
@@ -271,37 +280,9 @@
   },
   {
    "mods": 4,
-   "member": "call: net.minecraft.CrashReport.getFriendlyReport()Ljava/lang/String;",
-   "game": "template",
-   "gameDetail": "f net.minecraft.ReportType.CRASH ; m net.minecraft.CrashReport.getFriendlyReport(Lnet.minecraft.ReportType;)Ljava.lang.String; at 4 of 6 rewritten uses (7 uses)",
-   "portable": false
-  },
-  {
-   "mods": 4,
    "member": "call: net.minecraft.client.model.AgeableListModel.renderToBuffer(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;IIFFFF)V",
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
-   "portable": false
-  },
-  {
-   "mods": 4,
-   "member": "call: net.minecraft.client.renderer.RenderType.end(Lcom/mojang/blaze3d/vertex/BufferBuilder;Lcom/mojang/blaze3d/vertex/VertexSorting;)V",
-   "game": "redesigned",
-   "gameDetail": "1 uses, 1 in methods b kept, none line up",
-   "portable": false
-  },
-  {
-   "mods": 4,
-   "member": "call: net.minecraft.client.renderer.SectionBufferBuilderPack.builder(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/BufferBuilder;",
-   "game": "split",
-   "gameDetail": " at 1 of 1 rewritten uses (5 uses)",
-   "portable": false
-  },
-  {
-   "mods": 4,
-   "member": "call: net.minecraft.client.renderer.chunk.SectionRenderDispatcher$RenderSection.beginLayer(Lcom/mojang/blaze3d/vertex/BufferBuilder;)V",
-   "game": "redesigned",
-   "gameDetail": "3 uses, 1 in methods b kept, none line up",
    "portable": false
   }
  ]
