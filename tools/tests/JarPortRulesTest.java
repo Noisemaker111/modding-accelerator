@@ -22,7 +22,7 @@ final class JarPortRulesTest {
         statics(JarPortTest.snap(a, "g3/Rend", 0, null), Opcodes.ACC_PUBLIC, "getPosTexShader()Lg3/Shader;");
         statics(JarPortTest.snap(a, "g3/Sys", 0, null), Opcodes.ACC_PUBLIC, "setShader(" + supplier + ")V");
         JarPortTest.snap(a, "g3/Shader", 0, null);
-        JarPortTest.snap(a, "g3/Box", 0, null);
+        JarPortTest.snap(a, "g3/Box", 0, null, "<init>(II)V");
         statics(JarPortTest.snap(a, "g3/Builder", 0, null, "done()Lg3/Box;"), Opcodes.ACC_PUBLIC, "make(I)Lg3/Builder;");
         JarPortTest.snap(a, "g3/Res", 0, null, "ok()Z");
 
@@ -52,6 +52,7 @@ final class JarPortRulesTest {
               {"id": "max", "inClass": {"g3.Gui.MAX": "g3.Sys.max()"}},
               {"id": "blit", "inClass": {"g3.Gui.blit": "$0.draw($1)"}},
               {"id": "builder", "inClass": {"g3.Builder": "g3.Box", "g3.Builder.make": "new g3.Box($1)", "g3.Builder.done": "$0"}},
+              {"id": "box", "inClass": {"g3.Box.<init>(II)": "new g3.Box($1)"}},
               {"id": "hidden", "inClass": {"g3.Gui.flush": "g3.Sys.hidden()"}}
             ]}
             """);
@@ -85,6 +86,16 @@ final class JarPortRulesTest {
         go.visitVarInsn(Opcodes.ALOAD, 1);
         go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g3/Res", "ok", "()Z", false);
         go.visitInsn(Opcodes.POP);
+        go.visitTypeInsn(Opcodes.NEW, "g3/Box");
+        go.visitInsn(Opcodes.DUP);
+        go.visitInsn(Opcodes.ICONST_5);
+        go.visitIntInsn(Opcodes.BIPUSH, 6);
+        go.visitMethodInsn(Opcodes.INVOKESPECIAL, "g3/Box", "<init>", "(II)V", false);
+        go.visitInsn(Opcodes.POP);
+        go.visitTypeInsn(Opcodes.NEW, "m3/MyBox");
+        go.visitInsn(Opcodes.DUP);
+        go.visitMethodInsn(Opcodes.INVOKESPECIAL, "m3/MyBox", "<init>", "()V", false);
+        go.visitInsn(Opcodes.POP);
         go.visitFieldInsn(Opcodes.GETSTATIC, "g2/Log", "out", "Ljava/lang/StringBuilder;");
         go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()" + str, false);
         go.visitInsn(Opcodes.ARETURN);
@@ -102,11 +113,23 @@ final class JarPortRulesTest {
         never.visitMaxs(0, 1);
         never.visitEnd();
         run.visitEnd();
+        ClassWriter mine = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        mine.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m3/MyBox", null, "g3/Box", null);
+        MethodVisitor init = mine.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        init.visitCode();
+        init.visitVarInsn(Opcodes.ALOAD, 0);
+        init.visitIntInsn(Opcodes.BIPUSH, 7);
+        init.visitIntInsn(Opcodes.BIPUSH, 8);
+        init.visitMethodInsn(Opcodes.INVOKESPECIAL, "g3/Box", "<init>", "(II)V", false);
+        init.visitInsn(Opcodes.RETURN);
+        init.visitMaxs(0, 1);
+        init.visitEnd();
+        mine.visitEnd();
 
         JarPort port = new JarPort(a, b, map);
         port.fixes(book);
         List<Map<String, Object>> results = new ArrayList<>();
-        Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m3/Run.class", run.toByteArray())), "rules.jar", results));
+        Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m3/Run.class", run.toByteArray(), "m3/MyBox.class", mine.toByteArray())), "rules.jar", results));
         List<Object> unlinked = Json.array(results.get(0).get("unlinked"));
         JarPortTest.expect(unlinked.equals(List.of("call: g3.Gui.blit(II)V", "call: g3.Gui.flush()V")),
             "a rule that would drop an argument it does not name, or call what the mod may not, is not applied: " + unlinked);
@@ -114,6 +137,7 @@ final class JarPortRulesTest {
         Map<String, byte[]> classes = new HashMap<>(JarPortTest.newGame());
         classes.putAll(newGame());
         classes.put("m3/Run", ported.get("m3/Run.class"));
+        classes.put("m3/MyBox", ported.get("m3/MyBox.class"));
         ClassLoader loader = new ClassLoader(null) {
             @Override
             protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -132,9 +156,9 @@ final class JarPortRulesTest {
         } catch (ReflectiveOperationException | LinkageError failed) {
             trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
         }
-        JarPortTest.expect(trace.equals("color:0.5/0.0;color:1.0/0.25;get;use;max;draw:7;box:3;ok;"),
+        JarPortTest.expect(trace.equals("color:0.5/0.0;color:1.0/0.25;get;use;max;draw:7;box:3;ok;box:5;box:7;"),
             "port rules' replacements (a static call, widened literals, a regex-named method reference, a supplier's value, a field read, "
-                + "new, a dropped class) and a call on a class that became an interface run on the JVM: " + trace);
+                + "new, a dropped class, a changed constructor and super constructor) and a call on a class that became an interface run on the JVM: " + trace);
 
         GameDiff.Snap opened = new GameDiff.Snap("2.0");
         GameDiff.Cls tile = new GameDiff.Cls("g4/Tile", Opcodes.ACC_FINAL, "java/lang/Object", new ArrayList<>(), false);

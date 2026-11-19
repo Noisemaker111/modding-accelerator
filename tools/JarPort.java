@@ -1333,6 +1333,7 @@ public final class JarPort {
         final String key;
         final String where;
         int nextLocal;
+        int extraStack; // what code written in place of an instruction may push beyond it
 
         Sites(Mod mod, MethodVisitor mv, int locals, List<String> targets, List<String> callers, String key, String where) {
             super(Opcodes.ASM9, mv);
@@ -1370,7 +1371,7 @@ public final class JarPort {
 
         @Override
         public void visitMaxs(int maxStack, int maxLocals) {
-            super.visitMaxs(maxStack + 4, Math.max(maxLocals, nextLocal));
+            super.visitMaxs(maxStack + 4 + extraStack, Math.max(maxLocals, nextLocal));
         }
 
         @Override
@@ -1457,6 +1458,10 @@ public final class JarPort {
                         super.visitInsn(Opcodes.POP);
                     }
                     mod.change("call removed");
+                    return;
+                }
+                if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && constructed(owner, decl.owner(), desc)) {
+                    mod.change("constructor arguments from a port rule");
                     return;
                 }
                 if (opcode != Opcodes.INVOKESPECIAL) {
@@ -1697,7 +1702,7 @@ public final class JarPort {
                         if (dropsOne && f.args() == null) {
                             continue;
                         }
-                        Lowering low = new Lowering(mod, callers, params, receiver);
+                        Lowering low = new Lowering(mod, callers, params, receiver, 0);
                         Code code = new Code();
                         Type got = low.lower(node, code);
                         if (ret.getSort() == Type.VOID) {
@@ -1722,6 +1727,64 @@ public final class JarPort {
                 }
             }
             return null;
+        }
+
+        /**
+         * new X(old arguments), or super(...), where X's constructor changed: a rule's "new X(...)" gives the new
+         * arguments from the old ones, which are set aside in fresh locals while the object being made stays on the
+         * stack, and X's new constructor is called on it. The object cannot be passed to a method before its constructor
+         * runs, so this is written in place rather than in an added method.
+         */
+        boolean constructed(String owner, String declOwner, String desc) {
+            String now = cls(owner);
+            if (!b.classes.containsKey(now)) {
+                return false;
+            }
+            Type[] old = Type.getArgumentTypes(desc);
+            Type[] params = new Type[old.length];
+            for (int i = 0; i < old.length; i++) {
+                params[i] = Type.getType(desc(old[i].getDescriptor()));
+                if (!present(mod, params[i])) {
+                    return false;
+                }
+            }
+            for (String o : new LinkedHashSet<>(List.of(owner, declOwner))) {
+                for (Fix f : fixes.getOrDefault(o, List.of())) {
+                    Matcher n = f.name().matcher("<init>");
+                    if (!n.matches() || f.args() != null && !desc.startsWith(f.args())) {
+                        continue;
+                    }
+                    try {
+                        FixExpr.Node node = FixExpr.parse(FixExpr.fill(f.expr(), n));
+                        if (!(node instanceof FixExpr.New made) || !made.type().replace('.', '/').equals(now)) {
+                            continue;
+                        }
+                        Set<Integer> used = FixExpr.operands(node);
+                        boolean dropsOne = false;
+                        for (int i = 1; i <= old.length; i++) {
+                            dropsOne |= !used.contains(i);
+                        }
+                        if (dropsOne && f.args() == null) {
+                            continue;
+                        }
+                        Lowering low = new Lowering(mod, callers, params, false, nextLocal);
+                        Member m = low.choose(low.methods(now, "<init>"), made.args(), now + ".<init>");
+                        Code code = new Code();
+                        low.arguments(m, made.args(), code);
+                        for (int i = old.length - 1; i >= 0; i--) {
+                            super.visitVarInsn(old[i].getOpcode(Opcodes.ISTORE), low.slots[i]);
+                        }
+                        nextLocal = low.locals;
+                        extraStack = Math.max(extraStack, code.max);
+                        code.steps.forEach(step -> step.accept(mv));
+                        super.visitMethodInsn(Opcodes.INVOKESPECIAL, inverse.getOrDefault(now, now), "<init>", oldDesc(m.desc()), false);
+                        return true;
+                    } catch (Refused | IllegalArgumentException notHere) {
+                        // Another rule may still give one that links.
+                    }
+                }
+            }
+            return false;
         }
 
         void invokeAdded(String[] added) {
@@ -1986,13 +2049,17 @@ public final class JarPort {
         final int[] slots;
         int locals;
 
-        /** params: the old member's operands in new names; with receiver the first is $0, else $1 is the first. */
-        Lowering(Mod mod, List<String> callers, Type[] params, boolean receiver) {
+        /**
+         * params: the old member's operands in new names, held in locals from first on; with receiver the first is $0,
+         * else $1 is the first.
+         */
+        Lowering(Mod mod, List<String> callers, Type[] params, boolean receiver, int first) {
             this.mod = mod;
             this.callers = callers;
             this.params = params;
             this.receiver = receiver;
             slots = new int[params.length];
+            locals = first;
             for (int i = 0; i < params.length; i++) {
                 slots[i] = locals;
                 locals += params[i].getSize();

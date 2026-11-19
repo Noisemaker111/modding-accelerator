@@ -7892,6 +7892,10 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.world.entity.Entity.hurt", "net.minecraft.world.entity.Entity.hurtServer"],
+      "inClass": {
+        "net.minecraft.world.entity.Entity.hurt(Lnet/minecraft/world/damagesource/DamageSource;F)": "$0.hurtOrSimulate($1, $2)",
+        "net.minecraft.world.entity.LivingEntity.hurt(Lnet/minecraft/world/damagesource/DamageSource;F)": "$0.hurtOrSimulate($1, $2)"
+      },
       "match": "does not override abstract method hurtServer|hurt\\(DamageSource,float\\) in \\w+ cannot override hurt",
       "apply": {
         "find": "(?m)^([ \\t]*)(@Override\\s+)?public\\s+boolean\\s+hurt\\s*\\(\\s*(?:final\\s+)?DamageSource\\s+(\\w+)\\s*,\\s*(?:final\\s+)?float\\s+(\\w+)\\s*\\)",
@@ -8278,11 +8282,10 @@
       "id": "recipe-holder-id-location-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
-      "members": [
-        "net.minecraft.world.item.crafting.RecipeHolder.id"
-      ],
+      "members": ["net.minecraft.world.item.crafting.RecipeHolder.id", "net.minecraft.world.item.crafting.RecipeHolder.<init>"],
       "inClass": {
-        "net.minecraft.world.item.crafting.RecipeHolder.id()": "$0.id().location()"
+        "net.minecraft.world.item.crafting.RecipeHolder.id()": "$0.id().location()",
+        "net.minecraft.world.item.crafting.RecipeHolder.<init>": "new net.minecraft.world.item.crafting.RecipeHolder(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, $1), $2)"
       },
       "match": "incompatible types: ResourceKey<Recipe<\\?>> cannot be converted to ResourceLocation",
       "apply": {
@@ -8323,6 +8326,138 @@
         "error": "Book.java:3: error: incompatible types: ResourceLocation cannot be converted to ResourceKey<Recipe<?>>\n        manager.byKey(id).ifPresent(r -> { });\n                      ^\n",
         "before": "class Book {\n    void f(RecipeManager manager, ResourceLocation id) {\n        manager.byKey(id).ifPresent(r -> { });\n    }\n}\n",
         "after": "class Book {\n    void f(RecipeManager manager, ResourceLocation id) {\n        manager.byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, id)).ifPresent(r -> { });\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "util-executor-service-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.Util.backgroundExecutor",
+        "net.minecraft.Util.ioPool"
+      ],
+      "inClass": {
+        "net.minecraft.Util.backgroundExecutor()": "net.minecraft.Util.backgroundExecutor().service()",
+        "net.minecraft.Util.ioPool()": "net.minecraft.Util.ioPool().service()"
+      },
+      "match": "incompatible types: TracingExecutor cannot be converted to ExecutorService",
+      "apply": {
+        "find": "\\bUtil\\s*\\.\\s*(backgroundExecutor|ioPool)\\s*\\(\\s*\\)(?!\\s*\\.\\s*service\\s*\\()",
+        "replace": "Util.$1().service()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's Util hands out its pools as TracingExecutor, a record holding the ExecutorService the old methods returned (service()).",
+      "verified": null,
+      "test": {
+        "error": "Use.java:3: error: incompatible types: TracingExecutor cannot be converted to ExecutorService\n        ExecutorService pool = Util.backgroundExecutor();\n                                                      ^\n",
+        "before": "class Use {\n    void f() {\n        ExecutorService pool = Util.backgroundExecutor();\n    }\n}\n",
+        "after": "class Use {\n    void f() {\n        ExecutorService pool = Util.backgroundExecutor().service();\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-cooldowns-stack-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.ItemCooldowns.addCooldown"
+      ],
+      "inClass": {
+        "net.minecraft.world.item.ItemCooldowns.addCooldown(Lnet/minecraft/world/item/Item;I)": "$0.addCooldown(new net.minecraft.world.item.ItemStack($1), $2)"
+      },
+      "match": "no suitable method found for addCooldown\\(Item,int\\)",
+      "apply": {
+        "find": "\\.\\s*addCooldown\\s*\\(\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,",
+        "replace": ".addCooldown(new net.minecraft.world.item.ItemStack($1),"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 keys item cooldowns by the stack (its use_cooldown group, else the item's id); a stack of the item gives the item's own group, the one the old Item key used.",
+      "verified": null,
+      "test": {
+        "error": "Use.java:3: error: no suitable method found for addCooldown(Item,int)\n        player.getCooldowns().addCooldown(this, 20);\n                             ^\n",
+        "before": "class Use {\n    void f(Player player) {\n        player.getCooldowns().addCooldown(this, 20);\n    }\n}\n",
+        "after": "class Use {\n    void f(Player player) {\n        player.getCooldowns().addCooldown(new net.minecraft.world.item.ItemStack(this), 20);\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-stack-description-id-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.ItemStack.getDescriptionId"
+      ],
+      "inClass": {
+        "net.minecraft.world.item.ItemStack.getDescriptionId()": "$0.getItem().getDescriptionId()"
+      },
+      "match": "symbol:\\s+method getDescriptionId\\(\\)\\n\\s*location: variable \\w+ of type ItemStack",
+      "apply": {
+        "find": "\\b{receiver}\\s*\\.\\s*getDescriptionId\\s*\\(\\s*\\)",
+        "replace": "{receiver}.getItem().getDescriptionId()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 dropped ItemStack.getDescriptionId; the translation key is the item's (Item.getDescriptionId, now the same for every stack of it).",
+      "verified": null,
+      "test": {
+        "error": "Use.java:3: error: cannot find symbol\n        String key = stack.getDescriptionId();\n                          ^\n  symbol:   method getDescriptionId()\n  location: variable stack of type ItemStack\n",
+        "before": "class Use {\n    void f(ItemStack stack) {\n        String key = stack.getDescriptionId();\n    }\n}\n",
+        "after": "class Use {\n    void f(ItemStack stack) {\n        String key = stack.getItem().getDescriptionId();\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "texture-target-clear-error-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "com.mojang.blaze3d.pipeline.TextureTarget.<init>"
+      ],
+      "inClass": {
+        "com.mojang.blaze3d.pipeline.TextureTarget.<init>(IIZZ)": "new com.mojang.blaze3d.pipeline.TextureTarget($1, $2, $3)"
+      },
+      "match": "constructor TextureTarget in class TextureTarget cannot be applied to given types",
+      "apply": {
+        "find": "\\bnew\\s+TextureTarget\\s*\\(\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*\\)",
+        "replace": "new TextureTarget($1, $2, $3)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's TextureTarget(width, height, useDepth) no longer takes clearError: the target no longer checks GL errors when it clears.",
+      "verified": null,
+      "test": {
+        "error": "Use.java:3: error: constructor TextureTarget in class TextureTarget cannot be applied to given types;\n        TextureTarget target = new TextureTarget(w, h, true, Minecraft.ON_OSX);\n                               ^\n",
+        "before": "class Use {\n    void f(int w, int h) {\n        TextureTarget target = new TextureTarget(w, h, true, Minecraft.ON_OSX);\n    }\n}\n",
+        "after": "class Use {\n    void f(int w, int h) {\n        TextureTarget target = new TextureTarget(w, h, true);\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "entity-render-dispatcher-yaw-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.client.renderer.entity.EntityRenderDispatcher.render"
+      ],
+      "inClass": {
+        "net.minecraft.client.renderer.entity.EntityRenderDispatcher.render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)": "$0.render($1, $2, $3, $4, $6, $7, $8, $9)"
+      },
+      "match": "method render in class EntityRenderDispatcher cannot be applied to given types",
+      "apply": {
+        "find": "\\.\\s*render\\s*\\(\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*\\)",
+        "replace": ".render($1, $2, $3, $4, $6, $7, $8, $9)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's EntityRenderDispatcher.render(entity, x, y, z, partialTick, poseStack, buffers, light) no longer takes the yaw: the renderer reads the entity's own rotation from its render state.",
+      "verified": null,
+      "test": {
+        "error": "Use.java:3: error: method render in class EntityRenderDispatcher cannot be applied to given types;\n        dispatcher.render(entity, 0.0, 0.0, 0.0, 0.0F, partialTick, poseStack, buffers, light);\n                  ^\n",
+        "before": "class Use {\n    void f(EntityRenderDispatcher dispatcher, Entity entity, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int light) {\n        dispatcher.render(entity, 0.0, 0.0, 0.0, 0.0F, partialTick, poseStack, buffers, light);\n    }\n}\n",
+        "after": "class Use {\n    void f(EntityRenderDispatcher dispatcher, Entity entity, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int light) {\n        dispatcher.render(entity, 0.0, 0.0, 0.0, partialTick, poseStack, buffers, light);\n    }\n}\n",
         "from": "written for this rule"
       }
     },
@@ -8428,6 +8563,10 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.world.entity.Entity.sendSystemMessage"],
+      "inClass": {
+        "net.minecraft.client.player.LocalPlayer.sendSystemMessage": "$0.displayClientMessage($1, false)",
+        "net.minecraft.world.entity.Entity.sendSystemMessage": "$0.displayClientMessage($1, false)"
+      },
       "match": "symbol:\\s+method sendSystemMessage\\((?:[\\w.]*\\.)?Component\\)\\n\\s*location: variable \\w+ of type \\w+",
       "apply": {
         "find": "(^\\s*|[;{]\\s*)\\b{receiver}\\s*\\.\\s*sendSystemMessage\\s*\\(",
