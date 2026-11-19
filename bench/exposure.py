@@ -1,30 +1,30 @@
-"""What real mods use of the game, and what of it a port would carry over: the porter's scoreboard and its to-do list.
+"""What real mods reference of the game, ported as jars and linked against the next release: the porter's scoreboard and its to-do list.
 
-    python bench/exposure.py fetch --loader neoforge --version 1.21.1 [--count 200]
-    python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 [--count 200] [--save NAME]
-    python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 [--save NAME]
+    python bench/exposure.py jars --loader neoforge|fabric --from 1.21.1 --to 1.21.2 [--save NAME] [--out FILE]
+    python bench/exposure.py all [--loader neoforge|fabric] [--only fabric:1.20.1] [--jobs 4] [--save]
+    python bench/exposure.py join DIR [--save]
+    python bench/exposure.py fetch --loader neoforge|fabric --version 1.21.1 [--repin]
+    python bench/exposure.py pin [--loader neoforge|fabric] [--version 1.21.1] [--repin]
     python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 [--save NAME]
     python bench/exposure.py steps [--from 1.14.4] [--to 26.3]
 
-fetch downloads the most downloaded mods of one loader and game version from Modrinth (the newest release of each
-for that version) into ~/.mmt/exposure/jars/LOADER-VERSION/. They are read, never built or shipped, and only to count
-which parts of the game mods use: rules still come only from the game and the loaders.
+The mods are the 150 most downloaded of one loader and release on Modrinth, each in its newest file for that release,
+listed once in bench/exposure/mods/LOADER-VERSION.json so every run reads the same jars, here or in the cloud (pin
+lists them for every release a loader is read for, without downloading; --repin lists them again). They are downloaded into ~/.mmt/exposure/jars/ and only read, never built or shipped: rules still come only from the game and
+the loaders.
 
-run reads them with tools/Exposure.java against GameDiff's route map between the two releases (made once, kept in
-~/.mmt/exposure/maps/): for every game class, method and field the mods use, whether a port carries it over
-(unchanged, renamed by the map, or rewritten from the game's own code) or not yet (another signature, or removed).
-It prints the share of mods with nothing left to carry and the members that break the most mods, and writes the full
-report to .runs/exposure/. --save NAME also keeps the summary in bench/exposure/NAME.json, so a fix is measured by
-how many mods it frees.
+jars ports one release's mods to the next with tools/JarPort.java (what mmt port --jar runs) and links every reference
+their classes, mixins and access transformers make to the game against the new release, as the JVM and Mixin will. It
+prints the mods that link and the references that hold the most back, each with what the game's own code did about it
+(tools/Exposure.java: replaced, template, split, linked, redesigned, unused). Fabric mods ship in intermediary names
+before 26.1; tools/ModNames.java reads them in Mojang's names first, through the game's own mappings.
 
-Only jars in the old release's Mojang names are read: NeoForge from 1.20.5, and any loader from 26.1.
+all runs jars for every update a loader's jars can be read across (Fabric from 1.14.4, NeoForge from 1.20.5, where it
+moved to Mojang's names) and joins them: per update the share of mods that link, in total, and the references that
+hold the most mods back across every update. join does the joining for summaries made elsewhere (the cloud run,
+tools/cloud-run exposure). --save keeps the table in bench/exposure/all.json.
 
-jars ports the same jars with tools/JarPort.java (what mmt port --jar runs) and links every reference their classes,
-mixins and access transformers make to the game against the new release, as the JVM and Mixin will: a field whose type
-changed, a mixin's @Shadow field that is gone, an injection whose target took other parameters all count, which run
-cannot see. It prints the mods that link and the references that hold the most mods back. It is the stricter number.
-
-load is the proof that a list predicts the game: the mods run clears that need no other mod are ported as jars and
+load is the proof that the list predicts the game: the mods jars says link that need no other mod are ported and
 started together on a real server of the new release (mmt pack-check); a failed start drops the mod its log names and
 starts again. It reports how many load, and whether any mod failed that jars said links.
 
@@ -35,20 +35,30 @@ own code changed (call rewrites, call chains, class replacements). A new kind of
 update here, not only in the one being worked on. Kept in bench/exposure/steps.json.
 """
 import argparse
+import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HOME = Path(os.path.expanduser("~")) / ".mmt" / "exposure"
 AGENT = {"User-Agent": "modding-accelerator-exposure/1.0"}
 INDEX = ROOT / "coverage" / "changes" / "index.json"
+PINS = ROOT / "bench" / "exposure" / "mods"
+COUNT = 150
+# The first release whose mod jars are read in Mojang's names: Fabric's through intermediary, NeoForge's as shipped
+# (before 1.20.5 NeoForge mods name members by SRG ids).
+FIRST = {"fabric": "1.14.4", "neoforge": "1.20.5"}
+UNOBFUSCATED = "26.1"
 
 
 def api(path, params=None):
@@ -63,39 +73,89 @@ def api(path, params=None):
             time.sleep(5 * (attempt + 1))
 
 
-def fetch(loader, version, count):
-    folder = HOME / "jars" / f"{loader}-{version}"
-    folder.mkdir(parents=True, exist_ok=True)
-    have, offset = 0, 0
-    while have < count:
-        facets = json.dumps([["project_type:mod"], [f"categories:{loader}"], [f"versions:{version}"]])
+def project_versions(project):
+    """A Modrinth project's versions, newest first, with what choosing a file needs; kept a day, so pinning every release asks once a project."""
+    cache = HOME / "modrinth" / f"{project}.json"
+    if cache.is_file() and time.time() - cache.stat().st_mtime < 86400:
+        try:
+            return json.loads(cache.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pass  # another run is writing it: ask again
+    versions = [{"id": v["id"], "published": v["date_published"], "game": v["game_versions"], "loaders": v["loaders"],
+                 "files": [{"url": f["url"], "file": f["filename"], "primary": f.get("primary"), "sha1": f["hashes"].get("sha1")}
+                           for f in v.get("files", [])]}
+                for v in api(f"project/{project}/version", {"include_changelog": "false"})]
+    versions.sort(key=lambda v: v["published"], reverse=True)
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    part = cache.with_name(f"{project}.{os.getpid()}.{id(versions)}.part")
+    part.write_text(json.dumps(versions), encoding="utf-8")
+    try:
+        part.replace(cache)
+    except OSError:
+        part.unlink(missing_ok=True)  # another run just wrote the same list
+    return versions
+
+
+def pin(loader, version, count=COUNT):
+    """The most-downloaded mods of one loader and release, each with its newest primary jar for that release, kept in PINS."""
+    mods, offset = [], 0
+    while len(mods) < count:
+        facets = json.dumps([["project_type:mod"], [f"categories:{loader}"], [f'versions:"{version}"']])  # unquoted, 1.20 is read as a number and matches nothing
         hits = api("search", {"facets": facets, "index": "downloads", "limit": 100, "offset": offset}).get("hits", [])
         if not hits:
             break
         offset += len(hits)
         for hit in hits:
-            if have >= count:
+            if len(mods) >= count:
                 break
-            slug = hit["slug"]
-            existing = list(folder.glob(slug + "--*.jar"))
-            if existing:
-                have += 1
-                continue
-            versions = api(f"project/{hit['project_id']}/version",
-                           {"loaders": json.dumps([loader]), "game_versions": json.dumps([version])})
-            files = [f for v in versions for f in v.get("files", []) if f.get("primary") and f["filename"].endswith(".jar")]
-            if not files:
-                continue
-            target = folder / f"{slug}--{files[0]['filename']}"
+            for v in project_versions(hit["project_id"]):
+                if loader not in v["loaders"] or version not in v["game"]:
+                    continue
+                f = next((f for f in v["files"] if f["primary"] and f["file"].endswith(".jar")), None)
+                if f:
+                    mods.append({"slug": hit["slug"], "project": hit["project_id"], "version": v["id"], **{k: f[k] for k in ("file", "url", "sha1")}})
+                    break
+    path = PINS / f"{loader}-{version}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"loader": loader, "version": version, "date": date.today().isoformat(), "mods": mods}, indent=0) + "\n", encoding="utf-8")
+    print(f"pinned {len(mods)} {loader} mods for {version} in {path.relative_to(ROOT)}")
+    return path
+
+
+def fetch(loader, version, repin=False):
+    """The pinned mods of one loader and release, downloaded once into ~/.mmt/exposure/jars/LOADER-VERSION/ (pinned first if they are not)."""
+    path = PINS / f"{loader}-{version}.json"
+    if repin or not path.is_file():
+        pin(loader, version)
+    mods = json.loads(path.read_text(encoding="utf-8"))["mods"]
+    folder = HOME / "jars" / f"{loader}-{version}"
+    folder.mkdir(parents=True, exist_ok=True)
+
+    def one(m):
+        target = folder / f"{m['slug']}--{m['file']}"
+        if target.is_file():
+            return target
+        for attempt in range(3):
             try:
-                with urllib.request.urlopen(urllib.request.Request(files[0]["url"], headers=AGENT), timeout=120) as r:
-                    target.write_bytes(r.read())
-                have += 1
+                with urllib.request.urlopen(urllib.request.Request(m["url"], headers=AGENT), timeout=300) as r:
+                    data = r.read()
+                break
             except Exception as error:
-                print(f"  {slug}: {error}", file=sys.stderr)
-            time.sleep(0.2)
-    print(f"{have} {loader} mods for {version} in {folder}")
-    return folder
+                if attempt == 2:
+                    print(f"  {m['slug']}: {error}", file=sys.stderr)
+                    return None
+                time.sleep(5 * (attempt + 1))
+        if m.get("sha1") and hashlib.sha1(data).hexdigest() != m["sha1"]:
+            print(f"  {m['slug']}: the download is not the pinned file", file=sys.stderr)
+            return None
+        part = target.with_suffix(".part")
+        part.write_bytes(data)
+        part.replace(target)
+        return target
+
+    with ThreadPoolExecutor(8) as pool:
+        jars = [j for j in pool.map(one, mods) if j]
+    return jars
 
 
 def releases():
@@ -113,6 +173,12 @@ def chain(frm, to):
     lo, hi = sorted([frm, to], key=vkey)
     span = [v for v in all_versions if vkey(lo) <= vkey(v) <= vkey(hi)]
     return span if vkey(frm) <= vkey(to) else list(reversed(span))
+
+
+def updates(loader):
+    """Every update from one indexed release to the next whose mod jars are read for this loader."""
+    every = [v for v in sorted(releases(), key=vkey) if vkey(v) >= vkey(FIRST[loader])]
+    return list(zip(every, every[1:]))
 
 
 def java():
@@ -146,58 +212,45 @@ def route_map(frm, to, loader, classes, tools_time):
     args = [java(), "-Xmx10g", "-cp", str(classes), "GameDiff", "--chain", ",".join(chain(frm, to)), "--out", str(target)]
     if loader == "neoforge":
         args += ["--loader", "neoforge"]
-    subprocess.run(args, check=True)
+    subprocess.run(args, check=True, stdout=subprocess.DEVNULL)
     return target
 
 
-def run(loader, frm, to, count, save):
-    folder = HOME / "jars" / f"{loader}-{frm}"
-    jars = sorted(folder.glob("*.jar"))[: count or None] if folder.is_dir() else []
-    if not jars:
-        folder = fetch(loader, frm, count or 200)
-        jars = sorted(folder.glob("*.jar"))
-    classes, tools_time = compile_tools()
-    route = route_map(frm, to, loader, classes, tools_time)
-    out = ROOT / ".runs" / "exposure" / f"{loader}-{frm}-{to}.json"
-    args = [java(), "-Xmx10g", "-cp", str(classes), "Exposure", "--from", frm, "--to", to, "--map", str(route), "--out", str(out),
-            "--rules", str(ROOT / "knowledge" / "fixes.json")]
-    if loader == "neoforge":
-        args += ["--loader", "neoforge"]
-    done = subprocess.run(args + [str(j) for j in jars])
-    if done.returncode:
-        raise SystemExit(f"Exposure failed (exit {done.returncode}); its output is above")
-    report = json.loads(out.read_text(encoding="utf-8"))
-    total = sum(r.get("gameUses", 0) for r in report["mods"])
-    carried = sum(r.get("gameUses", 0) - len(r.get("broken", [])) for r in report["mods"])
-    summary = {
-        "loader": loader, "from": frm, "to": to,
-        "modsRead": report["modsRead"], "modsWithNothingBroken": report["modsWithNothingBroken"],
-        "usesCarried": round(carried / total, 4) if total else 1.0,
-        "gameEvidence": report.get("gameEvidence", {}),
-        "signatureChanges": dict(list(report.get("signatureChanges", {}).items())[:30]),
-        "top": report["brokenByMods"][:40],
-    }
-    print(f"{summary['modsWithNothingBroken']}/{summary['modsRead']} mods have nothing left to carry; "
-          f"{summary['usesCarried']:.1%} of their game uses carry over")
-    if save:
-        path = ROOT / "bench" / "exposure" / f"{save}.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
-        print(f"saved {path}")
-    return summary
-
-
 ASM = [ROOT / "tools" / "perf" / "lib" / "asm-9.9.jar", ROOT / "tools" / "perf" / "lib" / "asm-commons-9.9.jar"]
+JAR_SOURCES = ("JarPort.java", "FixExpr.java", "Exposure.java", "GameDiff.java", "VersionMap.java", "ModNames.java")
 
 
 def jar_tools():
     out = ROOT / ".runs" / "exposure" / "jarport-classes"
-    sources = [ROOT / "tools" / n for n in ("JarPort.java", "FixExpr.java", "Exposure.java", "GameDiff.java", "VersionMap.java")] + [ROOT / "tools" / "cli" / "Json.java"]
+    sources = [ROOT / "tools" / n for n in JAR_SOURCES] + [ROOT / "tools" / "cli" / "Json.java"]
     stamp = out / "JarPort.class"
     if not stamp.is_file() or stamp.stat().st_mtime < max(s.stat().st_mtime for s in sources):
         javac = java().replace("java.exe", "javac.exe") if java().endswith("java.exe") else java() + "c"
         subprocess.run([javac, "-encoding", "UTF-8", "-cp", os.pathsep.join(map(str, ASM)), "-d", str(out)] + [str(s) for s in sources], check=True)
     return os.pathsep.join([str(out)] + [str(a) for a in ASM])
+
+
+def mojang_names(loader, version, jars):
+    """The jars in Mojang's names: Fabric's before 26.1 read through intermediary by tools/ModNames.java (kept in
+    ~/.mmt/exposure/mojang/ until ModNames or VersionMap changes), every other one as it is. A jar it cannot read is
+    left out, with why."""
+    if loader != "fabric" or vkey(version) >= vkey(UNOBFUSCATED):
+        return jars, {}
+    out = HOME / "mojang" / f"{loader}-{version}"
+    stamp = out / "tools.txt"
+    tools = str(max((ROOT / "tools" / n).stat().st_mtime for n in ("ModNames.java", "Exposure.java", "VersionMap.java")))
+    if out.is_dir() and (not stamp.is_file() or stamp.read_text() != tools):
+        shutil.rmtree(out)
+    out.mkdir(parents=True, exist_ok=True)
+    missing = [j for j in jars if not (out / j.name).is_file()]
+    failed = {}
+    if missing:
+        report = out / "report.json"
+        subprocess.run([java(), "-Xmx4g", "-cp", jar_tools(), "ModNames", "--version", version, "--out", str(out), "--report", str(report)]
+                       + [str(j) for j in missing], check=True, stdout=subprocess.DEVNULL)
+        failed = {m["mod"]: m["error"] for m in json.loads(report.read_text(encoding="utf-8"))["mods"] if "error" in m}
+        stamp.write_text(tools)
+    return [out / j.name for j in jars if (out / j.name).is_file()], failed
 
 
 def jar_port(loader, frm, to, jars, out_dir, report):
@@ -207,36 +260,115 @@ def jar_port(loader, frm, to, jars, out_dir, report):
     route = route_map(frm, to, loader, classes, tools_time)
     out_dir.mkdir(parents=True, exist_ok=True)
     args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
-            "--report", str(report)] + (["--loader", loader] if loader == "neoforge" else [])
+            "--report", str(report), "--loader", loader]
     done = subprocess.run(args + [str(j) for j in jars], stdout=subprocess.DEVNULL)
     if done.returncode:
         raise SystemExit(f"JarPort failed (exit {done.returncode}); its output is above")
     return json.loads(report.read_text(encoding="utf-8"))
 
 
-def jars(loader, frm, to, save):
+def game_says(loader, frm, to, report):
+    """What the game's own code did about each reference JarPort's report ranks (tools/Exposure.java)."""
+    classes, _ = compile_tools()
+    out = report.with_name("game.json")
+    subprocess.run([java(), "-Xmx10g", "-cp", str(classes), "Exposure", "--from", frm, "--to", to, "--report", str(report), "--out", str(out),
+                    "--loader", loader], check=True, stdout=subprocess.DEVNULL)
+    return json.loads(out.read_text(encoding="utf-8"))
+
+
+def jars(loader, frm, to, save=None, out=None, quiet=False):
     """The jar scoreboard: what every top mod's classes and mixins reference, linked against the new release as the JVM and Mixin do."""
-    folder = HOME / "jars" / f"{loader}-{frm}"
-    mods = sorted(folder.glob("*.jar")) if folder.is_dir() else []
-    if not mods:
-        mods = sorted(fetch(loader, frm, 200).glob("*.jar"))
-    out = ROOT / ".runs" / "exposure" / f"jars-{loader}-{frm}-{to}"
-    report = jar_port(loader, frm, to, mods, out / "mods", out / "report.json")
+    mods, unread = mojang_names(loader, frm, fetch(loader, frm))
+    work = ROOT / ".runs" / "exposure" / f"jars-{loader}-{frm}-{to}"
+    report = jar_port(loader, frm, to, mods, work / "mods", work / "report.json") if mods else {"linked": 0, "mods": [], "unlinkedByMods": []}
+    shutil.rmtree(work / "mods", ignore_errors=True)  # only the report is read; load ports the mods it starts itself
+    said = game_says(loader, frm, to, work / "report.json") if report["unlinkedByMods"] else {}
     rows = [m for m in report["mods"] if "error" not in m]
     summary = {
         "loader": loader, "from": frm, "to": to, "modsRead": len(rows), "modsThatLink": report["linked"],
         "silentOnly": sum(1 for m in rows if not m["unlinked"] and m["silent"]),
-        "top": report["unlinkedByMods"][:40],
+        "brokenUses": sum(r["mods"] for r in report["unlinkedByMods"]),  # distinct references, a mod and its nested jars once
+        "unreadable": {**unread, **{m["mod"]: m["error"] for m in report["mods"] if "error" in m}},
+        "top": [{**r, **said.get(r["member"], {})} for r in report["unlinkedByMods"][:40]],
     }
-    print(f"{summary['modsThatLink']}/{summary['modsRead']} mods link against {to} after the port "
-          f"({summary['silentOnly']} of them keep an override the game no longer calls)")
-    for row in summary["top"][:20]:
-        print(f"  {row['mods']:>4} mods  {row['member']}")
-    if save:
-        path = ROOT / "bench" / "exposure" / f"{save}.json"
+    if not quiet:
+        print(f"{summary['modsThatLink']}/{summary['modsRead']} {loader} mods link against {to} after the port "
+              f"({summary['brokenUses']} broken uses; {summary['silentOnly']} keep an override the game no longer calls)")
+        for row in summary["top"][:20]:
+            print(f"  {row['mods']:>4} mods  {row['member']}  (game: {row.get('game', '?')})")
+    for path in [p for p in (out, ROOT / "bench" / "exposure" / f"{save}.json" if save else None) if p]:
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
-        print(f"saved {path}")
+        if not quiet:
+            print(f"saved {path}")
     return summary
+
+
+def every_update(loaders, only, jobs, save):
+    """jars for every update of each loader, side by side; joined into one table."""
+    todo = [(lo, a, b) for lo in loaders for a, b in updates(lo) if not only or f"{lo}:{a}" in only]
+    jar_tools()
+    compile_tools()
+    out = ROOT / ".runs" / "exposure" / "all"
+    out.mkdir(parents=True, exist_ok=True)
+
+    def one(job):
+        lo, a, b = job
+        started = time.monotonic()
+        try:
+            s = jars(lo, a, b, out=out / f"{lo}-{a}-{b}.json", quiet=True)
+            print(f"  {lo} {a} -> {b}: {s['modsThatLink']}/{s['modsRead']} link ({time.monotonic() - started:.0f} s)", flush=True)
+        except (SystemExit, subprocess.CalledProcessError, OSError) as failed:
+            print(f"  {lo} {a} -> {b}: failed: {failed}", flush=True)
+
+    # Two updates next to each other share a release, and their first run downloads its files to the same cache: each
+    # wave holds updates that share none, so no two runs write one file.
+    for loader in loaders:
+        for parity in (0, 1):
+            wave = [t for t in todo if t[0] == loader and updates(loader).index((t[1], t[2])) % 2 == parity]
+            with ThreadPoolExecutor(max(1, jobs)) as pool:
+                list(pool.map(one, wave))
+    return join(out, save)
+
+
+def join(folder, save):
+    """One table from per-update summaries: each update's share of mods that link, the total, and what holds the most back."""
+    rows = []
+    for f in sorted(Path(folder).rglob("*.json")):
+        s = json.loads(f.read_text(encoding="utf-8"))
+        if {"loader", "from", "to", "modsRead"} <= s.keys():
+            rows.append(s)
+    order = {u: i for lo in FIRST for i, u in enumerate(updates(lo))}
+    rows.sort(key=lambda s: (s["loader"], order.get((s["from"], s["to"]), 999)))
+    total = {"mods": sum(s["modsRead"] for s in rows), "link": sum(s["modsThatLink"] for s in rows)}
+    loaders = {}
+    for s in rows:
+        t = loaders.setdefault(s["loader"], {"updates": 0, "mods": 0, "link": 0})
+        t["updates"] += 1
+        t["mods"] += s["modsRead"]
+        t["link"] += s["modsThatLink"]
+    top = sorted(({"loader": s["loader"], "update": f"{s['from']} -> {s['to']}", **r} for s in rows for r in s["top"]),
+                 key=lambda r: -r["mods"])[:60]
+    missing = [f"{lo} {a} -> {b}" for lo in FIRST for a, b in updates(lo) if not any(s["loader"] == lo and s["from"] == a for s in rows)]
+    table = {
+        "date": date.today().isoformat(), "total": total, "loaders": loaders, "missing": missing,
+        "updates": [{k: s[k] for k in ("loader", "from", "to", "modsRead", "modsThatLink", "brokenUses")} for s in rows],
+        "top": top,
+    }
+    share = total["link"] / total["mods"] if total["mods"] else 0
+    print(f"| Loader | Update | Mods that link |\n|---|---|---|")
+    for s in rows:
+        print(f"| {s['loader']} | {s['from']} -> {s['to']} | {s['modsThatLink']}/{s['modsRead']} |")
+    print(f"\n{total['link']} of {total['mods']} mod ports link ({share:.1%}) across {len(rows)} updates"
+          + "".join(f"; {lo} {t['link']}/{t['mods']}" for lo, t in loaders.items()) + (f"; not run: {', '.join(missing)}" if missing else ""))
+    print("\nWhat holds the most mods back, every update:")
+    for r in top[:15]:
+        print(f"  {r['mods']:>4} mods  {r['loader']} {r['update']}  {r['member']}  (game: {r.get('game', '?')})")
+    if save:
+        path = ROOT / "bench" / "exposure" / "all.json"
+        path.write_text(json.dumps(table, indent=1) + "\n", encoding="utf-8")
+        print(f"saved {path}")
+    return table
 
 
 def standalone(jar):
@@ -263,16 +395,18 @@ def standalone(jar):
 
 
 def load(loader, frm, to, save):
-    """The mods the scoreboard clears that need no other mod, ported as jars and started on a real server of the new release.
+    """The mods the jar scoreboard says link that need no other mod, ported as jars and started on a real server of the new release.
 
     One start holds them all; a start that fails drops the jar its log names and starts again, until a start opens a world,
     places every block item and opens it again. Each mod ends loaded, failed (with why) or left out as client-only."""
-    exposure = json.loads((ROOT / ".runs" / "exposure" / f"{loader}-{frm}-{to}.json").read_text(encoding="utf-8"))
+    report = ROOT / ".runs" / "exposure" / f"jars-{loader}-{frm}-{to}" / "report.json"
+    if not report.is_file():
+        jars(loader, frm, to)
+    linked = [m["mod"] for m in json.loads(report.read_text(encoding="utf-8"))["mods"] if "error" not in m and not m["unlinked"]]
     folder = HOME / "jars" / f"{loader}-{frm}"
-    chosen = [folder / m["mod"] for m in exposure["mods"] if not m.get("broken") and m.get("gameUses") and standalone(folder / m["mod"])]
+    chosen = [folder / name for name in linked if standalone(folder / name)]
     pack = ROOT / ".runs" / "exposure" / f"load-{loader}-{frm}-{to}"
     if pack.exists():
-        import shutil
         shutil.rmtree(pack)
     report = jar_port(loader, frm, to, chosen, pack / "mods", pack / "report.json")
     links = {m["mod"]: not m.get("unlinked") and "error" not in m for m in report["mods"]}
@@ -383,21 +517,32 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
     f = sub.add_parser("fetch")
-    f.add_argument("--loader", required=True)
+    f.add_argument("--loader", required=True, choices=sorted(FIRST))
     f.add_argument("--version", required=True)
-    f.add_argument("--count", type=int, default=200)
-    r = sub.add_parser("run")
-    r.add_argument("--loader", required=True)
-    r.add_argument("--from", dest="frm", required=True)
-    r.add_argument("--to", required=True)
-    r.add_argument("--count", type=int, default=0)
-    r.add_argument("--save")
+    f.add_argument("--repin", action="store_true", help="list the most-downloaded mods again instead of the pinned ones")
     for name in ("jars", "load"):
         j = sub.add_parser(name)
-        j.add_argument("--loader", required=True)
+        j.add_argument("--loader", required=True, choices=sorted(FIRST))
         j.add_argument("--from", dest="frm", required=True)
         j.add_argument("--to", required=True)
         j.add_argument("--save")
+        if name == "jars":
+            j.add_argument("--out", type=Path, help="write the summary to this file")
+    ls = sub.add_parser("updates", help="every LOADER:FROM:TO all runs, as JSON (the cloud run's matrix)")
+    ls.add_argument("--loader", choices=sorted(FIRST))
+    ls.add_argument("--only", help="LOADER:FROM,...")
+    pn = sub.add_parser("pin")
+    pn.add_argument("--loader", choices=sorted(FIRST), help="one loader (default both)")
+    pn.add_argument("--version", help="one release (default every one the loader is read for)")
+    pn.add_argument("--repin", action="store_true", help="list again releases already pinned")
+    al = sub.add_parser("all")
+    al.add_argument("--loader", choices=sorted(FIRST), help="one loader (default both)")
+    al.add_argument("--only", help="LOADER:FROM,... the updates to run (default every one)")
+    al.add_argument("--jobs", type=int, default=4, help="updates run side by side (each JarPort takes up to 10 GB)")
+    al.add_argument("--save", action="store_true", help="keep the table in bench/exposure/all.json")
+    jo = sub.add_parser("join")
+    jo.add_argument("folder")
+    jo.add_argument("--save", action="store_true")
     st = sub.add_parser("steps")
     st.add_argument("--from", dest="frm", default="1.14.4")
     st.add_argument("--to", default="26.3")
@@ -405,13 +550,25 @@ def main():
     if a.command == "steps":
         steps(a.frm, a.to)
     elif a.command == "jars":
-        jars(a.loader, a.frm, a.to, a.save)
+        jars(a.loader, a.frm, a.to, a.save, a.out)
+    elif a.command == "updates":
+        only = {x.strip() for x in a.only.split(",")} if a.only else None
+        print(json.dumps([f"{lo}:{x}:{y}" for lo in ([a.loader] if a.loader else sorted(FIRST)) for x, y in updates(lo)
+                          if not only or f"{lo}:{x}" in only]))
     elif a.command == "load":
         load(a.loader, a.frm, a.to, a.save)
-    elif a.command == "fetch":
-        fetch(a.loader, a.version, a.count)
+    elif a.command == "all":
+        only = {x.strip() for x in a.only.split(",")} if a.only else None
+        every_update([a.loader] if a.loader else sorted(FIRST), only, a.jobs, a.save)
+    elif a.command == "pin":
+        for lo in [a.loader] if a.loader else sorted(FIRST):
+            for v in [a.version] if a.version else [frm for frm, _ in updates(lo)]:
+                if a.repin or not (PINS / f"{lo}-{v}.json").is_file():
+                    pin(lo, v)
+    elif a.command == "join":
+        join(a.folder, a.save)
     else:
-        run(a.loader, a.frm, a.to, a.count, a.save)
+        print(f"{len(fetch(a.loader, a.version, a.repin))} {a.loader} mods for {a.version} in {HOME / 'jars' / f'{a.loader}-{a.version}'}")
 
 
 if __name__ == "__main__":
