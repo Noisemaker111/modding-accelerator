@@ -52,6 +52,14 @@ def port_preflight():
     yield java("-cp", str(out), "LegacyMapTest")
 
 
+def console_accessor():
+    out = ROOT / ".runs" / "console-tests"
+    # Console is compiled by the game's own Java 8 JVM, so its source must stay at that level.
+    yield ["javac", "--release", "8", "-encoding", "UTF-8", "-d", str(out), "tools/agent/Console.java",
+           "tools/tests/ConsoleAccessorTest.java"]
+    yield java("-cp", str(out), "ConsoleAccessorTest", ".")
+
+
 def legacy_agent():
     """Windows: the legacy launch agent in JAVA_TOOL_OPTIONS keeps system properties strings, and Gradle still runs."""
     prepared = subprocess.run(java("-jar", JAR, "legacy-agent", "--root", FIXTURE, "--json"), cwd=ROOT,
@@ -70,6 +78,7 @@ CHECKS = {
     "checkout-data": (True, None, checkout_data),
     "fingerprint": (True, None, [[sys.executable, "bench/test_fingerprint.py", JAR]]),
     "port-preflight": (False, None, port_preflight),
+    "console-accessor": (False, None, console_accessor),
     "zip": (True, None, [java("tools/tests/PackageAcceptanceTest.java", ZIP, ZIP + ".sha256", tempfile.gettempdir())]),
     "fast": (True, None, [java("-jar", JAR, "fast", "--root", FIXTURE, "--json")]),
     "hidden-window": (True, None, [java("tools/tests/BackgroundWindowsTest.java", FIXTURE, JAR)]),
