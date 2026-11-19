@@ -3,237 +3,269 @@
  "to": "26.3",
  "updates": 43,
  "gone": 49503,
- "learned": 2789,
+ "learned": 2462,
  "steps": [
   {
    "step": "1.14.4 -> 1.15",
    "gone": 2332,
-   "learned": 151,
+   "learned": 113,
    "rewrites": 66,
    "chains": 2,
-   "classRewrites": 8
+   "classRewrites": 8,
+   "learnerRows": 91
   },
   {
    "step": "1.15 -> 1.15.1",
    "gone": 3,
-   "learned": 2
+   "learned": 1,
+   "learnerRows": 1
   },
   {
    "step": "1.15.1 -> 1.15.2",
    "gone": 58,
    "learned": 9,
-   "rewrites": 6
+   "rewrites": 6,
+   "learnerRows": 8
   },
   {
    "step": "1.15.2 -> 1.16",
    "gone": 3356,
-   "learned": 458,
+   "learned": 220,
    "rewrites": 115,
    "chains": 10,
-   "classRewrites": 19
+   "classRewrites": 19,
+   "learnerRows": 286
   },
   {
    "step": "1.16.1 -> 1.16.2",
    "gone": 1366,
-   "learned": 195,
+   "learned": 84,
    "rewrites": 15,
    "chains": 2,
-   "classRewrites": 22
+   "classRewrites": 22,
+   "learnerRows": 94
   },
   {
    "step": "1.16.3 -> 1.16.4",
    "gone": 7,
-   "learned": 2
+   "learned": 1,
+   "learnerRows": 2
   },
   {
    "step": "1.16.5 -> 1.17",
    "gone": 2271,
-   "learned": 247,
+   "learned": 158,
    "rewrites": 80,
    "chains": 17,
-   "classRewrites": 12
+   "classRewrites": 12,
+   "learnerRows": 105
   },
   {
    "step": "1.17 -> 1.17.1",
    "gone": 59,
    "learned": 6,
    "rewrites": 4,
-   "classRewrites": 1
+   "classRewrites": 1,
+   "learnerRows": 3
   },
   {
    "step": "1.17.1 -> 1.18",
    "gone": 2662,
-   "learned": 83,
+   "learned": 76,
    "rewrites": 25,
    "chains": 3,
-   "classRewrites": 9
+   "classRewrites": 9,
+   "learnerRows": 62
   },
   {
    "step": "1.18 -> 1.18.1",
    "gone": 17,
    "learned": 2,
-   "rewrites": 1
+   "rewrites": 1,
+   "learnerRows": 1
   },
   {
    "step": "1.18.1 -> 1.18.2",
    "gone": 625,
-   "learned": 105,
+   "learned": 33,
    "rewrites": 22,
-   "classRewrites": 3
+   "classRewrites": 3,
+   "learnerRows": 67
   },
   {
    "step": "1.18.2 -> 1.19",
    "gone": 1940,
-   "learned": 353,
+   "learned": 92,
    "rewrites": 38,
    "chains": 5,
-   "classRewrites": 13
+   "classRewrites": 13,
+   "learnerRows": 200
   },
   {
    "step": "1.19 -> 1.19.1",
    "gone": 335,
-   "learned": 19,
-   "rewrites": 1
+   "learned": 9,
+   "rewrites": 1,
+   "learnerRows": 15
   },
   {
    "step": "1.19.1 -> 1.19.2",
    "gone": 10,
-   "learned": 3
+   "learned": 1,
+   "learnerRows": 2
   },
   {
    "step": "1.19.2 -> 1.19.3",
    "gone": 2934,
-   "learned": 197,
+   "learned": 123,
    "rewrites": 39,
    "chains": 1,
-   "classRewrites": 6
+   "classRewrites": 6,
+   "learnerRows": 153
   },
   {
    "step": "1.19.3 -> 1.19.4",
    "gone": 974,
-   "learned": 104,
+   "learned": 101,
    "rewrites": 42,
    "chains": 6,
-   "classRewrites": 4
+   "classRewrites": 4,
+   "learnerRows": 81
   },
   {
    "step": "1.19.4 -> 1.20",
    "gone": 1020,
-   "learned": 53,
+   "learned": 66,
    "rewrites": 44,
-   "classRewrites": 4
+   "classRewrites": 4,
+   "learnerRows": 41
   },
   {
    "step": "1.20.1 -> 1.20.2",
    "gone": 2004,
-   "learned": 117,
+   "learned": 70,
    "rewrites": 30,
    "chains": 7,
-   "classRewrites": 3
+   "classRewrites": 3,
+   "learnerRows": 78
   },
   {
    "step": "1.20.2 -> 1.20.3",
    "gone": 900,
-   "learned": 107,
-   "rewrites": 14,
+   "learned": 38,
+   "rewrites": 15,
    "chains": 5,
-   "classRewrites": 3
+   "classRewrites": 3,
+   "learnerRows": 65
   },
   {
    "step": "1.20.4 -> 1.20.5",
    "gone": 2384,
-   "learned": 368,
+   "learned": 103,
    "rewrites": 48,
    "chains": 3,
-   "classRewrites": 6
+   "classRewrites": 6,
+   "learnerRows": 156
   },
   {
    "step": "1.20.6 -> 1.21",
    "gone": 1119,
-   "learned": 98,
+   "learned": 51,
    "rewrites": 33,
    "chains": 3,
-   "classRewrites": 4
+   "classRewrites": 4,
+   "learnerRows": 47
   },
   {
    "step": "1.21 -> 1.21.1",
    "gone": 1,
-   "learned": 1
+   "learned": 1,
+   "learnerRows": 1
   },
   {
    "step": "1.21.1 -> 1.21.2",
    "gone": 3192,
-   "learned": 363,
+   "learned": 149,
    "rewrites": 65,
-   "chains": 10,
-   "classRewrites": 11
+   "chains": 15,
+   "classRewrites": 11,
+   "learnerRows": 207
   },
   {
    "step": "1.21.3 -> 1.21.4",
    "gone": 881,
-   "learned": 69,
+   "learned": 55,
    "rewrites": 20,
    "chains": 4,
-   "classRewrites": 6
+   "classRewrites": 6,
+   "learnerRows": 56
   },
   {
    "step": "1.21.4 -> 1.21.5",
    "gone": 3236,
-   "learned": 208,
+   "learned": 132,
    "rewrites": 83,
    "chains": 10,
-   "classRewrites": 9
+   "classRewrites": 9,
+   "learnerRows": 113
   },
   {
    "step": "1.21.5 -> 1.21.6",
    "gone": 1139,
-   "learned": 68,
+   "learned": 65,
    "rewrites": 44,
-   "classRewrites": 5
+   "classRewrites": 5,
+   "learnerRows": 39
   },
   {
    "step": "1.21.6 -> 1.21.7",
    "gone": 4,
-   "learned": 1
+   "learned": 0,
+   "learnerRows": 1
   },
   {
    "step": "1.21.8 -> 1.21.9",
    "gone": 2292,
-   "learned": 167,
+   "learned": 80,
    "rewrites": 33,
    "chains": 9,
-   "classRewrites": 3
+   "classRewrites": 3,
+   "learnerRows": 89
   },
   {
    "step": "1.21.10 -> 1.21.11",
    "gone": 1604,
-   "learned": 185,
+   "learned": 93,
    "rewrites": 25,
-   "classRewrites": 7
+   "classRewrites": 7,
+   "learnerRows": 128
   },
   {
    "step": "1.21.11 -> 26.1",
    "gone": 2900,
-   "learned": 233,
+   "learned": 151,
    "rewrites": 64,
    "chains": 10,
-   "classRewrites": 9
+   "classRewrites": 9,
+   "learnerRows": 188
   },
   {
    "step": "26.1.2 -> 26.2",
    "gone": 2910,
-   "learned": 270,
+   "learned": 193,
    "rewrites": 30,
    "chains": 22,
-   "classRewrites": 9
+   "classRewrites": 9,
+   "learnerRows": 204
   },
   {
    "step": "26.2 -> 26.3",
    "gone": 4968,
-   "learned": 322,
+   "learned": 186,
    "rewrites": 90,
    "chains": 2,
-   "classRewrites": 28
+   "classRewrites": 28,
+   "learnerRows": 201
   }
  ]
 }
