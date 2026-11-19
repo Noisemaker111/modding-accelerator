@@ -307,6 +307,19 @@ def load(loader, frm, to, save):
             verdicts[name] = "failed: " + why
             (pack / "mods" / name).rename(pack / "dropped" / name)
             print(f"  {name}: failed")
+    # A failed start can name a bystander along with the mod at fault, so each dropped mod that links gets one more start
+    # with the mods that loaded; it counts as loaded only if that start opens a world too.
+    if result.get("ok"):
+        for name in sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n)):
+            (pack / "dropped" / name).rename(pack / "mods" / name)
+            done = subprocess.run([mmt, "pack-check", "--pack", str(pack), "--minecraft", to, "--loader", loader, "--json"],
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace")
+            text = done.stdout[done.stdout.find("{"):]
+            if text and json.loads(text).get("ok"):
+                verdicts[name] = "loaded"
+                print(f"  {name}: loads with the others on its own start")
+            else:
+                (pack / "mods" / name).rename(pack / "dropped" / name)
     loaded = [n for n, v in verdicts.items() if v == "loaded"]
     summary = {
         "loader": loader, "from": frm, "to": to, "mods": len(chosen), "loaded": len(loaded),

@@ -11,11 +11,10 @@ that part is fixed with it. Read this whole file before the first command: it is
 - A mod comes in as source or as a `.jar`. `mmt port --jar MOD.jar --to 1.21.2` (tools/JarPort.java) moves a compiled
   NeoForge mod with no source and no build, and names every reference that does not link instead of guessing.
 - `python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2` (90 s) ports the 150 most-downloaded
-  NeoForge mods that way: **31 link against 1.21.2**, and it ranks what holds the others back. 87 of the 150 still
-  have six or more broken references, so the count moves in steps once the top entries are done, not per entry. This is the number to
+  NeoForge mods that way: **41 link against 1.21.2**, and it ranks what holds the others back. This is the number to
   move. `exposure.py run` says 58, but it cannot see mixins, field types or access transformers: of the 35 standalone
   mods it cleared, 6 failed on a real server, and the link check had named all 6.
-- `python bench/exposure.py load ...` is the proof: those 35 ported jars start on a real 1.21.2 server, 29 load, and
+- `python bench/exposure.py load ...` is the proof: those 35 ported jars start on a real 1.21.2 server, 30 load, and
   every mod the link check says links loads. A server never runs client code, so a client proof is step 51.
 - 16 of the 126 corpus ports build (`python bench/measures.py table port.corpus-builds`). 23 of the 126 are mods
   whose untouched original does not build on the runner, and 72 cross many updates at once, so this number only
@@ -28,6 +27,7 @@ that part is fixed with it. Read this whole file before the first command: it is
 | A rule for each compiler error of the mod in front of you (Nov 14 to 17, 355 rules) | 10 to 15 ports in a day; a rule freed 0 to 2 ports |
 | Building from the loader's starter project instead of the mod's build script (Nov 18, PR #109, closed) | 16 to 14 ports: it freed none |
 | Choosing work from `exposure.py run` (Nov 18) | 58 cleared; 6 of its 35 standalone mods fail on a real server, on mixins and field types it cannot see |
+| A rule with `inClass` for each top-ranked changed member of 1.21.2 (Nov 18, PR #118, 57 replacements) | 31 to 41 of 150 link. The rest are held back by 1.21.2's rendering and recipe rewrites (render states, toasts, recipe book), which one-member replacements cannot express; fixing every mixin signature change would add about 4 |
 | Choosing work from `mmt port-plan`'s list (Nov 18) | of the 21 ports it said had nothing left, 7 built. It reads NeoForge mods (109 changed game parts a port) but almost nothing in Fabric mods (5 a port) |
 
 What they share: the work was chosen from a list nobody had checked against real builds. **A list may choose the
@@ -43,10 +43,9 @@ safely. If that is not you, say so to Jon and stop; adding text rules instead is
    reads Fabric mods too: they ship in intermediary names, so they are read through the game's own mappings to
    Mojang's names. Done when `run` is gone and the count covers the 150 most-downloaded Fabric mods as well.
 2. **Step 47 (doing): a fix names a game part and is applied in the class.** What the game's own change map knows
-   (calls switched, added arguments, chains, narrower fields) is applied in classes already; rules are not yet. A rule in `knowledge/fixes.json` names the game
-   member it replaces and what replaces it (a call, a chain, a field read through a method); JarPort applies it where a
-   class references that member, and a source port where the compiler resolved it. Its test links `before` against
-   the old release and `after` against the new one. The jar scoreboard's top entries are the order.
+   (calls switched, added arguments, chains, narrower fields) and every rule's `inClass` (a Java expression for the
+   old member, compiled by JarPort against the new release, see `tools/FixExpr.java`) are applied in classes. Still to
+   do: the source port applies the same `inClass` where the compiler resolved the member, instead of a regex.
 
 ## The loop, once steps 44 and 47 are in. One changed game part per turn
 

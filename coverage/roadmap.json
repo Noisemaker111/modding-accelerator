@@ -487,7 +487,7 @@
       "port.jar-links",
       "port.jar-loads"
      ],
-     "result": "So far (2026-11-18): JarPort applies what the game's own code shows, inside the class: a call switched to another (Registry.getHolder -> HolderGetter.get), an added argument filled with the one value the game passes (GuiGraphics.blit gets RenderType::guiTextured, now learned from the new release's own calls), a member read through a chain, a field read that now holds a subtype (InteractionResult.SUCCESS). Each runs on the JVM in jar-port's test. Broken uses across the 150 mods fell from 5,640 to 5,234; mods that link went 30 -> 31, because 87 of the 150 still have six or more broken references. Next: rules in knowledge/fixes.json that name a member get a replacement JarPort applies, then RenderSystem.setShader (43 mods) and GameRenderer's shader getters (31)."
+     "result": "So far (2026-11-18): JarPort applies in the class what the game's own code shows (calls switched, added arguments such as GuiGraphics.blit's RenderType::guiTextured, chains, narrower fields) and every port rule's inClass: a Java expression for the old member, compiled against the new release like javac would, or a dropped class mapped to its replacement. 57 replacements on 33 rules. 41 of 150 link (30 before), broken uses 5,640 -> 4,147; on a real 1.21.2 server 30 of 35 load and all 19 that link load. The rest are held back by 1.21.2's rendering and recipe rewrites (render states, toasts, recipe book), which one-member replacements cannot express: every remaining mixin signature change would add about 4. Next: the source port applies inClass too."
     },
     {
      "id": "51",

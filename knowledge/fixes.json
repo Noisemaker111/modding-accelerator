@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Ordered fix rules for `mmt port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured. `provenance` says where a rule came from: `hand` = written for a fixture port from its compiler errors and the game's own classes; `game-diff` = generated from the game's own jars; `third-party-mods` = learned from other people's mods (the Stonecutter switches, `source: stonecutter`). New rules come from the game and the compiler, never from other mods' code.",
+  "note": "Ordered fix rules for `mmt port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured. `provenance` says where a rule came from: `hand` = written for a fixture port from its compiler errors and the game's own classes; `game-diff` = generated from the game's own jars; `third-party-mods` = learned from other people's mods (the Stonecutter switches, `source: stonecutter`). New rules come from the game and the compiler, never from other mods' code. `inClass` maps a game member the rule replaces (`a.b.Owner.name`, optionally with its argument descriptor, the name may be a regex) to a Java expression in the new release's names ($0 the receiver, $1.. the arguments) that `mmt port --jar` compiles into each class that uses it (tools/FixExpr.java); a dropped class mapped to a class says what its values become.",
   "rules": [
     {
       "id": "neo263-drop-glfw-import",
@@ -8335,15 +8335,17 @@
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": [
         "net.minecraft.Util.backgroundExecutor",
-        "net.minecraft.Util.ioPool"
+        "net.minecraft.Util.ioPool",
+        "net.minecraft.Util.nonCriticalIoPool"
       ],
       "inClass": {
         "net.minecraft.Util.backgroundExecutor()": "net.minecraft.Util.backgroundExecutor().service()",
-        "net.minecraft.Util.ioPool()": "net.minecraft.Util.ioPool().service()"
+        "net.minecraft.Util.ioPool()": "net.minecraft.Util.ioPool().service()",
+        "net.minecraft.Util.nonCriticalIoPool()": "net.minecraft.Util.nonCriticalIoPool().service()"
       },
       "match": "incompatible types: TracingExecutor cannot be converted to ExecutorService",
       "apply": {
-        "find": "\\bUtil\\s*\\.\\s*(backgroundExecutor|ioPool)\\s*\\(\\s*\\)(?!\\s*\\.\\s*service\\s*\\()",
+        "find": "\\bUtil\\s*\\.\\s*(backgroundExecutor|ioPool|nonCriticalIoPool)\\s*\\(\\s*\\)(?!\\s*\\.\\s*service\\s*\\()",
         "replace": "Util.$1().service()"
       },
       "scope": "line",
