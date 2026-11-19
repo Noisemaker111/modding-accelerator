@@ -6,14 +6,14 @@
 
 **The goal:** Nobody should have to think about Minecraft versions or loaders: drop a mod in, as its source folder or as its .jar, from the command line or the desktop app, pick the version and the loader you want, and get it back the same way in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**30 of 56 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**31 of 57 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
 | Goal | Steps done | Now |
 |---|---|---|
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
-| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;18&nbsp;of&nbsp;31 | 🔵 47 · A fix names a game part and is applied in the class<br>⚪ 52 · mmt port --jar ports Fabric mods too<br>⚪ 51 · A ported jar is proven in a game client too |
+| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;19&nbsp;of&nbsp;32 | 🔵 47 · A fix names a game part and is applied in the class<br>⚪ 52 · mmt port --jar ports Fabric mods too<br>⚪ 51 · A ported jar is proven in a game client too |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
 | **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;4&nbsp;of&nbsp;10 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first |
 
@@ -122,7 +122,7 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.
 
 - **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Ported as jars, 57% of the 150 most-downloaded mods of each release link against the next one, over 61 updates of Fabric and NeoForge (43 of 150 for NeoForge 1.21.1 to 1.21.2). 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.
-- **The number that says most:** Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge is **5,258 mods**
+- **The number that says most:** Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge is **5,302 mods**
 - **Also:** Corpus ports that build with no hand edits is **16 updates**, target 60 updates by Dec 22, step 44
 - **Also:** Real mods with a port that works in the game is **8 mods**, target 6 mods by Dec 18, step 12
 
@@ -179,6 +179,7 @@ One command moves a mod's source from any version to any other, forward or back,
 | 47 | A fix names a game part and is applied in the class | 🔵 doing | Nov 24 → Dec 8 |
 | 47b | Ported jars keep mixins, overrides and access transformers working | 🟢 done | Nov 18 |
 | 51 | A ported jar is proven in a game client too | ⚪ next | Nov 24 → Dec 4 |
+| 54 | The porter learns each replacement from how the game ported its own code | 🟢 done | Nov 19 |
 | 45 | Generate the target build from the loader's starter project | ⚫ later | Nov 24 → Dec 8 |
 | 46 | One migration per redesigned game part, ranked by mods freed | ⚫ later | Nov 24 → Dec 22 |
 
@@ -242,13 +243,15 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **51 · A ported jar is proven in a game client too** (next). mmt pack-check proves a ported jar on a real server, and a server never runs client code: 15 of the 28 jars that loaded on 1.21.2 still reference rendering and screen code that does not link there. A client start with the ported jars (the loader's own client install, a world opened and a screen shown, hidden and muted) proves the rest, and makes the load proof cover client-only mods, which a server leaves out.
 
+**54 · The porter learns each replacement from how the game ported its own code** (done). GameDiff knew three shapes of change in the game's own code (a call switched, one added argument with its default, a chain). For every game method that used a changed or removed member and still exists in the next release, both bodies are rebuilt as value trees from their bytecode and lined up through the links; what the new code computes at the use, written over the old member's operands, is the replacement, in the same form as a rule's inClass, so JarPort applies it with no second path. The game's own uses vote, and a constant two operands share is settled across uses. *So far:* 2026-11-19: 1,413 -> 2,462 of 49,503 gone members get a replacement over all 43 updates (port.game-learned). On top of #120, 43 -> 45 of 150 NeoForge 1.21.1 mods link on 1.21.2 (Controlling and TerraBlender), broken references 4,556 -> 4,425. On a real 1.21.2 server 24 of the 26 that link load and 1 is client-only; TerraBlender fails on a biome data file 1.21.2 cannot parse (the same error as before it linked), which no link check sees. Left: redesigns, value-to-value changes an expression cannot say, and data files.
+
 **45 · Generate the target build from the loader's starter project** (later). The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version. *So far:* Tried on 2026-11-18 (PR #109, closed unmerged, branch generated-builds kept). 14 of the 16 building ports still build from a starter project, so it passed its own test, but over the whole corpus it freed none and lost 2: 14 of 125 build (cloud run 44382488417) against 16 of 126. 8 ports use Architectury, which rewrites the mod's code; 13 need a library with no release for the target version. Build scripts are not what holds the corpus back; steps 44 and 47 come first.
 
 **46 · One migration per redesigned game part, ranked by mods freed** (later). With steps 44 and 47 in, porting is one loop: python bench/exposure.py run ranks the changed game parts of an update by how many of the 150 most-downloaded mods use them; the top one gets a rule that names it, written from the game's own two versions; the same command shows the mods it freed. For 1.21.1 to 1.21.2 that is 637 changed parts, 313 of them used by one mod each: handled in the best order, 25 take the count from 58 to about 86 mods and 300 to about 109, so each part has to cost minutes, not a port run. A removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).
 
 </details>
 
-<details><summary>Every number for this goal (21)</summary>
+<details><summary>Every number for this goal (22)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -268,10 +271,11 @@ One command moves a mod's source from any version to any other, forward or back,
 | NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC, cold | — | 92.0 min (Nov 8) | — | Fact |
 | NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
 | Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2 | — | 58 mods (Nov 18) | 100 mods by Dec 22, step 46 | Baseline |
-| Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2 | 32 mods (Nov 18) | 43 mods (Nov 19) | 50 mods by Dec 8, step 47 | 61% of the way |
-| Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge | 5,018 mods (Nov 19) | 5,258 mods (Nov 19) | — | Fact |
-| Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | 28 mods (Nov 18) | 30 mods (Nov 19) | 33 mods by Dec 8, step 47 | 40% of the way |
+| Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2 | 32 mods (Nov 18) | 45 mods (Nov 19) | 50 mods by Dec 8, step 47 | 72% of the way |
+| Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge | 5,018 mods (Nov 19) | 5,302 mods (Nov 19) | — | Fact |
+| Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | 28 mods (Nov 18) | 34 mods (Nov 19) | 33 mods by Dec 8, step 47 | Met |
 | Standalone mods the jar scoreboard says link whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | — | 23 mods (Nov 19) | — | Fact |
+| Game members with no counterpart in the next release that the game's own code gives a replacement, all 43 updates | 1,413 items (Nov 18) | 2,462 items (Nov 19) | 2,462 items by Nov 26, step 54 | Met |
 | Corpus ports that build with no hand edits | 10 updates (Nov 16) | 16 updates (Nov 18) | 60 updates by Dec 22, step 44 | 12% of the way |
 
 </details>
@@ -405,7 +409,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 30 steps (Nov 19) | 56 steps by Mar 26, 2027 | 49% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 31 steps (Nov 19) | 57 steps by Mar 26, 2027 | 50% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
