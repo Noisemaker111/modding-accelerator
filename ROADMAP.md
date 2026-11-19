@@ -259,8 +259,8 @@ One command moves a mod's source from any version to any other, forward or back,
 | NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC, cold | — | 92.0 min (Nov 8) | — | Fact |
 | NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
 | Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2 | — | 58 mods (Nov 18) | 100 mods by Dec 22, step 46 | Baseline |
-| Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2 | — | 32 mods (Nov 18) | 50 mods by Dec 8, step 47 | Baseline |
-| Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | — | 28 mods (Nov 18) | 33 mods by Dec 8, step 47 | Baseline |
+| Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2 | 32 mods (Nov 18) | 30 mods (Nov 18) | 50 mods by Dec 8, step 47 | 0% of the way |
+| Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | 28 mods (Nov 18) | 29 mods (Nov 18) | 33 mods by Dec 8, step 47 | 20% of the way |
 | Corpus ports that build with no hand edits | 10 updates (Nov 16) | 16 updates (Nov 18) | 60 updates by Dec 22, step 44 | 12% of the way |
 
 </details>
