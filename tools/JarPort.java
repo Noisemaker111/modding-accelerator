@@ -279,11 +279,17 @@ public final class JarPort {
         }
     }
 
-    /** Whether a jar's own classes name the game in Fabric's intermediary (net/minecraft/class_N). */
+    /** Whether a jar's classes, or its nested jars', name the game in Fabric's intermediary (net/minecraft/class_N). */
     static boolean intermediary(byte[] jar) throws IOException {
         byte[] mark = "net/minecraft/class_".getBytes(StandardCharsets.ISO_8859_1);
-        for (var e : entries(jar, "", new HashMap<>()).entrySet()) {
+        Map<String, byte[]> entries = entries(jar, "", new HashMap<>());
+        for (var e : entries.entrySet()) {
             if (e.getKey().endsWith(".class") && indexOf(e.getValue(), mark) >= 0) {
+                return true;
+            }
+        }
+        for (String n : nested(entries)) {
+            if (intermediary(entries.get(n))) {
                 return true;
             }
         }
@@ -418,13 +424,28 @@ public final class JarPort {
         return entries;
     }
 
-    /** Jar-in-jar: nested jars are where META-INF/jarjar/metadata.json says ("path", often META-INF/jars/), or in META-INF/jarjar/. */
+    /**
+     * Jar-in-jar: nested jars are where META-INF/jarjar/metadata.json says ("path", often META-INF/jars/), in
+     * META-INF/jarjar/, or where fabric.mod.json lists them ("jars": [{"file": ...}]).
+     */
     static Set<String> nested(Map<String, byte[]> entries) {
         Set<String> nested = new HashSet<>();
         byte[] list = entries.get("META-INF/jarjar/metadata.json");
         if (list != null) {
             for (Object j : Json.array(Json.object(Json.parse(new String(list, StandardCharsets.UTF_8))).getOrDefault("jars", List.of()))) {
                 nested.add(Json.text(Json.object(j), "path", ""));
+            }
+        }
+        byte[] fmj = entries.get("fabric.mod.json");
+        if (fmj != null) {
+            try {
+                for (Object j : Json.object(Json.parse(new String(fmj, StandardCharsets.UTF_8))).get("jars") instanceof List<?> l ? l : List.of()) {
+                    if (j instanceof Map<?, ?> m && m.get("file") instanceof String file) {
+                        nested.add(file);
+                    }
+                }
+            } catch (RuntimeException unreadable) {
+                // the loader rejects it too
             }
         }
         for (String n : entries.keySet()) {

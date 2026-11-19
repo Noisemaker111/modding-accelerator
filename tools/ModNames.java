@@ -105,6 +105,9 @@ public final class ModNames {
             }
         }
         Map<String, Map<String, String>> refmap = refmaps(entries);
+        // Every string a refmap resolves is written into its mixin below, so the refmap is emptied: left as it was, Mixin
+        // would turn a string that equals one of its keys back into an intermediary name of the old release.
+        Set<String> refmapFiles = refmapFiles(entries);
         Set<String> nested = new LinkedHashSet<>();
         for (Object j : meta.get("jars") instanceof List<?> list ? list : List.of()) {
             if (j instanceof Map<?, ?> m && m.get("file") instanceof String file && entries.containsKey(file)) {
@@ -131,6 +134,8 @@ public final class ModNames {
             } else if (nested.contains(name)) {
                 data = jar(data, new Counts());
                 n.nested++;
+            } else if (refmapFiles.contains(name)) {
+                data = EMPTY_REFMAP;
             } else if (name.equals(widener)) {
                 String text = new String(data, StandardCharsets.UTF_8);
                 data = widener(text, n).getBytes(StandardCharsets.UTF_8);
@@ -164,22 +169,8 @@ public final class ModNames {
      * in the default ("mappings") table, which is the one written for intermediary.
      */
     static Map<String, Map<String, String>> refmaps(Map<String, byte[]> entries) {
-        Set<String> files = new LinkedHashSet<>();
-        for (var e : entries.entrySet()) {
-            if (!e.getKey().endsWith(".json") || e.getKey().contains("/")) {
-                continue;
-            }
-            try {
-                Map<String, Object> config = Json.object(Json.parse(new String(e.getValue(), StandardCharsets.UTF_8)));
-                if (config.get("refmap") instanceof String r) {
-                    files.add(r);
-                }
-            } catch (RuntimeException notJson) {
-                // not a mixin config
-            }
-        }
         Map<String, Map<String, String>> out = new HashMap<>();
-        for (String f : files) {
+        for (String f : refmapFiles(entries)) {
             byte[] data = entries.get(f);
             if (data == null) {
                 continue;
@@ -198,6 +189,28 @@ public final class ModNames {
         }
         return out;
     }
+
+    /** The refmaps a jar's mixin configs (top-level .json files with "refmap") name. */
+    static Set<String> refmapFiles(Map<String, byte[]> entries) {
+        Set<String> files = new LinkedHashSet<>();
+        for (var e : entries.entrySet()) {
+            if (!e.getKey().endsWith(".json") || e.getKey().contains("/")) {
+                continue;
+            }
+            try {
+                Map<String, Object> config = Json.object(Json.parse(new String(e.getValue(), StandardCharsets.UTF_8)));
+                if (config.get("refmap") instanceof String r) {
+                    files.add(r);
+                }
+            } catch (RuntimeException notJson) {
+                // not a mixin config
+            }
+        }
+        return files;
+    }
+
+    /** What a refmap becomes once its strings are written into the mixins themselves: nothing left to look up. */
+    static final byte[] EMPTY_REFMAP = "{\n  \"mappings\": {},\n  \"data\": {}\n}\n".getBytes(StandardCharsets.UTF_8);
 
     final Remapper remapper = new Remapper(Opcodes.ASM9) {
         @Override
@@ -628,18 +641,7 @@ public final class ModNames {
                 }
             }
             String widener = meta.get("accessWidener") instanceof String w ? w : null;
-            Set<String> refmaps = new HashSet<>();
-            for (var e : entries.entrySet()) {
-                if (e.getKey().endsWith(".json") && !e.getKey().contains("/")) {
-                    try {
-                        if (Json.object(Json.parse(new String(e.getValue(), StandardCharsets.UTF_8))).get("refmap") instanceof String r) {
-                            refmaps.add(r);
-                        }
-                    } catch (RuntimeException notJson) {
-                        // not a mixin config
-                    }
-                }
-            }
+            Set<String> refmaps = refmapFiles(entries);
             List<byte[]> classFiles = entries.entrySet().stream().filter(e -> e.getKey().endsWith(".class")).map(Map.Entry::getValue).toList();
             Jar jar = new Jar(classFiles);
             Map<String, byte[]> out = new LinkedHashMap<>();
@@ -662,7 +664,7 @@ public final class ModNames {
                 } else if (name.equals(widener)) {
                     data = widener(new String(data, StandardCharsets.UTF_8), jar).getBytes(StandardCharsets.UTF_8);
                 } else if (refmaps.contains(name)) {
-                    data = "{\n  \"mappings\": {},\n  \"data\": {}\n}\n".getBytes(StandardCharsets.UTF_8);
+                    data = EMPTY_REFMAP; // the strings are written out in full; ModNames emptied it already when it read the jar
                 }
                 out.put(name, data);
             }
@@ -701,12 +703,12 @@ public final class ModNames {
 
                 @Override
                 public String mapInvokeDynamicMethodName(String name, String descriptor, Handle bootstrap, Object... arguments) {
-                    // A lambda for a game interface implements that interface's method, named as the game names it.
+                    // A lambda implements its interface's method under the name a call to it uses, through the mod's own
+                    // interfaces too (a mod interface extending a game one).
                     Type made = Type.getReturnType(descriptor);
                     if (bootstrap.getOwner().equals("java/lang/invoke/LambdaMetafactory") && made.getSort() == Type.OBJECT
                         && arguments.length > 0 && arguments[0] instanceof Type sam) {
-                        String hit = game('m', made.getInternalName(), name, sam.getDescriptor());
-                        return hit != null ? hit : name;
+                        return jar.member('m', made.getInternalName(), name, sam.getDescriptor());
                     }
                     return name;
                 }
@@ -878,6 +880,10 @@ public final class ModNames {
             List<String> member(String key, String text) {
                 if (text.contains("*") || text.contains(" ") || text.isEmpty() || key.equals("value") && !text.contains("(") && !text.contains(";")) {
                     return List.of(text);
+                }
+                // @At("NEW") names a class ("a/b/C", "La/b/C;") or a constructor's descriptor ("(I)La/b/C;").
+                if (key.equals("target") && (text.startsWith("(") || text.matches("L[^;()]+;") || text.matches("[\\w$]+(/[\\w$]+)+"))) {
+                    return List.of(text.startsWith("(") || text.startsWith("L") && text.endsWith(";") ? desc(text) : cls(text));
                 }
                 Matcher m = STRING.matcher(text);
                 if (!m.matches()) {

@@ -25,6 +25,7 @@ final class JarPortFabricTest {
             JarPortTest.snap(s, "g5/Level", 0, null);
             GameDiff.Cls entity = JarPortTest.snap(s, "g5/Entity", 0, null, "tick()V", "getLevel()Lg5/Level;");
             entity.fields.put("level", new GameDiff.Fld(entity, "level", "Lg5/Level;", Opcodes.ACC_PRIVATE));
+            JarPortTest.snap(s, "g5/Ticker", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "tick()V");
         }
         statics(a, "g5/Clock", "now()J");
         statics(b, "g5/Clock", "time()J");
@@ -39,7 +40,7 @@ final class JarPortFabricTest {
         Map<String, byte[]> files = new LinkedHashMap<>();
         files.put("fabric.mod.json", """
             {"schemaVersion": 1, "id": "m5", "version": "1", "accessWidener": "m5.accesswidener", "mixins": ["m5.mixins.json"],
-             "depends": {"minecraft": "~1.0", "fabricloader": ">=0.15"}}
+             "depends": {"minecraft": "~1.0", "fabricloader": ">=0.15"}, "jars": [{"file": "META-INF/jars/inner.jar"}]}
             """.getBytes(StandardCharsets.UTF_8));
         files.put("m5.mixins.json", "{\"package\": \"m5\", \"mixins\": [\"EntityMixin\", \"EntityAccessor\"], \"refmap\": \"m5-refmap.json\"}".getBytes(StandardCharsets.UTF_8));
         files.put("m5-refmap.json", "{\"mappings\": {\"m5/EntityMixin\": {\"tick\": \"method_5773()V\"}}}".getBytes(StandardCharsets.UTF_8));
@@ -52,16 +53,23 @@ final class JarPortFabricTest {
         files.put("m5/MyEntity.class", myEntity());
         files.put("m5/EntityMixin.class", entityMixin());
         files.put("m5/EntityAccessor.class", accessor());
+        files.put("m5/Visitor.class", JarPortTest.empty("m5/Visitor", Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "java/lang/Object", "g5/Ticker"));
+        files.put("m5/Lambdas.class", lambdas());
+        // A helper mod nested only through fabric.mod.json's "jars": it is ported too, its metadata included.
+        files.put("META-INF/jars/inner.jar", JarPortTest.jar(Map.of(
+            "fabric.mod.json", "{\"schemaVersion\": 1, \"id\": \"inner\", \"version\": \"1\", \"depends\": {\"minecraft\": \"1.0\"}}".getBytes(StandardCharsets.UTF_8),
+            "m5/Timer.class", timer())));
         List<Map<String, Object>> results = new ArrayList<>();
         JarPort port = new JarPort(a, b, map);
         port.fixes(book);
         port.runtimeNames = true;
         port.out = new ModNames.Back(
-            Map.of("g5/Entity", "net/minecraft/class_1297", "g5/Level", "net/minecraft/class_1937"),
-            Map.of("g5/Entity.tick()V", "method_5773", "g5/Entity.getLevel()Lg5/Level;", "method_37908"),
+            Map.of("g5/Entity", "net/minecraft/class_1297", "g5/Level", "net/minecraft/class_1937", "g5/Ticker", "net/minecraft/class_9999"),
+            Map.of("g5/Entity.tick()V", "method_5773", "g5/Entity.getLevel()Lg5/Level;", "method_37908", "g5/Ticker.tick()V", "method_9999"),
             Map.of("g5/Entity.level", "field_6002"), b);
         Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(files), "m5.jar", results));
-        List<String> unlinked = Json.array(results.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        // A nested jar's result comes before its parent's.
+        List<String> unlinked = results.stream().filter(r -> "m5.jar".equals(r.get("jar"))).flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
 
         JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("g5.Base.<init>")) && !new String(ported.get("m5.accesswidener"), StandardCharsets.UTF_8).contains("<init>"),
             "a constructor the mod's access widener makes extendable (protected) links from its subclass, with no line added: " + unlinked);
@@ -82,6 +90,15 @@ final class JarPortFabricTest {
             "a mixin's target and injection point are written out in intermediary: " + mixin);
         JarPortTest.expect("Lnet/minecraft/class_1297;hashCode()I".equals(mixin.get("onHash(I)I")),
             "a library method named through a game class keeps its name, with the class in intermediary: " + mixin.get("onHash(I)I"));
+        JarPortTest.expect("<init> NEW net/minecraft/class_1297".equals(mixin.get("onNew(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V")),
+            "an @At(\"NEW\") class target is written in intermediary: " + mixin.get("onNew(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V"));
+        Map<String, byte[]> inner = JarPortTest.entries(ported.get("META-INF/jars/inner.jar"));
+        JarPortTest.expect(new String(inner.get("fabric.mod.json"), StandardCharsets.UTF_8).contains("\"minecraft\":\"2.0\"")
+            && calls(inner.get("m5/Timer.class")).stream().anyMatch(c -> c.contains("mmt$fix")) && results.stream().anyMatch(r -> String.valueOf(r.get("jar")).endsWith("inner.jar")),
+            "a mod nested only through fabric.mod.json is ported and reported, its metadata asking for the new release: " + results.stream().map(r -> r.get("jar")).toList());
+        Map<String, byte[]> read = JarPortTest.entries(new ModNames(new Exposure.Intermediary(Map.of(), Map.of())).jar(JarPortTest.jar(files), new ModNames.Counts()));
+        JarPortTest.expect(new String(read.get("m5-refmap.json"), StandardCharsets.UTF_8).contains("\"mappings\": {}"),
+            "reading a jar writes its refmap's strings into the mixins and empties it, so no release's output keeps a stale one");
         JarPortTest.expect(fields(ported.get("m5/EntityMixin.class")).contains("field_6002"), "a mixin's @Shadow field takes its intermediary name");
         Map<String, String> accessor = JarPortFixesTest.strings(ported.get("m5/EntityAccessor.class"));
         JarPortTest.expect("field_6002".equals(accessor.get("getLevel()Lnet/minecraft/class_1937;")),
@@ -102,7 +119,9 @@ final class JarPortFabricTest {
         classes.put("g5/Clock", clock());
         classes.put("net/minecraft/class_1937", JarPortTest.real("net/minecraft/class_1937", "java/lang/Object", 0, new String[0], w -> { }));
         classes.put("net/minecraft/class_1297", runtimeEntity());
-        for (String c : List.of("m5/Sub", "m5/MyShaped", "m5/Timer", "m5/MyEntity")) {
+        classes.put("net/minecraft/class_9999", JarPortTest.real("net/minecraft/class_9999", "java/lang/Object", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, new String[0],
+            w -> w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "method_9999", "()V", null, null).visitEnd()));
+        for (String c : List.of("m5/Sub", "m5/MyShaped", "m5/Timer", "m5/MyEntity", "m5/Visitor", "m5/Lambdas")) {
             classes.put(c, ported.get(c + ".class"));
         }
         ClassLoader loader = new ClassLoader(null) {
@@ -123,13 +142,16 @@ final class JarPortFabricTest {
             Object time = loader.loadClass("m5.Timer").getMethod("run").invoke(null);
             Object e = loader.loadClass("m5.MyEntity").getConstructor().newInstance();
             loader.loadClass("net.minecraft.class_1297").getMethod("run").invoke(e);
-            trace = loader.loadClass("g2.Log").getField("out").get(null) + "matched:" + matched + ";time:" + time;
+            Object visitor = loader.loadClass("m5.Lambdas").getMethod("make").invoke(null);
+            loader.loadClass("net.minecraft.class_9999").getMethod("method_9999").invoke(visitor);
+            trace =loader.loadClass("g2.Log").getField("out").get(null) + "matched:" + matched + ";time:" + time;
         } catch (ReflectiveOperationException | LinkageError failed) {
             trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
         }
-        JarPortTest.expect(trace.equals("base;mod-tick;level;matched:true;time:7"),
+        JarPortTest.expect(trace.equals("base;mod-tick;level;lambda;matched:true;time:7"),
             "on the JVM: the subclass calls the extendable constructor, the game's generic method answers, the Fabric rule's "
-                + "replacement runs, and the game calls the mod's override through its intermediary name: " + trace);
+                + "replacement runs, the game calls the mod's override through its intermediary name, and a lambda for the mod's "
+                + "interface answers the game interface's: " + trace);
     }
 
     static void statics(GameDiff.Snap s, String name, String method) {
@@ -279,6 +301,22 @@ final class JarPortFabricTest {
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();
+        MethodVisitor made = w.visitMethod(Opcodes.ACC_PRIVATE, "onNew", "(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V", null, null);
+        AnnotationVisitor inject = made.visitAnnotation("Lorg/spongepowered/asm/mixin/injection/Inject;", false);
+        AnnotationVisitor ctor = inject.visitArray("method");
+        ctor.visit(null, "<init>");
+        ctor.visitEnd();
+        AnnotationVisitor news = inject.visitArray("at");
+        AnnotationVisitor at = news.visitAnnotation(null, "Lorg/spongepowered/asm/mixin/injection/At;");
+        at.visit("value", "NEW");
+        at.visit("target", "g5/Entity");
+        at.visitEnd();
+        news.visitEnd();
+        inject.visitEnd();
+        made.visitCode();
+        made.visitInsn(Opcodes.RETURN);
+        made.visitMaxs(0, 0);
+        made.visitEnd();
         // A method the game class only inherits from a library (here the JDK): its owner is still the game's class.
         MethodVisitor lib = w.visitMethod(Opcodes.ACC_PRIVATE, "onHash", "(I)I", null, null);
         AnnotationVisitor constant = lib.visitAnnotation("Lorg/spongepowered/asm/mixin/injection/ModifyConstant;", false);
@@ -293,6 +331,28 @@ final class JarPortFabricTest {
         lib.visitEnd();
         w.visitEnd();
         return w.toByteArray();
+    }
+
+    /** m5.Lambdas.make() returns a lambda for the mod's Visitor, which extends the game's Ticker. */
+    static byte[] lambdas() {
+        return JarPortTest.real("m5/Lambdas", "java/lang/Object", 0, new String[0], w -> {
+            Handle factory = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;"
+                    + "Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false);
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "make", "()Lm5/Visitor;", null, null);
+            m.visitCode();
+            m.visitInvokeDynamicInsn("tick", "()Lm5/Visitor;", factory,
+                Type.getType("()V"), new Handle(Opcodes.H_INVOKESTATIC, "m5/Lambdas", "lambda$make$0", "()V", false), Type.getType("()V"));
+            m.visitInsn(Opcodes.ARETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+            MethodVisitor body = w.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, "lambda$make$0", "()V", null, null);
+            body.visitCode();
+            JarPortTest.append(body, "lambda;");
+            body.visitInsn(Opcodes.RETURN);
+            body.visitMaxs(0, 0);
+            body.visitEnd();
+        });
     }
 
     static byte[] accessor() {

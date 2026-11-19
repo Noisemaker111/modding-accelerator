@@ -105,7 +105,7 @@ public final class JarPortTest {
         if (failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port: 57 checks passed");
+        System.out.println("jar-port: 60 checks passed");
     }
 
     /**
