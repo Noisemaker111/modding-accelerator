@@ -266,14 +266,15 @@ def mojang_names(loader, version, jars):
     return [out / j.name for j in jars if (out / j.name).is_file()], failed
 
 
-def jar_port(loader, frm, to, jars, out_dir, report):
-    """Ports jars with tools/JarPort.java into out_dir and returns its report."""
+def jar_port(loader, frm, to, jars, out_dir, report, runtime=False):
+    """Ports jars with tools/JarPort.java into out_dir and returns its report. runtime: in the names the loader runs
+    (a Fabric jar handed back in the target release's intermediary), for a game to start them."""
     classpath = jar_tools()
     classes, tools_time = compile_tools()
     route = route_map(frm, to, loader, classes, tools_time)
     out_dir.mkdir(parents=True, exist_ok=True)
     args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
-            "--report", str(report), "--loader", loader]
+            "--report", str(report), "--loader", loader] + (["--runtime-names"] if runtime else [])
     done = subprocess.run(args + [str(j) for j in jars], stdout=subprocess.DEVNULL)
     if done.returncode:
         raise SystemExit(f"JarPort failed (exit {done.returncode}); its output is above")
@@ -494,10 +495,45 @@ def join(folder, save):
     return table
 
 
+def fabric_meta(jar):
+    """A jar's fabric.mod.json, or None."""
+    import zipfile
+    with zipfile.ZipFile(jar) as z:
+        if "fabric.mod.json" not in z.namelist():
+            return None
+        try:
+            return json.loads(z.read("fabric.mod.json").decode("utf-8", "replace"), strict=False)
+        except ValueError:
+            return None
+
+
+def fabric_api(version):
+    """Fabric API's newest release for a game version, from Modrinth (kept in ~/.mmt/exposure/platform/), or None."""
+    folder = HOME / "platform"
+    have = sorted(folder.glob(f"fabric-api-for-{version}--*.jar"))
+    if have:
+        return have[-1]
+    versions = api("project/fabric-api/version", {"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([version])}) or []
+    files = [f for v in versions for f in v.get("files", []) if f.get("primary")]
+    if not files:
+        return None
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / f"fabric-api-for-{version}--{files[0]['filename']}"
+    with urllib.request.urlopen(urllib.request.Request(files[0]["url"], headers=AGENT), timeout=120) as r:
+        target.write_bytes(r.read())
+    return target
+
+
 def standalone(jar):
-    """A NeoForge or Forge mod whose metadata asks for no other mod and no other language loader."""
+    """A mod whose metadata asks for no other mod and no other language loader (NeoForge, Forge or Fabric)."""
     import tomllib
     import zipfile
+    meta = fabric_meta(jar)
+    if meta is not None:
+        own = {meta.get("id")} | set(meta.get("provides") or [])
+        if any(e.get("adapter", "default") != "default" for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
+            return False
+        return all(d in ("minecraft", "fabricloader", "java") or d in own for d in (meta.get("depends") or {}))
     with zipfile.ZipFile(jar) as z:
         names = [n for n in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml") if n in z.namelist()]
         if not names:
@@ -518,9 +554,12 @@ def standalone(jar):
 
 
 def mod_ids(jar):
-    """The mod ids a NeoForge or Forge jar declares."""
+    """The mod ids a NeoForge, Forge or Fabric jar declares."""
     import tomllib
     import zipfile
+    meta = fabric_meta(jar)
+    if meta is not None:
+        return {meta.get("id")} | set(meta.get("provides") or [])
     with zipfile.ZipFile(jar) as z:
         for name in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml"):
             if name in z.namelist():
@@ -611,9 +650,19 @@ def load(loader, frm, to, save):
     pack = ROOT / ".runs" / "exposure" / f"load-{loader}-{frm}-{to}"
     if pack.exists():
         shutil.rmtree(pack)
-    report = jar_port(loader, frm, to, chosen, pack / "mods", pack / "report.json")
+    # A Fabric jar is ported in Mojang's names (read as jars does) and handed back in the names Fabric runs.
+    read, _ = mojang_names(loader, frm, chosen)
+    report = jar_port(loader, frm, to, read, pack / "mods", pack / "report.json", runtime=loader == "fabric")
     links = {m["mod"]: not m.get("unlinked") and "error" not in m for m in report["mods"]}
     (pack / "dropped").mkdir()
+    platform = []
+    if loader == "fabric":
+        # Fabric API is the platform nearly every Fabric pack has, as NeoForge's own classes are to a NeoForge mod: mods
+        # that call it optionally, or without listing it, start as they would for players. It is not counted.
+        api_jar = fabric_api(to)
+        if api_jar:
+            shutil.copy(api_jar, pack / "mods" / api_jar.name)
+            platform.append(api_jar.name)
     mmt = str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))
     verdicts = {}
     for attempt in range(len(chosen) + 1):
@@ -622,7 +671,7 @@ def load(loader, frm, to, save):
         text = done.stdout[done.stdout.find("{"):]
         result = json.loads(text) if text else {}
         res = result.get("result", {})
-        present = sorted(p.name for p in (pack / "mods").glob("*.jar"))
+        present = sorted(p.name for p in (pack / "mods").glob("*.jar") if p.name not in platform)
         for name, why in (res.get("game", {}).get("leftOut") or {}).items():
             verdicts[name] = "client-only: " + str(why)[:200]
         if result.get("ok"):
@@ -662,7 +711,9 @@ def load(loader, frm, to, save):
                 print(f"  {name}: loads with the others on its own start")
             else:
                 (pack / "mods" / name).rename(pack / "dropped" / name)
-    client = client_starts(loader, to, pack, [n for n, v in verdicts.items() if v == "loaded" or v.startswith("client-only")])
+    # pack-check installs a loader's client from its installer (knowledge/pack-loaders.json "installClient"): NeoForge's so far.
+    client = (client_starts(loader, to, pack, [n for n, v in verdicts.items() if v == "loaded" or v.startswith("client-only")]) if loader == "neoforge"
+              else {"mods": 0, "loaded": 0, "verdicts": {}, "notRun": f"pack-check --side client has no {loader} client installer yet"})
     loaded = [n for n, v in verdicts.items() if v == "loaded"]
     summary = {
         "loader": loader, "from": frm, "to": to, "mods": len(chosen), "loaded": len(loaded),

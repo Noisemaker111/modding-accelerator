@@ -2,6 +2,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import java.util.regex.*;
 import java.util.zip.*;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.ClassRemapper;
@@ -104,6 +105,9 @@ public final class ModNames {
             }
         }
         Map<String, Map<String, String>> refmap = refmaps(entries);
+        // Every string a refmap resolves is written into its mixin below, so the refmap is emptied: left as it was, Mixin
+        // would turn a string that equals one of its keys back into an intermediary name of the old release.
+        Set<String> refmapFiles = refmapFiles(entries);
         Set<String> nested = new LinkedHashSet<>();
         for (Object j : meta.get("jars") instanceof List<?> list ? list : List.of()) {
             if (j instanceof Map<?, ?> m && m.get("file") instanceof String file && entries.containsKey(file)) {
@@ -130,6 +134,8 @@ public final class ModNames {
             } else if (nested.contains(name)) {
                 data = jar(data, new Counts());
                 n.nested++;
+            } else if (refmapFiles.contains(name)) {
+                data = EMPTY_REFMAP;
             } else if (name.equals(widener)) {
                 String text = new String(data, StandardCharsets.UTF_8);
                 data = widener(text, n).getBytes(StandardCharsets.UTF_8);
@@ -163,22 +169,8 @@ public final class ModNames {
      * in the default ("mappings") table, which is the one written for intermediary.
      */
     static Map<String, Map<String, String>> refmaps(Map<String, byte[]> entries) {
-        Set<String> files = new LinkedHashSet<>();
-        for (var e : entries.entrySet()) {
-            if (!e.getKey().endsWith(".json") || e.getKey().contains("/")) {
-                continue;
-            }
-            try {
-                Map<String, Object> config = Json.object(Json.parse(new String(e.getValue(), StandardCharsets.UTF_8)));
-                if (config.get("refmap") instanceof String r) {
-                    files.add(r);
-                }
-            } catch (RuntimeException notJson) {
-                // not a mixin config
-            }
-        }
         Map<String, Map<String, String>> out = new HashMap<>();
-        for (String f : files) {
+        for (String f : refmapFiles(entries)) {
             byte[] data = entries.get(f);
             if (data == null) {
                 continue;
@@ -197,6 +189,28 @@ public final class ModNames {
         }
         return out;
     }
+
+    /** The refmaps a jar's mixin configs (top-level .json files with "refmap") name. */
+    static Set<String> refmapFiles(Map<String, byte[]> entries) {
+        Set<String> files = new LinkedHashSet<>();
+        for (var e : entries.entrySet()) {
+            if (!e.getKey().endsWith(".json") || e.getKey().contains("/")) {
+                continue;
+            }
+            try {
+                Map<String, Object> config = Json.object(Json.parse(new String(e.getValue(), StandardCharsets.UTF_8)));
+                if (config.get("refmap") instanceof String r) {
+                    files.add(r);
+                }
+            } catch (RuntimeException notJson) {
+                // not a mixin config
+            }
+        }
+        return files;
+    }
+
+    /** What a refmap becomes once its strings are written into the mixins themselves: nothing left to look up. */
+    static final byte[] EMPTY_REFMAP = "{\n  \"mappings\": {},\n  \"data\": {}\n}\n".getBytes(StandardCharsets.UTF_8);
 
     final Remapper remapper = new Remapper(Opcodes.ASM9) {
         @Override
@@ -349,6 +363,606 @@ public final class ModNames {
     String rename(String s) {
         return names.rename(s);
     }
+
+    /**
+     * The other way: a jar in Mojang's names handed back in the names Fabric runs before 26.1, one release's intermediary.
+     * A reference names its member through a class (the owner) that may only inherit it, and intermediary names a member
+     * where it is declared, so each one is looked up through the release's hierarchy. A mod's own method that overrides a
+     * game method takes the game method's name, and so does every mod class above it that declares it; a mixin's members
+     * that are its targets' (shadows, overwrites) take theirs. Mixin annotation strings are written out in full in
+     * intermediary, accessors get an explicit target, refmaps are emptied (the strings no longer need them), the access
+     * widener is written for the "intermediary" namespace, the access transformer the port reads is dropped (Fabric never
+     * reads one), and nested jars are handed back the same way.
+     */
+    static final class Back {
+        final Map<String, String> classes = new HashMap<>(); // Mojang -> intermediary
+        final Map<String, String> methods = new HashMap<>(); // Mojang owner.name+desc (declaring class) -> intermediary name
+        final Map<String, String> fields = new HashMap<>(); // Mojang owner.name -> intermediary name
+        final GameDiff.Snap game; // the release in Mojang's names
+
+        Back(String version, GameDiff.Snap game) throws Exception {
+            this.game = game;
+            VersionMap.Table t = VersionMap.Table.load(version, "mojmap");
+            t.classes.forEach((inter, named) -> classes.put(named, inter));
+            for (boolean method : new boolean[] { true, false }) {
+                for (var e : (method ? t.methods : t.fields).entrySet()) {
+                    VersionMap.Member m = e.getValue();
+                    String name = e.getKey().substring(e.getKey().indexOf('.') + 1);
+                    if (!name.startsWith("method_") && !name.startsWith("field_") && name.endsWith(m.interDesc())) {
+                        name = name.substring(0, name.length() - m.interDesc().length());
+                    }
+                    if (method) {
+                        methods.put(m.owner() + "." + m.name() + m.desc(), name);
+                    } else {
+                        fields.put(m.owner() + "." + m.name(), name);
+                    }
+                }
+            }
+        }
+
+        Back(Map<String, String> classes, Map<String, String> methods, Map<String, String> fields, GameDiff.Snap game) {
+            this.classes.putAll(classes);
+            this.methods.putAll(methods);
+            this.fields.putAll(fields);
+            this.game = game;
+        }
+
+        String cls(String mojang) {
+            return classes.getOrDefault(mojang, mojang);
+        }
+
+        String desc(String mojang) {
+            return mojang == null ? null : VersionMap.Tiny.remapDesc(mojang, classes);
+        }
+
+        /** A game member's intermediary name, found where the release declares it (owner or a supertype); null when none. */
+        String game(char kind, String owner, String name, String desc) {
+            Deque<String> queue = new ArrayDeque<>(List.of(owner));
+            Set<String> seen = new HashSet<>();
+            while (!queue.isEmpty()) {
+                String c = queue.poll();
+                if (!seen.add(c)) {
+                    continue;
+                }
+                String hit = kind == 'f' ? fields.get(c + "." + name) : methods.get(c + "." + name + desc);
+                if (hit != null) {
+                    return hit;
+                }
+                GameDiff.Cls k = game.classes.get(c);
+                if (k != null) {
+                    if (k.sup != null) {
+                        queue.add(k.sup);
+                    }
+                    queue.addAll(k.ifaces);
+                }
+            }
+            return null;
+        }
+
+        /** One mod class as the hand-back needs it. */
+        static final class Own {
+            String sup;
+            List<String> ifaces = List.of();
+            final Set<String> methods = new HashSet<>(); // name + desc
+            final Set<String> fields = new HashSet<>();
+            final Set<String> accessors = new HashSet<>(); // @Accessor/@Invoker methods: their own names stay
+            final List<String> targets = new ArrayList<>(); // a mixin's target classes
+        }
+
+        /** A jar's classes and what each mod method or field is renamed to. */
+        final class Jar {
+            final Map<String, Own> own = new HashMap<>();
+            final Map<String, String> renamed = new HashMap<>(); // class.name+desc or class.name -> intermediary
+
+            Jar(Collection<byte[]> classFiles) {
+                for (byte[] bytes : classFiles) {
+                    read(bytes);
+                }
+                // A mixin's members named as its targets' are theirs; a mod method overriding a game method takes its name.
+                for (var e : own.entrySet()) {
+                    Own o = e.getValue();
+                    for (String f : o.fields) {
+                        String hit = o.targets.stream().map(t -> game('f', t, f, null)).filter(Objects::nonNull).findFirst().orElse(null);
+                        if (hit != null) {
+                            renamed.put(e.getKey() + "." + f, hit);
+                        }
+                    }
+                    for (String m : o.methods) {
+                        if (o.accessors.contains(m) || m.startsWith("<")) {
+                            continue;
+                        }
+                        int paren = m.indexOf('(');
+                        String name = m.substring(0, paren), desc = m.substring(paren);
+                        String bare = name.startsWith("shadow$") ? name.substring(7) : name;
+                        String hit = o.targets.stream().map(t -> game('m', t, bare, desc)).filter(Objects::nonNull).findFirst().orElse(null);
+                        if (hit == null) {
+                            hit = inherited(e.getKey(), bare, desc);
+                        }
+                        if (hit != null) {
+                            above(e.getKey(), m, name.substring(0, name.length() - bare.length()) + hit, new HashSet<>());
+                        }
+                    }
+                }
+            }
+
+            void read(byte[] bytes) {
+                ClassReader r = new ClassReader(bytes);
+                Own o = new Own();
+                own.put(r.getClassName(), o);
+                o.sup = r.getSuperName();
+                o.ifaces = List.of(r.getInterfaces());
+                r.accept(new ClassVisitor(Opcodes.ASM9) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                        if (!desc.equals("Lorg/spongepowered/asm/mixin/Mixin;")) {
+                            return null;
+                        }
+                        return new AnnotationVisitor(Opcodes.ASM9) {
+                            @Override
+                            public AnnotationVisitor visitArray(String name) {
+                                return new AnnotationVisitor(Opcodes.ASM9) {
+                                    @Override
+                                    public void visit(String n, Object v) {
+                                        if (v instanceof Type t) {
+                                            o.targets.add(t.getInternalName());
+                                        } else if (v instanceof String s) {
+                                            o.targets.add(s.replace('.', '/'));
+                                        }
+                                    }
+                                };
+                            }
+                        };
+                    }
+
+                    @Override
+                    public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                        o.fields.add(name);
+                        return null;
+                    }
+
+                    @Override
+                    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                        o.methods.add(name + desc);
+                        return new MethodVisitor(Opcodes.ASM9) {
+                            @Override
+                            public AnnotationVisitor visitAnnotation(String d, boolean visible) {
+                                if (d.equals(ACCESSOR) || d.equals(INVOKER)) {
+                                    o.accessors.add(name + desc);
+                                }
+                                return null;
+                            }
+                        };
+                    }
+                }, ClassReader.SKIP_CODE);
+            }
+
+            /** The intermediary name of a game method a mod class inherits through its own supertypes, or null. */
+            String inherited(String cls, String name, String desc) {
+                Deque<String> queue = new ArrayDeque<>();
+                Own o = own.get(cls);
+                if (o.sup != null) {
+                    queue.add(o.sup);
+                }
+                queue.addAll(o.ifaces);
+                Set<String> seen = new HashSet<>();
+                while (!queue.isEmpty()) {
+                    String c = queue.poll();
+                    if (!seen.add(c)) {
+                        continue;
+                    }
+                    Own up = own.get(c);
+                    if (up == null) {
+                        String hit = game('m', c, name, desc);
+                        if (hit != null) {
+                            return hit;
+                        }
+                        continue;
+                    }
+                    if (up.sup != null) {
+                        queue.add(up.sup);
+                    }
+                    queue.addAll(up.ifaces);
+                    queue.addAll(up.targets);
+                }
+                return null;
+            }
+
+            /** Every mod class above cls that declares the method takes the same name, so the override family stays one. */
+            void above(String cls, String method, String to, Set<String> seen) {
+                Own o = own.get(cls);
+                if (o == null || !seen.add(cls)) {
+                    return;
+                }
+                if (o.methods.contains(method)) {
+                    renamed.putIfAbsent(cls + "." + method, to);
+                }
+                if (o.sup != null) {
+                    above(o.sup, method, to, seen);
+                }
+                for (String i : o.ifaces) {
+                    above(i, method, to, seen);
+                }
+            }
+
+            /** A member reached through owner: a mod class's own renaming, or the game's, looked up through the supertypes. */
+            String member(char kind, String owner, String name, String desc) {
+                Deque<String> queue = new ArrayDeque<>(List.of(owner));
+                Set<String> seen = new HashSet<>();
+                while (!queue.isEmpty()) {
+                    String c = queue.poll();
+                    if (!seen.add(c)) {
+                        continue;
+                    }
+                    Own o = own.get(c);
+                    if (o == null) {
+                        String hit = game(kind, c, name, desc);
+                        if (hit != null) {
+                            return hit;
+                        }
+                        continue;
+                    }
+                    String key = c + "." + name + (kind == 'f' ? "" : desc);
+                    if (kind == 'f' ? o.fields.contains(name) : o.methods.contains(name + desc)) {
+                        return renamed.getOrDefault(key, name);
+                    }
+                    if (o.sup != null) {
+                        queue.add(o.sup);
+                    }
+                    queue.addAll(o.ifaces);
+                }
+                return name;
+            }
+        }
+
+        /** One jar, nested jars included, in the names Fabric runs. */
+        byte[] jar(byte[] bytes) throws IOException {
+            Map<String, byte[]> entries = new LinkedHashMap<>();
+            Map<String, Long> times = new HashMap<>();
+            try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(bytes))) {
+                for (ZipEntry e; (e = zip.getNextEntry()) != null; ) {
+                    if (!e.isDirectory()) {
+                        entries.put(e.getName(), zip.readAllBytes());
+                        times.put(e.getName(), e.getTime());
+                    }
+                }
+            }
+            Map<String, Object> meta = Map.of();
+            if (entries.get("fabric.mod.json") != null) {
+                try {
+                    meta = Json.object(Json.parse(new String(entries.get("fabric.mod.json"), StandardCharsets.UTF_8)));
+                } catch (RuntimeException unreadable) {
+                    // the classes are still the mod's
+                }
+            }
+            Set<String> nested = new HashSet<>();
+            for (Object j : meta.get("jars") instanceof List<?> list ? list : List.of()) {
+                if (j instanceof Map<?, ?> m && m.get("file") instanceof String file) {
+                    nested.add(file);
+                }
+            }
+            String widener = meta.get("accessWidener") instanceof String w ? w : null;
+            Set<String> refmaps = refmapFiles(entries);
+            List<byte[]> classFiles = entries.entrySet().stream().filter(e -> e.getKey().endsWith(".class")).map(Map.Entry::getValue).toList();
+            Jar jar = new Jar(classFiles);
+            Map<String, byte[]> out = new LinkedHashMap<>();
+            for (var e : entries.entrySet()) {
+                String name = e.getKey();
+                byte[] data = e.getValue();
+                if (name.equals("META-INF/accesstransformer.cfg") && !meta.isEmpty()) {
+                    continue;
+                }
+                if (name.endsWith(".class")) {
+                    String[] renamed = new String[1];
+                    try {
+                        data = cls(jar, data, renamed);
+                        name = name.replaceFirst("^(META-INF/versions/\\d+/)?.*", "$1") + renamed[0] + ".class";
+                    } catch (RuntimeException unreadable) {
+                        // left as it is
+                    }
+                } else if (nested.contains(name)) {
+                    data = jar(data);
+                } else if (name.equals(widener)) {
+                    data = widener(new String(data, StandardCharsets.UTF_8), jar).getBytes(StandardCharsets.UTF_8);
+                } else if (refmaps.contains(name)) {
+                    data = EMPTY_REFMAP; // the strings are written out in full; ModNames emptied it already when it read the jar
+                }
+                out.put(name, data);
+            }
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            try (ZipOutputStream zip = new ZipOutputStream(buffer)) {
+                for (var e : out.entrySet()) {
+                    ZipEntry entry = new ZipEntry(e.getKey());
+                    entry.setTime(times.getOrDefault(e.getKey(), 0L));
+                    zip.putNextEntry(entry);
+                    zip.write(e.getValue());
+                    zip.closeEntry();
+                }
+            }
+            return buffer.toByteArray();
+        }
+
+        byte[] cls(Jar jar, byte[] bytes, String[] renamed) {
+            ClassReader reader = new ClassReader(bytes);
+            Own self = jar.own.get(reader.getClassName());
+            List<String> targets = self == null ? List.of() : self.targets;
+            Remapper remapper = new Remapper(Opcodes.ASM9) {
+                @Override
+                public String map(String internalName) {
+                    return Back.this.cls(internalName);
+                }
+
+                @Override
+                public String mapMethodName(String owner, String name, String descriptor) {
+                    return owner.startsWith("[") || name.startsWith("<") ? name : jar.member('m', owner, name, descriptor);
+                }
+
+                @Override
+                public String mapFieldName(String owner, String name, String descriptor) {
+                    return jar.member('f', owner, name, descriptor);
+                }
+
+                @Override
+                public String mapInvokeDynamicMethodName(String name, String descriptor, Handle bootstrap, Object... arguments) {
+                    // A lambda implements its interface's method under the name a call to it uses, through the mod's own
+                    // interfaces too (a mod interface extending a game one).
+                    Type made = Type.getReturnType(descriptor);
+                    if (bootstrap.getOwner().equals("java/lang/invoke/LambdaMetafactory") && made.getSort() == Type.OBJECT
+                        && arguments.length > 0 && arguments[0] instanceof Type sam) {
+                        return jar.member('m', made.getInternalName(), name, sam.getDescriptor());
+                    }
+                    return name;
+                }
+            };
+            ClassWriter writer = new ClassWriter(0);
+            ClassVisitor remap = new ClassRemapper(writer, remapper) {
+                @Override
+                public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                    renamed[0] = remapper.map(name);
+                    super.visit(version, access, name, signature, superName, interfaces);
+                }
+            };
+            reader.accept(new Annotations(remap, targets), 0);
+            return writer.toByteArray();
+        }
+
+        /** A mixin's annotation strings, written out in intermediary before the class itself is renamed. */
+        final class Annotations extends ClassVisitor {
+            final List<String> targets;
+
+            Annotations(ClassVisitor next, List<String> targets) {
+                super(Opcodes.ASM9, next);
+                this.targets = targets;
+            }
+
+            @Override
+            public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                AnnotationVisitor av = super.visitAnnotation(desc, visible);
+                if (!desc.equals("Lorg/spongepowered/asm/mixin/Mixin;") || av == null) {
+                    return strings(av);
+                }
+                return new AnnotationVisitor(Opcodes.ASM9, av) {
+                    @Override
+                    public AnnotationVisitor visitArray(String name) {
+                        AnnotationVisitor inner = super.visitArray(name);
+                        return !"targets".equals(name) || inner == null ? inner : new AnnotationVisitor(Opcodes.ASM9, inner) {
+                            @Override
+                            public void visit(String n, Object v) {
+                                super.visit(n, v instanceof String s ? className(s) : v);
+                            }
+                        };
+                    }
+                };
+            }
+
+            @Override
+            public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                FieldVisitor fv = super.visitField(access, name, desc, signature, value);
+                return fv == null ? null : new FieldVisitor(Opcodes.ASM9, fv) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String d, boolean visible) {
+                        return strings(super.visitAnnotation(d, visible));
+                    }
+                };
+            }
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+                return mv == null ? null : new MethodVisitor(Opcodes.ASM9, mv) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String d, boolean visible) {
+                        AnnotationVisitor av = super.visitAnnotation(d, visible);
+                        if (av != null && (d.equals(ACCESSOR) || d.equals(INVOKER))) {
+                            return accessor(av, d.equals(INVOKER), name, desc);
+                        }
+                        return strings(av);
+                    }
+                };
+            }
+
+            String className(String s) {
+                boolean dotted = s.indexOf('/') < 0;
+                String c = cls(s.replace('.', '/'));
+                return dotted ? c.replace('/', '.') : c;
+            }
+
+            /** An @Accessor or @Invoker always names its target in intermediary: Mixin cannot infer it from the method's name. */
+            AnnotationVisitor accessor(AnnotationVisitor av, boolean invoker, String method, String desc) {
+                return new AnnotationVisitor(Opcodes.ASM9, av) {
+                    String value;
+
+                    @Override
+                    public void visit(String n, Object v) {
+                        if ("value".equals(n) && v instanceof String s) {
+                            value = s;
+                            return;
+                        }
+                        super.visit(n, v);
+                    }
+
+                    @Override
+                    public void visitEnd() {
+                        String target = value != null ? value : inferred(invoker ? INVOKER : ACCESSOR, method);
+                        String hit = null;
+                        if (!target.equals("<init>") && !(invoker && value == null && method.matches("^(new|create).*"))) {
+                            for (String t : targets) {
+                                if (!invoker) {
+                                    hit = game('f', t, target, null);
+                                    if (hit == null && value == null) {
+                                        hit = game('f', t, target.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ROOT), null);
+                                    }
+                                } else {
+                                    hit = game('m', t, target, desc);
+                                }
+                                if (hit != null) {
+                                    break;
+                                }
+                            }
+                        }
+                        if (hit != null) {
+                            super.visit("value", hit);
+                        } else if (value != null) {
+                            super.visit("value", value);
+                        }
+                        super.visitEnd();
+                    }
+                };
+            }
+
+            /** Member strings ("method", "target", a desc'd "value") in intermediary; a name for several overloads becomes one string each. */
+            AnnotationVisitor strings(AnnotationVisitor av) {
+                if (av == null || targets.isEmpty()) {
+                    return av;
+                }
+                return new AnnotationVisitor(Opcodes.ASM9, av) {
+                    @Override
+                    public void visit(String name, Object value) {
+                        if (value instanceof String s && name != null && MEMBER_KEYS.contains(name)) {
+                            List<String> out = member(name, s);
+                            super.visit(name, out.get(0));
+                            return;
+                        }
+                        super.visit(name, value);
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitArray(String name) {
+                        AnnotationVisitor inner = super.visitArray(name);
+                        if (inner == null || name == null || !MEMBER_KEYS.contains(name)) {
+                            return strings(inner);
+                        }
+                        return new AnnotationVisitor(Opcodes.ASM9, inner) {
+                            @Override
+                            public void visit(String n, Object value) {
+                                if (value instanceof String s) {
+                                    for (String one : member(name, s)) {
+                                        super.visit(n, one);
+                                    }
+                                    return;
+                                }
+                                super.visit(n, value);
+                            }
+
+                            @Override
+                            public AnnotationVisitor visitAnnotation(String n, String d) {
+                                return strings(super.visitAnnotation(n, d));
+                            }
+                        };
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String name, String desc) {
+                        return strings(super.visitAnnotation(name, desc));
+                    }
+                };
+            }
+
+            List<String> member(String key, String text) {
+                if (text.contains("*") || text.contains(" ") || text.isEmpty() || key.equals("value") && !text.contains("(") && !text.contains(";")) {
+                    return List.of(text);
+                }
+                // @At("NEW") names a class ("a/b/C", "La/b/C;") or a constructor's descriptor ("(I)La/b/C;").
+                if (key.equals("target") && (text.startsWith("(") || text.matches("L[^;()]+;") || text.matches("[\\w$]+(/[\\w$]+)+"))) {
+                    return List.of(text.startsWith("(") || text.startsWith("L") && text.endsWith(";") ? desc(text) : cls(text));
+                }
+                Matcher m = STRING.matcher(text);
+                if (!m.matches()) {
+                    return List.of(text);
+                }
+                String owner = m.group(1), name = m.group(2), mdesc = m.group(3), fdesc = m.group(4);
+                String prefix = owner == null ? "" : "L" + cls(owner) + ";";
+                if (name.equals("<init>") || name.equals("<clinit>")) {
+                    return List.of(prefix + name + (mdesc == null ? "" : desc(mdesc)));
+                }
+                List<String> owners = owner != null ? List.of(owner) : targets;
+                for (String o : owners) {
+                    if (fdesc != null || mdesc == null && owner != null && game('f', o, name, null) != null) {
+                        String hit = game('f', o, name, null);
+                        if (hit != null) {
+                            return List.of(prefix + hit + (fdesc == null ? "" : ":" + desc(fdesc)));
+                        }
+                        continue;
+                    }
+                    if (mdesc != null) {
+                        String hit = game('m', o, name, mdesc);
+                        if (hit != null) {
+                            return List.of(prefix + hit + desc(mdesc));
+                        }
+                        continue;
+                    }
+                    // A bare name: every overload the target declares by that name.
+                    GameDiff.Cls k = game.classes.get(o);
+                    List<String> descs = k == null ? List.of() : k.methods.values().stream().filter(x -> x.name.equals(name)).map(x -> x.desc).toList();
+                    Set<String> names = new LinkedHashSet<>();
+                    for (String d : descs) {
+                        String hit = game('m', o, name, d);
+                        names.add(hit == null ? name : hit);
+                    }
+                    if (names.size() == 1) {
+                        return List.of(prefix + names.iterator().next());
+                    }
+                    if (!names.isEmpty()) {
+                        return descs.stream().map(d -> {
+                            String hit = game('m', o, name, d);
+                            return prefix + (hit == null ? name : hit) + desc(d);
+                        }).toList();
+                    }
+                }
+                // Not the game's member (a library method on a game class, like Netty's initChannel): its owner and types still are.
+                return List.of(prefix + name + (mdesc != null ? desc(mdesc) : fdesc != null ? ":" + desc(fdesc) : ""));
+            }
+        }
+
+        /** The access widener for the "intermediary" namespace. */
+        String widener(String text, Jar jar) {
+            StringBuilder out = new StringBuilder();
+            for (String line : text.split("\r?\n", -1)) {
+                String body = line.replaceAll("#.*", "").trim();
+                String[] p = body.split("\\s+");
+                if (p.length >= 3 && (p[0].equals("accessWidener") || p[0].equals("classTweaker"))) {
+                    out.append(p[0]).append(' ').append(p[1]).append(" intermediary\n");
+                    continue;
+                }
+                if (body.isEmpty() || p.length < 3) {
+                    out.append(line).append('\n');
+                    continue;
+                }
+                String owner = p[2];
+                StringBuilder l = new StringBuilder(p[0]).append(' ').append(p[1]).append(' ').append(cls(owner));
+                if (p[1].equals("method") && p.length >= 5) {
+                    l.append(' ').append(jar.member('m', owner, p[3], p[4])).append(' ').append(desc(p[4]));
+                } else if (p[1].equals("field") && p.length >= 5) {
+                    l.append(' ').append(jar.member('f', owner, p[3], p[4])).append(' ').append(desc(p[4]));
+                }
+                out.append(l).append('\n');
+            }
+            String s = out.toString();
+            return s.endsWith("\n\n") ? s.substring(0, s.length() - 1) : s;
+        }
+    }
+
+    static final Set<String> MEMBER_KEYS = Set.of("method", "target", "value");
+    static final Pattern STRING = Pattern.compile("(?:L([^;]+);)?([\\w$<>]+)(?:(\\(.*)|:(.+))?");
 
     /** An access widener in Mojang names, under the "named" namespace. */
     String widener(String text, Counts n) {

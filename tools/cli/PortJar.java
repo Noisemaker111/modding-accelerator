@@ -24,23 +24,28 @@ final class PortJar {
             throw new IllegalArgumentException("mmt port --jar needs --to VERSION, the Minecraft release to move the mod to.");
         }
         String toml = metadata(jar);
-        if (toml == null) {
+        String fabric = toml == null ? entry(jar, "fabric.mod.json") : null;
+        if (toml == null && fabric == null) {
             throw new IllegalArgumentException(
-                jar.getFileName() + " has no META-INF/neoforge.mods.toml. mmt port --jar moves NeoForge mods from 1.20.5 on " +
-                "(they ship in Mojang's names); for Fabric and older Forge mods, port their source with --root."
+                jar.getFileName() + " has no META-INF/neoforge.mods.toml or fabric.mod.json. mmt port --jar moves NeoForge mods " +
+                "from 1.20.5 on and Fabric mods from 1.14.4 on; for older Forge mods, port their source with --root."
             );
         }
+        String loader = fabric != null ? "fabric" : "neoforge";
         String from = options.get("from", "");
         if (from.isBlank()) {
-            from = builtFor(toml);
+            from = fabric != null ? fabricBuiltFor(fabric) : builtFor(toml);
         }
         if (from == null) {
             throw new IllegalArgumentException(
                 jar.getFileName() + " does not say which one Minecraft release it was built for. Add --from VERSION."
             );
         }
-        if (Versions.compare(from, "1.20.5") < 0 || Versions.compare(to, "1.20.5") < 0) {
-            throw new IllegalArgumentException("mmt port --jar moves NeoForge mods between 1.20.5 and newer releases (Mojang's names at run time).");
+        String first = fabric != null ? "1.14.4" : "1.20.5";
+        if (Versions.compare(from, first) < 0 || Versions.compare(to, first) < 0) {
+            throw new IllegalArgumentException(fabric != null
+                ? "mmt port --jar moves Fabric mods between 1.14.4 and newer releases (Fabric's intermediary names, or Mojang's from 26.1)."
+                : "mmt port --jar moves NeoForge mods between 1.20.5 and newer releases (Mojang's names at run time).");
         }
         var blocked = Route.blocked(home, from, to);
         if (blocked != null) {
@@ -59,13 +64,14 @@ final class PortJar {
         Path cache = Path.of(System.getProperty("user.home"), ".mmt", "jar-port");
         List<String> chain = Route.plan(home, from, to).versions;
         String differ = Fingerprints.files(List.of(home.resolve("tools/GameDiff.java"), home.resolve("tools/VersionMap.java")));
-        Path map = cache.resolve("maps").resolve("neoforge-" + String.join("_", chain) + "-" + differ + ".json");
+        Path map = cache.resolve("maps").resolve(loader + "-" + String.join("_", chain) + "-" + differ + ".json");
         if (!Files.isRegularFile(map)) {
             Files.createDirectories(map.getParent());
-            var diff = Run.command(
-                List.of(jdk.java().toString(), "-Xmx6g", "-cp", cp, "GameDiff", "--chain", String.join(",", chain), "--loader", "neoforge", "--out", map.toString()),
-                report.root, Map.of(), report.log("route-map"), 900
-            );
+            List<String> differCommand = new ArrayList<>(List.of(jdk.java().toString(), "-Xmx6g", "-cp", cp, "GameDiff", "--chain", String.join(",", chain), "--out", map.toString()));
+            if (loader.equals("neoforge")) {
+                differCommand.addAll(List.of("--loader", "neoforge"));
+            }
+            var diff = Run.command(differCommand, report.root, Map.of(), report.log("route-map"), 900);
             report.stage("route-map", diff, Map.of("chain", chain));
             if (diff.exit() != 0) {
                 throw new IOException("The game's change map from " + from + " to " + to + " could not be made. " + Run.tail(diff.log()));
@@ -74,7 +80,7 @@ final class PortJar {
         Path receipt = report.directory.resolve("jar-port.json");
         Files.createDirectories(receipt.getParent());
         var ported = Run.command(
-            List.of(jdk.java().toString(), "-Xmx6g", "-cp", cp, "JarPort", "--from", from, "--to", to, "--loader", "neoforge",
+            List.of(jdk.java().toString(), "-Xmx6g", "-cp", cp, "JarPort", "--from", from, "--to", to, "--loader", loader, "--runtime-names",
                 "--map", map.toString(), "--fixes", home.resolve("knowledge/fixes.json").toString(), "--out", out.toString(), "--report", receipt.toString(), jar.toString()),
             report.root, Map.of(), report.log("jar-port"), 900
         );
@@ -106,7 +112,7 @@ final class PortJar {
         if (!silent.isEmpty()) {
             details.append("\n").append(silent.size()).append(" methods override game methods ").append(to).append(" no longer has; they load and are never called.");
         }
-        details.append("\nCheck it in the game: mmt pack-check --pack FOLDER_WITH_mods --minecraft ").append(to).append(" --loader neoforge");
+        details.append("\nCheck it in the game: mmt pack-check --pack FOLDER_WITH_mods --minecraft ").append(to).append(" --loader ").append(loader);
         return Json.map(
             "ok", unlinked.isEmpty(),
             "jar", jar.toString(),
@@ -121,10 +127,30 @@ final class PortJar {
     }
 
     static String metadata(Path jar) throws IOException {
+        return entry(jar, "META-INF/neoforge.mods.toml");
+    }
+
+    static String entry(Path jar, String name) throws IOException {
         try (ZipFile zip = new ZipFile(jar.toFile())) {
-            ZipEntry e = zip.getEntry("META-INF/neoforge.mods.toml");
+            ZipEntry e = zip.getEntry(name);
             return e == null ? null : new String(zip.getInputStream(e).readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    /** The one release a fabric.mod.json's "minecraft" dependency names ("1.21.1", "~1.21.1", "=1.21.1"), or null when it allows several. */
+    static String fabricBuiltFor(String json) {
+        Object depends;
+        try {
+            depends = Json.object(Json.parse(json)).get("depends");
+        } catch (RuntimeException unreadable) {
+            return null;
+        }
+        Object range = depends instanceof Map<?, ?> m ? m.get("minecraft") : null;
+        if (range instanceof List<?> list && list.size() == 1) {
+            range = list.get(0);
+        }
+        Matcher exact = Pattern.compile("[=~]?\\s*(\\d+\\.\\d+(?:\\.\\d+)?)").matcher(range instanceof String s ? s.trim() : "");
+        return exact.matches() ? exact.group(1) : null;
     }
 
     static final Pattern MINECRAFT = Pattern.compile("(?s)modId\\s*=\\s*\"minecraft\"[^\\[]*?versionRange\\s*=\\s*\"([^\"]*)\"|versionRange\\s*=\\s*\"([^\"]*)\"[^\\[]*?modId\\s*=\\s*\"minecraft\"");
@@ -160,7 +186,7 @@ final class PortJar {
     /** JarPort and what it reads, compiled once per version of their sources. */
     static Path compile(Path home, Runtimes.Jdk jdk, Mmt.Report report) throws Exception {
         List<Path> sources = new ArrayList<>();
-        for (String s : List.of("tools/JarPort.java", "tools/FixExpr.java", "tools/Exposure.java", "tools/GameDiff.java", "tools/VersionMap.java", "tools/cli/Json.java")) {
+        for (String s : List.of("tools/JarPort.java", "tools/ModNames.java", "tools/FixExpr.java", "tools/Exposure.java", "tools/GameDiff.java", "tools/VersionMap.java", "tools/cli/Json.java")) {
             sources.add(home.resolve(s));
         }
         Path classes = Path.of(System.getProperty("user.home"), ".mmt", "jar-port", "classes", Fingerprints.files(sources));
