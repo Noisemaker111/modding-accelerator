@@ -360,7 +360,7 @@ public final class JarPort {
         return out;
     }
 
-    static final Pattern DECLARED_AT = Pattern.compile("\\[\\[accessTransformers\\]\\][^\\[]*?file\\s*=\\s*\"([^\"]+)\"");
+    static final Pattern DECLARED_AT = Pattern.compile("\\[\\[accessTransformers\\]\\][^\\[]*?file\\s*=\\s*(?:\"([^\"]+)\"|'([^']+)')");
 
     /** The access transformers the loader reads from a jar: those its neoforge.mods.toml lists, else the default one. */
     static List<String> atFiles(Map<String, byte[]> entries) {
@@ -369,7 +369,7 @@ public final class JarPort {
         if (toml != null) {
             Matcher m = DECLARED_AT.matcher(new String(toml, StandardCharsets.UTF_8));
             while (m.find()) {
-                out.add(m.group(1).replaceFirst("^/", ""));
+                out.add((m.group(1) != null ? m.group(1) : m.group(2)).replaceFirst("^/", ""));
             }
         }
         if (out.isEmpty()) {
@@ -516,7 +516,7 @@ public final class JarPort {
         "org/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable"
     );
 
-    /** A handler's @Inject: the target method strings, and each @At's {value, target} (in @Slice too). */
+    /** A handler's @Inject: the target method strings, and each @At's {value, target, ordinal} (in @Slice too). */
     record Injector(List<String> methods, List<String[]> ats) {}
 
     /**
@@ -536,6 +536,8 @@ public final class JarPort {
             public void visit(String n, Object v) {
                 if (at != null && v instanceof String s && ("value".equals(n) || "target".equals(n))) {
                     at["value".equals(n) ? 0 : 1] = s;
+                } else if (at != null && "ordinal".equals(n) && v instanceof Integer i && i >= 0) {
+                    at[2] = String.valueOf(i);
                 }
             }
 
@@ -565,7 +567,7 @@ public final class JarPort {
                 if (!d.equals(AT)) {
                     return injection(inj, null);
                 }
-                String[] found = new String[2];
+                String[] found = new String[3];
                 inj.ats().add(found);
                 return injection(inj, found);
             }
@@ -1835,7 +1837,7 @@ public final class JarPort {
                     }
                 }
             }
-            if (!pointsKept(inj, into, ats)) {
+            if (!pointsKept(targets, inj, into, ats)) {
                 return;
             }
             Found f = into.get(0);
@@ -1861,19 +1863,20 @@ public final class JarPort {
             }
         }
         // @At targets that only took other parameters, in methods that are themselves known in the new release.
+        List<GameDiff.Meth[]> methods = enclosing(targets, inj, into);
         for (int i = 0; i < ats.size(); i++) {
             Found at = ats.get(i);
-            if (at != null && at.kind() == 's' && at.desc() != null && enclosing(into).size() == into.size()
-                && enclosing(into).stream().allMatch(m -> calls(m, at))) {
+            int k = i;
+            if (at != null && at.kind() == 's' && at.desc() != null && methods != null && methods.stream().allMatch(m -> pointKept(inj.ats().get(k), at, m))) {
                 mod.retargets.put(key + " " + inj.ats().get(i)[1], at.changed());
             }
         }
     }
 
     /** Whether every @At of an injector still finds its place in the methods it injects into, in the new release. */
-    boolean pointsKept(Injector inj, List<Found> into, List<Found> ats) {
-        List<GameDiff.Meth> methods = enclosing(into);
-        if (methods.size() != into.size()) {
+    boolean pointsKept(List<String> targets, Injector inj, List<Found> into, List<Found> ats) {
+        List<GameDiff.Meth[]> methods = enclosing(targets, inj, into);
+        if (methods == null) {
             return false;
         }
         for (int i = 0; i < ats.size(); i++) {
@@ -1885,36 +1888,179 @@ public final class JarPort {
             if (!Set.of("INVOKE", "INVOKE_ASSIGN", "FIELD").contains(value) || at == null || at.kind() == 0 || at.desc() == null) {
                 return false;
             }
-            if (!methods.stream().allMatch(m -> calls(m, at))) {
+            int k = i;
+            if (!methods.stream().allMatch(m -> pointKept(inj.ats().get(k), at, m))) {
                 return false;
             }
         }
         return true;
     }
 
-    /** The new release's methods an injector's targets name (signature changes followed), when all are known. */
-    List<GameDiff.Meth> enclosing(List<Found> into) {
-        List<GameDiff.Meth> out = new ArrayList<>();
-        for (Found f : into) {
-            GameDiff.Meth m = (f.kind() == 'm' || f.kind() == 's') && f.desc() != null ? b.method(f.owner(), f.name(), f.desc()) : null;
-            if (m != null) {
-                out.add(m);
+    /**
+     * Whether an @At ({value, target, ordinal}; at its target in new names) finds its place in a method injected into
+     * ({new, old}): the new method's own instructions use the member, and as often as the old one's did when the @At picks
+     * one occurrence by its ordinal. A use inside a lambda does not count: Mixin injects into the method's own code.
+     */
+    boolean pointKept(String[] point, Found at, GameDiff.Meth[] method) {
+        char kind = at.kind() == 's' ? 'm' : at.kind();
+        int now = uses(code(b), b, method[0], kind, at.owner(), at.name(), at.desc());
+        if (now < 1) {
+            return false;
+        }
+        if (point[2] == null) {
+            return true;
+        }
+        Matcher m = MEMBER.matcher(point[1]);
+        if (!m.matches()) {
+            return false;
+        }
+        String owner = m.group(1) != null ? m.group(1) : null;
+        int before = uses(code(a), a, method[1], kind, owner, m.group(2), m.group(3) != null ? m.group(3) : m.group(4));
+        return before == now && now > Integer.parseInt(point[2]);
+    }
+
+    /** The methods an injector's targets name, {new release, old release} each, when all are known on both sides. */
+    List<GameDiff.Meth[]> enclosing(List<String> targets, Injector inj, List<Found> into) {
+        List<GameDiff.Meth[]> out = new ArrayList<>();
+        for (int i = 0; i < into.size(); i++) {
+            Found f = into.get(i);
+            GameDiff.Meth now = (f.kind() == 'm' || f.kind() == 's') && f.desc() != null ? b.method(f.owner(), f.name(), f.desc()) : null;
+            GameDiff.Meth before = oldMethod(targets, inj.methods().get(i));
+            if (now == null || before == null) {
+                return null;
             }
+            out.add(new GameDiff.Meth[] { now, before });
         }
         return out;
     }
 
-    /** Whether a method of the new release uses a member an @At names (new names) in its code. */
-    boolean calls(GameDiff.Meth m, Found at) {
-        char kind = at.kind() == 's' ? 'm' : at.kind();
-        GameDiff.Cls decl = at.owner() == null ? null : Exposure.declaring(b, at.owner(), kind, at.name(), kind == 'f' ? null : at.desc());
-        String owner = decl == null ? at.owner() : decl.name;
-        for (GameDiff.Ref r : m.refs) {
-            if (r.kind() == kind && r.name().equals(at.name()) && r.owner().equals(owner) && (at.desc() == null || at.desc().equals(r.desc()))) {
-                return true;
+    /**
+     * How often a method's own instructions (lambdas apart) use a member (owner null: any owner), read from the release's
+     * jar; -1 when they cannot be read.
+     */
+    int uses(GameCode code, GameDiff.Snap s, GameDiff.Meth m, char kind, String owner, String name, String desc) {
+        List<String[]> refs = code == null ? null : code.refs(m.owner.name, m.name, m.desc);
+        if (refs == null) {
+            return -1;
+        }
+        GameDiff.Cls decl = owner == null ? null : Exposure.declaring(s, owner, kind, name, kind == 'f' ? null : desc);
+        int n = 0;
+        for (String[] r : refs) {
+            if (r[0].charAt(0) != kind || !r[2].equals(name) || desc != null && !desc.equals(r[3])) {
+                continue;
+            }
+            GameDiff.Cls at = Exposure.declaring(s, r[1], kind, r[2], kind == 'f' ? null : r[3]);
+            if (owner == null || r[1].equals(owner) || decl != null && at != null && decl.name.equals(at.name)) {
+                n++;
             }
         }
-        return false;
+        return n;
+    }
+
+    GameCode newCode, oldCode; // read when an injection point is first checked; tests set them
+    boolean codeTried;
+
+    GameCode code(GameDiff.Snap s) {
+        if (!codeTried && newCode == null && oldCode == null) {
+            codeTried = true;
+            try {
+                newCode = GameCode.of(b.version);
+                oldCode = GameCode.of(a.version);
+            } catch (Exception unreadable) {
+                newCode = null;
+                oldCode = null;
+            }
+        }
+        return s == b ? newCode : oldCode;
+    }
+
+    /**
+     * One release's own code: a method's instructions in order, in Mojang names, without its lambdas. bytes gives a
+     * class file by its name in the jar; pg maps the jar's names to Mojang's (null when they are Mojang's).
+     */
+    static final class GameCode {
+        final java.util.function.Function<String, byte[]> bytes;
+        final GameDiff.Names names;
+        final Map<String, String> toJar = new HashMap<>();
+        final Map<String, Optional<GameDiff.RawCls>> parsed = new HashMap<>();
+
+        GameCode(java.util.function.Function<String, byte[]> bytes, VersionMap.Proguard pg) {
+            this.bytes = bytes;
+            names = new GameDiff.Names(pg);
+            if (pg != null) {
+                pg.classes.forEach((jar, named) -> toJar.put(named, jar));
+            }
+        }
+
+        static GameCode of(String version) throws Exception {
+            String json = GameDiff.versionJson(version);
+            Path jar = GameDiff.verified(GameDiff.download(json, "client"), "client-" + version + ".jar");
+            String[] mappings = GameDiff.download(json, "client_mappings");
+            VersionMap.Proguard pg = mappings == null ? null
+                : VersionMap.Proguard.parse(Files.readString(GameDiff.verified(mappings, "client-" + version + ".txt"), StandardCharsets.UTF_8));
+            Map<String, byte[]> all = new HashMap<>();
+            for (byte[] c : GameDiff.classes(jar, null)) {
+                all.put(new ClassReader(c).getClassName(), c);
+            }
+            return new GameCode(all::get, pg);
+        }
+
+        GameDiff.RawCls raw(String jarName) {
+            return parsed.computeIfAbsent(jarName, n -> Optional.ofNullable(bytes.apply(n)).map(GameDiff::parse)).orElse(null);
+        }
+
+        /** The class (jar names) that declares a member a reference names, or the owner when none of its classes does. */
+        String declarer(String owner, String name, String desc, boolean field) {
+            Deque<String> queue = new ArrayDeque<>(List.of(owner));
+            Set<String> seen = new HashSet<>();
+            while (!queue.isEmpty()) {
+                String c = queue.poll();
+                GameDiff.RawCls rc = seen.add(c) ? raw(c) : null;
+                if (rc == null) {
+                    continue;
+                }
+                if (field ? rc.fields.containsKey(name) : rc.methods.containsKey(name + desc)) {
+                    return c;
+                }
+                if (rc.sup != null) {
+                    queue.add(rc.sup);
+                }
+                queue.addAll(rc.ifaces);
+            }
+            return owner;
+        }
+
+        /** {kind, owner, name, desc} of each call and field access in a method's own code; null when it is not in the jar. */
+        List<String[]> refs(String owner, String name, String desc) {
+            String jarOwner = toJar.getOrDefault(owner, owner);
+            byte[] file = bytes.apply(jarOwner);
+            if (file == null) {
+                return null;
+            }
+            List<String[]> out = new ArrayList<>();
+            boolean[] found = new boolean[1];
+            new ClassReader(file).accept(new ClassVisitor(Opcodes.ASM9) {
+                @Override
+                public MethodVisitor visitMethod(int access, String n, String d, String signature, String[] exceptions) {
+                    if (found[0] || !names.method(jarOwner, n, d).equals(name) || !names.desc(d).equals(desc)) {
+                        return null;
+                    }
+                    found[0] = true;
+                    return new MethodVisitor(Opcodes.ASM9) {
+                        @Override
+                        public void visitMethodInsn(int opcode, String o, String mn, String md, boolean itf) {
+                            out.add(new String[] { "m", names.cls(o), names.method(declarer(o, mn, md, false), mn, md), names.desc(md) });
+                        }
+
+                        @Override
+                        public void visitFieldInsn(int opcode, String o, String fn, String fd) {
+                            out.add(new String[] { "f", names.cls(o), names.field(declarer(o, fn, fd, true), fn), names.desc(fd) });
+                        }
+                    };
+                }
+            }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            return found[0] ? out : null;
+        }
     }
 
     /** The old release's method a mixin "method" string names in one of the targets, or null. */

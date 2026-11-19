@@ -24,11 +24,8 @@ final class JarPortFixesTest {
             JarPortTest.snap(s, "g3/Light", 0, null);
             JarPortTest.snap(s, "g3/Alloc", 0, null);
         }
-        GameDiff.Cls oldWin = JarPortTest.snap(a, "g3/Win", 0, null, "go(Z)V", "run()V", "tick()V", "gone()V", "paint(Lg3/Light;" + STR + ")V", "shade(Lg3/Light;)V");
-        GameDiff.Cls win = JarPortTest.snap(b, "g3/Win", 0, null, "go(ZI)V", "run()V", "tick()V", "paint(Lg3/Alloc;" + STR + ")V", "shade(Lg3/Alloc;)V");
-        win.methods.get("go(ZI)V").refs = new GameDiff.Ref[] { new GameDiff.Ref('m', "g3/Win", "tick", "()V") };
-        win.methods.get("run()V").refs = new GameDiff.Ref[] { new GameDiff.Ref('m', "g3/Win", "go", "(ZI)V") };
-        oldWin.methods.get("run()V").refs = new GameDiff.Ref[] { new GameDiff.Ref('m', "g3/Win", "go", "(Z)V") };
+        JarPortTest.snap(a, "g3/Win", 0, null, "go(Z)V", "run()V", "tick()V", "draw()V", "gone()V", "paint(Lg3/Light;" + STR + ")V", "shade(Lg3/Light;)V");
+        JarPortTest.snap(b, "g3/Win", 0, null, "go(ZI)V", "run()V", "tick()V", "draw()V", "paint(Lg3/Alloc;" + STR + ")V", "shade(Lg3/Alloc;)V");
         JarPortTest.snap(a, "g3/Hook", Opcodes.ACC_ABSTRACT, null, "handle(" + STR + "I)" + STR, "fire()" + STR);
         GameDiff.Cls hook = JarPortTest.snap(b, "g3/Hook", Opcodes.ACC_ABSTRACT, null, "handle(I" + STR + "Lg3/Alloc;)" + STR, "fire()" + STR);
         hook.methods.get("handle(I" + STR + "Lg3/Alloc;)" + STR).flags |= Opcodes.ACC_ABSTRACT;
@@ -46,13 +43,17 @@ final class JarPortFixesTest {
             """);
 
         Map<String, byte[]> files = new LinkedHashMap<>();
-        files.put("META-INF/neoforge.mods.toml", "modLoader=\"javafml\"\n".getBytes(StandardCharsets.UTF_8));
-        files.put("META-INF/accesstransformer.cfg", "public g3.Gone\npublic g3.Box removed\n".getBytes(StandardCharsets.UTF_8));
+        // A transformer the metadata names with a single-quoted TOML string: the loader reads that file, not the default one.
+        files.put("META-INF/neoforge.mods.toml", "modLoader=\"javafml\"\n[[accessTransformers]]\nfile='META-INF/custom.cfg'\n".getBytes(StandardCharsets.UTF_8));
+        files.put("META-INF/custom.cfg", "public g3.Gone\npublic g3.Box removed\n".getBytes(StandardCharsets.UTF_8));
         files.put("m3/WinMixin.class", winMixin());
         files.put("m3/MyHook.class", myHook());
         files.put("m3/Reader.class", reader());
         List<Map<String, Object>> results = new ArrayList<>();
-        Map<String, byte[]> ported = JarPortTest.entries(new JarPort(a, b, map).port(JarPortTest.jar(files), "fixes.jar", results));
+        JarPort port = new JarPort(a, b, map);
+        port.newCode = new JarPort.GameCode(Map.of("g3/Win", win(false))::get, null);
+        port.oldCode = new JarPort.GameCode(Map.of("g3/Win", win(true))::get, null);
+        Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(files), "fixes.jar", results));
         List<String> unlinked = Json.array(results.get(0).get("unlinked")).stream().map(String::valueOf).toList();
 
         Map<String, String> mixin = strings(ported.get("m3/WinMixin.class"));
@@ -66,6 +67,8 @@ final class JarPortFixesTest {
             && mixin.get("redirect(Lg3/Win;Lg3/Light;" + STR + ")V").startsWith("paint(Lg3/Light;")
             && mixin.get("onShade(Lg3/Light;" + CI + ")V").startsWith("shade(Lg3/Light;)V"),
             "a call the new method no longer makes, captured locals, a @Redirect and a handler reading an argument that is gone stay as written: " + mixin);
+        JarPortTest.expect(mixin.get("onDraw(" + CI + ")V").startsWith("go(Z)V") && mixin.get("onSecondTick(" + CI + ")V").startsWith("go(Z)V"),
+            "so do a call the new method makes only inside a lambda, and an @At ordinal whose occurrence is gone: " + mixin);
         JarPortTest.expect(unlinked.contains("mixin target changed signature: g3.Win.go(Z)V")
             && unlinked.contains("mixin target changed signature: g3.Win.paint(Lg3/Light;Ljava/lang/String;)V"),
             "and are reported: " + unlinked);
@@ -73,7 +76,7 @@ final class JarPortFixesTest {
             && mixin.containsKey("onPaint$mmt(Lg3/Light;" + STR + CI + ")V"),
             "a handler that takes the target's arguments is re-declared with the new ones: " + mixin.keySet());
 
-        String at = new String(ported.get("META-INF/accesstransformer.cfg"), StandardCharsets.UTF_8);
+        String at = new String(ported.get("META-INF/custom.cfg"), StandardCharsets.UTF_8);
         JarPortTest.expect(at.startsWith("# public g3.Gone  # mmt port: gone in 2.0\n# public g3.Box removed  # mmt port: gone in 2.0\n")
             && unlinked.stream().noneMatch(u -> u.startsWith("access transformer")),
             "access transformer lines for a class or member that is gone are commented out, not reported: " + at);
@@ -141,6 +144,8 @@ final class JarPortFixesTest {
         handler(w, INJECT, "onTick", "(" + CI + ")V", "go(Z)V", "INVOKE", "Lg3/Win;tick()V", null);
         handler(w, INJECT, "onRun", "(" + CI + ")V", "run()V", "INVOKE", "Lg3/Win;go(Z)V", null);
         handler(w, INJECT, "onGone", "(" + CI + ")V", "go(Z)V", "INVOKE", "Lg3/Win;gone()V", null);
+        handler(w, INJECT, "onDraw", "(" + CI + ")V", "go(Z)V", "INVOKE", "Lg3/Win;draw()V", null);
+        handler(w, INJECT, "onSecondTick", "(" + CI + ")V", "go(Z)V", "INVOKE", "Lg3/Win;tick()V", null);
         handler(w, INJECT, "onLocals", "(Z" + CI + "I)V", "go(Z)V", "HEAD", null, null);
         handler(w, "Lorg/spongepowered/asm/mixin/injection/Redirect;", "redirect", "(Lg3/Win;Lg3/Light;" + STR + ")V", "paint(Lg3/Light;" + STR + ")V", "HEAD", null, null);
         // Reads the Light the new target no longer passes: nothing can stand in for it.
@@ -173,6 +178,9 @@ final class JarPortFixesTest {
         if (atTarget != null) {
             point.visit("target", atTarget);
         }
+        if (name.equals("onSecondTick")) {
+            point.visit("ordinal", 1);
+        }
         point.visitEnd();
         ats.visitEnd();
         av.visitEnd();
@@ -183,6 +191,64 @@ final class JarPortFixesTest {
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();
+    }
+
+    /**
+     * g3.Win's code in one release. The old go(boolean) calls tick() twice and draw(); the new go(boolean, int) calls
+     * tick() once and draw() only inside a lambda. run() calls go either way.
+     */
+    static byte[] win(boolean old) {
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "g3/Win", null, "java/lang/Object", null);
+        String go = old ? "(Z)V" : "(ZI)V";
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "go", go, null, null);
+        m.visitCode();
+        for (int i = 0; i < (old ? 2 : 1); i++) {
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+            m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g3/Win", "tick", "()V", false);
+        }
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        if (old) {
+            m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g3/Win", "draw", "()V", false);
+        } else {
+            Handle factory = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;"
+                    + "Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false);
+            m.visitInvokeDynamicInsn("run", "(Lg3/Win;)Ljava/lang/Runnable;", factory,
+                Type.getType("()V"), new Handle(Opcodes.H_INVOKESPECIAL, "g3/Win", "lambda$go$0", "()V", false), Type.getType("()V"));
+            m.visitInsn(Opcodes.POP);
+            MethodVisitor lambda = w.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC, "lambda$go$0", "()V", null, null);
+            lambda.visitCode();
+            lambda.visitVarInsn(Opcodes.ALOAD, 0);
+            lambda.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g3/Win", "draw", "()V", false);
+            lambda.visitInsn(Opcodes.RETURN);
+            lambda.visitMaxs(0, 0);
+            lambda.visitEnd();
+        }
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        MethodVisitor run = w.visitMethod(Opcodes.ACC_PUBLIC, "run", "()V", null, null);
+        run.visitCode();
+        run.visitVarInsn(Opcodes.ALOAD, 0);
+        run.visitInsn(Opcodes.ICONST_0);
+        if (!old) {
+            run.visitInsn(Opcodes.ICONST_0);
+        }
+        run.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g3/Win", "go", go, false);
+        run.visitInsn(Opcodes.RETURN);
+        run.visitMaxs(0, 0);
+        run.visitEnd();
+        String light = old ? "Lg3/Light;" : "Lg3/Alloc;";
+        for (var e : Map.of("paint", "(" + light + STR + ")V", "shade", "(" + light + ")V").entrySet()) {
+            MethodVisitor p = w.visitMethod(Opcodes.ACC_PUBLIC, e.getKey(), e.getValue(), null, null);
+            p.visitCode();
+            p.visitInsn(Opcodes.RETURN);
+            p.visitMaxs(0, 0);
+            p.visitEnd();
+        }
+        w.visitEnd();
+        return w.toByteArray();
     }
 
     /** m3.MyHook overrides the old g3.Hook.handle(String, int) with s + i. */
