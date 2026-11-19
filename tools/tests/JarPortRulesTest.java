@@ -149,6 +149,68 @@ final class JarPortRulesTest {
             "the loader's access transformer opens the game as mods see it, and never narrows it");
     }
 
+    /**
+     * An @EventBusSubscriber class that names no bus: newer loaders send each listener to its event's bus, 1.21.2's puts
+     * the class on the game bus and refuses a mod-bus event there. All mod-bus listeners get bus = MOD; a mix is reported.
+     */
+    static void buses(Path scratch) throws Exception {
+        GameDiff.Snap a = new GameDiff.Snap("1.0"), b = new GameDiff.Snap("2.0");
+        for (GameDiff.Snap s : List.of(a, b)) {
+            JarPortTest.snap(s, "net/neoforged/neoforge/registries/RegisterEvent", 0, null).ifaces.add("net/neoforged/fml/event/IModBusEvent");
+            JarPortTest.snap(s, "net/neoforged/neoforge/event/TickEvent", 0, null);
+        }
+        Path map = scratch.resolve("route-buses.json");
+        Files.writeString(map, "{}");
+        Map<String, byte[]> files = new LinkedHashMap<>();
+        files.put("m5/Reg.class", subscriber("m5/Reg", "net/neoforged/neoforge/registries/RegisterEvent"));
+        files.put("m5/Both.class", subscriber("m5/Both", "net/neoforged/neoforge/registries/RegisterEvent", "net/neoforged/neoforge/event/TickEvent"));
+        files.put("m5/Game.class", subscriber("m5/Game", "net/neoforged/neoforge/event/TickEvent"));
+        List<Map<String, Object>> results = new ArrayList<>();
+        Map<String, byte[]> ported = JarPortTest.entries(new JarPort(a, b, map).port(JarPortTest.jar(files), "buses.jar", results));
+        JarPortTest.expect(bus(ported.get("m5/Reg.class")).equals("MOD") && bus(ported.get("m5/Game.class")).isEmpty(),
+            "a subscriber whose listeners are all mod-bus events is put on the mod bus, a game-bus one is left alone: "
+                + bus(ported.get("m5/Reg.class")) + " / " + bus(ported.get("m5/Game.class")));
+        JarPortTest.expect(Json.array(results.get(0).get("unlinked")).equals(List.of("listeners for both event buses in one @EventBusSubscriber class: m5.Both")),
+            "a subscriber with listeners on both buses is reported: " + results.get(0).get("unlinked"));
+    }
+
+    static byte[] subscriber(String name, String... events) {
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, name, null, "java/lang/Object", null);
+        AnnotationVisitor av = w.visitAnnotation("Lnet/neoforged/fml/common/EventBusSubscriber;", true);
+        av.visit("modid", "m5");
+        av.visitEnd();
+        for (int i = 0; i < events.length; i++) {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "on" + i, "(L" + events[i] + ";)V", null, null);
+            m.visitAnnotation("Lnet/neoforged/bus/api/SubscribeEvent;", true).visitEnd();
+            m.visitCode();
+            m.visitInsn(Opcodes.RETURN);
+            m.visitMaxs(0, 1);
+            m.visitEnd();
+        }
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** The bus an @EventBusSubscriber names, or "" for none. */
+    static String bus(byte[] bytes) {
+        String[] found = { "" };
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public AnnotationVisitor visitAnnotation(String d, boolean visible) {
+                return new AnnotationVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitEnum(String n, String desc, String value) {
+                        if (n.equals("bus")) {
+                            found[0] = value;
+                        }
+                    }
+                };
+            }
+        }, ClassReader.SKIP_CODE);
+        return found[0];
+    }
+
     static void statics(GameDiff.Cls c, int access, String... methods) {
         for (String m : methods) {
             int paren = m.indexOf('(');

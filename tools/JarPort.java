@@ -54,6 +54,9 @@ public final class JarPort {
         boolean selfInterface;
         int selfVersion;
         final Map<String, Added> added = new LinkedHashMap<>(); // rule replacement + operands -> method added to self
+        final Map<String, Boolean> subscribers = new HashMap<>(); // @EventBusSubscriber class -> whether it names its bus
+        final Map<String, List<String>> listeners = new HashMap<>(); // class -> event types of its @SubscribeEvent methods (old names)
+        final Set<String> toModBus = new HashSet<>(); // subscriber classes whose annotation gets bus = MOD
 
         void change(String kind) {
             changed.merge(kind, 1, Integer::sum);
@@ -237,6 +240,7 @@ public final class JarPort {
             }
         }
         plan(mod);
+        buses(mod);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(buffer)) {
             for (var e : entries.entrySet()) {
@@ -343,6 +347,17 @@ public final class JarPort {
         new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
             public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                if (desc.equals(SUBSCRIBER)) {
+                    mod.subscribers.put(rc.name, false);
+                    return new AnnotationVisitor(Opcodes.ASM9) {
+                        @Override
+                        public void visitEnum(String name, String d, String value) {
+                            if ("bus".equals(name)) {
+                                mod.subscribers.put(rc.name, true);
+                            }
+                        }
+                    };
+                }
                 if (!desc.equals("Lorg/spongepowered/asm/mixin/Mixin;")) {
                     return null;
                 }
@@ -377,6 +392,10 @@ public final class JarPort {
                 return new MethodVisitor(Opcodes.ASM9) {
                     @Override
                     public AnnotationVisitor visitAnnotation(String annotation, boolean visible) {
+                        Type[] params = Type.getArgumentTypes(desc);
+                        if (annotation.equals("Lnet/neoforged/bus/api/SubscribeEvent;") && params.length == 1 && params[0].getSort() == Type.OBJECT) {
+                            mod.listeners.computeIfAbsent(rc.name, k -> new ArrayList<>()).add(params[0].getInternalName());
+                        }
                         String kind = ACCESSORS.get(annotation);
                         if (kind == null) {
                             return null;
@@ -395,6 +414,34 @@ public final class JarPort {
                 };
             }
         }, ClassReader.SKIP_CODE);
+    }
+
+    static final String SUBSCRIBER = "Lnet/neoforged/fml/common/EventBusSubscriber;";
+
+    /**
+     * Newer loaders send each listener of an @EventBusSubscriber class that names no bus to the bus its event belongs to;
+     * older ones (1.21.2's NeoForge, FML 4.0.29) put the whole class on the game bus, and refuse a mod-bus event there.
+     * A class whose listeners are all mod-bus events gets bus = MOD written, which every loader honours; one with both
+     * kinds cannot be split by its annotation and is reported.
+     */
+    void buses(Mod mod) {
+        for (var e : mod.subscribers.entrySet()) {
+            List<String> events = mod.listeners.getOrDefault(e.getKey(), List.of());
+            long onMod = events.stream().filter(t -> modBus(mod, cls(t))).count();
+            if (e.getValue() || onMod == 0) {
+                continue;
+            }
+            if (onMod == events.size()) {
+                mod.toModBus.add(e.getKey());
+            } else {
+                mod.unlinked.add("listeners for both event buses in one @EventBusSubscriber class: " + Exposure.dotted(e.getKey()));
+            }
+        }
+    }
+
+    /** Whether an event (new names) is dispatched on a mod's own bus: the loader's lifecycle events and every IModBusEvent. */
+    boolean modBus(Mod mod, String event) {
+        return event.startsWith("net/neoforged/fml/event/") || isA(mod, event, "net/neoforged/fml/event/IModBusEvent");
     }
 
     // ---- Linking: where the old release declares a member, and whether the new one has it as the JVM sees it.
@@ -1023,6 +1070,16 @@ public final class JarPort {
             @Override
             public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
                 AnnotationVisitor av = super.visitAnnotation(desc, visible);
+                if (desc.equals(SUBSCRIBER) && av != null && mod.toModBus.contains(self[0])) {
+                    mod.change("event subscriber put on the mod bus");
+                    return new AnnotationVisitor(Opcodes.ASM9, av) {
+                        @Override
+                        public void visitEnd() {
+                            super.visitEnum("bus", "Lnet/neoforged/fml/common/EventBusSubscriber$Bus;", "MOD");
+                            super.visitEnd();
+                        }
+                    };
+                }
                 if (!desc.equals("Lorg/spongepowered/asm/mixin/Mixin;") || av == null) {
                     return av;
                 }

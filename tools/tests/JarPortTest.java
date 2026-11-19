@@ -96,10 +96,11 @@ public final class JarPortTest {
         expect(use.contains("call g/Vault.secret()V"), "with the access its parent's access transformer gives the game: " + use);
         runs(scratch);
         JarPortRulesTest.check(scratch);
+        JarPortRulesTest.buses(scratch);
         if (failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port: 30 checks passed");
+        System.out.println("jar-port: 32 checks passed");
     }
 
     /**
