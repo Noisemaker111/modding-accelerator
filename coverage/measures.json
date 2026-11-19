@@ -1406,6 +1406,20 @@
    "history": []
   },
   {
+   "id": "port.game-learned",
+   "area": "port",
+   "name": "Game members with no counterpart in the next release that the game's own code gives a replacement, all 43 updates",
+   "unit": "items",
+   "better": "higher",
+   "of": 49503,
+   "explain": "python bench/exposure.py steps links every release from 1.14.4 to 26.3 to the next from the game's own bytecode and counts the classes, methods and fields with no counterpart (49,503), and how many of them the porter has a replacement for, read from how the game ported its own uses of them: a call switched, a chain, a class replaced, or any expression the game's new code computes from the old operands (GameDiff's Learner). Each member counts once. About four minutes; no mods.",
+   "points": [
+    {"date": "2026-11-18", "value": 1413, "n": 49503, "note": "call rewrites, chains and class replacements only", "source": "python bench/exposure.py steps (bench/exposure/steps.json)"},
+    {"date": "2026-11-18", "value": 2789, "n": 49503, "note": "the learner: what the game's new code computes in place of the member, written over its operands and applied like a rule's inClass", "source": "python bench/exposure.py steps (bench/exposure/steps.json), PR #121"}
+   ],
+   "target": {"value": 2789, "by": "2026-11-26", "step": "52"}
+  },
+  {
    "id": "port.corpus-builds",
    "area": "port",
    "name": "Corpus ports that build with no hand edits",

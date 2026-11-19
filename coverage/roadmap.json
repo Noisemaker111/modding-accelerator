@@ -545,6 +545,23 @@
      "wrongIf": "a mod that loads on the server and links fails in the client"
     },
     {
+     "id": "52",
+     "title": "The porter learns each replacement from how the game ported its own code",
+     "part": "Port by changed game part",
+     "status": "done",
+     "text": "GameDiff knew three shapes of change in the game's own code (a call switched, one added argument with its default, a chain). For every game method that used a changed or removed member and still exists in the next release, both bodies are rebuilt as value trees from their bytecode and lined up through the links; what the new code computes at the use, written over the old member's operands, is the replacement, in the same form as a rule's inClass, so JarPort applies it with no second path. The game's own uses vote, and a constant two operands share is settled across uses.",
+     "start": "2026-11-18",
+     "target": "2026-11-26",
+     "done": "2026-11-19",
+     "finish": "port.game-learned up from 1,413 over all 43 updates, port.jar-links up from 41, and every linked standalone mod loads on a real 1.21.2 server",
+     "wrongIf": "a mod that links only because of a learned replacement fails on the server",
+     "measures": [
+      "port.game-learned",
+      "port.jar-links"
+     ],
+     "result": "2026-11-19: 1,413 -> 2,789 of 49,503 gone members get a replacement over all 43 updates (port.game-learned). 41 -> 42 of 150 NeoForge 1.21.1 mods link on 1.21.2, broken uses 5,191 -> 4,997; on a real 1.21.2 server 34 of 40 load and all 23 that link load, Controlling (newly linking) among them. Left: redesigns, mixins, overrides and value-to-value changes an expression cannot say."
+    },
+    {
      "id": "45",
      "title": "Generate the target build from the loader's starter project",
      "part": "Port by changed game part",
