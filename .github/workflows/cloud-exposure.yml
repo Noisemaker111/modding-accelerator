@@ -6,8 +6,6 @@ name: Cloud jar scoreboard
 # No caches: a job downloads about 1 GB (the game twice, its loader, 150 mods) in under a minute.
 run-name: "Cloud jar scoreboard: ${{ inputs.only || 'every update' }} ${{ inputs.request }}"
 on:
-  push:
-    branches: [claude/jar-scoreboard-all-versions]  # first run only: dispatch needs the file on main; removed before merge
   workflow_dispatch:
     inputs:
       only:

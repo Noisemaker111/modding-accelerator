@@ -183,11 +183,11 @@
    "title": "Port a mod to any Minecraft version",
    "intro": "One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.",
    "headline": [
-    "port.real-mods-clear",
+    "port.jar-links.every-update",
     "port.corpus-builds",
     "port.mods-working"
    ],
-   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. For one big update (1.21.1 to 1.21.2), 58 of the 150 most-downloaded NeoForge mods use nothing the porter cannot carry over. 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.",
+   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Ported as jars, 57% of the 150 most-downloaded mods of each release link against the next one, over 61 updates of Fabric and NeoForge (43 of 150 for NeoForge 1.21.1 to 1.21.2). 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.",
    "try": [
     {
      "say": "move to another Minecraft version; every edit can be undone",
@@ -464,14 +464,41 @@
     },
     {
      "id": "44",
-     "title": "One porting worklist, read from jars, for every loader",
+     "title": "One porting scoreboard, read from jars, for every update and loader",
      "part": "Port by changed game part",
-     "status": "next",
+     "status": "done",
      "text": "python bench/exposure.py jars links what each of the 150 most-downloaded mods references (classes, mixins, access transformers) against the target release, as the JVM and Mixin will, and ranks what does not link by the mods it holds back. It replaces exposure.py run as the list that chooses porting work: run cleared 58 NeoForge mods and the link check 32, and every mod that failed on a real server was one run cleared and the link check did not. Fabric jars ship in intermediary names, so the link check reads them through the game's own mappings to Mojang's names, and the source porter's worklist (port-plan) is read the same way.",
      "start": "2026-11-19",
+     "finish": "the all-updates, both-loaders table is in coverage/measures.json (port.jar-links.every-update), exposure.py run is gone, and NeoForge 1.21.1 -> 1.21.2 counts what the one-update scoreboard counts (41 before #120, 43 after)",
+     "wrongIf": "a mod python bench/exposure.py load starts fails on the server although the link check says it links",
+     "done": "2026-11-19",
+     "result": "python bench/exposure.py all, or tools/cloud-run exposure in about 8 minutes, ports the 150 most-downloaded mods of each release (pinned in bench/exposure/mods/) to the next and links them, for 43 Fabric updates from 1.14.4 and 18 NeoForge updates from 1.20.5: 5,258 of 9,149 mod ports link (57.5%), 5,018 before #120. NeoForge 1.21.1 -> 1.21.2 counts 41 on the code before #120 and 43 after, as the one-update scoreboard did; Fabric 40. Fabric jars are read in Mojang's names through intermediary (tools/ModNames.java), with Fabric API's transitive access applied to the game; ported to their own release, 124 of 150 Fabric 1.21.1 mods link against 100 of 150 NeoForge ones, so the reading adds no misses of its own. On a real 1.21.2 server 23 of the 25 standalone NeoForge mods that link load; one is client-only and one, with no code, fails on its data. Each reference on the list says what the game's own code did about it. exposure.py run is retired. Not read yet: NeoForge 1.20.2 to 1.20.5 (step 53).",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links",
+      "port.jar-loads.linked"
+     ]
+    },
+    {
+     "id": "52",
+     "title": "mmt port --jar ports Fabric mods too",
+     "part": "Port by changed game part",
+     "status": "next",
+     "text": "The scoreboard reads Fabric jars in Mojang's names (step 44); the port must hand them back in the names Fabric runs: intermediary of the target release before 26.1, Mojang's from 26.1, with refmaps and access wideners written for it. Then exposure.py load starts ported Fabric mods on a real Fabric server, as it does for NeoForge.",
+     "start": "2026-11-19",
      "target": "2026-11-26",
-     "finish": "exposure.py run is gone and port.real-mods-clear is counted by the link check, for NeoForge and for the 150 most-downloaded Fabric mods of 1.21.1",
-     "wrongIf": "a mod python bench/exposure.py load starts fails on the server although the link check says it links"
+     "finish": "exposure.py load --loader fabric --from 1.21.1 --to 1.21.2 starts the standalone Fabric mods that link on a real 1.21.2 Fabric server and every one that links loads",
+     "wrongIf": "a Fabric mod that links fails to load for a name the reading got wrong"
+    },
+    {
+     "id": "53",
+     "title": "Read NeoForge 1.20.2 to 1.20.4 mods",
+     "part": "Port by changed game part",
+     "status": "later",
+     "text": "NeoForge mods before 1.20.5 name game members by SRG ids (m_N_, f_N_). Read them in Mojang's names through NeoForge's own NeoForm mappings, as Fabric's are read through intermediary, so the scoreboard covers NeoForge's first three updates too.",
+     "start": "2026-11-26",
+     "target": "2026-12-03",
+     "finish": "port.jar-links.every-update counts 21 NeoForge updates"
     },
     {
      "id": "47",
