@@ -18,10 +18,12 @@ public final class PackServerTests extends PackCheckFixtures {
             serverMods(harness, scratch);
             loaders(harness, scratch);
             fingerprintVerdict(scratch);
+            clientLaunch(scratch);
             System.out.println(
                 count +
                 " pack server checks passed: which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones, a --focus set)," +
-                " a library jar's bundled mods, four loader adapters, --fingerprint's verdict (a failed recording fails; a reload change is a note)"
+                " a library jar's bundled mods, four loader adapters, --fingerprint's verdict (a failed recording fails; a reload change is a note)," +
+                " the client launch built from a loader's version file over the game's (one version of a library, this system's rules)"
             );
         } finally {
             System.setProperty("user.home", home);
@@ -29,6 +31,54 @@ public final class PackServerTests extends PackCheckFixtures {
                 for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ the client launch
+    /**
+     * pack-check --side client builds the launch from the loader's version file over the game's, as a launcher does: a
+     * library both list is on the class path once, in the loader's version (two ASM builds stop NeoForge's start), a library
+     * or argument for another system or a launcher feature is left out, values are filled, and the loader's main class runs.
+     */
+    static void clientLaunch(Path scratch) throws Exception {
+        Path install = scratch.resolve("client-install"), instance = scratch.resolve("client-instance");
+        String other = PackClient.OS.equals("windows") ? "osx" : "windows";
+        Json.save(install.resolve("versions/1.21.2/1.21.2.json"), Json.map(
+            "id", "1.21.2", "mainClass", "net.minecraft.client.main.Main",
+            "assetIndex", Json.map("id", "18"),
+            "libraries", List.of(
+                library("org.ow2.asm:asm:9.3", null),
+                library("org.lwjgl:lwjgl:3.3.3", null),
+                library("org.lwjgl:lwjgl:3.3.3:natives-" + other, List.of(Json.map("action", "allow", "os", Json.map("name", other)))),
+                library("org.lwjgl:lwjgl:3.3.3:natives-" + PackClient.OS, List.of(Json.map("action", "allow", "os", Json.map("name", PackClient.OS))))
+            ),
+            "arguments", Json.map(
+                "jvm", List.of(Json.map("rules", List.of(Json.map("action", "allow", "os", Json.map("name", other))), "value", "-XstartOnFirstThread"),
+                    "-Djava.library.path=${natives_directory}", "-cp", "${classpath}"),
+                "game", List.of("--gameDir", "${game_directory}", "--assetIndex", "${assets_index_name}",
+                    Json.map("rules", List.of(Json.map("action", "allow", "features", Json.map("is_demo_user", true))), "value", "--demo"))
+            )
+        ));
+        Json.save(install.resolve("versions/loader-1/loader-1.json"), Json.map(
+            "id", "loader-1", "inheritsFrom", "1.21.2", "mainClass", "loader.Boot",
+            "libraries", List.of(library("org.ow2.asm:asm:9.7", null)),
+            "arguments", Json.map("jvm", List.of("-DlibraryDirectory=${library_directory}"), "game", List.of("--launchTarget", "client"))
+        ));
+        List<String> command = PackClient.command(install, "1.21.2", Path.of("java"), instance, List.of("-Xmx1G"));
+        String classpath = command.get(command.indexOf("-cp") + 1);
+        expect(classpath.contains("asm-9.7.jar") && !classpath.contains("asm-9.3.jar"), "a library both version files list is on the class path once, the loader's: " + classpath);
+        expect(classpath.contains("natives-" + PackClient.OS) && !classpath.contains("natives-" + other), "a library for another system is left out: " + classpath);
+        expect(!command.contains("-XstartOnFirstThread") && !command.contains("--demo"), "an argument for another system or a launcher feature is left out: " + command);
+        int main = command.indexOf("loader.Boot");
+        expect(main > command.indexOf("-Xmx1G") && main > command.indexOf("-cp") && main < command.indexOf("--launchTarget"), "options, then the loader's main class, then the game's arguments: " + command);
+        expect(command.contains(instance.toString()) && command.contains("18") && command.stream().noneMatch(a -> a.contains("${")), "every ${value} is filled: " + command);
+    }
+
+    static Map<String, Object> library(String name, List<?> rules) {
+        String[] p = name.split(":");
+        String path = p[0].replace('.', '/') + "/" + p[1] + "/" + p[2] + "/" + p[1] + "-" + p[2] + (p.length > 3 ? "-" + p[3] : "") + ".jar";
+        Map<String, Object> library = Json.map("name", name, "downloads", Json.map("artifact", Json.map("path", path, "url", "https://example.invalid/" + path)));
+        if (rules != null) library.put("rules", rules);
+        return library;
     }
 
     // ------------------------------------------------------------------ --fingerprint's verdict
