@@ -1,6 +1,7 @@
 {
   "note": "Every entry is a port that was actually run. status: stop = named errors remain; build = packaged build + mixin audit passed; load = the real client or server loaded it; behaviour = an assertion on the mod's own state passed in the game (a frame change or a reloaded save is not behaviour). A run proves only its own loader and the updates it crossed. Add an entry only with a receipt; remarked says when and why a status was lowered.",
   "versions": [
+    "1.7.10",
     "1.12.2",
     "1.16.5",
     "1.18.2",
@@ -374,6 +375,15 @@
       "status": "load",
       "detail": "Port sweep verify5 (python bench/sweep.py, commit 2e18da56a5): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with trashcans in the loader's own mod list (mmt eval). 4 blocks, items and entity types the mod's own assets name are in the game's registries: passed.",
       "date": "2026-11-15"
+    },
+    {
+      "mod": "CinematicZoom",
+      "loader": "forge",
+      "from": "1.21.1",
+      "to": "1.7.10",
+      "status": "load",
+      "detail": "First port into Forge 1.7.10. mmt port --fix took the untouched NeoForge 1.21.1 source across the 1.14.4 seam and the SRG hubs (19 waypoints) with nothing written by hand: 98 compile errors to a packaged build on RetroFuturaGradle 2.0.6, mixin audit clean (the ported mod declares no mixins). The real 1.7.10 client listed cinematiczoom in the loader's own mod list (mmt ui-check, then mmt eval through FML's Loader; receipts under .runs/cinematic-zoom-6/.runs/portable/). A local scratch harness also asserted the mod's own state in that client: holding the zoom key engaged ZoomManager (held=true, fovMul 0.33), releasing disengaged it (held=false, fovMul 1.0), 52 s, client stopped afterwards. The row stays load because that harness is not a committed check under tools/tests; the eval wrapper defect it exposed (getMinecraft vs getInstance) is committed with ConsoleAccessorTest.",
+      "date": "2026-11-18"
     }
   ],
   "loader_pairs": [

@@ -15,7 +15,7 @@ on the way, not a result. This file says which platform has reached what, and ho
 | Game data and mixins, no game (`data-check`, `mixin-check`) | Yes (`data-check`: 26.x) | `mixin-check` | No | No | Not applicable |
 | Behaviour in a hidden client (`ui-check`, `world-check`) | Yes | Yes | Loads only | No | Not applicable |
 | Dedicated server plus client or test player (`mp-check`, `server-check`) | Partly | Partly | No | No | Yes: real Paper 1.8 and up, with a test player |
-| Port between versions (`port`) | Yes, 1.14.4 to 26.3 | Yes, 1.14.4 to 26.3 | No | No | No: `port` names the edits instead |
+| Port between versions (`port`) | Yes, 1.14.4 to 26.3 | Yes, 1.14.4 to 26.3 | Yes, 1.21.1 to 1.7.10 (1 mod) | No | No: `port` names the edits instead |
 | Switch loader (`convert`) | To NeoForge | To Fabric (26.1+ and 1.21.1) | No | No | No |
 | Modpacks on their own server (`pack-check`) | Yes | Yes | Yes | Yes | Not applicable |
 | Performance (`perf`, `perf-optimize`) | Yes | Yes | Not yet proven | No | No |
@@ -30,7 +30,7 @@ Windows and partly on Linux, not on macOS.
 
 | What | Corpus | Result | Source |
 |---|---|---|---|
-| Ports proven in the game, no hand edits | 3 mods, 7 routes | All pass their own in-game check | `coverage/ledger.json` |
+| Ports proven in the game, no hand edits | 9 mods, 20 routes | 7 pass their own in-game check, 13 load in the real game | `coverage/ledger.json` |
 | Port sweep | 46 mods, 126 routes | 9 build, 7 load, 1 passes its behaviour check | `bench/sweep/results/after2.json` |
 | Convert sweep | 35 mods | 28 not refused, 5 compile, 5 match the original's behaviour in the game, 5 convert back | `coverage/sweeps/convert.json` |
 | Pack sweep | 24 packs, 1.16.5 to 26.3 | 21 pass as shipped, 24 with repairs | `coverage/sweeps/pack.json` |
