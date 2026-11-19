@@ -95,10 +95,11 @@ public final class JarPortTest {
         expect(use.contains("call g/Block.bar()V"), "and its classes are rewritten: " + use);
         expect(use.contains("call g/Vault.secret()V"), "with the access its parent's access transformer gives the game: " + use);
         runs(scratch);
+        JarPortRulesTest.check(scratch);
         if (failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port: 27 checks passed");
+        System.out.println("jar-port: 29 checks passed");
     }
 
     /**

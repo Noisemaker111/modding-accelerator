@@ -22,7 +22,9 @@ import org.objectweb.asm.commons.SimpleRemapper;
  * reported, never guessed. Class renames are applied everywhere. The mod's metadata is moved to the new release, nested
  * mods (jar-in-jar) are ported the same way, and signatures that no longer match are removed.
  *
- *   java JarPort --from 1.21.1 --to 1.21.2 --map route.json [--loader neoforge] --out OUT.jar|DIR [--report R.json] IN.jar ...
+ *   java JarPort --from 1.21.1 --to 1.21.2 --map route.json [--loader neoforge] [--fixes knowledge/fixes.json] --out OUT.jar|DIR [--report R.json] IN.jar ...
+ *
+ * --fixes applies the port rules' "inClass" replacements (FixExpr) to members nothing in the game's own code replaces.
  *
  * The report lists per jar what was rewritten and every reference that does not link in the new release ("unlinked");
  * a jar with no unlinked reference is expected to load. Exit 0 when every jar was written, whatever it reports.
@@ -48,6 +50,10 @@ public final class JarPort {
         final Set<String> unlinked = new TreeSet<>();
         final Set<String> silent = new TreeSet<>(); // overrides the new release no longer calls: the mod loads, a hook is quiet
         final Map<String, Integer> changed = new TreeMap<>();
+        String self; // the class being rewritten, and what a method added to it must respect
+        boolean selfInterface;
+        int selfVersion;
+        final Map<String, Added> added = new LinkedHashMap<>(); // rule replacement + operands -> method added to self
 
         void change(String kind) {
             changed.merge(kind, 1, Integer::sum);
@@ -121,7 +127,7 @@ public final class JarPort {
     final Map<String, Chain> chains = new HashMap<>(); // owner.name+desc, or owner.name for a field
 
     public static void main(String[] args) throws Exception {
-        String from = null, to = null, map = null, out = null, loader = null, report = null;
+        String from = null, to = null, map = null, out = null, loader = null, report = null, book = null;
         List<Path> jars = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -131,15 +137,19 @@ public final class JarPort {
                 case "--out" -> out = args[++i];
                 case "--loader" -> loader = args[++i];
                 case "--report" -> report = args[++i];
+                case "--fixes" -> book = args[++i];
                 case "--cache" -> VersionMap.cache = Path.of(args[++i]).toAbsolutePath();
                 default -> jars.add(Path.of(args[i]));
             }
         }
         if (from == null || to == null || map == null || out == null || jars.isEmpty()) {
-            System.err.println("usage: JarPort --from V --to V --map route.json [--loader neoforge] --out OUT.jar|DIR [--report R.json] IN.jar ...");
+            System.err.println("usage: JarPort --from V --to V --map route.json [--loader neoforge] [--fixes knowledge/fixes.json] --out OUT.jar|DIR [--report R.json] IN.jar ...");
             System.exit(2);
         }
         JarPort port = new JarPort(Exposure.snap(from, loader), Exposure.snap(to, loader), Path.of(map));
+        if (book != null) {
+            port.fixes(Path.of(book));
+        }
         Path target = Path.of(out);
         boolean folder = jars.size() > 1 || Files.isDirectory(target);
         if (folder) {
@@ -569,6 +579,16 @@ public final class JarPort {
                     queue.add(game.sup);
                 }
                 queue.addAll(game.ifaces);
+                continue;
+            }
+            Class<?> jdk = jdk(k);
+            if (jdk != null) {
+                if (jdk.getSuperclass() != null) {
+                    queue.add(Type.getInternalName(jdk.getSuperclass()));
+                }
+                for (Class<?> i : jdk.getInterfaces()) {
+                    queue.add(Type.getInternalName(i));
+                }
             }
         }
         return false;
@@ -982,6 +1002,10 @@ public final class JarPort {
             @Override
             public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                 self[0] = name;
+                mod.self = name;
+                mod.selfInterface = (access & Opcodes.ACC_INTERFACE) != 0;
+                mod.selfVersion = version & 0xFFFF;
+                mod.added.clear();
                 targets = mod.mixinTargets.getOrDefault(name, List.of());
                 // A mixin's code runs inside each target class, so access is checked from there.
                 callers = targets.isEmpty() ? List.of(name) : targets.stream().map(JarPort.this::cls).toList();
@@ -1050,6 +1074,18 @@ public final class JarPort {
                 String key = self[0] + "." + name + desc;
                 int locals = mod.maxLocals.getOrDefault(key, 0);
                 return mv == null ? null : new Sites(mod, mv, locals, targets, callers, key, where);
+            }
+
+            @Override
+            public void visitEnd() {
+                for (Added m : mod.added.values()) {
+                    MethodVisitor mv = super.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, m.name(), m.desc(), null, null);
+                    mv.visitCode();
+                    m.code().steps.forEach(step -> step.accept(mv));
+                    mv.visitMaxs(m.code().max, m.locals());
+                    mv.visitEnd();
+                }
+                super.visitEnd();
             }
         };
         reader.accept(sites, 0);
@@ -1299,6 +1335,14 @@ public final class JarPort {
                 mod.change("field read through a chain");
                 return;
             }
+            if (t == null && read) {
+                String[] added = fix(List.of(owner, decl.owner()), name, null, opcode == Opcodes.GETSTATIC ? "()" + desc : "(L" + owner + ";)" + desc, opcode == Opcodes.GETFIELD);
+                if (added != null) {
+                    invokeAdded(added);
+                    mod.change("field read replaced by a port rule");
+                    return;
+                }
+            }
             if (t == null) {
                 mod.unlinked.add("field: " + Exposure.dotted(decl.owner()) + "." + name);
                 super.visitFieldInsn(opcode, owner, name, desc);
@@ -1357,6 +1401,15 @@ public final class JarPort {
                     }
                     mod.change("call removed");
                     return;
+                }
+                if (opcode != Opcodes.INVOKESPECIAL) {
+                    String opDesc = opcode == Opcodes.INVOKESTATIC ? desc : "(L" + owner + ";" + desc.substring(1);
+                    String[] added = fix(List.of(owner, decl.owner()), name, desc, opDesc, opcode != Opcodes.INVOKESTATIC);
+                    if (added != null) {
+                        invokeAdded(added);
+                        mod.change("call replaced by a port rule");
+                        return;
+                    }
                 }
                 mod.unlinked.add("call: " + Exposure.dotted(decl.owner()) + "." + name + desc);
                 super.visitMethodInsn(opcode, owner, name, desc, itf);
@@ -1433,26 +1486,8 @@ public final class JarPort {
         Runnable value(String text, Type wanted) {
             Matcher ref = Pattern.compile("([\\w.$]+)::(\\w+)").matcher(text);
             if (ref.matches()) {
-                String owner = ref.group(1).replace('.', '/');
-                String[] sam = functional(wanted.getInternalName());
-                GameDiff.Cls holder = b.classes.get(owner);
-                if (sam == null || holder == null) {
-                    return null;
-                }
-                int arity = Type.getArgumentTypes(sam[1]).length;
-                List<GameDiff.Meth> impls = holder.methods.values().stream()
-                    .filter(m -> m.name.equals(ref.group(2)) && (m.flags & Opcodes.ACC_STATIC) != 0 && Type.getArgumentTypes(m.desc).length == arity)
-                    .toList();
-                if (impls.size() != 1 || !memberOpen(mod, callers, owner, impls.get(0).name + impls.get(0).desc, impls.get(0).flags)) {
-                    return null;
-                }
-                GameDiff.Meth impl = impls.get(0);
-                Handle factory = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
-                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;"
-                        + "Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false);
-                Handle target = new Handle(Opcodes.H_INVOKESTATIC, inverse.getOrDefault(owner, owner), impl.name, oldDesc(impl.desc), (holder.flags & Opcodes.ACC_INTERFACE) != 0);
-                String wantedOld = oldDesc(wanted.getDescriptor());
-                return () -> super.visitInvokeDynamicInsn(sam[0], "()" + wantedOld, factory, Type.getType(sam[1]), target, Type.getType(oldDesc(impl.desc)));
+                Object[] indy = lambda(mod, callers, ref.group(1).replace('.', '/'), ref.group(2), wanted);
+                return indy == null ? null : () -> super.visitInvokeDynamicInsn((String) indy[0], (String) indy[1], (Handle) indy[2], (Object[]) indy[3]);
             }
             Matcher call = Pattern.compile("([\\w.$]+)\\.(\\w+)\\(\\)").matcher(text);
             Matcher field = Pattern.compile("([\\w.$]+)\\.(\\w+)").matcher(text);
@@ -1564,6 +1599,77 @@ public final class JarPort {
             return JarPort.this.isA(mod, c, target);
         }
 
+        /**
+         * The replacement a port rule gives for the old member (owners: the class the site names and the one declaring the
+         * member), compiled into a private static method of this class that takes the old operands (opDesc, old names).
+         * Returns {name, desc} of that method, or null when no rule names the member or its replacement does not link and
+         * type here. args is the member's descriptor a rule's "(args)" is matched against (null for a field). With
+         * receiver, the first operand is the receiver ($0).
+         */
+        String[] fix(List<String> owners, String name, String args, String opDesc, boolean receiver) {
+            if (mod.selfInterface && mod.selfVersion < Opcodes.V9) {
+                return null;
+            }
+            Type[] ops = Type.getArgumentTypes(opDesc);
+            Type ret = Type.getReturnType(opDesc);
+            Type[] params = new Type[ops.length];
+            for (int i = 0; i < ops.length; i++) {
+                params[i] = Type.getType(desc(ops[i].getDescriptor()));
+                if (!present(mod, params[i])) {
+                    return null;
+                }
+            }
+            Type newRet = Type.getType(desc(ret.getDescriptor()));
+            for (String owner : new LinkedHashSet<>(owners)) {
+                for (Fix f : fixes.getOrDefault(owner, List.of())) {
+                    Matcher n = f.name().matcher(name);
+                    if (!n.matches() || f.args() != null && (args == null || !args.startsWith(f.args()))) {
+                        continue;
+                    }
+                    try {
+                        String expr = FixExpr.fill(f.expr(), n);
+                        FixExpr.Node node = FixExpr.parse(expr);
+                        // An argument left out is a decision about one overload, so only a rule naming that overload's
+                        // arguments may drop one: spawnAtLocation(stack) -> ...($1) must not also take spawnAtLocation(stack, offset).
+                        Set<Integer> used = FixExpr.operands(node);
+                        boolean dropsOne = false;
+                        for (int i = 1; i <= ops.length - (receiver ? 1 : 0); i++) {
+                            dropsOne |= !used.contains(i);
+                        }
+                        if (dropsOne && f.args() == null) {
+                            continue;
+                        }
+                        Lowering low = new Lowering(mod, callers, params, receiver);
+                        Code code = new Code();
+                        Type got = low.lower(node, code);
+                        if (ret.getSort() == Type.VOID) {
+                            if (got.getSize() > 0) {
+                                code.add(-got.getSize(), mv -> mv.visitInsn(got.getSize() == 2 ? Opcodes.POP2 : Opcodes.POP));
+                            }
+                            code.add(0, mv -> mv.visitInsn(Opcodes.RETURN));
+                        } else if (present(mod, newRet) && got.getSort() != Type.VOID && low.fits(got, newRet)) {
+                            low.widen(got, newRet, code);
+                            code.add(-newRet.getSize(), mv -> mv.visitInsn(newRet.getOpcode(Opcodes.IRETURN)));
+                        } else {
+                            continue;
+                        }
+                        String desc = Type.getMethodDescriptor(ret, ops);
+                        Added m = mod.added.computeIfAbsent(expr + desc, k -> new Added(
+                            "mmt$fix$" + mod.added.size() + "$" + Integer.toHexString(mod.self.hashCode()), desc, code, low.locals
+                        ));
+                        return new String[] { m.name(), m.desc() };
+                    } catch (Refused | IllegalArgumentException notHere) {
+                        // Another rule may still give one that links.
+                    }
+                }
+            }
+            return null;
+        }
+
+        void invokeAdded(String[] added) {
+            super.visitMethodInsn(Opcodes.INVOKESTATIC, mod.self, added[0], added[1], mod.selfInterface);
+        }
+
         /** A call in the new release's names, written in the old ones (the class renamer runs after), as an interface call where it is one. */
         void invoke(boolean isStatic, Call c) {
             GameDiff.Cls holder = b.classes.get(c.owner());
@@ -1593,7 +1699,10 @@ public final class JarPort {
             for (int i = 0; i < mapped.length; i++) {
                 if (mapped[i] instanceof Handle h) {
                     mapped[i] = handle(h);
-                } else if (mapped[i] instanceof Type t) {
+                }
+            }
+            for (Object o : mapped) {
+                if (o instanceof Type t) {
                     types(mod, t.getDescriptor(), where);
                 }
             }
@@ -1621,6 +1730,15 @@ public final class JarPort {
                 }
                 String[] t = target(mod, callers, h.getOwner(), 'm', h.getName(), h.getDesc(), decl);
                 if (t == null || !t[2].equals(desc(h.getDesc()))) {
+                    int tag = h.getTag();
+                    if (tag == Opcodes.H_INVOKESTATIC || tag == Opcodes.H_INVOKEVIRTUAL || tag == Opcodes.H_INVOKEINTERFACE) {
+                        String opDesc = tag == Opcodes.H_INVOKESTATIC ? h.getDesc() : "(L" + h.getOwner() + ";" + h.getDesc().substring(1);
+                        String[] added = fix(List.of(h.getOwner(), decl.owner()), h.getName(), h.getDesc(), opDesc, tag != Opcodes.H_INVOKESTATIC);
+                        if (added != null) {
+                            mod.change("method reference replaced by a port rule");
+                            return new Handle(Opcodes.H_INVOKESTATIC, mod.self, added[0], added[1], mod.selfInterface);
+                        }
+                    }
                     mod.unlinked.add("method reference: " + Exposure.dotted(decl.owner()) + "." + h.getName() + h.getDesc());
                     return h;
                 }
@@ -1666,6 +1784,503 @@ public final class JarPort {
             }
         }
     }
+
+    // ---- Port rules applied in the class.
+
+    /** A port rule's replacement for game members of one old class ("inClass"): name is a regex, args a descriptor's start or null. */
+    record Fix(String rule, Pattern name, String args, String expr) {}
+
+    final Map<String, List<Fix>> fixes = new HashMap<>(); // old owner (internal) -> replacements its rules give
+
+    static final Pattern DESCRIBED = Pattern.compile("([\\w$<>]+)(\\((?:\\[*(?:[ZBCSIJFD]|L[\\w/$]+;))*\\)\\S*)");
+
+    /** Reads every rule's "inClass" from a rule book (knowledge/fixes.json): "a.b.Owner.name[(args)]" -> expression (FixExpr). */
+    void fixes(Path book) throws IOException {
+        for (Object o : Json.array(Json.read(book).get("rules"))) {
+            var rule = Json.object(o);
+            for (var e : Json.object(rule.getOrDefault("inClass", Map.of())).entrySet()) {
+                int dot = e.getKey().lastIndexOf('.');
+                String rest = e.getKey().substring(dot + 1);
+                Matcher d = DESCRIBED.matcher(rest);
+                boolean described = d.matches();
+                Fix fix = new Fix(Json.text(rule, "id", ""), Pattern.compile(described ? Pattern.quote(d.group(1)) : rest), described ? d.group(2) : null, String.valueOf(e.getValue()));
+                fixes.computeIfAbsent(e.getKey().substring(0, dot).replace('.', '/'), k -> new ArrayList<>()).add(fix);
+            }
+        }
+    }
+
+    /** A private static method added to the class being rewritten: a rule's replacement, taking the old member's operands. */
+    record Added(String name, String desc, Code code, int locals) {}
+
+    /** The type of null, which fits any reference. */
+    static final Type NULL = Type.getObjectType("null");
+
+    /** Code being built: each step writes to a method, and the stack it needs is counted as it goes. */
+    static final class Code {
+        final List<java.util.function.Consumer<MethodVisitor>> steps = new ArrayList<>();
+        int depth;
+        int max;
+
+        void add(int change, java.util.function.Consumer<MethodVisitor> step) {
+            steps.add(step);
+            depth += change;
+            max = Math.max(max, depth);
+        }
+
+        void append(Code other) {
+            steps.addAll(other.steps);
+            max = Math.max(max, depth + other.max);
+            depth += other.depth;
+        }
+    }
+
+    /** A replacement that does not link or type in the new release; it is not written. */
+    static final class Refused extends RuntimeException {
+        Refused(String why) {
+            super(why, null, false, false);
+        }
+    }
+
+    /** A JDK class by internal name, or null. Only java.* is looked up: the game's own classes come from the snapshot. */
+    static Class<?> jdk(String internal) {
+        if (!internal.startsWith("java/")) {
+            return null;
+        }
+        try {
+            return Class.forName(internal.replace('/', '.'), false, null);
+        } catch (ClassNotFoundException | LinkageError absent) {
+            return null;
+        }
+    }
+
+    /** Whether a type exists for code running on the new release: not a game class, or one the new release has. */
+    boolean present(Mod mod, Type t) {
+        Type e = t.getSort() == Type.ARRAY ? t.getElementType() : t;
+        if (e.getSort() != Type.OBJECT) {
+            return true;
+        }
+        String n = e.getInternalName();
+        return b.classes.containsKey(n) || mod.classes.containsKey(n) || !GameDiff.gameClass(n);
+    }
+
+    boolean isInterface(Mod mod, String internal) {
+        GameDiff.Cls game = b.classes.get(internal);
+        if (game != null) {
+            return (game.flags & Opcodes.ACC_INTERFACE) != 0;
+        }
+        GameDiff.RawCls own = mod.classes.get(internal);
+        if (own != null) {
+            return (own.flags & Opcodes.ACC_INTERFACE) != 0;
+        }
+        Class<?> k = jdk(internal);
+        return k != null && k.isInterface();
+    }
+
+    /** A method or constructor as a call names it (owner is the class the instruction names), and whether the caller may use it. */
+    record Member(String owner, String name, String desc, boolean isStatic, boolean itf, boolean open) {}
+
+    /** The pieces of an invokedynamic making a functional interface wanted from a static method owner::name, or null. */
+    Object[] lambda(Mod mod, List<String> callers, String owner, String name, Type wanted) {
+        String[] sam = wanted.getSort() == Type.OBJECT ? functional(wanted.getInternalName()) : null;
+        GameDiff.Cls holder = b.classes.get(owner);
+        if (sam == null || holder == null) {
+            return null;
+        }
+        int arity = Type.getArgumentTypes(sam[1]).length;
+        List<GameDiff.Meth> impls = holder.methods.values().stream()
+            .filter(m -> m.name.equals(name) && (m.flags & Opcodes.ACC_STATIC) != 0 && Type.getArgumentTypes(m.desc).length == arity)
+            .toList();
+        if (impls.size() != 1 || !memberOpen(mod, callers, owner, impls.get(0).name + impls.get(0).desc, impls.get(0).flags)) {
+            return null;
+        }
+        GameDiff.Meth impl = impls.get(0);
+        Handle factory = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;"
+                + "Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false);
+        Handle target = new Handle(Opcodes.H_INVOKESTATIC, inverse.getOrDefault(owner, owner), impl.name, oldDesc(impl.desc), (holder.flags & Opcodes.ACC_INTERFACE) != 0);
+        return new Object[] { sam[0], "()" + oldDesc(wanted.getDescriptor()), factory, new Object[] { Type.getType(sam[1]), target, Type.getType(oldDesc(impl.desc)) } };
+    }
+
+    /**
+     * One rule's replacement compiled for one site, the way javac would compile it against the new release: names are
+     * resolved there (or in the JDK), overloads chosen by the operands' types, and every member must be one the caller may
+     * use. Anything else is Refused. Code is written in the old release's names; the class renamer runs after.
+     */
+    final class Lowering {
+        final Mod mod;
+        final List<String> callers;
+        final Type[] params;
+        final boolean receiver;
+        final int[] slots;
+        int locals;
+
+        /** params: the old member's operands in new names; with receiver the first is $0, else $1 is the first. */
+        Lowering(Mod mod, List<String> callers, Type[] params, boolean receiver) {
+            this.mod = mod;
+            this.callers = callers;
+            this.params = params;
+            this.receiver = receiver;
+            slots = new int[params.length];
+            for (int i = 0; i < params.length; i++) {
+                slots[i] = locals;
+                locals += params[i].getSize();
+            }
+        }
+
+        Type lower(FixExpr.Node n, Code out) {
+            return switch (n) {
+                case FixExpr.Arg a -> arg(a.index(), out);
+                case FixExpr.Lit l -> literal(l, out);
+                case FixExpr.Path p -> path(p.dotted(), out);
+                case FixExpr.Get g -> field(lower(g.target(), out), g.name(), false, out);
+                case FixExpr.Invoke i -> invoke(i, out);
+                case FixExpr.New w -> construct(w, out);
+                case FixExpr.Cast c -> cast(c, out);
+                case FixExpr.Ref r -> throw new Refused("a method reference is taken only as an argument");
+            };
+        }
+
+        Type arg(int index, Code out) {
+            int k = receiver ? index : index - 1;
+            if (k < 0 || k >= params.length) {
+                throw new Refused("$" + index + " is not an operand of the old member");
+            }
+            Type t = params[k];
+            int slot = slots[k];
+            out.add(t.getSize(), mv -> mv.visitVarInsn(t.getOpcode(Opcodes.ILOAD), slot));
+            return t;
+        }
+
+        Type literal(FixExpr.Lit l, Code out) {
+            if (l.type() == null) {
+                out.add(1, mv -> mv.visitInsn(Opcodes.ACONST_NULL));
+                return NULL;
+            }
+            Type t = Type.getType(l.type());
+            Object v = l.value();
+            if (v instanceof Boolean z) {
+                out.add(1, mv -> mv.visitInsn(z ? Opcodes.ICONST_1 : Opcodes.ICONST_0));
+            } else {
+                out.add(t.getSize(), mv -> mv.visitLdcInsn(v));
+            }
+            return t;
+        }
+
+        boolean known(String internal) {
+            return b.classes.containsKey(internal) || jdk(internal) != null;
+        }
+
+        String type(String dotted) {
+            String internal = dotted.replace('.', '/');
+            if (!known(internal)) {
+                throw new Refused(dotted + " is not a class of the new release");
+            }
+            return internal;
+        }
+
+        /** a.b.C.F.G: the longest start that is a class, then its static field F and G of that. */
+        Type path(String dotted, Code out) {
+            String[] parts = dotted.split("\\.");
+            for (int i = parts.length - 1; i >= 1; i--) {
+                String owner = String.join("/", Arrays.copyOf(parts, i));
+                if (!known(owner)) {
+                    continue;
+                }
+                Type t = field(Type.getObjectType(owner), parts[i], true, out);
+                for (int k = i + 1; k < parts.length; k++) {
+                    t = field(t, parts[k], false, out);
+                }
+                return t;
+            }
+            throw new Refused(dotted + " is not a field of the new release");
+        }
+
+        Type field(Type owner, String name, boolean isStatic, Code out) {
+            if (owner.getSort() != Type.OBJECT || owner == NULL) {
+                throw new Refused("no field " + name + " on " + owner);
+            }
+            String o = owner.getInternalName();
+            String desc;
+            Class<?> k = jdk(o);
+            if (k != null) {
+                java.lang.reflect.Field f;
+                try {
+                    f = k.getField(name);
+                } catch (NoSuchFieldException absent) {
+                    throw new Refused("no field " + name + " on " + o);
+                }
+                if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) != isStatic) {
+                    throw new Refused(name + " is not a " + (isStatic ? "static" : "instance") + " field");
+                }
+                desc = Type.getDescriptor(f.getType());
+            } else {
+                FieldHit f = fieldNew(mod, callers, o, name);
+                GameDiff.Cls holder = Exposure.declaring(b, o, 'f', name, null);
+                if (f == null || !f.open() || holder == null || ((holder.fields.get(name).flags & Opcodes.ACC_STATIC) != 0) != isStatic) {
+                    throw new Refused("no field " + name + " the caller may read on " + o);
+                }
+                desc = f.desc();
+            }
+            Type t = Type.getType(desc);
+            String ownerOld = inverse.getOrDefault(o, o);
+            String descOld = oldDesc(desc);
+            out.add(t.getSize() - (isStatic ? 0 : 1), mv -> mv.visitFieldInsn(isStatic ? Opcodes.GETSTATIC : Opcodes.GETFIELD, ownerOld, name, descOld));
+            return t;
+        }
+
+        /** Every method named name that a call on owner reaches, most derived first; static ones are named on their own class. */
+        List<Member> methods(String owner, String name) {
+            List<Member> out = new ArrayList<>();
+            Set<String> seen = new HashSet<>();
+            boolean itf = isInterface(mod, owner);
+            boolean open = classOpen(mod, callers, owner);
+            Deque<String> queue = new ArrayDeque<>(List.of(owner));
+            Set<String> visited = new HashSet<>();
+            while (!queue.isEmpty()) {
+                String c = queue.poll();
+                if (!visited.add(c)) {
+                    continue;
+                }
+                GameDiff.RawCls own = mod.classes.get(c);
+                GameDiff.Cls game = own == null ? b.classes.get(c) : null;
+                Class<?> k = own == null && game == null ? jdk(c) : null;
+                if (game != null) {
+                    for (GameDiff.Meth m : game.methods.values()) {
+                        if (m.name.equals(name) && seen.add(m.desc)) {
+                            boolean st = (m.flags & Opcodes.ACC_STATIC) != 0;
+                            boolean usable = open && memberOpen(mod, callers, c, m.name + m.desc, m.flags) && (m.flags & Opcodes.ACC_SYNTHETIC) == 0;
+                            out.add(new Member(st ? c : owner, name, m.desc, st, st ? isInterface(mod, c) : itf, usable));
+                        }
+                    }
+                } else if (k != null) {
+                    boolean pub = java.lang.reflect.Modifier.isPublic(k.getModifiers());
+                    if (name.equals("<init>")) {
+                        for (var ctor : k.getConstructors()) {
+                            if (seen.add(Type.getConstructorDescriptor(ctor))) {
+                                out.add(new Member(c, name, Type.getConstructorDescriptor(ctor), false, false, pub));
+                            }
+                        }
+                    }
+                    for (var m : k.getMethods()) {
+                        String d = Type.getMethodDescriptor(m);
+                        if (m.getName().equals(name) && !m.isBridge() && seen.add(d)) {
+                            boolean st = java.lang.reflect.Modifier.isStatic(m.getModifiers());
+                            String decl = Type.getInternalName(m.getDeclaringClass());
+                            out.add(new Member(st ? decl : owner, name, d, st, st ? m.getDeclaringClass().isInterface() : itf, pub));
+                        }
+                    }
+                }
+                if (name.equals("<init>")) {
+                    break;
+                }
+                String sup = own != null ? (own.sup == null ? null : cls(own.sup)) : game != null ? game.sup : null;
+                if (sup != null) {
+                    queue.add(sup);
+                }
+                if (own != null) {
+                    own.ifaces.forEach(i -> queue.add(cls(i)));
+                } else if (game != null) {
+                    queue.addAll(game.ifaces);
+                }
+            }
+            return out;
+        }
+
+        Type invoke(FixExpr.Invoke i, Code out) {
+            Code target = new Code();
+            String owner;
+            boolean isStatic = i.target() instanceof FixExpr.Path p && known(p.dotted().replace('.', '/'));
+            if (isStatic) {
+                owner = ((FixExpr.Path) i.target()).dotted().replace('.', '/');
+            } else {
+                Type recv = lower(i.target(), target);
+                if (recv.getSort() != Type.OBJECT || recv == NULL) {
+                    throw new Refused("no method " + i.name() + " on " + recv);
+                }
+                owner = recv.getInternalName();
+            }
+            boolean wantStatic = isStatic;
+            Member m = choose(methods(owner, i.name()).stream().filter(x -> x.isStatic() == wantStatic).toList(), i.args(), owner + "." + i.name());
+            out.append(target);
+            int popped = arguments(m, i.args(), out) + (isStatic ? 0 : 1);
+            Type ret = Type.getReturnType(m.desc());
+            int op = isStatic ? Opcodes.INVOKESTATIC : m.itf() ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL;
+            out.add(ret.getSize() - popped, mv -> mv.visitMethodInsn(op, inverse.getOrDefault(m.owner(), m.owner()), m.name(), oldDesc(m.desc()), m.itf()));
+            return ret;
+        }
+
+        Type construct(FixExpr.New w, Code out) {
+            String owner = type(w.type());
+            GameDiff.Cls game = b.classes.get(owner);
+            Class<?> k = jdk(owner);
+            int flags = game != null ? game.flags : k.getModifiers();
+            if ((flags & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE)) != 0) {
+                throw new Refused(w.type() + " cannot be made with new");
+            }
+            Member m = choose(methods(owner, "<init>"), w.args(), owner + ".<init>");
+            String old = inverse.getOrDefault(owner, owner);
+            out.add(1, mv -> mv.visitTypeInsn(Opcodes.NEW, old));
+            out.add(1, mv -> mv.visitInsn(Opcodes.DUP));
+            int popped = arguments(m, w.args(), out) + 1;
+            out.add(-popped, mv -> mv.visitMethodInsn(Opcodes.INVOKESPECIAL, old, "<init>", oldDesc(m.desc()), false));
+            return Type.getObjectType(owner);
+        }
+
+        /** Writes each argument converted to m's parameter; returns the stack slots they take. */
+        int arguments(Member m, List<FixExpr.Node> args, Code out) {
+            Type[] ps = Type.getArgumentTypes(m.desc());
+            int slots = 0;
+            for (int k = 0; k < ps.length; k++) {
+                Type p = ps[k];
+                if (args.get(k) instanceof FixExpr.Ref r) {
+                    Object[] indy = lambda(mod, callers, type(r.type()), r.name(), p);
+                    Object[] bsmArgs = (Object[]) indy[3];
+                    out.add(1, mv -> mv.visitInvokeDynamicInsn((String) indy[0], (String) indy[1], (Handle) indy[2], bsmArgs));
+                } else {
+                    Type got = lower(args.get(k), out);
+                    widen(got, p, out);
+                }
+                slots += p.getSize();
+            }
+            return slots;
+        }
+
+        /** The one most specific candidate the arguments fit, as javac picks it (no varargs expansion, no boxing). */
+        Member choose(List<Member> candidates, List<FixExpr.Node> args, String what) {
+            List<Type> types = new ArrayList<>();
+            for (FixExpr.Node a : args) {
+                types.add(a instanceof FixExpr.Ref ? null : lower(a, new Code()));
+            }
+            List<Member> fit = new ArrayList<>();
+            for (Member m : candidates) {
+                Type[] ps = Type.getArgumentTypes(m.desc());
+                boolean ok = ps.length == args.size();
+                for (int k = 0; ok && k < ps.length; k++) {
+                    ok = types.get(k) == null
+                        ? args.get(k) instanceof FixExpr.Ref r && known(r.type().replace('.', '/')) && lambda(mod, callers, r.type().replace('.', '/'), r.name(), ps[k]) != null
+                        : fits(types.get(k), ps[k]);
+                }
+                if (ok) {
+                    fit.add(m);
+                }
+            }
+            List<Member> best = fit.stream().filter(m -> fit.stream().allMatch(o -> o == m || narrower(m, o))).toList();
+            if (best.size() != 1) {
+                throw new Refused(what + (fit.isEmpty() ? " takes no such arguments" : " is ambiguous for these arguments"));
+            }
+            if (!best.get(0).open()) {
+                throw new Refused(what + " is closed to the caller");
+            }
+            return best.get(0);
+        }
+
+        boolean narrower(Member m, Member o) {
+            Type[] a = Type.getArgumentTypes(m.desc());
+            Type[] b = Type.getArgumentTypes(o.desc());
+            for (int k = 0; k < a.length; k++) {
+                if (!fits(a[k], b[k])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Type cast(FixExpr.Cast c, Code out) {
+            Type got = lower(c.expr(), out);
+            if (FixExpr.PRIMITIVES.contains(c.type())) {
+                Type to = Type.getType(switch (c.type()) {
+                    case "boolean" -> "Z";
+                    case "byte" -> "B";
+                    case "char" -> "C";
+                    case "short" -> "S";
+                    case "int" -> "I";
+                    case "long" -> "J";
+                    case "float" -> "F";
+                    default -> "D";
+                });
+                if (got.getSort() < Type.CHAR || got.getSort() > Type.DOUBLE || to.getSort() == Type.BOOLEAN) {
+                    throw new Refused("cannot cast " + got + " to " + c.type());
+                }
+                convert(got, to, out);
+                return to;
+            }
+            String to = type(c.type());
+            if (got.getSort() != Type.OBJECT && got.getSort() != Type.ARRAY) {
+                throw new Refused("cannot cast " + got + " to " + c.type());
+            }
+            String old = inverse.getOrDefault(to, to);
+            out.add(0, mv -> mv.visitTypeInsn(Opcodes.CHECKCAST, old));
+            return Type.getObjectType(to);
+        }
+
+        /** Whether a value of type from may be passed where to is wanted, as Java allows without a cast (no boxing). */
+        boolean fits(Type from, Type to) {
+            if (from == NULL) {
+                return to.getSort() == Type.OBJECT || to.getSort() == Type.ARRAY;
+            }
+            if (from.equals(to)) {
+                return true;
+            }
+            if (from.getSort() < Type.ARRAY || to.getSort() < Type.ARRAY) {
+                return from.getSort() >= Type.CHAR && to.getSort() > Type.CHAR && from.getSort() <= Type.DOUBLE && to.getSort() <= Type.DOUBLE
+                    && WIDER.getOrDefault(from.getSort(), Set.of()).contains(to.getSort());
+            }
+            if (to.getDescriptor().equals("Ljava/lang/Object;")) {
+                return true;
+            }
+            if (from.getSort() == Type.ARRAY) {
+                if (to.getSort() != Type.ARRAY) {
+                    return to.getInternalName().equals("java/lang/Cloneable") || to.getInternalName().equals("java/io/Serializable");
+                }
+                Type fe = Type.getType(from.getDescriptor().substring(1));
+                Type te = Type.getType(to.getDescriptor().substring(1));
+                return fe.getSort() >= Type.ARRAY && te.getSort() >= Type.ARRAY && fits(fe, te);
+            }
+            return to.getSort() == Type.OBJECT && isA(mod, from.getInternalName(), to.getInternalName());
+        }
+
+        /** The conversion Java makes when a value is passed or returned where a wider primitive is wanted. */
+        void widen(Type from, Type to, Code out) {
+            if (from.getSort() < Type.ARRAY && to.getSort() < Type.ARRAY && !from.equals(to)) {
+                convert(from, to, out);
+            }
+        }
+
+        void convert(Type from, Type to, Code out) {
+            char f = from.getSort() <= Type.INT ? 'I' : from.getDescriptor().charAt(0);
+            char t = to.getSort() <= Type.INT ? 'I' : to.getDescriptor().charAt(0);
+            String pair = "" + f + t;
+            Integer op = CONVERSIONS.get(pair);
+            if (op != null) {
+                out.add(to.getSize() - from.getSize(), mv -> mv.visitInsn(op));
+            }
+            int narrow = switch (to.getSort()) {
+                case Type.BYTE -> Opcodes.I2B;
+                case Type.CHAR -> Opcodes.I2C;
+                case Type.SHORT -> Opcodes.I2S;
+                default -> 0;
+            };
+            if (narrow != 0 && from.getSort() != to.getSort()) {
+                out.add(0, mv -> mv.visitInsn(narrow));
+            }
+        }
+    }
+
+    static final Map<Integer, Set<Integer>> WIDER = Map.of(
+        Type.BYTE, Set.of(Type.SHORT, Type.INT, Type.LONG, Type.FLOAT, Type.DOUBLE),
+        Type.SHORT, Set.of(Type.INT, Type.LONG, Type.FLOAT, Type.DOUBLE),
+        Type.CHAR, Set.of(Type.INT, Type.LONG, Type.FLOAT, Type.DOUBLE),
+        Type.INT, Set.of(Type.LONG, Type.FLOAT, Type.DOUBLE),
+        Type.LONG, Set.of(Type.FLOAT, Type.DOUBLE),
+        Type.FLOAT, Set.of(Type.DOUBLE)
+    );
+
+    static final Map<String, Integer> CONVERSIONS = Map.ofEntries(
+        Map.entry("IJ", Opcodes.I2L), Map.entry("IF", Opcodes.I2F), Map.entry("ID", Opcodes.I2D),
+        Map.entry("JI", Opcodes.L2I), Map.entry("JF", Opcodes.L2F), Map.entry("JD", Opcodes.L2D),
+        Map.entry("FI", Opcodes.F2I), Map.entry("FJ", Opcodes.F2L), Map.entry("FD", Opcodes.F2D),
+        Map.entry("DI", Opcodes.D2I), Map.entry("DJ", Opcodes.D2L), Map.entry("DF", Opcodes.D2F)
+    );
 
     // ---- Metadata.
 

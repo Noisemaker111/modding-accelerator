@@ -192,7 +192,7 @@ ASM = [ROOT / "tools" / "perf" / "lib" / "asm-9.9.jar", ROOT / "tools" / "perf" 
 
 def jar_tools():
     out = ROOT / ".runs" / "exposure" / "jarport-classes"
-    sources = [ROOT / "tools" / n for n in ("JarPort.java", "Exposure.java", "GameDiff.java", "VersionMap.java")] + [ROOT / "tools" / "cli" / "Json.java"]
+    sources = [ROOT / "tools" / n for n in ("JarPort.java", "FixExpr.java", "Exposure.java", "GameDiff.java", "VersionMap.java")] + [ROOT / "tools" / "cli" / "Json.java"]
     stamp = out / "JarPort.class"
     if not stamp.is_file() or stamp.stat().st_mtime < max(s.stat().st_mtime for s in sources):
         javac = java().replace("java.exe", "javac.exe") if java().endswith("java.exe") else java() + "c"
@@ -206,7 +206,7 @@ def jar_port(loader, frm, to, jars, out_dir, report):
     classes, tools_time = compile_tools()
     route = route_map(frm, to, loader, classes, tools_time)
     out_dir.mkdir(parents=True, exist_ok=True)
-    args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--out", str(out_dir),
+    args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
             "--report", str(report)] + (["--loader", loader] if loader == "neoforge" else [])
     done = subprocess.run(args + [str(j) for j in jars], stdout=subprocess.DEVNULL)
     if done.returncode:

@@ -1382,6 +1382,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "members": ["net.minecraft.world.entity.EntityType.create"],
+      "inClass": {
+        "net.minecraft.world.entity.EntityType.create(Lnet/minecraft/world/level/Level;)": "$0.create($1, net.minecraft.world.entity.EntitySpawnReason.NATURAL)"
+      },
       "match": "no suitable method found for create\\(ServerLevel\\)",
       "apply": {
         "find": "(EntityTypes?\\.[A-Z_]+)\\.create\\((\\w+)\\)",
@@ -1491,6 +1494,11 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "members": ["net.minecraft.world.entity.Entity.spawnAtLocation"],
+      "inClass": {
+        "net.minecraft.world.entity.Entity.spawnAtLocation": "$0.spawnAtLocation((net.minecraft.server.level.ServerLevel) $0.level(), $1)",
+        "net.minecraft.world.entity.Entity.spawnAtLocation(Lnet/minecraft/world/item/ItemStack;F)": "$0.spawnAtLocation((net.minecraft.server.level.ServerLevel) $0.level(), $1, $2)",
+        "net.minecraft.world.entity.Entity.spawnAtLocation(Lnet/minecraft/world/level/ItemLike;I)": "$0.spawnAtLocation((net.minecraft.server.level.ServerLevel) $0.level(), $1, $2)"
+      },
       "match": "no suitable method found for spawnAtLocation",
       "apply": {
         "find": "(\\w+)\\.spawnAtLocation\\(([^)]*)\\)",
@@ -5236,6 +5244,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.client.gui.GuiGraphics.setColor"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.setColor": "com.mojang.blaze3d.systems.RenderSystem.setShaderColor($1, $2, $3, $4)"
+      },
       "match": "symbol:\\s+method setColor\\((?:int|float|double)(?:,(?:int|float|double)){3}\\)\\n\\s*location: (?:variable \\w+ of type |class )GuiGraphics\\b",
       "apply": {
         "find": "\\b\\w+\\.setColor\\(((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5638,6 +5649,11 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.client.Minecraft.getProfiler", "net.minecraft.world.level.Level.getProfiler", "net.minecraft.server.MinecraftServer.getProfiler"],
+      "inClass": {
+        "net.minecraft.client.Minecraft.getProfiler": "net.minecraft.util.profiling.Profiler.get()",
+        "net.minecraft.world.level.Level.getProfiler": "net.minecraft.util.profiling.Profiler.get()",
+        "net.minecraft.server.MinecraftServer.getProfiler": "net.minecraft.util.profiling.Profiler.get()"
+      },
       "match": "symbol:\\s+method getProfiler\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )(?:Minecraft|Level|ClientLevel|ServerLevel|MinecraftServer)\\b",
       "apply": {
         "find": "\\b(?:\\w+\\.)*(?:\\w+\\(\\)\\.)?getProfiler\\(\\)",
@@ -7023,6 +7039,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.world.InteractionResult.sidedSuccess", "net.minecraft.world.InteractionResult.CONSUME_PARTIAL", "net.minecraft.world.InteractionResult.SUCCESS_NO_ITEM_USED"],
+      "inClass": {
+        "net.minecraft.world.InteractionResult.sidedSuccess(Z)": "net.minecraft.world.InteractionResult.SUCCESS"
+      },
       "match": "symbol:\\s+(?:method sidedSuccess\\(boolean\\)|variable (?:CONSUME_PARTIAL|SUCCESS_NO_ITEM_USED))\\s*\\n\\s*location: (?:class|interface) InteractionResult",
       "apply": {
         "find": "\\bInteractionResult\\.sidedSuccess\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -7725,6 +7744,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.world.item.crafting.Ingredient.of"],
+      "inClass": {
+        "net.minecraft.world.item.crafting.Ingredient.of(Lnet/minecraft/tags/TagKey;)": "net.minecraft.world.item.crafting.Ingredient.of(net.minecraft.core.registries.BuiltInRegistries.ITEM.getOrThrow($1))"
+      },
       "match": "no suitable method found for of\\(TagKey<Item>\\)",
       "apply": {
         "find": "\\bIngredient\\.of\\(\\s*((?:\\w+\\.)*(?:Tags\\.Items|ItemTags)\\.[A-Z][A-Z0-9_]*|\\w*[Tt]ag\\w*)\\s*\\)",
@@ -7749,6 +7771,10 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["com.mojang.blaze3d.systems.RenderSystem.setShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityTranslucentEmissiveShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeItemEntityTranslucentCullShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityCutoutNoCullZOffsetShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextBackgroundSeeThroughShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextIntensitySeeThroughShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTranslucentMovingBlockShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGuiGhostRecipeOverlayShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntitySmoothCutoutShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityCutoutNoCullShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityTranslucentShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeArmorCutoutNoCullShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGlintTranslucentShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGuiTextHighlightShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeArmorEntityGlintShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityNoOutlineShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextBackgroundShader", "net.minecraft.client.renderer.GameRenderer.getPositionColorTexLightmapShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextSeeThroughShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextIntensityShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeCutoutMippedShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityCutoutShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityShadowShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityAlphaShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityDecalShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntityGlintShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEnergySwirlShader", "net.minecraft.client.renderer.GameRenderer.getPositionColorLightmapShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEntitySolidShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTranslucentShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeBreezeWindShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEndGatewayShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGuiOverlayShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeBeaconBeamShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEndPortalShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeLightningShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeWaterMaskShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeCrumblingShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTripwireShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeOutlineShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeCloudsShader", "net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeCutoutShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGlintShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeSolidShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeLeashShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeLinesShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeTextShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeEyesShader", "net.minecraft.client.renderer.GameRenderer.getPositionColorShader", "net.minecraft.client.renderer.GameRenderer.getRendertypeGuiShader", "net.minecraft.client.renderer.GameRenderer.getPositionTexShader", "net.minecraft.client.renderer.GameRenderer.getParticleShader", "net.minecraft.client.renderer.GameRenderer.getPositionShader"],
+      "inClass": {
+        "net.minecraft.client.renderer.GameRenderer.get(\\w+)Shader": "net.minecraft.client.Minecraft.getInstance().getShaderManager().getProgram(net.minecraft.client.renderer.CoreShaders.{^1})",
+        "com.mojang.blaze3d.systems.RenderSystem.setShader(Ljava/util/function/Supplier;)": "com.mojang.blaze3d.systems.RenderSystem.setShader((net.minecraft.client.renderer.CompiledShaderProgram) $1.get())"
+      },
       "match": "symbol:\\s+method get\\w+Shader\\(\\)",
       "apply": {
         "find": "\\bGameRenderer::get(RendertypeEntityTranslucentEmissive|RendertypeItemEntityTranslucentCull|RendertypeEntityCutoutNoCullZOffset|RendertypeTextBackgroundSeeThrough|RendertypeTextIntensitySeeThrough|RendertypeTranslucentMovingBlock|RendertypeGuiGhostRecipeOverlay|RendertypeEntitySmoothCutout|RendertypeEntityCutoutNoCull|RendertypeEntityTranslucent|RendertypeArmorCutoutNoCull|RendertypeGlintTranslucent|RendertypeGuiTextHighlight|RendertypeArmorEntityGlint|RendertypeEntityNoOutline|RendertypeTextBackground|PositionColorTexLightmap|RendertypeTextSeeThrough|RendertypeTextIntensity|RendertypeCutoutMipped|RendertypeEntityCutout|RendertypeEntityShadow|RendertypeEntityAlpha|RendertypeEntityDecal|RendertypeEntityGlint|RendertypeEnergySwirl|PositionColorLightmap|RendertypeEntitySolid|RendertypeTranslucent|RendertypeBreezeWind|RendertypeEndGateway|RendertypeGuiOverlay|RendertypeBeaconBeam|RendertypeEndPortal|RendertypeLightning|RendertypeWaterMask|RendertypeCrumbling|RendertypeTripwire|RendertypeOutline|RendertypeClouds|PositionTexColor|RendertypeCutout|RendertypeGlint|RendertypeSolid|RendertypeLeash|RendertypeLines|RendertypeText|RendertypeEyes|PositionColor|RendertypeGui|PositionTex|Particle|Position)Shader\\b",
@@ -7947,6 +7973,9 @@
       "members": [
         "net.minecraft.client.gui.GuiGraphics.bufferSource"
       ],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.bufferSource": "net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource()"
+      },
       "match": "symbol:\\s+method bufferSource\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )GuiGraphics",
       "apply": {
         "find": "(?<![\\w.])[\\w.]*\\w\\s*\\.\\s*bufferSource\\s*\\(\\s*\\)",
@@ -7973,6 +8002,9 @@
       "members": [
         "net.minecraft.core.Registry.asLookup"
       ],
+      "inClass": {
+        "net.minecraft.core.Registry.asLookup": "$0"
+      },
       "match": "symbol:\\s+method asLookup\\(\\)",
       "apply": {
         "find": "\\s*\\.\\s*asLookup\\s*\\(\\s*\\)",
@@ -8124,6 +8156,9 @@
       "members": [
         "net.minecraft.world.item.crafting.Ingredient.isEmpty"
       ],
+      "inClass": {
+        "net.minecraft.world.item.crafting.Ingredient.isEmpty": "$0.items().isEmpty()"
+      },
       "match": "symbol:\\s+method isEmpty\\(\\)\\n\\s*location: variable \\w+ of type Ingredient",
       "apply": {
         "find": "\\b{receiver}\\s*\\.\\s*isEmpty\\s*\\(\\s*\\)",
@@ -8218,6 +8253,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.world.level.Level.getRecipeManager"],
+      "inClass": {
+        "net.minecraft.world.level.Level.getRecipeManager": "$0.getServer().getRecipeManager()"
+      },
       "match": "symbol:\\s+method getRecipeManager\\(\\)\\n\\s*location: (?:variable \\w+ of type|class) (?:[\\w.]*\\.)?Level\\b",
       "apply": {
         "find": "\\.\\s*getRecipeManager\\s*\\(\\s*\\)",

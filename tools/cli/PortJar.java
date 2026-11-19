@@ -75,7 +75,7 @@ final class PortJar {
         Files.createDirectories(receipt.getParent());
         var ported = Run.command(
             List.of(jdk.java().toString(), "-Xmx6g", "-cp", cp, "JarPort", "--from", from, "--to", to, "--loader", "neoforge",
-                "--map", map.toString(), "--out", out.toString(), "--report", receipt.toString(), jar.toString()),
+                "--map", map.toString(), "--fixes", home.resolve("knowledge/fixes.json").toString(), "--out", out.toString(), "--report", receipt.toString(), jar.toString()),
             report.root, Map.of(), report.log("jar-port"), 900
         );
         report.stage("jar-port", ported, Map.of());
@@ -160,7 +160,7 @@ final class PortJar {
     /** JarPort and what it reads, compiled once per version of their sources. */
     static Path compile(Path home, Runtimes.Jdk jdk, Mmt.Report report) throws Exception {
         List<Path> sources = new ArrayList<>();
-        for (String s : List.of("tools/JarPort.java", "tools/Exposure.java", "tools/GameDiff.java", "tools/VersionMap.java", "tools/cli/Json.java")) {
+        for (String s : List.of("tools/JarPort.java", "tools/FixExpr.java", "tools/Exposure.java", "tools/GameDiff.java", "tools/VersionMap.java", "tools/cli/Json.java")) {
             sources.add(home.resolve(s));
         }
         Path classes = Path.of(System.getProperty("user.home"), ".mmt", "jar-port", "classes", Fingerprints.files(sources));
