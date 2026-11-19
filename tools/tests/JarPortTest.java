@@ -25,8 +25,12 @@ public final class JarPortTest {
         Files.writeString(map, """
             {"classes": [{"from": "g.Old", "to": "g.New"}],
              "methods": [{"owner": "g.Block", "from": "foo", "desc": "()V", "to": "bar", "newDesc": "()V"},
-                         {"owner": "g.Block", "from": "sig", "desc": "()V", "to": "sig", "newDesc": "(I)V"}],
-             "fields": [{"owner": "g.Block", "from": "old", "desc": "I", "to": "renamed", "newDesc": "I"}],
+                         {"owner": "g.Block", "from": "sig", "desc": "()V", "to": "sig", "newDesc": "(I)V"},
+                         {"owner": "g.Vault", "from": "hid", "desc": "()V", "to": "secret", "newDesc": "()V"},
+                         {"owner": "g.Root", "from": "foo2", "desc": "()V", "to": "bar2", "newDesc": "()V"},
+                         {"owner": "g.Api", "from": "run", "desc": "()V", "to": "go", "newDesc": "()V"}],
+             "fields": [{"owner": "g.Block", "from": "old", "desc": "I", "to": "renamed", "newDesc": "I"},
+                        {"owner": "g.Vault", "from": "inner", "desc": "I", "to": "hidden", "newDesc": "I"}],
              "rewrites": [{"owner": "g.Block", "from": "gone", "desc": "()V", "toOwner": "", "to": "", "newDesc": ""}]}
             """);
         JarPort port = new JarPort(a, b, map);
@@ -58,6 +62,10 @@ public final class JarPortTest {
         )), "only what does not link in the new release is reported: " + unlinked);
         expect(run.contains("call g/Block.sig()V"), "a call whose parameters changed is left as written, not given a descriptor its stack does not fit: " + run);
         expect(run.contains("call g/Block.prot()V"), "a protected method stays callable from a subclass (not reported above)");
+        expect(run.contains("call g/Vault.secret()V") && run.contains("get g/Vault.hidden I"),
+            "a rename to a private member the mod's access transformer opens with a wildcard is taken: " + run);
+        expect(members(entries.get("m/ModMid.class")).containsKey("method foo2()V"),
+            "an override stays as written when the game class it extends keeps the old name, though an ancestor renamed it");
         Map<String, String> child = members(entries.get("m/MyChild.class"));
         expect(child.containsKey("method bar()V") && !child.containsKey("method foo()V"), "a second-level override follows the rename too: " + child.keySet());
         Map<String, String> byName = members(entries.get("m/OldMixin.class"));
@@ -83,11 +91,13 @@ public final class JarPortTest {
         Map<String, byte[]> inner = entries(entries.get("META-INF/jars/lib.jar"));
         String innerToml = new String(inner.get("META-INF/neoforge.mods.toml"), StandardCharsets.UTF_8);
         expect(innerToml.contains("[2.0]"), "a nested mod listed in jarjar/metadata.json is ported too: " + innerToml);
-        expect(members(inner.get("l/Lib.class")).get("method use()V").contains("call g/Block.bar()V"), "and its classes are rewritten");
+        String use = members(inner.get("l/Lib.class")).get("method use()V");
+        expect(use.contains("call g/Block.bar()V"), "and its classes are rewritten: " + use);
+        expect(use.contains("call g/Vault.secret()V"), "with the access its parent's access transformer gives the game: " + use);
         if (failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port: 23 checks passed");
+        System.out.println("jar-port: 26 checks passed");
     }
 
     static void expect(boolean ok, String what) {
@@ -109,6 +119,22 @@ public final class JarPortTest {
         block.methods.put(method + "()V", new GameDiff.Meth(block, method, "()V", Opcodes.ACC_PUBLIC));
         block.fields.put(field, new GameDiff.Fld(block, field, "I", Opcodes.ACC_PUBLIC));
         block.methods.put("prot()V", new GameDiff.Meth(block, "prot", "()V", Opcodes.ACC_PROTECTED));
+        String hid = old ? "hid" : "secret";
+        GameDiff.Cls vault = new GameDiff.Cls("g/Vault", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
+        vault.methods.put(hid + "()V", new GameDiff.Meth(vault, hid, "()V", old ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PRIVATE));
+        String inner = old ? "inner" : "hidden";
+        vault.fields.put(inner, new GameDiff.Fld(vault, inner, "I", old ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PRIVATE));
+        GameDiff.Cls root = new GameDiff.Cls("g/Root", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
+        root.methods.put((old ? "foo2" : "bar2") + "()V", new GameDiff.Meth(root, old ? "foo2" : "bar2", "()V", Opcodes.ACC_PUBLIC));
+        GameDiff.Cls mid = new GameDiff.Cls("g/Mid", Opcodes.ACC_PUBLIC, "g/Root", List.of(), false);
+        if (!old) {
+            mid.methods.put("foo2()V", new GameDiff.Meth(mid, "foo2", "()V", Opcodes.ACC_PUBLIC));
+        }
+        GameDiff.Cls api = new GameDiff.Cls("g/Api", Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "java/lang/Object", List.of(), false);
+        api.methods.put((old ? "run" : "go") + "()V", new GameDiff.Meth(api, old ? "run" : "go", "()V", Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT));
+        for (GameDiff.Cls c : List.of(root, mid, api, vault)) {
+            s.classes.put(c.name, c);
+        }
         block.methods.put("closed()V", new GameDiff.Meth(block, "closed", "()V", old ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PRIVATE));
         String sig = old ? "()V" : "(I)V";
         block.methods.put("sig" + sig, new GameDiff.Meth(block, "sig", sig, Opcodes.ACC_PUBLIC));
@@ -131,6 +157,19 @@ public final class JarPortTest {
     static byte[] empty(String name, int access, String sup, String... ifaces) {
         ClassWriter w = new ClassWriter(0);
         w.visit(Opcodes.V21, access, name, null, sup, ifaces.length == 0 ? null : ifaces);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** A class (or interface, as a default method) with one empty method that overrides a game one. */
+    static byte[] overriding(String name, int access, String sup, String iface, String method) {
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V21, access, name, null, sup, iface == null ? null : new String[] { iface });
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, method, "()V", null, null);
+        m.visitCode();
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 1);
+        m.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }
@@ -181,6 +220,11 @@ public final class JarPortTest {
             run.visitVarInsn(Opcodes.ALOAD, 0);
             run.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g/Block", call, "()V", false);
         }
+        run.visitInsn(Opcodes.ACONST_NULL);
+        run.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g/Vault", "hid", "()V", false);
+        run.visitInsn(Opcodes.ACONST_NULL);
+        run.visitFieldInsn(Opcodes.GETFIELD, "g/Vault", "inner", "I");
+        run.visitInsn(Opcodes.POP);
         run.visitInsn(Opcodes.RETURN);
         run.visitMaxs(0, 1);
         run.visitEnd();
@@ -214,6 +258,8 @@ public final class JarPortTest {
         use.visitCode();
         use.visitInsn(Opcodes.ACONST_NULL);
         use.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g/Block", "foo", "()V", false);
+        use.visitInsn(Opcodes.ACONST_NULL);
+        use.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g/Vault", "hid", "()V", false);
         use.visitInsn(Opcodes.RETURN);
         use.visitMaxs(0, 1);
         use.visitEnd();
@@ -256,6 +302,10 @@ public final class JarPortTest {
         child.visitEnd();
         files.put("m/MyChild.class", child.toByteArray());
         files.put("m/Impl.class", empty("m/Impl", Opcodes.ACC_PUBLIC, "java/lang/Object", "g/GoneIface"));
+        files.put("META-INF/accesstransformer.cfg", "public g.Vault *()\npublic g.Vault *\n".getBytes(StandardCharsets.UTF_8));
+        files.put("m/ModMid.class", overriding("m/ModMid", Opcodes.ACC_PUBLIC, "g/Mid", null, "foo2"));
+        files.put("m/ApiDefault.class", overriding("m/ApiDefault", Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "java/lang/Object", "g/Api", "run"));
+        files.put("m/Impl2.class", empty("m/Impl2", Opcodes.ACC_PUBLIC, "java/lang/Object", "m/ApiDefault"));
         files.put("m/Square.class", empty("m/Square", Opcodes.ACC_PUBLIC, "java/lang/Object", "g/Shape"));
         int abstractClass = Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT;
         files.put("m/OldMixin.class", mixin("m/OldMixin", abstractClass, "targets", "g.Old", w2 -> { }));

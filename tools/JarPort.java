@@ -161,36 +161,29 @@ public final class JarPort {
 
     /** A whole jar, nested mods included; each jar's result is added to results. */
     byte[] port(byte[] jar, String name, List<Map<String, Object>> results) throws IOException {
-        Map<String, byte[]> entries = new LinkedHashMap<>();
+        return port(jar, name, results, null);
+    }
+
+    /**
+     * grants: what every access transformer in the outermost jar and its nested jars opens (null: read it here). The loader
+     * applies an access transformer to the game for every mod, so a nested helper may rely on its parent's.
+     */
+    byte[] port(byte[] jar, String name, List<Map<String, Object>> results, Set<String> grants) throws IOException {
         Map<String, Long> times = new HashMap<>();
-        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(jar))) {
-            for (ZipEntry e; (e = zip.getNextEntry()) != null; ) {
-                if (unsafe(e.getName())) {
-                    throw new IOException(name + " has an entry that points outside the jar: " + e.getName());
-                }
-                if (!e.isDirectory()) {
-                    entries.put(e.getName(), zip.readAllBytes());
-                    times.put(e.getName(), e.getTime());
-                }
-            }
-        }
-        // Jar-in-jar: the loader finds nested jars where META-INF/jarjar/metadata.json says ("path"), often META-INF/jars/.
-        Set<String> nested = new HashSet<>();
-        byte[] list = entries.get("META-INF/jarjar/metadata.json");
-        if (list != null) {
-            for (Object j : Json.array(Json.object(Json.parse(new String(list, StandardCharsets.UTF_8))).getOrDefault("jars", List.of()))) {
-                nested.add(Json.text(Json.object(j), "path", ""));
+        Map<String, byte[]> entries = entries(jar, name, times);
+        Set<String> nested = nested(entries);
+        if (grants == null) {
+            grants = new HashSet<>();
+            for (String text : accessTransformers(entries, name)) {
+                widen(grants, text);
             }
         }
         Mod mod = new Mod();
+        mod.widened.addAll(grants);
         for (var e : entries.entrySet()) {
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
                 read(mod, e.getValue());
             }
-        }
-        byte[] at = entries.get("META-INF/accesstransformer.cfg");
-        if (at != null) {
-            widen(mod, new String(at, StandardCharsets.UTF_8));
         }
         plan(mod);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -206,7 +199,7 @@ public final class JarPort {
                 } else if (n.equals("META-INF/neoforge.mods.toml") || n.equals("META-INF/mods.toml")) {
                     data = metadata(new String(data, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8);
                 } else if (nested.contains(n) || n.startsWith("META-INF/jarjar/") && n.endsWith(".jar")) {
-                    data = port(data, name + "!" + n.substring(n.lastIndexOf('/') + 1), results);
+                    data = port(data, name + "!" + n.substring(n.lastIndexOf('/') + 1), results, grants);
                 } else if (n.endsWith(".class") && !n.startsWith("META-INF/versions/")) {
                     data = rewrite(mod, data);
                 } else if (n.equals("META-INF/accesstransformer.cfg")) {
@@ -226,6 +219,54 @@ public final class JarPort {
         result.put("silent", new ArrayList<>(mod.silent));
         results.add(result);
         return buffer.toByteArray();
+    }
+
+    /** A jar's files by name (directories left out); times gets each file's time. An entry pointing outside the jar refuses it. */
+    static Map<String, byte[]> entries(byte[] jar, String name, Map<String, Long> times) throws IOException {
+        Map<String, byte[]> entries = new LinkedHashMap<>();
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(jar))) {
+            for (ZipEntry e; (e = zip.getNextEntry()) != null; ) {
+                if (unsafe(e.getName())) {
+                    throw new IOException(name + " has an entry that points outside the jar: " + e.getName());
+                }
+                if (!e.isDirectory()) {
+                    entries.put(e.getName(), zip.readAllBytes());
+                    times.put(e.getName(), e.getTime());
+                }
+            }
+        }
+        return entries;
+    }
+
+    /** Jar-in-jar: nested jars are where META-INF/jarjar/metadata.json says ("path", often META-INF/jars/), or in META-INF/jarjar/. */
+    static Set<String> nested(Map<String, byte[]> entries) {
+        Set<String> nested = new HashSet<>();
+        byte[] list = entries.get("META-INF/jarjar/metadata.json");
+        if (list != null) {
+            for (Object j : Json.array(Json.object(Json.parse(new String(list, StandardCharsets.UTF_8))).getOrDefault("jars", List.of()))) {
+                nested.add(Json.text(Json.object(j), "path", ""));
+            }
+        }
+        for (String n : entries.keySet()) {
+            if (n.startsWith("META-INF/jarjar/") && n.endsWith(".jar")) {
+                nested.add(n);
+            }
+        }
+        nested.retainAll(entries.keySet());
+        return nested;
+    }
+
+    /** Every access transformer in a jar and its nested jars. */
+    static List<String> accessTransformers(Map<String, byte[]> entries, String name) throws IOException {
+        List<String> out = new ArrayList<>();
+        byte[] at = entries.get("META-INF/accesstransformer.cfg");
+        if (at != null) {
+            out.add(new String(at, StandardCharsets.UTF_8));
+        }
+        for (String n : nested(entries)) {
+            out.addAll(accessTransformers(entries(entries.get(n), name + "!" + n, new HashMap<>()), name + "!" + n));
+        }
+        return out;
     }
 
     /** An entry name that an unzip would write outside its folder: absolute, a drive, a backslash or a ".." part. */
@@ -420,7 +461,9 @@ public final class JarPort {
 
     /** Whether one of callers may use a member with these flags declared in holder (new names), after the mod's access transformer. */
     boolean memberOpen(Mod mod, List<String> callers, String holder, String member, int flags) {
-        if ((flags & Opcodes.ACC_PUBLIC) != 0 || mod.widened.contains(holder + "." + member)) {
+        boolean method = member.contains("(");
+        String every = holder + (method ? ".*()" : ".*");
+        if ((flags & Opcodes.ACC_PUBLIC) != 0 || mod.widened.contains(holder + "." + member) || mod.widened.contains(every) && !member.startsWith("<init>")) {
             return true;
         }
         for (String caller : callers) {
@@ -614,6 +657,33 @@ public final class JarPort {
         return null;
     }
 
+    /** The game classes (new names) a mod class extends or implements, directly or through the mod's own classes. */
+    List<String> gameParents(Mod mod, GameDiff.RawCls rc) {
+        List<String> out = new ArrayList<>();
+        Deque<String> queue = new ArrayDeque<>();
+        if (rc.sup != null) {
+            queue.add(rc.sup);
+        }
+        queue.addAll(rc.ifaces);
+        Set<String> seen = new HashSet<>();
+        while (!queue.isEmpty()) {
+            String c = queue.poll();
+            if (!seen.add(c)) {
+                continue;
+            }
+            GameDiff.RawCls own = mod.classes.get(c);
+            if (own == null) {
+                out.add(cls(c));
+                continue;
+            }
+            if (own.sup != null) {
+                queue.add(own.sup);
+            }
+            queue.addAll(own.ifaces);
+        }
+        return out;
+    }
+
     void override(Mod mod, GameDiff.RawCls rc, GameDiff.RawMeth m) {
         List<String> parents = new ArrayList<>(rc.ifaces);
         if (rc.sup != null) {
@@ -629,11 +699,13 @@ public final class JarPort {
         }
         String[] moved = route.method(decl.owner(), m.name, m.desc);
         String mapped = desc(m.desc);
-        String newRoot = cls(decl.owner());
-        if (Exposure.declaring(b, newRoot, 'm', m.name, mapped) != null) {
+        // Looked up from the game classes the mod actually extends: a game subclass may keep the old name while its
+        // ancestor renames it, and then the mod's method still overrides as written.
+        List<String> supers = gameParents(mod, rc);
+        if (supers.stream().anyMatch(s -> Exposure.declaring(b, s, 'm', m.name, mapped) != null)) {
             return; // still overrides as written
         }
-        if (moved[2].equals(mapped) && (Exposure.declaring(b, newRoot, 'm', moved[1], moved[2]) != null || Exposure.declaring(b, moved[0], 'm', moved[1], moved[2]) != null)) {
+        if (moved[2].equals(mapped) && supers.stream().anyMatch(s -> Exposure.declaring(b, s, 'm', moved[1], moved[2]) != null)) {
             mod.renamedDecl.put(rc.name + "." + m.name + m.desc, new String[] { moved[1], moved[2] });
             mod.change("override renamed");
             return;
@@ -676,7 +748,8 @@ public final class JarPort {
             if (own != null) {
                 for (GameDiff.RawMeth m : own.methods.values()) {
                     if ((m.flags & Opcodes.ACC_ABSTRACT) == 0) {
-                        written.add(m.name + desc(m.desc));
+                        String[] renamed = mod.renamedDecl.get(own.name + "." + m.name + m.desc);
+                        written.add(renamed == null ? m.name + desc(m.desc) : renamed[0] + renamed[1]);
                     }
                 }
                 own.ifaces.forEach(i -> game.add(mod.classes.containsKey(i) ? i : cls(i)));
@@ -1287,9 +1360,11 @@ public final class JarPort {
         return m.appendTail(sb).toString();
     }
 
-    /** Access transformer lines name game members in the old release; each one is moved to its new name or reported. */
-    /** What the mod's access transformer makes public, in the new release's names, so linking does not count it as closed. */
-    void widen(Mod mod, String text) {
+    /**
+     * What an access transformer makes public, in the new release's names, so linking does not count it as closed: a class
+     * ("owner"), a member ("owner.name" or "owner.name+desc"), every field ("owner.*") or every method but constructors ("owner.*()").
+     */
+    void widen(Set<String> grants, String text) {
         for (String line : text.split("\n")) {
             String[] p = line.replaceAll("#.*", "").trim().split("\\s+");
             if (p.length < 2 || !p[0].startsWith("public")) {
@@ -1298,19 +1373,22 @@ public final class JarPort {
             String owner = p[1].replace('.', '/');
             String newOwner = cls(owner);
             if (p.length == 2) {
-                mod.widened.add(newOwner);
+                grants.add(newOwner);
                 continue;
             }
             int paren = p[2].indexOf('(');
-            if (paren < 0) {
-                mod.widened.add(newOwner + "." + route.field(owner, p[2])[1]);
+            if (p[2].equals("*") || p[2].equals("*()")) {
+                grants.add(newOwner + "." + p[2]);
+            } else if (paren < 0) {
+                grants.add(newOwner + "." + route.field(owner, p[2])[1]);
             } else {
                 String[] moved = route.method(owner, p[2].substring(0, paren), p[2].substring(paren));
-                mod.widened.add(newOwner + "." + moved[1] + moved[2]);
+                grants.add(newOwner + "." + moved[1] + moved[2]);
             }
         }
     }
 
+    /** Access transformer lines name game members in the old release; each one is moved to its new name or reported. */
     String accessTransformer(Mod mod, String text) {
         StringBuilder out = new StringBuilder();
         for (String line : text.split("\n", -1)) {
@@ -1324,7 +1402,7 @@ public final class JarPort {
             String rest = p.length > 2 ? p[2] : null;
             String newOwner = cls(owner);
             String newRest = rest;
-            if (rest != null && a.classes.containsKey(owner)) {
+            if (rest != null && !rest.startsWith("*") && a.classes.containsKey(owner)) {
                 int paren = rest.indexOf('(');
                 if (paren < 0) {
                     String[] moved = route.field(owner, rest);
