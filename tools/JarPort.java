@@ -72,12 +72,53 @@ public final class JarPort {
         Map<String, Object> raw = Json.read(map);
         for (Object o : Json.array(raw.getOrDefault("rewrites", List.of()))) {
             var w = Json.object(o);
+            String key = Exposure.Route.internal(Json.text(w, "owner", "")) + "." + Json.text(w, "from", "") + Json.text(w, "desc", "");
             if (Json.text(w, "to", "").isEmpty() && Json.text(w, "toOwner", "").isEmpty()) {
-                String key = Exposure.Route.internal(Json.text(w, "owner", "")) + "." + Json.text(w, "from", "") + Json.text(w, "desc", "");
                 removals.computeIfAbsent(key, k -> new ArrayList<>()).add(w);
+            } else if (majority(w)) {
+                rewrites.computeIfAbsent(key, k -> new ArrayList<>()).add(new Call(
+                    Exposure.Route.internal(Json.text(w, "toOwner", "")), Json.text(w, "to", ""), Json.text(w, "newDesc", ""),
+                    Boolean.TRUE.equals(w.get("newStatic"))
+                ));
+            }
+        }
+        for (Object o : Json.array(raw.getOrDefault("argDefaults", List.of()))) {
+            var w = Json.object(o);
+            if (majority(w)) {
+                String key = Exposure.Route.internal(Json.text(w, "owner", "")) + "." + Json.text(w, "from", "") + Json.text(w, "desc", "");
+                defaults.put(key, new Default(
+                    new Call(Exposure.Route.internal(Json.text(w, "toOwner", "")), Json.text(w, "to", ""), Json.text(w, "newDesc", ""), false),
+                    ((Number) w.get("index")).intValue(), Json.text(w, "value", "")
+                ));
+            }
+        }
+        for (Object o : Json.array(raw.getOrDefault("chains", List.of()))) {
+            var w = Json.object(o);
+            if (majority(w)) {
+                String key = Exposure.Route.internal(Json.text(w, "owner", "")) + "." + Json.text(w, "from", "") + Json.text(w, "desc", "");
+                chains.put(key, new Chain(Exposure.Route.internal(Json.text(w, "newOwner", "")), Json.text(w, "steps", "")));
             }
         }
     }
+
+    /** A replacement the game's own code shows in more than half of the places it changed. */
+    static boolean majority(Map<String, Object> w) {
+        Object votes = w.get("votes"), of = w.get("of");
+        return !(votes instanceof Number v) || !(of instanceof Number n) || v.intValue() * 2 > n.intValue();
+    }
+
+    /** A call in the new release's names. */
+    record Call(String owner, String name, String desc, boolean isStatic) {}
+
+    /** A parameter the game added, and the one value its own code passes there ("a.b.C::m", "a.b.C.FIELD", "a.b.C.m()"). */
+    record Default(Call to, int index, String value) {}
+
+    /** What replaces a member read from the same receiver: "f:name" and "m:name" steps; the last takes the old call's arguments. */
+    record Chain(String newOwner, String steps) {}
+
+    final Map<String, List<Call>> rewrites = new HashMap<>(); // owner.name+desc (old names) -> calls the game's code switched to
+    final Map<String, Default> defaults = new HashMap<>();
+    final Map<String, Chain> chains = new HashMap<>(); // owner.name+desc, or owner.name for a field
 
     public static void main(String[] args) throws Exception {
         String from = null, to = null, map = null, out = null, loader = null, report = null;
@@ -502,6 +543,70 @@ public final class JarPort {
         return false;
     }
 
+    /** Whether c (new names) is target or extends or implements it, through the mod's own classes and the new release. */
+    boolean isA(Mod mod, String c, String target) {
+        Deque<String> queue = new ArrayDeque<>(List.of(c));
+        Set<String> seen = new HashSet<>();
+        while (!queue.isEmpty()) {
+            String k = queue.poll();
+            if (k.equals(target)) {
+                return true;
+            }
+            if (!seen.add(k)) {
+                continue;
+            }
+            GameDiff.RawCls own = mod.classes.get(k);
+            if (own != null) {
+                if (own.sup != null) {
+                    queue.add(cls(own.sup));
+                }
+                own.ifaces.forEach(i -> queue.add(cls(i)));
+                continue;
+            }
+            GameDiff.Cls game = b.classes.get(k);
+            if (game != null) {
+                if (game.sup != null) {
+                    queue.add(game.sup);
+                }
+                queue.addAll(game.ifaces);
+            }
+        }
+        return false;
+    }
+
+    /** {name, descriptor} of the one abstract method of a functional interface (the game's or the JDK's), or null. */
+    String[] functional(String internal) {
+        List<String[]> found = new ArrayList<>();
+        GameDiff.Cls game = b.classes.get(internal);
+        if (game != null) {
+            Deque<GameDiff.Cls> queue = new ArrayDeque<>(List.of(game));
+            Set<String> defaults = new HashSet<>();
+            while (!queue.isEmpty()) {
+                GameDiff.Cls k = queue.poll();
+                for (GameDiff.Meth m : k.methods.values()) {
+                    if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !OBJECT.contains(m.name + m.desc) && !defaults.contains(m.name + m.desc)) {
+                        found.add(new String[] { m.name, m.desc });
+                    } else if ((m.flags & Opcodes.ACC_STATIC) == 0) {
+                        defaults.add(m.name + m.desc);
+                    }
+                }
+                k.ifaces.stream().map(b.classes::get).filter(Objects::nonNull).forEach(queue::add);
+            }
+        } else if (internal.startsWith("java/")) {
+            try {
+                Class<?> type = Class.forName(internal.replace('/', '.'), false, null);
+                for (java.lang.reflect.Method m : type.getMethods()) {
+                    if (java.lang.reflect.Modifier.isAbstract(m.getModifiers()) && !OBJECT.contains(m.getName() + Type.getMethodDescriptor(m))) {
+                        found.add(new String[] { m.getName(), Type.getMethodDescriptor(m) });
+                    }
+                }
+            } catch (ClassNotFoundException | LinkageError notJdk) {
+                return null;
+            }
+        }
+        return found.stream().map(f -> f[0] + f[1]).distinct().count() == 1 ? found.get(0) : null;
+    }
+
     record FieldHit(String desc, boolean open) {}
 
     /** The field the new release resolves from owner (new names), through the mod's own classes, or null. */
@@ -532,16 +637,19 @@ public final class JarPort {
      */
     String[] target(Mod mod, List<String> callers, String siteOwner, char kind, String name, String desc, Decl decl) {
         String newSite = cls(siteOwner);
-        if (kind == 'f') {
+        if (kind == 'f' || kind == 'r') {
             String[] moved = route.field(decl.owner(), name);
             String fieldDesc = desc(desc);
             for (String[] t : List.of(new String[] { newSite, name }, new String[] { newSite, moved[1] }, new String[] { moved[0], moved[1] })) {
                 FieldHit found = fieldNew(mod, callers, t[0], t[1]);
-                if (found != null && found.desc().equals(fieldDesc) && found.open()) {
-                    return new String[] { t[0], t[1], fieldDesc };
+                // A field read ('r') may now hold a subtype (1.21.2: InteractionResult.SUCCESS is an InteractionResult$Success):
+                // the value read still serves where the old type was used. A write must match exactly.
+                boolean fits = found != null && (found.desc().equals(fieldDesc) || kind == 'r' && usable(Type.getType(found.desc()), Type.getType(fieldDesc)));
+                if (fits && found.open()) {
+                    return new String[] { t[0], t[1], found.desc() };
                 }
                 if (found != null) {
-                    return null; // there with another type, or closed to the mod: a getfield of it fails to link
+                    return null; // there with another type, or closed to the mod: the access fails to link
                 }
             }
             return null;
@@ -571,17 +679,32 @@ public final class JarPort {
         return null;
     }
 
+    /**
+     * Whether a call written for from (new names) still works against to: the same number of arguments, each old one
+     * acceptable where the new one is asked (a supertype now), and a result the caller can use as the old one (a subtype now).
+     */
     boolean widens(String from, String to) {
         Type[] before = Type.getArgumentTypes(from), after = Type.getArgumentTypes(to);
-        if (before.length != after.length || !Type.getReturnType(from).equals(Type.getReturnType(to))) {
+        if (before.length != after.length || !usable(Type.getReturnType(to), Type.getReturnType(from))) {
             return false;
         }
         for (int i = 0; i < before.length; i++) {
-            if (!before[i].equals(after[i]) && !Exposure.assignable(b, before[i].getClassName(), after[i].getClassName())) {
+            if (!usable(before[i], after[i])) {
                 return false;
             }
         }
         return true;
+    }
+
+    /** A value of type value can be used where type wanted is asked, without a cast. */
+    boolean usable(Type value, Type wanted) {
+        if (value.equals(wanted)) {
+            return true;
+        }
+        if (value.getSort() != Type.OBJECT || wanted.getSort() != Type.OBJECT) {
+            return false;
+        }
+        return Exposure.assignable(b, value.getClassName(), wanted.getClassName());
     }
 
     /** Positions of the new parameters among the old ones when the new list is the old one with some taken out (one way only), else null. */
@@ -1170,7 +1293,12 @@ public final class JarPort {
                 super.visitFieldInsn(opcode, owner, name, desc);
                 return;
             }
-            String[] t = target(mod, callers, owner, 'f', name, desc, decl);
+            boolean read = opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC;
+            String[] t = target(mod, callers, owner, read ? 'r' : 'f', name, desc, decl);
+            if (t == null && read && chain(decl.owner() + "." + name, Type.getType(desc), opcode == Opcodes.GETSTATIC, "")) {
+                mod.change("field read through a chain");
+                return;
+            }
             if (t == null) {
                 mod.unlinked.add("field: " + Exposure.dotted(decl.owner()) + "." + name);
                 super.visitFieldInsn(opcode, owner, name, desc);
@@ -1202,6 +1330,17 @@ public final class JarPort {
                 return;
             }
             String[] t = target(mod, callers, owner, 'm', name, desc, decl);
+            String key = decl.owner() + "." + name + desc;
+            if (t == null && rewritten(key, owner, desc, opcode)) {
+                return;
+            }
+            if (t == null && defaulted(key, owner, desc, opcode)) {
+                return;
+            }
+            if (t == null && opcode != Opcodes.INVOKESTATIC && chain(key, Type.getReturnType(desc), false, desc)) {
+                mod.change("call through a chain");
+                return;
+            }
             if (t == null) {
                 String[] moved = route.method(decl.owner(), name, desc);
                 int[] keep = linksNew(mod, callers, moved[0], 'm', moved[1], moved[2]) ? kept(desc(desc), moved[2]) : null;
@@ -1237,6 +1376,200 @@ public final class JarPort {
                 }
             }
             super.visitMethodInsn(opcode, inverse.getOrDefault(t[0], t[0]), t[1], oldDesc(t[2]), nowInterface);
+        }
+
+        /**
+         * A call the game's own code switched to another (Registry.getHolder -> HolderGetter.get): taken when the receiver
+         * is one, the arguments and the result still fit, and the mod may call it.
+         */
+        boolean rewritten(String key, String owner, String desc, int opcode) {
+            boolean isStatic = opcode == Opcodes.INVOKESTATIC;
+            for (Call c : rewrites.getOrDefault(key, List.of())) {
+                if (c.isStatic() != isStatic || !widens(desc(desc), c.desc()) || !linksNew(mod, callers, c.owner(), 'm', c.name(), c.desc())) {
+                    continue;
+                }
+                if (!isStatic && !isA(cls(owner), c.owner())) {
+                    continue;
+                }
+                invoke(isStatic, c);
+                mod.change("call rewritten from the game's code");
+                return true;
+            }
+            return false;
+        }
+
+        /** A call to a method that gained one parameter, with the one value the game's own code passes there inserted. */
+        boolean defaulted(String key, String owner, String desc, int opcode) {
+            Default d = defaults.get(key);
+            if (d == null || opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.INVOKESPECIAL) {
+                return false;
+            }
+            Type[] now = Type.getArgumentTypes(d.to().desc());
+            Type[] before = Type.getArgumentTypes(desc(desc));
+            if (now.length != before.length + 1 || !isA(cls(owner), d.to().owner()) || !linksNew(mod, callers, d.to().owner(), 'm', d.to().name(), d.to().desc())) {
+                return false;
+            }
+            Runnable value = value(d.value(), now[d.index()]);
+            if (value == null) {
+                return false;
+            }
+            Type[] args = Type.getArgumentTypes(desc);
+            int[] slots = new int[args.length];
+            for (int i = args.length - 1; i >= d.index(); i--) {
+                slots[i] = nextLocal;
+                nextLocal += args[i].getSize();
+                super.visitVarInsn(args[i].getOpcode(Opcodes.ISTORE), slots[i]);
+            }
+            value.run();
+            for (int i = d.index(); i < args.length; i++) {
+                super.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), slots[i]);
+            }
+            invoke(false, d.to());
+            mod.change("call given the game's default argument");
+            return true;
+        }
+
+        /** Code that pushes the value the game's code passes ("a.b.C::m" as an instance of wanted, "a.b.C.FIELD", "a.b.C.m()"), or null. */
+        Runnable value(String text, Type wanted) {
+            Matcher ref = Pattern.compile("([\\w.$]+)::(\\w+)").matcher(text);
+            if (ref.matches()) {
+                String owner = ref.group(1).replace('.', '/');
+                String[] sam = functional(wanted.getInternalName());
+                GameDiff.Cls holder = b.classes.get(owner);
+                if (sam == null || holder == null) {
+                    return null;
+                }
+                int arity = Type.getArgumentTypes(sam[1]).length;
+                List<GameDiff.Meth> impls = holder.methods.values().stream()
+                    .filter(m -> m.name.equals(ref.group(2)) && (m.flags & Opcodes.ACC_STATIC) != 0 && Type.getArgumentTypes(m.desc).length == arity)
+                    .toList();
+                if (impls.size() != 1 || !memberOpen(mod, callers, owner, impls.get(0).name + impls.get(0).desc, impls.get(0).flags)) {
+                    return null;
+                }
+                GameDiff.Meth impl = impls.get(0);
+                Handle factory = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false);
+                Handle target = new Handle(Opcodes.H_INVOKESTATIC, inverse.getOrDefault(owner, owner), impl.name, oldDesc(impl.desc), (holder.flags & Opcodes.ACC_INTERFACE) != 0);
+                String wantedOld = oldDesc(wanted.getDescriptor());
+                return () -> super.visitInvokeDynamicInsn(sam[0], "()" + wantedOld, factory, Type.getType(sam[1]), target, Type.getType(oldDesc(impl.desc)));
+            }
+            Matcher call = Pattern.compile("([\\w.$]+)\\.(\\w+)\\(\\)").matcher(text);
+            Matcher field = Pattern.compile("([\\w.$]+)\\.(\\w+)").matcher(text);
+            boolean isCall = call.matches();
+            if (!isCall && !field.matches()) {
+                return null;
+            }
+            String owner = (isCall ? call : field).group(1).replace('.', '/');
+            String name = (isCall ? call : field).group(2);
+            GameDiff.Cls holder = b.classes.get(owner);
+            if (holder == null) {
+                return null;
+            }
+            if (isCall) {
+                GameDiff.Meth m = holder.methods.values().stream()
+                    .filter(x -> x.name.equals(name) && x.desc.startsWith("()") && (x.flags & Opcodes.ACC_STATIC) != 0).findFirst().orElse(null);
+                if (m == null || !usable(Type.getReturnType(m.desc), wanted) || !memberOpen(mod, callers, owner, m.name + m.desc, m.flags)) {
+                    return null;
+                }
+                boolean itf = (holder.flags & Opcodes.ACC_INTERFACE) != 0;
+                return () -> super.visitMethodInsn(Opcodes.INVOKESTATIC, inverse.getOrDefault(owner, owner), m.name, oldDesc(m.desc), itf);
+            }
+            GameDiff.Fld f = holder.fields.get(name);
+            if (f == null || (f.flags & Opcodes.ACC_STATIC) == 0 || !usable(Type.getType(f.desc), wanted) || !memberOpen(mod, callers, owner, name, f.flags)) {
+                return null;
+            }
+            return () -> super.visitFieldInsn(Opcodes.GETSTATIC, inverse.getOrDefault(owner, owner), name, oldDesc(f.desc));
+        }
+
+        /**
+         * A member read from the same receiver, step by step (1.21.2: Input.jumping -> keyPresses.jump()). The receiver is
+         * on the stack under the old call's arguments (desc; "" for a field read): they are set aside, the steps read
+         * fields and call no-argument methods, and the last step takes them back. The result must serve as the old one.
+         */
+        boolean chain(String key, Type result, boolean isStatic, String desc) {
+            Chain c = chains.get(key);
+            if (c == null || isStatic) {
+                return false;
+            }
+            String[] steps = c.steps().split(",");
+            Type[] args = desc.isEmpty() ? new Type[0] : Type.getArgumentTypes(desc);
+            Type[] newArgs = desc.isEmpty() ? new Type[0] : Type.getArgumentTypes(desc(desc));
+            // Plan every step before writing any: each one must link against the new release.
+            List<String[]> plan = new ArrayList<>();
+            String type = c.newOwner();
+            for (int i = 0; i < steps.length; i++) {
+                String[] s = steps[i].split(":", 2);
+                boolean last = i == steps.length - 1;
+                if (s.length != 2 || type == null) {
+                    return false;
+                }
+                if (s[0].equals("f")) {
+                    FieldHit f = fieldNew(mod, callers, type, s[1]);
+                    if (f == null || !f.open() || (last && !usable(Type.getType(f.desc()), Type.getType(desc(result.getDescriptor()))))) {
+                        return false;
+                    }
+                    plan.add(new String[] { "f", type, s[1], f.desc() });
+                    type = Type.getType(f.desc()).getSort() == Type.OBJECT ? Type.getType(f.desc()).getInternalName() : null;
+                    continue;
+                }
+                GameDiff.Meth found = null;
+                for (GameDiff.Cls k = b.classes.get(type); k != null && found == null; k = k.sup == null ? null : b.classes.get(k.sup)) {
+                    for (GameDiff.Meth m : k.methods.values()) {
+                        Type[] params = Type.getArgumentTypes(m.desc);
+                        boolean argsFit = params.length == (last ? newArgs.length : 0);
+                        for (int p = 0; argsFit && p < params.length; p++) {
+                            argsFit = usable(newArgs[p], params[p]);
+                        }
+                        boolean resultFits = !last || usable(Type.getReturnType(m.desc), Type.getType(desc(result.getDescriptor())));
+                        if (m.name.equals(s[1]) && (m.flags & Opcodes.ACC_STATIC) == 0 && argsFit && resultFits) {
+                            found = m;
+                            break;
+                        }
+                    }
+                }
+                if (found == null || !linksNew(mod, callers, type, 'm', found.name, found.desc)) {
+                    return false;
+                }
+                plan.add(new String[] { "m", type, found.name, found.desc });
+                Type ret = Type.getReturnType(found.desc);
+                type = ret.getSort() == Type.OBJECT ? ret.getInternalName() : null;
+            }
+            if (!isA(cls(key.substring(0, key.indexOf('.'))), c.newOwner())) {
+                return false;
+            }
+            int[] slots = new int[args.length];
+            for (int i = args.length - 1; i >= 0; i--) {
+                slots[i] = nextLocal;
+                nextLocal += args[i].getSize();
+                super.visitVarInsn(args[i].getOpcode(Opcodes.ISTORE), slots[i]);
+            }
+            for (int i = 0; i < plan.size(); i++) {
+                String[] p = plan.get(i);
+                if (i == plan.size() - 1) {
+                    for (int a = 0; a < args.length; a++) {
+                        super.visitVarInsn(args[a].getOpcode(Opcodes.ILOAD), slots[a]);
+                    }
+                }
+                if (p[0].equals("f")) {
+                    super.visitFieldInsn(Opcodes.GETFIELD, inverse.getOrDefault(p[1], p[1]), p[2], oldDesc(p[3]));
+                } else {
+                    invoke(false, new Call(p[1], p[2], p[3], false));
+                }
+            }
+            return true;
+        }
+
+        boolean isA(String c, String target) {
+            return JarPort.this.isA(mod, c, target);
+        }
+
+        /** A call in the new release's names, written in the old ones (the class renamer runs after), as an interface call where it is one. */
+        void invoke(boolean isStatic, Call c) {
+            GameDiff.Cls holder = b.classes.get(c.owner());
+            boolean itf = holder != null && (holder.flags & Opcodes.ACC_INTERFACE) != 0;
+            int op = isStatic ? Opcodes.INVOKESTATIC : itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL;
+            super.visitMethodInsn(op, inverse.getOrDefault(c.owner(), c.owner()), c.name(), oldDesc(c.desc()), itf);
         }
 
         /** Takes the arguments not in keep off the stack: all are stored in fresh locals and the kept ones loaded back. */

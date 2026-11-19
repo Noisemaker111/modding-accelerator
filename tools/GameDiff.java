@@ -2394,7 +2394,7 @@ public final class GameDiff {
          * links) is the value b passes. A method reference, a static field or a static no-argument call that two calls
          * agree on, at 80%, is the value (1.21.2: GuiGraphics.blitSprite(RenderType::guiTextured, ...)).
          */
-        List<ArgDefault> argDefaults() {
+        List<ArgDefault> argDefaults(List<Rewrite> rewrites) {
             Map<List<Meth>, Map<String, Integer>> votes = new HashMap<>();
             Map<List<Meth>, Integer> totals = new HashMap<>();
             for (var e : mAB.entrySet()) {
@@ -2461,7 +2461,67 @@ public final class GameDiff {
                     out.add(new ArgDefault(ma, mb, addedIndex(ma, mb), best, c1, total));
                 }
             }
+            out.addAll(passedByNewCalls(rewrites, out));
             out.sort(Comparator.comparing((ArgDefault d) -> d.to().sig()));
+            return out;
+        }
+
+        /**
+         * Added arguments that b's own calls fill with one method reference, counted over every call b makes to the new
+         * method. For a method the game changed in more than one way at once, its old and new calls do not line up, so
+         * argDefaults() sees no inserted code (1.21.2: GuiGraphics.blit took a Function and float texture coordinates
+         * together); its new calls still show the value (RenderType::guiTextured at 38 of 46). The value is the method
+         * reference created last before the call in the same statement; at 80% of all calls, as above.
+         */
+        List<ArgDefault> passedByNewCalls(List<Rewrite> rewrites, List<ArgDefault> known) {
+            Map<Meth, Meth> pairs = new HashMap<>();
+            for (Rewrite r : rewrites) {
+                if (r.to() != null && gainedOne(r.from(), r.to())) {
+                    pairs.put(r.to(), r.from());
+                }
+            }
+            for (ArgDefault d : known) {
+                pairs.remove(d.to());
+            }
+            Map<Meth, Map<String, Integer>> votes = new HashMap<>();
+            Map<Meth, Integer> totals = new HashMap<>();
+            for (Cls c : b.classes.values()) {
+                for (Meth y : c.methods.values()) {
+                    for (int j = 0; j < y.refs.length; j++) {
+                        Ref call = y.refs[j];
+                        Meth mb = call.kind() == 'm' ? b.method(call.owner(), call.name(), call.desc()) : null;
+                        if (mb == null || !pairs.containsKey(mb)) {
+                            continue;
+                        }
+                        totals.merge(mb, 1, Integer::sum);
+                        String value = null;
+                        // Back to the statement before (a call returning nothing ends one); number constants count as references.
+                        for (int k = j - 2; k >= Math.max(0, j - 32); k--) {
+                            Ref r = y.refs[k];
+                            if (r.kind() == 'm' && r.desc() != null && r.desc().endsWith(")V")) {
+                                break;
+                            }
+                            if (r.kind() == 'k' && String.valueOf(r.owner()).startsWith("indy:")) {
+                                value = valueOf(new Ref[] { r, y.refs[k + 1] });
+                                break;
+                            }
+                        }
+                        if (value != null) {
+                            votes.computeIfAbsent(mb, x -> new HashMap<>()).merge(value, 1, Integer::sum);
+                        }
+                    }
+                }
+            }
+            List<ArgDefault> out = new ArrayList<>();
+            for (var e : votes.entrySet()) {
+                var best = e.getValue().entrySet().stream().max(Map.Entry.comparingByValue()).get();
+                int total = totals.get(e.getKey());
+                Meth ma = pairs.get(e.getKey());
+                int index = addedIndex(ma, e.getKey());
+                if (index >= 0 && best.getValue() >= 2 && best.getValue() * 10 >= total * 8) {
+                    out.add(new ArgDefault(ma, e.getKey(), index, best.getKey(), best.getValue(), total));
+                }
+            }
             return out;
         }
 
@@ -3000,7 +3060,8 @@ public final class GameDiff {
                 );
                 hops.add(line);
                 System.out.println("  " + line);
-                for (Hop.Rewrite r : h.rewrites()) {
+                List<Hop.Rewrite> found = h.rewrites();
+                for (Hop.Rewrite r : found) {
                     rewrites.add(
                         "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
                         ", \"owner\": " + VersionMap.Diff.q(r.from().owner.name.replace('/', '.')) +
@@ -3015,7 +3076,7 @@ public final class GameDiff {
                         ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
                     );
                 }
-                for (Hop.ArgDefault d : h.argDefaults()) {
+                for (Hop.ArgDefault d : h.argDefaults(found)) {
                     argDefaults.add(
                         "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
                         ", \"owner\": " + VersionMap.Diff.q(d.from().owner.name.replace('/', '.')) +

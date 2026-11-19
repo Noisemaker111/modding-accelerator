@@ -477,7 +477,7 @@
      "id": "47",
      "title": "A fix names a game part and is applied in the class",
      "part": "Port by changed game part",
-     "status": "next",
+     "status": "doing",
      "text": "A porting rule is text: a pattern on the compiler's error and a find-and-replace on the source (355 of 358 rules), so it cannot reach a .jar and cannot tell LocalPlayer.sendSystemMessage from ServerPlayer.sendSystemMessage. A rule names the game member it replaces and what replaces it (a call, a call chain, a field read through a method), and JarPort applies it where a class references that member; a source port applies the same rule at the places the compiler resolved. A rule's test links its before against the old release and its after against the new one, in seconds, with no mod. The jar scoreboard's top entries are the order: GuiGraphics.blit (52 mods), RenderSystem.setShader (43), InteractionResult's fields (28), Registry.getTag (29).",
      "finish": "50 of the 150 most-downloaded NeoForge mods for 1.21.1 link against 1.21.2 (32 today), and every one that needs no other mod loads on a real 1.21.2 server",
      "wrongIf": "the link count rises and python bench/exposure.py load does not",
@@ -486,7 +486,8 @@
      "measures": [
       "port.jar-links",
       "port.jar-loads"
-     ]
+     ],
+     "result": "So far (2026-11-18): JarPort applies what the game's own code shows, inside the class: a call switched to another (Registry.getHolder -> HolderGetter.get), an added argument filled with the one value the game passes (GuiGraphics.blit gets RenderType::guiTextured, now learned from the new release's own calls), a member read through a chain, a field read that now holds a subtype (InteractionResult.SUCCESS). Each runs on the JVM in jar-port's test. Broken uses across the 150 mods fell from 5,640 to 5,234; mods that link went 30 -> 31, because 87 of the 150 still have six or more broken references. Next: rules in knowledge/fixes.json that name a member get a replacement JarPort applies, then RenderSystem.setShader (43 mods) and GameRenderer's shader getters (31)."
     },
     {
      "id": "51",
