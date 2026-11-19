@@ -16,7 +16,7 @@ that part is fixed with it. Read this whole file before the first command: it is
   and `port.jar-links.every-update`. It also ranks what holds the most mods back across every update. Run it on your
   PR's last commit and put the before and after in the PR (#120 moved it from 5,018).
 - One update: `python bench/exposure.py jars --loader neoforge|fabric --from 1.21.1 --to 1.21.2` (about 2 minutes):
-  NeoForge 43 of 150 link, Fabric 40. Fabric jars are read in Mojang's names through intermediary first
+  NeoForge 45 of 150 link, Fabric 40. Fabric jars are read in Mojang's names through intermediary first
   (tools/ModNames.java). Each line of its list says what the game's own code did about that reference.
 - `python bench/exposure.py load ...` is the proof: the standalone mods `jars` says link are ported and started on a
   real 1.21.2 server; 23 of 25 load, one is client-only and one has no code (its data uses an effect 1.21.2 removed).

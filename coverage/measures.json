@@ -1419,7 +1419,7 @@
     {"date": "2026-11-18", "value": 1413, "n": 49503, "note": "call rewrites, chains and class replacements only", "source": "python bench/exposure.py steps (bench/exposure/steps.json)"},
     {"date": "2026-11-19", "value": 2462, "n": 49503, "note": "the learner: what the game's new code computes in place of the member, written over its operands and applied like a rule's inClass; uses it cannot read count against it", "source": "python bench/exposure.py steps (bench/exposure/steps.json), PR #121"}
    ],
-   "target": {"value": 2462, "by": "2026-11-26", "step": "52"}
+   "target": {"value": 2462, "by": "2026-11-26", "step": "54"}
   },
   {
    "id": "port.corpus-builds",
