@@ -16,6 +16,9 @@
 - **Ported jars keep their mixins and overrides.** `mmt port --jar` follows game methods that only changed their
   parameters into a mod's mixin hooks and overrides, and opens game members a new release made private through the
   mod's own access transformer.
+- **Check a modpack in its own client too.** `mmt pack-check --side client` installs the loader's client, starts the
+  pack hidden and muted, opens a world, shows the inventory and every creative tab, and names the mod that breaks
+  the client (NeoForge so far). Ported jars are now proven in the client as well as on the server.
 - **Tests in the real game,** not just builds: mod state checked in a hidden client, plugins on a real Paper server
   with a bot player.
 - **Games start hidden and muted** by default.

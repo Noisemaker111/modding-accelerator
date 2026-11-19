@@ -19,8 +19,12 @@ that part is fixed with it. Read this whole file before the first command: it is
   NeoForge 45 of 150 link, Fabric 40. Fabric jars are read in Mojang's names through intermediary first
   (tools/ModNames.java). Each line of its list says what the game's own code did about that reference.
 - `python bench/exposure.py load ...` is the proof: the standalone mods `jars` says link are ported and started on a
-  real 1.21.2 server; 23 of 25 load, one is client-only and one has no code (its data uses an effect 1.21.2 removed).
-  A server never runs client code, so a client proof is step 51.
+  real 1.21.2 server and then in a real 1.21.2 client (`mmt pack-check --side client`), each mod's two verdicts side by
+  side. Server: 23 of 25 load (one client-only, one with no code fails on its data). Client: 23 of 24 load; Puzzle loads
+  on the server and links but fails in the client, because its injection point (a call 1.21.2's loading overlay no
+  longer makes) is inside a method that still exists. The client covers the title screen, a world, the inventory and
+  every creative tab, not a mod's own screens.
+- `jars` also checks each mod's data files for built-in game ids the new release dropped (`modsThatLinkAndData`).
 - 16 of the 126 corpus ports build (`python bench/measures.py table port.corpus-builds`). 23 of the 126 are mods
   whose untouched original does not build on the runner, and 72 cross many updates at once, so this number only
   moves after single updates work. Use it as the proof at the end of a PR, never to choose what to do next.
