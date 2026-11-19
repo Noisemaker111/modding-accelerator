@@ -43,9 +43,27 @@ final class GameLearnTest {
         JarPortTest.expect("$0.fill($1, $2, -1)".equals(fill), "where every game use passes the same constant twice, each argument keeps its own operand: " + fill);
         JarPortTest.expect(!learned.containsKey("net.minecraft.t.Gui.tint(L" + T + "In;)V"),
             "a parameter in the same place but of another type in the new code is not the old operand: " + learned.keySet());
+        JarPortTest.expect(!learned.containsKey("net.minecraft.t.Gui.shade(I)V"),
+            "two uses passing one constant and a third passing another parameter are not agreement: " + learned.keySet());
+        JarPortTest.expect(!learned.containsKey("net.minecraft.t.Gui.tone(I)V"),
+            "a local assigned on one branch only is not the value it was last given: " + learned.keySet());
+        JarPortTest.expect(!learned.containsKey("net.minecraft.t.SubGui.fill(II)V"),
+            "an override whose own uses disagree does not take its supertype's replacement: " + learned.keySet());
 
         Path map = scratch.resolve("route-learned.json");
         Files.writeString(map, "{\"learned\": [" + String.join(",\n", lines) + "]}");
+        String once = run(a, b, map, newGame);
+        JarPortTest.expect(once.equals("make:m;blit:m,7.0,9.0,256;jump;"), "the learned replacements run in the ported mod on the JVM: " + once);
+        String twice = run(a, GameDiff.read("3.0", List.copyOf(newGame.values()), null, List.of()), map, newGame);
+        JarPortTest.expect(twice.equals(once), "a replacement learned on the first of two updates applies on a port across both: " + twice);
+        if (JarPortTest.failures > 0) {
+            System.exit(1);
+        }
+        System.out.println("game-learn: 11 checks passed");
+    }
+
+    /** The mod ported from a to b with the route map, run on this JVM against the new game's classes: its trace. */
+    static String run(GameDiff.Snap a, GameDiff.Snap b, Path map, Map<String, byte[]> newGame) throws Exception {
         ClassWriter run = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         run.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m7/Run", null, "java/lang/Object", null);
         MethodVisitor go = run.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "go", "(L" + T + "Gui;L" + T + "In;)" + STR, null, null);
@@ -84,14 +102,9 @@ final class GameLearnTest {
             Object in = loader.loadClass("net.minecraft.t.In").getConstructor().newInstance();
             trace = String.valueOf(loader.loadClass("m7.Run").getMethods()[0].invoke(null, gui, in));
         } catch (ReflectiveOperationException | LinkageError failed) {
-            trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
+            trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause()) + " " + Json.array(results.get(0).get("unlinked"));
         }
-        JarPortTest.expect(trace.equals("make:m;blit:m,7.0,9.0,256;jump;"),
-            "the learned replacements run in the ported mod on the JVM: " + trace + " " + Json.array(results.get(0).get("unlinked")));
-        if (JarPortTest.failures > 0) {
-            System.exit(1);
-        }
-        System.out.println("game-learn: 6 checks passed");
+        return trace;
     }
 
     static String expr(Map<String, GameDiff.Learner.Learned> learned, String key) {
@@ -142,13 +155,21 @@ final class GameLearnTest {
             m.visitInsn(Opcodes.RETURN);
             m.visitMaxs(0, 0);
             m.visitEnd();
-            for (String[] other : new String[][] { { "fill", two ? "(III)V" : "(II)V" }, { "tint", two ? "(L" + T + "Keys;)V" : "(L" + T + "In;)V" } }) {
+            for (String[] other : new String[][] { { "fill", two ? "(III)V" : "(II)V" }, { "tint", two ? "(L" + T + "Keys;)V" : "(L" + T + "In;)V" },
+                { "shade", two ? "(II)V" : "(I)V" }, { "tone", two ? "(II)V" : "(I)V" } }) {
                 MethodVisitor o = w.visitMethod(Opcodes.ACC_PUBLIC, other[0], other[1], null, null);
                 o.visitCode();
                 o.visitInsn(Opcodes.RETURN);
                 o.visitMaxs(0, 0);
                 o.visitEnd();
             }
+        }, null));
+        out.put(T + "SubGui", cls("SubGui", T + "Gui", w -> {
+            MethodVisitor o = w.visitMethod(Opcodes.ACC_PUBLIC, "fill", two ? "(III)V" : "(II)V", null, null);
+            o.visitCode();
+            o.visitInsn(Opcodes.RETURN);
+            o.visitMaxs(0, 0);
+            o.visitEnd();
         }, null));
         if (two) {
             out.put(T + "Keys", cls("Keys", w -> {
@@ -199,6 +220,24 @@ final class GameLearnTest {
             r.visitLabel(skip);
             create(r, two, 3, "x", "NATURAL");
             fill(r, two);
+            // gui.shade(1), gui.shade(2) -> shade(1, 7), shade(2, 7); new SubGui().fill(0, 0) -> fill(0, 0, 5), (1, 1) -> (1, 1, 9)
+            for (int k = 1; k <= 2; k++) {
+                r.visitVarInsn(Opcodes.ALOAD, 1);
+                r.visitIntInsn(Opcodes.BIPUSH, k);
+                if (two) {
+                    r.visitIntInsn(Opcodes.BIPUSH, 7);
+                }
+                r.visitMethodInsn(Opcodes.INVOKEVIRTUAL, T + "Gui", "shade", two ? "(II)V" : "(I)V", false);
+                r.visitTypeInsn(Opcodes.NEW, T + "SubGui");
+                r.visitInsn(Opcodes.DUP);
+                r.visitMethodInsn(Opcodes.INVOKESPECIAL, T + "SubGui", "<init>", "()V", false);
+                r.visitIntInsn(Opcodes.BIPUSH, k - 1);
+                r.visitIntInsn(Opcodes.BIPUSH, k - 1);
+                if (two) {
+                    r.visitIntInsn(Opcodes.BIPUSH, k == 1 ? 5 : 9);
+                }
+                r.visitMethodInsn(Opcodes.INVOKEVIRTUAL, T + "SubGui", "fill", two ? "(III)V" : "(II)V", false);
+            }
             r.visitInsn(Opcodes.RETURN);
             r.visitMaxs(0, 0);
             r.visitEnd();
@@ -208,6 +247,28 @@ final class GameLearnTest {
             blit(p, two, "c", 0, 5, 2);
             create(p, two, 3, "y", "SPAWNER");
             fill(p, two);
+            // gui.shade(3) -> shade(3, x)
+            p.visitVarInsn(Opcodes.ALOAD, 1);
+            p.visitInsn(Opcodes.ICONST_3);
+            if (two) {
+                p.visitVarInsn(Opcodes.ILOAD, 2);
+            }
+            p.visitMethodInsn(Opcodes.INVOKEVIRTUAL, T + "Gui", "shade", two ? "(II)V" : "(I)V", false);
+            // int v = 5; if (x != 0) v = x; gui.tone(v) -> the same, then gui.tone(x, x)
+            Label kept = new Label();
+            p.visitInsn(Opcodes.ICONST_5);
+            p.visitVarInsn(Opcodes.ISTORE, 4);
+            p.visitVarInsn(Opcodes.ILOAD, 2);
+            p.visitJumpInsn(Opcodes.IFEQ, kept);
+            p.visitVarInsn(Opcodes.ILOAD, 2);
+            p.visitVarInsn(Opcodes.ISTORE, 4);
+            p.visitLabel(kept);
+            p.visitVarInsn(Opcodes.ALOAD, 1);
+            p.visitVarInsn(Opcodes.ILOAD, two ? 2 : 4);
+            if (two) {
+                p.visitVarInsn(Opcodes.ILOAD, 2);
+            }
+            p.visitMethodInsn(Opcodes.INVOKEVIRTUAL, T + "Gui", "tone", two ? "(II)V" : "(I)V", false);
             p.visitInsn(Opcodes.RETURN);
             p.visitMaxs(0, 0);
             p.visitEnd();
@@ -293,17 +354,21 @@ final class GameLearnTest {
 
     /** A public class of the game with a public no-argument constructor (init adds to it) and whatever body adds. */
     static byte[] cls(String simple, java.util.function.Consumer<ClassWriter> body, java.util.function.Consumer<MethodVisitor> init) {
+        return cls(simple, "java/lang/Object", body, init);
+    }
+
+    static byte[] cls(String simple, String sup, java.util.function.Consumer<ClassWriter> body, java.util.function.Consumer<MethodVisitor> init) {
         ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES) {
             @Override
             protected String getCommonSuperClass(String x, String y) {
                 return "java/lang/Object";
             }
         };
-        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, T + simple, null, "java/lang/Object", null);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, T + simple, null, sup, null);
         MethodVisitor ctor = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         ctor.visitCode();
         ctor.visitVarInsn(Opcodes.ALOAD, 0);
-        ctor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        ctor.visitMethodInsn(Opcodes.INVOKESPECIAL, sup, "<init>", "()V", false);
         if (init != null) {
             init.accept(ctor);
         }

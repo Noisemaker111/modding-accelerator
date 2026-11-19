@@ -3041,7 +3041,7 @@ public final class GameDiff {
         final String self;
         final Body body = new Body();
         final Map<Integer, Node> locals = new HashMap<>();
-        final Map<Label, List<Node>> saved = new HashMap<>();
+        final Map<Label, State> saved = new HashMap<>();
         List<Node> stack = new ArrayList<>();
         boolean live = true;
 
@@ -3081,9 +3081,21 @@ public final class GameDiff {
             body.statements.add(new Node('S', ref, kind, "V", kids));
         }
 
+        /** The operand stack and locals a jump carries to its target. */
+        record State(List<Node> stack, Map<Integer, Node> locals) {}
+
         void save(Label l) {
-            List<Node> have = saved.get(l);
-            saved.put(l, have == null ? new ArrayList<>(stack) : merge(have, stack));
+            State have = saved.get(l);
+            saved.put(l, have == null ? new State(new ArrayList<>(stack), new HashMap<>(locals)) : new State(merge(have.stack(), stack), merge(have.locals(), locals)));
+        }
+
+        /** A value that depends on which way control came: it stands for neither, and Learner never matches it. */
+        static Node phi(String type) {
+            return new Node('o', null, "phi", type);
+        }
+
+        static boolean phi(Node n) {
+            return n.op == 'o' && "phi".equals(n.value);
         }
 
         static List<Node> merge(List<Node> x, List<Node> y) {
@@ -3092,7 +3104,18 @@ public final class GameDiff {
             }
             List<Node> out = new ArrayList<>();
             for (int i = 0; i < x.size(); i++) {
-                out.add(x.get(i) == y.get(i) ? x.get(i) : new Node('o', null, "phi", x.get(i).type));
+                out.add(x.get(i) == y.get(i) ? x.get(i) : phi(x.get(i).type));
+            }
+            return out;
+        }
+
+        static Map<Integer, Node> merge(Map<Integer, Node> x, Map<Integer, Node> y) {
+            Map<Integer, Node> out = new HashMap<>();
+            Set<Integer> slots = new HashSet<>(x.keySet());
+            slots.addAll(y.keySet());
+            for (int s : slots) {
+                Node a = x.get(s), b = y.get(s);
+                out.put(s, a == b ? a : phi(a != null ? a.type : b.type));
             }
             return out;
         }
@@ -3126,16 +3149,49 @@ public final class GameDiff {
             for (ExceptionCatch c : code.exceptionHandlers()) {
                 handlers.add(c.handler());
             }
+            // Loop heads (targets of a jump back) and every local the method stores to: at a loop head or a handler
+            // those locals may hold any value they get later, so they are merged values there.
+            Set<Label> seen = new HashSet<>(), loops = new HashSet<>();
+            Set<Integer> stored = new HashSet<>();
+            for (CodeElement el : code) {
+                switch (el) {
+                    case LabelTarget lt -> seen.add(lt.label());
+                    case BranchInstruction bi -> {
+                        if (seen.contains(bi.target())) {
+                            loops.add(bi.target());
+                        }
+                    }
+                    case LookupSwitchInstruction ls -> ls.cases().stream().map(SwitchCase::target).filter(seen::contains).forEach(loops::add);
+                    case TableSwitchInstruction ts -> ts.cases().stream().map(SwitchCase::target).filter(seen::contains).forEach(loops::add);
+                    case StoreInstruction si -> stored.add(si.slot());
+                    case IncrementInstruction ii -> stored.add(ii.slot());
+                    default -> {
+                    }
+                }
+            }
             try {
                 for (CodeElement el : code) {
                     if (el instanceof LabelTarget lt) {
-                        List<Node> s = saved.remove(lt.label());
+                        State s = saved.remove(lt.label());
                         if (handlers.contains(lt.label())) {
-                            stack = new ArrayList<>(List.of(new Node('o', null, "catch", "Ljava/lang/Throwable;")));
+                            stack = new ArrayList<>(List.of(phi("Ljava/lang/Throwable;")));
                         } else if (!live) {
-                            stack = s == null ? new ArrayList<>() : new ArrayList<>(s);
+                            stack = s == null ? new ArrayList<>() : new ArrayList<>(s.stack());
+                            if (s != null) {
+                                locals.clear();
+                                locals.putAll(s.locals());
+                            }
                         } else if (s != null) {
-                            stack = merge(stack, s);
+                            stack = merge(stack, s.stack());
+                            Map<Integer, Node> joined = merge(locals, s.locals());
+                            locals.clear();
+                            locals.putAll(joined);
+                        }
+                        if (handlers.contains(lt.label()) || loops.contains(lt.label())) {
+                            for (int s2 : stored) {
+                                Node had = locals.get(s2);
+                                locals.put(s2, phi(had == null ? "Ljava/lang/Object;" : had.type));
+                            }
                         }
                         live = true;
                     } else if (el instanceof Instruction ins && live) {
@@ -3485,10 +3541,14 @@ public final class GameDiff {
             for (Cls c : h.a.classes.values()) {
                 for (Meth m : c.methods.values()) {
                     String key = c.name + "." + m.name + m.desc;
-                    if (m.isStatic() || m.special() || byKey.containsKey(key) || !broken(new Ref('m', c.name, m.name, m.desc))) {
+                    // An override the game's own code shows something else for (its uses lined up, read or not) keeps
+                    // that evidence: it was rejected, so it is left unresolved rather than given its supertype's reading.
+                    if (m.isStatic() || m.special() || byKey.containsKey(key) || !sites.getOrDefault(key, Map.of()).isEmpty()
+                        || !broken(new Ref('m', c.name, m.name, m.desc))) {
                         continue;
                     }
                     Learned up = null;
+                    Meth upMethod = null;
                     Deque<String> todo = new ArrayDeque<>(supertypes(c));
                     Set<String> seen = new HashSet<>();
                     while (up == null && !todo.isEmpty()) {
@@ -3498,14 +3558,27 @@ public final class GameDiff {
                             continue;
                         }
                         up = byKey.get(s + "." + m.name + m.desc);
+                        upMethod = sc.methods.get(m.name + m.desc);
                         todo.addAll(supertypes(sc));
                     }
-                    if (up != null) {
+                    if (up != null && stillOverrides(m, upMethod)) {
                         out.add(new Learned(c.name.replace('/', '.'), m.name, m.desc, false, h.mAB.containsKey(m), up.expr(), up.votes(), up.of()));
                     }
                 }
             }
             return out;
+        }
+
+        /**
+         * The new release keeps sub overriding sup: both dropped, or both linked to methods of the same name and
+         * descriptor where the one's class extends the other's. Anything else changed the two apart.
+         */
+        boolean stillOverrides(Meth sub, Meth sup) {
+            Meth ys = h.mAB.get(sub), yp = sup == null ? null : h.mAB.get(sup);
+            if (ys == null || yp == null) {
+                return ys == null && yp == null;
+            }
+            return ys.name.equals(yp.name) && ys.desc.equals(yp.desc) && h.subtypeB(ys.owner.name, yp.owner.name);
         }
 
         /** -Dgamediff.learnlog=PREFIX: every member's uses lined up, uses read, votes and readings, one file per update. */
@@ -3527,10 +3600,11 @@ public final class GameDiff {
          */
         static String vote(Collection<Set<String>> uses, int[] tally) {
             Map<String, Integer> shapes = new HashMap<>();
-            int of = 0;
+            // Every use that lined up counts, read or not: a use the new code rewrote into something no expression over
+            // the operands says (another parameter, a local) is evidence against every reading.
+            int of = uses.size();
             for (Set<String> readings : uses) {
                 if (!readings.isEmpty()) {
-                    of++;
                     readings.stream().map(r -> CHOICE.matcher(r).replaceAll(OPEN + "" + CLOSE)).distinct().forEach(s -> shapes.merge(s, 1, Integer::sum));
                 }
             }
@@ -3939,8 +4013,8 @@ public final class GameDiff {
                 return known;
             }
             long x;
-            if (sideA && hole(n)) {
-                x = 0x9E3779B97F4A7C15L * (System.identityHashCode(n) + 1L);
+            if (sideA && hole(n) || Decoder.phi(n)) {
+                x = 0x9E3779B97F4A7C15L * (System.identityHashCode(n) + 1L) + (sideA ? 0 : 1);
             } else {
                 x = fnv(n.op + head(n, sideA));
                 for (Node k : n.kids) {
@@ -3959,6 +4033,9 @@ public final class GameDiff {
             if (holes != null && hole(x)) {
                 Node had = holes.putIfAbsent(x, y);
                 return had == null || had == y;
+            }
+            if (Decoder.phi(x) || Decoder.phi(y)) {
+                return false;
             }
             if (hash(x, true) == hash(y, false)) {
                 return true;

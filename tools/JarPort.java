@@ -118,13 +118,16 @@ public final class JarPort {
                 chains.put(key, new Chain(Exposure.Route.internal(Json.text(w, "newOwner", "")), Json.text(w, "steps", "")));
             }
         }
-        // What the game's own code computes in place of a member (GameDiff's Learner), applied as a rule's inClass is.
+        // What the game's own code computes in place of a member (GameDiff's Learner), applied as a rule's inClass is: on
+        // any update of the port whose old member the release ported from has by that name (a mod names it so), and
+        // compiled against the release ported to, so an expression a later update broke is refused, not written.
         for (Object o : Json.array(raw.getOrDefault("learned", List.of()))) {
             var w = Json.object(o);
-            String desc = Json.text(w, "desc", "");
-            if (majority(w) && Json.text(w, "step", "").equals(a.version + " -> " + b.version)) {
-                fixes.computeIfAbsent(Exposure.Route.internal(Json.text(w, "owner", "")), k -> new ArrayList<>()).add(new Fix("game " + a.version + " -> " + b.version,
-                    Pattern.compile(Pattern.quote(Json.text(w, "from", ""))), desc.isEmpty() ? null : desc.substring(0, desc.indexOf(')') + 1), Json.text(w, "expr", "")));
+            String owner = Exposure.Route.internal(Json.text(w, "owner", "")), from = Json.text(w, "from", ""), desc = Json.text(w, "desc", "");
+            boolean named = desc.isEmpty() ? a.field(owner, from) != null : a.method(owner, from, desc) != null;
+            if (majority(w) && named && covers(Json.text(w, "step", ""), "")) {
+                fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game " + Json.text(w, "step", ""),
+                    Pattern.compile(Pattern.quote(from)), desc.isEmpty() ? null : desc.substring(0, desc.indexOf(')') + 1), Json.text(w, "expr", "")));
             }
         }
     }

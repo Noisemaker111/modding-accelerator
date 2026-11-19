@@ -521,9 +521,10 @@ def steps(frm, to):
     # also lists members whose signature changed: those have a counterpart, so they are not in "gone").
     learned, members = {}, {}
     for section in ("rewrites", "chains", "classRewrites", "learned"):
+        rows_key = "learnerRows" if section == "learned" else section  # "learned" is the per-update member total
         for r in route.get(section, []):
-            learned.setdefault(r["step"], {}).setdefault(section, 0)
-            learned[r["step"]][section] += 1
+            learned.setdefault(r["step"], {}).setdefault(rows_key, 0)
+            learned[r["step"]][rows_key] += 1
             if not r.get("linked"):
                 members.setdefault(r["step"], set()).add((r.get("owner", ""), r["from"], r.get("desc", "")))
     rows, gone, taught = [], 0, 0
