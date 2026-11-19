@@ -2,11 +2,13 @@
  "loader": "neoforge",
  "from": "1.21.1",
  "to": "1.21.2",
- "mods": 35,
- "loaded": 30,
- "linkedAndLoaded": 20,
- "linked": 21,
- "failedButLinked": [],
+ "mods": 39,
+ "loaded": 34,
+ "linkedAndLoaded": 24,
+ "linked": 26,
+ "failedButLinked": [
+  "terrablender--TerraBlender-neoforge-1.21.1-4.1.0.8.jar"
+ ],
  "verdicts": {
   "cubes-without-borders--cwb-5.0.0+1.21.0.neoforge.jar": "client-only: a server start showed it reaches client-only code",
   "ferrite-core--ferritecore-7.0.3-neoforge.jar": "failed: its mixin config ferritecore.fastmap.mixin.json is in the failure",
@@ -23,7 +25,9 @@
   "cherished-worlds--cherishedworlds-neoforge-10.1.1+1.21.1.jar": "loaded",
   "cloth-config--cloth-config-15.0.140-neoforge.jar": "loaded",
   "clumps--Clumps-neoforge-1.21.1-19.0.0.1.jar": "loaded",
+  "controlling--Controlling-neoforge-1.21.1-19.0.5.jar": "loaded",
   "coroutil--coroutil-neoforge-1.21.0-1.3.8.jar": "loaded",
+  "crash-assistant--CrashAssistant-neoforge-1.20.6-1.21.4-1.11.12.jar": "loaded",
   "cristel-lib--cristellib-neoforge-1.21.1-3.1.7.jar": "loaded",
   "e4mc--e4mc-neoforge-6.2.3.jar": "loaded",
   "euphoria-patches--EuphoriaPatcher-1.10.5-r5.9.3-neoforge.jar": "loaded",
@@ -39,9 +43,11 @@
   "particle-rain--particlerain-4.0.3+1.21.1-neoforge.jar": "loaded",
   "puzzle--puzzle-neoforge-2.3.0+1.21.1.jar": "loaded",
   "resourceful-config--resourcefulconfig-neoforge-1.21-3.0.11.jar": "loaded",
+  "rhino--rhino-2101.2.8-build.91.jar": "loaded",
   "searchables--Searchables-neoforge-1.21.1-1.0.2.jar": "loaded",
   "sodium-dynamic-lights--sodiumdynamiclights-neoforge-1.0.10-1.21.1.jar": "loaded",
   "spark--spark-1.10.124-neoforge.jar": "loaded",
-  "supermartijn642s-config-lib--supermartijn642configlib-1.1.8-neoforge-mc1.21.jar": "loaded"
+  "supermartijn642s-config-lib--supermartijn642configlib-1.1.8-neoforge-mc1.21.jar": "loaded",
+  "yeetus-experimentus--yeetusexperimentus-neoforge-87.0.0.jar": "loaded"
  }
 }

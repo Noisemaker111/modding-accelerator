@@ -553,13 +553,13 @@
      "start": "2026-11-18",
      "target": "2026-11-26",
      "done": "2026-11-19",
-     "finish": "port.game-learned up from 1,413 over all 43 updates, port.jar-links up from 41, and every linked standalone mod loads on a real 1.21.2 server",
+     "finish": "port.game-learned up from 1,413 over all 43 updates, port.jar-links up, and every linked standalone mod loads on a real 1.21.2 server",
      "wrongIf": "a mod that links only because of a learned replacement fails on the server",
      "measures": [
       "port.game-learned",
       "port.jar-links"
      ],
-     "result": "2026-11-19: 1,413 -> 2,789 of 49,503 gone members get a replacement over all 43 updates (port.game-learned). 41 -> 42 of 150 NeoForge 1.21.1 mods link on 1.21.2, broken uses 5,191 -> 4,997; on a real 1.21.2 server 34 of 40 load and all 23 that link load, Controlling (newly linking) among them. Left: redesigns, mixins, overrides and value-to-value changes an expression cannot say."
+     "result": "2026-11-19: 1,413 -> 2,462 of 49,503 gone members get a replacement over all 43 updates (port.game-learned). On top of #120, 43 -> 45 of 150 NeoForge 1.21.1 mods link on 1.21.2 (Controlling and TerraBlender), broken references 4,556 -> 4,425. On a real 1.21.2 server 24 of the 26 that link load and 1 is client-only; TerraBlender fails on a biome data file 1.21.2 cannot parse (the same error as before it linked), which no link check sees. Left: redesigns, value-to-value changes an expression cannot say, and data files."
     },
     {
      "id": "45",
