@@ -477,7 +477,7 @@
      "id": "47",
      "title": "A fix names a game part and is applied in the class",
      "part": "Port by changed game part",
-     "status": "next",
+     "status": "doing",
      "text": "A porting rule is text: a pattern on the compiler's error and a find-and-replace on the source (355 of 358 rules), so it cannot reach a .jar and cannot tell LocalPlayer.sendSystemMessage from ServerPlayer.sendSystemMessage. A rule names the game member it replaces and what replaces it (a call, a call chain, a field read through a method), and JarPort applies it where a class references that member; a source port applies the same rule at the places the compiler resolved. A rule's test links its before against the old release and its after against the new one, in seconds, with no mod. The jar scoreboard's top entries are the order: GuiGraphics.blit (52 mods), RenderSystem.setShader (43), InteractionResult's fields (28), Registry.getTag (29).",
      "finish": "50 of the 150 most-downloaded NeoForge mods for 1.21.1 link against 1.21.2 (32 today), and every one that needs no other mod loads on a real 1.21.2 server",
      "wrongIf": "the link count rises and python bench/exposure.py load does not",
@@ -486,7 +486,8 @@
      "measures": [
       "port.jar-links",
       "port.jar-loads"
-     ]
+     ],
+     "result": "So far (2026-11-18): JarPort applies in the class what the game's own code shows (calls switched, added arguments such as GuiGraphics.blit's RenderType::guiTextured, chains, narrower fields) and every port rule's inClass: a Java expression for the old member, compiled against the new release like javac would, or a dropped class mapped to its replacement. 57 replacements on 33 rules. 41 of 150 link (30 before), broken uses 5,640 -> 4,147; on a real 1.21.2 server 30 of 35 load and all 19 that link load. The rest are held back by 1.21.2's rendering and recipe rewrites (render states, toasts, recipe book), which one-member replacements cannot express: every remaining mixin signature change would add about 4. Next: the source port applies inClass too."
     },
     {
      "id": "51",

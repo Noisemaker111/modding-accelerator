@@ -16,7 +16,7 @@ on the way, not a result. This file says which platform has reached what, and ho
 | Behaviour in a hidden client (`ui-check`, `world-check`) | Yes | Yes | Loads only | No | Not applicable |
 | Dedicated server plus client or test player (`mp-check`, `server-check`) | Partly | Partly | No | No | Yes: real Paper 1.8 and up, with a test player |
 | Port between versions (`port`) | Yes, 1.14.4 to 26.3 | Yes, 1.14.4 to 26.3 | No | No | No: `port` names the edits instead |
-| Port a compiled `.jar` (`port --jar`) | No | 1.20.5 and newer: 29 of 35 popular mods load on a real 1.21.2 server | No | No | No |
+| Port a compiled `.jar` (`port --jar`) | No | 1.20.5 and newer: 30 of 35 popular mods load on a real 1.21.2 server | No | No | No |
 | Switch loader (`convert`) | To NeoForge | To Fabric (26.1+ and 1.21.1) | No | No | No |
 | Modpacks on their own server (`pack-check`) | Yes | Yes | Yes | Yes | Not applicable |
 | Performance (`perf`, `perf-optimize`) | Yes | Yes | Not yet proven | No | No |

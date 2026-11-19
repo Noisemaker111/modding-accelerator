@@ -192,7 +192,7 @@ ASM = [ROOT / "tools" / "perf" / "lib" / "asm-9.9.jar", ROOT / "tools" / "perf" 
 
 def jar_tools():
     out = ROOT / ".runs" / "exposure" / "jarport-classes"
-    sources = [ROOT / "tools" / n for n in ("JarPort.java", "Exposure.java", "GameDiff.java", "VersionMap.java")] + [ROOT / "tools" / "cli" / "Json.java"]
+    sources = [ROOT / "tools" / n for n in ("JarPort.java", "FixExpr.java", "Exposure.java", "GameDiff.java", "VersionMap.java")] + [ROOT / "tools" / "cli" / "Json.java"]
     stamp = out / "JarPort.class"
     if not stamp.is_file() or stamp.stat().st_mtime < max(s.stat().st_mtime for s in sources):
         javac = java().replace("java.exe", "javac.exe") if java().endswith("java.exe") else java() + "c"
@@ -206,7 +206,7 @@ def jar_port(loader, frm, to, jars, out_dir, report):
     classes, tools_time = compile_tools()
     route = route_map(frm, to, loader, classes, tools_time)
     out_dir.mkdir(parents=True, exist_ok=True)
-    args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--out", str(out_dir),
+    args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
             "--report", str(report)] + (["--loader", loader] if loader == "neoforge" else [])
     done = subprocess.run(args + [str(j) for j in jars], stdout=subprocess.DEVNULL)
     if done.returncode:
@@ -307,6 +307,24 @@ def load(loader, frm, to, save):
             verdicts[name] = "failed: " + why
             (pack / "mods" / name).rename(pack / "dropped" / name)
             print(f"  {name}: failed")
+    # A failed start can name a bystander along with the mod at fault, so each dropped mod that links gets one more start
+    # with the mods that loaded; it counts as loaded only if that start opens a world too.
+    if result.get("ok"):
+        for name in sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n)):
+            (pack / "dropped" / name).rename(pack / "mods" / name)
+            done = subprocess.run([mmt, "pack-check", "--pack", str(pack), "--minecraft", to, "--loader", loader, "--json"],
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace")
+            start = done.stdout.find("{")
+            again = json.loads(done.stdout[start:]) if start >= 0 else {}
+            left_out = again.get("result", {}).get("game", {}).get("leftOut") or {}
+            if name in left_out:
+                verdicts[name] = "client-only: " + str(left_out[name])[:200]
+                (pack / "mods" / name).rename(pack / "dropped" / name)
+            elif again.get("ok"):
+                verdicts[name] = "loaded"
+                print(f"  {name}: loads with the others on its own start")
+            else:
+                (pack / "mods" / name).rename(pack / "dropped" / name)
     loaded = [n for n, v in verdicts.items() if v == "loaded"]
     summary = {
         "loader": loader, "from": frm, "to": to, "mods": len(chosen), "loaded": len(loaded),

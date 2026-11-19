@@ -94,10 +94,233 @@ public final class JarPortTest {
         String use = members(inner.get("l/Lib.class")).get("method use()V");
         expect(use.contains("call g/Block.bar()V"), "and its classes are rewritten: " + use);
         expect(use.contains("call g/Vault.secret()V"), "with the access its parent's access transformer gives the game: " + use);
+        runs(scratch);
+        JarPortRulesTest.check(scratch);
+        JarPortRulesTest.buses(scratch);
+        JarPortRulesTest.foreignMixin(scratch);
         if (failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port: 26 checks passed");
+        System.out.println("jar-port: 33 checks passed");
+    }
+
+    /**
+     * The game's own replacements, applied in a class and then run on this JVM against real classes of the new release:
+     * an added argument filled with the value the game passes (a method reference), a call switched to an interface
+     * method, a field read that now holds a subtype, a field read through a chain, and an argument the new method no
+     * longer takes. The JVM verifies the rewritten code when it loads it, and the calls leave their trace in g2.Log.out.
+     */
+    static void runs(Path scratch) throws Exception {
+        String str = "Ljava/lang/String;";
+        GameDiff.Snap a = new GameDiff.Snap("1.0"), b = new GameDiff.Snap("2.0");
+        snap(a, "g2/Gui", 0, null, "draw(" + str + ")V", "clear(Z)V");
+        snap(b, "g2/Gui", 0, null, "draw(Ljava/util/function/Function;" + str + ")V", "clear()V");
+        snap(a, "g2/Holder", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null);
+        snap(b, "g2/Holder", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "get(" + str + ")" + str);
+        snap(a, "g2/Reg", 0, null, "lookup(" + str + ")" + str).ifaces.add("g2/Holder");
+        snap(b, "g2/Reg", 0, null, "get(" + str + ")" + str).ifaces.add("g2/Holder");
+        snap(a, "g2/Res", 0, null).fields.put("OK", new GameDiff.Fld(a.classes.get("g2/Res"), "OK", "Lg2/Res;", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+        snap(b, "g2/Res", 0, null).fields.put("OK", new GameDiff.Fld(b.classes.get("g2/Res"), "OK", "Lg2/Res$Ok;", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+        snap(b, "g2/Res$Ok", 0, "g2/Res");
+        snap(a, "g2/In", 0, null).fields.put("jumping", new GameDiff.Fld(a.classes.get("g2/In"), "jumping", "Z", Opcodes.ACC_PUBLIC));
+        snap(b, "g2/In", 0, null).fields.put("keys", new GameDiff.Fld(b.classes.get("g2/In"), "keys", "Lg2/Keys;", Opcodes.ACC_PUBLIC));
+        snap(b, "g2/Keys", 0, null, "jump()Z");
+        snap(a, "g2/Type", 0, null);
+        GameDiff.Cls type = snap(b, "g2/Type", 0, null);
+        type.methods.put("make(" + str + ")Lg2/Type;", new GameDiff.Meth(type, "make", "(" + str + ")Lg2/Type;", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+        Path map = scratch.resolve("route-runs.json");
+        Files.writeString(map, """
+            {"signatures": [{"owner": "g2.Gui", "from": "clear", "desc": "(Z)V", "to": "clear", "newDesc": "()V"}],
+             "rewrites": [{"owner": "g2.Reg", "from": "lookup", "desc": "(Ljava/lang/String;)Ljava/lang/String;", "static": false,
+                           "toOwner": "g2.Holder", "to": "get", "newDesc": "(Ljava/lang/String;)Ljava/lang/String;", "newStatic": false, "votes": 3, "of": 3}],
+             "argDefaults": [{"owner": "g2.Gui", "from": "draw", "desc": "(Ljava/lang/String;)V", "toOwner": "g2.Gui", "to": "draw",
+                              "newDesc": "(Ljava/util/function/Function;Ljava/lang/String;)V", "index": 0, "value": "g2.Type::make", "votes": 3, "of": 3}],
+             "chains": [{"owner": "g2.In", "newOwner": "g2.In", "from": "jumping", "desc": "", "field": true, "steps": "f:keys,m:jump", "votes": 2, "of": 2}]}
+            """);
+
+        ClassWriter run = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        run.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m2/Run", null, "java/lang/Object", null);
+        MethodVisitor go = run.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "go", "(Lg2/Gui;Lg2/Reg;Lg2/In;)" + str, null, null);
+        go.visitCode();
+        go.visitVarInsn(Opcodes.ALOAD, 0);
+        go.visitLdcInsn("x");
+        go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g2/Gui", "draw", "(" + str + ")V", false);
+        go.visitVarInsn(Opcodes.ALOAD, 1);
+        go.visitLdcInsn("y");
+        go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g2/Reg", "lookup", "(" + str + ")" + str, false);
+        go.visitInsn(Opcodes.POP);
+        go.visitFieldInsn(Opcodes.GETSTATIC, "g2/Res", "OK", "Lg2/Res;");
+        go.visitInsn(Opcodes.POP);
+        go.visitVarInsn(Opcodes.ALOAD, 2);
+        go.visitFieldInsn(Opcodes.GETFIELD, "g2/In", "jumping", "Z");
+        go.visitInsn(Opcodes.POP);
+        go.visitVarInsn(Opcodes.ALOAD, 0);
+        go.visitInsn(Opcodes.ICONST_1);
+        go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g2/Gui", "clear", "(Z)V", false);
+        go.visitFieldInsn(Opcodes.GETSTATIC, "g2/Log", "out", "Ljava/lang/StringBuilder;");
+        go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()" + str, false);
+        go.visitInsn(Opcodes.ARETURN);
+        go.visitMaxs(0, 3);
+        go.visitEnd();
+        run.visitEnd();
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        Map<String, byte[]> ported = entries(new JarPort(a, b, map).port(jar(Map.of("m2/Run.class", run.toByteArray())), "runs.jar", results));
+        Map<String, byte[]> classes = new HashMap<>(newGame());
+        classes.put("m2/Run", ported.get("m2/Run.class"));
+        ClassLoader loader = new ClassLoader(null) {
+            @Override
+            protected Class<?> findClass(String name) throws ClassNotFoundException {
+                byte[] bytes = classes.get(name.replace('.', '/'));
+                if (bytes == null) {
+                    return Class.forName(name, false, ClassLoader.getPlatformClassLoader());
+                }
+                return defineClass(name, bytes, 0, bytes.length);
+            }
+        };
+        String trace;
+        try {
+            Object gui = loader.loadClass("g2.Gui").getConstructor().newInstance();
+            Object reg = loader.loadClass("g2.Reg").getConstructor().newInstance();
+            Object in = loader.loadClass("g2.In").getConstructor().newInstance();
+            trace = String.valueOf(loader.loadClass("m2.Run").getMethods()[0].invoke(null, gui, reg, in));
+        } catch (ReflectiveOperationException | LinkageError failed) {
+            trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
+        }
+        expect(trace.equals("type:x;draw;get;jump;clear;"),
+            "the game's replacements (an added argument, an interface call, a narrower field, a chain, a dropped argument) run on the JVM: " + trace
+                + " " + Json.array(results.get(0).get("unlinked")));
+    }
+
+    static GameDiff.Cls snap(GameDiff.Snap s, String name, int flags, String sup, String... methods) {
+        GameDiff.Cls c = new GameDiff.Cls(name, Opcodes.ACC_PUBLIC | flags, sup == null ? "java/lang/Object" : sup, new ArrayList<>(), false);
+        for (String m : methods) {
+            int paren = m.indexOf('(');
+            int access = Opcodes.ACC_PUBLIC | ((flags & Opcodes.ACC_INTERFACE) != 0 ? Opcodes.ACC_ABSTRACT : 0);
+            c.methods.put(m, new GameDiff.Meth(c, m.substring(0, paren), m.substring(paren), access));
+        }
+        s.classes.put(name, c);
+        return c;
+    }
+
+    /** The new release's classes as real bytecode; each method appends its name to g2.Log.out. */
+    static Map<String, byte[]> newGame() {
+        Map<String, byte[]> out = new HashMap<>();
+        ClassWriter log = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        log.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "g2/Log", null, "java/lang/Object", null);
+        log.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "out", "Ljava/lang/StringBuilder;", null, null).visitEnd();
+        MethodVisitor init = log.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+        init.visitCode();
+        init.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
+        init.visitInsn(Opcodes.DUP);
+        init.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
+        init.visitFieldInsn(Opcodes.PUTSTATIC, "g2/Log", "out", "Ljava/lang/StringBuilder;");
+        init.visitInsn(Opcodes.RETURN);
+        init.visitMaxs(0, 0);
+        init.visitEnd();
+        log.visitEnd();
+        out.put("g2/Log", log.toByteArray());
+        out.put("g2/Holder", real("g2/Holder", "java/lang/Object", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, new String[0], w -> {
+            w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "get", "(Ljava/lang/String;)Ljava/lang/String;", null, null).visitEnd();
+        }));
+        out.put("g2/Gui", real("g2/Gui", "java/lang/Object", 0, new String[0], w -> {
+            traced(w, "draw", "(Ljava/util/function/Function;Ljava/lang/String;)V", "draw;", m -> {
+                m.visitVarInsn(Opcodes.ALOAD, 1);
+                m.visitVarInsn(Opcodes.ALOAD, 2);
+                m.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/function/Function", "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
+                m.visitInsn(Opcodes.POP);
+            });
+            traced(w, "clear", "()V", "clear;", m -> { });
+        }));
+        out.put("g2/Reg", real("g2/Reg", "java/lang/Object", 0, new String[] { "g2/Holder" }, w -> {
+            traced(w, "get", "(Ljava/lang/String;)Ljava/lang/String;", "get;", m -> { });
+        }));
+        out.put("g2/Keys", real("g2/Keys", "java/lang/Object", 0, new String[0], w -> traced(w, "jump", "()Z", "jump;", m -> { })));
+        out.put("g2/Res$Ok", real("g2/Res$Ok", "g2/Res", 0, new String[0], w -> { }));
+        out.put("g2/Res", real("g2/Res", "java/lang/Object", 0, new String[0], w -> {
+            w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "OK", "Lg2/Res$Ok;", null, null).visitEnd();
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+            m.visitCode();
+            m.visitTypeInsn(Opcodes.NEW, "g2/Res$Ok");
+            m.visitInsn(Opcodes.DUP);
+            m.visitMethodInsn(Opcodes.INVOKESPECIAL, "g2/Res$Ok", "<init>", "()V", false);
+            m.visitFieldInsn(Opcodes.PUTSTATIC, "g2/Res", "OK", "Lg2/Res$Ok;");
+            m.visitInsn(Opcodes.RETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }));
+        out.put("g2/In", real("g2/In", "java/lang/Object", 0, new String[0], w -> {
+            w.visitField(Opcodes.ACC_PUBLIC, "keys", "Lg2/Keys;", null, null).visitEnd();
+        }));
+        out.put("g2/Type", real("g2/Type", "java/lang/Object", 0, new String[0], w -> {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "make", "(Ljava/lang/String;)Lg2/Type;", null, null);
+            m.visitCode();
+            append(m, "type:");
+            m.visitFieldInsn(Opcodes.GETSTATIC, "g2/Log", "out", "Ljava/lang/StringBuilder;");
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+            m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+            m.visitInsn(Opcodes.POP);
+            append(m, ";");
+            m.visitTypeInsn(Opcodes.NEW, "g2/Type");
+            m.visitInsn(Opcodes.DUP);
+            m.visitMethodInsn(Opcodes.INVOKESPECIAL, "g2/Type", "<init>", "()V", false);
+            m.visitInsn(Opcodes.ARETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }));
+        return out;
+    }
+
+    /** A public class with a public no-argument constructor (In's sets keys) and whatever body adds. */
+    static byte[] real(String name, String sup, int flags, String[] ifaces, java.util.function.Consumer<ClassWriter> body) {
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC | flags, name, null, sup, ifaces);
+        if ((flags & Opcodes.ACC_INTERFACE) == 0) {
+            MethodVisitor init = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+            init.visitCode();
+            init.visitVarInsn(Opcodes.ALOAD, 0);
+            init.visitMethodInsn(Opcodes.INVOKESPECIAL, sup, "<init>", "()V", false);
+            if (name.equals("g2/In")) {
+                init.visitVarInsn(Opcodes.ALOAD, 0);
+                init.visitTypeInsn(Opcodes.NEW, "g2/Keys");
+                init.visitInsn(Opcodes.DUP);
+                init.visitMethodInsn(Opcodes.INVOKESPECIAL, "g2/Keys", "<init>", "()V", false);
+                init.visitFieldInsn(Opcodes.PUTFIELD, "g2/In", "keys", "Lg2/Keys;");
+            }
+            init.visitInsn(Opcodes.RETURN);
+            init.visitMaxs(0, 0);
+            init.visitEnd();
+        }
+        body.accept(w);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** A public method that runs before, appends text to g2.Log.out and returns its default value. */
+    static void traced(ClassWriter w, String name, String desc, String text, java.util.function.Consumer<MethodVisitor> before) {
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, name, desc, null, null);
+        m.visitCode();
+        before.accept(m);
+        append(m, text);
+        Type ret = Type.getReturnType(desc);
+        if (ret.getSort() == Type.VOID) {
+            m.visitInsn(Opcodes.RETURN);
+        } else if (ret.getSort() == Type.BOOLEAN) {
+            m.visitInsn(Opcodes.ICONST_1);
+            m.visitInsn(Opcodes.IRETURN);
+        } else {
+            m.visitVarInsn(Opcodes.ALOAD, 1);
+            m.visitInsn(Opcodes.ARETURN);
+        }
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+    }
+
+    static void append(MethodVisitor m, String text) {
+        m.visitFieldInsn(Opcodes.GETSTATIC, "g2/Log", "out", "Ljava/lang/StringBuilder;");
+        m.visitLdcInsn(text);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+        m.visitInsn(Opcodes.POP);
     }
 
     static void expect(boolean ok, String what) {
