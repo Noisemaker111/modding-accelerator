@@ -50,6 +50,14 @@ def port_preflight():
     yield java("-cp", str(out), "ChainMapTest")
 
 
+def jar_port():
+    out = ROOT / ".runs" / "jarport-tests"
+    asm = SEP.join(["tools/perf/lib/asm-9.9.jar", "tools/perf/lib/asm-commons-9.9.jar"])
+    yield ["javac", "--release", "25", "-encoding", "UTF-8", "-cp", asm, "-d", str(out), "tools/JarPort.java", "tools/Exposure.java",
+           "tools/GameDiff.java", "tools/VersionMap.java", "tools/cli/Json.java", "tools/tests/JarPortTest.java"]
+    yield java("-cp", str(out) + SEP + asm, "JarPortTest", str(out / "scratch"))
+
+
 def legacy_agent():
     """Windows: the legacy launch agent in JAVA_TOOL_OPTIONS keeps system properties strings, and Gradle still runs."""
     prepared = subprocess.run(java("-jar", JAR, "legacy-agent", "--root", FIXTURE, "--json"), cwd=ROOT,
@@ -68,6 +76,7 @@ CHECKS = {
     "checkout-data": (True, None, checkout_data),
     "fingerprint": (True, None, [[sys.executable, "bench/test_fingerprint.py", JAR]]),
     "port-preflight": (False, None, port_preflight),
+    "jar-port": (False, None, jar_port),
     "zip": (True, None, [java("tools/tests/PackageAcceptanceTest.java", ZIP, ZIP + ".sha256", tempfile.gettempdir())]),
     "fast": (True, None, [java("-jar", JAR, "fast", "--root", FIXTURE, "--json")]),
     "hidden-window": (True, None, [java("tools/tests/BackgroundWindowsTest.java", FIXTURE, JAR)]),

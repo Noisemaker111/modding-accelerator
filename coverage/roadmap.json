@@ -464,29 +464,40 @@
     },
     {
      "id": "44",
-     "title": "The port worklist sees every mod and predicts the build",
+     "title": "One porting worklist, read from jars, for every loader",
      "part": "Port by changed game part",
      "status": "next",
-     "text": "mmt port-plan compiles a mod on its own version and lists every place it touches game code, with the exact game method or field, joined with what the target version did to it. It has to be true before it chooses any work: it reads NeoForge mods (a median of 109 changed game parts per port) but almost nothing in Fabric mods (a median of 5; betterf3 has 5,289 lines and 28 places), and 32 of the 126 corpus ports have no plan at all.",
-     "start": "2026-11-17",
-     "target": "2026-12-01",
-     "result": "Half done in PR #97: the plan exists and covers 94 ports of 44 mods, 101,819 places, almost all of them in the 47 NeoForge ports. 3,208 changes in 887 game classes are handled by nothing. Checked against the cloud sweep on 2026-11-18, it does not predict builds yet (see the finish line).",
-     "finish": "No corpus port the worklist clears stops on compiler errors (8 of its 21 cleared ports do today; 7 build, 6 stop on a library or the build), and Fabric ports list changed game code at the rate NeoForge ports do",
-     "wrongIf": "with Fabric mods read, under 70% of the compiler errors left in the corpus sit at a place the worklist names"
+     "text": "python bench/exposure.py jars links what each of the 150 most-downloaded mods references (classes, mixins, access transformers) against the target release, as the JVM and Mixin will, and ranks what does not link by the mods it holds back. It replaces exposure.py run as the list that chooses porting work: run cleared 58 NeoForge mods and the link check 32, and every mod that failed on a real server was one run cleared and the link check did not. Fabric jars ship in intermediary names, so the link check reads them through the game's own mappings to Mojang's names, and the source porter's worklist (port-plan) is read the same way.",
+     "start": "2026-11-19",
+     "target": "2026-11-26",
+     "finish": "exposure.py run is gone and port.real-mods-clear is counted by the link check, for NeoForge and for the 150 most-downloaded Fabric mods of 1.21.1",
+     "wrongIf": "a mod python bench/exposure.py load starts fails on the server although the link check says it links"
     },
     {
      "id": "47",
-     "title": "A rule names a game part and is applied only there",
+     "title": "A fix names a game part and is applied in the class",
      "part": "Port by changed game part",
      "status": "next",
-     "text": "A port rule is a pattern on the compiler's error text plus a find-and-replace on the file (355 of 358 rules), so it cannot tell LocalPlayer.sendSystemMessage, removed in 1.21.2, from ServerPlayer.sendSystemMessage, which stayed: both read .sendSystemMessage( in the text. The worklist already holds each place's start, end and resolved game member. A rule's members are applied at exactly those places, in one pass before the first compile, and a rule's test compiles its before on the old game and its after on the new one, in seconds. That makes one changed game part a unit of work that can be checked without porting a mod.",
-     "finish": "The 63 rules that name their game parts are applied at the places the compiler resolved (0 today), each with a test that compiles on both game versions",
-     "wrongIf": "the 16 corpus ports that build today no longer build with their rules applied this way",
+     "text": "A porting rule is text: a pattern on the compiler's error and a find-and-replace on the source (355 of 358 rules), so it cannot reach a .jar and cannot tell LocalPlayer.sendSystemMessage from ServerPlayer.sendSystemMessage. A rule names the game member it replaces and what replaces it (a call, a call chain, a field read through a method), and JarPort applies it where a class references that member; a source port applies the same rule at the places the compiler resolved. A rule's test links its before against the old release and its after against the new one, in seconds, with no mod. The jar scoreboard's top entries are the order: GuiGraphics.blit (52 mods), RenderSystem.setShader (43), InteractionResult's fields (28), Registry.getTag (29).",
+     "finish": "50 of the 150 most-downloaded NeoForge mods for 1.21.1 link against 1.21.2 (32 today), and every one that needs no other mod loads on a real 1.21.2 server",
+     "wrongIf": "the link count rises and python bench/exposure.py load does not",
      "start": "2026-11-24",
      "target": "2026-12-08",
      "measures": [
-      "port.corpus-builds"
+      "port.jar-links",
+      "port.jar-loads"
      ]
+    },
+    {
+     "id": "51",
+     "title": "A ported jar is proven in a game client too",
+     "part": "Port by changed game part",
+     "status": "next",
+     "text": "mmt pack-check proves a ported jar on a real server, and a server never runs client code: 15 of the 28 jars that loaded on 1.21.2 still reference rendering and screen code that does not link there. A client start with the ported jars (the loader's own client install, a world opened and a screen shown, hidden and muted) proves the rest, and makes the load proof cover client-only mods, which a server leaves out.",
+     "start": "2026-11-24",
+     "target": "2026-12-04",
+     "finish": "python bench/exposure.py load starts the ported jars in a real 1.21.2 client as well as on a server, and reports both",
+     "wrongIf": "a mod that loads on the server and links fails in the client"
     },
     {
      "id": "45",
@@ -694,12 +705,18 @@
      "id": "50",
      "title": "A mod's .jar works as well as its source",
      "part": "One place for both",
-     "status": "next",
+     "status": "done",
      "text": "port and convert change a mod's source folder, which only its author has. A compiled mod is read today for two things only: to count what it uses of the game and of a loader (python bench/exposure.py, python bench/convert_coverage.py real) and to run it in a modpack on a real server (mmt pack-check). Source stays: an author gets source back. A .jar has to work too, in and out, for everyone who has only the .jar. This step comes before the others because it decides their shape: the work is either done on the compiled classes themselves, or on source recovered from the .jar and built again, and the first job is to try both on mods the scoreboards already clear and keep the one whose results load in the game. If the compiled classes are changed directly, steps 44 and 47 are rewritten: the worklist is the .jar scoreboard, which has no source to be blind to, and a fix is applied where a class names the game part.",
-     "finish": "Of the 42 most-downloaded NeoForge mods for 1.21.1 that the porting scoreboard clears and that need no other mod, 40 come back as a .jar for 1.21.2 that loads on a real 1.21.2 server (0 today: no command takes a .jar)",
+     "finish": "Of the 42 most-downloaded NeoForge mods for 1.21.1 that the porting scoreboard clears and that need no other mod, 40 come back as a .jar for 1.21.2 that loads on a real 1.21.2 server (0 today: no command takes a .jar). Measured: 35 such mods by the scoreboard's own list (it said 42 before mods needing another language loader such as Kotlin were counted as needing another mod)",
      "wrongIf": "fewer than 30 of those 42 load, which would mean the scoreboard clears mods that are not ready",
      "start": "2026-11-19",
-     "target": "2026-12-05"
+     "target": "2026-12-05",
+     "done": "2026-11-18",
+     "measures": [
+      "port.jar-loads",
+      "port.jar-links"
+     ],
+     "result": "The compiled classes are changed directly: mmt port --jar MOD.jar --to 1.21.2 (tools/JarPort.java) relinks every reference a mod's classes, mixins and access transformers make to the game against the new release, renames what the game's own change map names, moves the metadata, ports nested mods, and names what does not link instead of guessing. No source and no build: 35 jars take 8 seconds. On a real 1.21.2 server 28 of the 35 load (a new world, every block item placed, the world opened again); the finish line said 40. The 7 others are not a jar problem: 6 use game code 1.21.2 changed (ferritecore and glitchcore mixin targets, Jade, MRU, Nature's Compass, TerraBlender's biome data) and 1 is client-only. Every one of the 6 was named in advance by the new link check, and every mod it said links loaded. The scoreboard that chose them (exposure.py run) cannot see mixins, field types or access transformers: it clears 58 of the 150 top mods, the link check 32. Decompiling to source and building again was not tried: the jar path loads 28 with no build, and its 6 failures are game changes a rebuilt source would meet too. A server does not run client code, so 15 of the 28 loaded with references that only a game client reaches still unlinked (step 51)."
     },
     {
      "id": "49",
