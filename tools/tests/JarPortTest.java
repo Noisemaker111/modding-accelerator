@@ -55,13 +55,15 @@ public final class JarPortTest {
         List<String> unlinked = Json.array(mine.get("unlinked")).stream().map(String::valueOf).toList();
         expect(unlinked.equals(List.of(
             "abstract method not written: g.Shape.area()D (in m.Square)",
-            "call: g.Block.closed()V",
             "call: g.Block.missing()V",
             "call: g.Block.sig()V",
             "class gone: g.GoneIface (in m.Impl)"
         )), "only what does not link in the new release is reported: " + unlinked);
         expect(run.contains("call g/Block.sig()V"), "a call whose parameters changed is left as written, not given a descriptor its stack does not fit: " + run);
         expect(run.contains("call g/Block.prot()V"), "a protected method stays callable from a subclass (not reported above)");
+        String at = new String(entries.get("META-INF/accesstransformer.cfg"), StandardCharsets.UTF_8);
+        expect(at.contains("\npublic g.Block closed()V\n") && run.contains("call g/Block.closed()V"),
+            "a method the new release made private is opened through the mod's access transformer, not reported: " + at);
         expect(run.contains("call g/Vault.secret()V") && run.contains("get g/Vault.hidden I"),
             "a rename to a private member the mod's access transformer opens with a wildcard is taken: " + run);
         expect(members(entries.get("m/ModMid.class")).containsKey("method foo2()V"),
@@ -98,10 +100,11 @@ public final class JarPortTest {
         JarPortRulesTest.check(scratch);
         JarPortRulesTest.buses(scratch);
         JarPortRulesTest.foreignMixin(scratch);
+        JarPortFixesTest.check(scratch);
         if (failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port: 33 checks passed");
+        System.out.println("jar-port: 44 checks passed");
     }
 
     /**
