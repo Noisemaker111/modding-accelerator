@@ -2471,7 +2471,8 @@ public final class GameDiff {
          * method. For a method the game changed in more than one way at once, its old and new calls do not line up, so
          * argDefaults() sees no inserted code (1.21.2: GuiGraphics.blit took a Function and float texture coordinates
          * together); its new calls still show the value (RenderType::guiTextured at 38 of 46). The value is the method
-         * reference created last before the call in the same statement; at 80% of all calls, as above.
+         * reference created last before the call in the same statement that makes the added parameter's
+         * functional interface; at 80% of all calls, as above.
          */
         List<ArgDefault> passedByNewCalls(List<Rewrite> rewrites, List<ArgDefault> known) {
             Map<Meth, Meth> pairs = new HashMap<>();
@@ -2495,13 +2496,15 @@ public final class GameDiff {
                         }
                         totals.merge(mb, 1, Integer::sum);
                         String value = null;
+                        String sam = samName(MethodTypeDesc.ofDescriptor(mb.desc).parameterList().get(addedIndex(pairs.get(mb), mb)).descriptorString());
                         // Back to the statement before (a call returning nothing ends one); number constants count as references.
                         for (int k = j - 2; k >= Math.max(0, j - 32); k--) {
                             Ref r = y.refs[k];
                             if (r.kind() == 'm' && r.desc() != null && r.desc().endsWith(")V")) {
                                 break;
                             }
-                            if (r.kind() == 'k' && String.valueOf(r.owner()).startsWith("indy:")) {
+                            // The reference must make the added parameter's functional interface, not a later argument's.
+                            if (r.kind() == 'k' && String.valueOf(r.owner()).equals("indy:" + sam)) {
                                 value = valueOf(new Ref[] { r, y.refs[k + 1] });
                                 break;
                             }
@@ -2523,6 +2526,34 @@ public final class GameDiff {
                 }
             }
             return out;
+        }
+
+        /** The name of the one abstract method of a functional interface (b's own or the JDK's), or null. */
+        String samName(String type) {
+            if (!type.startsWith("L")) {
+                return null;
+            }
+            String internal = type.substring(1, type.length() - 1);
+            Set<String> names = new HashSet<>();
+            Cls c = b.classes.get(internal);
+            if (c != null) {
+                for (Meth m : c.methods.values()) {
+                    if ((m.flags & 0x0400) != 0) {
+                        names.add(m.name);
+                    }
+                }
+            } else if (internal.startsWith("java/")) {
+                try {
+                    for (java.lang.reflect.Method m : Class.forName(internal.replace('/', '.'), false, null).getMethods()) {
+                        if (java.lang.reflect.Modifier.isAbstract(m.getModifiers()) && !Set.of("equals", "hashCode", "toString").contains(m.getName())) {
+                            names.add(m.getName());
+                        }
+                    }
+                } catch (ClassNotFoundException | LinkageError absent) {
+                    return null;
+                }
+            }
+            return names.size() == 1 ? names.iterator().next() : null;
         }
 
         /** b's method takes a's parameters (after the map's renames) with exactly one more, inserted anywhere. */

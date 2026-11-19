@@ -57,6 +57,9 @@ public final class JarPort {
         final Map<String, Boolean> subscribers = new HashMap<>(); // @EventBusSubscriber class -> whether it names its bus
         final Map<String, List<String>> listeners = new HashMap<>(); // class -> event types of its @SubscribeEvent methods (old names)
         final Set<String> toModBus = new HashSet<>(); // subscriber classes whose annotation gets bus = MOD
+        final Map<String, List<Object[]>> subscriberValues = new HashMap<>(); // its other annotation values: {name, value} or {name, [desc, enum]...}
+        final Map<String, List<Listener>> listenerMethods = new HashMap<>();
+        final Map<String, List<Listener>> split = new HashMap<>(); // mixed subscriber -> its mod-bus listeners, moved to a companion
 
         void change(String kind) {
             changed.merge(kind, 1, Integer::sum);
@@ -241,6 +244,11 @@ public final class JarPort {
         }
         plan(mod);
         buses(mod);
+        for (var e : mod.split.entrySet()) {
+            String file = e.getKey() + "$ModBusListeners.class";
+            entries.put(file, companion(mod, e.getKey(), e.getValue()));
+            mod.change("mod-bus listeners moved to a companion class");
+        }
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(buffer)) {
             for (var e : entries.entrySet()) {
@@ -349,12 +357,30 @@ public final class JarPort {
             public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
                 if (desc.equals(SUBSCRIBER)) {
                     mod.subscribers.put(rc.name, false);
+                    List<Object[]> values = mod.subscriberValues.computeIfAbsent(rc.name, k -> new ArrayList<>());
                     return new AnnotationVisitor(Opcodes.ASM9) {
+                        @Override
+                        public void visit(String name, Object value) {
+                            values.add(new Object[] { name, value });
+                        }
+
                         @Override
                         public void visitEnum(String name, String d, String value) {
                             if ("bus".equals(name)) {
                                 mod.subscribers.put(rc.name, true);
                             }
+                        }
+
+                        @Override
+                        public AnnotationVisitor visitArray(String name) {
+                            List<String[]> items = new ArrayList<>();
+                            values.add(new Object[] { name, items });
+                            return new AnnotationVisitor(Opcodes.ASM9) {
+                                @Override
+                                public void visitEnum(String n, String d, String value) {
+                                    items.add(new String[] { d, value });
+                                }
+                            };
                         }
                     };
                 }
@@ -393,8 +419,21 @@ public final class JarPort {
                     @Override
                     public AnnotationVisitor visitAnnotation(String annotation, boolean visible) {
                         Type[] params = Type.getArgumentTypes(desc);
-                        if (annotation.equals("Lnet/neoforged/bus/api/SubscribeEvent;") && params.length == 1 && params[0].getSort() == Type.OBJECT) {
+                        if (annotation.equals(LISTENER) && params.length == 1 && params[0].getSort() == Type.OBJECT) {
                             mod.listeners.computeIfAbsent(rc.name, k -> new ArrayList<>()).add(params[0].getInternalName());
+                            Listener l = new Listener(name, desc, access, params[0].getInternalName(), new ArrayList<>());
+                            mod.listenerMethods.computeIfAbsent(rc.name, k -> new ArrayList<>()).add(l);
+                            return new AnnotationVisitor(Opcodes.ASM9) {
+                                @Override
+                                public void visit(String n, Object value) {
+                                    l.values().add(new Object[] { n, value });
+                                }
+
+                                @Override
+                                public void visitEnum(String n, String d, String value) {
+                                    l.values().add(new Object[] { n, d, value });
+                                }
+                            };
                         }
                         String kind = ACCESSORS.get(annotation);
                         if (kind == null) {
@@ -417,12 +456,16 @@ public final class JarPort {
     }
 
     static final String SUBSCRIBER = "Lnet/neoforged/fml/common/EventBusSubscriber;";
+    static final String LISTENER = "Lnet/neoforged/bus/api/SubscribeEvent;";
+
+    /** A @SubscribeEvent method and its annotation's values ({name, value} or {name, enum desc, value}). */
+    record Listener(String name, String desc, int access, String event, List<Object[]> values) {}
 
     /**
      * Newer loaders send each listener of an @EventBusSubscriber class that names no bus to the bus its event belongs to;
      * older ones (1.21.2's NeoForge, FML 4.0.29) put the whole class on the game bus, and refuse a mod-bus event there.
-     * A class whose listeners are all mod-bus events gets bus = MOD written, which every loader honours; one with both
-     * kinds cannot be split by its annotation and is reported.
+     * A class whose listeners are all mod-bus events gets bus = MOD written, which every loader honours. A class with
+     * both kinds keeps its game-bus listeners; its mod-bus ones are called from a companion class on the mod bus.
      */
     void buses(Mod mod) {
         for (var e : mod.subscribers.entrySet()) {
@@ -433,10 +476,56 @@ public final class JarPort {
             }
             if (onMod == events.size()) {
                 mod.toModBus.add(e.getKey());
+                continue;
+            }
+            List<Listener> moved = mod.listenerMethods.getOrDefault(e.getKey(), List.of()).stream().filter(l -> modBus(mod, cls(l.event()))).toList();
+            if (moved.stream().allMatch(l -> (l.access() & Opcodes.ACC_STATIC) != 0)) {
+                mod.split.put(e.getKey(), moved);
             } else {
                 mod.unlinked.add("listeners for both event buses in one @EventBusSubscriber class: " + Exposure.dotted(e.getKey()));
             }
         }
+    }
+
+    /** The companion of a subscriber with listeners on both buses: on the mod bus, each listener calls the original. */
+    byte[] companion(Mod mod, String owner, List<Listener> listeners) {
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SYNTHETIC, owner + "$ModBusListeners", null, "java/lang/Object", null);
+        AnnotationVisitor av = w.visitAnnotation(SUBSCRIBER, true);
+        for (Object[] v : mod.subscriberValues.getOrDefault(owner, List.of())) {
+            if (v[1] instanceof List<?> items) {
+                AnnotationVisitor array = av.visitArray((String) v[0]);
+                for (Object item : items) {
+                    String[] e = (String[]) item;
+                    array.visitEnum(null, e[0], e[1]);
+                }
+                array.visitEnd();
+            } else {
+                av.visit((String) v[0], v[1]);
+            }
+        }
+        av.visitEnum("bus", "Lnet/neoforged/fml/common/EventBusSubscriber$Bus;", "MOD");
+        av.visitEnd();
+        for (Listener l : listeners) {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, l.name(), l.desc(), null, null);
+            AnnotationVisitor sub = m.visitAnnotation(LISTENER, true);
+            for (Object[] v : l.values()) {
+                if (v.length == 3) {
+                    sub.visitEnum((String) v[0], (String) v[1], (String) v[2]);
+                } else {
+                    sub.visit((String) v[0], v[1]);
+                }
+            }
+            sub.visitEnd();
+            m.visitCode();
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+            m.visitMethodInsn(Opcodes.INVOKESTATIC, owner, l.name(), l.desc(), false);
+            m.visitInsn(Opcodes.RETURN);
+            m.visitMaxs(1, 1);
+            m.visitEnd();
+        }
+        w.visitEnd();
+        return w.toByteArray();
     }
 
     /** Whether an event (new names) is dispatched on a mod's own bus: the loader's lifecycle events and every IModBusEvent. */
@@ -699,7 +788,8 @@ public final class JarPort {
     /**
      * {owner, name, desc} in new names that a reference to a game member becomes, or null when nothing in the new release
      * links. A new descriptor is taken only when the arguments already on the stack still fit it: the same types after class
-     * renames, or parameters that became supertypes with the same return. Anything else (an added, removed or narrowed
+     * renames, or parameters that became supertypes, with the same return or one that serves where the old one was used
+     * (a subtype; a field read may also now hold a subtype). Anything else (an added, removed or narrowed
      * parameter, another return type) does not link here; dropped arguments are handled at the call site.
      */
     String[] target(Mod mod, List<String> callers, String siteOwner, char kind, String name, String desc, Decl decl) {
@@ -1133,7 +1223,16 @@ public final class JarPort {
                     newName = renamed[0];
                     newDesc = oldDesc(renamed[1]);
                 }
-                MethodVisitor mv = super.visitMethod(access, newName, newDesc, signature, exceptions);
+                boolean moved = mod.split.getOrDefault(self[0], List.of()).stream().anyMatch(l -> l.name().equals(name) && l.desc().equals(desc));
+                MethodVisitor mv = super.visitMethod(moved ? access & ~Opcodes.ACC_PRIVATE : access, newName, newDesc, signature, exceptions);
+                if (moved && mv != null) {
+                    mv = new MethodVisitor(Opcodes.ASM9, mv) {
+                        @Override
+                        public AnnotationVisitor visitAnnotation(String d, boolean visible) {
+                            return d.equals(LISTENER) ? null : super.visitAnnotation(d, visible);
+                        }
+                    };
+                }
                 String key = self[0] + "." + name + desc;
                 int locals = mod.maxLocals.getOrDefault(key, 0);
                 return mv == null ? null : new Sites(mod, mv, locals, targets, callers, key, where);
@@ -1261,6 +1360,9 @@ public final class JarPort {
         };
     }
 
+    static final Pattern REFERENCE = Pattern.compile("([\\w.$]+)::(\\w+)");
+    static final Pattern STATIC_CALL = Pattern.compile("([\\w.$]+)\\.(\\w+)\\(\\)");
+    static final Pattern STATIC_FIELD = Pattern.compile("([\\w.$]+)\\.(\\w+)");
     static final Pattern MEMBER = Pattern.compile("(?:L([^;]+);)?([\\w$<>]+)(?:(\\(.*)|:(.+))?");
 
     /** One member string of a mixin annotation in the new release's names, or as written when it cannot be read or does not link. */
@@ -1439,15 +1541,18 @@ public final class JarPort {
             }
             String[] t = target(mod, callers, owner, 'm', name, desc, decl);
             String key = decl.owner() + "." + name + desc;
-            if (t == null && rewritten(key, owner, desc, opcode)) {
+            boolean superCall = opcode == Opcodes.INVOKESPECIAL;
+            if (t == null && !superCall && rewritten(key, owner, desc, opcode)) {
                 return;
             }
             if (t == null && defaulted(key, owner, desc, opcode)) {
                 return;
             }
-            if (t == null && opcode != Opcodes.INVOKESTATIC && chain(key, Type.getReturnType(desc), false, desc)) {
-                mod.change("call through a chain");
-                return;
+            if (t == null && opcode == Opcodes.INVOKEVIRTUAL || t == null && opcode == Opcodes.INVOKEINTERFACE) {
+                if (chain(key, Type.getReturnType(desc), false, desc)) {
+                    mod.change("call through a chain");
+                    return;
+                }
             }
             if (t == null) {
                 String[] moved = route.method(decl.owner(), name, desc);
@@ -1536,12 +1641,7 @@ public final class JarPort {
                 return false;
             }
             Type[] args = Type.getArgumentTypes(desc);
-            int[] slots = new int[args.length];
-            for (int i = args.length - 1; i >= d.index(); i--) {
-                slots[i] = nextLocal;
-                nextLocal += args[i].getSize();
-                super.visitVarInsn(args[i].getOpcode(Opcodes.ISTORE), slots[i]);
-            }
+            int[] slots = spill(args, d.index());
             value.run();
             for (int i = d.index(); i < args.length; i++) {
                 super.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), slots[i]);
@@ -1553,13 +1653,13 @@ public final class JarPort {
 
         /** Code that pushes the value the game's code passes ("a.b.C::m" as an instance of wanted, "a.b.C.FIELD", "a.b.C.m()"), or null. */
         Runnable value(String text, Type wanted) {
-            Matcher ref = Pattern.compile("([\\w.$]+)::(\\w+)").matcher(text);
+            Matcher ref = REFERENCE.matcher(text);
             if (ref.matches()) {
                 Object[] indy = lambda(mod, callers, ref.group(1).replace('.', '/'), ref.group(2), wanted);
                 return indy == null ? null : () -> super.visitInvokeDynamicInsn((String) indy[0], (String) indy[1], (Handle) indy[2], (Object[]) indy[3]);
             }
-            Matcher call = Pattern.compile("([\\w.$]+)\\.(\\w+)\\(\\)").matcher(text);
-            Matcher field = Pattern.compile("([\\w.$]+)\\.(\\w+)").matcher(text);
+            Matcher call = STATIC_CALL.matcher(text);
+            Matcher field = STATIC_FIELD.matcher(text);
             boolean isCall = call.matches();
             if (!isCall && !field.matches()) {
                 return null;
@@ -1610,7 +1710,9 @@ public final class JarPort {
                 }
                 if (s[0].equals("f")) {
                     FieldHit f = fieldNew(mod, callers, type, s[1]);
-                    if (f == null || !f.open() || (last && !usable(Type.getType(f.desc()), Type.getType(desc(result.getDescriptor()))))) {
+                    GameDiff.Cls holder = Exposure.declaring(b, type, 'f', s[1], null);
+                    boolean instance = holder == null || (holder.fields.get(s[1]).flags & Opcodes.ACC_STATIC) == 0;
+                    if (f == null || !f.open() || !instance || (last && !usable(Type.getType(f.desc()), Type.getType(desc(result.getDescriptor()))))) {
                         return false;
                     }
                     plan.add(new String[] { "f", type, s[1], f.desc() });
@@ -1642,12 +1744,7 @@ public final class JarPort {
             if (!isA(cls(key.substring(0, key.indexOf('.'))), c.newOwner())) {
                 return false;
             }
-            int[] slots = new int[args.length];
-            for (int i = args.length - 1; i >= 0; i--) {
-                slots[i] = nextLocal;
-                nextLocal += args[i].getSize();
-                super.visitVarInsn(args[i].getOpcode(Opcodes.ISTORE), slots[i]);
-            }
+            int[] slots = spill(args, 0);
             for (int i = 0; i < plan.size(); i++) {
                 String[] p = plan.get(i);
                 if (i == plan.size() - 1) {
@@ -1697,15 +1794,8 @@ public final class JarPort {
                     }
                     try {
                         String expr = FixExpr.fill(f.expr(), n);
-                        FixExpr.Node node = FixExpr.parse(expr);
-                        // An argument left out is a decision about one overload, so only a rule naming that overload's
-                        // arguments may drop one: spawnAtLocation(stack) -> ...($1) must not also take spawnAtLocation(stack, offset).
-                        Set<Integer> used = FixExpr.operands(node);
-                        boolean dropsOne = false;
-                        for (int i = 1; i <= ops.length - (receiver ? 1 : 0); i++) {
-                            dropsOne |= !used.contains(i);
-                        }
-                        if (dropsOne && f.args() == null) {
+                        FixExpr.Node node = parsed(expr);
+                        if (dropsUnnamed(f, node, ops.length - (receiver ? 1 : 0))) {
                             continue;
                         }
                         Lowering low = new Lowering(mod, callers, params, receiver, 0);
@@ -1761,16 +1851,8 @@ public final class JarPort {
                         continue;
                     }
                     try {
-                        FixExpr.Node node = FixExpr.parse(FixExpr.fill(f.expr(), n));
-                        if (!(node instanceof FixExpr.New made) || !made.type().replace('.', '/').equals(now)) {
-                            continue;
-                        }
-                        Set<Integer> used = FixExpr.operands(node);
-                        boolean dropsOne = false;
-                        for (int i = 1; i <= old.length; i++) {
-                            dropsOne |= !used.contains(i);
-                        }
-                        if (dropsOne && f.args() == null) {
+                        FixExpr.Node node = parsed(FixExpr.fill(f.expr(), n));
+                        if (!(node instanceof FixExpr.New made) || !made.type().replace('.', '/').equals(now) || dropsUnnamed(f, node, old.length)) {
                             continue;
                         }
                         Lowering low = new Lowering(mod, callers, params, false, nextLocal);
@@ -1805,15 +1887,21 @@ public final class JarPort {
             super.visitMethodInsn(op, inverse.getOrDefault(c.owner(), c.owner()), c.name(), oldDesc(c.desc()), itf);
         }
 
-        /** Takes the arguments not in keep off the stack: all are stored in fresh locals and the kept ones loaded back. */
-        void drop(String desc, int[] keep) {
-            Type[] args = Type.getArgumentTypes(desc);
+        /** Stores the arguments from index from on, which are on top of the stack, in fresh locals; returns each one's slot. */
+        int[] spill(Type[] args, int from) {
             int[] slots = new int[args.length];
-            for (int i = args.length - 1; i >= 0; i--) {
+            for (int i = args.length - 1; i >= from; i--) {
                 slots[i] = nextLocal;
                 nextLocal += args[i].getSize();
                 super.visitVarInsn(args[i].getOpcode(Opcodes.ISTORE), slots[i]);
             }
+            return slots;
+        }
+
+        /** Takes the arguments not in keep off the stack: all are stored in fresh locals and the kept ones loaded back. */
+        void drop(String desc, int[] keep) {
+            Type[] args = Type.getArgumentTypes(desc);
+            int[] slots = spill(args, 0);
             for (int k : keep) {
                 super.visitVarInsn(args[k].getOpcode(Opcodes.ILOAD), slots[k]);
             }
@@ -1932,6 +2020,9 @@ public final class JarPort {
     void fixes(Path book) throws IOException {
         for (Object o : Json.array(Json.read(book).get("rules"))) {
             var rule = Json.object(o);
+            if (!covers(Json.text(rule, "jump", ""), Json.text(rule, "loader", ""))) {
+                continue;
+            }
             for (var e : Json.object(rule.getOrDefault("inClass", Map.of())).entrySet()) {
                 // A class the new release dropped, and the one its values become (BlockEntityType$Builder -> BlockEntityType).
                 String gone = e.getKey().replace('.', '/');
@@ -1948,6 +2039,35 @@ public final class JarPort {
                 fixes.computeIfAbsent(e.getKey().substring(0, dot).replace('.', '/'), k -> new ArrayList<>()).add(fix);
             }
         }
+    }
+
+    /**
+     * Whether a rule written for "A -> B" (and one loader, when it names one) belongs on this port: its update lies
+     * between the releases ported from and to, and the loader is the one ported for.
+     */
+    boolean covers(String jump, String loader) {
+        if (!loader.isEmpty() && !loader.equals(b.loaderVersion == null ? "" : "neoforge")) {
+            return false;
+        }
+        String[] range = jump.replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
+        if (range.length != 2) {
+            return true;
+        }
+        return compareVersions(a.version, range[1]) < 0 && compareVersions(b.version, range[0]) > 0;
+    }
+
+    /** Releases in order: 1.21.1 < 1.21.2 < 1.21.10 < 26.1. */
+    static int compareVersions(String x, String y) {
+        String[] p = x.split("[.-]");
+        String[] q = y.split("[.-]");
+        for (int i = 0; i < Math.max(p.length, q.length); i++) {
+            int a = i < p.length && p[i].matches("\\d+") ? Integer.parseInt(p[i]) : 0;
+            int b = i < q.length && q[i].matches("\\d+") ? Integer.parseInt(q[i]) : 0;
+            if (a != b) {
+                return Integer.compare(a, b);
+            }
+        }
+        return 0;
     }
 
     /** A private static method added to the class being rewritten: a rule's replacement, taking the old member's operands. */
@@ -1980,6 +2100,31 @@ public final class JarPort {
         Refused(String why) {
             super(why, null, false, false);
         }
+    }
+
+    final Map<String, FixExpr.Node> parsed = new HashMap<>(); // a rule's expression, filled, once parsed
+
+    FixExpr.Node parsed(String expr) {
+        FixExpr.Node n = parsed.get(expr);
+        if (n == null) {
+            n = FixExpr.parse(expr);
+            parsed.put(expr, n);
+        }
+        return n;
+    }
+
+    /**
+     * An argument left out is a decision about one overload, so only a rule naming that overload's arguments may drop
+     * one: spawnAtLocation(stack) -> ...($1) must not also take spawnAtLocation(stack, offset).
+     */
+    static boolean dropsUnnamed(Fix f, FixExpr.Node node, int arguments) {
+        Set<Integer> used = FixExpr.operands(node);
+        for (int i = 1; i <= arguments; i++) {
+            if (!used.contains(i)) {
+                return f.args() == null;
+            }
+        }
+        return false;
     }
 
     /** A JDK class by internal name, or null. Only java.* is looked up: the game's own classes come from the snapshot. */

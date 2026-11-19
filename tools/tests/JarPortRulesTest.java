@@ -22,7 +22,7 @@ final class JarPortRulesTest {
         statics(JarPortTest.snap(a, "g3/Rend", 0, null), Opcodes.ACC_PUBLIC, "getPosTexShader()Lg3/Shader;");
         statics(JarPortTest.snap(a, "g3/Sys", 0, null), Opcodes.ACC_PUBLIC, "setShader(" + supplier + ")V");
         JarPortTest.snap(a, "g3/Shader", 0, null);
-        JarPortTest.snap(a, "g3/Box", 0, null, "<init>(II)V");
+        JarPortTest.snap(a, "g3/Box", 0, null, "<init>(II)V", "ping()V");
         statics(JarPortTest.snap(a, "g3/Builder", 0, null, "done()Lg3/Box;"), Opcodes.ACC_PUBLIC, "make(I)Lg3/Builder;");
         JarPortTest.snap(a, "g3/Res", 0, null, "ok()Z");
 
@@ -36,12 +36,13 @@ final class JarPortRulesTest {
         GameDiff.Cls shaders = JarPortTest.snap(b, "g3/Shaders", 0, null);
         shaders.fields.put("POS_TEX", new GameDiff.Fld(shaders, "POS_TEX", "Lg3/Key;", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
         statics(JarPortTest.snap(b, "g3/Mgr", 0, null), Opcodes.ACC_PUBLIC, "get(Lg3/Key;)Lg3/Prog;");
-        JarPortTest.snap(b, "g3/Box", 0, null, "<init>(I)V");
+        JarPortTest.snap(b, "g3/Box", 0, null, "<init>(I)V", "pong()V");
         JarPortTest.snap(b, "g3/Res", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "ok()Z");
 
         Path map = scratch.resolve("route-rules.json");
         Files.writeString(map, """
-            {"classes": [{"from": "g3.Shader", "to": "g3.Prog"}]}
+            {"classes": [{"from": "g3.Shader", "to": "g3.Prog"}],
+             "rewrites": [{"owner": "g3.Box", "from": "ping", "desc": "()V", "toOwner": "g3.Box", "to": "pong", "newDesc": "()V", "newStatic": false, "votes": 3, "of": 3}]}
             """);
         Path book = scratch.resolve("fixes-rules.json");
         Files.writeString(book, """
@@ -53,7 +54,10 @@ final class JarPortRulesTest {
               {"id": "blit", "inClass": {"g3.Gui.blit": "$0.draw($1)"}},
               {"id": "builder", "inClass": {"g3.Builder": "g3.Box", "g3.Builder.make": "new g3.Box($1)", "g3.Builder.done": "$0"}},
               {"id": "box", "inClass": {"g3.Box.<init>(II)": "new g3.Box($1)"}},
-              {"id": "hidden", "inClass": {"g3.Gui.flush": "g3.Sys.hidden()"}}
+              {"id": "hidden", "inClass": {"g3.Gui.flush": "g3.Sys.hidden()"}},
+              {"id": "later", "jump": "3.0 -> 4.0", "inClass": {"g3.Gui.flush": "g3.Sys.max()"}},
+              {"id": "other-loader", "loader": "neoforge", "inClass": {"g3.Gui.flush": "g3.Sys.max()"}},
+              {"id": "bad-group", "inClass": {"g3.Gui.blit(II)": "g3.Sys.color({1}, 1, 1, 1)"}}
             ]}
             """);
 
@@ -124,6 +128,13 @@ final class JarPortRulesTest {
         init.visitInsn(Opcodes.RETURN);
         init.visitMaxs(0, 1);
         init.visitEnd();
+        MethodVisitor sup = mine.visitMethod(Opcodes.ACC_PUBLIC, "ping", "()V", null, null);
+        sup.visitCode();
+        sup.visitVarInsn(Opcodes.ALOAD, 0);
+        sup.visitMethodInsn(Opcodes.INVOKESPECIAL, "g3/Box", "ping", "()V", false);
+        sup.visitInsn(Opcodes.RETURN);
+        sup.visitMaxs(0, 1);
+        sup.visitEnd();
         mine.visitEnd();
 
         JarPort port = new JarPort(a, b, map);
@@ -131,8 +142,9 @@ final class JarPortRulesTest {
         List<Map<String, Object>> results = new ArrayList<>();
         Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m3/Run.class", run.toByteArray(), "m3/MyBox.class", mine.toByteArray())), "rules.jar", results));
         List<Object> unlinked = Json.array(results.get(0).get("unlinked"));
-        JarPortTest.expect(unlinked.equals(List.of("call: g3.Gui.blit(II)V", "call: g3.Gui.flush()V")),
-            "a rule that would drop an argument it does not name, or call what the mod may not, is not applied: " + unlinked);
+        JarPortTest.expect(unlinked.equals(List.of("call: g3.Box.ping()V", "call: g3.Gui.blit(II)V", "call: g3.Gui.flush()V")),
+            "not applied: a rule that would drop an argument it does not name, call what the mod may not, belongs to a later update or "
+                + "another loader, or names a group its member has not; and a super call is not switched to another method: " + unlinked);
 
         Map<String, byte[]> classes = new HashMap<>(JarPortTest.newGame());
         classes.putAll(newGame());
@@ -194,8 +206,44 @@ final class JarPortRulesTest {
         JarPortTest.expect(bus(ported.get("m5/Reg.class")).equals("MOD") && bus(ported.get("m5/Game.class")).isEmpty(),
             "a subscriber whose listeners are all mod-bus events is put on the mod bus, a game-bus one is left alone: "
                 + bus(ported.get("m5/Reg.class")) + " / " + bus(ported.get("m5/Game.class")));
-        JarPortTest.expect(Json.array(results.get(0).get("unlinked")).equals(List.of("listeners for both event buses in one @EventBusSubscriber class: m5.Both")),
-            "a subscriber with listeners on both buses is reported: " + results.get(0).get("unlinked"));
+        byte[] companion = ported.get("m5/Both$ModBusListeners.class");
+        JarPortTest.expect(Json.array(results.get(0).get("unlinked")).isEmpty() && listeners(ported.get("m5/Both.class")).equals(List.of("on1"))
+                && companion != null && bus(companion).equals("MOD") && listeners(companion).equals(List.of("on0:m5/Both.on0")),
+            "a subscriber with listeners on both buses keeps its game-bus one, and a companion on the mod bus calls the other: "
+                + results.get(0).get("unlinked") + " " + listeners(ported.get("m5/Both.class")) + " " + (companion == null ? "no companion" : listeners(companion)));
+    }
+
+    /** A class's @SubscribeEvent methods, each with the static call it makes when it makes one ("on0:m5/Both.on0"). */
+    static List<String> listeners(byte[] bytes) {
+        List<String> out = new ArrayList<>();
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                String[] found = { null, "" };
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String d, boolean visible) {
+                        if (d.equals("Lnet/neoforged/bus/api/SubscribeEvent;")) {
+                            found[0] = name;
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public void visitMethodInsn(int opcode, String owner, String n, String d, boolean itf) {
+                        found[1] = ":" + owner + "." + n;
+                    }
+
+                    @Override
+                    public void visitEnd() {
+                        if (found[0] != null) {
+                            out.add(found[0] + found[1]);
+                        }
+                    }
+                };
+            }
+        }, 0);
+        return out;
     }
 
     /** A mixin into another mod's class extends that class's game superclass, so it may use the game class's protected members. */

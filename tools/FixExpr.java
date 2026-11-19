@@ -50,11 +50,17 @@ final class FixExpr {
     }
 
     /** The expression for one matched member name: {N} and {^N} filled from the match. */
+    static final java.util.regex.Pattern GROUP = java.util.regex.Pattern.compile("\\{(\\^?)(\\d)}");
+
     static String fill(String expr, java.util.regex.MatchResult name) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{(\\^?)(\\d)}").matcher(expr);
+        java.util.regex.Matcher m = GROUP.matcher(expr);
         StringBuilder out = new StringBuilder();
         while (m.find()) {
-            String g = name.group(Integer.parseInt(m.group(2)));
+            int index = Integer.parseInt(m.group(2));
+            if (index > name.groupCount()) {
+                throw new IllegalArgumentException("{" + index + "} names no group of the member's name in: " + expr);
+            }
+            String g = name.group(index);
             String v = g == null ? "" : m.group(1).isEmpty() ? g
                 : g.replaceAll("([a-z0-9])([A-Z])", "$1_$2").replaceAll("([A-Z])([A-Z][a-z])", "$1_$2").toUpperCase(Locale.ROOT);
             m.appendReplacement(out, java.util.regex.Matcher.quoteReplacement(v));
@@ -181,6 +187,9 @@ final class FixExpr {
             int start = ++at;
             while (at < text.length() && text.charAt(at) != '"') {
                 at += text.charAt(at) == '\\' ? 2 : 1;
+            }
+            if (at > text.length()) {
+                throw error("unterminated string");
             }
             String body = text.substring(start, at);
             expect("\"");

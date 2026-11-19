@@ -314,8 +314,13 @@ def load(loader, frm, to, save):
             (pack / "dropped" / name).rename(pack / "mods" / name)
             done = subprocess.run([mmt, "pack-check", "--pack", str(pack), "--minecraft", to, "--loader", loader, "--json"],
                                   capture_output=True, text=True, encoding="utf-8", errors="replace")
-            text = done.stdout[done.stdout.find("{"):]
-            if text and json.loads(text).get("ok"):
+            start = done.stdout.find("{")
+            again = json.loads(done.stdout[start:]) if start >= 0 else {}
+            left_out = again.get("result", {}).get("game", {}).get("leftOut") or {}
+            if name in left_out:
+                verdicts[name] = "client-only: " + str(left_out[name])[:200]
+                (pack / "mods" / name).rename(pack / "dropped" / name)
+            elif again.get("ok"):
                 verdicts[name] = "loaded"
                 print(f"  {name}: loads with the others on its own start")
             else:
