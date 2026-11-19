@@ -1374,7 +1374,8 @@
        150
       ]
      }
-    }
+    },
+    {"date": "2026-11-19", "value": 5302, "n": 9149, "note": "GameDiff's Learner: the game's own replacement for any expression, every update; fabric 3,820, neoforge 1,482; no update lower, up to +6 on one", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44540189228 (bench/exposure/all.json), PR #121"}
    ],
    "history": []
   },
