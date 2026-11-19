@@ -198,6 +198,36 @@ final class JarPortRulesTest {
             "a subscriber with listeners on both buses is reported: " + results.get(0).get("unlinked"));
     }
 
+    /** A mixin into another mod's class extends that class's game superclass, so it may use the game class's protected members. */
+    static void foreignMixin(Path scratch) throws Exception {
+        GameDiff.Snap a = new GameDiff.Snap("1.0"), b = new GameDiff.Snap("2.0");
+        for (GameDiff.Snap s : List.of(a, b)) {
+            GameDiff.Cls base = JarPortTest.snap(s, "g6/Base", 0, null);
+            base.methods.put("draw()V", new GameDiff.Meth(base, "draw", "()V", Opcodes.ACC_PROTECTED));
+        }
+        Path map = scratch.resolve("route-foreign.json");
+        Files.writeString(map, "{}");
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "m6/Mix", null, "g6/Base", null);
+        AnnotationVisitor mixin = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor targets = mixin.visitArray("targets");
+        targets.visit(null, "other.mod.Screen");
+        targets.visitEnd();
+        mixin.visitEnd();
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PRIVATE, "redraw", "()V", null, null);
+        m.visitCode();
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Base", "draw", "()V", false);
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 1);
+        m.visitEnd();
+        w.visitEnd();
+        List<Map<String, Object>> results = new ArrayList<>();
+        new JarPort(a, b, map).port(JarPortTest.jar(Map.of("m6/Mix.class", w.toByteArray())), "foreign.jar", results);
+        JarPortTest.expect(Json.array(results.get(0).get("unlinked")).isEmpty(),
+            "a mixin into another mod's class may call the protected members of the game class it extends: " + results.get(0).get("unlinked"));
+    }
+
     static byte[] subscriber(String name, String... events) {
         ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, name, null, "java/lang/Object", null);

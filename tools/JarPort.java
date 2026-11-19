@@ -1056,6 +1056,12 @@ public final class JarPort {
                 targets = mod.mixinTargets.getOrDefault(name, List.of());
                 // A mixin's code runs inside each target class, so access is checked from there.
                 callers = targets.isEmpty() ? List.of(name) : targets.stream().map(JarPort.this::cls).toList();
+                // A target in another mod is unknown here. Mixin makes a mixin extend its target's superclass, so the
+                // mixin's own parents stand in for the target's (protected members of the game class they extend).
+                if (targets.stream().anyMatch(t -> !mod.classes.containsKey(t) && !a.classes.containsKey(t))) {
+                    callers = new ArrayList<>(callers);
+                    callers.add(name);
+                }
                 String where = Exposure.dotted(name);
                 if (superName != null) {
                     types(mod, "L" + superName + ";", where);
