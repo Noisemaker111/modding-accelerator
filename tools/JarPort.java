@@ -126,7 +126,8 @@ public final class JarPort {
         for (Object o : Json.array(raw.getOrDefault("learned", List.of()))) {
             var w = Json.object(o);
             String owner = Exposure.Route.internal(Json.text(w, "owner", "")), from = Json.text(w, "from", ""), desc = Json.text(w, "desc", "");
-            boolean named = desc.isEmpty() ? a.field(owner, from) != null : a.method(owner, from, desc) != null;
+            String member = from.endsWith("=") ? from.substring(0, from.length() - 1) : from; // "name=": a write
+            boolean named = desc.isEmpty() ? a.field(owner, member) != null : a.method(owner, from, desc) != null;
             if (majority(w) && named && covers(Json.text(w, "step", ""), "")) {
                 fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game " + Json.text(w, "step", ""),
                     Pattern.compile(Pattern.quote(from)), desc.isEmpty() ? null : desc.substring(0, desc.indexOf(')') + 1), Json.text(w, "expr", "")));
@@ -2396,6 +2397,15 @@ public final class JarPort {
                 if (added != null) {
                     invokeAdded(added);
                     mod.change("field read replaced by a port rule");
+                    return;
+                }
+            }
+            if (t == null && !read) {
+                // A write through what replaces it ("name=": $0 the receiver unless static, then the value).
+                String[] added = fix(List.of(owner, decl.owner()), name + "=", null, opcode == Opcodes.PUTSTATIC ? "(" + desc + ")V" : "(L" + owner + ";" + desc + ")V", opcode == Opcodes.PUTFIELD);
+                if (added != null) {
+                    invokeAdded(added);
+                    mod.change("field write replaced by a port rule");
                     return;
                 }
             }

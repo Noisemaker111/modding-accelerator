@@ -3515,6 +3515,7 @@ public final class GameDiff {
                 out.add(new Learned(old.owner().replace('/', '.'), old.name(), field ? "" : old.desc(), field, linked, best, top, of));
             }
             out.addAll(sameMeaning(out, log));
+            out.addAll(accessors(out));
             out.addAll(overrides(out));
             out.sort(Comparator.comparing(Learned::owner).thenComparing(Learned::name).thenComparing(Learned::desc));
             if (log != null) {
@@ -3802,6 +3803,71 @@ public final class GameDiff {
          */
         static final double SAME = 0.8, MARGIN = 0.15, REST = 0.5;
 
+        /**
+         * A field b still has but closed, read or written through the accessor its class now has for it: a public method
+         * whose whole body is `return this.field` (1.17's Player.getInventory() for inventory) or `this.field = value`
+         * (1.19.3's AbstractWidget.setY for y). Exact, so no vote is needed. A write is learned as "name=" with $1 the
+         * value written.
+         */
+        List<Learned> accessors(List<Learned> found) {
+            Set<String> have = new HashSet<>();
+            for (Learned l : found) {
+                have.add(l.owner().replace('.', '/') + "." + l.name());
+            }
+            List<Learned> out = new ArrayList<>();
+            for (var e : h.fAB.entrySet()) {
+                Fld f = e.getKey(), y = e.getValue();
+                Cls ca = h.a.classes.get(f.owner.name);
+                if (!closed(f.flags, y.flags) || !h.descBA(y.desc).equals(f.desc) || ca == null || (ca.flags & ACC_PUBLIC) == 0) {
+                    continue;
+                }
+                boolean isStatic = (f.flags & ACC_STATIC) != 0;
+                String owner = y.owner.name.replace('/', '.');
+                for (Meth c : y.owner.methods.values()) {
+                    if ((c.flags & ACC_PUBLIC) == 0 || c.isStatic() != isStatic || c.special() || !c.hasCode) {
+                        continue;
+                    }
+                    boolean getter = c.desc.equals("()" + y.desc), setter = c.desc.equals("(" + y.desc + ")V");
+                    if (!getter && !setter) {
+                        continue;
+                    }
+                    Body body = decode(h.b, y.owner.name, c.name + c.desc, false);
+                    String call = (isStatic ? owner : "$0") + "." + c.name;
+                    String read = f.owner.name + "." + f.name, write = read + "=";
+                    if (getter && body != null && !have.contains(read) && reads(body, y, isStatic)) {
+                        out.add(new Learned(f.owner.name.replace('/', '.'), f.name, "", true, true, call + "()", 1, 1));
+                        have.add(read);
+                    } else if (setter && body != null && !have.contains(write) && writes(body, y, isStatic)) {
+                        out.add(new Learned(f.owner.name.replace('/', '.'), f.name + "=", "", true, true, call + "($1)", 1, 1));
+                        have.add(write);
+                    }
+                }
+            }
+            return out;
+        }
+
+        static boolean reads(Body body, Fld y, boolean isStatic) {
+            if (body.statements.size() != 1 || !"return".equals(body.statements.get(0).value) || body.statements.get(0).kids.length != 1) {
+                return false;
+            }
+            Node v = body.statements.get(0).kids[0];
+            return v.ref != null && v.ref.owner().equals(y.owner.name) && v.ref.name().equals(y.name)
+                && (isStatic ? v.op == 'g' : v.op == 'f' && v.kids[0].op == 'p' && v.kids[0].value.equals(0));
+        }
+
+        static boolean writes(Body body, Fld y, boolean isStatic) {
+            if (body.statements.size() != 2 || !"return".equals(body.statements.get(1).value) || body.statements.get(1).kids.length != 0) {
+                return false;
+            }
+            Node put = body.statements.get(0);
+            if (!"put".equals(put.value) || put.ref == null || !put.ref.owner().equals(y.owner.name) || !put.ref.name().equals(y.name)) {
+                return false;
+            }
+            boolean receiver = isStatic || put.kids[0].op == 'p' && put.kids[0].value.equals(0);
+            Node v = put.kids[put.kids.length - 1];
+            return receiver && v.op == 'p' && v.value.equals(isStatic ? 0 : 1);
+        }
+
         /** The share of what the old body did that the candidate also does (both sorted, distinct). */
         static double covered(long[] old, long[] now) {
             int i = 0, j = 0, both = 0;
@@ -3835,6 +3901,69 @@ public final class GameDiff {
             long[] t = out.stream().mapToLong(Long::longValue).sorted().toArray();
             meanings.put(m, t);
             return t;
+        }
+
+        final Map<Node, Boolean> mergedMemo = new IdentityHashMap<>();
+
+        /** The tree holds a value that depends on the path taken. */
+        boolean merged(Node n) {
+            Boolean known = mergedMemo.get(n);
+            if (known != null) {
+                return known;
+            }
+            boolean out = Decoder.phi(n);
+            for (int i = 0; i < n.kids.length && !out; i++) {
+                out = merged(n.kids[i]);
+            }
+            mergedMemo.put(n, out);
+            return out;
+        }
+
+        /** The argument a b method gives back as its result, by its generic signature (`<T> T m(T)`), or null. */
+        Integer givesArgument(Ref r) {
+            Meth mb = h.b.method(r.owner(), r.name(), r.desc());
+            ClassModel cm = mb == null ? null : model(h.b, mb.owner.name);
+            if (cm == null) {
+                return null;
+            }
+            Origin o = h.b.origins.get(mb.owner.name);
+            String self = cm.thisClass().asInternalName();
+            for (MethodModel mm : cm.methods()) {
+                String rn = mm.methodName().stringValue(), rd = mm.methodType().stringValue();
+                if (!(o.names().method(self, rn, rd) + o.names().desc(rd)).equals(mb.name + mb.desc)) {
+                    continue;
+                }
+                var sig = mm.findAttribute(Attributes.signature());
+                if (sig.isEmpty()) {
+                    return null;
+                }
+                MethodSignature ms = MethodSignature.parseFrom(sig.get().signature().stringValue());
+                if (!(ms.result() instanceof Signature.TypeVarSig t)) {
+                    return null;
+                }
+                Integer found = null;
+                for (int i = 0; i < ms.arguments().size(); i++) {
+                    if (ms.arguments().get(i) instanceof Signature.TypeVarSig a && a.identifier().equals(t.identifier())) {
+                        if (found != null) {
+                            return null;
+                        }
+                        found = i;
+                    }
+                }
+                return found;
+            }
+            return null;
+        }
+
+        /** An a descriptor's class in b's names, dotted (through the links, or a class rewrite). */
+        String mappedName(String desc) {
+            String old = desc.substring(1, desc.length() - 1);
+            Cls ca = h.a.classes.get(old);
+            Cls cb = ca == null ? null : h.cAB.get(ca);
+            if (cb == null && ca != null) {
+                cb = classRewrites().get(ca);
+            }
+            return (cb != null ? cb.name : old).replace('/', '.');
         }
 
         void gather(Meth m, boolean sideA, int depth, Set<Meth> seen, Set<Long> out) {
@@ -4201,10 +4330,25 @@ public final class GameDiff {
             keys.putIfAbsent(key, use.ref);
             Set<String> readings = sites.computeIfAbsent(key, k -> new IdentityHashMap<>()).computeIfAbsent(use, k -> new LinkedHashSet<>());
             int first = use.op == 'v' || use.op == 'f' ? 0 : 1;
+            String cast = "";
             if (!fits(m.type, use.type)) {
+                // A generic call gives back its argument's own type (<T extends GuiEventListener> T addRenderableWidget(T)):
+                // erased it says GuiEventListener, but javac gives the argument's type, so the value is cast back to it.
+                Integer j = (m.op == 'v' || m.op == 's') ? givesArgument(m.ref) : null;
+                Node arg = j == null ? null : m.kids[j + (m.op == 'v' ? 1 : 0)];
+                if (arg == null || !use.type.startsWith("L") || !fits(arg.type, use.type)) {
+                    return;
+                }
+                cast = "(" + mappedName(use.type) + ") ";
+            }
+            String body = express(m, use.kids, first, use.type, 0);
+            String reading = body == null ? null : cast.isEmpty() ? body : cast + receiver(body);
+            if (reading == null && readings.isEmpty() && (merged(m) || Arrays.stream(use.kids).anyMatch(this::merged))) {
+                // Unreadable only because a value depends on the path taken (a loop's variable): that says nothing
+                // either way, so the use abstains instead of counting against.
+                sites.get(key).remove(use);
                 return;
             }
-            String reading = express(m, use.kids, first, use.type, 0);
             if (reading != null) {
                 readings.add(reading);
             }
@@ -4266,7 +4410,10 @@ public final class GameDiff {
                 Fld f = h.a.field(r.owner(), r.name());
                 if (f != null && (f.flags & ACC_PRIVATE) == 0) {
                     Fld y = h.fAB.get(f);
-                    out = y == null || ((y.flags ^ f.flags) & ACC_STATIC) != 0 || !h.descBA(y.desc).equals(f.desc) || closed(f.flags, y.flags);
+                    // A field that moved to another class: the route map carries moved methods, not moved fields
+                    // (1.19.3's Registry.BLOCK, now BuiltInRegistries.BLOCK).
+                    out = y == null || ((y.flags ^ f.flags) & ACC_STATIC) != 0 || !h.descBA(y.desc).equals(f.desc) || closed(f.flags, y.flags)
+                        || y.owner != h.cAB.get(f.owner);
                 }
             }
             brokenRefs.put(r, out);
