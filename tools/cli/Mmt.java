@@ -376,7 +376,7 @@ public final class Mmt {
                 Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar")
             ) throw new IllegalArgumentException(
                 "--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run mmt discover --root SOURCE" +
-                (options.command.equals("port") ? ", or move the compiled NeoForge mod with mmt port --jar FILE --to VERSION." : ".")
+                (options.command.equals("port") ? ", or move the compiled NeoForge or Fabric mod with mmt port --jar FILE --to VERSION." : ".")
             );
             if (!COMMANDS.contains(options.command)) throw new IllegalArgumentException(
                 unknownCommand(options.command)
@@ -927,7 +927,7 @@ public final class Mmt {
             "Background keeps the client hidden and prevents cursor capture (default off).\n" +
             "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off,\n" +
             "and the next game gets back the sound, narrator and first-launch options quiet changed in its folder.";
-            case "port" -> "Port a compiled NeoForge mod (1.20.5 and newer), no source and no build:\n" +
+            case "port" -> "Port a compiled NeoForge mod (1.20.5 and newer) or Fabric mod (1.14.4 and newer), no source and no build:\n" +
             "  mmt port --jar MOD.jar --to 1.21.2 [--from 1.21.1] [--out PORTED.jar] [--json]\n" +
             "Every reference its classes and mixins make to the game is relinked against the new release; what does not link is named,\n" +
             "never guessed, and the command fails. --from comes from the jar's metadata when it names one release.\n" +

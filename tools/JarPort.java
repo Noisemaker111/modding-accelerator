@@ -32,6 +32,7 @@ import org.objectweb.asm.commons.SimpleRemapper;
 public final class JarPort {
 
     final GameDiff.Snap a, b;
+    String loader; // "neoforge" or "fabric": the loader ported for, which a rule may name
     final Exposure.Route route;
     final String to, loaderTo;
     final Map<String, String> classMap = new HashMap<>();
@@ -77,6 +78,7 @@ public final class JarPort {
     JarPort(GameDiff.Snap a, GameDiff.Snap b, Path map) throws IOException {
         this.a = a;
         this.b = b;
+        loader = b.loaderVersion != null ? "neoforge" : "fabric";
         to = b.version;
         loaderTo = b.loaderVersion;
         route = Exposure.Route.read(map);
@@ -153,9 +155,11 @@ public final class JarPort {
 
     public static void main(String[] args) throws Exception {
         String from = null, to = null, map = null, out = null, loader = null, report = null, book = null;
+        boolean runtime = false;
         List<Path> jars = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
+                case "--runtime-names" -> runtime = true;
                 case "--from" -> from = args[++i];
                 case "--to" -> to = args[++i];
                 case "--map" -> map = args[++i];
@@ -168,10 +172,14 @@ public final class JarPort {
             }
         }
         if (from == null || to == null || map == null || out == null || jars.isEmpty()) {
-            System.err.println("usage: JarPort --from V --to V --map route.json [--loader neoforge] [--fixes knowledge/fixes.json] --out OUT.jar|DIR [--report R.json] IN.jar ...");
+            System.err.println("usage: JarPort --from V --to V --map route.json [--loader neoforge|fabric] [--runtime-names] [--fixes knowledge/fixes.json] --out OUT.jar|DIR [--report R.json] IN.jar ...");
             System.exit(2);
         }
         JarPort port = new JarPort(Exposure.snap(from, loader), Exposure.snap(to, loader), Path.of(map));
+        if (loader != null) {
+            port.loader = loader;
+        }
+        port.runtimeNames = runtime;
         if (book != null) {
             port.fixes(Path.of(book));
         }
@@ -237,7 +245,62 @@ public final class JarPort {
 
     /** A whole jar, nested mods included; each jar's result is added to results. */
     byte[] port(byte[] jar, String name, List<Map<String, Object>> results) throws IOException {
-        return port(jar, name, results, null);
+        boolean fabric = loader.equals("fabric");
+        if (fabric && compareVersions(a.version, UNOBFUSCATED) < 0 && intermediary(jar)) {
+            jar = fabricIn().jar(jar, new ModNames.Counts());
+        }
+        byte[] out = port(jar, name, results, null);
+        if (fabric && runtimeNames && compareVersions(b.version, UNOBFUSCATED) < 0) {
+            out = fabricOut().jar(out);
+        }
+        return out;
+    }
+
+    /** The first release Fabric runs in Mojang's names; before it, in that release's intermediary. */
+    static final String UNOBFUSCATED = "26.1";
+
+    boolean runtimeNames; // hand a Fabric jar back in the names Fabric runs, not Mojang's
+    ModNames in;
+    ModNames.Back out;
+
+    ModNames fabricIn() throws IOException {
+        try {
+            return in != null ? in : (in = new ModNames(new Exposure.Intermediary(a.version)));
+        } catch (Exception unreadable) {
+            throw new IOException("Fabric's intermediary names for " + a.version + " could not be read: " + unreadable.getMessage(), unreadable);
+        }
+    }
+
+    ModNames.Back fabricOut() throws IOException {
+        try {
+            return out != null ? out : (out = new ModNames.Back(b.version, b));
+        } catch (Exception unreadable) {
+            throw new IOException("Fabric's intermediary names for " + b.version + " could not be read: " + unreadable.getMessage(), unreadable);
+        }
+    }
+
+    /** Whether a jar's own classes name the game in Fabric's intermediary (net/minecraft/class_N). */
+    static boolean intermediary(byte[] jar) throws IOException {
+        byte[] mark = "net/minecraft/class_".getBytes(StandardCharsets.ISO_8859_1);
+        for (var e : entries(jar, "", new HashMap<>()).entrySet()) {
+            if (e.getKey().endsWith(".class") && indexOf(e.getValue(), mark) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static int indexOf(byte[] data, byte[] mark) {
+        outer:
+        for (int i = 0; i + mark.length <= data.length; i++) {
+            for (int j = 0; j < mark.length; j++) {
+                if (data[i + j] != mark[j]) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
     }
 
     /**
@@ -258,7 +321,9 @@ public final class JarPort {
         mod.widened.addAll(grants);
         // NeoForge's loader (FML 4 to 11) reads the access transformers neoforge.mods.toml lists, or else
         // META-INF/accesstransformer.cfg, for every mod file, nested ones included.
-        mod.canWiden = entries.containsKey("META-INF/neoforge.mods.toml");
+        // Fabric's reads the access widener fabric.mod.json names, for every mod file too.
+        byte[] fmj = entries.get("fabric.mod.json");
+        mod.canWiden = entries.containsKey("META-INF/neoforge.mods.toml") || fmj != null;
         for (var e : entries.entrySet()) {
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
                 read(mod, e.getValue());
@@ -279,7 +344,12 @@ public final class JarPort {
             }
         }
         List<String> atFiles = atFiles(entries);
-        if (!mod.grants.isEmpty()) {
+        String widener = fmj == null ? null : widenerFile(fmj);
+        if (fmj != null && widener == null && !mod.grants.isEmpty()) {
+            widener = "mmt-port.accesswidener";
+            entries.put(widener, "accessWidener v2 named\n".getBytes(StandardCharsets.UTF_8));
+        }
+        if (fmj == null && !mod.grants.isEmpty()) {
             entries.putIfAbsent(atFiles.get(0), new byte[0]);
         }
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -294,13 +364,22 @@ public final class JarPort {
                     data = unsigned(data);
                 } else if (n.equals("META-INF/neoforge.mods.toml") || n.equals("META-INF/mods.toml")) {
                     data = metadata(new String(data, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8);
+                } else if (n.equals("fabric.mod.json")) {
+                    data = fabricMetadata(data, widener);
+                } else if (n.equals(widener)) {
+                    String text = accessWidener(mod, new String(data, StandardCharsets.UTF_8));
+                    if (!mod.grants.isEmpty()) {
+                        text += (text.endsWith("\n") ? "" : "\n") + "# Opened by mmt port: closed in " + to + ", used by this mod\n" + widenerLines(mod.grants);
+                        mod.change("members opened through the mod's access widener");
+                    }
+                    data = text.getBytes(StandardCharsets.UTF_8);
                 } else if (nested.contains(n) || n.startsWith("META-INF/jarjar/") && n.endsWith(".jar")) {
                     data = port(data, name + "!" + n.substring(n.lastIndexOf('/') + 1), results, grants);
                 } else if (rewritten.containsKey(n)) {
                     data = rewritten.get(n);
                 } else if (atFiles.contains(n)) {
                     String text = accessTransformer(mod, new String(data, StandardCharsets.UTF_8));
-                    if (n.equals(atFiles.get(0)) && !mod.grants.isEmpty()) {
+                    if (fmj == null && n.equals(atFiles.get(0)) && !mod.grants.isEmpty()) {
                         text += (text.isEmpty() || text.endsWith("\n") ? "" : "\n") + "# Opened by mmt port: closed in " + to + ", used by this mod\n" + String.join("\n", mod.grants) + "\n";
                         mod.change("members opened through the mod's access transformer");
                     }
@@ -780,6 +859,9 @@ public final class JarPort {
         String every = holder + (method ? ".*()" : ".*");
         if ((flags & Opcodes.ACC_PUBLIC) != 0 || mod.widened.contains(holder + "." + member) || mod.widened.contains(every) && !member.startsWith("<init>")) {
             return true;
+        }
+        if (mod.widened.contains("~" + holder + "." + member) || mod.widened.contains("~" + every) && !member.startsWith("<init>")) {
+            flags = flags & ~Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED;
         }
         for (String caller : callers) {
             if (caller.equals(holder)) {
@@ -1373,7 +1455,7 @@ public final class JarPort {
         }
         for (GameDiff.Cls k : supers) {
             for (GameDiff.Meth m : k.methods.values()) {
-                if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !written.contains(m.name + m.desc) && !OBJECT.contains(m.name + m.desc)) {
+                if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !written.contains(m.name + m.desc) && !OBJECT.contains(m.name + m.desc) && !generic(supers, m)) {
                     mod.unlinked.add("abstract method not written: " + Exposure.dotted(k.name) + "." + m.name + m.desc + " (in " + Exposure.dotted(rc.name) + ")");
                 }
             }
@@ -1381,6 +1463,37 @@ public final class JarPort {
     }
 
     static final Set<String> OBJECT = Set.of("equals(Ljava/lang/Object;)Z", "hashCode()I", "toString()Ljava/lang/String;");
+
+    /**
+     * Whether a game class among supers implements an abstract method through a generic parameter: a concrete method of
+     * that name whose parameters are narrower (ShapedRecipe.matches(CraftingInput, Level) for Recipe.matches(RecipeInput,
+     * Level)). javac wrote the bridge with the erased signature into that class, and the snapshot leaves bridges out.
+     */
+    boolean generic(List<GameDiff.Cls> supers, GameDiff.Meth abs) {
+        Type[] want = Type.getArgumentTypes(abs.desc);
+        for (GameDiff.Cls k : supers) {
+            for (GameDiff.Meth m : k.methods.values()) {
+                if (m.name.equals(abs.name) && (m.flags & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_STATIC)) == 0 && narrows(want, m.desc, abs.desc)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Parameters each the same as or narrower than want, and a result that serves as abs's. */
+    boolean narrows(Type[] want, String desc, String abs) {
+        Type[] got = Type.getArgumentTypes(desc);
+        if (got.length != want.length || !usable(Type.getReturnType(desc), Type.getReturnType(abs))) {
+            return false;
+        }
+        for (int i = 0; i < got.length; i++) {
+            if (!usable(got[i], want[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     /** An @Accessor or @Invoker names a target member (its value, or the name Mixin infers); a renamed one is written into the value. */
     void accessor(Mod mod, String mixin, List<String> targets, GameDiff.RawMeth m, String[] spec) {
@@ -2801,7 +2914,7 @@ public final class JarPort {
      * between the releases ported from and to, and the loader is the one ported for.
      */
     boolean covers(String jump, String loader) {
-        if (!loader.isEmpty() && !loader.equals(b.loaderVersion == null ? "" : "neoforge")) {
+        if (!loader.isEmpty() && !loader.equals(this.loader)) {
             return false;
         }
         String[] range = jump.replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
@@ -3353,30 +3466,128 @@ public final class JarPort {
         return m.appendTail(sb).toString();
     }
 
+    /** The access widener a fabric.mod.json names, or null. */
+    static String widenerFile(byte[] fmj) {
+        try {
+            return Json.object(Json.parse(new String(fmj, StandardCharsets.UTF_8))).get("accessWidener") instanceof String w ? w : null;
+        } catch (RuntimeException unreadable) {
+            return null;
+        }
+    }
+
+    /**
+     * fabric.mod.json asks for the new release: its "minecraft" dependency becomes the release ported to, and it names the
+     * access widener the port wrote when the mod had none. Anything unreadable is left as it is.
+     */
+    byte[] fabricMetadata(byte[] data, String widener) {
+        Map<String, Object> meta;
+        try {
+            meta = Json.object(Json.parse(new String(data, StandardCharsets.UTF_8)));
+        } catch (RuntimeException unreadable) {
+            return data;
+        }
+        if (meta.get("depends") instanceof Map<?, ?> depends && depends.containsKey("minecraft")) {
+            Json.object(depends).put("minecraft", to);
+        }
+        if (widener != null && !meta.containsKey("accessWidener")) {
+            meta.put("accessWidener", widener);
+        }
+        return Json.write(meta).getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Access widener lines name game members in the old release (Mojang's names, as ModNames reads them); each one is moved
+     * to its new name, and a line whose class or member is gone is commented out, as in an access transformer.
+     */
+    String accessWidener(Mod mod, String text) {
+        StringBuilder out = new StringBuilder();
+        for (String line : text.split("\r?\n", -1)) {
+            String body = line.replaceAll("#.*", "").trim();
+            String[] p = body.split("\\s+");
+            if (p.length < 3 || p[0].equals("accessWidener") || p[0].equals("classTweaker")) {
+                out.append(line).append('\n');
+                continue;
+            }
+            String owner = p[2].replace('.', '/');
+            String newOwner = cls(owner);
+            String moved = null;
+            boolean known = a.classes.containsKey(owner);
+            if (!known) {
+                moved = body; // another mod's class, or one the old release did not have: left as it is
+            } else if (!b.classes.containsKey(newOwner)) {
+                moved = null;
+            } else if (p[1].equals("class")) {
+                moved = p[0] + " class " + newOwner;
+            } else if (p[1].equals("method") && p.length >= 5) {
+                String[] m = route.method(owner, p[3], p[4]);
+                GameDiff.Cls holder = Exposure.declaring(b, newOwner, 'm', m[1], m[2]);
+                moved = holder == null ? null : p[0] + " method " + newOwner + " " + m[1] + " " + m[2];
+            } else if (p[1].equals("field") && p.length >= 4) {
+                String[] f = route.field(owner, p[3]);
+                GameDiff.Cls holder = Exposure.declaring(b, newOwner, 'f', f[1], null);
+                moved = holder == null ? null : p[0] + " field " + newOwner + " " + f[1] + " " + holder.fields.get(f[1]).desc;
+            } else {
+                moved = body;
+            }
+            if (moved == null) {
+                out.append("# ").append(body).append("  # mmt port: gone in ").append(to).append('\n');
+                mod.change("access widener line for a gone member commented out");
+            } else {
+                out.append(moved.equals(body) ? line : moved).append('\n');
+            }
+        }
+        String s = out.toString();
+        return s.endsWith("\n\n") ? s.substring(0, s.length() - 1) : s;
+    }
+
+    /** The port's own grants ("public a.b.C [member]") as access widener lines; a field's type comes from the new release. */
+    String widenerLines(Set<String> grants) {
+        StringBuilder out = new StringBuilder();
+        for (String g : grants) {
+            String[] p = g.split(" ");
+            String owner = p[1].replace('.', '/');
+            if (p.length == 2) {
+                out.append("accessible class ").append(owner).append('\n');
+            } else if (p[2].contains("(")) {
+                int paren = p[2].indexOf('(');
+                out.append("accessible method ").append(owner).append(' ').append(p[2], 0, paren).append(' ').append(p[2].substring(paren)).append('\n');
+            } else {
+                GameDiff.Cls holder = Exposure.declaring(b, owner, 'f', p[2], null);
+                if (holder != null) {
+                    out.append("accessible field ").append(owner).append(' ').append(p[2]).append(' ').append(holder.fields.get(p[2]).desc).append('\n');
+                }
+            }
+        }
+        return out.toString();
+    }
+
     /**
      * What an access transformer makes public, in the new release's names, so linking does not count it as closed: a class
      * ("owner"), a member ("owner.name" or "owner.name+desc"), every field ("owner.*") or every method but constructors ("owner.*()").
+     * What it makes protected (Fabric's extendable, written protected-f) is kept with a leading "~": a subclass may use it.
      */
     void widen(Set<String> grants, String text) {
         for (String line : text.split("\n")) {
             String[] p = line.replaceAll("#.*", "").trim().split("\\s+");
-            if (p.length < 2 || !p[0].startsWith("public")) {
+            boolean open = p[0].startsWith("public");
+            if (p.length < 2 || !open && !p[0].startsWith("protected")) {
                 continue;
             }
+            String mark = open ? "" : "~";
             String owner = p[1].replace('.', '/');
             String newOwner = cls(owner);
             if (p.length == 2) {
-                grants.add(newOwner);
+                grants.add(mark + newOwner);
                 continue;
             }
             int paren = p[2].indexOf('(');
             if (p[2].equals("*") || p[2].equals("*()")) {
-                grants.add(newOwner + "." + p[2]);
+                grants.add(mark + newOwner + "." + p[2]);
             } else if (paren < 0) {
-                grants.add(newOwner + "." + route.field(owner, p[2])[1]);
+                grants.add(mark + newOwner + "." + route.field(owner, p[2])[1]);
             } else {
                 String[] moved = route.method(owner, p[2].substring(0, paren), p[2].substring(paren));
-                grants.add(newOwner + "." + moved[1] + moved[2]);
+                grants.add(mark + newOwner + "." + moved[1] + moved[2]);
             }
         }
     }

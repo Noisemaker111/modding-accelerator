@@ -266,14 +266,15 @@ def mojang_names(loader, version, jars):
     return [out / j.name for j in jars if (out / j.name).is_file()], failed
 
 
-def jar_port(loader, frm, to, jars, out_dir, report):
-    """Ports jars with tools/JarPort.java into out_dir and returns its report."""
+def jar_port(loader, frm, to, jars, out_dir, report, runtime=False):
+    """Ports jars with tools/JarPort.java into out_dir and returns its report. runtime: in the names the loader runs
+    (a Fabric jar handed back in the target release's intermediary), for a game to start them."""
     classpath = jar_tools()
     classes, tools_time = compile_tools()
     route = route_map(frm, to, loader, classes, tools_time)
     out_dir.mkdir(parents=True, exist_ok=True)
     args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
-            "--report", str(report), "--loader", loader]
+            "--report", str(report), "--loader", loader] + (["--runtime-names"] if runtime else [])
     done = subprocess.run(args + [str(j) for j in jars], stdout=subprocess.DEVNULL)
     if done.returncode:
         raise SystemExit(f"JarPort failed (exit {done.returncode}); its output is above")
@@ -494,10 +495,32 @@ def join(folder, save):
     return table
 
 
+def fabric_meta(jar):
+    """A jar's fabric.mod.json, or None."""
+    import zipfile
+    with zipfile.ZipFile(jar) as z:
+        if "fabric.mod.json" not in z.namelist():
+            return None
+        try:
+            return json.loads(z.read("fabric.mod.json").decode("utf-8", "replace"), strict=False)
+        except ValueError:
+            return None
+
+
 def standalone(jar):
-    """A NeoForge or Forge mod whose metadata asks for no other mod and no other language loader."""
+    """A mod whose metadata asks for no other mod and no other language loader (NeoForge, Forge or Fabric)."""
     import tomllib
     import zipfile
+    meta = fabric_meta(jar)
+    if meta is not None:
+        own = {meta.get("id")} | set(meta.get("provides") or [])
+        if any(e.get("adapter", "default") != "default" for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
+            return False
+        # Fabric API used without being listed is still another mod the jar needs, unless it bundles its modules.
+        with zipfile.ZipFile(jar) as z:
+            bundled = any("fabric-api" in n or n.startswith("META-INF/jars/fabric-") for n in z.namelist())
+            uses_api = any(n.endswith(".class") and b"net/fabricmc/fabric/" in z.read(n) for n in z.namelist())
+        return (bundled or not uses_api) and all(d in ("minecraft", "fabricloader", "java") or d in own for d in (meta.get("depends") or {}))
     with zipfile.ZipFile(jar) as z:
         names = [n for n in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml") if n in z.namelist()]
         if not names:
@@ -518,9 +541,12 @@ def standalone(jar):
 
 
 def mod_ids(jar):
-    """The mod ids a NeoForge or Forge jar declares."""
+    """The mod ids a NeoForge, Forge or Fabric jar declares."""
     import tomllib
     import zipfile
+    meta = fabric_meta(jar)
+    if meta is not None:
+        return {meta.get("id")} | set(meta.get("provides") or [])
     with zipfile.ZipFile(jar) as z:
         for name in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml"):
             if name in z.namelist():
@@ -611,7 +637,9 @@ def load(loader, frm, to, save):
     pack = ROOT / ".runs" / "exposure" / f"load-{loader}-{frm}-{to}"
     if pack.exists():
         shutil.rmtree(pack)
-    report = jar_port(loader, frm, to, chosen, pack / "mods", pack / "report.json")
+    # A Fabric jar is ported in Mojang's names (read as jars does) and handed back in the names Fabric runs.
+    read, _ = mojang_names(loader, frm, chosen)
+    report = jar_port(loader, frm, to, read, pack / "mods", pack / "report.json", runtime=loader == "fabric")
     links = {m["mod"]: not m.get("unlinked") and "error" not in m for m in report["mods"]}
     (pack / "dropped").mkdir()
     mmt = str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))
