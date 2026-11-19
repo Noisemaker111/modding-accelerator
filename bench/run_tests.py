@@ -54,7 +54,7 @@ def jar_port():
     out = ROOT / ".runs" / "jarport-tests"
     asm = SEP.join(["tools/perf/lib/asm-9.9.jar", "tools/perf/lib/asm-commons-9.9.jar"])
     yield ["javac", "--release", "25", "-encoding", "UTF-8", "-cp", asm, "-d", str(out), "tools/JarPort.java", "tools/FixExpr.java", "tools/Exposure.java",
-           "tools/GameDiff.java", "tools/VersionMap.java", "tools/cli/Json.java", "tools/tests/JarPortTest.java", "tools/tests/JarPortRulesTest.java"]
+           "tools/GameDiff.java", "tools/VersionMap.java", "tools/cli/Json.java", "tools/tests/JarPortTest.java", "tools/tests/JarPortRulesTest.java", "tools/tests/JarPortFixesTest.java"]
     yield java("-cp", str(out) + SEP + asm, "JarPortTest", str(out / "scratch"))
 
 

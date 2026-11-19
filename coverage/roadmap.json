@@ -490,6 +490,23 @@
      "result": "So far (2026-11-18): JarPort applies in the class what the game's own code shows (calls switched, added arguments such as GuiGraphics.blit's RenderType::guiTextured, chains, narrower fields) and every port rule's inClass: a Java expression for the old member, compiled against the new release like javac would, or a dropped class mapped to its replacement. 57 replacements on 33 rules. 41 of 150 link (30 before), broken uses 5,640 -> 4,147; on a real 1.21.2 server 30 of 35 load and all 19 that link load. The rest are held back by 1.21.2's rendering and recipe rewrites (render states, toasts, recipe book), which one-member replacements cannot express: every remaining mixin signature change would add about 4. Next: the source port applies inClass too."
     },
     {
+     "id": "47b",
+     "title": "Ported jars keep mixins, overrides and access transformers working",
+     "part": "Port by changed game part",
+     "status": "done",
+     "text": "Part of step 47 that needs nothing learned from the game's code, for every update: a mixin @Inject whose target method only took other parameters is moved to the new signature when Mixin will accept the handler there and its injection points are still in the new method (a handler that takes the target's arguments is re-declared with the new ones and calls the original); a mod method overriding a game method whose parameters changed gets a method with the new signature that calls it; a member the new release closed is opened through the mod's own access transformer, which NeoForge's loader reads for every mod file; access transformer lines for members that are gone are commented out. Injectors that take the changed call's own arguments (@Redirect, @ModifyArg, @WrapOperation) and handlers that capture locals stay reported.",
+     "finish": "The tool-fix layer of the 1.21.2 scoreboard: 45 of the 150 most-downloaded NeoForge mods for 1.21.1 link against 1.21.2 (coordinator's estimate; 41 today), and every linked one that needs no other mod loads on a real 1.21.2 server",
+     "wrongIf": "a mod the link check clears after these fixes fails on a real server",
+     "start": "2026-11-18",
+     "target": "2026-11-20",
+     "done": "2026-11-18",
+     "measures": [
+      "port.jar-links",
+      "port.jar-loads"
+     ],
+     "result": "43 of 150 link against 1.21.2 (41 before): cubes-without-borders and sodium-dynamic-lights. On a real 1.21.2 server 30 of 35 load; 21 link, 20 of them load and the 21st is client-only; none fails. On 1.21.4 to 1.21.5, 33 to 36 link. Broken references in the 150 mods 5,191 to 4,556; overrides the game no longer called 1,762 to 1,471. The estimate's other two mods are not safe to move: cherished-worlds captures the target's locals, drippy-loading-screen wraps calls whose parameters changed (@WrapOperation). The 48 references the scoreboard sorted as 'mixin now closed' are fields whose type changed, not access: a mixin already runs as its target. The remaining mixin signature changes are 1.21.2's rewritten LevelRenderer.renderLevel, whose injection points moved into other methods."
+    },
+    {
      "id": "51",
      "title": "A ported jar is proven in a game client too",
      "part": "Port by changed game part",
