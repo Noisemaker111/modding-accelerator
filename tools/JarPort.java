@@ -1177,8 +1177,12 @@ public final class JarPort {
         if (now == null || moved[2].equals(mapped) || (now.flags & (Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL)) != 0) {
             return false;
         }
-        if (rc.methods.containsKey(moved[1] + oldDesc(moved[2]))) {
-            return false; // the mod already declares the new signature
+        String signature = moved[1] + moved[2];
+        boolean taken = rc.methods.containsKey(moved[1] + oldDesc(moved[2]))
+            || mod.bridges.getOrDefault(rc.name, List.of()).stream().anyMatch(br -> (br.name() + br.desc()).equals(signature))
+            || mod.renamedDecl.entrySet().stream().anyMatch(e -> e.getKey().startsWith(rc.name + ".") && (e.getValue()[0] + e.getValue()[1]).equals(signature));
+        if (taken) {
+            return false; // the class already has a method with the new signature
         }
         Type result = Type.getReturnType(mapped), wanted = Type.getReturnType(moved[2]);
         if (!result.equals(wanted) && (wanted.getSort() == Type.VOID || !usable(result, wanted))) {
