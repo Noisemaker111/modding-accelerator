@@ -126,7 +126,8 @@ public final class JarPort {
         for (Object o : Json.array(raw.getOrDefault("learned", List.of()))) {
             var w = Json.object(o);
             String owner = Exposure.Route.internal(Json.text(w, "owner", "")), from = Json.text(w, "from", ""), desc = Json.text(w, "desc", "");
-            boolean named = desc.isEmpty() ? a.field(owner, from) != null : a.method(owner, from, desc) != null;
+            String member = from.endsWith("=") ? from.substring(0, from.length() - 1) : from; // "name=": a write
+            boolean named = desc.isEmpty() ? a.field(owner, member) != null : a.method(owner, from, desc) != null;
             if (majority(w) && named && covers(Json.text(w, "step", ""), "")) {
                 fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game " + Json.text(w, "step", ""),
                     Pattern.compile(Pattern.quote(from)), desc.isEmpty() ? null : desc.substring(0, desc.indexOf(')') + 1), Json.text(w, "expr", "")));
@@ -2373,6 +2374,7 @@ public final class JarPort {
 
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+            fresh = false;
             types(mod, desc, where);
             String[] own = mod.renamedDecl.get(owner + "." + name);
             if (own != null) {
@@ -2398,6 +2400,15 @@ public final class JarPort {
                     return;
                 }
             }
+            if (t == null && !read) {
+                // A write through what replaces it ("name=": $0 the receiver unless static, then the value).
+                String[] added = fix(List.of(owner, decl.owner()), name + "=", null, opcode == Opcodes.PUTSTATIC ? "(" + desc + ")V" : "(L" + owner + ";" + desc + ")V", opcode == Opcodes.PUTFIELD);
+                if (added != null) {
+                    invokeAdded(added);
+                    mod.change("field write replaced by a port rule");
+                    return;
+                }
+            }
             if (t == null) {
                 mod.unlinked.add("field: " + Exposure.dotted(decl.owner()) + "." + name);
                 super.visitFieldInsn(opcode, owner, name, desc);
@@ -2411,6 +2422,15 @@ public final class JarPort {
 
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+            fresh = false;
+            String[] closing = opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && !news.isEmpty() && news.peek()[0].equals(owner) ? news.peek() : null;
+            call(opcode, owner, name, desc, itf);
+            if (closing != null) {
+                news.remove(closing);
+            }
+        }
+
+        void call(int opcode, String owner, String name, String desc, boolean itf) {
             String[] own = mod.renamedDecl.get(owner + "." + name + desc);
             if (own != null) {
                 super.visitMethodInsn(opcode, owner, own[0], oldDesc(own[1]), itf);
@@ -2462,6 +2482,10 @@ public final class JarPort {
                 }
                 if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && constructed(owner, decl.owner(), desc)) {
                     mod.change("constructor arguments from a port rule");
+                    return;
+                }
+                if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && made(owner, decl.owner(), desc)) {
+                    mod.change("constructor replaced by a factory");
                     return;
                 }
                 if (opcode != Opcodes.INVOKESPECIAL) {
@@ -2815,6 +2839,7 @@ public final class JarPort {
 
         @Override
         public void visitLdcInsn(Object value) {
+            fresh = false;
             if (value instanceof Type t) {
                 types(mod, t.getDescriptor(), where);
             }
@@ -2862,6 +2887,70 @@ public final class JarPort {
         public void visitTypeInsn(int opcode, String type) {
             types(mod, type.startsWith("[") ? type : "L" + type + ";", where);
             super.visitTypeInsn(opcode, type);
+            if (opcode == Opcodes.NEW) {
+                news.push(new String[] { type, null });
+                fresh = true;
+            } else {
+                fresh = false;
+            }
+        }
+
+        // Objects made with new and not yet constructed, innermost first: {class, "dup" when new was followed by dup}.
+        final Deque<String[]> news = new ArrayDeque<>();
+        boolean fresh; // the last instruction was a new
+
+        @Override
+        public void visitInsn(int opcode) {
+            if (opcode == Opcodes.DUP && fresh && !news.isEmpty()) {
+                news.peek()[1] = "dup";
+            }
+            fresh = false;
+            super.visitInsn(opcode);
+        }
+
+        @Override
+        public void visitVarInsn(int opcode, int var) {
+            fresh = false;
+            super.visitVarInsn(opcode, var);
+        }
+
+        @Override
+        public void visitIntInsn(int opcode, int operand) {
+            fresh = false;
+            super.visitIntInsn(opcode, operand);
+        }
+
+        @Override
+        public void visitJumpInsn(int opcode, Label label) {
+            fresh = false;
+            super.visitJumpInsn(opcode, label);
+        }
+
+        /**
+         * new X(args) where X's constructor does not link and a replacement gives a value of X some other way (1.21:
+         * ResourceLocation.fromNamespaceAndPath for the closed constructor): the arguments are set aside, the two
+         * references to the object not yet constructed that new and dup left are dropped, and the replacement is called.
+         * Only where new was followed directly by dup, as javac and kotlinc write it.
+         */
+        boolean made(String owner, String declOwner, String desc) {
+            String[] pending = news.isEmpty() ? null : news.peek();
+            if (pending == null || !pending[0].equals(owner) || pending[1] == null) {
+                return false;
+            }
+            String[] added = fix(List.of(owner, declOwner), "<init>", desc, desc.substring(0, desc.indexOf(')') + 1) + "L" + owner + ";", false);
+            if (added == null) {
+                return false;
+            }
+            news.pop();
+            Type[] args = Type.getArgumentTypes(desc);
+            int[] slots = spill(args, 0);
+            super.visitInsn(Opcodes.POP);
+            super.visitInsn(Opcodes.POP);
+            for (int i = 0; i < args.length; i++) {
+                super.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), slots[i]);
+            }
+            invokeAdded(added);
+            return true;
         }
 
         @Override

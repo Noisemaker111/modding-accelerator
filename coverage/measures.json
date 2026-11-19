@@ -1881,7 +1881,9 @@
        150
       ]
      }
-    }
+    },
+    {"date": "2026-11-19", "value": 5731, "n": 9149, "note": "main at 77b7438 measured again on the same runners: the 5,743 recorded with #124 came from its branch before rebasing and does not reproduce (Fabric 26.1.2 -> 26.2 gives 37, not 44)", "source": "tools/cloud-run exposure --ref main https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44606173217"},
+    {"date": "2026-11-19", "value": 5775, "n": 9149, "note": "members the game closed, moved or made generic learned from the game's own code (closed constructors behind factories, moved fields, accessors, generic results); +44 on main measured the same way, no update lower; +12 NeoForge and +9 Fabric on 1.20.6 -> 1.21", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44603073553 (bench/exposure/all.json), PR #126"}
    ],
    "history": []
   },
