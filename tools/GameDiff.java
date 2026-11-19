@@ -3614,9 +3614,6 @@ public final class GameDiff {
                     String params = m.desc.substring(0, m.desc.indexOf(')') + 1);
                     String result = m.special() ? "L" + ca.name + ";" : m.desc.substring(m.desc.indexOf(')') + 1);
                     long[] before = meaning(m, true);
-                    if (before.length < 3) {
-                        continue;
-                    }
                     // A candidate is a public wrapper of the old member where b still has it (closed), taken as it is; or
                     // what the game's own new code wrote at a use of it, weighed by what its body does.
                     Meth alive = h.mAB.get(m);
@@ -3651,7 +3648,7 @@ public final class GameDiff {
                         }
                         // Where b still has the old member, only a wrapper of it is the same thing; anything else calls
                         // it and changes the result (getPixel converts what getPixelABGR returns).
-                        if (alive != null || !written.contains(call)) {
+                        if (alive != null || !written.contains(call) || before.length < 3) {
                             continue;
                         }
                         // Most of what the old body did, and not much else: a caller that also does it (die for
