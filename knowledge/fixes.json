@@ -1884,6 +1884,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.blit(Lnet/minecraft/resources/ResourceLocation;IIIIII)": "$0.blit(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $4, $5, $6, $7, 256, 256)"
+      },
       "match": "no suitable method found for blit\\(",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -1904,6 +1907,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.blit(Lnet/minecraft/resources/ResourceLocation;IIFFIIII)": "$0.blit(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $4, $5, $6, $7, $8, $9)"
+      },
       "match": "no suitable method found for blit\\(",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -1924,6 +1930,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.blit(Lnet/minecraft/resources/ResourceLocation;IIIFFIIII)": "$0.blit(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $5, $6, $7, $8, $9, $10)"
+      },
       "match": "no suitable method found for blit\\(",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -1944,6 +1953,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "members": ["net.minecraft.client.gui.GuiGraphics.blit"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.blit(Lnet/minecraft/resources/ResourceLocation;IIIIFFIIII)": "$0.blit(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $6, $7, $4, $5, $8, $9, $10, $11)"
+      },
       "match": "no suitable method found for blit\\(",
       "apply": {
         "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5124,6 +5136,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.client.gui.GuiGraphics.blitSprite"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.blitSprite": "$0.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $4, $5)"
+      },
       "match": "no suitable method found for blitSprite\\((?:ResourceLocation|TextureAtlasSprite),int,int,int,int\\)",
       "apply": {
         "find": "\\.blitSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5148,6 +5163,10 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.client.gui.GuiGraphics.blitSprite"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.blitSprite(Lnet/minecraft/resources/ResourceLocation;IIIII)": "$0.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $5, $6)",
+        "net.minecraft.client.gui.GuiGraphics.blitSprite(Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIII)": "$0.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $5, $6)"
+      },
       "match": "no suitable method found for blitSprite\\((?:ResourceLocation|TextureAtlasSprite),int,int,int,int,int\\)",
       "apply": {
         "find": "\\.blitSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5172,6 +5191,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.client.gui.GuiGraphics.blitSprite"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.blitSprite(Lnet/minecraft/resources/ResourceLocation;IIIIIIIII)": "$0.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $4, $5, $6, $7, $9, $10)"
+      },
       "match": "TextureAtlasSprite cannot be converted to (?:RenderPipeline|Function<)",
       "apply": {
         "find": "\\.blitSprite\\(\\s*(\\w*[Ss]prite\\w*)\\s*,((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -5196,6 +5218,9 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.client.gui.GuiGraphics.blitTiledSprite"],
+      "inClass": {
+        "net.minecraft.client.gui.GuiGraphics.blitTiledSprite(Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIIIII)": "$0.blitTiledSprite(net.minecraft.client.renderer.RenderType::guiTextured, $1, $2, $3, $5, $6, $7, $8, $9, $10, $11, $12, -1)"
+      },
       "match": "method blitTiledSprite in class GuiGraphics cannot be applied to given types",
       "apply": {
         "find": "\\.blitTiledSprite\\((?!\\s*(?:RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
@@ -6355,6 +6380,14 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.world.ItemInteractionResult"],
+      "inClass": {
+        "net.minecraft.world.ItemInteractionResult": "net.minecraft.world.InteractionResult",
+        "net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION": "net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND",
+        "net.minecraft.world.ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION": "net.minecraft.world.InteractionResult.PASS",
+        "net.minecraft.world.ItemInteractionResult.CONSUME_PARTIAL": "net.minecraft.world.InteractionResult.CONSUME",
+        "net.minecraft.world.ItemInteractionResult.sidedSuccess(Z)": "net.minecraft.world.InteractionResult.SUCCESS",
+        "net.minecraft.world.ItemInteractionResult.result()": "$0"
+      },
       "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
       "apply": {
         "find": "\\bItemInteractionResult\\b",
@@ -6878,6 +6911,15 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.world.InteractionResultHolder"],
+      "inClass": {
+        "net.minecraft.world.InteractionResultHolder": "net.minecraft.world.InteractionResult",
+        "net.minecraft.world.InteractionResultHolder.pass(Ljava/lang/Object;)": "net.minecraft.world.InteractionResult.PASS",
+        "net.minecraft.world.InteractionResultHolder.fail(Ljava/lang/Object;)": "net.minecraft.world.InteractionResult.FAIL",
+        "net.minecraft.world.InteractionResultHolder.success": "net.minecraft.world.InteractionResult.SUCCESS.heldItemTransformedTo((net.minecraft.world.item.ItemStack) $1)",
+        "net.minecraft.world.InteractionResultHolder.consume": "net.minecraft.world.InteractionResult.CONSUME.heldItemTransformedTo((net.minecraft.world.item.ItemStack) $1)",
+        "net.minecraft.world.InteractionResultHolder.sidedSuccess(Ljava/lang/Object;Z)": "net.minecraft.world.InteractionResult.SUCCESS.heldItemTransformedTo((net.minecraft.world.item.ItemStack) $1)",
+        "net.minecraft.world.InteractionResultHolder.getResult()": "$0"
+      },
       "match": "symbol:\\s+(?:class|variable) InteractionResultHolder\\b|InteractionResult is abstract; cannot be instantiated",
       "apply": {
         "find": "\\bInteractionResultHolder\\s*<[^<>;]*(?:<[^<>;]*>[^<>;]*)?>",
@@ -7103,6 +7145,11 @@
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "members": ["net.minecraft.world.level.block.entity.BlockEntityType$Builder"],
+      "inClass": {
+        "net.minecraft.world.level.block.entity.BlockEntityType$Builder": "net.minecraft.world.level.block.entity.BlockEntityType",
+        "net.minecraft.world.level.block.entity.BlockEntityType$Builder.of": "new net.minecraft.world.level.block.entity.BlockEntityType($1, java.util.Set.of($2))",
+        "net.minecraft.world.level.block.entity.BlockEntityType$Builder.build(Lcom/mojang/datafixers/types/Type;)": "$0"
+      },
       "match": "symbol:\\s+(?:class|method) (?:Builder|of)\\b[^\\n]*\\n\\s*location: class BlockEntityType|symbol:\\s+class Builder\\b",
       "apply": {
         "find": "\\bBlockEntityType\\.Builder\\.of\\(\\s*((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+(?:,(?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)*)\\)\\s*\\.build\\(\\s*(?:null|[^()]*(?:\\([^()]*\\))?[^()]*)\\)",
@@ -8172,6 +8219,110 @@
         "error": "Show.java:3: error: cannot find symbol\n        if (ingredient.isEmpty() || stack.isEmpty()) return;\n                      ^\n  symbol:   method isEmpty()\n  location: variable ingredient of type Ingredient\n",
         "before": "class Show {\n    void f(Ingredient ingredient, ItemStack stack) {\n        if (ingredient.isEmpty() || stack.isEmpty()) return;\n    }\n}\n",
         "after": "class Show {\n    void f(Ingredient ingredient, ItemStack stack) {\n        if (ingredient.items().isEmpty() || stack.isEmpty()) return;\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "native-image-get-pixel-abgr-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "com.mojang.blaze3d.platform.NativeImage.getPixelRGBA"
+      ],
+      "inClass": {
+        "com.mojang.blaze3d.platform.NativeImage.getPixelRGBA(II)": "net.minecraft.util.ARGB.toABGR($0.getPixel($1, $2))"
+      },
+      "match": "symbol:\\s+method getPixelRGBA\\(",
+      "apply": {
+        "find": "\\b{receiver}\\s*\\.\\s*getPixelRGBA\\s*\\(\\s*((?:[^()]|\\([^()]*\\))*?)\\s*\\)",
+        "replace": "net.minecraft.util.ARGB.toABGR({receiver}.getPixel($1))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 named NativeImage's raw pixel accessors for what they hold, ABGR, and made them private (getPixelABGR); the public getPixel(x, y) returns ARGB. getPixelRGBA returned the ABGR value, which is ARGB.toABGR of getPixel.",
+      "verified": null,
+      "test": {
+        "error": "Tint.java:3: error: cannot find symbol\n        int c = image.getPixelRGBA(x, y);\n                     ^\n  symbol:   method getPixelRGBA(int,int)\n  location: variable image of type NativeImage\n",
+        "before": "class Tint {\n    int f(NativeImage image, int x, int y) {\n        int c = image.getPixelRGBA(x, y);\n        return c;\n    }\n}\n",
+        "after": "class Tint {\n    int f(NativeImage image, int x, int y) {\n        int c = net.minecraft.util.ARGB.toABGR(image.getPixel(x, y));\n        return c;\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "native-image-set-pixel-abgr-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "com.mojang.blaze3d.platform.NativeImage.setPixelRGBA"
+      ],
+      "inClass": {
+        "com.mojang.blaze3d.platform.NativeImage.setPixelRGBA(III)": "$0.setPixel($1, $2, net.minecraft.util.ARGB.fromABGR($3))"
+      },
+      "match": "symbol:\\s+method setPixelRGBA\\(",
+      "apply": {
+        "find": "\\b{receiver}\\s*\\.\\s*setPixelRGBA\\s*\\(\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^()]|\\([^()]*\\))+?)\\s*\\)",
+        "replace": "{receiver}.setPixel($1, $2, net.minecraft.util.ARGB.fromABGR($3))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "The setter of native-image-get-pixel-abgr-1212: setPixelRGBA took an ABGR value, and the public setPixel(x, y, colour) takes ARGB, so the value goes through ARGB.fromABGR.",
+      "verified": null,
+      "test": {
+        "error": "Tint.java:3: error: cannot find symbol\n        image.setPixelRGBA(x, y, color);\n             ^\n  symbol:   method setPixelRGBA(int,int,int)\n  location: variable image of type NativeImage\n",
+        "before": "class Tint {\n    void f(NativeImage image, int x, int y, int color) {\n        image.setPixelRGBA(x, y, color);\n    }\n}\n",
+        "after": "class Tint {\n    void f(NativeImage image, int x, int y, int color) {\n        image.setPixel(x, y, net.minecraft.util.ARGB.fromABGR(color));\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "recipe-holder-id-location-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.crafting.RecipeHolder.id"
+      ],
+      "inClass": {
+        "net.minecraft.world.item.crafting.RecipeHolder.id()": "$0.id().location()"
+      },
+      "match": "incompatible types: ResourceKey<Recipe<\\?>> cannot be converted to ResourceLocation",
+      "apply": {
+        "find": "\\.\\s*id\\s*\\(\\s*\\)(?!\\s*\\.\\s*location\\s*\\()",
+        "replace": ".id().location()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's RecipeHolder names its recipe by a ResourceKey; the id the old holder gave is that key's location.",
+      "verified": null,
+      "test": {
+        "error": "Book.java:3: error: incompatible types: ResourceKey<Recipe<?>> cannot be converted to ResourceLocation\n        ResourceLocation id = holder.id();\n                                       ^\n",
+        "before": "class Book {\n    void f(RecipeHolder<?> holder) {\n        ResourceLocation id = holder.id();\n    }\n}\n",
+        "after": "class Book {\n    void f(RecipeHolder<?> holder) {\n        ResourceLocation id = holder.id().location();\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "recipe-manager-by-key-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.world.item.crafting.RecipeManager.byKey"
+      ],
+      "inClass": {
+        "net.minecraft.world.item.crafting.RecipeManager.byKey(Lnet/minecraft/resources/ResourceLocation;)": "$0.byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, $1))"
+      },
+      "match": "incompatible types: ResourceLocation cannot be converted to ResourceKey<Recipe<\\?>>",
+      "apply": {
+        "find": "\\.\\s*byKey\\s*\\(\\s*((?:[^()]|\\([^()]*\\))+?)\\s*\\)",
+        "replace": ".byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, $1))"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2's RecipeManager looks a recipe up by its ResourceKey; the key for an id is ResourceKey.create(Registries.RECIPE, id).",
+      "verified": null,
+      "test": {
+        "error": "Book.java:3: error: incompatible types: ResourceLocation cannot be converted to ResourceKey<Recipe<?>>\n        manager.byKey(id).ifPresent(r -> { });\n                      ^\n",
+        "before": "class Book {\n    void f(RecipeManager manager, ResourceLocation id) {\n        manager.byKey(id).ifPresent(r -> { });\n    }\n}\n",
+        "after": "class Book {\n    void f(RecipeManager manager, ResourceLocation id) {\n        manager.byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, id)).ifPresent(r -> { });\n    }\n}\n",
         "from": "written for this rule"
       }
     },

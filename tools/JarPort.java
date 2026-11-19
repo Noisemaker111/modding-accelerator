@@ -1420,7 +1420,8 @@ public final class JarPort {
             }
             boolean nowInterface = itf;
             GameDiff.Cls holder = b.classes.get(t[0]);
-            if (holder != null && !t[0].equals(cls(owner))) {
+            // The class may have become an interface under the same name (1.21.2's InteractionResult was an enum).
+            if (holder != null) {
                 nowInterface = (holder.flags & Opcodes.ACC_INTERFACE) != 0;
                 if (opcode == Opcodes.INVOKEVIRTUAL && nowInterface) {
                     opcode = Opcodes.INVOKEINTERFACE;
@@ -1745,7 +1746,11 @@ public final class JarPort {
                 if (!t[1].equals(h.getName()) || !t[0].equals(cls(h.getOwner()))) {
                     mod.change("method reference renamed");
                 }
-                return new Handle(h.getTag(), inverse.getOrDefault(t[0], t[0]), t[1], oldDesc(t[2]), h.isInterface());
+                GameDiff.Cls holder = b.classes.get(t[0]);
+                boolean itf = holder == null ? h.isInterface() : (holder.flags & Opcodes.ACC_INTERFACE) != 0;
+                int tag = h.getTag() == Opcodes.H_INVOKEVIRTUAL && itf ? Opcodes.H_INVOKEINTERFACE
+                    : h.getTag() == Opcodes.H_INVOKEINTERFACE && !itf ? Opcodes.H_INVOKEVIRTUAL : h.getTag();
+                return new Handle(tag, inverse.getOrDefault(t[0], t[0]), t[1], oldDesc(t[2]), itf);
             }
             return h;
         }
@@ -1794,11 +1799,21 @@ public final class JarPort {
 
     static final Pattern DESCRIBED = Pattern.compile("([\\w$<>]+)(\\((?:\\[*(?:[ZBCSIJFD]|L[\\w/$]+;))*\\)\\S*)");
 
-    /** Reads every rule's "inClass" from a rule book (knowledge/fixes.json): "a.b.Owner.name[(args)]" -> expression (FixExpr). */
+    /**
+     * Reads every rule's "inClass" from a rule book (knowledge/fixes.json): "a.b.Owner.name[(args)]" -> expression (FixExpr),
+     * or a class the new release dropped -> the class its values become.
+     */
     void fixes(Path book) throws IOException {
         for (Object o : Json.array(Json.read(book).get("rules"))) {
             var rule = Json.object(o);
             for (var e : Json.object(rule.getOrDefault("inClass", Map.of())).entrySet()) {
+                // A class the new release dropped, and the one its values become (BlockEntityType$Builder -> BlockEntityType).
+                String gone = e.getKey().replace('.', '/');
+                String now = String.valueOf(e.getValue()).replace('.', '/');
+                if (a.classes.containsKey(gone) && !b.classes.containsKey(gone) && b.classes.containsKey(now)) {
+                    classMap.putIfAbsent(gone, now);
+                    continue;
+                }
                 int dot = e.getKey().lastIndexOf('.');
                 String rest = e.getKey().substring(dot + 1);
                 Matcher d = DESCRIBED.matcher(rest);
@@ -1853,14 +1868,14 @@ public final class JarPort {
         }
     }
 
-    /** Whether a type exists for code running on the new release: not a game class, or one the new release has. */
+    /** Whether a type exists for code running on the new release: the new release or the mod has it, or the old release never did (a library's). */
     boolean present(Mod mod, Type t) {
         Type e = t.getSort() == Type.ARRAY ? t.getElementType() : t;
         if (e.getSort() != Type.OBJECT) {
             return true;
         }
         String n = e.getInternalName();
-        return b.classes.containsKey(n) || mod.classes.containsKey(n) || !GameDiff.gameClass(n);
+        return b.classes.containsKey(n) || mod.classes.containsKey(n) || !a.classes.containsKey(n);
     }
 
     boolean isInterface(Mod mod, String internal) {

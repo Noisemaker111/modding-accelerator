@@ -148,7 +148,7 @@ public final class GameDiff {
         final Cls owner;
         final String name;
         final String desc;
-        final int flags;
+        int flags; // widened by the loader's access transformer (Exposure.loaderAccess)
         String ops = "";
         Ref[] refs = new Ref[0];
         boolean hasCode;
@@ -204,7 +204,7 @@ public final class GameDiff {
         final Cls owner;
         final String name;
         final String desc;
-        final int flags;
+        int flags; // widened by the loader's access transformer (Exposure.loaderAccess)
         final List<Meth> accessors = new ArrayList<>();
         String constant; // a compile-time constant's value: javac inlines these, so nothing reads the field
         String id; // our stable id (field_g<n>)
@@ -221,7 +221,7 @@ public final class GameDiff {
     static final class Cls {
 
         final String name;
-        final int flags;
+        int flags; // widened by the loader's access transformer (Exposure.loaderAccess)
         final String sup;
         final List<String> ifaces;
         final boolean loader;

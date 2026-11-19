@@ -164,7 +164,52 @@ public final class Exposure {
         String metadata = VersionMap.fetchText(GameDiff.NEOFORGE + "maven-metadata.xml", "neoforge-maven-metadata.xml");
         String lv = GameDiff.neoforgeFor(version, metadata);
         Path jar = lv == null ? null : VersionMap.fetch(GameDiff.NEOFORGE + lv + "/neoforge-" + lv + "-universal.jar", "neoforge-" + lv + "-universal.jar");
-        return GameDiff.load(version, jar, lv);
+        GameDiff.Snap s = GameDiff.load(version, jar, lv);
+        if (jar != null) {
+            try (ZipFile zip = new ZipFile(jar.toFile())) {
+                ZipEntry at = zip.getEntry("META-INF/accesstransformer.cfg");
+                if (at != null) {
+                    loaderAccess(s, new String(zip.getInputStream(at).readAllBytes(), StandardCharsets.UTF_8));
+                }
+            }
+        }
+        return s;
+    }
+
+    /**
+     * The loader opens game classes and members with its own access transformer (NeoForge makes BlockEntityType's
+     * constructor public), and every mod sees the game that way at run time, so the snapshot is widened to match.
+     */
+    static void loaderAccess(GameDiff.Snap s, String text) {
+        for (String line : text.split("\n")) {
+            String[] p = line.replaceAll("#.*", "").trim().split("\\s+");
+            int open = p[0].startsWith("public") ? 0x0001 : p[0].startsWith("protected") ? 0x0004 : 0;
+            GameDiff.Cls c = p.length < 2 || open == 0 ? null : s.classes.get(p[1].replace('.', '/'));
+            if (c == null) {
+                continue;
+            }
+            if (p.length == 2) {
+                c.flags = opened(c.flags, open);
+            } else if (p[2].contains("(")) {
+                GameDiff.Meth m = c.methods.get(p[2]);
+                if (m != null) {
+                    m.flags = opened(m.flags, open);
+                }
+            } else {
+                GameDiff.Fld f = c.fields.get(p[2]);
+                if (f != null) {
+                    f.flags = opened(f.flags, open);
+                }
+            }
+        }
+    }
+
+    /** Access flags after an access transformer's public (1) or protected (4); it never narrows. */
+    static int opened(int flags, int open) {
+        if ((flags & 0x0001) != 0) {
+            return flags;
+        }
+        return open == 0x0001 ? (flags & ~0x0006) | 0x0001 : (flags & ~0x0002) | 0x0004;
     }
 
     /** A jar's (or a folder's) class files by internal name; nested jars (jar-in-jar libraries) are not the mod's. */
