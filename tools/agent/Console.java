@@ -76,7 +76,7 @@ final class Console {
             else body.append(line).append('\n');
         }
         String text = body.toString().trim();
-        boolean minecraft = loads(game, PortableAgent.Names.cls("net/minecraft/client/Minecraft").replace('/', '.'));
+        boolean minecraft = loads(game, runtimeClass("net.minecraft.client.Minecraft"));
         // Fabric builds on Yarn names call the same class MinecraftClient; mc must exist there too.
         boolean yarn = !minecraft && loads(game, "net.minecraft.client.MinecraftClient");
         // An expression is returned as it is; statements return what they return, or null.
@@ -211,10 +211,26 @@ final class Console {
             protected Class<?> findClass(String name) throws ClassNotFoundException {
                 ByteArrayOutputStream bytes = classes.get(name);
                 if (bytes == null) throw new ClassNotFoundException(name);
-                byte[] code = PortableAgent.Names.remap(bytes.toByteArray(), game);
+                byte[] code = runtimeNames(bytes.toByteArray(), game);
                 return defineClass(name, code, 0, code.length);
             }
         };
+    }
+
+    /*
+     * A game run in other names than Mojang's: the agent's table (PortableAgent.Names) publishes these two through system
+     * properties, so this class compiles and runs on its own (perf's toggles use it without the agent).
+     */
+    @SuppressWarnings("unchecked")
+    private static String runtimeClass(String mojang) {
+        Object f = System.getProperties().get("mmt.runtimeClass");
+        return f == null ? mojang : ((java.util.function.Function<String, String>) f).apply(mojang);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static byte[] runtimeNames(byte[] code, ClassLoader game) {
+        Object f = System.getProperties().get("mmt.remap");
+        return f == null ? code : ((java.util.function.BiFunction<byte[], ClassLoader, byte[]>) f).apply(code, game);
     }
 
     private static boolean loads(ClassLoader loader, String name) {

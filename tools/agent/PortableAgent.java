@@ -648,6 +648,12 @@ public final class PortableAgent {
             System.getProperties().put("mmt.rename", new java.util.function.BiFunction<Class<?>, String, List<String>>() {
                 public List<String> apply(Class<?> type, String name) { return declared(type, name); }
             });
+            System.getProperties().put("mmt.runtimeClass", new java.util.function.Function<String, String>() {
+                public String apply(String mojang) { return cls(mojang.replace('.', '/')).replace('/', '.'); }
+            });
+            System.getProperties().put("mmt.remap", new java.util.function.BiFunction<byte[], ClassLoader, byte[]>() {
+                public byte[] apply(byte[] code, ClassLoader game) { return remap(code, game); }
+            });
         }
 
         static String cls(String mojangInternal) { String r = runtime.get(mojangInternal); return r == null ? mojangInternal : r; }
