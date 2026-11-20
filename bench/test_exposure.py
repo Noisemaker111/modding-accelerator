@@ -196,4 +196,37 @@ with tempfile.TemporaryDirectory() as tmp:
           f"a jump says how many updates it crosses, one that did not run is named, and a pair that is no jump is left out: {table['jumps']} {table['missing']}")
     check([t["mod"] for t in table["nearest"]] == ["near.jar", "far.jar"], "over every update the mods nearest to done come first")
 
+# Jars are read on every processor at once; the rows come back as one process would have given them.
+with tempfile.TemporaryDirectory() as tmp:
+    folder = Path(tmp)
+    names = [f"mod{i:03}.jar" for i in range(150)]
+    for i, name in enumerate(names):
+        (folder / name).write_bytes(b"x" * (1 + (i * 37) % 97) * 1000)
+    (folder / "big.jar").write_bytes(b"x" * 2_000_000)
+    given = [folder / "big.jar"] + [folder / n for n in names]
+    E.CORES = 16
+    dealt = E.piles(given)
+    sizes = [sum(j.stat().st_size for j in pile) for pile in dealt]
+    check(len(dealt) == 4 and sorted(j.name for pile in dealt for j in pile) == sorted(j.name for j in given), "every jar is in exactly one of four piles")
+    check(max(sizes) - min(sizes) <= 2_000_000 and [folder / "big.jar"] in [pile[:1] for pile in dealt],
+          f"the piles weigh about the same, the biggest jar dealt first: {sizes}")
+    E.CORES = 4
+    check(len(E.piles(given)) == 1, "a 4-processor runner has none to spare: one pile")
+    E.CORES = 64
+    check(len(E.piles(given)) == 151 // E.PILE and len(E.piles(given[:5])) == 1, "a pile is not made for a handful of jars, however many processors there are")
+    tool = folder / "tool.py"
+    tool.write_text("import json, sys\nargs = sys.argv[1:]\nat = args.index('--report')\njars = args[at + 2:]\n"
+                    "if any('mod013' in j for j in jars) and 'fail' in args:\n    sys.exit(3)\n"
+                    "json.dump({'mods': [{'mod': j.replace(chr(92), '/').rsplit('/', 1)[1], 'heap': args[0]} for j in jars]}, open(args[at + 1], 'w'))\n", encoding="utf-8")
+    E.CORES = 16
+    rows = E.side_by_side([sys.executable, str(tool), "-Xmx10g"], given, folder / "report.json")
+    check([r["mod"] for r in rows] == [j.name for j in given], "rows come back in the order the jars were given, each once")
+    check(not list(folder.glob("report.*.json")), "the piles' own reports are removed")
+    try:
+        E.side_by_side([sys.executable, str(tool), "fail"], given, folder / "report.json")
+        failed = False
+    except SystemExit:
+        failed = True
+    check(failed, "one pile failing fails the run")
+
 print(f"exposure: {checks} checks passed")
