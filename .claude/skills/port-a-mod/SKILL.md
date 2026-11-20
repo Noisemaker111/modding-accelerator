@@ -6,20 +6,23 @@ description: Make mmt port carry any mod across Minecraft versions with no hand 
 You never work on "this mod's errors". You teach the porter one changed part of the game, and every mod that uses
 that part is fixed with it. Read this whole file before the first command: it is short, and each part was measured.
 
-## Where porting stands (2026-11-19)
+## Where porting stands (2026-11-20)
 
 - A mod comes in as source or as a `.jar`. `mmt port --jar MOD.jar --to 1.21.2` (tools/JarPort.java) moves a compiled
   NeoForge or Fabric mod with no source and no build, and names every reference that does not link instead of guessing.
   A Fabric jar is read in Mojang's names and handed back in the target release's intermediary (`ModNames.Back`).
-- **The number to move:** `tools/cloud-run exposure` (about 15 minutes; `python bench/exposure.py all` runs the same here)
-  ports the 150 most-downloaded mods of each release to the next and links them against the next release and its
-  loader (NeoForge with FML and its event bus; Fabric Loader and Fabric API), for 43 Fabric updates from 1.14.4 and 21
-  NeoForge updates from 1.20.2: **5,826 of 9,423 mod ports link (61.8%)**, table in `bench/exposure/all.json` and
-  `port.jar-links.every-update`. It ranks what holds the most mods back across every update, each labelled `game` or
-  `loader`. Run it on your PR's last commit and put the before and after in the PR.
-- One update: `python bench/exposure.py jars --loader neoforge|fabric --from 1.21.1 --to 1.21.2` (about 2 minutes):
-  NeoForge 45 of 150 link, Fabric 42. Fabric jars are read in Mojang's names through intermediary first
-  (tools/ModNames.java). Each line of its list says what the game's own code did about that reference.
+- **The number to move:** `tools/cloud-run exposure` (`python bench/exposure.py all` runs the same here) ports the
+  150 most-downloaded mods of each release and links them against the target release and its loader (NeoForge with FML
+  and its event bus; Fabric Loader and Fabric API). It counts three things, in `bench/exposure/all.json`:
+  **jumps** over several updates, from each family's most-used release to the next family's and to the newest
+  release (`port.jar-links.jumps`), which is what people ask for; the **big updates**, each into a new family; and
+  the small ones, across which nearly every mod links untouched. One update at a time, all together, was the old
+  headline (`port.jar-links.every-update`) and flattered the porter: half its updates are small. Run it on your PR's
+  last commit and put the before and after of the jumps and the big updates in the PR.
+- One update or one jump: `python bench/exposure.py jars --loader neoforge|fabric --from 1.21.1 --to 1.21.2` (about
+  2 minutes; `--to 1.21.4` or `--to 26.3` is a jump). It prints **the mods nearest to done**, each with the
+  references it still needs and what the game's own code did about each one: that is the to-do list. Fabric jars are
+  read in Mojang's names through intermediary first (tools/ModNames.java).
 - `python bench/exposure.py load ...` is the proof: the standalone mods `jars` says link are ported and started on a
   real 1.21.2 server and then in a real 1.21.2 client (`mmt pack-check --side client`), each mod's two verdicts side by
   side. Server: 23 of 25 load (one client-only, one with no code fails on its data). Client: 23 of 24 load; Puzzle loads
@@ -47,6 +50,7 @@ that part is fixed with it. Read this whole file before the first command: it is
 | GameDiff's Learner: what the game's new code computes at each use of a changed member, as an `inClass` expression (Nov 19, PR #121) | 1,413 -> 2,462 of 49,503 gone members get a replacement over all 43 updates; 43 -> 45 of 150 link. What is left is mostly redesigns, mixins, overrides and value-to-value changes (`false` -> `TriState.DEFAULT`) an expression cannot say |
 | Members the route map follows that still break, learned too: a closed member from its exact public wrapper, a closed field from its accessor, moved fields, generic results; readings seen only with literal arguments refused (Nov 19, PR #126) | every update 5,302 -> 5,365 of 9,149, none lower. Overrides with retyped parameters freed 1-2 mods per update when measured, so they wait for passing the new argument into the old method. The link check does not read NeoForge's loader (FML) classes: 2 mods that link failed on `ModLoadingContext.registerConfig` |
 | Calls the game removed learned as dropped (uses vanish, or the statement is only the receiver chain), and replaced classes as a class map from the types the game's own members and values switched to (Nov 20, PR #128) | every update 5,826 -> 5,854 of 9,423, none lower; Fabric 1.18.2 -> 1.19 34 -> 49 (TextComponent). Most mods that drop endVertex() still don't link on 1.21: getBuilder() + begin() became one call, which no one-member replacement says. JOML (1.19.3) is a library the snapshot doesn't read |
+| Taking the reference the most mods share first, which every row above did (measured Nov 20 on NeoForge 1.21.1 -> 1.21.2) | a mod held back has 15 references at the median, and 1,241 of the 2,060 are used by one mod each: the 100 most shared freed 2 mods, the 500 most shared 16. The mods nearest to done first: 15 mods are one reference away, 26 are done after 40 fixes. The first one taken that way (ServerPlayer.teleportTo) freed Chunky, which loads on a real 1.21.2 server |
 | Linking against the loader too, reading NeoForge 1.20.2-1.20.4, and counting mods whose code the port never reads as not read (Nov 20, PR #127) | every update 5,775 -> 5,586 on the same 61 updates (loader breaks -28 net; hidden code -165), 5,826 of 9,423 over 64. The compasses' FML break is now porting work; loader breaks are ranked with game ones |
 | Overrides whose parameters changed type moved whole to the new signature, each old parameter worked out from the new ones as the game's own overrides do (graphics.pose(), event.key()), and calls in the body given the new arguments; every injector's @At checked against the new method, a gone point a break only where require says so (Nov 20, steps 55 and 59) | every update 5,854 -> 5,838 of 9,423: +1 from moved overrides, -17 real breaks (required injection points gone; Better Mount HUD crashes on one in a real client). The screen family stays blocked by calls whose receiver changed (Font.draw(pose, ...) -> graphics.drawString(font, ...)), which need the new parameter as an operand of a learned replacement |
 
@@ -70,12 +74,14 @@ the first row above.
 ## The loop. One changed game part per turn
 
 1. `python bench/exposure.py jars --loader neoforge|fabric --from A --to B --save NAME`. It downloads the pinned mods
-   the first time, prints the mods that link, and the references that do not, ranked by how many mods they hold back,
-   each with what the game's own code did about it. To pick the update, read the ranked list across every update in
-   `bench/exposure/all.json`.
-2. Take the top part whose line says the game shows the answer (`game: replaced`, `split`, `linked`, `template`).
-   The detail names what the game's own code calls now. Skip `redesigned` and `unused` unless you can read both
-   versions of the game class and say what replaces it; if you can't, leave it. A wrong rule is worse than none.
+   the first time and prints the mods nearest to done, each with the references it still needs and what the game's
+   own code did about each. To pick the update, read `nearest` in `bench/exposure/all.json`: the mods with the
+   fewest left over every update.
+2. Take the first mod on that list whose every reference the game answers (`game: replaced`, `split`, `linked`,
+   `template`), and its first reference. The detail names what the game's own code calls now. Skip a mod with a
+   `redesigned` or `unused` reference unless you can read both versions of the game class and say what replaces it;
+   if you can't, take the next mod. A wrong rule is worse than none. The rule still names a game part, never the
+   mod: the mod only chooses which part comes next, because a part that finishes no mod helps nobody yet.
    Before writing a rule, see why the learner gave none: run GameDiff with `-Dgamediff.learnlog=PREFIX` and read the
    member's line (game uses lined up, uses read, votes, readings). A fix to the learner frees every update; a rule one.
 3. Write one rule in `knowledge/fixes.json` with `members` naming that game part, then
