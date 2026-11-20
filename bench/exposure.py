@@ -892,15 +892,16 @@ def fabric_api(version):
     return publish(part, target)
 
 
-def standalone(jar, platform=frozenset()):
+def standalone(jar, platform=frozenset(), adapters=frozenset()):
     """A mod whose metadata asks for no other mod and no other language loader (NeoForge, Forge or Fabric) beyond the
-    platform the pack runs on: for Fabric, Fabric API's modules (platform), which a pack starts with as it would for players."""
+    platform the pack runs on: for Fabric, Fabric API's modules (platform), which a pack starts with as it would for players,
+    and the language adapters (adapters) the mods started with it provide."""
     import tomllib
     import zipfile
     meta = fabric_meta(jar)
     if meta is not None:
         own = {meta.get("id")} | set(meta.get("provides") or [])
-        if any(e.get("adapter", "default") != "default" for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
+        if any(e.get("adapter", "default") not in adapters | {"default"} for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
             return False
         return all(d in ("minecraft", "fabricloader", "java") or d in own or d in platform for d in (meta.get("depends") or {}))
     with zipfile.ZipFile(jar) as z:
@@ -1035,9 +1036,17 @@ def load(loader, frm, to, save):
         jars(loader, frm, to)
     linked = [m["mod"] for m in json.loads(report.read_text(encoding="utf-8"))["mods"] if "error" not in m and not m["unlinked"]]
     folder = HOME / "jars" / f"{loader}-{frm}"
-    # A Fabric mod that needs Fabric API needs nothing beyond the platform the pack starts with.
-    provided = set(platform_ids(loader, to))
-    chosen = [folder / name for name in linked if standalone(folder / name, provided)]
+    # A Fabric mod that needs Fabric API needs nothing beyond the platform the pack starts with; one that needs other
+    # mods starts with them when they link too.
+    provided, adapters, chosen = set(platform_ids(loader, to)), set(), []
+    while True:
+        more = [folder / name for name in linked if folder / name not in chosen and standalone(folder / name, provided, adapters)]
+        if not more:
+            break
+        for jar in more:
+            chosen.append(jar)
+            provided |= mod_ids(jar)
+            adapters |= set((fabric_meta(jar) or {}).get("languageAdapters") or {})
     pack = ROOT / ".runs" / "exposure" / f"load-{loader}-{frm}-{to}"
     if pack.exists():
         shutil.rmtree(pack)

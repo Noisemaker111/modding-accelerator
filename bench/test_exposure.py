@@ -139,6 +139,12 @@ with tempfile.TemporaryDirectory() as tmp:
     other.write_bytes(jar({"fabric.mod.json": json.dumps({"id": "o", "depends": {"cloth-config": "*"}})}))
     check(E.standalone(capes, {"fabric-api", "fabric-api-base"}) and not E.standalone(capes) and not E.standalone(other, {"fabric-api"}),
           "a mod that needs only Fabric API is started with the platform; one that needs another mod is not")
+    kotlin = Path(tmp) / "kt.jar"
+    kotlin.write_bytes(jar({"fabric.mod.json": json.dumps({"id": "kt", "depends": {"fabric-language-kotlin": "*"},
+                                                           "entrypoints": {"main": [{"adapter": "kotlin", "value": "a.B"}]}})}))
+    check(E.standalone(kotlin, {"fabric-language-kotlin"}, {"kotlin"}) and not E.standalone(kotlin, {"fabric-language-kotlin"})
+          and E.standalone(other, {"cloth-config"}),
+          "a mod whose dependencies and language adapter come with mods started beside it is started with them")
 
 # The to-do list finishes mods. The reference the most mods share (g.Shared.one, 2 mods) finishes none of them.
 rows = [

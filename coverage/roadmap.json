@@ -620,6 +620,24 @@
      "result": "Every update 5,846 of 9,423, the same as main: Fabric 1.19.4 -> 1.20 42 -> 44 from rewritten screen calls, and FerriteCore no longer counted on 1.20.6 -> 1.21 (both loaders), whose mixin casts ModelResourceLocation to a ResourceLocation accessor. Real Fabric 1.20 server and client with Fabric API: every linked mod loads (21 on the server, 9 client-only, 30/30 in the client; Krypton loads alone and clashes with e4mc on 1.19.4 too). Real NeoForge 1.21: Necronomicon loads now that its dependency on forge asks for neoforge."
     },
     {
+     "id": "63",
+     "title": "Mod classes on a removed superclass, and drawing code outside moved screen methods",
+     "part": "Port by changed game part",
+     "status": "done",
+     "done": "2026-11-20",
+     "text": "A mod class whose game superclass is gone extends what the game's own former subclasses of it extend now (GuiComponent's extend Object in 1.20), its super() follows, and what it inherited and its new superclass lacks is reported. A lambda in a moved body moves with the parameter it captures. Injectors other than @Inject follow a method that only took other parameters when they capture none of what changed. A closed field a learned rewrite reads is opened through the mod's access widener.",
+     "start": "2026-11-20",
+     "target": "2026-11-22",
+     "finish": "port.jar-links.every-update up from 5,865 with no update lower except named false links, and load --loader fabric on 1.19.4 -> 1.20 (server and client) showing every linked mod loads",
+     "wrongIf": "a mod that links through one of these fails in a real game",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates",
+      "port.jar-links.newest"
+     ],
+     "result": "Every update 5,865 -> 5,882 of 9,423 (15 updates up, none lower), big updates 1,878 -> 1,895 of 5,149, newest 11 -> 15 of 294 (NeoForge 1.21.1 -> 26.3 6 -> 10). Mostly other injectors aimed at retyped HUD and screen methods (Zoomify) and tooltip rewrites reading Screen.font (Controlling)."
+    },
+    {
      "id": "56",
      "title": "The porter learns members the game closed, moved or made generic",
      "part": "Port by changed game part",
