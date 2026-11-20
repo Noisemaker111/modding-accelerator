@@ -1066,9 +1066,10 @@ public final class Mmt {
             "is your pack changed: an instance folder in place (undo with --undo), an export or .mrpack as a fixed copy.\n" +
             "--focus MODID,MODID is a minimal repro: only the jars providing those ids and their required dependencies (from the jars'\n" +
             "metadata) and loader plugins start, so one fault is proven in minutes, not a whole pack's start; --fix then never changes your pack.\n" +
-            "--side client starts the pack's own client instead (both: server and client): the loader's installer installs it, it runs hidden and muted\n" +
+            "--side client starts the pack's own client instead (both: server and client): the loader's own installer or launcher profile installs it, it runs hidden and muted\n" +
             "as your preferences say, loads every mod to the title screen, opens a flat world, shows the inventory and every creative tab, and quits.\n" +
-            "A client that does not get through names the mods its log and crash report point at. NeoForge only so far (installClient in the loader's entry).\n" +
+            "A client that does not get through names the mods its log and crash report point at. NeoForge (its installer) and Fabric (its launcher profile);\n" +
+            "a Fabric client before 26.1 runs intermediary, which mmt's agent reads through Mojang's and Fabric's mappings.\n" +
             "--memory 6G sets the server's heap. A start is judged by its log: --timeout SECONDS (default 600) stops one whose log stops growing,\n" +
             "and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that never finishes. How to add a loader, input, check or\n" +
             "repair: tools/packcheck/CONTRIBUTING.md.";

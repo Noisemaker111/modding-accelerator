@@ -617,7 +617,7 @@ public final class GameDiff {
                     s.fixPairs.add(id(p[0]) + "\0" + id(p[1]));
                 }
             }
-            boolean inside = loader ? n.startsWith("net/neoforged/") : gameClass(n);
+            boolean inside = loader ? !gameClass(n) : gameClass(n); // the loader's classes are the ones its caller chose (Exposure.snap)
             if (!inside || anonymous(n) || (rc.flags & ACC_SYNTHETIC) != 0) {
                 continue;
             }

@@ -54,10 +54,21 @@ public final class Exposure {
             row.put("game", game[0]);
             row.put("gameDetail", game[1]);
             row.put("portable", portable.contains(key));
+            row.put("part", loaderPart(a, key) ? "loader" : "game");
             said.put(member, row);
         }
         Files.writeString(Path.of(out), Json.write(said), StandardCharsets.UTF_8);
         System.out.printf("%s -> %s: what the game's own code did, for %d references%n", from, to, said.size());
+    }
+
+    /** Whether a key (a class, or owner.member) names the loader's API rather than the game's. */
+    static boolean loaderPart(GameDiff.Snap a, String key) {
+        String k = key.contains("(") ? key.substring(0, key.indexOf('(')) : key;
+        GameDiff.Cls c = a.classes.get(k.replace('.', '/'));
+        if (c == null && k.lastIndexOf('.') > 0) {
+            c = a.classes.get(k.substring(0, k.lastIndexOf('.')).replace('.', '/'));
+        }
+        return c != null && c.loader;
     }
 
     static final Pattern REFERENCE = Pattern.compile("^[^:]+: ([\\w.$]+?)(?:\\.([\\w$<>]+)(\\(.*)?)?$");
@@ -89,31 +100,279 @@ public final class Exposure {
     }
 
     /**
-     * One release of the game in Mojang names, with NeoForge's own classes when asked, or opened as Fabric API opens it
-     * for every mod (its transitive access wideners) with --loader fabric.
+     * One release of the game in Mojang names with the loader a mod runs on, as the mod sees it at run time. NeoForge:
+     * its own classes and every library of net.neoforged its build depends on (the mod loader FML, the event bus), opened
+     * by its access transformer. Fabric: Fabric Loader and Fabric API, with the interfaces Fabric API adds to game classes
+     * and the game opened by its transitive access wideners. A mod's references to the loader are linked like its
+     * references to the game, so a loader API change is porting work, not a surprise at load time.
      */
     static GameDiff.Snap snap(String version, String loader) throws Exception {
-        if ("fabric".equals(loader)) {
-            GameDiff.Snap s = GameDiff.load(version, null, null);
-            fabricAccess(s, version);
-            return s;
+        Platform p = "neoforge".equals(loader) ? neoforge(version) : "fabric".equals(loader) ? fabric(version) : new Platform(null, List.of(), "", Map.of());
+        String vj = GameDiff.versionJson(version);
+        Path client = GameDiff.verified(GameDiff.download(vj, "client"), "client-" + version + ".jar");
+        String[] m = GameDiff.download(vj, "client_mappings");
+        VersionMap.Proguard pg = m == null ? null : VersionMap.Proguard.parse(Files.readString(GameDiff.verified(m, "client-" + version + ".txt"), StandardCharsets.UTF_8));
+        List<byte[]> game = GameDiff.classes(client, null);
+        if (!p.injected().isEmpty()) {
+            game = injected(game, pg, p.injected());
         }
-        if (!"neoforge".equals(loader)) {
-            return GameDiff.load(version, null, null);
+        GameDiff.Snap s = GameDiff.read(version, game, pg, p.classes());
+        s.loaderVersion = p.version();
+        loaderAccess(s, p.access());
+        System.out.printf("  read %s with %s: %,d classes (%,d of the loader)%n", version, loader == null ? "no loader" : loader + " " + p.version(),
+            s.classes.size(), s.classes.values().stream().filter(c -> c.loader).count());
+        return s;
+    }
+
+    /**
+     * What a loader adds to one release: its version (NeoForge's; null for Fabric, whose loader is not tied to a release),
+     * its classes in Mojang names, its access transformer, and interfaces it adds to game classes (Mojang names).
+     */
+    record Platform(String version, List<byte[]> classes, String access, Map<String, List<String>> injected) {}
+
+    static final String NEOFORGED = "https://maven.neoforged.net/releases/";
+
+    /**
+     * NeoForge's build for a release (the newest, as GameDiff picks it) and the libraries it publishes as dependencies in
+     * net.neoforged's groups (FML, the event bus, ...), read from its own pom. Before 1.20.5 NeoForge ran on SRG member
+     * names, so its classes are read in Mojang names through its NeoForm mappings, as its mods are.
+     */
+    static Platform neoforge(String version) throws Exception {
+        String lv = neoforgeVersion(version);
+        if (lv == null) {
+            return new Platform(null, List.of(), "", Map.of());
         }
-        String metadata = VersionMap.fetchText(GameDiff.NEOFORGE + "maven-metadata.xml", "neoforge-maven-metadata.xml");
-        String lv = GameDiff.neoforgeFor(version, metadata);
-        Path jar = lv == null ? null : VersionMap.fetch(GameDiff.NEOFORGE + lv + "/neoforge-" + lv + "-universal.jar", "neoforge-" + lv + "-universal.jar");
-        GameDiff.Snap s = GameDiff.load(version, jar, lv);
-        if (jar != null) {
-            try (ZipFile zip = new ZipFile(jar.toFile())) {
-                ZipEntry at = zip.getEntry("META-INF/accesstransformer.cfg");
-                if (at != null) {
-                    loaderAccess(s, new String(zip.getInputStream(at).readAllBytes(), StandardCharsets.UTF_8));
+        Path universal = VersionMap.fetch(GameDiff.NEOFORGE + lv + "/neoforge-" + lv + "-universal.jar", "neoforge-" + lv + "-universal.jar");
+        byte[] bytes = Files.readAllBytes(universal);
+        if (srgNames(version)) {
+            bytes = new ModNames(Intermediary.neoform(version)).jar(bytes, new ModNames.Counts());
+        }
+        List<byte[]> classes = new ArrayList<>(classes(bytes, "net/neoforged/"));
+        for (String[] d : dependencies(neoforgePom(lv))) {
+            if (!d[0].startsWith("net.neoforged") || d[1].equals("neoform") || d[1].equals("neoforge")) {
+                continue;
+            }
+            String path = d[0].replace('.', '/') + "/" + d[1] + "/" + d[2] + "/" + d[1] + "-" + d[2] + ".jar";
+            try {
+                classes.addAll(classes(Files.readAllBytes(VersionMap.fetch(NEOFORGED + path, d[0] + "-" + d[1] + "-" + d[2] + ".jar")), "net/neoforged/"));
+            } catch (java.io.IOException notPublished) {
+                System.out.println("  " + path + ": " + notPublished.getMessage()); // a build-time library with no plain jar
+            }
+        }
+        String at = "";
+        try (ZipFile zip = new ZipFile(universal.toFile())) {
+            ZipEntry e = zip.getEntry("META-INF/accesstransformer.cfg");
+            if (e != null) {
+                at = new String(zip.getInputStream(e).readAllBytes(), StandardCharsets.UTF_8);
+            }
+        }
+        return new Platform(lv, classes, srgNames(version) ? Intermediary.neoform(version).rename(at) : at, Map.of());
+    }
+
+    static String neoforgeVersion(String version) throws Exception {
+        return GameDiff.neoforgeFor(version, VersionMap.fetchText(GameDiff.NEOFORGE + "maven-metadata.xml", "neoforge-maven-metadata.xml"));
+    }
+
+    /** NeoForge ran on SRG member names (m_N_, f_N_) before 1.20.5, its mods too. */
+    static boolean srgNames(String version) {
+        return compare(version, "1.20.5") < 0;
+    }
+
+    static String neoforgePom(String lv) throws Exception {
+        return VersionMap.fetchText(GameDiff.NEOFORGE + lv + "/neoforge-" + lv + ".pom", "neoforge-" + lv + ".pom");
+    }
+
+    /** {group, artifact, version} of each plain jar dependency a pom lists (none with a type or classifier). */
+    static List<String[]> dependencies(String pom) {
+        List<String[]> out = new ArrayList<>();
+        Matcher d = Pattern.compile("<dependency>(.*?)</dependency>", Pattern.DOTALL).matcher(pom);
+        while (d.find()) {
+            String body = d.group(1); // its own coordinates come before any exclusion it lists
+            String g = tag(body, "groupId"), a = tag(body, "artifactId"), v = tag(body, "version");
+            if (g != null && a != null && v != null && tag(body, "type") == null && tag(body, "classifier") == null) {
+                out.add(new String[] {g, a, v});
+            }
+        }
+        return out;
+    }
+
+    static String tag(String xml, String name) {
+        Matcher m = Pattern.compile("<" + name + ">([^<]*)</" + name + ">").matcher(xml);
+        return m.find() ? m.group(1).trim() : null;
+    }
+
+    static final String FABRIC_MAVEN = "https://maven.fabricmc.net/net/fabricmc/";
+
+    /**
+     * Fabric Loader (its newest stable release: players run the newest loader on every release) and the newest Fabric API
+     * built for the release, both from Fabric's own maven, in Mojang names. Fabric API's modules name game classes they
+     * add an interface to ("loom:injected_interfaces"); a mod built with Loom calls those methods on the game class.
+     */
+    static Platform fabric(String version) throws Exception {
+        List<byte[]> classes = new ArrayList<>();
+        String loaderMeta = VersionMap.fetchText(FABRIC_MAVEN + "fabric-loader/maven-metadata.xml", "fabric-loader-maven-metadata.xml");
+        String loaderVersion = tag(loaderMeta, "release");
+        if (loaderVersion != null) {
+            Path jar = VersionMap.fetch(FABRIC_MAVEN + "fabric-loader/" + loaderVersion + "/fabric-loader-" + loaderVersion + ".jar", "fabric-loader-" + loaderVersion + ".jar");
+            classes.addAll(classes(Files.readAllBytes(jar), "net/fabricmc/"));
+        }
+        Path api = fabricApi(version);
+        StringBuilder access = new StringBuilder();
+        Map<String, List<String>> injected = new HashMap<>();
+        if (api != null) {
+            byte[] bytes = Files.readAllBytes(api);
+            Intermediary names = compare(version, "26.1") < 0 ? new Intermediary(version) : null;
+            // Fabric API's modules open game members to every mod with "transitive-" widener lines (BlockEntityRenderers.
+            // register, MenuScreens.register), as NeoForge does with its access transformer.
+            for (String text : wideners(bytes)) {
+                StringBuilder lines = new StringBuilder();
+                boolean intermediary = false;
+                for (String line : text.split("\r?\n")) {
+                    String body = line.replaceAll("#.*", "").trim();
+                    if (body.startsWith("accessWidener") || body.startsWith("classTweaker")) {
+                        intermediary = body.endsWith("intermediary");
+                    } else if (body.startsWith("transitive-")) {
+                        lines.append(body.substring("transitive-".length())).append('\n');
+                    }
+                }
+                access.append(transformer(intermediary && names != null ? names.rename(lines.toString()) : lines.toString()));
+            }
+            for (String fmj : modJsons(bytes)) {
+                Matcher block = Pattern.compile("\"loom:injected_interfaces\"\\s*:\\s*\\{([^}]*)\\}").matcher(fmj);
+                while (block.find()) {
+                    Matcher e = Pattern.compile("\"([^\"]+)\"\\s*:\\s*\\[([^\\]]*)\\]").matcher(block.group(1));
+                    while (e.find()) {
+                        String target = names == null ? e.group(1) : names.rename(e.group(1));
+                        Matcher i = Pattern.compile("\"([^\"]+)\"").matcher(e.group(2));
+                        while (i.find()) {
+                            injected.computeIfAbsent(target, k -> new ArrayList<>()).add(i.group(1).replaceAll("<.*", ""));
+                        }
+                    }
+                }
+            }
+            if (names != null) {
+                bytes = new ModNames(names).jar(bytes, new ModNames.Counts());
+            }
+            classes.addAll(classes(bytes, "net/fabricmc/"));
+        }
+        classes.removeIf(Exposure::isMixin);
+        return new Platform(null, classes, access.toString(), injected);
+    }
+
+    /** Releases in order: 1.20.4 before 1.20.5 before 26.1. */
+    static int compare(String a, String b) {
+        String[] x = a.split("\\D+"), y = b.split("\\D+");
+        for (int i = 0; i < Math.max(x.length, y.length); i++) {
+            int p = i < x.length && !x[i].isEmpty() ? Integer.parseInt(x[i]) : 0, q = i < y.length && !y[i].isEmpty() ? Integer.parseInt(y[i]) : 0;
+            if (p != q) {
+                return Integer.compare(p, q);
+            }
+        }
+        return 0;
+    }
+
+    /** The newest Fabric API built for a release ("+1.21.1", or "+1.14" for the first ones), or null. */
+    static Path fabricApi(String version) throws Exception {
+        String metadata = VersionMap.fetchText(FABRIC_API + "maven-metadata.xml", "fabric-api-maven-metadata.xml");
+        String minor = version.replaceFirst("^(\\d+\\.\\d+)\\.\\d+$", "$1");
+        String chosen = null;
+        for (String wanted : List.of(version, minor)) {
+            Matcher m = Pattern.compile("<version>([^<]+\\+" + Pattern.quote(wanted) + ")</version>").matcher(metadata);
+            while (m.find()) {
+                chosen = m.group(1);
+            }
+            if (chosen != null) {
+                break;
+            }
+        }
+        return chosen == null ? null : VersionMap.fetch(FABRIC_API + chosen + "/fabric-api-" + chosen + ".jar", "fabric-api-" + chosen + ".jar");
+    }
+
+    /** A Fabric API class in a mixin package: Mixin applies it to the game, no mod links against it. */
+    static boolean isMixin(byte[] c) {
+        String name = new org.objectweb.asm.ClassReader(c).getClassName();
+        return name.contains("/mixin/");
+    }
+
+    /** The classes of a jar and the jars nested in it (by fabric.mod.json or NeoForge's jarjar list), under a package. */
+    static List<byte[]> classes(byte[] jar, String prefix) throws java.io.IOException {
+        List<byte[]> out = new ArrayList<>();
+        Map<String, byte[]> entries = new HashMap<>();
+        try (ZipInputStream zip = new ZipInputStream(new java.io.ByteArrayInputStream(jar))) {
+            for (ZipEntry e; (e = zip.getNextEntry()) != null; ) {
+                if (!e.isDirectory()) {
+                    entries.put(e.getName(), zip.readAllBytes());
                 }
             }
         }
-        return s;
+        for (var e : entries.entrySet()) {
+            String n = e.getKey();
+            if (n.endsWith(".class") && n.startsWith(prefix) && !n.endsWith("package-info.class")) {
+                out.add(e.getValue());
+            } else if (n.endsWith(".jar") && (n.startsWith("META-INF/jars/") || n.startsWith("META-INF/jarjar/"))) {
+                out.addAll(classes(e.getValue(), prefix));
+            }
+        }
+        return out;
+    }
+
+    /** Every fabric.mod.json in a jar and the jars nested in it. */
+    static List<String> modJsons(byte[] jar) throws java.io.IOException {
+        List<String> out = new ArrayList<>();
+        try (ZipInputStream zip = new ZipInputStream(new java.io.ByteArrayInputStream(jar))) {
+            for (ZipEntry e; (e = zip.getNextEntry()) != null; ) {
+                if (e.getName().equals("fabric.mod.json")) {
+                    out.add(new String(zip.readAllBytes(), StandardCharsets.UTF_8));
+                } else if (e.getName().startsWith("META-INF/jars/") && e.getName().endsWith(".jar")) {
+                    out.addAll(modJsons(zip.readAllBytes()));
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * The game's class files with the interfaces a loader adds to them, as Fabric API's mixins do at run time. Classes are
+     * named in Mojang names; the game jar names them obfuscated before 26.1, so each is found through Mojang's mappings.
+     */
+    static List<byte[]> injected(List<byte[]> game, VersionMap.Proguard pg, Map<String, List<String>> add) {
+        Map<String, List<String>> byJarName = new HashMap<>();
+        if (pg == null) {
+            byJarName.putAll(add);
+        } else {
+            pg.classes.forEach((obf, named) -> {
+                if (add.containsKey(named)) {
+                    byJarName.put(obf, add.get(named));
+                }
+            });
+        }
+        List<byte[]> out = new ArrayList<>(game.size());
+        for (byte[] c : game) {
+            org.objectweb.asm.ClassReader r = new org.objectweb.asm.ClassReader(c);
+            List<String> more = byJarName.get(r.getClassName());
+            if (more == null) {
+                out.add(c);
+                continue;
+            }
+            org.objectweb.asm.ClassWriter w = new org.objectweb.asm.ClassWriter(0);
+            r.accept(new org.objectweb.asm.ClassVisitor(org.objectweb.asm.Opcodes.ASM9, w) {
+                @Override
+                public void visit(int v, int access, String name, String signature, String sup, String[] ifaces) {
+                    // The interfaces are Fabric's own classes: Mojang's mappings do not name them, so they stay as written.
+                    Set<String> all = new LinkedHashSet<>(Arrays.asList(ifaces == null ? new String[0] : ifaces));
+                    all.addAll(more);
+                    String generic = signature;
+                    if (generic != null) {
+                        for (String i : more) {
+                            generic += "L" + i + ";";
+                        }
+                    }
+                    super.visit(v, access, name, generic, sup, all.toArray(new String[0]));
+                }
+            }, 0);
+            out.add(w.toByteArray());
+        }
+        return out;
     }
 
     /**
@@ -146,43 +405,6 @@ public final class Exposure {
 
     static final String FABRIC_API = "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/";
 
-    /**
-     * Fabric API's modules open game members to every mod with "transitive-" access widener lines (BlockEntityRenderers.
-     * register, MenuScreens.register), as NeoForge does with its access transformer. The newest Fabric API built for the
-     * release ("+1.21.1", or "+1.14" for the first ones) is read from Fabric's own maven; a release with none is left as is.
-     */
-    static void fabricAccess(GameDiff.Snap s, String version) throws Exception {
-        String metadata = VersionMap.fetchText(FABRIC_API + "maven-metadata.xml", "fabric-api-maven-metadata.xml");
-        String minor = version.replaceFirst("^(\\d+\\.\\d+)\\.\\d+$", "$1");
-        String chosen = null;
-        for (String wanted : List.of(version, minor)) {
-            Matcher m = Pattern.compile("<version>([^<]+\\+" + Pattern.quote(wanted) + ")</version>").matcher(metadata);
-            while (m.find()) {
-                chosen = m.group(1);
-            }
-            if (chosen != null) {
-                break;
-            }
-        }
-        if (chosen == null) {
-            return;
-        }
-        Path jar = VersionMap.fetch(FABRIC_API + chosen + "/fabric-api-" + chosen + ".jar", "fabric-api-" + chosen + ".jar");
-        StringBuilder lines = new StringBuilder();
-        boolean intermediary = false;
-        for (String text : wideners(Files.readAllBytes(jar))) {
-            for (String line : text.split("\r?\n")) {
-                String body = line.replaceAll("#.*", "").trim();
-                if (body.startsWith("accessWidener") || body.startsWith("classTweaker")) {
-                    intermediary |= body.endsWith("intermediary");
-                } else if (body.startsWith("transitive-")) {
-                    lines.append(body.substring("transitive-".length())).append('\n');
-                }
-            }
-        }
-        String opened = intermediary ? new Intermediary(version).rename(lines.toString()) : lines.toString();
-        loaderAccess(s, transformer(opened));
-    }
 
     /** Every access widener in a Fabric jar and the jars nested in it. */
     static List<String> wideners(byte[] jar) throws java.io.IOException {
@@ -245,7 +467,8 @@ public final class Exposure {
      */
     static final class Intermediary {
         static final Pattern CLASS = Pattern.compile("net([/.])minecraft\\1class_\\d+(?:\\$class_\\d+)*");
-        static final Pattern MEMBER = Pattern.compile("\\b(?:method|field|comp)_\\d+\\b");
+        // Fabric's intermediary members, and NeoForm's SRG ids (m_N_, f_N_) NeoForge ran on before 1.20.5.
+        static final Pattern MEMBER = Pattern.compile("\\b(?:(?:method|field|comp)_\\d+|[mf]_\\d+_)\\b");
 
         final Map<String, String> classes = new HashMap<>(); // slash form
         final Map<String, String> members = new HashMap<>();
@@ -271,9 +494,74 @@ public final class Exposure {
             }
         }
 
+        /**
+         * NeoForge's SRG names of one release in Mojang's. NeoForge's pom names the NeoForm build it was made from; NeoForm's
+         * joined mappings name each obfuscated class (in Mojang's name already) and member with an SRG id, unique in the
+         * whole game, and Mojang's own mappings name the same obfuscated members, so the two join through them.
+         */
+        static Intermediary neoform(String version) throws Exception {
+            Intermediary cached = NEOFORM.get(version);
+            if (cached != null) {
+                return cached;
+            }
+            String lv = neoforgeVersion(version);
+            String nf = lv == null ? null : dependencies(neoforgePom(lv)).stream().filter(d -> d[1].equals("neoform")).map(d -> d[2]).findFirst().orElse(null);
+            if (nf == null) {
+                // The pom lists NeoForm with a type (a zip), which dependencies() leaves out: read it directly.
+                Matcher m = lv == null ? null : Pattern.compile("<artifactId>neoform</artifactId>\\s*<version>([^<]+)</version>").matcher(neoforgePom(lv));
+                nf = m != null && m.find() ? m.group(1) : null;
+            }
+            if (nf == null) {
+                throw new java.io.IOException("no NeoForge build with NeoForm mappings for " + version);
+            }
+            Path zip = VersionMap.fetch(NEOFORGED + "net/neoforged/neoform/" + nf + "/neoform-" + nf + ".zip", "neoform-" + nf + ".zip");
+            Matcher at = Pattern.compile("\"mappings\"\\s*:\\s*\"([^\"]+)\"").matcher(VersionMap.zipEntry(zip, "config.json"));
+            String tsrg = VersionMap.zipEntry(zip, at.find() ? at.group(1) : "config/joined.tsrg");
+            String vj = GameDiff.versionJson(version);
+            VersionMap.Proguard pg = VersionMap.Proguard.parse(Files.readString(GameDiff.verified(GameDiff.download(vj, "client_mappings"), "client-" + version + ".txt"), StandardCharsets.UTF_8));
+            String[] server = GameDiff.download(vj, "server_mappings");
+            if (server != null) {
+                pg.merge(VersionMap.Proguard.parse(Files.readString(GameDiff.verified(server, "server-" + version + ".txt"), StandardCharsets.UTF_8)));
+            }
+            Intermediary out = new Intermediary(Map.of(), srg(tsrg, pg));
+            NEOFORM.put(version, out);
+            return out;
+        }
+
+        static final Map<String, Intermediary> NEOFORM = new java.util.concurrent.ConcurrentHashMap<>();
+
+        /**
+         * SRG id -> Mojang name from NeoForm's tsrg2 ("tsrg2 obf srg id"; a class line "obf name", a method line
+         * "\tobf (desc) m_N_ N", a field line "\tobf f_N_ N"; deeper lines are parameters) and Mojang's mappings.
+         */
+        static Map<String, String> srg(String tsrg, VersionMap.Proguard pg) {
+            Map<String, String> members = new HashMap<>();
+            String owner = null;
+            for (String line : tsrg.split("\r?\n")) {
+                if (line.startsWith("tsrg") || line.isBlank() || line.startsWith("\t\t")) {
+                    continue;
+                }
+                String[] p = line.trim().split("\\s+");
+                if (!line.startsWith("\t")) {
+                    owner = p[0];
+                    continue;
+                }
+                if (owner == null || p.length < 2) {
+                    continue;
+                }
+                boolean method = p.length >= 3 && p[1].startsWith("(");
+                String id = method ? p[2] : p[1];
+                String named = method ? pg.methods.get(owner + "." + p[0] + p[1]) : pg.fields.get(owner + "." + p[0]);
+                if (named != null && id.matches("[mf]_\\d+_")) {
+                    members.putIfAbsent(id, named);
+                }
+            }
+            return members;
+        }
+
         /** Intermediary class and member names inside a text, in Mojang names (classes keep the text's separator). */
         String rename(String s) {
-            if (!s.contains("class_") && !s.contains("method_") && !s.contains("field_") && !s.contains("comp_")) {
+            if (!s.contains("class_") && !s.contains("method_") && !s.contains("field_") && !s.contains("comp_") && !s.contains("m_") && !s.contains("f_")) {
                 return s;
             }
             Matcher c = CLASS.matcher(s);
