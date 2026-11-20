@@ -861,6 +861,30 @@
    "target": {"value": 50, "by": "2026-12-08", "step": "47"}
   },
   {
+   "id": "port.jar-links.newest",
+   "area": "port",
+   "name": "Mods of the most-used release whose ported jar links on the newest game, Fabric and NeoForge",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "What people ask for: the 150 most-downloaded mods of the release with the most mods on Modrinth (Fabric 1.20.1, NeoForge 1.21.1) ported in one go to the newest release (26.3), 22 and 15 updates away, and linked against it and its loader. python bench/exposure.py jars --loader fabric --from 1.20.1 --to 26.3, or tools/cloud-run exposure, which runs both among its jumps. A mod has to get through every update on the way, so this is far below any one update's count.",
+   "info": true,
+   "points": [
+    {"date": "2026-11-20", "value": 11, "n": 294, "note": "first measurement: Fabric 1.20.1 -> 26.3 5 of 147, NeoForge 1.21.1 -> 26.3 6 of 147. Every hub to 26.3, measured once in the same run: 6 to 39 of 147, under 15 from 1.16.5 on except the last three hubs", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44821929843 (bench/exposure/all.json), PR #140"}
+   ]
+  },
+  {
+   "id": "port.jar-links.big-updates",
+   "area": "port",
+   "name": "Most-downloaded mods whose ported jar links, the big updates only, Fabric and NeoForge",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "port.jar-links.every-update without the updates that change almost nothing: only the 35 updates into another family of releases (coverage/changes/index.json: the game broke at least 1 in 100 of its names). Across the other 29, 93% of mods link untouched, which is why every update together reads 62%.",
+   "info": true,
+   "points": [
+    {"date": "2026-11-20", "value": 1861, "n": 5149, "note": "35 big updates; the 29 small ones 3986 of 4274; the 23 jumps of several updates 1138 of 3384", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44821929843 (bench/exposure/all.json), PR #140"}
+   ]
+  },
+  {
    "id": "port.jar-links.every-update",
    "area": "port",
    "name": "Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge",
@@ -1887,7 +1911,8 @@
     {"date": "2026-11-20", "value": 5826, "n": 9423, "note": "64 updates (21 NeoForge: 1.20.2 to 1.20.4 read through NeoForm's SRG names); mods linked against their loader too (NeoForge with FML and its event bus, Fabric Loader and Fabric API); mods whose game code is in a jar their own loader unpacks (Essential, Crash Assistant, CustomSkinLoader) counted as not read. On the 61 updates main measured: 5,775 -> 5,586", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44656866160 (bench/exposure/all.json), PR #127"},
     {"date": "2026-11-20", "value": 5854, "n": 9423, "note": "removed calls learned as dropped and replaced classes as a class map, from the game's own code; +28 on main's 5,826 (after #127), no update lower; Fabric 1.18.2 -> 1.19 34 -> 49", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44771994264 (bench/exposure/all.json), PR #128"},
     {"date": "2026-11-20", "value": 5838, "n": 9423, "note": "steps 55 and 58 on main after #128 (5,854): +1 from overrides moved to the game's new parameter types (Fabric 1.19.4 -> 1.20), -17 mods whose required mixin injection point the new method no longer has (real breaks the link check used to miss; Better Mount HUD crashes on one in a real Fabric 1.20.5 client)", "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44778079456 (bench/exposure/all.json)"},
-    {"date": "2026-11-20", "value": 5846, "n": 9423, "note": "replacements spanning two calls (getBuilder+begin, tesselator.end), renamed overload families, and the game's libraries read (JOML class map, authlib members); +8 on main's 5,838; 3 updates 1 lower, each a real library break the old check missed (Resourceful Config crashes on main's 1.20.5 port with NoClassDefFoundError DataResult$PartialResult)", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44815913630 (bench/exposure/all.json), PR #136"}
+    {"date": "2026-11-20", "value": 5846, "n": 9423, "note": "replacements spanning two calls (getBuilder+begin, tesselator.end), renamed overload families, and the game's libraries read (JOML class map, authlib members); +8 on main's 5,838; 3 updates 1 lower, each a real library break the old check missed (Resourceful Config crashes on main's 1.20.5 port with NoClassDefFoundError DataResult$PartialResult)", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44815913630 (bench/exposure/all.json), PR #136"},
+    {"date": "2026-11-20", "value": 5847, "n": 9423, "note": "ServerPlayer.teleportTo's 1.21.2 form as a rule, the first item of the nearest-to-done list: NeoForge 1.21.1 -> 1.21.2 +1 (Chunky, which loads on a real 1.21.2 server)", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44821929843 (bench/exposure/all.json), PR #140"}
    ],
    "history": []
   },

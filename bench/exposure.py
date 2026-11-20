@@ -209,13 +209,16 @@ def big(frm, to):
 
 def jumps(loader):
     """The ports people ask for, which cross several updates: from each family's hub (its release with the most mods)
-    to the next family's hub, and to the newest release. A mod has to get through every update on the way, so these
-    are far lower than any one update's count; one update apart, the pair is already in updates."""
+    to the next family's hub, and from the release with the most mods of all to the newest one. A mod has to get
+    through every update on the way, so these are far lower than any one update's count. One update apart, the pair
+    is already in updates. Every hub to the newest release was measured once (2026-11-20, run 44821929843): 33 more
+    jobs that each read every release on the way, 60% of the run's time, and all but the nearest few under 15 of 147."""
     single = updates(loader)
     read = [frm for frm, _ in single]
-    hubs = sorted({f["hub"] for f in families().values() if f["hub"] in read}, key=vkey)
-    newest = single[-1][1]
-    pairs = list(zip(hubs, hubs[1:])) + [(hub, newest) for hub in hubs]
+    family = families()
+    hubs = sorted({f["hub"] for f in family.values() if f["hub"] in read}, key=vkey)
+    most = max(hubs, key=lambda hub: family[hub].get("mods", {}).get(hub, 0))
+    pairs = list(zip(hubs, hubs[1:])) + [(most, single[-1][1])]
     return [p for p in dict.fromkeys(pairs) if p not in single]
 
 
@@ -711,7 +714,7 @@ def join(folder, save):
     wanted = {(lo, *u): i for lo in FIRST for i, u in enumerate(jumps(lo))}
     pair = lambda s: (s["loader"], s["from"], s["to"])
     rows = sorted((s for s in found if pair(s) in single), key=lambda s: (s["loader"], single[pair(s)]))
-    far = sorted((s for s in found if pair(s) not in single), key=lambda s: (s["loader"], wanted.get(pair(s), 999)))
+    far = sorted((s for s in found if pair(s) in wanted), key=lambda s: (s["loader"], wanted[pair(s)]))
 
     def count(some):
         return {"updates": len(some), "mods": sum(s["modsRead"] for s in some), "link": sum(s["modsThatLink"] for s in some)}
@@ -723,6 +726,9 @@ def join(folder, save):
     total["small"] = count([s for s in rows if not big(s["from"], s["to"])])
     # What people ask for: a port over several updates.
     total["jumps"] = {"jumps": len(far), "mods": sum(s["modsRead"] for s in far), "link": sum(s["modsThatLink"] for s in far)}
+    # The jump asked for most: the most-used release's mods on the newest game.
+    newest = [s for s in far if s["to"] == updates(s["loader"])[-1][1]]
+    total["newest"] = {"jumps": len(newest), "mods": sum(s["modsRead"] for s in newest), "link": sum(s["modsThatLink"] for s in newest)}
     checked = [s for s in rows if s.get("modsThatLinkAndData") is not None]
     # Over the updates whose registry reports ran: mods that link and also name nothing in their data that the new release dropped.
     total["data"] = {"updates": len(checked), "link": sum(s["modsThatLink"] for s in checked), "linkAndData": sum(s["modsThatLinkAndData"] for s in checked)}
@@ -737,9 +743,12 @@ def join(folder, save):
     top = sorted(({"loader": s["loader"], "update": f"{s['from']} -> {s['to']}", **r} for s in rows for r in s["top"]),
                  key=lambda r: -r["mods"])[:60]
     # The to-do list over every update: the mods with the fewest references left, those the game's own code answers first.
-    turns = [{"loader": s["loader"], "update": f"{s['from']} -> {s['to']}", "mod": t["mod"], "members": t["members"]}
+    # Among equals, the update into the release with the most mods: that is where a finished port is wanted most.
+    family = families()
+    used = {v: f.get("mods", {}).get(v, 0) for v, f in family.items()}
+    turns = [{"loader": s["loader"], "update": f"{s['from']} -> {s['to']}", "mod": t["mod"], "members": t["members"], "wanted": used.get(s["to"], 0)}
              for s in rows for t in s.get("nearest", [])]
-    turns.sort(key=lambda t: (len(t["members"]), sum(1 for m in t["members"] if m.get("game") not in ANSWERED)))
+    turns.sort(key=lambda t: (len(t["members"]), sum(1 for m in t["members"] if m.get("game") not in ANSWERED), -t["wanted"]))
     missing = [f"{lo} {a} -> {b}" for lo, a, b in list(single) + list(wanted) if not any(pair(s) == (lo, a, b) for s in found)]
     keep = ("loader", "from", "to", "modsRead", "modsThatLink", "modsThatLinkAndData", "brokenUses", "loaderUses", "modsHeldOnlyByLoader")
     table = {
@@ -761,8 +770,8 @@ def join(folder, save):
         print(f"\n| Loader | Jump | Updates crossed | Mods that link |\n|---|---|---|---|")
         for s in table["jumps"]:
             print(f"| {s['loader']} | {s['from']} -> {s['to']} | {s['updatesCrossed']} | {s['modsThatLink']}/{s['modsRead']} |")
-    j = total["jumps"]
-    print(f"\n{share(j['link'], j['mods'])} mod ports link across the {j['jumps']} jumps of several updates, which is what people ask for")
+    j, n = total["jumps"], total["newest"]
+    print(f"\n{share(n['link'], n['mods'])} of the most-used release's mods link on the newest game; {share(j['link'], j['mods'])} mod ports link across all {j['jumps']} jumps of several updates")
     print(f"one update at a time: {share(total['big']['link'], total['big']['mods'])} across the {total['big']['updates']} big updates, "
           f"{share(total['small']['link'], total['small']['mods'])} across the {total['small']['updates']} small ones; {share(total['link'], total['mods'])} together"
           + "".join(f"; {lo} {t['link']}/{t['mods']}" for lo, t in loaders.items()) + (f"; not run: {', '.join(missing)}" if missing else ""))

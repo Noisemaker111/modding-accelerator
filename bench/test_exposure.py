@@ -157,11 +157,13 @@ with tempfile.TemporaryDirectory() as tmp:
     E.INDEX = Path(tmp) / "index.json"
     E.INDEX.write_text(json.dumps({
         "allVersions": [{"id": v, "status": "indexed"} for v in ("1.0", "1.1", "2.0", "2.1", "3.0")],
-        "families": {"list": [{"id": "1", "versions": ["1.0", "1.1"], "hub": "1.1"}, {"id": "2", "versions": ["2.0", "2.1"], "hub": "2.0"},
-                              {"id": "3", "versions": ["3.0"], "hub": "3.0"}]}}), encoding="utf-8")
+        "families": {"list": [{"id": "1", "versions": ["1.0", "1.1"], "hub": "1.0", "mods": {"1.0": 9, "1.1": 2}},
+                              {"id": "2", "versions": ["2.0", "2.1"], "hub": "2.1", "mods": {"2.0": 1, "2.1": 5}},
+                              {"id": "3", "versions": ["3.0"], "hub": "3.0", "mods": {"3.0": 4}}]}}), encoding="utf-8")
     E.FIRST = {"fabric": "1.0", "neoforge": "2.0"}
-    check(E.jumps("fabric") == [("1.1", "3.0"), ("2.0", "3.0")], f"hub to next hub and to the newest release, without the pairs one update apart: {E.jumps('fabric')}")
-    check(E.jumps("neoforge") == [("2.0", "3.0")], "a loader's jumps start at its first release")
+    check(E.jumps("fabric") == [("1.0", "2.1"), ("1.0", "3.0")],
+          f"each hub to the next hub, and the most-used release to the newest, without the pairs one update apart: {E.jumps('fabric')}")
+    check(E.jumps("neoforge") == [], "a loader read from a later release has only its own hubs, and a pair one update apart is no jump")
     check(E.big("1.1", "2.0") and not E.big("1.0", "1.1"), "an update into another family is a big one")
 
     def summary(loader, frm, to, link, turns=()):
@@ -171,7 +173,7 @@ with tempfile.TemporaryDirectory() as tmp:
     runs = Path(tmp) / "runs"
     runs.mkdir()
     for s in (summary("fabric", "1.0", "1.1", 10), summary("fabric", "1.1", "2.0", 4, [("far.jar", ["a", "b", "c"]), ("near.jar", ["a"])]),
-              summary("fabric", "1.1", "3.0", 1)):
+              summary("fabric", "1.0", "3.0", 1), summary("fabric", "1.1", "3.0", 7)):
         (runs / f"{s['loader']}-{s['from']}-{s['to']}.json").write_text(json.dumps(s), encoding="utf-8")
     sys.stdout = io.StringIO()
     try:
@@ -180,10 +182,10 @@ with tempfile.TemporaryDirectory() as tmp:
         sys.stdout = sys.__stdout__
     total = table["total"]
     check((total["link"], total["mods"]) == (14, 20), f"a jump is not counted among the single updates: {total['link']}/{total['mods']}")
-    check((total["big"]["link"], total["small"]["link"], total["jumps"]["link"], total["jumps"]["mods"]) == (4, 10, 1, 10),
-          f"big updates, small ones and jumps are counted apart: {total['big']} {total['small']} {total['jumps']}")
-    check(table["jumps"][0]["updatesCrossed"] == 3 and "fabric 2.0 -> 3.0" in table["missing"] and "fabric 2.0 -> 2.1" in table["missing"],
-          f"a jump says how many updates it crosses, and one that did not run is named: {table['jumps']} {table['missing']}")
+    check((total["big"]["link"], total["small"]["link"], total["jumps"]["link"], total["jumps"]["mods"], total["newest"]["link"]) == (4, 10, 1, 10, 1),
+          f"big updates, small ones, jumps and the jump to the newest release are counted apart: {total['big']} {total['small']} {total['jumps']} {total['newest']}")
+    check(len(table["jumps"]) == 1 and table["jumps"][0]["updatesCrossed"] == 4 and "fabric 1.0 -> 2.1" in table["missing"] and "fabric 2.0 -> 2.1" in table["missing"],
+          f"a jump says how many updates it crosses, one that did not run is named, and a pair that is no jump is left out: {table['jumps']} {table['missing']}")
     check([t["mod"] for t in table["nearest"]] == ["near.jar", "far.jar"], "over every update the mods nearest to done come first")
 
 print(f"exposure: {checks} checks passed")

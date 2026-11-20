@@ -13,12 +13,13 @@ that part is fixed with it. Read this whole file before the first command: it is
   A Fabric jar is read in Mojang's names and handed back in the target release's intermediary (`ModNames.Back`).
 - **The number to move:** `tools/cloud-run exposure` (`python bench/exposure.py all` runs the same here) ports the
   150 most-downloaded mods of each release and links them against the target release and its loader (NeoForge with FML
-  and its event bus; Fabric Loader and Fabric API). It counts three things, in `bench/exposure/all.json`:
-  **jumps** over several updates, from each family's most-used release to the next family's and to the newest
-  release (`port.jar-links.jumps`), which is what people ask for; the **big updates**, each into a new family; and
-  the small ones, across which nearly every mod links untouched. One update at a time, all together, was the old
-  headline (`port.jar-links.every-update`) and flattered the porter: half its updates are small. Run it on your PR's
-  last commit and put the before and after of the jumps and the big updates in the PR.
+  and its event bus; Fabric Loader and Fabric API). In `bench/exposure/all.json` it counts, apart: the **jump to the
+  newest game** from the most-used release (Fabric 1.20.1, NeoForge 1.21.1 to 26.3: **11 of 294 link**,
+  `port.jar-links.newest`), which is what people ask for; the **35 big updates**, each into a new family of releases
+  (**1,861 of 5,149**, `port.jar-links.big-updates`); the 21 jumps from each family's most-used release to the next
+  family's; and the 29 small updates, across which 93% link untouched. All updates together was the old headline (62%,
+  `port.jar-links.every-update`) and flattered the porter. Run it on your PR's last commit and put the before and
+  after of the newest-game jump and the big updates in the PR.
 - One update or one jump: `python bench/exposure.py jars --loader neoforge|fabric --from 1.21.1 --to 1.21.2` (about
   2 minutes; `--to 1.21.4` or `--to 26.3` is a jump). It prints **the mods nearest to done**, each with the
   references it still needs and what the game's own code did about each one: that is the to-do list. Fabric jars are
