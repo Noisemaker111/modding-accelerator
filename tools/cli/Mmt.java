@@ -20,6 +20,7 @@ public final class Mmt {
             directory = root.resolve(".runs/portable/" + id);
         }
 
+        /** A log file for a stage, in the run's folder; the folder is made here, since a stage may be the first to write. */
         Path log(String name) {
             Path log = directory.resolve(stages.size() + "-" + name + ".log");
             try {

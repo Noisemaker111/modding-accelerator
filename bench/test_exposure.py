@@ -132,6 +132,14 @@ with tempfile.TemporaryDirectory() as tmp:
     out = E.with_hidden_code_unread(rep, {"e.jar": e})
 check(out["linked"] == 0 and "payload-1.jar" in out["mods"][0].get("error", ""), "such a mod is reported as not read instead of linking")
 
+with tempfile.TemporaryDirectory() as tmp:
+    capes = Path(tmp) / "capes.jar"
+    capes.write_bytes(jar({"fabric.mod.json": json.dumps({"id": "capes", "depends": {"fabricloader": "*", "fabric-api": "*", "minecraft": "1.19.4"}})}))
+    other = Path(tmp) / "other.jar"
+    other.write_bytes(jar({"fabric.mod.json": json.dumps({"id": "o", "depends": {"cloth-config": "*"}})}))
+    check(E.standalone(capes, {"fabric-api", "fabric-api-base"}) and not E.standalone(capes) and not E.standalone(other, {"fabric-api"}),
+          "a mod that needs only Fabric API is started with the platform; one that needs another mod is not")
+
 # The to-do list finishes mods. The reference the most mods share (g.Shared.one, 2 mods) finishes none of them.
 rows = [
     {"mod": "a.jar", "unlinked": ["a.jar: call: g.Shared.one()V (in a.A)", "a.jar!in.jar: call: g.Shared.one()V (in a.B)", "a.jar: call: g.A.x()V", "a.jar: call: g.A.y()V"]},

@@ -32,6 +32,10 @@ final class JarPortRetypeTest {
         JarPortTest.snap(b, "g6/Screen", 0, null, "render(" + GFX + "I)V", "back(" + GFX + ")V", "key(" + KEY + ")Z", "tick()V", "old()V", "kept()V", "hover(" + GFX + ")V", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z", "scroll(IIII)Z");
         JarPortTest.snap(a, "g6/Title", 0, "g6/Screen", "render(" + POSE + "I)V", "key(III)Z", "chr(CI)Z", "drag(IIII)Z");
         JarPortTest.snap(b, "g6/Title", 0, "g6/Screen", "render(" + GFX + "I)V", "key(" + KEY + ")Z", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z");
+        JarPortTest.snap(a, "g6/Loc", 0, null);
+        JarPortTest.snap(b, "g6/Loc", 0, null);
+        JarPortTest.snap(a, "g6/ModelLoc", 0, "g6/Loc");
+        JarPortTest.snap(b, "g6/ModelLoc", 0, null);
         Path map = scratch.resolve("route-retype.json");
         Files.writeString(map, """
             {"signatures": [{"owner": "g6.Screen", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"},
@@ -74,11 +78,14 @@ final class JarPortRetypeTest {
 
         // A NeoForge jar from before 1.20.5 names its metadata META-INF/mods.toml, which NeoForge 1.20.5 on no longer reads.
         Map<String, byte[]> toml = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("META-INF/mods.toml",
-            "modLoader=\"javafml\"\n[[dependencies.m6]]\nmodId=\"minecraft\"\nversionRange=\"[1.0]\"\n".getBytes(java.nio.charset.StandardCharsets.UTF_8))),
+            "modLoader=\"javafml\"\n[[dependencies.m6]]\nmodId=\"minecraft\"\nversionRange=\"[1.0]\"\n[[dependencies.m6]]\nmodId=\"forge\"\nmandatory=true\nversionRange=\"*\"\n".getBytes(java.nio.charset.StandardCharsets.UTF_8))),
             "old.jar", new ArrayList<>()));
         JarPortTest.expect(!toml.containsKey("META-INF/mods.toml") && new String(toml.getOrDefault("META-INF/neoforge.mods.toml", new byte[0]),
                 java.nio.charset.StandardCharsets.UTF_8).contains("versionRange=\"[2.0]\""),
             "a jar ported past 1.20.5 gets its metadata as META-INF/neoforge.mods.toml, asking for the new release: " + toml.keySet());
+        String neoToml = new String(toml.getOrDefault("META-INF/neoforge.mods.toml", new byte[0]), java.nio.charset.StandardCharsets.UTF_8);
+        JarPortTest.expect(neoToml.contains("modId=\"neoforge\"") && !neoToml.contains("modId=\"forge\""),
+            "a Forge jar's dependency on the loader asks for NeoForge, which provides no mod called forge: " + neoToml);
 
         // A class the new release lacks but the mod carries in its own nested jar: where the release has no such package any
         // more (a module the platform stopped shipping), the bundled copy runs; where it still has the package, it does not.
@@ -92,16 +99,24 @@ final class JarPortRetypeTest {
             "a class the mod's own nested jar carries, from a package the new release dropped, is the mod's; one from a package it kept is gone: " + outer);
 
         List<Map<String, Object>> others = new ArrayList<>();
-        Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin(),
-            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ScreenMixin\"], \"injectors\": {\"defaultRequire\": 1}}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "other.jar", others));
+        Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin(), "m6/ByName.class", byName(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ScreenMixin\", \"ByName\"], \"injectors\": {\"defaultRequire\": 1}}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "other.jar", others));
         List<String> stays = Json.array(others.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(stays.contains("call: g6.Gui.fill(Lg6/Pose;I)V"),
             "a pose the game did not pass, and one outside a moved body, still get no graphics: " + stays);
         JarPortTest.expect(stays.contains("mixin injection point gone: g6.Screen.old()V in g6.Screen.tick()V (in m6.ScreenMixin)")
             && stays.contains("mixin injection point gone: STORE #1 of a int local in g6.Screen.tick()V (in m6.ScreenMixin)")
-            && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 2,
+            && stays.contains("mixin injection point gone: g6.Screen.old()V in g6.Screen.tick()V (in m6.ByName)")
+            && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 3,
             "an @Inject at a call the new method no longer makes, and a @ModifyVariable at a second int store it no longer has, are reported; "
                 + "one at a call it still makes is not: " + stays);
+        // A mixin casting its own this to an accessor of Loc relies on ModelLoc being a Loc, which 2.0 ends; Title is still a Screen.
+        List<Map<String, Object>> castRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/LocAccess.class", locAccess(), "m6/ModelLocMixin.class", selfCast("m6/ModelLocMixin", "g6/ModelLoc", "m6/LocAccess"),
+            "m6/TitleMixin.class", selfCast("m6/TitleMixin", "g6/Title", "g6/Screen"))), "cast.jar", castRuns);
+        List<String> castUnlinked = Json.array(castRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(castUnlinked.equals(List.of("mixin target no longer a g6.Loc: g6.ModelLoc (in m6.ModelLocMixin)")),
+            "a mixin's this cast to a type its target stopped being is reported; one its target still is is not: " + castUnlinked);
         List<Map<String, Object>> quiet = new ArrayList<>();
         port.port(JarPortTest.jar(Map.of("m6/ScreenMixin.class", mixin())), "quiet.jar", quiet);
         List<String> quietUnlinked = Json.array(quiet.get(0).get("unlinked")).stream().map(String::valueOf).toList();
@@ -112,8 +127,9 @@ final class JarPortRetypeTest {
         Map<String, String> handlers = JarPortFixesTest.strings(other.get("m6/ScreenMixin.class"));
         String onRender = JarPortTest.members(other.get("m6/ScreenMixin.class")).getOrDefault("method onRender(" + GFX + "I" + CI + ")V", "");
         JarPortTest.expect("render(Lg6/Graphics;I)V HEAD".equals(handlers.get("onRender(" + GFX + "I" + CI + ")V"))
-            && onRender.contains("call g6/Graphics.pose()Lg6/Pose;") && handlers.containsKey("onRender$mmt(" + POSE + "I" + CI + ")V"),
-            "a mixin handler that reads the old argument moves to the new signature and gets graphics.pose(): " + handlers + " " + onRender);
+            && onRender.contains("call g6/Graphics.pose()Lg6/Pose;") && onRender.contains("call g6/Pose.push()V")
+            && !handlers.containsKey("onRender(" + POSE + "I" + CI + ")V") && handlers.keySet().stream().noneMatch(k -> k.startsWith("onRender$mmt")),
+            "a mixin handler that reads the old argument moves whole to the new signature, its pose worked out as graphics.pose(): " + handlers + " " + onRender);
 
         Map<String, byte[]> classes = new HashMap<>(JarPortTest.newGame());
         classes.put("g6/Pose", JarPortTest.real("g6/Pose", "java/lang/Object", 0, new String[0], w -> JarPortTest.traced(w, "push", "()V", "push;", m -> { })));
@@ -146,7 +162,7 @@ final class JarPortRetypeTest {
         JarPortTest.expect(trace.endsWith("push;a;true;dx5;basedrag;true;"),
             "a method its family shows nothing for gets the conversion the game uses for that type elsewhere (pose()), a char comes from "
                 + "the event's code point, and drag distances that moved behind the event are passed on: " + trace);
-        JarPortTest.expect(trace.startsWith("back;fill7;push;fill8;r;A;basekey;true;back;fill7;push;fill8;r;child;A;basekey;true;"),
+        JarPortTest.expect(trace.startsWith("back;fill7;push;fill8;fill1;r;A;basekey;true;back;fill7;push;fill8;fill1;r;child;A;basekey;true;"),
             "the game's new render and key reach the mod's code with graphics.pose() and event.code(), and its calls get the graphics and the event: " + trace);
     }
 
@@ -195,6 +211,18 @@ final class JarPortRetypeTest {
         m.visitVarInsn(Opcodes.ISTORE, 3);
         m.visitVarInsn(Opcodes.ALOAD, 1);
         m.visitVarInsn(Opcodes.ILOAD, 3);
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, "g6/Gui", "fill", "(" + POSE + "I)V", false);
+        // Gui.fill(pose, x > 5 ? 1 : 2): the pose crosses a branch on the stack.
+        Label two = new Label(), joined = new Label();
+        m.visitVarInsn(Opcodes.ALOAD, 1);
+        m.visitVarInsn(Opcodes.ILOAD, 2);
+        m.visitInsn(Opcodes.ICONST_5);
+        m.visitJumpInsn(Opcodes.IF_ICMPLE, two);
+        m.visitInsn(Opcodes.ICONST_1);
+        m.visitJumpInsn(Opcodes.GOTO, joined);
+        m.visitLabel(two);
+        m.visitInsn(Opcodes.ICONST_2);
+        m.visitLabel(joined);
         m.visitMethodInsn(Opcodes.INVOKESTATIC, "g6/Gui", "fill", "(" + POSE + "I)V", false);
         JarPortTest.append(m, "r;");
         m.visitInsn(Opcodes.RETURN);
@@ -394,6 +422,52 @@ final class JarPortRetypeTest {
             m.visitVarInsn(Opcodes.ALOAD, 1);
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
         });
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.ByName: an @Inject into the method a regular expression names (tick), at its call of old(), which the new tick no longer makes. */
+    static byte[] byName() {
+        ClassWriter w = writer("m6/ByName", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Screen"));
+        value.visitEnd();
+        target.visitEnd();
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onOld", "(" + CI + ")V", "/^(tick|method_1)$/", "INVOKE", "Lg6/Screen;old()V", null);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.LocAccess: an accessor mixin interface applied to g6.Loc. */
+    static byte[] locAccess() {
+        ClassWriter w = new ClassWriter(0);
+        w.visit(Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "m6/LocAccess", null, "java/lang/Object", null);
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Loc"));
+        value.visitEnd();
+        target.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** A mixin into target whose method casts its own this to type: ((Type) (Object) this). */
+    static byte[] selfCast(String name, String target, String type) {
+        ClassWriter w = writer(name, "java/lang/Object");
+        AnnotationVisitor mixin = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = mixin.visitArray("value");
+        value.visit(null, Type.getObjectType(target));
+        value.visitEnd();
+        mixin.visitEnd();
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PRIVATE, "use", "()V", null, null);
+        m.visitCode();
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        m.visitTypeInsn(Opcodes.CHECKCAST, type);
+        m.visitInsn(Opcodes.POP);
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(1, 1);
+        m.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }
