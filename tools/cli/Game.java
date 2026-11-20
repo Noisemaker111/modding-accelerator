@@ -1260,6 +1260,7 @@ final class Game {
         Path log = build.report.log("game");
         Files.createDirectories(log.getParent());
         Files.createDirectories(build.project.state());
+        Files.deleteIfExists(build.project.state().resolve("agent-failed.txt"));
         final CompletableFuture<Map<String, Object>> ready = new CompletableFuture<>();
         WatchService watch = FileSystems.getDefault().newWatchService();
         build.project
@@ -1271,6 +1272,17 @@ final class Game {
                     while (!ready.isDone()) {
                         WatchKey key = watch.take();
                         for (WatchEvent<?> event : key.pollEvents()) if (
+                            event.context().toString().equals("agent-failed.txt")
+                        ) {
+                            try {
+                                ready.completeExceptionally(
+                                    new IOException(
+                                        "mmt's control agent cannot run in this client: " +
+                                        Files.readString(build.project.state().resolve("agent-failed.txt")).strip()
+                                    )
+                                );
+                            } catch (IOException notCommittedYet) {}
+                        } else if (
                             event.context().toString().equals("agent.json")
                         ) {
                             try {
