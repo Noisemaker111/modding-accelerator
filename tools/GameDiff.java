@@ -3492,6 +3492,13 @@ public final class GameDiff {
                     pair(x.owner.name, bx, y.owner.name, by, 0);
                 }
             }
+            // With the class map settled, the uses whose new value had a type only it explains are read again.
+            typeMap();
+            List<Node[]> again = deferred;
+            deferred = null;
+            for (Node[] d : again) {
+                read(d[0], d[1]);
+            }
             List<Learned> out = new ArrayList<>();
             StringBuilder log = LEARN_LOG.isEmpty() ? null : new StringBuilder();
             for (var e : sites.entrySet()) {
@@ -4015,7 +4022,6 @@ public final class GameDiff {
         /** A choice inside a reading: a constant b passes that an operand also held, or code two operands share. */
         static final char OPEN = '\u0001', OR = '\u0002', CLOSE = '\u0003';
         static final Pattern CHOICE = Pattern.compile(OPEN + "([^" + CLOSE + "]*)" + CLOSE);
-
         /** Every operand and constant is a choice, even of one option, so uses that pass a constant and uses that pass code share a shape. */
         static String choice(List<String> options) {
             return options.isEmpty() ? null : OPEN + String.join(String.valueOf(OR), options) + CLOSE;
@@ -4179,9 +4185,10 @@ public final class GameDiff {
             int i0 = 0, j0 = 0;
             for (int[] p : bounds) {
                 int na = p[0] - i0, nb = p[1] - j0;
+                boolean dropped = dropped(x, i0, p[0], y, j0, p[1]);
                 for (int i = i0; i < p[0] && nb > 0; i++) {
                     Node sa = x.statements.get(i);
-                    if (!holed(sa)) {
+                    if (!holed(sa) || dropped && droppable(sa)) {
                         continue;
                     }
                     // A statement that is only the use (a call made for what it does, a value stored) has no context to
@@ -4213,6 +4220,119 @@ public final class GameDiff {
             if (depth < 3) {
                 lambdas.forEach((la, lb) -> pair(ca, decode(h.a, ca, la, true), cb, decode(h.b, cb, lb, true), depth + 1));
             }
+        }
+
+        /**
+         * A call the game simply removed: between two statements that line up, a's gap is b's gap plus statements that
+         * are only a call of a member b no longer has, made for what it does (1.21's endVertex(), 1.19.4's
+         * disableTexture()). Each such call either was dropped or lines up with a statement of b that is only its
+         * receiver (the vertex chain endVertex() ended); every other statement of the gap must line up with b's, in
+         * order. Each such call is a use whose reading is "nothing": empty for a void call, its receiver for one that
+         * returns it.
+         */
+        boolean dropped(Body x, int i0, int i1, Body y, int j0, int j1) {
+            boolean any = false;
+            for (int i = i0; i < i1 && !any; i++) {
+                any = droppable(x.statements.get(i));
+            }
+            long cells = (long) (i1 - i0 + 1) * (j1 - j0 + 1);
+            if (!any || cells > 40_000) {
+                return false;
+            }
+            byte[][] memo = new byte[i1 - i0 + 1][j1 - j0 + 1]; // 0 unknown, 1 explained, 2 not
+            if (!explained(x, i0, i1, y, j0, j1, i0, j0, memo)) {
+                return false;
+            }
+            List<Node> gone = new ArrayList<>();
+            for (int i = i0, j = j0; i < i1;) {
+                Node s = x.statements.get(i);
+                if (j < j1 && pairs(s, y.statements.get(j)) && explained(x, i0, i1, y, j0, j1, i + 1, j + 1, memo)) {
+                    j++;
+                } else if (!droppable(s)) {
+                    return false;
+                }
+                if (droppable(s)) {
+                    gone.add(s);
+                }
+                i++;
+            }
+            for (Node s : gone) {
+                Node use = s.kids[0];
+                String key = use.ref.owner() + "." + use.ref.name() + use.ref.desc();
+                keys.putIfAbsent(key, use.ref);
+                String reading = use.type.equals("V") ? "" : use.op == 'v' && returnsReceiver(use.ref) ? choice(List.of("$0")) : null;
+                Set<String> readings = sites.computeIfAbsent(key, k -> new IdentityHashMap<>()).computeIfAbsent(use, k -> new LinkedHashSet<>());
+                if (reading != null) {
+                    readings.add(reading);
+                }
+            }
+            return true;
+        }
+
+        /** a's statements from i and b's from j, to the gap's ends, line up with some removed calls left out. */
+        boolean explained(Body x, int i0, int i1, Body y, int j0, int j1, int i, int j, byte[][] memo) {
+            if (i == i1) {
+                return j == j1;
+            }
+            if (memo[i - i0][j - j0] != 0) {
+                return memo[i - i0][j - j0] == 1;
+            }
+            Node s = x.statements.get(i);
+            boolean ok = j < j1 && pairs(s, y.statements.get(j)) && explained(x, i0, i1, y, j0, j1, i + 1, j + 1, memo)
+                || droppable(s) && explained(x, i0, i1, y, j0, j1, i + 1, j, memo);
+            memo[i - i0][j - j0] = (byte) (ok ? 1 : 2);
+            return ok;
+        }
+
+        /** s lines up with t; a removed call only with a statement that is its receiver's value, as the game wrote it. */
+        boolean pairs(Node s, Node t) {
+            budget = 20_000;
+            if (!droppable(s)) {
+                return match(s, t, new IdentityHashMap<>());
+            }
+            Node use = s.kids[0];
+            if (!"expr".equals(t.value) || t.kids.length != 1 || use.op != 'v') {
+                return false;
+            }
+            return match(use.kids[0], t.kids[0], null) || linesUpThrough(use.kids[0], t.kids[0]) || use.kids.length == 1 && endsLike(use, t.kids[0]);
+        }
+
+        /** A statement that is only a call, made for what it does, of a member b removed (no counterpart at all). */
+        boolean droppable(Node s) {
+            if (!"expr".equals(s.value) || s.kids.length != 1 || !hole(s.kids[0]) || s.kids[0].op != 's' && s.kids[0].op != 'v') {
+                return false;
+            }
+            Meth m = h.a.method(s.kids[0].ref.owner(), s.kids[0].ref.name(), s.kids[0].ref.desc());
+            return m != null && !m.special() && h.mAB.get(m) == null;
+        }
+
+        /** A method that gives back the object it was called on, by its type: a builder's fluent step. */
+        boolean returnsReceiver(Ref r) {
+            String ret = r.desc().substring(r.desc().indexOf(')') + 1);
+            Meth m = h.a.method(r.owner(), r.name(), r.desc());
+            if (!ret.startsWith("L") || m == null || m.isStatic() || !subtypeA(r.owner(), ret.substring(1, ret.length() - 1))) {
+                return false;
+            }
+            // Where a has the body, every return gives back `this`; an interface's abstract step is taken by its type.
+            Body body = m.hasCode ? decode(h.a, m.owner.name, m.name + m.desc, false) : null;
+            return !m.hasCode || body != null && body.statements.stream().filter(s -> "return".equals(s.value))
+                .allMatch(s -> s.kids.length == 1 && s.kids[0].op == 'p' && s.kids[0].value.equals(0));
+        }
+
+        boolean subtypeA(String sub, String sup) {
+            Deque<String> todo = new ArrayDeque<>(List.of(sub));
+            Set<String> seen = new HashSet<>();
+            while (!todo.isEmpty()) {
+                String c = todo.poll();
+                if (c.equals(sup)) {
+                    return true;
+                }
+                Cls k = h.a.classes.get(c);
+                if (k != null && seen.add(c)) {
+                    todo.addAll(supertypes(k));
+                }
+            }
+            return false;
         }
 
         /** The lambdas two lined-up trees make at the same place (not inside a use of a changed member). */
@@ -4334,11 +4454,20 @@ public final class GameDiff {
                 Integer j = (m.op == 'v' || m.op == 's') ? givesArgument(m.ref) : null;
                 Node arg = j == null ? null : m.kids[j + (m.op == 'v' ? 1 : 0)];
                 if (arg == null || !use.type.startsWith("L") || !fits(arg.type, use.type)) {
+                    if (deferred != null && typeVote(use.type, m.type)) {
+                        deferred.add(new Node[] { use, m });
+                    }
                     return;
                 }
                 cast = "(" + mappedName(use.type) + ") ";
             }
             String body = express(m, use.kids, first, use.type, 0);
+            if (use.type.equals("V") && endsLike(use, m)) {
+                // A void call whose place b fills with only its receiver's value (the vertex chain endVertex() ended,
+                // even where the game also rewrote that chain: color(255, 255, 255, 255) became color(-1)) did nothing
+                // b still does: it is dropped.
+                body = "";
+            }
             String reading = body == null ? null : cast.isEmpty() ? body : cast + receiver(body);
             if (reading == null && readings.isEmpty() && (merged(m) || Arrays.stream(use.kids).anyMatch(this::merged))) {
                 // Unreadable only because a value depends on the path taken (a loop's variable): that says nothing
@@ -4349,6 +4478,15 @@ public final class GameDiff {
             if (reading != null) {
                 readings.add(reading);
             }
+        }
+
+        /** use is an instance call and m is the same call its receiver ends with: same member, same number of operands. */
+        boolean endsLike(Node use, Node m) {
+            if (use.op != 'v' || use.kids.length != 1) {
+                return false;
+            }
+            Node r = use.kids[0];
+            return (r.op == 'v' || r.op == 's') && !hole(r) && r.op == m.op && r.kids.length == m.kids.length && head(r, true).equals(head(m, false));
         }
 
         /** b's value of type got can stand where a's code had a value of type had: anything for nothing, else the same type or a subtype. */
@@ -4385,6 +4523,66 @@ public final class GameDiff {
                 }
             }
             return rewritten;
+        }
+
+        List<Node[]> deferred = new ArrayList<>(); // uses whose new value fits only once the class map is known
+        final Map<Cls, Map<Cls, Integer>> typeVotes = new HashMap<>();
+        final List<Hop.ClassRewrite> typeRewrites = new ArrayList<>();
+
+        /**
+         * A gone class of a where b has a value of another class: one vote that b's class took its place. Only a game class
+         * b dropped with no class rewrite yet, and a game class of b of the same kind.
+         */
+        boolean typeVote(String had, String got) {
+            if (!had.startsWith("L") || !got.startsWith("L")) {
+                return false;
+            }
+            Cls ca = h.a.classes.get(had.substring(1, had.length() - 1));
+            Cls cb = h.b.classes.get(got.substring(1, got.length() - 1));
+            if (ca == null || cb == null || h.cAB.containsKey(ca) || classRewrites().containsKey(ca) || anonymous(ca.name) || ca.kind() != cb.kind()) {
+                return false;
+            }
+            typeVotes.computeIfAbsent(ca, k -> new HashMap<>()).merge(cb, 1, Integer::sum);
+            return true;
+        }
+
+        /**
+         * The class map from the types the game's own code switched to: each linked method's parameters and result and
+         * each linked field's type, place by place, where a's is a class b dropped (1.19's TextComponent fields and
+         * results became MutableComponent), with the values b computes where a's code made one (votes from read). Kept
+         * as a class rewrite with two votes and 80% agreement, as the route map's own class rewrites are.
+         */
+        void typeMap() {
+            for (var e : h.mAB.entrySet()) {
+                List<ClassDesc> pa = MethodTypeDesc.ofDescriptor(e.getKey().desc).parameterList();
+                List<ClassDesc> pb = MethodTypeDesc.ofDescriptor(e.getValue().desc).parameterList();
+                if (pa.size() == pb.size()) {
+                    for (int i = 0; i < pa.size(); i++) {
+                        typeVote(pa.get(i).descriptorString(), pb.get(i).descriptorString());
+                    }
+                }
+                typeVote(MethodTypeDesc.ofDescriptor(e.getKey().desc).returnType().descriptorString(),
+                    MethodTypeDesc.ofDescriptor(e.getValue().desc).returnType().descriptorString());
+            }
+            for (var e : h.fAB.entrySet()) {
+                typeVote(e.getKey().desc, e.getValue().desc);
+            }
+            for (var e : typeVotes.entrySet()) {
+                Cls best = null;
+                int top = 0, of = 0;
+                for (var v : e.getValue().entrySet()) {
+                    of += v.getValue();
+                    if (v.getValue() > top || v.getValue() == top && best != null && v.getKey().name.compareTo(best.name) < 0) {
+                        top = v.getValue();
+                        best = v.getKey();
+                    }
+                }
+                if (top >= 2 && top * 10 >= of * 8) {
+                    classRewrites().put(e.getKey(), best);
+                    typeRewrites.add(new Hop.ClassRewrite(e.getKey(), best, top, of));
+                }
+            }
+            typeRewrites.sort(Comparator.comparing((Hop.ClassRewrite r) -> r.from().name));
         }
 
         /** Whether a's reference names a member a mod could use that b dropped or gave another signature. */
@@ -4506,7 +4704,7 @@ public final class GameDiff {
             List<String> same = new ArrayList<>();
             for (int i = 0; i < ops.length; i++) {
                 budget = 2_000;
-                if (match(ops[i], m, null)) {
+                if (match(ops[i], m, null) || linesUpThrough(ops[i], m)) {
                     same.add("$" + (i + first));
                 }
             }
@@ -4562,6 +4760,29 @@ public final class GameDiff {
                 }
                 default -> null;
             };
+        }
+
+        /**
+         * An operand that is b's code m except inside uses of other changed members, each where b has a value that can
+         * stand in its place: a mod's operand, ported, is what b computes there. 1.21's vertex chain
+         * vertex(x, y, z).color(c) before endVertex() is addVertex(x, y, z).setColor(c), vertex having changed too. The
+         * operand itself must line up, not be such a use.
+         */
+        boolean linesUpThrough(Node op, Node m) {
+            if (hole(op) || !holed(op)) {
+                return false;
+            }
+            Map<Node, Node> inner = new IdentityHashMap<>();
+            budget = 2_000;
+            if (!match(op, m, inner)) {
+                return false;
+            }
+            for (var e : inner.entrySet()) {
+                if (!fits(e.getValue().type, e.getKey().type)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /** A call's arguments (m's kids from index from), each typed for its parameter, or null. */
@@ -4799,10 +5020,13 @@ public final class GameDiff {
                         ", \"votes\": " + c.votes() + ", \"of\": " + c.of() + " }"
                     );
                 }
-                for (Learner.Learned l : new Learner(h).learn()) {
+                Learner learner = new Learner(h);
+                for (Learner.Learned l : learner.learn()) {
                     learned.add(l.json(prev.version + " -> " + s.version));
                 }
-                for (Hop.ClassRewrite r : h.classRewrites()) {
+                List<Hop.ClassRewrite> rewrites = new ArrayList<>(h.classRewrites());
+                rewrites.addAll(learner.typeRewrites);
+                for (Hop.ClassRewrite r : rewrites) {
                     classRewrites.add(
                         "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
                         ", \"from\": " + VersionMap.Diff.q(r.from().name.replace('/', '.')) +
