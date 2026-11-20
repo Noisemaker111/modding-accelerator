@@ -6,8 +6,9 @@
  "loaded": 21,
  "linkedAndLoaded": 21,
  "linked": 31,
- "failedButLinked": [
-  "e4mc--e4mc-fabric-6.2.3.jar"
+ "failedButLinked": [],
+ "clashOnly": [
+  "krypton--krypton-0.2.2.jar"
  ],
  "failedDataOnly": [],
  "verdicts": {
@@ -20,13 +21,13 @@
   "modelfix--modelfix-1.10-fabric.jar": "client-only: client-only (folder, its own metadata)",
   "morechathistory--morechathistory-1.3.0.jar": "client-only: client-only (folder, its own metadata)",
   "sodium-shadowy-path-blocks--sodium-shadowy-path-blocks-3.4.2.jar": "client-only: client-only (folder, its own metadata)",
-  "krypton--krypton-0.2.2.jar": "loaded",
-  "e4mc--e4mc-fabric-6.2.3.jar": "failed: the loader names it: [13:22:31] [Server thread/ERROR]: Mixin apply for mod e4mc failed e4mc.mixins.json:ConnectionMixin from mod e4mc -> net.minecraft.class_2535: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException Critical injection failure: @ModifyArg annotation on hijackCha...; the loader names it: Caused by: org.spongepowered.asm.mixin.throwables.MixinApplyError: Mixin [",
+  "krypton--krypton-0.2.2.jar": "clash: loads alone, fails next to the other mods: its mixin config krypton.mixins.json is in the failure",
   "athena-ctm--athena-fabric-1.19.4-2.0.0.jar": "loaded",
   "attributefix--AttributeFix-Fabric-1.19.4-19.1.2.jar": "loaded",
   "clumps--Clumps-fabric-1.19.4-10.0.0.3.jar": "loaded",
   "cristel-lib--cristellib-1.1.2-fabric.jar": "loaded",
   "dungeons-and-taverns--dungeons-and-taverns-2.0.2.jar": "loaded",
+  "e4mc--e4mc-fabric-6.2.3.jar": "loaded",
   "fabric-language-kotlin--fabric-language-kotlin-1.14.2+kotlin.2.4.21.jar": "loaded",
   "ferrite-core--ferritecore-5.2.0-fabric.jar": "loaded",
   "memoryleakfix--memoryleakfix-fabric-1.17+-1.1.5.jar": "loaded",
@@ -56,10 +57,10 @@
    "cristel-lib--cristellib-1.1.2-fabric.jar": "loaded",
    "cubes-without-borders--cwb-5.0.0+1.19.3.fabric.jar": "loaded",
    "dungeons-and-taverns--dungeons-and-taverns-2.0.2.jar": "loaded",
+   "e4mc--e4mc-fabric-6.2.3.jar": "loaded",
    "fabric-language-kotlin--fabric-language-kotlin-1.14.2+kotlin.2.4.21.jar": "loaded",
    "fast-ip-ping--fast-ip-ping-v1.0.12-mc1.19.4-fabric.jar": "loaded",
    "ferrite-core--ferritecore-5.2.0-fabric.jar": "loaded",
-   "krypton--krypton-0.2.2.jar": "loaded",
    "melody--Melody-fabric-1.19.4-1.0.0.jar": "loaded",
    "memoryleakfix--memoryleakfix-fabric-1.17+-1.1.5.jar": "loaded",
    "mixintrace--mixintrace-1.1.1+1.17.jar": "loaded",

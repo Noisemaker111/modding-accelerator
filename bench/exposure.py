@@ -819,6 +819,21 @@ def client_starts(loader, to, server_pack, names, platform=()):
     return {"mods": len(names), "loaded": len(loaded), "verdicts": verdicts}
 
 
+def starts_alone(loader, to, pack, name, platform):
+    """Whether a dropped mod starts a real server of the release on its own, with the platform the pack has."""
+    alone = pack / "alone"
+    shutil.rmtree(alone, ignore_errors=True)
+    (alone / "mods").mkdir(parents=True)
+    shutil.copy(pack / "dropped" / name, alone / "mods" / name)
+    for jar in platform:
+        shutil.copy(pack / "mods" / jar, alone / "mods" / jar)
+    mmt = str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))
+    done = subprocess.run([mmt, "pack-check", "--pack", str(alone), "--minecraft", to, "--loader", loader, "--json"],
+                          capture_output=True, text=True, encoding="utf-8", errors="replace")
+    start = done.stdout.find("{")
+    return bool(start >= 0 and json.loads(done.stdout[start:]).get("ok"))
+
+
 def load(loader, frm, to, save):
     """The mods the jar scoreboard says link that need no other mod, ported as jars and started on a real server of the new release,
     then in a real client of it (client_starts), with both verdicts side by side.
@@ -897,12 +912,18 @@ def load(loader, frm, to, save):
                 print(f"  {name}: loads with the others on its own start")
             else:
                 (pack / "mods" / name).rename(pack / "dropped" / name)
+                if starts_alone(loader, to, pack, name, platform):
+                    # Two mods that patch the same game code can refuse each other on any release, ported or not; the
+                    # port is judged by the mod starting alone.
+                    verdicts[name] = "clash: loads alone, fails next to the other mods: " + verdicts[name][len("failed: "):]
+                    print(f"  {name}: loads alone, fails next to the others")
     client = client_starts(loader, to, pack, [n for n, v in verdicts.items() if v == "loaded" or v.startswith("client-only")], platform)
     loaded = [n for n, v in verdicts.items() if v == "loaded"]
     summary = {
         "loader": loader, "from": frm, "to": to, "mods": len(chosen), "loaded": len(loaded),
         "linkedAndLoaded": sum(1 for n in loaded if links.get(n)), "linked": sum(links.values()),
         "failedButLinked": sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n) and has_code(folder / n)),
+        "clashOnly": sorted(n for n, v in verdicts.items() if v.startswith("clash") and links.get(n)),
         # A mod with no game code links trivially; what fails it is its data, which the link check does not read.
         "failedDataOnly": sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n) and not has_code(folder / n)),
         "verdicts": verdicts,
@@ -917,7 +938,8 @@ def load(loader, frm, to, save):
           f"{summary['loadedOnServerFailedInClient'] or 'none'}")
     print(f"{summary['loaded']}/{summary['mods']} load on a real {to} server; {summary['linked']} link, "
           f"{summary['linkedAndLoaded']} of them load; failed although they link: {summary['failedButLinked'] or 'none'}"
-          + (f"; failed on their data, with no game code: {summary['failedDataOnly']}" if summary["failedDataOnly"] else ""))
+          + (f"; failed on their data, with no game code: {summary['failedDataOnly']}" if summary["failedDataOnly"] else "")
+          + (f"; load alone but fail next to the others: {summary['clashOnly']}" if summary["clashOnly"] else ""))
     if save:
         path = ROOT / "bench" / "exposure" / f"{save}.json"
         path.write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
