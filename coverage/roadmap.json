@@ -603,7 +603,7 @@
      "result": "2026-11-20: +2 mod ports link from this alone (Capes on Fabric 1.19.4 -> 1.20, OctoLib on Fabric 1.21.8 -> 1.21.9); both are client-side and Fabric's client is not started by load yet. The screen family stays the biggest blocker because the same mods also call methods whose receiver changed (Font.draw(pose, ...) -> graphics.drawString(font, ...), Screen.renderTooltip -> GuiGraphics.renderTooltip): next is learning those calls with the new parameter as an operand. Every update (tools/cloud-run exposure, run 44778079456): 5,854 -> 5,838 of 9,423 on main after #128; +1 from moved overrides (Fabric 1.19.4 -> 1.20) and -17 mods whose required injection point is gone (Better Mount HUD crashes on it in a real Fabric 1.20.5 client)."
     },
     {
-     "id": "60",
+     "id": "61",
      "title": "Calls on a moved screen's parameter follow the game's own rewrite",
      "part": "Port by changed game part",
      "status": "done",
