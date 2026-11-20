@@ -32,6 +32,11 @@ minutes; delete it when the cause is gone.
 - Fix: until it reads the project's own `gradle.properties`, set `"fingerprint": false` in the experiment. A client-only
   mod that changes no world state (a map) gains nothing from the gate anyway.
 
+## A second `mmt package` or full test run fails on mmt.jar being open
+- Cause: two package builds or full `bench/run_tests.py` runs at once race on
+  `build/distributions/mmt.jar`; Windows file locking fails the loser with "another program has it open".
+- Fix: run package builds and full suites one at a time, never in overlapping background jobs.
+
 ## `gh: command not found` on Windows
 - Fix: `export PATH="/c/Program Files/GitHub CLI:$PATH"`.
 

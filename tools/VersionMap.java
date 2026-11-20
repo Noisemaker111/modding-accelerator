@@ -18,8 +18,14 @@ import javax.tools.*;
  * class, method or field in every release. Joining each version's readable names (Mojang's
  * official mappings, or yarn) through intermediary gives every rename and every signature change.
  *
- *   java tools/VersionMap.java <from> <to> [--names mojmap|yarn] [--out map.json] [--cache dir]
- *   java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn] --out map.json   (one map across every update, with history)
+ *   java tools/VersionMap.java <from> <to> [--names mojmap|yarn|mcp[:channel]] [--out map.json] [--cache dir]
+ *   java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn|mcp[:channel]] [--to-names ...] --out map.json
+ *     (one map across every update, with history; a chain crossing 1.14.4 reads MCP names up to the
+ *     seam through SRG ids, translates keys through the obfuscated names both lanes share, and reads
+ *     the target namespace past it -- Mojang's by default for an MCP source, or --to-names)
+ *
+ * Releases before 1.14.4 have no intermediary and no Mojang mappings; Forge's SRG ids are their
+ * stable identity instead, with MCP's published names as the readable side (see Srg).
  *   java tools/VersionMap.java --map map.json --explain <build log>
  *   java tools/VersionMap.java --map map.json --fix <build log> --repo <dir> [--rules learned.json] [--dry-run]
  *   java tools/VersionMap.java --map map.json --learn <a.diff> [--learn <b.diff>...] --out learned.json
@@ -31,7 +37,13 @@ import javax.tools.*;
 public final class VersionMap {
 
     static Path cache = Path.of(System.getProperty("user.home"), ".mmt", "mappings");
+    static final String FORGE_MAVEN = "https://maven.minecraftforge.net/";
     static final HttpClient HTTP = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+
+    /** The published name sets a table can be built from; mcp may pin a channel (mcp:stable_39). */
+    static boolean knownNames(String names) {
+        return names != null && (names.equals("mojmap") || names.equals("yarn") || names.equals("mcp") || names.startsWith("mcp:"));
+    }
 
     public static void main(String[] args) throws Exception {
         List<String> pos = new ArrayList<>();
@@ -80,16 +92,17 @@ public final class VersionMap {
             return;
         }
         if (chain != null) {
-            if (!(names.equals("mojmap") || names.equals("yarn")) || out == null) {
+            if (!knownNames(names) || out == null) {
                 System.err.println(
-                    "usage: java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn] --out map.json"
+                    "usage: java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn|mcp[:channel]] --out map.json"
                 );
                 System.exit(2);
             }
             long t0 = System.nanoTime();
             List<String> versions = List.of(chain.split(","));
-            String n = names;
-            Chain c = Chain.of(versions, v -> Table.load(v, n));
+            String n = names, t = toNames;
+            boolean srgSeam = versions.stream().anyMatch(v -> releaseCompare(v, SEAM) < 0);
+            Chain c = Chain.of(versions, v -> laneTable(v, n, t, srgSeam));
             Path target = Path.of(out);
             Files.createDirectories(target.toAbsolutePath().getParent());
             Files.writeString(target, c.json(names), StandardCharsets.UTF_8);
@@ -138,12 +151,12 @@ public final class VersionMap {
         }
         if (
             pos.size() != 2 ||
-            !(names.equals("mojmap") || names.equals("yarn")) ||
-            (fromNames != null && !(fromNames.equals("mojmap") || fromNames.equals("yarn"))) ||
-            (toNames != null && !(toNames.equals("mojmap") || toNames.equals("yarn")))
+            !knownNames(names) ||
+            (fromNames != null && !knownNames(fromNames)) ||
+            (toNames != null && !knownNames(toNames))
         ) {
             System.err.println(
-                "usage: java tools/VersionMap.java <from> <to> [--names mojmap|yarn] [--from-names] [--to-names] [--out map.json]"
+                "usage: java tools/VersionMap.java <from> <to> [--names mojmap|yarn|mcp[:channel]] [--from-names] [--to-names] [--out map.json]"
             );
             System.exit(2);
         }
@@ -340,6 +353,8 @@ public final class VersionMap {
     static final class Table {
 
         final String version;
+        String lane = "inter"; // the key space: srg (Forge SRG ids) or inter (Fabric intermediary ids)
+        String mappings; // the published artifacts these names came from (the mcp lane's provenance)
         final Map<String, String> classes = new HashMap<>(); // intermediary -> named
         final Map<String, Member> methods = new HashMap<>(); // key -> named
         final Map<String, Member> fields = new HashMap<>();
@@ -349,12 +364,29 @@ public final class VersionMap {
             this.version = version;
         }
 
+        /** Ids assigned once and never reused: intermediary's method_/field_ and SRG's func_/field_. */
+        static boolean stableId(String interName) {
+            return interName.startsWith("method_") || interName.startsWith("field_") || interName.startsWith("func_");
+        }
+
         static String key(String interOwner, String interName, String interDesc) {
-            boolean stable = interName.startsWith("method_") || interName.startsWith("field_");
-            return stable ? interOwner + "." + interName : interOwner + "." + interName + interDesc;
+            return stableId(interName) ? interOwner + "." + interName : interOwner + "." + interName + interDesc;
+        }
+
+        /** Stable method ids by bare name, so a member moved to another owner is found when its key misses. */
+        void indexMoved() {
+            for (String k : methods.keySet()) {
+                String name = k.substring(k.indexOf('.') + 1);
+                if (name.startsWith("method_") || name.startsWith("func_")) {
+                    methodsByInterName.computeIfAbsent(name, x -> new ArrayList<>()).add(k);
+                }
+            }
         }
 
         static Table load(String version, String names) throws Exception {
+            if (names.equals("mcp") || names.startsWith("mcp:")) {
+                return loadMcp(version, names.length() > 4 ? names.substring(4) : null);
+            }
             String manifest = fetchText(
                 "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json",
                 "version_manifest_v2.json"
@@ -461,13 +493,7 @@ public final class VersionMap {
                     }
                 }
             }
-            for (var e : t.methods.entrySet()) {
-                String k = e.getKey();
-                String name = k.substring(k.indexOf('.') + 1);
-                if (name.startsWith("method_")) {
-                    t.methodsByInterName.computeIfAbsent(name, x -> new ArrayList<>()).add(k);
-                }
-            }
+            t.indexMoved();
             return t;
         }
 
@@ -487,14 +513,133 @@ public final class VersionMap {
                 String interDesc = Tiny.remapDesc(row.obfDesc, obfToInter);
                 String named = namer.name(interOwner, row.interName, interDesc, row.method);
                 if (named == null) {
-                    named = row.interName.startsWith("method_") || row.interName.startsWith("field_")
-                        ? row.obfName
-                        : row.interName;
+                    named = stableId(row.interName) ? row.obfName : row.interName;
                 }
                 String namedDesc = Tiny.remapDesc(interDesc, interToNamed);
                 Member m = new Member(interToNamed.getOrDefault(interOwner, interOwner), named, namedDesc, interDesc);
                 (row.method ? t.methods : t.fields).put(key(interOwner, row.interName, interDesc), m);
             }
+        }
+
+        /**
+         * One version's names the pre-1.14.4 way: Forge's SRG table for identity (joined.srg in
+         * de.oceanlabs.mcp:mcp's srg zips, published to 1.12.2; joined.tsrg in mcp_config from 1.12.2)
+         * and MCP's CSVs for the readable side. The channel names the published name set the source
+         * was written against (stable_39, snapshot_20171003); the default is the last stable set
+         * published for the release.
+         */
+        static Table loadMcp(String version, String channel) throws Exception {
+            McpNames mn = mcpNames(version, channel);
+            Table t = fromSrg(version, mn.keys(), mn.csv());
+            t.mappings = mn.source();
+            return t;
+        }
+
+        /**
+         * One release's SRG data in the shapes its readers use: keys (obfuscated to SRG id), names
+         * (obfuscated to MCP name, in Proguard's layout), the name CSVs, and the artifacts it all
+         * came from.
+         */
+        record McpNames(Tiny keys, Proguard names, Map<String, String> csv, String source) {}
+
+        static McpNames mcpNames(String version, String channel) throws Exception {
+            String srgMeta = fetchText(FORGE_MAVEN + "de/oceanlabs/mcp/mcp/maven-metadata.xml", "mcp-meta.xml");
+            Tiny rows;
+            String srgFrom;
+            if (srgMeta.contains("<version>" + version + "</version>")) {
+                Path z = fetch(
+                    FORGE_MAVEN + "de/oceanlabs/mcp/mcp/" + version + "/mcp-" + version + "-srg.zip",
+                    "mcp-" + version + "-srg.zip"
+                );
+                rows = Srg.srg(zipEntry(z, "joined.srg"));
+                srgFrom = "mcp " + version + " joined.srg";
+            } else {
+                Path z = fetch(
+                    FORGE_MAVEN + "de/oceanlabs/mcp/mcp_config/" + version + "/mcp_config-" + version + ".zip",
+                    "mcp_config-" + version + ".zip"
+                );
+                rows = Srg.tsrg(zipEntry(z, "config/joined.tsrg"));
+                srgFrom = "mcp_config " + version + " joined.tsrg";
+            }
+            String group = channel != null && channel.startsWith("snapshot_") ? "mcp_snapshot" : "mcp_stable";
+            String namesMeta = fetchText(FORGE_MAVEN + "de/oceanlabs/mcp/" + group + "/maven-metadata.xml", group + "-meta.xml");
+            String artifact = mcpArtifact(namesMeta, version, channel);
+            if (artifact == null) {
+                throw new IOException(
+                    "no MCP " +
+                    group +
+                    " names published for " +
+                    version +
+                    " (a legacy source can only be read in the names it was written against)"
+                );
+            }
+            Path nz = fetch(
+                FORGE_MAVEN + "de/oceanlabs/mcp/" + group + "/" + artifact + "/" + group + "-" + artifact + ".zip",
+                group + "-" + artifact + ".zip"
+            );
+            Map<String, String> csv = Srg.csv(zipEntry(nz, "fields.csv"), zipEntry(nz, "methods.csv"));
+            return new McpNames(rows, Srg.proguardOf(rows, csv), csv, srgFrom + ", " + group + " " + artifact);
+        }
+
+        /** The published MCP name artifact for a release: an explicit channel wins, else the last stable set. */
+        static String mcpArtifact(String metadata, String version, String channel) {
+            List<String> all = new ArrayList<>();
+            Matcher m = Pattern.compile("<version>([^<]+)</version>").matcher(metadata);
+            while (m.find()) {
+                all.add(m.group(1));
+            }
+            if (channel != null) {
+                String prefix = channel.substring(channel.indexOf('_') + 1) + "-";
+                for (String a : all) {
+                    if (a.startsWith(prefix)) {
+                        return a;
+                    }
+                }
+                return null;
+            }
+            int secondDot = version.indexOf('.', version.indexOf('.') + 1);
+            String minor = secondDot < 0 ? version : version.substring(0, secondDot); // 39-1.12 serves 1.12.2
+            String best = null, bestForMinor = null;
+            long bestN = -1, bestMinorN = -1;
+            for (String a : all) {
+                int dash = a.indexOf('-');
+                if (dash < 0) {
+                    continue;
+                }
+                long n;
+                try {
+                    n = Long.parseLong(a.substring(0, dash));
+                } catch (NumberFormatException e) {
+                    continue;
+                }
+                String suffix = a.substring(dash + 1);
+                if (suffix.equals(version) && n > bestN) {
+                    best = a;
+                    bestN = n;
+                } else if (suffix.equals(minor) && n > bestMinorN) {
+                    bestForMinor = a;
+                    bestMinorN = n;
+                }
+            }
+            return best != null ? best : bestForMinor;
+        }
+
+        /**
+         * A table from SRG rows and MCP names. SRG class names are already deobfuscated and MCP never
+         * renames a class, so a class's named side is its SRG name; a member MCP never named keeps its
+         * SRG id, which is what legacy sources call it by.
+         */
+        static Table fromSrg(String version, Tiny rows, Map<String, String> names) {
+            Table t = new Table(version);
+            t.lane = "srg";
+            Map<String, String> identity = new HashMap<>();
+            for (String srg : rows.classes.values()) {
+                identity.put(srg, srg);
+            }
+            t.classes.putAll(identity);
+            fill(t, rows, rows.classes, (owner, name, desc, method) -> names.getOrDefault(name, name), identity);
+            t.indexMoved();
+            return t;
         }
     }
 
@@ -510,6 +655,16 @@ public final class VersionMap {
         final Map<String, String> fieldsNoDesc = fields;
         final List<Row> memberRows = new ArrayList<>();
 
+        /** One member in both shapes its readers use: the lookup maps and the row list. */
+        void add(boolean method, String obfOwner, String obfName, String obfDesc, String interName) {
+            if (method) {
+                methods.put(obfOwner + "." + obfName + obfDesc, interName);
+            } else {
+                fields.put(obfOwner + "." + obfName, interName);
+            }
+            memberRows.add(new Row(method, obfOwner, obfName, obfDesc, interName));
+        }
+
         static Tiny parse(String text) {
             Tiny t = new Tiny();
             String owner0 = null;
@@ -522,12 +677,7 @@ public final class VersionMap {
                     String[] p = line.split("\t", -1);
                     boolean method = p[1].equals("m");
                     String desc = p[2], n0 = p[3], n1 = p.length > 4 && !p[4].isEmpty() ? p[4] : n0;
-                    if (method) {
-                        t.methods.put(owner0 + "." + n0 + desc, n1);
-                    } else {
-                        t.fields.put(owner0 + "." + n0, n1);
-                    }
-                    t.memberRows.add(new Row(method, owner0, n0, desc, n1));
+                    t.add(method, owner0, n0, desc, n1);
                 }
             }
             return t;
@@ -640,6 +790,385 @@ public final class VersionMap {
                 };
             return "[".repeat(dims) + base;
         }
+    }
+
+    // ------------------------------------------------------------------ SRG (MCP)
+
+    /**
+     * Forge's SRG mappings: the stable identity of the releases intermediary never covered. Both
+     * spellings (the joined.srg text MCP shipped and mcp_config's joined.tsrg) parse into the row
+     * shape the other lanes use, with the SRG id standing where the intermediary id stands. SRG field
+     * rows carry no type, so a field's descriptor stays empty in this lane.
+     */
+    static final class Srg {
+
+        static Tiny srg(String text) {
+            Tiny t = new Tiny();
+            for (String line : text.split("\r?\n")) {
+                String[] p = line.split(" ");
+                switch (p[0]) {
+                    case "CL:" -> {
+                        if (p.length == 3) {
+                            t.classes.put(p[1], p[2]);
+                        }
+                    }
+                    case "FD:" -> {
+                        if (p.length == 3) {
+                            int s = p[1].lastIndexOf('/');
+                            t.add(
+                                false,
+                                p[1].substring(0, s),
+                                p[1].substring(s + 1),
+                                "",
+                                p[2].substring(p[2].lastIndexOf('/') + 1)
+                            );
+                        }
+                    }
+                    case "MD:" -> {
+                        if (p.length == 5) {
+                            int s = p[1].lastIndexOf('/');
+                            t.add(true, p[1].substring(0, s), p[1].substring(s + 1), p[2], p[3].substring(p[3].lastIndexOf('/') + 1));
+                        }
+                    }
+                    default -> {} // PK: package rows name nothing a class row does not
+                }
+            }
+            return t;
+        }
+
+        static Tiny tsrg(String text) {
+            Tiny t = new Tiny();
+            String owner = null;
+            for (String line : text.split("\r?\n")) {
+                if (line.isEmpty() || line.startsWith("tsrg2")) {
+                    continue;
+                }
+                if (line.startsWith("\t")) {
+                    if (owner == null) {
+                        continue;
+                    }
+                    String[] p = line.trim().split(" ");
+                    if (p.length == 3 && p[1].startsWith("(")) {
+                        t.add(true, owner, p[0], p[1], p[2]);
+                    } else if (p.length >= 2) {
+                        t.add(false, owner, p[0], p.length == 3 ? p[1] : "", p[p.length - 1]);
+                    }
+                } else {
+                    String[] p = line.trim().split(" ");
+                    if (p.length >= 2) {
+                        owner = p[0];
+                        t.classes.put(p[0], p[1]);
+                    }
+                }
+            }
+            return t;
+        }
+
+        /** The same data in Proguard's layout (obfuscated to readable), for readers that walk a jar. */
+        static Proguard proguardOf(Tiny rows, Map<String, String> csv) {
+            Proguard pg = new Proguard();
+            pg.classes.putAll(rows.classes);
+            for (Tiny.Row r : rows.memberRows) {
+                String named = csv.getOrDefault(r.interName(), r.interName());
+                if (r.method()) {
+                    pg.methods.put(r.obfOwner() + "." + r.obfName() + r.obfDesc(), named);
+                } else {
+                    pg.fields.put(r.obfOwner() + "." + r.obfName(), named);
+                }
+            }
+            return pg;
+        }
+
+        /** Searge id to MCP name from the first two columns only; the quoted javadoc column is never read. */
+        static Map<String, String> csv(String... texts) {
+            Map<String, String> names = new HashMap<>();
+            for (String text : texts) {
+                for (String line : text.split("\r?\n")) {
+                    int a = line.indexOf(','), b = a < 0 ? -1 : line.indexOf(',', a + 1);
+                    if (b > a) {
+                        String id = line.substring(0, a);
+                        if (id.startsWith("func_") || id.startsWith("field_")) {
+                            names.put(id, line.substring(a + 1, b));
+                        }
+                    }
+                }
+            }
+            return names;
+        }
+    }
+
+    // ------------------------------------------------------------------ the seam
+
+    /**
+     * The release both name lanes share: the last Forge SRG release and the first with Mojang
+     * mappings. Kept equal to Route.FIRST_MAPPED. Chains load this release in SRG names and
+     * translate keys past it; the index measures the translation as its own step.
+     */
+    static final String SEAM = "1.14.4";
+
+    /** The pseudo-step a seam-crossing chain records the MCP to Mojang key translation under. */
+    static final String BRIDGE_STEP = SEAM + " -> " + SEAM;
+
+    /** Numeric dotted release order; chain versions are plain releases, so no pre-release handling. */
+    static int releaseCompare(String a, String b) {
+        String[] x = a.split("\\."), y = b.split("\\.");
+        for (int i = 0; i < Math.max(x.length, y.length); i++) {
+            int l = i < x.length ? leadingNumber(x[i]) : 0, r = i < y.length ? leadingNumber(y[i]) : 0;
+            if (l != r) {
+                return Integer.compare(l, r);
+            }
+        }
+        return 0;
+    }
+
+    static int leadingNumber(String part) {
+        int i = 0;
+        while (i < part.length() && Character.isDigit(part.charAt(i))) {
+            i++;
+        }
+        return i == 0 ? 0 : Integer.parseInt(part.substring(0, i));
+    }
+
+    /**
+     * Mojang's mappings for a version, client and server separately: a member can live on either
+     * side, and the two obfuscations do not always agree. A release without published mappings
+     * yields empty tables.
+     */
+    static Proguard[] proguardsFor(String version) throws Exception {
+        String manifest = fetchText(
+            "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json",
+            "version_manifest_v2.json"
+        );
+        int atManifest = manifest.indexOf("\"id\": \"" + version + "\"");
+        if (atManifest < 0) {
+            atManifest = manifest.indexOf("\"id\":\"" + version + "\"");
+        }
+        String versionJson = fetchText(jsonString(manifest, "url", atManifest), "version-" + version + ".json");
+        int cdl = versionJson.indexOf("\"client_mappings\"");
+        int sdl = versionJson.indexOf("\"server_mappings\"");
+        Proguard client = cdl < 0
+            ? new Proguard()
+            : Proguard.parse(fetchText(jsonString(versionJson, "url", cdl), "client-" + version + ".txt"));
+        Proguard server = sdl < 0
+            ? new Proguard()
+            : Proguard.parse(fetchText(jsonString(versionJson, "url", sdl), "server-" + version + ".txt"));
+        return new Proguard[] {client, server};
+    }
+
+    /** Official member triples (owner, name, descriptor) a version's own mappings know. */
+    static Set<String> officialTriples(Proguard[] pgs) {
+        Set<String> triples = new HashSet<>();
+        for (Proguard pg : pgs) {
+            for (var e : pg.methods.entrySet()) {
+                String key = e.getKey();
+                int dot = key.indexOf('.'), paren = key.indexOf('(');
+                String obfOwner = key.substring(0, dot);
+                String owner = pg.classes.getOrDefault(obfOwner, obfOwner);
+                triples.add(owner + "\0" + e.getValue() + "\0" + Tiny.remapDesc(key.substring(paren), pg.classes));
+            }
+            for (var e : pg.fields.entrySet()) {
+                String key = e.getKey();
+                String obfOwner = key.substring(0, key.indexOf('.'));
+                String owner = pg.classes.getOrDefault(obfOwner, obfOwner);
+                triples.add(owner + "\0" + e.getValue() + "\0");
+            }
+        }
+        return triples;
+    }
+
+    /** Official class names a version's own mappings know. */
+    static Set<String> officialClasses(Proguard[] pgs) {
+        Set<String> names = new HashSet<>();
+        for (Proguard pg : pgs) {
+            names.addAll(pg.classes.values());
+        }
+        return names;
+    }
+
+    /**
+     * The seam translation: SRG keys to intermediary keys at 1.14.4, joined through the obfuscated
+     * names both lanes publish (mcp_config's joined.tsrg and intermediary's tiny). Members join on
+     * owner, name and descriptor; fields carry no descriptor in SRG, so they join on owner and name.
+     * Classes join on the obfuscated class. Forward reads members and classes; a backport reads the
+     * Back maps. Built from cached downloads; two small file parses, no network when cached.
+     */
+    static final class Bridge {
+        final Map<String, String> classes = new LinkedHashMap<>(), classesBack = new LinkedHashMap<>();
+        final Map<String, String> members = new LinkedHashMap<>(), membersBack = new LinkedHashMap<>();
+        /**
+         * Fallback identities for members and classes the exact join misses: the retroactive
+         * intermediary drops some overloads, so a notch name can be absent there while present in
+         * both jars. SRG key to official owner, name and descriptor at the seam, guarded: a notch
+         * name resolving differently on the client and server sides yields no fallback. The step
+         * file pairs by these identities; chains use them to rescue what the exact join misses.
+         * The reverse maps serve backports.
+         */
+        final Map<String, String> membersOfficial = new LinkedHashMap<>(), membersBackOfficial = new LinkedHashMap<>();
+        final Map<String, String> classesOfficial = new LinkedHashMap<>(), classesBackOfficial = new LinkedHashMap<>();
+
+        static Bridge at() throws Exception {
+            Tiny srg = Table.mcpNames(SEAM, null).keys();
+            Path inter = fetch(
+                "https://maven.fabricmc.net/net/fabricmc/intermediary/" + SEAM + "/intermediary-" + SEAM + "-v2.jar",
+                "intermediary-" + SEAM + "-v2.jar"
+            );
+            Tiny it = Tiny.parse(zipEntry(inter, "mappings/mappings.tiny"));
+            Proguard[] pgs = proguardsFor(SEAM);
+            return join(srg, it, pgs[0], pgs[1]);
+        }
+
+        /**
+         * The pure join both lanes share: unit-testable without downloads. Callers pass the
+         * 1.14.4 artifacts (mcp_config joined.tsrg rows, intermediary tiny, Mojang client and
+         * server mappings); every map out is keyed through the shared obfuscated names.
+         */
+        static Bridge join(Tiny srg, Tiny it, Proguard client, Proguard server) {
+            Map<String, String[]> byObf = new HashMap<>();
+            for (Tiny.Row r : it.memberRows) {
+                byObf.put(r.obfOwner() + "\0" + r.obfName() + "\0" + r.obfDesc(), new String[] {
+                    it.classes.getOrDefault(r.obfOwner(), r.obfOwner()), r.interName()
+                });
+            }
+            Map<String, String[]> fieldsByObf = new HashMap<>();
+            for (Tiny.Row r : it.memberRows) {
+                if (!r.method()) {
+                    fieldsByObf.putIfAbsent(r.obfOwner() + "\0" + r.obfName(), new String[] {
+                        it.classes.getOrDefault(r.obfOwner(), r.obfOwner()), r.interName()
+                    });
+                }
+            }
+            Bridge b = new Bridge();
+            for (var e : srg.classes.entrySet()) {
+                String named = it.classes.get(e.getKey());
+                if (named == null) {
+                    continue;
+                }
+                b.classes.put(e.getValue(), named);
+                b.classesBack.put(named, e.getValue());
+            }
+            for (Tiny.Row r : srg.memberRows) {
+                String seargeOwner = srg.classes.getOrDefault(r.obfOwner(), r.obfOwner());
+                String srgKey = Table.key(seargeOwner, r.interName(), Tiny.remapDesc(r.obfDesc(), srg.classes));
+                String[] found = r.method()
+                    ? byObf.get(r.obfOwner() + "\0" + r.obfName() + "\0" + r.obfDesc())
+                    : fieldsByObf.get(r.obfOwner() + "\0" + r.obfName());
+                if (found == null) {
+                    continue;
+                }
+                String interKey = Table.key(found[0], found[1], Tiny.remapDesc(r.obfDesc(), it.classes));
+                b.members.put(srgKey, interKey);
+                b.membersBack.put(interKey, srgKey);
+            }
+            // Fallback identities for everything the exact join missed, resolved through Mojang's
+            // own mappings for both sides (the notch names coincide here; where they do not, the
+            // guards below yield no fallback and the member reads as removed, honestly).
+            Map<String, String> obfToOfficial = new HashMap<>();
+            client.classes.forEach((k, v) -> obfToOfficial.putIfAbsent(k, v));
+            server.classes.forEach((k, v) -> obfToOfficial.putIfAbsent(k, v));
+            for (Tiny.Row r : srg.memberRows) {
+                String seargeOwner = srg.classes.getOrDefault(r.obfOwner(), r.obfOwner());
+                String srgKey = Table.key(seargeOwner, r.interName(), Tiny.remapDesc(r.obfDesc(), srg.classes));
+                String owner = officialOwner(r.obfOwner(), client, server);
+                String name = officialName(r, client, server);
+                if (owner != null && name != null) {
+                    String okey = owner + "\0" + name + "\0" + Tiny.remapDesc(r.obfDesc(), obfToOfficial);
+                    b.membersOfficial.put(srgKey, okey);
+                    b.membersBackOfficial.putIfAbsent(okey, srgKey);
+                }
+                if (b.members.containsKey(srgKey)) {
+                    continue;
+                }
+                String[] found = r.method()
+                    ? byObf.get(r.obfOwner() + "\0" + r.obfName() + "\0" + r.obfDesc())
+                    : fieldsByObf.get(r.obfOwner() + "\0" + r.obfName());
+                if (found == null) {
+                    continue;
+                }
+                String interKey = Table.key(found[0], found[1], Tiny.remapDesc(r.obfDesc(), it.classes));
+                b.members.put(srgKey, interKey);
+                b.membersBack.put(interKey, srgKey);
+            }
+            for (var e : srg.classes.entrySet()) {
+                String official = officialOwner(e.getKey(), client, server);
+                if (official != null) {
+                    b.classesOfficial.put(e.getValue(), official);
+                    b.classesBackOfficial.putIfAbsent(official, e.getValue());
+                }
+            }
+            return b;
+        }
+
+        /** A notch owner's official name, or null when the client and server disagree. */
+        static String officialOwner(String obf, Proguard client, Proguard server) {
+            String c = client.classes.get(obf), s = server.classes.get(obf);
+            if (c != null && s != null && !c.equals(s)) {
+                return null;
+            }
+            return c != null ? c : s;
+        }
+
+        /** A notch member's official name, or null when the client and server disagree. */
+        static String officialName(Tiny.Row r, Proguard client, Proguard server) {
+            String key = r.method() ? r.obfOwner() + "." + r.obfName() + r.obfDesc() : r.obfOwner() + "." + r.obfName();
+            String c = r.method() ? client.methods.get(key) : client.fields.get(key);
+            String s = r.method() ? server.methods.get(key) : server.fields.get(key);
+            if (c != null && s != null && !c.equals(s)) {
+                return null;
+            }
+            return c != null ? c : s;
+        }
+
+        /**
+         * Official identity for a constructor: neither SRG spelling rows them, so synthesize from
+         * the class link. Null unless the key names a constructor whose owner links. A partially
+         * remapped descriptor simply misses its target later, honestly.
+         */
+        String initForward(String srgKey, String seargeDesc) {
+            int dot = srgKey.indexOf('.');
+            if (dot < 0 || !srgKey.substring(dot + 1).startsWith("<init>")) {
+                return null;
+            }
+            String official = classesOfficial.get(srgKey.substring(0, dot));
+            if (official == null) {
+                return null;
+            }
+            return official + "\0<init>\0" + Tiny.remapDesc(seargeDesc, classesOfficial);
+        }
+
+        /**
+         * The SRG key for a constructor reached from the intermediary side: the intermediary
+         * spelling rows them, so translate the owner through the class link and the descriptor
+         * back into SRG names. Null unless the key names a constructor whose owner links back.
+         */
+        String initBack(String interKey, String interDesc) {
+            int dot = interKey.indexOf('.');
+            if (dot < 0 || !interKey.substring(dot + 1).startsWith("<init>")) {
+                return null;
+            }
+            String searge = classesBack.get(interKey.substring(0, dot));
+            if (searge == null) {
+                return null;
+            }
+            return searge + ".<init>" + Tiny.remapDesc(interDesc, classesBack);
+        }
+    }
+
+    /**
+     * Lane-aware table loading for a chain: releases before the seam have no official names and
+     * always read MCP names through SRG ids; 1.14.4 reads the requested lane (MCP for an MCP
+     * source, official otherwise), except a chain reaching back past the seam always reads it in
+     * SRG names so the bridge, not the retroactive intermediary, carries the crossing; later
+     * releases read the target namespace (Mojang's when the source is MCP, since the bridge lands
+     * in Mojang's names). The bridge between lanes is joined by key, not guessed.
+     */
+    static Table laneTable(String version, String names, String toNames, boolean srgSeam) throws Exception {
+        boolean srg = releaseCompare(version, SEAM) < 0
+            || (version.equals(SEAM) && (names.startsWith("mcp") || srgSeam));
+        if (srg) {
+            return Table.loadMcp(version, names.startsWith("mcp:") ? names.substring(4) : null);
+        }
+        String modern = names.startsWith("mcp") ? (toNames != null ? toNames : "mojmap") : names;
+        return Table.load(version, modern);
     }
 
     // ------------------------------------------------------------------ the diff
@@ -839,6 +1368,12 @@ public final class VersionMap {
             Map<String, String> classes = new LinkedHashMap<>(), methods = new LinkedHashMap<>(), fields =
                 new LinkedHashMap<>(); // original key -> current key
             Set<String> classGone = new HashSet<>(), methodGone = new HashSet<>(), fieldGone = new HashSet<>();
+            boolean seamCrossed = false;
+            Map<String, String> seamRemap = new HashMap<>(); // first-lane class names to last-lane ones
+            // Forward bridge misses with a known official identity resolve at the tally against the
+            // last version's own mappings (the intermediary drops overloads the jars still carry).
+            Map<String, String> pendingMethods = new LinkedHashMap<>(), pendingFields = new LinkedHashMap<>(),
+                pendingClasses = new LinkedHashMap<>(); // original key -> official identity at the seam
             for (String k : first.classes.keySet()) {
                 classes.put(k, k);
             }
@@ -855,19 +1390,66 @@ public final class VersionMap {
             for (int i = 1; i < versions.size(); i++) {
                 Table cur = loader.load(versions.get(i));
                 String step = prev.version + " -> " + cur.version;
+                // Crossing the seam changes the key space, so tracked keys are translated through the
+                // bridge first (recorded under the bridge step); the update's own changes then read as
+                // usual. On the SRG lane a renamed class is linked back up by shared member ids, the
+                // index's convention. A translation both renames and moves an element still reads as one
+                // bridge event naming its endpoints; the update's own renames read under its own step.
+                Bridge bridge = null;
+                Map<String, String> links = Map.of(), curMembersByOfficial = Map.of(), curClassesByOfficial = Map.of();
+                if (!cur.lane.equals(prev.lane)) {
+                    bridge = Bridge.at();
+                    seamCrossed = true;
+                    seamRemap.putAll(prev.lane.equals("srg") ? bridge.classes : bridge.classesBack);
+                    if (prev.lane.equals("srg")) {
+                        curMembersByOfficial = indexMembersByOfficial(cur);
+                        curClassesByOfficial = indexClassesByOfficial(cur);
+                    }
+                } else if (cur.lane.equals("srg")) {
+                    links = linkSrgClasses(prev, cur);
+                }
+                boolean srgToInter = bridge != null && prev.lane.equals("srg");
                 for (var e : classes.entrySet()) {
                     if (classGone.contains(e.getKey())) {
                         continue;
                     }
-                    String was = prev.classes.get(e.getKey()), now = cur.classes.get(e.getKey()), orig = Diff.dots(
-                        first.classes.get(e.getKey())
-                    );
+                    String was = prev.classes.get(e.getValue()), next = e.getValue(), hop = step;
+                    if (bridge != null) {
+                        hop = BRIDGE_STEP;
+                        if (srgToInter) {
+                            next = bridge.classes.get(next);
+                            String official = next == null ? bridge.classesOfficial.get(e.getValue()) : null;
+                            if (next == null) {
+                                next = official == null ? null : curClassesByOfficial.get(official);
+                            }
+                            if (next == null && official != null) {
+                                classGone.add(e.getKey());
+                                pendingClasses.put(e.getKey(), official);
+                                continue;
+                            }
+                        } else {
+                            next = bridge.classesBack.get(next);
+                            if (next == null) {
+                                String official = prev.classes.get(e.getValue());
+                                next = official == null ? null : bridge.classesBackOfficial.get(official);
+                            }
+                        }
+                    } else {
+                        next = links.getOrDefault(next, next);
+                    }
+                    String now = next == null ? null : cur.classes.get(next);
+                    String orig = Diff.dots(first.classes.get(e.getKey()));
                     if (now == null) {
                         classGone.add(e.getKey());
-                        c.history.add(new Event("class", null, orig, null, "removed", Diff.dots(was), null, step));
-                    } else if (!now.equals(was)) {
+                        c.history.add(new Event("class", null, orig, null, "removed", Diff.dots(was), null, hop));
+                        continue;
+                    }
+                    if (!next.equals(e.getValue())) {
+                        e.setValue(next);
+                    }
+                    if (!now.equals(was)) {
                         c.history.add(
-                            new Event("class", null, orig, null, "renamed", Diff.dots(was), Diff.dots(now), step)
+                            new Event("class", null, orig, null, "renamed", Diff.dots(was), Diff.dots(now), hop)
                         );
                     }
                 }
@@ -875,16 +1457,63 @@ public final class VersionMap {
                     if (methodGone.contains(e.getKey())) {
                         continue;
                     }
-                    Member o = first.methods.get(e.getKey()), mp = prev.methods.get(e.getValue()), mc = cur.methods.get(
-                        e.getValue()
-                    );
-                    String was = Diff.dots(mp.owner()) + "." + mp.name();
+                    Member o = first.methods.get(e.getKey()), mp = prev.methods.get(e.getValue());
+                    String was = Diff.dots(mp.owner()) + "." + mp.name(), hop = step;
+                    if (bridge != null) {
+                        String next;
+                        if (srgToInter) {
+                            next = bridge.members.get(e.getValue());
+                            String okey = next == null ? bridge.membersOfficial.get(e.getValue()) : null;
+                            if (next == null && okey == null) okey = bridge.initForward(e.getValue(), mp.interDesc());
+                            if (next == null) {
+                                next = okey == null ? null : curMembersByOfficial.get(okey);
+                            }
+                            if (next == null && okey != null) {
+                                methodGone.add(e.getKey());
+                                pendingMethods.put(e.getKey(), okey);
+                                continue;
+                            }
+                        } else {
+                            next = bridge.membersBack.get(e.getValue());
+                            if (next == null) {
+                                Member pm = prev.methods.get(e.getValue());
+                                String okey = pm.owner() + "\0" + pm.name() + "\0" + pm.desc();
+                                next = bridge.membersBackOfficial.get(okey);
+                                if (next == null) next = bridge.initBack(e.getValue(), pm.interDesc());
+                            }
+                        }
+                        if (next == null) {
+                            methodGone.add(e.getKey());
+                            c.history.add(
+                                new Event(
+                                    "method",
+                                    Diff.dots(o.owner()),
+                                    o.name(),
+                                    o.desc(),
+                                    "removed",
+                                    was,
+                                    null,
+                                    BRIDGE_STEP
+                                )
+                            );
+                            continue;
+                        }
+                        e.setValue(next);
+                        hop = BRIDGE_STEP;
+                    }
+                    if (!links.isEmpty()) {
+                        String translated = followLink(links, cur.methods::containsKey, e.getValue());
+                        if (!translated.equals(e.getValue())) {
+                            e.setValue(translated);
+                        }
+                    }
+                    Member mc = cur.methods.get(e.getValue());
                     if (mc == null) {
                         String interName = e.getValue().substring(e.getValue().indexOf('.') + 1);
                         List<String> elsewhere = cur.methodsByInterName.getOrDefault(interName, List.of());
                         if (!elsewhere.isEmpty()) {
-                            e.setValue(elsewhere.get(0));
-                            mc = cur.methods.get(elsewhere.get(0));
+                            e.setValue(pickMoveTarget(cur, mp, elsewhere, links, ownerOf(e.getValue())));
+                            mc = cur.methods.get(e.getValue());
                             c.history.add(
                                 new Event(
                                     "method",
@@ -923,11 +1552,16 @@ public final class VersionMap {
                                 "renamed",
                                 was,
                                 Diff.dots(mc.owner()) + "." + mc.name(),
-                                step
+                                hop
                             )
                         );
                     }
-                    if (!mc.interDesc().equals(mp.interDesc())) {
+                    // Descriptors compare across the seam in one lane: the previous side remapped through
+                    // the bridge's class translation, so only a true signature change reads as one.
+                    String mpDesc = bridge != null
+                        ? Tiny.remapDesc(mp.interDesc(), srgToInter ? bridge.classes : bridge.classesBack)
+                        : mp.interDesc();
+                    if (!mc.interDesc().equals(mpDesc)) {
                         c.history.add(
                             new Event(
                                 "method",
@@ -937,7 +1571,7 @@ public final class VersionMap {
                                 "signature",
                                 was + mp.desc(),
                                 Diff.dots(mc.owner()) + "." + mc.name() + mc.desc(),
-                                step
+                                hop
                             )
                         );
                     }
@@ -946,10 +1580,48 @@ public final class VersionMap {
                     if (fieldGone.contains(e.getKey())) {
                         continue;
                     }
-                    Member o = first.fields.get(e.getKey()), fp = prev.fields.get(e.getValue()), fc = cur.fields.get(
-                        e.getValue()
-                    );
-                    String was = Diff.dots(fp.owner()) + "." + fp.name();
+                    Member o = first.fields.get(e.getKey()), fp = prev.fields.get(e.getValue());
+                    String was = Diff.dots(fp.owner()) + "." + fp.name(), hop = step;
+                    if (bridge != null) {
+                        String next;
+                        if (srgToInter) {
+                            next = bridge.members.get(e.getValue());
+                            String okey = next == null ? bridge.membersOfficial.get(e.getValue()) : null;
+                            if (next == null && okey == null) okey = bridge.initForward(e.getValue(), fp.interDesc());
+                            if (next == null) {
+                                next = okey == null ? null : curMembersByOfficial.get(okey);
+                            }
+                            if (next == null && okey != null) {
+                                fieldGone.add(e.getKey());
+                                pendingFields.put(e.getKey(), okey);
+                                continue;
+                            }
+                        } else {
+                            next = bridge.membersBack.get(e.getValue());
+                            if (next == null) {
+                                Member pm = prev.fields.get(e.getValue());
+                                String okey = pm.owner() + "\0" + pm.name() + "\0";
+                                next = bridge.membersBackOfficial.get(okey);
+                                if (next == null) next = bridge.initBack(e.getValue(), pm.interDesc());
+                            }
+                        }
+                        if (next == null) {
+                            fieldGone.add(e.getKey());
+                            c.history.add(
+                                new Event("field", Diff.dots(o.owner()), o.name(), o.desc(), "removed", was, null, BRIDGE_STEP)
+                            );
+                            continue;
+                        }
+                        e.setValue(next);
+                        hop = BRIDGE_STEP;
+                    }
+                    if (!links.isEmpty()) {
+                        String translated = followLink(links, cur.fields::containsKey, e.getValue());
+                        if (!translated.equals(e.getValue())) {
+                            e.setValue(translated);
+                        }
+                    }
+                    Member fc = cur.fields.get(e.getValue());
                     if (fc == null) {
                         fieldGone.add(e.getKey());
                         c.history.add(
@@ -965,7 +1637,7 @@ public final class VersionMap {
                                 "renamed",
                                 was,
                                 Diff.dots(fc.owner()) + "." + fc.name(),
-                                step
+                                hop
                             )
                         );
                     }
@@ -977,7 +1649,10 @@ public final class VersionMap {
             // on the way and back by the end (same intermediary id) compiles, so it is not reported as removed.
             Diff d = c.diff;
             for (var e : classes.entrySet()) {
-                String a = first.classes.get(e.getKey()), b = last.classes.get(e.getKey());
+                if (pendingClasses.containsKey(e.getKey())) {
+                    continue;
+                }
+                String a = first.classes.get(e.getKey()), b = last.classes.get(e.getValue());
                 if (b == null) {
                     d.classRemoved.add(a);
                 } else if (!b.equals(a)) {
@@ -985,10 +1660,24 @@ public final class VersionMap {
                 }
             }
             for (var e : methods.entrySet()) {
+                if (pendingMethods.containsKey(e.getKey())) {
+                    continue;
+                }
                 Member ma = first.methods.get(e.getKey());
                 boolean gone = methodGone.contains(e.getKey());
-                String key = gone && last.methods.containsKey(e.getKey()) ? e.getKey() : e.getValue();
-                Member mb = gone && !last.methods.containsKey(e.getKey()) ? null : last.methods.get(key);
+                Member mb;
+                String key;
+                if (gone) {
+                    mb = last.methods.get(e.getKey());
+                    key = e.getKey();
+                    if (mb == null) {
+                        mb = last.methods.get(e.getValue());
+                        key = e.getValue();
+                    }
+                } else {
+                    mb = last.methods.get(e.getValue());
+                    key = e.getValue();
+                }
                 if (mb == null) {
                     d.methodRemoved.add(new Change(ma.owner(), ma.name(), null, ma.desc(), null, null));
                     continue;
@@ -998,20 +1687,27 @@ public final class VersionMap {
                 } else if (!mb.name().equals(ma.name())) {
                     d.methodRenamed.add(new Change(ma.owner(), ma.name(), mb.name(), ma.desc(), mb.desc(), mb.owner()));
                 }
-                if (!mb.interDesc().equals(ma.interDesc())) {
+                // Across the seam the first descriptor is remapped through the bridge's class
+                // translation before comparing, so only a true signature change reads as one.
+                String maSpace = seamCrossed ? Tiny.remapDesc(ma.interDesc(), seamRemap) : ma.interDesc();
+                if (!mb.interDesc().equals(maSpace)) {
                     d.methodSignature.add(
                         new Change(ma.owner(), ma.name(), mb.name(), ma.desc(), mb.desc(), mb.owner())
                     );
                 }
             }
             for (var e : fields.entrySet()) {
-                Member fa = first.fields.get(e.getKey()), fb = last.fields.get(e.getKey());
+                if (pendingFields.containsKey(e.getKey())) {
+                    continue;
+                }
+                Member fa = first.fields.get(e.getKey()), fb = last.fields.get(e.getValue());
                 if (fb == null) {
                     d.fieldRemoved.add(new Change(fa.owner(), fa.name(), null, fa.desc(), null, null));
                 } else if (!fb.name().equals(fa.name())) {
                     d.fieldRenamed.add(new Change(fa.owner(), fa.name(), fb.name(), fa.desc(), fb.desc(), fb.owner()));
                 }
             }
+            resolvePending(c, d, first, last, pendingMethods, pendingFields, pendingClasses);
             Comparator<Change> byOwner = Comparator.comparing(Change::owner).thenComparing(Change::from);
             for (var l : List.of(
                 d.methodRenamed,
@@ -1026,6 +1722,402 @@ public final class VersionMap {
             d.classRenamed.sort(Comparator.comparing(x -> x[0]));
             Collections.sort(d.classRemoved);
             return c;
+        }
+
+        /**
+         * Pair renamed classes on the SRG lane by shared member ids. The index measures the same
+         * links; port follows them so a renamed class keeps its history.
+         */
+        static Map<String, String> linkSrgClasses(Table prev, Table cur) {
+            Map<String, Set<String>> pIds = new HashMap<>(), cIds = new HashMap<>();
+            for (var e : prev.methods.entrySet()) {
+                if (!e.getValue().name().equals("<init>")) {
+                    pIds.computeIfAbsent(ownerOf(e.getKey()), x -> new HashSet<>()).add("m" + idOf(e.getKey()));
+                }
+            }
+            for (var e : prev.fields.entrySet()) {
+                pIds.computeIfAbsent(ownerOf(e.getKey()), x -> new HashSet<>()).add("f" + idOf(e.getKey()));
+            }
+            for (var e : cur.methods.entrySet()) {
+                if (!e.getValue().name().equals("<init>")) {
+                    cIds.computeIfAbsent(ownerOf(e.getKey()), x -> new HashSet<>()).add("m" + idOf(e.getKey()));
+                }
+            }
+            for (var e : cur.fields.entrySet()) {
+                cIds.computeIfAbsent(ownerOf(e.getKey()), x -> new HashSet<>()).add("f" + idOf(e.getKey()));
+            }
+            Set<String> gone = new HashSet<>(prev.classes.keySet()), fresh = new HashSet<>(cur.classes.keySet());
+            gone.removeAll(cur.classes.keySet());
+            fresh.removeAll(prev.classes.keySet());
+            return linkBySharedIds(gone, fresh, pIds, cIds);
+        }
+
+        /**
+         * Mutual-best Jaccard matches need at least half shared. A class that grew or shrank around
+         * the Flattening can fall below that despite one obvious successor, so an unclaimed pair
+         * also links when it shares at least three stable member ids, two of them distinctive,
+         * with twice every rival's distinctive count (or a strict win with five or more, since
+         * abundant evidence needs less margin). Both directions must choose the same pair; a tie on
+         * either side links nothing. Shared ids used by more than MAX_ID_USES classes carry no
+         * weight: base-class and packet API ids repeat across whole hierarchies, while a rename
+         * keeps its own members' ids. Jaccard ties break by distinctive-id count, then by shared
+         * name tokens, and an unbreakable tie links nothing, so no link depends on iteration order.
+         */
+        static final int MAX_ID_USES = 12;
+
+        static Map<String, String> linkBySharedIds(
+            Collection<String> gone,
+            Collection<String> fresh,
+            Map<String, Set<String>> goneIds,
+            Map<String, Set<String>> freshIds
+        ) {
+            Map<String, Integer> idUses = new HashMap<>();
+            for (Map<String, Set<String>> ids : List.of(goneIds, freshIds)) {
+                for (Set<String> s : ids.values()) {
+                    for (String k : s) {
+                        if (stableSrgMember(k)) {
+                            idUses.merge(k, 1, Integer::sum);
+                        }
+                    }
+                }
+            }
+            Map<String, String> best = new HashMap<>(), bestBack = new HashMap<>();
+            Map<String, Double> score = new HashMap<>(), scoreBack = new HashMap<>();
+            Map<String, Integer> bestRare = new HashMap<>(), bestBackRare = new HashMap<>();
+            Map<String, Integer> bestName = new HashMap<>(), bestBackName = new HashMap<>();
+            Set<String> deadJ = new HashSet<>(), deadJBack = new HashSet<>();
+            Map<String, String> overlapBest = new HashMap<>(), overlapBack = new HashMap<>();
+            Map<String, Integer> overlapCount = new HashMap<>(), overlapSecond = new HashMap<>();
+            Map<String, Integer> overlapTotal = new HashMap<>();
+            Map<String, Integer> overlapBackCount = new HashMap<>(), overlapBackSecond = new HashMap<>();
+            Map<String, Integer> stableGone = stableSrgCounts(goneIds), stableFresh = stableSrgCounts(freshIds);
+            for (String g : gone) {
+                Set<String> gn = goneIds.getOrDefault(g, Set.of());
+                if (gn.size() < 4) {
+                    continue;
+                }
+                for (String f : fresh) {
+                    Set<String> fn = freshIds.getOrDefault(f, Set.of());
+                    if (fn.size() < 4) {
+                        continue;
+                    }
+                    int common = 0, sharedIds = 0, rareIds = 0;
+                    for (String n : gn) {
+                        if (fn.contains(n)) {
+                            common++;
+                            if (stableSrgMember(n)) {
+                                sharedIds++;
+                                if (idUses.getOrDefault(n, 0) <= MAX_ID_USES) {
+                                    rareIds++;
+                                }
+                            }
+                        }
+                    }
+                    double j = (double) common / (gn.size() + fn.size() - common);
+                    double sg = score.getOrDefault(g, 0.0);
+                    int sr = bestRare.getOrDefault(g, -1);
+                    if (j > sg) {
+                        score.put(g, j);
+                        best.put(g, f);
+                        bestRare.put(g, rareIds);
+                        bestName.put(g, nameSim(g, f));
+                        deadJ.remove(g);
+                    } else if (j > 0.0 && j == sg) {
+                        int ns = nameSim(g, f);
+                        int bns = bestName.getOrDefault(g, -1);
+                        if (rareIds > sr || (rareIds == sr && ns > bns)) {
+                            score.put(g, j);
+                            best.put(g, f);
+                            bestRare.put(g, rareIds);
+                            bestName.put(g, ns);
+                            deadJ.remove(g);
+                        } else if (rareIds == sr && ns == bns) {
+                            deadJ.add(g);
+                        }
+                    }
+                    double sf = scoreBack.getOrDefault(f, 0.0);
+                    int sbr = bestBackRare.getOrDefault(f, -1);
+                    if (j > sf) {
+                        scoreBack.put(f, j);
+                        bestBack.put(f, g);
+                        bestBackRare.put(f, rareIds);
+                        bestBackName.put(f, nameSim(g, f));
+                        deadJBack.remove(f);
+                    } else if (j > 0.0 && j == sf) {
+                        int sbn = nameSim(g, f);
+                        int bbn = bestBackName.getOrDefault(f, -1);
+                        if (rareIds > sbr || (rareIds == sbr && sbn > bbn)) {
+                            scoreBack.put(f, j);
+                            bestBack.put(f, g);
+                            bestBackRare.put(f, rareIds);
+                            bestBackName.put(f, sbn);
+                            deadJBack.remove(f);
+                        } else if (rareIds == sbr && sbn == bbn) {
+                            deadJBack.add(f);
+                        }
+                    }
+                    if (stableGone.getOrDefault(g, 0) >= 4 && stableFresh.getOrDefault(f, 0) >= 4) {
+                        if (rareIds > overlapCount.getOrDefault(g, 0)) {
+                            overlapSecond.put(g, overlapCount.getOrDefault(g, 0));
+                            overlapCount.put(g, rareIds);
+                            overlapTotal.put(g, sharedIds);
+                            overlapBest.put(g, f);
+                        } else if (rareIds > overlapSecond.getOrDefault(g, 0)) {
+                            overlapSecond.put(g, rareIds);
+                        }
+                        if (rareIds > overlapBackCount.getOrDefault(f, 0)) {
+                            overlapBackSecond.put(f, overlapBackCount.getOrDefault(f, 0));
+                            overlapBackCount.put(f, rareIds);
+                            overlapBack.put(f, g);
+                        } else if (rareIds > overlapBackSecond.getOrDefault(f, 0)) {
+                            overlapBackSecond.put(f, rareIds);
+                        }
+                    }
+                }
+            }
+            Map<String, String> links = new HashMap<>();
+            Set<String> claimed = new HashSet<>();
+            for (var e : best.entrySet()) {
+                if (score.get(e.getKey()) >= 0.5 && e.getKey().equals(bestBack.get(e.getValue()))
+                    && !deadJ.contains(e.getKey()) && !deadJBack.contains(e.getValue())) {
+                    links.put(e.getKey(), e.getValue());
+                    claimed.add(e.getValue());
+                }
+            }
+            for (var e : overlapBest.entrySet()) {
+                String g = e.getKey(), f = e.getValue();
+                int n = overlapCount.getOrDefault(e.getKey(), 0), second = overlapSecond.getOrDefault(e.getKey(), 0);
+                int t = overlapTotal.getOrDefault(e.getKey(), 0);
+                boolean clearWinner = t >= 3 && n >= 2
+                    && (second == 0 || n >= 2 * second || (n >= 5 && n > second));
+                int backSecond = overlapBackSecond.getOrDefault(f, 0);
+                boolean reverseClear = overlapBackCount.getOrDefault(f, 0) > backSecond;
+                if (!links.containsKey(g) && !claimed.contains(f) && clearWinner && reverseClear && g.equals(overlapBack.get(f))) {
+                    links.put(g, f);
+                    claimed.add(f);
+                }
+            }
+            return links;
+        }
+
+        static boolean stableSrgMember(String key) {
+            return key.startsWith("mfunc_") || key.startsWith("ffield_");
+        }
+
+        /** Shared CamelCase tokens of two classes' simple names, plural-insensitive. */
+        static int nameSim(String g, String f) {
+            Set<String> gt = tokens(g), ft = tokens(f);
+            int common = 0;
+            for (String t : gt) {
+                if (ft.contains(t)) {
+                    common++;
+                }
+            }
+            return common;
+        }
+
+        static Set<String> tokens(String internal) {
+            String simple = internal.substring(internal.lastIndexOf('/') + 1).replace('$', ' ');
+            Set<String> out = new HashSet<>();
+            for (String part : simple.split("[^A-Za-z0-9]+")) {
+                for (String w : part.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[0-9])(?=[A-Za-z])|(?<=[A-Za-z])(?=[0-9])")) {
+                    String t = w.toLowerCase(Locale.ROOT);
+                    if (t.endsWith("s") && t.length() > 3 && !t.endsWith("ss")) {
+                        t = t.substring(0, t.length() - 1);
+                    }
+                    if (!t.isEmpty()) {
+                        out.add(t);
+                    }
+                }
+            }
+            return out;
+        }
+
+        static Map<String, Integer> stableSrgCounts(Map<String, Set<String>> ids) {
+            Map<String, Integer> counts = new HashMap<>();
+            for (var e : ids.entrySet()) {
+                int count = 0;
+                for (String key : e.getValue()) {
+                    if (stableSrgMember(key)) {
+                        count++;
+                    }
+                }
+                counts.put(e.getKey(), count);
+            }
+            return counts;
+        }
+
+        static String ownerOf(String key) {
+            return key.substring(0, key.indexOf('.'));
+        }
+
+        static String idOf(String key) {
+            return key.substring(key.indexOf('.') + 1);
+        }
+
+        /**
+         * Follow a class rename before looking a member up: the member kept its id, so the linked
+         * owner names its key in the next table (descriptors remapped through the step's links).
+         * Falls back to the tracked key.
+         */
+        static String followLink(Map<String, String> links, java.util.function.Predicate<String> present, String key) {
+            String owner = ownerOf(key);
+            String linked = links.get(owner);
+            if (linked == null) {
+                return key;
+            }
+            String id = idOf(key);
+            String translated = linked + "." + id;
+            if (present.test(translated)) {
+                return translated;
+            }
+            int paren = id.indexOf('(');
+            if (paren < 0) {
+                return key;
+            }
+            String remapped = linked + "." + id.substring(0, paren) + Tiny.remapDesc(id.substring(paren), links);
+            return present.test(remapped) ? remapped : key;
+        }
+
+        /**
+         * Pick a move target among same-id members. SRG ids are shared across an override
+         * hierarchy, so an id alone can name a dozen methods: prefer the candidate that keeps the
+         * member's name, then its descriptor, then one owned by the linked class. Intermediary ids
+         * are unique, so modern steps never reach past the first candidate.
+         */
+        static String pickMoveTarget(Table cur, Member mp, List<String> elsewhere, Map<String, String> links, String oldOwner) {
+            if (elsewhere.size() == 1) {
+                return elsewhere.get(0);
+            }
+            for (String k : elsewhere) {
+                if (cur.methods.get(k).name().equals(mp.name())) {
+                    return k;
+                }
+            }
+            for (String k : elsewhere) {
+                if (cur.methods.get(k).interDesc().equals(mp.interDesc())) {
+                    return k;
+                }
+            }
+            String linked = links.get(oldOwner);
+            if (linked != null) {
+                for (String k : elsewhere) {
+                    if (ownerOf(k).equals(linked)) {
+                        return k;
+                    }
+                }
+            }
+            return elsewhere.get(0);
+        }
+
+        /**
+         * The adjacent table's members by official identity, for the bridge's name fallback. Fields
+         * carry no descriptor on the SRG lane, so both sides key fields by owner and name alone.
+         */
+        static Map<String, String> indexMembersByOfficial(Table cur) {
+            Map<String, String> index = new HashMap<>();
+            for (var e : cur.methods.entrySet()) {
+                index.putIfAbsent(e.getValue().owner() + "\0" + e.getValue().name() + "\0" + e.getValue().desc(), e.getKey());
+            }
+            for (var e : cur.fields.entrySet()) {
+                index.putIfAbsent(e.getValue().owner() + "\0" + e.getValue().name() + "\0", e.getKey());
+            }
+            return index;
+        }
+
+        static Map<String, String> indexClassesByOfficial(Table cur) {
+            Map<String, String> index = new HashMap<>();
+            for (var e : cur.classes.entrySet()) {
+                index.putIfAbsent(e.getValue(), e.getKey());
+            }
+            return index;
+        }
+
+        /**
+         * Bridge-pending members and classes resolve against the last version's own mappings: an
+         * official identity unchanged since the seam maps straight to the final name. Anything still
+         * unmapped reads as removed, with the bridge step. Only forward routes pend; a backport
+         * resolves eagerly at the bridge, when the SRG table is in hand.
+         */
+        static void resolvePending(
+            Chain c,
+            Diff d,
+            Table first,
+            Table last,
+            Map<String, String> pendingMethods,
+            Map<String, String> pendingFields,
+            Map<String, String> pendingClasses
+        ) throws Exception {
+            if (pendingMethods.isEmpty() && pendingFields.isEmpty() && pendingClasses.isEmpty()) {
+                return;
+            }
+            Set<String> lastMembers = Set.of(), lastClasses = Set.of();
+            if (!last.lane.equals("srg")) {
+                Proguard[] pgs = proguardsFor(last.version);
+                lastMembers = officialTriples(pgs);
+                lastClasses = officialClasses(pgs);
+            }
+            for (var e : pendingMethods.entrySet()) {
+                Member ma = first.methods.get(e.getKey());
+                String[] id = e.getValue().split("\0", -1);
+                String was = Diff.dots(ma.owner()) + "." + ma.name();
+                if (lastMembers.contains(e.getValue())) {
+                    String to = Diff.dots(id[0]) + "." + id[1];
+                    String what = id[0].equals(ma.owner()) ? "renamed" : "moved";
+                    if (what.equals("moved")) {
+                        d.methodMoved.add(new Change(ma.owner(), ma.name(), id[1], ma.desc(), id[2], id[0]));
+                    } else {
+                        d.methodRenamed.add(new Change(ma.owner(), ma.name(), id[1], ma.desc(), id[2], id[0]));
+                    }
+                    c.history.add(
+                        new Event("method", Diff.dots(ma.owner()), ma.name(), ma.desc(), what, was, to, BRIDGE_STEP)
+                    );
+                } else {
+                    d.methodRemoved.add(new Change(ma.owner(), ma.name(), null, ma.desc(), null, null));
+                    c.history.add(
+                        new Event("method", Diff.dots(ma.owner()), ma.name(), ma.desc(), "removed", was, null, BRIDGE_STEP)
+                    );
+                }
+            }
+            for (var e : pendingFields.entrySet()) {
+                Member fa = first.fields.get(e.getKey());
+                String[] id = e.getValue().split("\0", -1);
+                String was = Diff.dots(fa.owner()) + "." + fa.name();
+                if (lastMembers.contains(e.getValue())) {
+                    d.fieldRenamed.add(new Change(fa.owner(), fa.name(), id[1], fa.desc(), id[2], id[0]));
+                    c.history.add(
+                        new Event(
+                            "field",
+                            Diff.dots(fa.owner()),
+                            fa.name(),
+                            fa.desc(),
+                            "renamed",
+                            was,
+                            Diff.dots(id[0]) + "." + id[1],
+                            BRIDGE_STEP
+                        )
+                    );
+                } else {
+                    d.fieldRemoved.add(new Change(fa.owner(), fa.name(), null, fa.desc(), null, null));
+                    c.history.add(
+                        new Event("field", Diff.dots(fa.owner()), fa.name(), fa.desc(), "removed", was, null, BRIDGE_STEP)
+                    );
+                }
+            }
+            for (var e : pendingClasses.entrySet()) {
+                String a = first.classes.get(e.getKey());
+                if (lastClasses.contains(e.getValue())) {
+                    d.classRenamed.add(new String[] {a, e.getValue()});
+                    c.history.add(
+                        new Event("class", null, Diff.dots(a), null, "renamed", Diff.dots(a), Diff.dots(e.getValue()), BRIDGE_STEP)
+                    );
+                } else {
+                    d.classRemoved.add(a);
+                    c.history.add(
+                        new Event("class", null, Diff.dots(a), null, "removed", Diff.dots(a), null, BRIDGE_STEP)
+                    );
+                }
+            }
         }
 
         /** The usual map sections, so explain/fix/preflight read it unchanged, plus the chain and its history. */
@@ -1221,6 +2313,7 @@ public final class VersionMap {
         final Map<String, Set<String>> sigTo = new HashMap<>();
         final Map<String, Set<String>> sigTransitions = new HashMap<>();
         final Set<String> methodGone = new HashSet<>(), fieldGone = new HashSet<>(), sigNames = new HashSet<>();
+        final List<Map<String, String>> history = new ArrayList<>(); // kind, name, what, was, to, step, in map order
         /** Removed methods by owner (simple) and name: an override of one has nothing left to override. */
         final Set<String> removedByOwner = new HashSet<>();
         /** Call-site rewrites the game made (GameDiff's "rewrites"), by old owner (simple) and name. */
@@ -1257,6 +2350,17 @@ public final class VersionMap {
                     continue;
                 }
                 String t = line.trim();
+                if (section.equals("history") && t.contains("\"step\":")) {
+                    Map<String, String> event = new HashMap<>();
+                    event.put("kind", field(t, "kind"));
+                    event.put("name", field(t, "name"));
+                    event.put("what", field(t, "what"));
+                    event.put("was", field(t, "was"));
+                    event.put("to", field(t, "to"));
+                    event.put("step", field(t, "step"));
+                    k.history.add(event);
+                    continue;
+                }
                 if (section.equals("classesRemoved")) {
                     if (t.startsWith("\"")) {
                         String c = t.replaceAll("[\",]", "");
@@ -1349,10 +2453,18 @@ public final class VersionMap {
 
         /** The one new name for an old member name, narrowed by the type javac says it looked in. */
         static String pick(Set<String[]> candidates, String location) {
+            return forType(candidates, locationType(location));
+        }
+
+        /**
+         * The one new name the receiver's own type (or a supertype --supers names) gave this member, else null. A
+         * rename on another class with the same member name says nothing about this receiver: 1.21.2 renamed one
+         * class's getGameTime to gameTime, and Level.getGameTime stayed.
+         */
+        static String forType(Set<String[]> candidates, String type) {
             if (candidates == null || candidates.isEmpty()) {
                 return null;
             }
-            String type = locationType(location);
             if (type == null) {
                 return null;
             }
@@ -3800,23 +4912,55 @@ public final class VersionMap {
 
         static int run(Path mapFile, Path repo, boolean dryRun) throws IOException {
             Known known = Known.load(mapFile);
-            if (!"yarn".equals(known.names)) {
-                System.out.println("map-preflight: no reviewed recipes for " + known.names);
-                return 0;
+            if ("yarn".equals(known.names)) {
+                int files = 0;
+                for (Path file : Fix.sourceFiles(repo)) {
+                    String before = Files.readString(file, StandardCharsets.UTF_8);
+                    String after = ApiFix.preflight(known, file, before);
+                    if (after.equals(before)) {
+                        continue;
+                    }
+                    files++;
+                    if (!dryRun) {
+                        Files.writeString(file, after, StandardCharsets.UTF_8);
+                    }
+                }
+                System.out.println("map-preflight: " + files + " file(s)" + (dryRun ? " (dry run)" : ""));
+                return files;
             }
-            int files = 0;
+            // Map-driven lint for MCP and Mojang names: every method call and dotted field read
+            // whose name the map renamed, moved or removed is reported with the update that changed
+            // it. Unanimous renames on provably game-owned receivers are rewritten; everything else
+            // (ambiguous renames, removals, unknown receivers, mod-owned or self-declared names) is
+            // reported for a human. Parse only: no build, no game.
+            int files = 0, auto = 0, review = 0;
             for (Path file : Fix.sourceFiles(repo)) {
                 String before = Files.readString(file, StandardCharsets.UTF_8);
-                String after = ApiFix.preflight(known, file, before);
-                if (after.equals(before)) {
+                ApiFix.Lint lint;
+                try {
+                    lint = ApiFix.lintKnown(known, file, before);
+                } catch (RuntimeException failure) {
+                    System.out.println(repo.relativize(file) + ": skipped, could not parse (" + failure.getMessage() + ")");
                     continue;
                 }
-                files++;
-                if (!dryRun) {
-                    Files.writeString(file, after, StandardCharsets.UTF_8);
+                for (ApiFix.LintHit hit : lint.hits) {
+                    System.out.println(repo.relativize(file) + ":" + hit.line() + ": " + hit.detail());
+                    if (hit.auto()) {
+                        auto++;
+                    } else {
+                        review++;
+                    }
+                }
+                if (!lint.fixed.equals(before)) {
+                    files++;
+                    if (!dryRun) {
+                        Files.writeString(file, lint.fixed, StandardCharsets.UTF_8);
+                    }
                 }
             }
-            System.out.println("map-preflight: " + files + " file(s)" + (dryRun ? " (dry run)" : ""));
+            System.out.println(
+                "map-preflight: " + files + " file(s), " + auto + " auto-fix(es), " + review + " to review" + (dryRun ? " (dry run)" : "")
+            );
             return files;
         }
     }
@@ -4059,6 +5203,462 @@ public final class VersionMap {
                 }
             }
             return a.withEdits();
+        }
+
+        /** One lint finding: a call site the map knows, with its rewrite when it is unambiguous. */
+        record LintHit(int line, String oldName, String detail, boolean auto) {}
+
+        /** The lint result: findings for the report, and the source with unanimous renames applied. */
+        static final class Lint {
+            final List<LintHit> hits = new ArrayList<>();
+            String fixed;
+        }
+
+        static int lineOf(String source, int offset) {
+            int line = 1;
+            for (int i = 0; i < offset && i < source.length(); i++) {
+                if (source.charAt(i) == 10) {
+                    line++;
+                }
+            }
+            return line;
+        }
+
+        /** Call sites and field reads by their receiver: game code we can rewrite, mod code we leave alone. */
+        static final class Scope {
+            final Set<String> methods = new HashSet<>(), vars = new HashSet<>(), types = new HashSet<>();
+            final Map<String, String> varTypes = new HashMap<>(), imports = new HashMap<>(), staticImports = new HashMap<>();
+            final Set<String> ambiguousStatics = new HashSet<>();
+        }
+
+        static String simpleTypeName(String type) {
+            String t = type.replaceAll("<.*", "").replace("[]", "").trim();
+            int dot = t.lastIndexOf('.');
+            return dot >= 0 ? t.substring(dot + 1) : t;
+        }
+
+        static Scope scopeOf(CompilationUnitTree unit, List<TreePath> paths) {
+            Scope s = new Scope();
+            for (TreePath p : paths) {
+                if (p.getLeaf() instanceof MethodTree m) {
+                    s.methods.add(m.getName().toString());
+                } else if (p.getLeaf() instanceof VariableTree v) {
+                    String name = v.getName().toString();
+                    s.vars.add(name);
+                    if (v.getType() != null) {
+                        s.varTypes.put(name, simpleTypeName(v.getType().toString()));
+                    }
+                } else if (p.getLeaf() instanceof ClassTree c) {
+                    s.types.add(c.getSimpleName().toString());
+                }
+            }
+            for (ImportTree i : unit.getImports()) {
+                String fqn = i.getQualifiedIdentifier().toString();
+                int dot = fqn.lastIndexOf('.');
+                if (dot <= 0) {
+                    continue;
+                }
+                if (i.isStatic()) {
+                    String name = fqn.substring(dot + 1);
+                    if (name.equals("*") || s.staticImports.containsKey(name)) {
+                        s.ambiguousStatics.add(name);
+                    } else {
+                        s.staticImports.put(name, fqn);
+                    }
+                } else {
+                    s.imports.put(fqn.substring(dot + 1), fqn);
+                }
+            }
+            return s;
+            }
+
+        static boolean gameImport(Scope scope, String simple) {
+            String fqn = scope.imports.get(simple);
+            return fqn != null && !scope.types.contains(simple) &&
+                (fqn.startsWith("net.minecraft.") || fqn.startsWith("com.mojang."));
+        }
+
+        /** Whether a statically imported name unambiguously names game code. */
+        static boolean gameStaticImport(Scope scope, String name) {
+            String fqn = scope.staticImports.get(name);
+            return fqn != null && !scope.ambiguousStatics.contains(name) && !scope.types.contains(name) &&
+                (fqn.startsWith("net.minecraft.") || fqn.startsWith("com.mojang."));
+        }
+
+        /** The simple name of a type, or null when the tree is not a plain or qualified name. */
+        static String typeName(Tree t) {
+            if (t instanceof IdentifierTree id) {
+                return id.getName().toString();
+            }
+            if (t instanceof MemberSelectTree m) {
+                return m.getIdentifier().toString();
+            }
+            if (t instanceof ParameterizedTypeTree p) {
+                return typeName(p.getType());
+            }
+            return null;
+        }
+
+        /** Whether the nearest enclosing class or interface directly extends a game type. */
+        static boolean extendsGame(Scope scope, TreePath p) {
+            for (TreePath q = p; q != null; q = q.getParentPath()) {
+                if (!(q.getLeaf() instanceof ClassTree c)) {
+                    continue;
+                }
+                if (c.getExtendsClause() != null) {
+                    String sup = typeName(c.getExtendsClause());
+                    if (sup != null && gameImport(scope, sup)) {
+                        return true;
+                    }
+                }
+                for (Tree io : c.getImplementsClause()) {
+                    String sup = typeName(io);
+                    if (sup != null && gameImport(scope, sup)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            return false;
+        }
+
+        /** A bare identifier in a type, annotation or declaration position: a name, never a field read. */
+        static boolean nonValuePosition(TreePath p) {
+            TreePath parent = p.getParentPath();
+            if (parent == null) {
+                return true;
+            }
+            Tree t = parent.getLeaf();
+            if (t instanceof VariableTree v) {
+                return v.getType() == p.getLeaf();
+            }
+            if (t instanceof MethodTree m) {
+                return m.getReturnType() == p.getLeaf();
+            }
+            if (t instanceof NewClassTree n) {
+                return n.getIdentifier() == p.getLeaf();
+            }
+            if (t instanceof InstanceOfTree io) {
+                return io.getType() == p.getLeaf();
+            }
+            if (
+                t instanceof ClassTree ||
+                t instanceof TypeParameterTree ||
+                t instanceof ParameterizedTypeTree ||
+                t instanceof ArrayTypeTree ||
+                t instanceof WildcardTree ||
+                t instanceof UnionTypeTree ||
+                t instanceof IntersectionTypeTree ||
+                t instanceof AnnotatedTypeTree ||
+                t instanceof AnnotationTree
+            ) {
+                return true;
+            }
+            for (TreePath q = p; q != null; q = q.getParentPath()) {
+                if (q.getLeaf() instanceof AnnotationTree) {
+                    return true;
+                }
+            }
+            return false;
+            }
+
+        /** The simple type behind a call receiver, or null when the source cannot prove it. */
+        static String receiverType(Scope scope, ExpressionTree receiver) {
+            if (receiver instanceof NewClassTree n && n.getIdentifier() instanceof IdentifierTree id) {
+                String name = id.getName().toString();
+                return scope.imports.containsKey(name) ? simpleTypeName(scope.imports.get(name)) : name;
+            }
+            // Only the variable or type itself: in a.b.call() the receiver is b, whose type a does not tell.
+            String root = receiver instanceof IdentifierTree id ? id.getName().toString() : null;
+            if (root == null || root.equals("this") || root.equals("super")) {
+                return null;
+            }
+            if (scope.varTypes.containsKey(root)) {
+                return scope.varTypes.get(root);
+            }
+            if (scope.imports.containsKey(root)) {
+                return simpleTypeName(scope.imports.get(root));
+            }
+            return null;
+        }
+
+        /** A member select that names a type or a package, not a member access. */
+        static boolean qualifiedContext(TreePath p) {
+            TreePath parent = p.getParentPath();
+            if (parent == null) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof MemberSelectTree) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof ImportTree) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof VariableTree v && v.getType() == p.getLeaf()) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof MethodTree m && m.getReturnType() == p.getLeaf()) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof NewClassTree n && n.getIdentifier() == p.getLeaf()) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof ClassTree) {
+                return true;
+            }
+            if (parent.getLeaf() instanceof InstanceOfTree io && io.getType() == p.getLeaf()) {
+                return true;
+            }
+            for (TreePath q = p; q != null; q = q.getParentPath()) {
+                if (q.getLeaf() instanceof ImportTree) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static int callArity(String desc) {
+            int depth = desc.indexOf('('), end = desc.indexOf(')');
+            if (depth < 0 || end < 0) {
+                return -1;
+            }
+            int count = 0, i = depth + 1;
+            while (i < end) {
+                char c = desc.charAt(i);
+                if (c == '[') {
+                    i++;
+                } else if (c == 'L') {
+                    int semi = desc.indexOf(';', i);
+                    if (semi < 0 || semi > end) {
+                        return -1;
+                    }
+                    i = semi + 1;
+                    count++;
+                } else {
+                    i++;
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        static String stepsFor(Known k, String kind, String name, Set<String> whats) {
+            String key = k.names + "\0" + k.fromVersion + "\0" + k.toVersion + "\0" + kind + "\0" + name + "\0" + String.join(",", new TreeSet<>(whats));
+            return stepsForCache.computeIfAbsent(key, x -> {
+                List<String> steps = new ArrayList<>();
+                for (Map<String, String> e : k.history) {
+                    if (kind.equals(e.get("kind")) && name.equals(e.get("name")) && whats.contains(e.get("what"))) {
+                        steps.add(e.get("step"));
+                    }
+                }
+                return String.join(", ", new LinkedHashSet<>(steps));
+            });
+        }
+
+        static final Map<String, String> stepsForCache = new HashMap<>();
+
+        static String candidatesDetail(Set<String[]> candidates) {
+            Set<String> names = new TreeSet<>();
+            for (String[] c : candidates) {
+                names.add(c[1]);
+            }
+            return String.join("|", names);
+        }
+
+        /**
+         * Map-driven lint for any namespace: parse only, no build. Every method call and dotted
+         * field read whose name the map renamed, moved or removed is reported with the update that
+         * A rename is rewritten only when it is unanimous (one new name everywhere),
+         * the file does not declare the name itself, and the receiver provably names a game type
+         * (or is a game static import); unqualified calls in a game subclass and everything else
+         * are reported for a human.
+         */
+        static Lint lintKnown(Known k, Path file, String source) throws IOException {
+            ApiFix a = new ApiFix(file, source);
+            Lint out = new Lint();
+            out.fixed = source;
+            List<String> lines = Arrays.asList(source.split("\\R", -1));
+            Scope scope = scopeOf(a.unit, a.paths);
+            for (TreePath p : a.paths) {
+                if (p.getLeaf() instanceof MethodInvocationTree call && call.getMethodSelect() instanceof MemberSelectTree member) {
+                    String name = member.getIdentifier().toString();
+                    int line = lineOf(source, a.start(member));
+                    if (scope.methods.contains(name)) {
+                        if (k.methodTo.containsKey(name) || k.methodGone.contains(name) || k.sigNames.contains(name)) {
+                            out.hits.add(new LintHit(line, name, name + " declared here; skipped [self-declared]", false));
+                        }
+                        continue;
+                    }
+                    Set<String[]> candidates = k.methodTo.get(name);
+                    if (candidates == null || candidates.isEmpty()) {
+                        if (k.methodGone.contains(name)) {
+                            out.hits.add(
+                                new LintHit(line, name, name + " removed (" + stepsFor(k, "method", name, Set.of("removed")) + ") [hand-fix]", false)
+                            );
+                        } else if (k.sigNames.contains(name)) {
+                            boolean any = false;
+                            for (Map.Entry<String, Set<String>> e : k.sigTo.entrySet()) {
+                                if (!e.getKey().endsWith("." + name)) {
+                                    continue;
+                                }
+                                for (String desc : e.getValue()) {
+                                    if (callArity(desc) == call.getArguments().size()) {
+                                        any = true;
+                                    }
+                                }
+                            }
+                            if (!any) {
+                                out.hits.add(
+                                    new LintHit(line, name, name + " signature changed (" + stepsFor(k, "method", name, Set.of("signature")) + ") [review args]", false)
+                                );
+                            }
+                        }
+                        continue;
+                    }
+                    String steps = stepsFor(k, "method", name, Set.of("renamed", "moved"));
+                    String type = receiverType(scope, member.getExpression());
+                    boolean game = type != null && gameImport(scope, type);
+                    String to = game ? Known.forType(candidates, type) : null;
+                    boolean applied = false;
+                    if (to != null) {
+                        String next = replaceCall(out.fixed, line, name, to);
+                        applied = !next.equals(out.fixed);
+                        out.fixed = next;
+                    }
+                    String where = member.getExpression() + "." + name;
+                    if (applied) {
+                        out.hits.add(new LintHit(line, name, where + " -> " + to + " (" + steps + ") [auto]", true));
+                    } else {
+                        out.hits.add(
+                            new LintHit(line, name, where + " -> " + candidatesDetail(candidates) + " (" + steps + ") [review]", false)
+                        );
+                    }
+                } else if (p.getLeaf() instanceof MemberSelectTree member && !qualifiedContext(p)) {
+                    String name = member.getIdentifier().toString();
+                    int line = lineOf(source, a.start(member));
+                    if (scope.vars.contains(name)) {
+                        if (k.fieldTo.containsKey(name) || k.fieldGone.contains(name)) {
+                            out.hits.add(new LintHit(line, name, name + " declared here; skipped [self-declared]", false));
+                        }
+                        continue;
+                    }
+                    String lineText = line >= 1 && line <= lines.size() ? lines.get(line - 1) : "";
+                    Set<String[]> candidates = k.fieldTo.get(name);
+                    if (candidates == null || candidates.isEmpty()) {
+                        if (k.fieldGone.contains(name)) {
+                            out.hits.add(
+                                new LintHit(line, name, name + " removed (" + stepsFor(k, "field", name, Set.of("removed")) + ") [hand-fix]", false)
+                            );
+                        }
+                        continue;
+                    }
+                    if (lineText.matches(".*\\b" + Pattern.quote(name) + "\\s*\\(.*")) {
+                        out.hits.add(new LintHit(line, name, name + " -> " + candidatesDetail(candidates) + " [review: call-shaped]", false));
+                        continue;
+                    }
+                    String steps = stepsFor(k, "field", name, Set.of("renamed", "moved"));
+                    String type = receiverType(scope, member.getExpression());
+                    boolean game = type != null && gameImport(scope, type);
+                    String to = game ? Known.forType(candidates, type) : null;
+                    boolean applied = false;
+                    if (to != null) {
+                        String next = replaceField(out.fixed, line, name, to);
+                        applied = !next.equals(out.fixed);
+                        out.fixed = next;
+                    }
+                    String where = member.getExpression() + "." + name;
+                    if (applied) {
+                        out.hits.add(new LintHit(line, name, where + " -> " + to + " (" + steps + ") [auto]", true));
+                    } else {
+                        out.hits.add(new LintHit(line, name, where + " -> " + candidatesDetail(candidates) + " (" + steps + ") [review]", false));
+                    }
+                } else if (
+                    p.getLeaf() instanceof MethodInvocationTree call &&
+                    call.getMethodSelect() instanceof IdentifierTree id &&
+                    !(call.getMethodSelect() instanceof MemberSelectTree)
+                ) {
+                    // An unqualified call: provable only through a static import or an inherited
+                    // game member. Anything else is the mod's own code or broken code; stay silent.
+                    String name = id.getName().toString();
+                    if (scope.methods.contains(name) || !k.methodTo.containsKey(name)) {
+                        continue;
+                    }
+                    int line = lineOf(source, a.start(call));
+                    String steps = stepsFor(k, "method", name, Set.of("renamed", "moved"));
+                    if (gameStaticImport(scope, name)) {
+                        String to = Known.unanimous(k.methodTo.get(name));
+                        if (to != null) {
+                            String next = replaceCall(out.fixed, line, name, to);
+                            if (!next.equals(out.fixed)) {
+                                out.fixed = next;
+                                out.hits.add(new LintHit(line, name, name + " -> " + to + " (" + steps + ") [auto: static import]", true));
+                                continue;
+                            }
+                        }
+                    }
+                    if (!extendsGame(scope, p)) {
+                        continue;
+                    }
+                    out.hits.add(
+                        new LintHit(
+                            line,
+                            name,
+                            name + " -> " + candidatesDetail(k.methodTo.get(name)) + " (" + steps + ") [review: unqualified call in game subclass]",
+                            false
+                        )
+                    );
+                } else if (p.getLeaf() instanceof IdentifierTree id && !(p.getParentPath() instanceof MemberSelectTree) && !nonValuePosition(p)) {
+                    // A bare name: a local (skipped silently), an inherited game field (reported),
+                    // a static import (auto when unanimous), or nothing we can prove (skipped).
+                    String name = id.getName().toString();
+                    if (scope.vars.contains(name) || scope.methods.contains(name) || !k.fieldTo.containsKey(name)) {
+                        continue;
+                    }
+                    int line = lineOf(source, a.start(id));
+                    String steps = stepsFor(k, "field", name, Set.of("renamed", "moved"));
+                    if (gameStaticImport(scope, name)) {
+                        String to = Known.unanimous(k.fieldTo.get(name));
+                        if (to != null) {
+                            String next = replaceField(out.fixed, line, name, to);
+                            if (!next.equals(out.fixed)) {
+                                out.fixed = next;
+                                out.hits.add(new LintHit(line, name, name + " -> " + to + " (" + steps + ") [auto: static import]", true));
+                                continue;
+                            }
+                        }
+                    }
+                    if (!extendsGame(scope, p)) {
+                        continue;
+                    }
+                    out.hits.add(
+                        new LintHit(
+                            line,
+                            name,
+                            name + " -> " + candidatesDetail(k.fieldTo.get(name)) + " (" + steps + ") [review: unqualified field in game subclass]",
+                            false
+                        )
+                    );
+                }
+            }
+            return out;
+        }
+
+        static String replaceCall(String source, int line, String from, String to) {
+            return replaceOnLine(source, line, "\\b" + Pattern.quote(from) + "(?=\\s*\\()", Matcher.quoteReplacement(to));
+        }
+
+        static String replaceField(String source, int line, String from, String to) {
+            return replaceOnLine(source, line, "\\b" + Pattern.quote(from) + "\\b(?![\\w$])", Matcher.quoteReplacement(to));
+        }
+
+        static String replaceOnLine(String source, int line, String pattern, String replacement) {
+            String nl = source.contains("\r\n") ? "\r\n" : "\n";
+            String[] lines = source.split("\r\n|\n", -1);
+            if (line < 1 || line > lines.length) {
+                return source;
+            }
+            lines[line - 1] = Pattern.compile(pattern).matcher(lines[line - 1]).replaceAll(replacement);
+            return String.join(nl, lines);
         }
 
         String opaqueTextColor(ExpressionTree color) {

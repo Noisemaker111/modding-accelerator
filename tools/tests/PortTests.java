@@ -14,7 +14,7 @@ public final class PortTests {
         System.out.println("PASS " + message);
     }
 
-    /** Hub routing from the change index, rule ranges, the pre-1.14.4 refusal and errors named by update. */
+    /** Hub routing from the change index, rule ranges, the legacy SRG route across the seam both ways, and errors named by update. */
     static void routeChecks(Path home, Port port, Path scratch) throws Exception {
         Route forward = Route.plan(home, "1.20.1", "1.21.6");
         check(
@@ -52,14 +52,66 @@ public final class PortTests {
             forward.stepsCovered("1.21.6 -> 26.3 (official names)", "mojmap").isEmpty(),
             "a rule for other names, the other direction or updates not crossed does not run"
         );
-        Map<String, Object> refused = Route.blocked(home, "1.12.2", "1.20.1");
+        Map<String, Object> refuse = Route.blocked(home, "1.9", "1.12.2");
         check(
-            refused != null &&
-            "blocked".equals(refused.get("tier")) &&
-            String.valueOf(refused.get("details")).contains("1.14.4") &&
-            Route.blocked(home, "1.20.1", "1.21.6") == null,
-            "releases before 1.14.4 are refused with the reason; later ones are not: " +
-            (refused == null ? null : refused.get("details"))
+            Route.blocked(home, "1.12.2", "1.20.1") == null &&
+            Route.blocked(home, "1.20.1", "1.12.2") == null &&
+            Route.blocked(home, "1.20.1", "1.21.6") == null &&
+            refuse != null &&
+            "blocked".equals(refuse.get("tier")),
+            "a port crossing 1.14.4 is portable either way through the bridge; only releases no indexed step touches stay blocked: " +
+            (refuse == null ? null : refuse.get("details"))
+        );
+        Route seam = Route.plan(home, "1.12.2", "1.20.1");
+        check(
+            seam != null &&
+            seam.crossesSeam() &&
+            seam.seamChain().get(0).equals("1.12.2") &&
+            seam.seamChain().get(seam.seamChain().size() - 1).equals("1.20.1") &&
+            seam.steps().contains(Route.BRIDGE_STEP) &&
+            Route.BRIDGE_STEP.equals(Route.FIRST_MAPPED + " -> " + Route.FIRST_MAPPED) &&
+            seam.srgChain().get(seam.srgChain().size() - 1).equals("1.14.4") &&
+            seam.mappedChain().get(0).equals("1.14.4"),
+            "a seam route joins the SRG run, the bridge pseudo-step and the intermediary run: " +
+            (seam == null ? null : seam.steps())
+        );
+        Route seamBack = Route.plan(home, "1.20.1", "1.12.2");
+        check(
+            seamBack != null &&
+            seamBack.crossesSeam() &&
+            seamBack.seamChain().get(0).equals("1.20.1") &&
+            seamBack.seamChain().get(seamBack.seamChain().size() - 1).equals("1.12.2") &&
+            seamBack.steps().contains(Route.BRIDGE_STEP) &&
+            seamBack.srgChain().get(0).equals("1.14.4") &&
+            seamBack.srgChain().get(seamBack.srgChain().size() - 1).equals("1.12.2"),
+            "a backport walks the same chain in reverse, bridge step included: " +
+            (seamBack == null ? null : seamBack.steps())
+        );
+        check(
+            seam.stepsCovered("1.12.2 -> 1.20.1 (mcp)", "mcp").contains(Route.BRIDGE_STEP) &&
+            seam.stepsCovered("1.12.2 -> 1.20.1 (mcp)", "mojmap").isEmpty(),
+            "a rule spanning the seam covers the bridge step on an MCP source, nothing on a Mojang one"
+        );
+        Route hubs = Route.plan(home, "1.7.10", "1.14.4");
+        check(
+            hubs != null &&
+            hubs.waypoints.equals(List.of("1.7.10", "1.8.9", "1.10.2", "1.12.2", "1.14.4")) &&
+            hubs.srgChain().equals(hubs.versions) &&
+            hubs.mappedChain().equals(List.of("1.14.4")) &&
+            hubs.linkOf("1.12.2 -> 1.14.4").equals("srg") &&
+            Route.blocked(home, "1.7.10", "1.12.2") == null &&
+            Route.blocked(home, "1.12.2", "1.14.4") == null &&
+            Route.blocked(home, "1.14.4", "1.12.2") == null &&
+            Route.blocked(home, "1.9", "1.12.2") != null,
+            "the legacy hubs route hub to hub on the SRG chain to 1.14.4; a non-hub legacy release stays blocked: " +
+            (hubs == null ? null : hubs.waypoints)
+        );
+        check(
+            hubs.stepsCovered("1.12.2 -> 1.14.4 (mojmap)", "mcp").isEmpty() &&
+            hubs.stepsCovered("1.12.2 -> 1.14.4 (mcp)", "mcp").equals(List.of("1.12.2 -> 1.14.4")) &&
+            hubs.stepsCovered("1.12.2 -> 1.14.4 (mcp)", "mojmap").isEmpty() &&
+            hubs.stepsCovered("1.12.2 -> 1.14.4 (mcp)", "mcp:stable_39").equals(List.of("1.12.2 -> 1.14.4")),
+            "Mojang-named rules never run on an MCP source; MCP rules run only there, pinned channel included"
         );
         check(
             Route.plan(home, "1.21.1-rc1", "1.21.6") == null,

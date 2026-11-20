@@ -113,6 +113,8 @@ public final class PortPreflightTest {
         VersionMap.Known wrongHop = VersionMap.Known.load(colorMap); wrongHop.fromVersion = "1.21.4";
         require(VersionMap.ApiFix.preflight(wrongHop, scratch.resolve("ColorDemo.java"), rgb).equals(rgb), "unknown version hop refused");
 
+        lintChecks(scratch);
+
         // An @Override that stopped overriding: the game renamed render differently per owner, so the class's own
         // supertypes pick the new name; without them nothing is guessed.
         Path repo = Files.createDirectories(scratch.resolve("overrides"));
@@ -718,6 +720,169 @@ public final class PortPreflightTest {
         require(Files.readString(cr.resolve("Other.java")).equals(own), "a file that does not import the game's class is untouched");
 
         System.out.println("PASS: mapping-backed preflight and guarded lookalikes");
+    }
+
+    static void lintChecks(Path scratch) throws Exception {
+        Path map = scratch.resolve("lint-map.json");
+        Files.writeString(map, """
+            { "from": "1.12.2", "to": "1.14.4", "names": "mcp",
+              "methods": [
+                { "owner": "net.minecraft.block.Block", "from": "getBlockState", "to": "getStateContainer", "desc": "()Lnet/minecraft/block/state/IBlockState;", "newDesc": "()Lnet/minecraft/block/state/BlockStateContainer;" },
+                { "owner": "net.minecraft.block.Block", "from": "getFoo", "to": "getFooA", "desc": "()V", "newDesc": "()V" },
+                { "owner": "net.minecraft.block.Block", "from": "getFoo", "to": "getFooB", "desc": "()V", "newDesc": "()V" },
+                { "owner": "net.minecraft.client.gui.FontRenderer", "from": "isKeyDown", "to": "isKeyDown", "desc": "(I)Z", "newDesc": "(II)Z" },
+                { "owner": "net.minecraft.world.storage.WorldInfo", "from": "getWorldTime", "to": "worldTime", "desc": "()J", "newDesc": "()J" }
+              ],
+              "methodsRemoved": [
+                { "owner": "net.minecraft.block.Block", "from": "deadMethod", "desc": "()V", "newDesc": null }
+              ],
+              "fields": [
+                { "owner": "net.minecraft.block.Block", "from": "slipperiness", "to": "friction", "desc": "F", "newDesc": "F" },
+                { "owner": "net.minecraft.world.EnumDifficulty", "from": "NORMAL", "to": "OVERWORLD", "desc": "I", "newDesc": "I" }
+              ],
+              "fieldsRemoved": [
+                { "owner": "net.minecraft.block.Block", "from": "deadField", "desc": "I", "newDesc": null }
+              ],
+              "signatures": [
+                { "owner": "net.minecraft.client.gui.FontRenderer", "from": "isKeyDown", "to": "isKeyDown", "desc": "(I)Z", "newDesc": "(II)Z" }
+              ],
+              "history": [
+                { "kind": "method", "owner": "net.minecraft.block.Block", "name": "getBlockState", "desc": "()V", "what": "renamed", "was": "net.minecraft.block.Block.getBlockState", "to": "net.minecraft.block.Block.getStateContainer", "step": "1.12.2 -> 1.14.4" },
+                { "kind": "method", "owner": "net.minecraft.block.Block", "name": "getFoo", "desc": "()V", "what": "renamed", "was": "net.minecraft.block.Block.getFoo", "to": "net.minecraft.block.Block.getFooA", "step": "1.12.2 -> 1.14.4" },
+                { "kind": "method", "owner": "net.minecraft.block.Block", "name": "deadMethod", "desc": "()V", "what": "removed", "was": "net.minecraft.block.Block.deadMethod", "to": null, "step": "1.12.2 -> 1.14.4" },
+                { "kind": "field", "owner": "net.minecraft.block.Block", "name": "slipperiness", "desc": "F", "what": "renamed", "was": "net.minecraft.block.Block.slipperiness", "to": "net.minecraft.block.Block.friction", "step": "1.12.2 -> 1.14.4" }
+              ] }
+            """);
+        VersionMap.Known known = VersionMap.Known.load(map);
+        String source = """
+            import net.minecraft.block.Block;
+            class Demo {
+              Object state(Block block) {
+                return block.getBlockState();
+              }
+              Object ambiguous(Block block) {
+                return block.getFoo();
+              }
+              Object gone(Block block) {
+                return block.deadMethod();
+              }
+              Object unqualified(Block block) {
+                return getFoo(block);
+              }
+              float slip(Block block) {
+                return block.slipperiness;
+              }
+              int dead(Block block) {
+                return block.deadField;
+              }
+              boolean keys(Object input) {
+                return input.isKeyDown(1);
+              }
+              boolean keys2(Object input) {
+                return input.isKeyDown(1, 2);
+              }
+              long time(Block block) {
+                return block.getWorldTime();
+              }
+              Object normal() {
+                return Block.NORMAL;
+              }
+              Object chained(Block block) {
+                return block.next.slipperiness;
+              }
+            }
+            """;
+        VersionMap.ApiFix.Lint lint = VersionMap.ApiFix.lintKnown(known, scratch.resolve("Demo.java"), source);
+        require(lint.hits.stream().anyMatch(h -> h.auto() && h.detail().contains("1.12.2 -> 1.14.4")), "auto fixes name their update");
+        String[] auto = lint.hits.stream().filter(h -> h.auto()).map(h -> h.oldName()).sorted().toArray(String[]::new);
+        require(java.util.Arrays.equals(auto, new String[] {"getBlockState", "slipperiness"}), "unanimous game-owned renames auto-apply: " + String.join(",", auto));
+        require(lint.hits.stream().anyMatch(h -> h.detail().contains("getFoo") && h.detail().contains("[review]")), "ambiguous rename reported");
+        // A rename made on another class proves nothing about this receiver (1.21.2 renamed one class's getGameTime and Level kept its own).
+        require(lint.hits.stream().anyMatch(h -> h.detail().startsWith("block.getWorldTime") && h.detail().contains("[review]")), "a rename on another owner is reported, not applied");
+        require(lint.hits.stream().anyMatch(h -> h.detail().startsWith("Block.NORMAL") && h.detail().contains("[review]")), "a field renamed on another owner is reported, not applied");
+        require(lint.hits.stream().noneMatch(h -> h.auto() && h.detail().startsWith("block.next.")), "a chain's receiver type is not its root's");
+        require(lint.fixed.contains("block.getWorldTime()") && lint.fixed.contains("Block.NORMAL") && lint.fixed.contains("block.next.slipperiness"), "other owners' renames left as written");
+        require(lint.hits.stream().anyMatch(h -> h.detail().contains("deadMethod") && h.detail().contains("[hand-fix]")), "removed method reported with its update");
+        require(lint.hits.stream().anyMatch(h -> h.detail().contains("deadField") && h.detail().contains("[hand-fix]")), "removed field reported");
+        require(lint.hits.stream().noneMatch(h -> h.detail().contains("unqualified call")), "plain unqualified calls stay silent: no game superclass, no static import");
+        String heir = String.join("\n",
+            "import net.minecraft.block.Block;",
+            "class GameChild extends Block {",
+            "  Object u(Block b) {",
+            "    return getFoo(b);",
+            "  }",
+            "  float slip() {",
+            "    return slipperiness;",
+            "  }",
+            "}");
+        VersionMap.ApiFix.Lint heirLint = VersionMap.ApiFix.lintKnown(known, scratch.resolve("GameChild.java"), heir);
+        require(heirLint.hits.stream().anyMatch(h -> h.detail().contains("getFoo") && h.detail().contains("[review: unqualified call in game subclass]")), "inherited game calls are reported, never auto-applied");
+        require(heirLint.hits.stream().anyMatch(h -> h.detail().contains("slipperiness") && h.detail().contains("[review: unqualified field in game subclass]")), "inherited game fields are reported");
+        require(heirLint.hits.stream().noneMatch(h -> h.auto()), "nothing auto-applies without a provable receiver");
+        String staticImp = String.join("\n",
+            "import net.minecraft.block.Block;",
+            "import static net.minecraft.block.Block.getBlockState;",
+            "class StaticUser {",
+            "  Object state(Block block) {",
+            "    return getBlockState();",
+            "  }",
+            "}");
+        VersionMap.ApiFix.Lint staticLint = VersionMap.ApiFix.lintKnown(known, scratch.resolve("StaticUser.java"), staticImp);
+        require(staticLint.hits.stream().anyMatch(h -> h.auto() && h.detail().startsWith("getBlockState -> getStateContainer")), "unambiguous static imports auto-apply");
+        require(lint.hits.stream().anyMatch(h -> h.detail().contains("signature changed") && h.detail().contains("[review args]")), "arity change flagged");
+        require(lint.hits.stream().noneMatch(h -> h.detail().contains("keys2")), "matching arity stays quiet");
+        require(lint.fixed.contains("block.getStateContainer()") && lint.fixed.contains("block.friction"), "rewrites applied");
+        require(lint.hits.stream().anyMatch(h -> h.auto() && h.detail().startsWith("block.getBlockState")), "findings name the receiver");
+        require(!lint.fixed.contains("block.getBlockState()") && !lint.fixed.contains("block.slipperiness"), "old names gone");
+        require(lint.fixed.contains("block.getFoo()") && lint.fixed.contains("block.deadMethod()"), "review items untouched");
+        require(VersionMap.ApiFix.lintKnown(known, scratch.resolve("Demo.java"), lint.fixed).hits.stream().noneMatch(h -> h.auto()), "second pass finds nothing left to auto-apply");
+        String shadowed = source.replace("class Demo {", "class Demo {\n  int getBlockState() { return 0; }");
+        VersionMap.ApiFix.Lint shadowedLint = VersionMap.ApiFix.lintKnown(known, scratch.resolve("Shadow.java"), shadowed);
+        require(shadowedLint.hits.stream().anyMatch(h -> h.oldName().equals("getBlockState") && h.detail().contains("[self-declared]")), "self-declared names are skipped loudly, not silently");
+        require(shadowedLint.hits.stream().noneMatch(h -> h.auto() && h.oldName().equals("getBlockState")), "self-declared names never auto-apply");
+        Path repo = scratch.resolve("repo");
+        Files.createDirectories(repo);
+        Files.writeString(repo.resolve("Demo.java"), source);
+        int files = VersionMap.Preflight.run(map, repo, true);
+        require(files == 1, "dry-run preflight reports the file without writing, got " + files);
+        require(Files.readString(repo.resolve("Demo.java")).equals(source), "dry run changes nothing");
+        int wrote = VersionMap.Preflight.run(map, repo, false);
+        require(wrote == 1 && Files.readString(repo.resolve("Demo.java")).contains("block.getStateContainer()"), "preflight applies the map fix");
+        Path backMap = scratch.resolve("back-map.json");
+        Files.writeString(backMap, """
+            { "from": "1.15.2", "to": "1.12.2", "names": "mojmap",
+              "methods": [
+                { "owner": "net.minecraft.world.level.block.Block", "from": "getStateDefinition", "to": "getBlockState", "desc": "()Lnet/minecraft/world/level/block/state/StateDefinition;", "newDesc": "()Lnet/minecraft/block/state/BlockStateContainer;" }
+              ],
+              "history": [
+                { "kind": "method", "owner": "net.minecraft.world.level.block.Block", "name": "getStateDefinition", "desc": "()V", "what": "renamed", "was": "net.minecraft.world.level.block.Block.getStateDefinition", "to": "net.minecraft.block.Block.getBlockState", "step": "1.14.4 -> 1.14.4" }
+              ] }
+            """);
+        String modern = """
+            import net.minecraft.world.level.block.Block;
+            class Modern {
+              Object state(Block block) {
+                return block.getStateDefinition();
+              }
+            }
+            """;
+        VersionMap.ApiFix.Lint back = VersionMap.ApiFix.lintKnown(VersionMap.Known.load(backMap), scratch.resolve("Modern.java"), modern);
+        require(back.hits.size() == 1 && back.hits.get(0).auto() && back.fixed.contains("block.getBlockState()"), "backports lint the same way, Mojang names to MCP");
+        VersionMap.Known other = new VersionMap.Known();
+        other.fromVersion = "9";
+        other.toVersion = "9";
+        other.names = "mcp";
+        java.util.Map<String, String> row = new java.util.HashMap<>();
+        row.put("kind", "method");
+        row.put("name", "getBlockState");
+        row.put("what", "renamed");
+        row.put("step", "9 -> 9");
+        other.history.add(row);
+        require(
+            VersionMap.ApiFix.stepsFor(other, "method", "getBlockState", java.util.Set.of("renamed")).equals("9 -> 9") &&
+            VersionMap.ApiFix.stepsFor(known, "method", "getBlockState", java.util.Set.of("renamed")).contains("1.12.2 -> 1.14.4"),
+            "step lookup is per-map; cached steps never leak across maps"
+        );
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }
 }

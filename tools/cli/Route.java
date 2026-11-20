@@ -12,6 +12,9 @@ final class Route {
 
     static final String FIRST_MAPPED = "1.14.4", FIRST_UNOBFUSCATED = "26.1";
 
+    /** The pseudo-step a seam-crossing chain records the MCP to Mojang key translation under. Kept equal to VersionMap.BRIDGE_STEP. */
+    static final String BRIDGE_STEP = FIRST_MAPPED + " -> " + FIRST_MAPPED;
+
     record Hop(String from, String to, List<String> steps) {}
 
     final String from, to;
@@ -28,7 +31,12 @@ final class Route {
         return harness.resolve("coverage/changes/index.json");
     }
 
-    /** A precise refusal for releases with no official names, or null when the versions are portable. */
+    /** Whether a plain release sits in the SRG world: before the first Mojang-mapped release. */
+    static boolean legacy(String version) {
+        return version.matches("\\d+(\\.\\d+)*") && Versions.compare(version, FIRST_MAPPED) < 0;
+    }
+
+    /** A precise refusal for releases no indexed step touches, or null when portable. */
     static Map<String, Object> blocked(Path harness, String from, String to) throws IOException {
         if (from.isBlank() || to.isBlank()) return null;
         for (String version : List.of(from, to)) {
@@ -45,15 +53,7 @@ final class Route {
                 "blocked",
                 List.of(Json.map("version", version, "reason", reason)),
                 "details",
-                "Blocked: Minecraft " +
-                version +
-                " is before " +
-                FIRST_MAPPED +
-                ". " +
-                reason +
-                " mmt ports between " +
-                FIRST_MAPPED +
-                " and the newest indexed release; nothing was changed."
+                "Blocked: Minecraft " + version + ". " + reason + " Nothing was changed."
             );
         }
         for (String version : List.of(from, to)) {
@@ -128,11 +128,6 @@ final class Route {
                 if (version.equals(row.get("id"))) return String.valueOf(row.get("reason"));
             }
         }
-        if (Versions.compare(version, FIRST_MAPPED) < 0) return (
-            "Mojang published no official mappings before " +
-            FIRST_MAPPED +
-            " and Fabric intermediary ids start there, so no proven name links this release to newer ones (it would need MCP or other legacy community mappings, which mmt does not use)."
-        );
         return null;
     }
 
@@ -173,6 +168,19 @@ final class Route {
             for (int k = a; k < b; k++) steps.add(route.versions.get(k) + " -> " + route.versions.get(k + 1));
             route.hops.add(new Hop(route.waypoints.get(w), route.waypoints.get(w + 1), steps));
         }
+        if (route.crossesSeam()) {
+            // The lane change records under its own pseudo-step, so history and hop records name it.
+            for (Hop hop : route.hops) {
+                List<String> steps = hop.steps();
+                for (int s = 0; s < steps.size(); s++) {
+                    String[] p = steps.get(s).split(" -> ");
+                    if (p[0].equals(FIRST_MAPPED) != p[1].equals(FIRST_MAPPED)) {
+                        steps.add(p[0].equals(FIRST_MAPPED) ? s : s + 1, BRIDGE_STEP);
+                        break;
+                    }
+                }
+            }
+        }
         return route;
     }
 
@@ -188,8 +196,49 @@ final class Route {
         return linked.getOrDefault(step, linked.getOrDefault(p[1] + " -> " + p[0], "unknown"));
     }
 
-    /** The releases a rename map can be joined across: the leading run of releases before 26.1. */
+    /** The releases an intermediary rename map can be joined across: the leading run before 26.1, from 1.14.4 on. */
     List<String> mappedChain() {
+        List<String> chain = new ArrayList<>();
+        for (String version : versions) if (
+            Versions.compare(version, FIRST_MAPPED) >= 0 && Versions.compare(version, FIRST_UNOBFUSCATED) < 0
+        ) chain.add(version);
+        return chain;
+    }
+
+    /**
+     * The releases an SRG rename map can be joined across: this route's run at or before 1.14.4, in
+     * walking order. Before 1.14.4 the index holds only the SRG hubs, so the run is hub to hub;
+     * 1.14.4 itself has SRG data and closes the chain.
+     */
+    List<String> srgChain() {
+        List<String> chain = new ArrayList<>();
+        for (String version : versions) {
+            if (Versions.compare(version, FIRST_MAPPED) > 0) {
+                if (!chain.isEmpty()) {
+                    break;
+                }
+            } else {
+                chain.add(version);
+            }
+        }
+        return chain;
+    }
+
+    /** Whether the route leaves the SRG world: releases on both sides of the first Mojang-mapped one. */
+    boolean crossesSeam() {
+        boolean below = false, above = false;
+        for (String version : versions) {
+            if (Versions.compare(version, FIRST_MAPPED) > 0) {
+                above = true;
+            } else {
+                below = true;
+            }
+        }
+        return below && above;
+    }
+
+    /** Every release a rename map can be joined across, in walking order: the SRG run to 1.14.4, then the intermediary run. */
+    List<String> seamChain() {
         List<String> chain = new ArrayList<>();
         for (String version : versions) if (Versions.compare(version, FIRST_UNOBFUSCATED) < 0) chain.add(version);
         return chain;
@@ -209,7 +258,8 @@ final class Route {
         if (jump == null || jump.isBlank()) return steps();
         String tag = jump.contains("(") ? jump.substring(jump.indexOf('(')).toLowerCase(Locale.ROOT) : "";
         if (tag.contains("yarn") && !names.equals("yarn")) return List.of();
-        if ((tag.contains("mojmap") || tag.contains("official")) && names.equals("yarn")) return List.of();
+        if ((tag.contains("mojmap") || tag.contains("official")) && !names.equals("mojmap")) return List.of();
+        if (tag.contains("mcp") && !(names.equals("mcp") || names.startsWith("mcp:"))) return List.of();
         String[] range = jump.replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
         if (range.length != 2 || !range[0].matches("\\d[\\w.]*") || !range[1].matches("\\d[\\w.]*")) return steps();
         // A rule rewrites old code into new code, so a forward rule never runs on a backport (or the reverse).
