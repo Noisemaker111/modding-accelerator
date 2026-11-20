@@ -187,7 +187,7 @@
     "port.corpus-builds",
     "port.mods-working"
    ],
-   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Ported as jars, 57% of the 150 most-downloaded mods of each release link against the next one, over 61 updates of Fabric and NeoForge (43 of 150 for NeoForge 1.21.1 to 1.21.2). 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.",
+   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Ported as jars and linked against the next release and its loader, 62% of the 150 most-downloaded mods of each release link, over 64 updates of Fabric and NeoForge (NeoForge from 1.20.2). 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.",
    "try": [
     {
      "say": "move to another Minecraft version; every edit can be undone",
@@ -499,25 +499,30 @@
      "id": "57",
      "title": "The link check reads the loader too, and proves Fabric in a client",
      "part": "Port by changed game part",
-     "status": "doing",
+     "status": "done",
      "text": "A mod links against its loader as well as the game: NeoForge's own classes with FML and its event bus, Fabric Loader and Fabric API. The scoreboard only read the game (and NeoForge's own classes), so a loader API change was a surprise at load time (Explorer's and Nature's Compass on 1.20.6 -> 1.21, ModLoadingContext.registerConfig). The snapshot gets every library NeoForge's own pom lists, and Fabric Loader and Fabric API with the interfaces Fabric API adds to game classes; loader breaks are ranked with game ones. The shared cache under ~/.mmt/exposure is keyed by the content of the tools that built it, so worktrees running at once cannot break each other (#126). exposure.py load starts ported Fabric mods in a real Fabric client too (its intermediary names translated for mmt's agent).",
      "start": "2026-11-19",
      "target": "2026-11-21",
      "finish": "port.jar-links.every-update counts 21 NeoForge updates; loader API breaks are counted in the scoreboard; Fabric load on 1.21.1 -> 1.21.2 reports server and client and every linked standalone mod loads in both; two worktrees running exposure.py jars at once both give correct results",
      "wrongIf": "a mod the link check clears fails on a real server or client on a loader member",
      "measures": [
-      "port.jar-links.every-update"
-     ]
+      "port.jar-links.every-update",
+      "port.fabric-jar-loads"
+     ],
+     "done": "2026-11-20",
+     "result": "2026-11-20: port.jar-links.every-update counts 64 updates, 21 of them NeoForge: 5,826 of 9,423 mod ports link (61.8%). On the 61 updates main measured it goes 5,775 -> 5,586. Linking against the loader (NeoForge with FML and its event bus, Fabric Loader and Fabric API) costs 28 net (NeoForge -28, Fabric 0 once mods' bundled copies of Fabric API modules, which never run, stop counting); the biggest are FML's FMLEnvironment.dist becoming a method (64 NeoForge mods on 1.21.8 -> 1.21.9), Fabric API's 26.1 renames (PayloadTypeRegistry, KeyBindingHelper), NeoForge 20.6 removing Event.Result, and Explorer's and Nature's Compass on ModLoadingContext.registerConfig. 165 more stop counting as linking because their game code is in a jar their own loader unpacks, which the port never reads (Essential, Crash Assistant, CustomSkinLoader, about 3 per update): they are reported as not read. Loader breaks are labelled and counted per update (loaderUses, modsHeldOnlyByLoader): 5,654 uses, 151 mod ports held by nothing else. The cache under ~/.mmt/exposure is keyed by tool content: two worktrees with different tools running Fabric 1.19.2 -> 1.19.3 at once both gave 38 of 150 and 2,546 broken uses, as the cloud did. Fabric load 1.21.1 -> 1.21.2 now starts a real Fabric client (Fabric's launcher profile; mmt's agent reads intermediary through Mojang's and Fabric's mappings): server 8 of 8 that a server runs, client 14 of 16; Better Mount HUD links and fails in the client on an injection point 1.21.2 no longer has (step 55), and Essential is now counted as not read."
     },
     {
      "id": "53",
      "title": "Read NeoForge 1.20.2 to 1.20.4 mods",
      "part": "Port by changed game part",
-     "status": "doing",
+     "status": "done",
      "text": "NeoForge mods before 1.20.5 name game members by SRG ids (m_N_, f_N_). Read them in Mojang's names through NeoForge's own NeoForm mappings, as Fabric's are read through intermediary, so the scoreboard covers NeoForge's first three updates too.",
      "start": "2026-11-19",
      "target": "2026-12-03",
-     "finish": "port.jar-links.every-update counts 21 NeoForge updates"
+     "finish": "port.jar-links.every-update counts 21 NeoForge updates",
+     "done": "2026-11-20",
+     "result": "2026-11-20 (with step 57): NeoForge's NeoForm build (named in its own jar's manifest) gives each SRG id an obfuscated member, which Mojang's mappings name, so ModNames reads NeoForge 1.20.2 to 1.20.4 mods (classes, access transformers, jarjar-nested jars) and NeoForge's own jar in Mojang names. 1.20.2 -> 1.20.3: 89 of 149 link, 1.20.3 -> 1.20.4: 129 of 149, 1.20.4 -> 1.20.5: 22 of 148, held back mostly by NeoForge 20.5's own rewrites (payload registration, TickEvent, ConfigScreenHandler). No SRG name is left in any reference."
     },
     {
      "id": "47",

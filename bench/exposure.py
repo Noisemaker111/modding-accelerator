@@ -244,10 +244,17 @@ def keyed(kind, *names):
 def publish(part, target):
     """Moves a finished file into a shared cache entry. If a run beside this one finished it first, its copy is kept: the same
     tools on the same inputs wrote the same thing, and replacing a file another run is reading can break that run."""
+    # A hard link never replaces, on any system (a move replaces on POSIX); a file system without hard links gets the move.
     try:
-        os.rename(part, target)  # never replaces on Windows; on POSIX a reader keeps the file it opened
+        os.link(part, target)
     except FileExistsError:
-        part.unlink(missing_ok=True)
+        pass
+    except OSError:
+        try:
+            os.rename(part, target)
+        except FileExistsError:
+            pass
+    part.unlink(missing_ok=True)
     return target
 
 
