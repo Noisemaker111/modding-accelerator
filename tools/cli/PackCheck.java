@@ -1288,7 +1288,7 @@ final class PackCheck {
 
         String runServer(List<String> command, Path log, Path out, boolean keepWorld) throws Exception {
             Files.createDirectories(log.getParent());
-            Process process = new ProcessBuilder(command).directory(instance.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
+            Process process = PackChecks.windowless(new ProcessBuilder(command)).directory(instance.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
             process.getOutputStream().close();
             // A start is judged by its log, not by the clock: a 400-mod pack legitimately takes many minutes, logging as it
             // loads, generates and places. It is stuck when its log has said nothing new for --timeout seconds (default 600;

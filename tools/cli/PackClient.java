@@ -259,7 +259,7 @@ final class PackClient {
         Files.writeString(instance.resolve("mmt-launch.txt"), String.join("\n", command) + "\n");
         long since = System.currentTimeMillis();
         java.time.Instant launched = java.time.Instant.now();
-        Process process = new ProcessBuilder(command).directory(instance.toFile()).redirectErrorStream(true).start();
+        Process process = PackChecks.windowless(new ProcessBuilder(command)).directory(instance.toFile()).redirectErrorStream(true).start();
         CompletableFuture<Map<String, Object>> ready = new CompletableFuture<>();
         // Programs a mod starts from the game, seen while it runs: one started as the game dies has no parent left to find it by.
         Set<ProcessHandle> started = ConcurrentHashMap.newKeySet();
