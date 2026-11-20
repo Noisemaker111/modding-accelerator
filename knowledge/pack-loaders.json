@@ -92,6 +92,7 @@
       "versions": "https://meta.fabricmc.net/v2/versions/loader/{mc}",
       "installers": "https://meta.fabricmc.net/v2/versions/installer",
       "install": ["server", "-dir", "{dir}", "-mcversion", "{mc}", "-loader", "{version}", "-downloadMinecraft"],
+      "clientProfile": "https://meta.fabricmc.net/v2/versions/loader/{mc}/{version}/profile/json",
       "launchJar": "fabric-server-launch.jar",
       "launcherProperties": "fabric-server-launcher.properties",
       "intermediary": "https://maven.fabricmc.net/net/fabricmc/intermediary/{mc}/intermediary-{mc}-v2.jar",

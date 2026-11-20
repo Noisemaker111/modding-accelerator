@@ -38,11 +38,12 @@ public final class ModNames {
     }
 
     public static void main(String[] args) throws Exception {
-        String version = null, out = null, report = null;
+        String version = null, out = null, report = null, loader = "fabric";
         List<Path> jars = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--version" -> version = args[++i];
+                case "--loader" -> loader = args[++i];
                 case "--out" -> out = args[++i];
                 case "--report" -> report = args[++i];
                 case "--cache" -> VersionMap.cache = Path.of(args[++i]).toAbsolutePath();
@@ -50,10 +51,10 @@ public final class ModNames {
             }
         }
         if (version == null || out == null || jars.isEmpty()) {
-            System.err.println("usage: ModNames --version V --out DIR [--report R.json] IN.jar ...");
+            System.err.println("usage: ModNames --version V [--loader fabric|neoforge] --out DIR [--report R.json] IN.jar ...");
             System.exit(2);
         }
-        ModNames names = new ModNames(new Exposure.Intermediary(version));
+        ModNames names = new ModNames(loader.equals("neoforge") ? Exposure.Intermediary.neoform(version) : new Exposure.Intermediary(version));
         Path dir = Files.createDirectories(Path.of(out));
         List<Object> rows = new ArrayList<>();
         for (Path jar : jars) {
@@ -61,7 +62,7 @@ public final class ModNames {
             row.put("mod", jar.getFileName().toString());
             try {
                 Counts n = new Counts();
-                Files.write(dir.resolve(jar.getFileName().toString()), names.jar(Files.readAllBytes(jar), n));
+                written(dir.resolve(jar.getFileName().toString()), names.jar(Files.readAllBytes(jar), n));
                 row.put("classes", n.classes);
                 row.put("mixinStrings", n.strings);
                 row.put("widenerLines", n.widener);
@@ -81,6 +82,26 @@ public final class ModNames {
 
     static final class Counts {
         int classes, strings, widener, nested;
+    }
+
+    /**
+     * Writes a file into a folder other runs share (~/.mmt/exposure), whole or not at all: under a name of its own, then
+     * moved into place. A run beside this one that wrote it first wins; its copy came from the same tools and input.
+     */
+    static void written(Path target, byte[] data) throws IOException {
+        Path part = Files.createTempFile(target.getParent(), target.getFileName().toString(), ".part");
+        Files.write(part, data);
+        try {
+            Files.move(part, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (FileAlreadyExistsException another) {
+            Files.delete(part);
+        } catch (AtomicMoveNotSupportedException | AccessDeniedException another) {
+            // Windows refuses a move over a file another run holds open: that run wrote it already.
+            Files.deleteIfExists(part);
+            if (!Files.isRegularFile(target)) {
+                throw another;
+            }
+        }
     }
 
     /** One jar, nested jars included, in Mojang names. */
@@ -114,6 +135,17 @@ public final class ModNames {
                 nested.add(file);
             }
         }
+        // A NeoForge mod lists its nested jars in META-INF/jarjar/metadata.json, and the loader reads its access
+        // transformers, which name members as the mod's classes do (SRG ids before 1.20.5).
+        Set<String> transformers = new HashSet<>();
+        if (fmj == null) {
+            for (String file : JarPort.nested(entries)) {
+                if (entries.containsKey(file)) {
+                    nested.add(file);
+                }
+            }
+            transformers.addAll(JarPort.atFiles(entries));
+        }
         String widener = meta.get("accessWidener") instanceof String w && entries.containsKey(w) ? w : null;
         Map<String, byte[]> out = new LinkedHashMap<>();
         for (var e : entries.entrySet()) {
@@ -136,6 +168,8 @@ public final class ModNames {
                 n.nested++;
             } else if (refmapFiles.contains(name)) {
                 data = EMPTY_REFMAP;
+            } else if (transformers.contains(name)) {
+                data = rename(new String(data, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8);
             } else if (name.equals(widener)) {
                 String text = new String(data, StandardCharsets.UTF_8);
                 data = widener(text, n).getBytes(StandardCharsets.UTF_8);

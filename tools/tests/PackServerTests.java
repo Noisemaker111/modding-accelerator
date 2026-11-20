@@ -60,11 +60,29 @@ public final class PackServerTests extends PackCheckFixtures {
         ));
         Json.save(install.resolve("versions/loader-1/loader-1.json"), Json.map(
             "id", "loader-1", "inheritsFrom", "1.21.2", "mainClass", "loader.Boot",
-            "libraries", List.of(library("org.ow2.asm:asm:9.7", null)),
+            // Fabric's launcher profile names a library by its maven coordinates under its repository, with no downloads entry.
+            "libraries", List.of(library("org.ow2.asm:asm:9.7", null), Json.map("name", "net.fabricmc:fabric-loader:0.16.7", "url", "https://maven.fabricmc.net/")),
             "arguments", Json.map("jvm", List.of("-DlibraryDirectory=${library_directory}"), "game", List.of("--launchTarget", "client"))
         ));
+        Files.write(install.resolve("versions/loader-1/loader-1.jar"), new byte[0]);
         List<String> command = PackClient.command(install, "1.21.2", Path.of("java"), instance, List.of("-Xmx1G"));
         String classpath = command.get(command.indexOf("-cp") + 1);
+        String[] maven = PackClient.artifact(Json.map("name", "net.fabricmc:fabric-loader:0.16.7", "url", "https://maven.fabricmc.net/"));
+        expect(maven[1].equals("https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.16.7/fabric-loader-0.16.7.jar")
+                && classpath.contains(Path.of("net/fabricmc/fabric-loader/0.16.7/fabric-loader-0.16.7.jar").toString()),
+            "a library named only by maven coordinates is downloaded from its repository and on the class path: " + classpath);
+        expect(classpath.endsWith(install.resolve("versions/loader-1/loader-1.jar").toString()),
+            "the game's jar is on the class path under the name of the version started, as a launcher puts it: " + classpath);
+        // The table mmt's agent reads a game in intermediary with: Mojang's names joined to Fabric's through the obfuscated ones.
+        String table = PackClient.runtimeTable(
+            "net.minecraft.client.Minecraft -> fgo:\n    net.minecraft.client.Options options -> m\n    1:3:void runTick(boolean):10:12 -> f\n"
+                + "    net.minecraft.client.Minecraft getInstance() -> Q\nnet.minecraft.client.Options -> fgq:\n",
+            "tiny\t2\t0\tofficial\tintermediary\nc\tfgo\tnet/minecraft/class_310\n\tf\tLfgq;\tm\tfield_1690\n\tm\t(Z)V\tf\tmethod_1523\n"
+                + "\tm\t()Lfgo;\tQ\tmethod_1551\n\t\tp\t1\t\tflag\nc\tfgq\tnet/minecraft/class_315\n");
+        expect(table.contains("c\tnet/minecraft/client/Minecraft\tnet/minecraft/class_310\n") && table.contains("f\tnet/minecraft/client/Minecraft\toptions\tfield_1690\n")
+                && table.contains("m\tnet/minecraft/client/Minecraft\trunTick\t(Z)V\tmethod_1523\n")
+                && table.contains("m\tnet/minecraft/client/Minecraft\tgetInstance\t()Lnet/minecraft/client/Minecraft;\tmethod_1551\n"),
+            "each class, field and method gets its run-time name, members matched by their obfuscated descriptor: " + table);
         expect(classpath.contains("asm-9.7.jar") && !classpath.contains("asm-9.3.jar"), "a library both version files list is on the class path once, the loader's: " + classpath);
         expect(classpath.contains("natives-" + PackClient.OS) && !classpath.contains("natives-" + other), "a library for another system is left out: " + classpath);
         expect(!command.contains("-XstartOnFirstThread") && !command.contains("--demo"), "an argument for another system or a launcher feature is left out: " + command);

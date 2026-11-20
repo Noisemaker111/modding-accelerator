@@ -25,32 +25,67 @@ final class PackClient {
     /** The loader's client, installed once per version, with the game's libraries and asset index beside it; null when the loader has no client installer. */
     static Path install(PackLoaders.Context context, PackLoaders.Loader loader, String minecraft, String version) throws Exception {
         var style = (PackLoaders.Style) loader;
-        List<Object> arguments = Json.array(style.spec.get("installClient"));
-        if (arguments.isEmpty()) return null;
+        List<Object> arguments = Json.array(style.spec.getOrDefault("installClient", List.of()));
+        String profile = Json.text(style.spec, "clientProfile", "");
+        if (arguments.isEmpty() && profile.isEmpty()) return null;
         Path dir = context.cache().resolve("loaders").resolve(loader.id() + "-client-" + minecraft + "-" + version);
         if (PackLoaders.Style.finished(dir)) return dir;
-        Path installer = dir.resolve("installer.jar");
-        PackCheck.download(style.fill(style.setting(minecraft, "installer"), minecraft, version, null), installer, null);
-        // Installers that write into a launcher folder refuse one without a profile list.
-        Files.writeString(dir.resolve("launcher_profiles.json"), "{\"profiles\":{}}");
-        List<String> filled = new ArrayList<>();
-        for (Object a : arguments) filled.add(style.fill(String.valueOf(a), minecraft, version, dir));
-        style.runInstaller(context, installer, filled, dir, version);
+        if (!profile.isEmpty()) {
+            // The loader publishes its launcher profile itself (Fabric's meta): its version file over the game's, which
+            // comes from Mojang's list as a launcher gets it.
+            Path game = dir.resolve("versions").resolve(minecraft).resolve(minecraft + ".json");
+            Files.createDirectories(game.getParent());
+            Files.writeString(game, Json.write(PackLoaders.Vanilla.version(context.cache(), context.harness(), minecraft)));
+            var own = Json.object(Json.parse(new String(PackCheck.get(style.fill(profile, minecraft, version, dir)), StandardCharsets.UTF_8)));
+            String id = Json.text(own, "id", loader.id() + "-" + minecraft);
+            Path file = dir.resolve("versions").resolve(id).resolve(id + ".json");
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, Json.write(own));
+        } else {
+            Path installer = dir.resolve("installer.jar");
+            PackCheck.download(style.fill(style.setting(minecraft, "installer"), minecraft, version, null), installer, null);
+            // Installers that write into a launcher folder refuse one without a profile list.
+            Files.writeString(dir.resolve("launcher_profiles.json"), "{\"profiles\":{}}");
+            List<String> filled = new ArrayList<>();
+            for (Object a : arguments) filled.add(style.fill(String.valueOf(a), minecraft, version, dir));
+            style.runInstaller(context, installer, filled, dir, version);
+        }
         Map<String, Object> merged = merged(dir, minecraft);
         for (Object o : Json.array(merged.get("libraries"))) {
             var library = Json.object(o);
             if (!allowed(library.get("rules"))) continue;
-            var downloads = Json.object(library.getOrDefault("downloads", Map.of()));
-            var artifact = Json.object(downloads.getOrDefault("artifact", Map.of()));
-            if (!artifact.isEmpty()) {
-                Path target = dir.resolve("libraries").resolve(Json.text(artifact, "path", ""));
-                if (!Files.isRegularFile(target)) PackCheck.download(Json.text(artifact, "url", ""), target, Json.text(artifact, "sha1", null));
-            }
+            String[] artifact = artifact(library);
+            if (artifact == null) continue;
+            Path target = dir.resolve("libraries").resolve(artifact[0]);
+            if (!Files.isRegularFile(target)) PackCheck.download(artifact[1], target, artifact[2]);
         }
+        // A launcher runs the game's jar under the name of the version it starts (a loader's ignore list names it so).
+        var client = Json.object(Json.object(merged.getOrDefault("downloads", Map.of())).getOrDefault("client", Map.of()));
+        Path jar = gameJar(dir, merged);
+        if (!client.isEmpty() && !Files.isRegularFile(jar)) PackCheck.download(Json.text(client, "url", ""), jar, Json.text(client, "sha1", null));
         var index = Json.object(merged.get("assetIndex"));
         PackCheck.download(Json.text(index, "url", ""), dir.resolve("assets/indexes/" + Json.text(index, "id", "") + ".json"), Json.text(index, "sha1", null));
         Files.writeString(dir.resolve("mmt-installed"), minecraft + "-" + version + "\n");
         return dir;
+    }
+
+    static Path gameJar(Path install, Map<String, Object> merged) {
+        String id = Json.text(merged, "id", "");
+        return install.resolve("versions").resolve(id).resolve(id + ".jar");
+    }
+
+    /**
+     * {path under libraries/, url, sha1 or null} of a library a version file lists: its "downloads" entry, or else its
+     * maven coordinates under its repository ("url", Mojang's by default), as Fabric's profile lists them; null for none.
+     */
+    static String[] artifact(Map<String, Object> library) {
+        var artifact = Json.object(Json.object(library.getOrDefault("downloads", Map.of())).getOrDefault("artifact", Map.of()));
+        if (!artifact.isEmpty()) return new String[] { Json.text(artifact, "path", ""), Json.text(artifact, "url", ""), Json.text(artifact, "sha1", null) };
+        String[] name = Json.text(library, "name", "").split(":");
+        if (name.length < 3 || library.containsKey("downloads")) return null;
+        String path = name[0].replace('.', '/') + "/" + name[1] + "/" + name[2] + "/" + name[1] + "-" + name[2] + (name.length > 3 ? "-" + name[3] : "") + ".jar";
+        String repository = Json.text(library, "url", "https://libraries.minecraft.net/");
+        return new String[] { path, repository + (repository.endsWith("/") ? "" : "/") + path, Json.text(library, "sha1", null) };
     }
 
     /** The loader's version file with the game's under it (inheritsFrom), as a launcher merges them: lists joined, the loader's first. */
@@ -116,11 +151,13 @@ final class PackClient {
         List<String> classpath = new ArrayList<>();
         for (Object o : Json.array(version.get("libraries"))) {
             var library = Json.object(o);
-            var artifact = Json.object(Json.object(library.getOrDefault("downloads", Map.of())).getOrDefault("artifact", Map.of()));
-            if (artifact.isEmpty() || !allowed(library.get("rules"))) continue;
-            String jar = Path.of(libraries, Json.text(artifact, "path", "")).toString();
+            String[] artifact = artifact(library);
+            if (artifact == null || !allowed(library.get("rules"))) continue;
+            String jar = Path.of(libraries, artifact[0]).toString();
             if (!classpath.contains(jar)) classpath.add(jar);
         }
+        Path game = gameJar(install, version);
+        if (Files.isRegularFile(game)) classpath.add(game.toString());
         Path natives = Files.createDirectories(instance.resolve("natives"));
         Map<String, String> values = new HashMap<>();
         values.put("library_directory", libraries);
@@ -199,13 +236,21 @@ final class PackClient {
         ));
         // The game's classes for the agent's snippets: the loader's named game jar and its own jars (they sit on no class path).
         List<String> game = new ArrayList<>();
-        for (Object o : Json.array(((PackLoaders.Style) owner.loader).spec.get("clientClasses"))) {
+        for (Object o : Json.array(((PackLoaders.Style) owner.loader).spec.getOrDefault("clientClasses", List.of()))) {
             var where = Json.object(o);
             Path dir = install.resolve(Json.text(where, "dir", ""));
             if (!Files.isDirectory(dir)) continue;
             try (var walk = Files.walk(dir)) {
                 walk.filter(p -> p.getFileName().toString().matches(Json.text(where, "match", ""))).forEach(p -> game.add(p.toString()));
             }
+        }
+        // A client that runs other names than Mojang's (Fabric's intermediary before 26.1): the agent gets the table of both,
+        // and its snippets compile against the game in Mojang's names.
+        PackLoaders.Names names = owner.loader.names(context, install, pack.minecraft());
+        if ("intermediary".equals(names.kind())) {
+            Path[] mojang = runtimeNames(context, install, pack.minecraft(), names.mapping());
+            options.add("-Dmmt.names=" + mojang[0]);
+            game.add(0, mojang[1].toString());
         }
         options.add("-Dmmt.classpath=" + String.join(File.pathSeparator, game));
         List<String> command = command(install, pack.minecraft(), context.java().java(), instance, options);
@@ -279,9 +324,8 @@ final class PackClient {
                 snippet(session, String.join("\n",
                     "var game = net.minecraft.client.Minecraft.getInstance();",
                     "var tab = ((java.util.List<?>) vars.get(\"tabs\")).get(" + i + ");",
-                    "var choose = game.screen.getClass().getDeclaredMethod(\"selectTab\", net.minecraft.world.item.CreativeModeTab.class);",
-                    "choose.setAccessible(true);",
-                    "choose.invoke(game.screen, tab);",
+                    // call() finds the private method by Mojang's name in the names the game runs.
+                    "call(game.screen, \"selectTab\", tab);",
                     "return true;"));
                 Game.request(session, Json.map("command", "ready", "requireScreen", true));
             }
@@ -361,6 +405,112 @@ final class PackClient {
                 // reported by the next start, which cannot reuse the folder
             }
         }
+    }
+
+    /**
+     * {table, jar}: every class and member of the client in Mojang's names and in the loader's run-time names (written for
+     * the agent, tools/agent PortableAgent.Names), and the client renamed to Mojang's names. Both come from the game's
+     * own files: Mojang's client mappings (named -> obfuscated) joined through the obfuscated names with the loader's
+     * (obfuscated -> run time, Fabric's intermediary tiny). Kept per game version.
+     */
+    static Path[] runtimeNames(PackLoaders.Context context, Path install, String minecraft, Path tiny) throws Exception {
+        Path dir = context.cache().resolve("minecraft").resolve(minecraft);
+        Path table = dir.resolve("client-runtime-names.tsv"), jar = dir.resolve("client-mojang.jar");
+        var merged = merged(install, minecraft);
+        var downloads = Json.object(merged.getOrDefault("downloads", Map.of()));
+        var named = Json.object(downloads.getOrDefault("client_mappings", Map.of()));
+        Path mappings = dir.resolve("client.txt");
+        if (!Files.isRegularFile(mappings)) PackCheck.download(Json.text(named, "url", ""), mappings, Json.text(named, "sha1", null));
+        if (!Files.isRegularFile(table)) {
+            Path part = dir.resolve(table.getFileName() + ".tmp");
+            Files.writeString(part, runtimeTable(Files.readString(mappings), Files.readString(tiny)));
+            Files.move(part, table, StandardCopyOption.REPLACE_EXISTING);
+        }
+        if (!Files.isRegularFile(jar)) {
+            Path part = dir.resolve("client-mojang.jar.tmp");
+            PackLoaders.rename(context, "client-mojang-names", gameJar(install, merged), part, mappings, true, List.of());
+            Files.move(part, jar, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return new Path[] { table, jar };
+    }
+
+    static final Pattern PROGUARD_METHOD = Pattern.compile("^\\s+(?:\\d+:\\d+:)?(\\S+) ([^ (]+)\\(([^)]*)\\)(?::\\d+(?::\\d+)?)? -> (\\S+)$");
+    static final Pattern PROGUARD_FIELD = Pattern.compile("^\\s+(\\S+) (\\S+) -> (\\S+)$");
+
+    /** The table: "c MOJANG RUNTIME", "m OWNER NAME DESC RUNTIME", "f OWNER NAME RUNTIME" (Mojang names, internal form). */
+    static String runtimeTable(String proguard, String tiny) {
+        Map<String, String> runtimeClass = new HashMap<>(), runtimeMember = new HashMap<>();
+        String owner = null;
+        for (String line : tiny.split("\n")) {
+            String[] p = line.split("\t", -1);
+            if (line.startsWith("c\t") && p.length >= 3) {
+                owner = p[1];
+                runtimeClass.put(p[1], p[2]);
+            } else if (owner != null && p.length >= 5 && p[0].isEmpty() && (p[1].equals("m") || p[1].equals("f"))) {
+                runtimeMember.put(owner + "." + p[3] + p[2], p[4]);
+            }
+        }
+        Map<String, String> obf = new HashMap<>();
+        for (String line : proguard.split("\n")) {
+            if (!line.startsWith(" ") && !line.startsWith("#") && line.endsWith(":") && line.contains(" -> ")) {
+                String[] p = line.substring(0, line.length() - 1).split(" -> ");
+                obf.put(p[0].replace('.', '/'), p[1].replace('.', '/'));
+            }
+        }
+        StringBuilder out = new StringBuilder();
+        String mojang = null, obfOwner = null;
+        for (String line : proguard.split("\n")) {
+            line = line.stripTrailing();
+            if (line.startsWith("#") || line.isEmpty()) continue;
+            if (!line.startsWith(" ")) {
+                mojang = line.substring(0, line.indexOf(" -> ")).replace('.', '/');
+                obfOwner = obf.get(mojang);
+                out.append("c\t").append(mojang).append('\t').append(runtimeClass.getOrDefault(obfOwner, obfOwner)).append('\n');
+                continue;
+            }
+            Matcher m = PROGUARD_METHOD.matcher(line);
+            if (m.matches()) {
+                StringBuilder args = new StringBuilder("(");
+                for (String a : m.group(3).isEmpty() ? new String[0] : m.group(3).split(",")) args.append(descriptor(a, null));
+                String desc = args + ")" + descriptor(m.group(1), null);
+                String obfDesc = "(" + Arrays.stream(m.group(3).isEmpty() ? new String[0] : m.group(3).split(",")).map(a -> descriptor(a, obf)).reduce("", String::concat)
+                    + ")" + descriptor(m.group(1), obf);
+                String runtime = runtimeMember.get(obfOwner + "." + m.group(4) + obfDesc);
+                if (runtime != null) out.append("m\t").append(mojang).append('\t').append(m.group(2)).append('\t').append(desc).append('\t').append(runtime).append('\n');
+                continue;
+            }
+            Matcher f = PROGUARD_FIELD.matcher(line);
+            if (f.matches()) {
+                String runtime = runtimeMember.get(obfOwner + "." + f.group(3) + descriptor(f.group(1), obf));
+                if (runtime != null) out.append("f\t").append(mojang).append('\t').append(f.group(2)).append('\t').append(runtime).append('\n');
+            }
+        }
+        return out.toString();
+    }
+
+    /** A Java type as Mojang's mappings write it ("int[]", "net.minecraft.world.Foo"), as a descriptor; classes through obf when given. */
+    static String descriptor(String type, Map<String, String> obf) {
+        StringBuilder arrays = new StringBuilder();
+        while (type.endsWith("[]")) {
+            arrays.append('[');
+            type = type.substring(0, type.length() - 2);
+        }
+        String base = switch (type) {
+            case "void" -> "V";
+            case "boolean" -> "Z";
+            case "byte" -> "B";
+            case "char" -> "C";
+            case "short" -> "S";
+            case "int" -> "I";
+            case "long" -> "J";
+            case "float" -> "F";
+            case "double" -> "D";
+            default -> {
+                String internal = type.replace('.', '/');
+                yield "L" + (obf == null ? internal : obf.getOrDefault(internal, internal)) + ";";
+            }
+        };
+        return arrays + base;
     }
 
     static Object snippet(Map<String, Object> session, String code) throws Exception {
