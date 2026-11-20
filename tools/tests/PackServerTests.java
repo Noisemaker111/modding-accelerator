@@ -426,7 +426,7 @@ public final class PackServerTests extends PackCheckFixtures {
                     Map.entry("1.21.1", "1.19.3"),
                     Map.entry("1.21.4", "1.21.2"),
                     Map.entry("1.21.5", "1.21.5"),
-                    Map.entry("1.21.10", "1.21.5"),
+                    Map.entry("1.21.10", "1.21.9"),
                     Map.entry("1.21.11", "1.21.11"),
                     Map.entry("26.1.2", "26.1"),
                     Map.entry("26.3", "26.1")

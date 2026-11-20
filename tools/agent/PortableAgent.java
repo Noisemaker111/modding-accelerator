@@ -286,6 +286,7 @@ public final class PortableAgent {
                 // Before 1.20.3 a world opens from the screen it is chosen on: loadLevel(screen, name).
                 invoke(flows, new String[]{"loadLevel", "start"}, screen(), world);
             }
+            confirmWithoutBackup();
             done.complete(Json.map("ok", true, "requestedWorld", world));
         } else if (command.equals("connect")) {
             String address = Json.text(request, "address", "127.0.0.1:25565");
@@ -566,6 +567,29 @@ public final class PortableAgent {
         catch (NoSuchMethodException noChildren) { }
         return null;
     }
+    /**
+     * Some releases ask before opening a world the client did not write itself (1.20.5's BackupConfirmScreen for the test
+     * world a dedicated server made): answer "load it, no backup, keep the caches", as a player clicking through would.
+     */
+    private static void confirmWithoutBackup() throws Exception {
+        Object shown = screen();
+        if (shown == null || !Names.named(shown.getClass()).endsWith("BackupConfirmScreen")) return;
+        for (Class<?> c = shown.getClass(); c != null; c = c.getSuperclass()) {
+            for (Field f : c.getDeclaredFields()) {
+                if (!f.getType().isInterface() || !Names.named(f.getType()).endsWith("BackupConfirmScreen$Listener")) continue;
+                f.setAccessible(true);
+                Object listener = f.get(shown);
+                for (Method m : f.getType().getMethods()) {
+                    if (Modifier.isAbstract(m.getModifiers()) && m.getParameterCount() == 2) {
+                        m.setAccessible(true);
+                        m.invoke(listener, false, false);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     private static Object screen() throws Exception {
         try { return field(client, "currentScreen", "screen"); }
         catch (NoSuchFieldException modern) { return call(field(client, "gui"), "screen"); }

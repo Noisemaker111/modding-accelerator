@@ -15,7 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
 /**
- * The game calls pack-check's probe makes that changed between Minecraft versions, for Minecraft 1.21.5 to 1.21.10: NBT getters
+ * The game calls pack-check's probe makes that changed between Minecraft versions, for Minecraft 1.21.5 to 1.21.8: NBT getters
  * return Optional (getStringOr and getCompoundOrEmpty are the plain forms) and an entity moves with snapTo.
  * pack-check compiles the probe with the variant in tools/packcheck/game/ whose folder names the newest version at or
  * below the pack's, so one probe source serves every version; each variant keeps the same methods.

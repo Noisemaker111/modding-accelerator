@@ -40,6 +40,7 @@ final class Installation {
         "tools/packcheck/game/1.19.3/MmtPackGame.java",
         "tools/packcheck/game/1.21.2/MmtPackGame.java",
         "tools/packcheck/game/1.21.5/MmtPackGame.java",
+        "tools/packcheck/game/1.21.9/MmtPackGame.java",
         "tools/packcheck/game/1.21.11/MmtPackGame.java",
         "tools/packcheck/game/26.1/MmtPackGame.java",
         "tools/packcheck/MmtFingerprint.java",

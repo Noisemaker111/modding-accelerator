@@ -1,0 +1,50 @@
+{
+ "loader": "neoforge",
+ "from": "1.20.4",
+ "to": "1.20.5",
+ "mods": 13,
+ "loaded": 12,
+ "linkedAndLoaded": 12,
+ "linked": 13,
+ "failedButLinked": [],
+ "clashOnly": [],
+ "failedDataOnly": [
+  "euphoria-patches--EuphoriaPatcher-0.3.4-neoforge.jar"
+ ],
+ "verdicts": {
+  "euphoria-patches--EuphoriaPatcher-0.3.4-neoforge.jar": "failed: the loader names it: [17:32:03] [modloading-worker-0/ERROR] [ne.ne.fm.ja.FMLModContainer/LOADING]: Failed to create mod instance. ModID: euphoria_patcher, class de.isuewo.euphoria_patcher.EuphoriaPatcher; the loader names it: Failure message: Euphoria Patcher (euphoria_patcher) has failed to load correctly; the loader names it: Euphoria Patcher (euphoria_patcher) has failed to load correctly",
+  "ai-improvements--AI-Improvements-1.20.2-0.5.3.jar": "loaded",
+  "alternate-current--alternate_current-mc1.20-1.7.0.jar": "loaded",
+  "chunky--Chunky-1.3.146.jar": "loaded",
+  "clumps--Clumps-neoforge-1.20.4-15.0.0.2.jar": "loaded",
+  "crash-assistant--CrashAssistant-neoforge-1.20.2-1.20.4-1.11.12.jar": "loaded",
+  "e4mc--e4mc-neoforge-6.2.3.jar": "loaded",
+  "forge-config-api-port--ForgeConfigAPIPort-v20.4.3-1.20.4-NeoForge.jar": "loaded",
+  "i18nupdatemod--I18nUpdateMod-3.8.0-all.jar": "loaded",
+  "konkrete--konkrete_neoforge_1.9.1_MC_1.20.4.jar": "loaded",
+  "rrls--rrls-4.0.3+mc1.20.4-forge.jar": "loaded",
+  "searchables--Searchables-neoforge-1.20.4-1.0.6.jar": "loaded",
+  "yeetus-experimentus--yeetusexperimentus-neoforge-84.0.3.jar": "loaded"
+ },
+ "client": {
+  "mods": 12,
+  "loaded": 11,
+  "verdicts": {
+   "konkrete--konkrete_neoforge_1.9.1_MC_1.20.4.jar": "loaded",
+   "rrls--rrls-4.0.3+mc1.20.4-forge.jar": "loaded",
+   "crash-assistant--CrashAssistant-neoforge-1.20.2-1.20.4-1.11.12.jar": "loaded",
+   "yeetus-experimentus--yeetusexperimentus-neoforge-84.0.3.jar": "failed: its mixin config yeetusexperimentus-neo.mixins.json is in the failure; a mixin handler of this mod is in the stack | Game action 'open-world' failed: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure: @ModifyVariable annotation on no could not find any targets matching 'loadLevel(Lnet/minecraft/world/level/storage/LevelStorageSource$LevelStorageAccess;Lcom/mojan",
+   "ai-improvements--AI-Improvements-1.20.2-0.5.3.jar": "loaded",
+   "alternate-current--alternate_current-mc1.20-1.7.0.jar": "loaded",
+   "chunky--Chunky-1.3.146.jar": "loaded",
+   "clumps--Clumps-neoforge-1.20.4-15.0.0.2.jar": "loaded",
+   "e4mc--e4mc-neoforge-6.2.3.jar": "loaded",
+   "forge-config-api-port--ForgeConfigAPIPort-v20.4.3-1.20.4-NeoForge.jar": "loaded",
+   "i18nupdatemod--I18nUpdateMod-3.8.0-all.jar": "loaded",
+   "searchables--Searchables-neoforge-1.20.4-1.0.6.jar": "loaded"
+  }
+ },
+ "loadedOnServerFailedInClient": [
+  "yeetus-experimentus--yeetusexperimentus-neoforge-84.0.3.jar"
+ ]
+}

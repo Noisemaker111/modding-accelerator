@@ -237,7 +237,7 @@ def compile_tools():
 
 
 # What a route map is built from: it changes with GameDiff or VersionMap, not with Exposure itself.
-MAP_SOURCES = ("GameDiff.java", "VersionMap.java", "cli/Json.java")
+MAP_SOURCES = ("GameDiff.java", "VersionMap.java", "Exposure.java", "ModNames.java", "cli/Json.java")
 
 
 def tools_key(*names):
@@ -296,8 +296,8 @@ def route_map(frm, to, loader, classes):
         return target
     part = part_of(target)
     args = [java(), "-Xmx10g", "-cp", str(classes), "GameDiff", "--chain", ",".join(chain(frm, to)), "--out", str(part)]
-    if loader == "neoforge":
-        args += ["--loader", "neoforge"]
+    if loader:
+        args += ["--loader", loader]
     subprocess.run(args, check=True, stdout=subprocess.DEVNULL)
     return publish(part, target)
 
