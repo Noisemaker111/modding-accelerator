@@ -912,8 +912,12 @@ public final class JarPort {
                 continue;
             }
             GameDiff.RawCls own = mod.classes.get(c);
-            if (own == null) {
-                own = provided(c);
+            if (own == null && provided(c) != null) {
+                // A class another of the mod's jars carries: its own members are the mod's; what it inherits is left as
+                // written, as for any library class this jar does not hold.
+                GameDiff.RawCls carried = provided(c);
+                return kind == 'f' ? carried.fields.containsKey(name) ? new Decl(c, false) : null
+                    : carried.methods.containsKey(name + desc) ? new Decl(c, false) : null;
             }
             if (own != null) {
                 if (kind == 'f' ? own.fields.containsKey(name) : own.methods.containsKey(name + desc)) {
