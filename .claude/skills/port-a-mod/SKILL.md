@@ -27,8 +27,8 @@ that part is fixed with it. Read this whole file before the first command: it is
   longer makes) is inside a method that still exists. The client covers the title screen, a world, the inventory and
   every creative tab, not a mod's own screens.
   On Fabric (`--loader fabric`) Fabric API is in the pack, and the client is Fabric's own (intermediary, read by mmt's
-  agent through Mojang's and Fabric's mappings): server 8 of 8 that a server runs, client 14 of 16 (Better Mount HUD:
-  an injection point 1.21.2 no longer has; Essential: its code is in a jar its own loader unpacks, now counted not read).
+  agent through Mojang's and Fabric's mappings): 13 link; server 7 of 7 that a server runs, client 12 of 13 (Better Mount HUD:
+  its @ModifyVariable finds no target in 1.21.2's HUD code, step 55).
 - `jars` also checks each mod's data files for built-in game ids the new release dropped (`modsThatLinkAndData`).
 - 16 of the 126 corpus ports build (`python bench/measures.py table port.corpus-builds`). 23 of the 126 are mods
   whose untouched original does not build on the runner, and 72 cross many updates at once, so this number only
