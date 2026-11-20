@@ -2390,7 +2390,94 @@ public final class JarPort {
          * owner, name and desc.
          */
         String[][] conversions(String owner, String name, String desc, String[] moved, int[] paired) {
-            return learned.computeIfAbsent(owner + "." + name + desc + "->" + moved[1] + moved[2], k -> learn(owner, name, desc, moved, paired));
+            // The whole override family is the evidence: every game class that overrides the topmost declaration.
+            String root = root(owner, name, desc);
+            String[][] found = learned.computeIfAbsent(root + "." + name + desc + "->" + moved[1] + moved[2] + Arrays.toString(paired),
+                k -> Objects.requireNonNullElse(learn(root, name, desc, moved, paired), NONE));
+            if (filling) {
+                return found == NONE ? null : found;
+            }
+            // A parameter its own family shows nothing for takes what the game's code uses for that type everywhere else
+            // in this update, when that agrees and one new parameter has the type (1.20's list entries, whose render
+            // passes the pose only to calls that changed with it, get graphics.pose() like every screen).
+            Type[] was = Type.getArgumentTypes(desc), now = Type.getArgumentTypes(moved[2]);
+            String[][] out = found == NONE ? new String[was.length][] : found.clone();
+            boolean any = found != NONE;
+            for (int i = 0; i < was.length; i++) {
+                if (paired[i] >= 0 || out[i] != null || was[i].getSort() < Type.ARRAY) {
+                    continue;
+                }
+                String wanted = desc(was[i].getDescriptor());
+                int only = -1, count = 0;
+                String steps = null;
+                for (int j = 0; j < now.length; j++) {
+                    String best = now[j].getSort() == Type.OBJECT ? pooled(now[j].getDescriptor(), wanted) : null;
+                    if (best != null) {
+                        only = j;
+                        steps = best;
+                        count++;
+                    }
+                }
+                if (count == 1) {
+                    out[i] = (only + " " + steps).split(" ");
+                    any = true;
+                }
+            }
+            return any ? out : null;
+        }
+
+        static final String[][] NONE = new String[0][];
+        final Map<String, Map<String, Integer>> pool = new HashMap<>(); // "new type>old type" -> steps -> the game's uses
+        final Set<String> pooledPairs = new HashSet<>();
+        boolean filling;
+
+        /**
+         * What the game's code reads from a value of type got (new names) where it used to have one of type had, agreed
+         * over every family of game methods in this update whose parameters changed between the two.
+         */
+        String pooled(String got, String had) {
+            String key = got + ">" + had;
+            if (pooledPairs.add(key)) {
+                filling = true;
+                try {
+                    for (var e : route.methods.entrySet()) {
+                        String k = e.getKey();
+                        int dot = k.lastIndexOf('.', k.indexOf('('));
+                        String owner = k.substring(0, dot), rest = k.substring(dot + 1), name = rest.substring(0, rest.indexOf('(')), desc = rest.substring(name.length());
+                        String[] moved = route.method(owner, name, desc);
+                        if (!a.classes.containsKey(owner) || !desc(desc).contains(had) || !moved[2].contains(got) || moved[2].equals(desc(desc))) {
+                            continue;
+                        }
+                        Type[] was = Type.getArgumentTypes(desc), now = Type.getArgumentTypes(moved[2]);
+                        conversions(owner, name, desc, moved, pair(now, Arrays.stream(was).map(t -> Type.getType(desc(t.getDescriptor()))).toArray(Type[]::new)));
+                    }
+                } finally {
+                    filling = false;
+                }
+            }
+            String best = agreed(pool.getOrDefault(key, Map.of()));
+            return best != null && stepsLink("0 " + best) ? best : null;
+        }
+
+        /** The class highest above owner, through superclasses and interfaces, that declares name+desc in the old release. */
+        String root(String owner, String name, String desc) {
+            String top = owner;
+            Deque<String> todo = new ArrayDeque<>(List.of(owner));
+            Set<String> seen = new HashSet<>();
+            while (!todo.isEmpty()) {
+                GameDiff.Cls c = a.classes.get(todo.poll());
+                if (c == null || !seen.add(c.name)) {
+                    continue;
+                }
+                if (c.methods.containsKey(name + desc) && subtype(a, top, c.name)) {
+                    top = c.name;
+                }
+                if (c.sup != null) {
+                    todo.add(c.sup);
+                }
+                todo.addAll(c.ifaces);
+            }
+            return top;
         }
 
         String[][] learn(String owner, String name, String desc, String[] moved, int[] paired) {
@@ -2434,6 +2521,15 @@ public final class JarPort {
                     });
                 }
             }
+            for (int i = 0; i < was.length; i++) {
+                for (var e : votes.get(i).entrySet()) {
+                    String[] parts = e.getKey().split(" ", 2);
+                    if (parts.length == 2) {
+                        pool.computeIfAbsent(now[Integer.parseInt(parts[0])].getDescriptor() + ">" + desc(was[i].getDescriptor()), k -> new HashMap<>())
+                            .merge(parts[1], e.getValue(), Integer::sum);
+                    }
+                }
+            }
             String[][] out = new String[was.length][];
             boolean any = false;
             for (int i = 0; i < was.length; i++) {
@@ -2443,8 +2539,19 @@ public final class JarPort {
                     any = true;
                 }
             }
+            if (!LOG.isEmpty()) {
+                try {
+                    Files.writeString(Path.of(LOG), owner + "." + name + desc + " -> " + moved[1] + moved[2] + "\t" + votes + "\n",
+                        StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
             return any ? out : null;
         }
+
+        /** -Djarport.retypelog=FILE: each game method whose parameters changed type, with the game's readings for each old parameter. */
+        static final String LOG = System.getProperty("jarport.retypelog", "");
 
         /** The reading most of the game's uses agree on: at least 80% of them, and two unless it is the only use. */
         static String agreed(Map<String, Integer> votes) {
@@ -2458,6 +2565,9 @@ public final class JarPort {
         boolean stepsLink(String reading) {
             String[] parts = reading.split(" ");
             for (int s = 1; s < parts.length; s++) {
+                if (parts[s].startsWith("x:")) {
+                    continue;
+                }
                 String[] step = step(parts[s]);
                 if (step[0].equals("m")) {
                     GameDiff.Meth m = b.method(step[1], step[2], step[3]);
@@ -2498,15 +2608,22 @@ public final class JarPort {
             }
             Deque<String> steps = new ArrayDeque<>();
             GameDiff.Node n = m;
-            while (steps.size() < 4 && n.kids.length == 1 && (n.op == 'v' && n.value == null && n.ref.desc().startsWith("()") || n.op == 'f')) {
-                steps.push(n.op == 'v' ? "m:" + n.ref.owner() + "." + n.ref.name() + n.ref.desc() : "f:" + n.ref.owner() + "." + n.ref.name() + ":" + n.ref.desc());
+            while (steps.size() < 4 && n.kids.length == 1 && (n.op == 'v' && n.value == null && n.ref.desc().startsWith("()") || n.op == 'f'
+                || n.op == 'x' && CONVERT.containsKey(n.kids[0].type + n.type))) {
+                steps.push(switch (n.op) {
+                    case 'v' -> "m:" + n.ref.owner() + "." + n.ref.name() + n.ref.desc();
+                    case 'f' -> "f:" + n.ref.owner() + "." + n.ref.name() + ":" + n.ref.desc();
+                    default -> "x:" + n.kids[0].type + n.type; // charTyped's char from the event's int code point
+                });
                 n = n.kids[0];
             }
             Integer j = n.op == 'p' && n.value instanceof Integer slot ? newParam.get(slot) : null;
-            if (j == null || steps.isEmpty()) {
+            // The new parameter itself is a conversion only where it is the old one's very type at another place
+            // (mouseDragged's drag distances after the event that replaced x, y and button).
+            if (j == null || steps.isEmpty() && !m.type.equals(desc(wanted.getDescriptor()))) {
                 return null;
             }
-            return j + " " + String.join(" ", steps);
+            return steps.isEmpty() ? String.valueOf(j) : j + " " + String.join(" ", steps);
         }
 
         /** The old release's classes that declare name+desc and are owner or extend it. */
@@ -2544,6 +2661,12 @@ public final class JarPort {
             return null;
         }
     }
+
+    /** The instruction that turns a value of one primitive type into another, by the two descriptors. */
+    static final Map<String, Integer> CONVERT = Map.ofEntries(Map.entry("IC", Opcodes.I2C), Map.entry("IB", Opcodes.I2B),
+        Map.entry("IS", Opcodes.I2S), Map.entry("IJ", Opcodes.I2L), Map.entry("IF", Opcodes.I2F), Map.entry("ID", Opcodes.I2D),
+        Map.entry("JI", Opcodes.L2I), Map.entry("FD", Opcodes.F2D), Map.entry("DF", Opcodes.D2F), Map.entry("FI", Opcodes.F2I),
+        Map.entry("DI", Opcodes.D2I));
 
     /** Whether class c is sup or extends or implements it in one release. */
     static boolean subtype(GameDiff.Snap s, String c, String sup) {
@@ -2997,6 +3120,10 @@ public final class JarPort {
     /** The steps a conversion reads (Retype.step) on the value on top of the stack, written in the old release's names. */
     void steps(MethodVisitor mv, String[] steps) {
         for (String text : steps == null ? new String[0] : steps) {
+            if (text.startsWith("x:")) {
+                mv.visitInsn(CONVERT.get(text.substring(2)));
+                continue;
+            }
             String[] s = Retype.step(text);
             String owner = inverse.getOrDefault(s[1], s[1]);
             if (s[0].equals("m")) {
@@ -3248,7 +3375,7 @@ public final class JarPort {
                         return;
                     }
                 }
-                mod.unlinked.add("call: " + Exposure.dotted(decl.owner()) + "." + name + desc);
+                mod.unlinked.add("call: " + Exposure.dotted(decl.owner()) + "." + name + desc + (WHERE ? " @ " + where + (Sites.this.moved != null ? " (moved)" : "") : ""));
                 super.visitMethodInsn(opcode, owner, name, desc, itf);
                 return;
             }
@@ -3564,6 +3691,9 @@ public final class JarPort {
 
         Shift moved; // set when this body moved to a game method's new parameter types
 
+        /** -Djarport.where=true: each unlinked call says which method makes it. */
+        static final boolean WHERE = Boolean.getBoolean("jarport.where");
+
         /**
          * A call that does not link, made in a body moved to a game method's new parameter types (moved), to a method that
          * now takes what the game passes: each candidate {owner, name, desc, "static" | "" | "mod"} (new names) is tried in
@@ -3609,7 +3739,7 @@ public final class JarPort {
                     }
                     argOf[j] = -1;
                     for (int r = 0; r < mine.length && newOf[j] < 0; r++) {
-                        if (!mine[r].equals(want[j])) {
+                        if (!mine[r].equals(want[j]) || passed.contains(r)) {
                             continue;
                         }
                         for (int k = 0; k < args.length; k++) {

@@ -26,25 +26,27 @@ final class JarPortRetypeTest {
         JarPortTest.snap(b, "g6/Key", 0, null, "code()I", "scan()I");
         JarPortTest.snap(a, "g6/Gui", 0, null);
         a.classes.get("g6/Gui").methods.put("fill(" + POSE + "I)V", new GameDiff.Meth(a.classes.get("g6/Gui"), "fill", "(" + POSE + "I)V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
-        JarPortTest.snap(a, "g6/Screen", 0, null, "render(" + POSE + "I)V", "back(" + POSE + ")V", "key(III)Z", "tick()V", "old()V", "kept()V");
-        JarPortTest.snap(b, "g6/Screen", 0, null, "render(" + GFX + "I)V", "back(" + GFX + ")V", "key(" + KEY + ")Z", "tick()V", "old()V", "kept()V");
-        JarPortTest.snap(a, "g6/Title", 0, "g6/Screen", "render(" + POSE + "I)V", "key(III)Z");
-        JarPortTest.snap(b, "g6/Title", 0, "g6/Screen", "render(" + GFX + "I)V", "key(" + KEY + ")Z");
+        JarPortTest.snap(a, "g6/Screen", 0, null, "render(" + POSE + "I)V", "back(" + POSE + ")V", "key(III)Z", "tick()V", "old()V", "kept()V", "hover(" + POSE + ")V", "chr(CI)Z", "drag(IIII)Z");
+        JarPortTest.snap(b, "g6/Screen", 0, null, "render(" + GFX + "I)V", "back(" + GFX + ")V", "key(" + KEY + ")Z", "tick()V", "old()V", "kept()V", "hover(" + GFX + ")V", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z");
+        JarPortTest.snap(a, "g6/Title", 0, "g6/Screen", "render(" + POSE + "I)V", "key(III)Z", "chr(CI)Z", "drag(IIII)Z");
+        JarPortTest.snap(b, "g6/Title", 0, "g6/Screen", "render(" + GFX + "I)V", "key(" + KEY + ")Z", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z");
         Path map = scratch.resolve("route-retype.json");
         Files.writeString(map, """
             {"signatures": [{"owner": "g6.Screen", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"},
                             {"owner": "g6.Screen", "from": "back", "desc": "(Lg6/Pose;)V", "to": "back", "newDesc": "(Lg6/Graphics;)V"},
-                            {"owner": "g6.Screen", "from": "key", "desc": "(III)Z", "to": "key", "newDesc": "(Lg6/Key;)Z"}],
+                            {"owner": "g6.Screen", "from": "key", "desc": "(III)Z", "to": "key", "newDesc": "(Lg6/Key;)Z"},
+                            {"owner": "g6.Screen", "from": "hover", "desc": "(Lg6/Pose;)V", "to": "hover", "newDesc": "(Lg6/Graphics;)V"},
+                            {"owner": "g6.Screen", "from": "chr", "desc": "(CI)Z", "to": "chr", "newDesc": "(Lg6/Key;)Z"},
+                            {"owner": "g6.Screen", "from": "drag", "desc": "(IIII)Z", "to": "drag", "newDesc": "(Lg6/Key;II)Z"}],
              "rewrites": [{"owner": "g6.Gui", "from": "fill", "desc": "(Lg6/Pose;I)V", "static": true, "toOwner": "g6.Graphics", "to": "fill",
                            "newDesc": "(I)V", "newStatic": false, "votes": 3, "of": 3}]}
             """);
-        boolean learn = !Boolean.getBoolean("retype.nolearn");
         JarPort port = new JarPort(a, b, map);
-        port.oldCode = new JarPort.GameCode(learn ? Map.of("g6/Title", title(true), "g6/Screen", screen(true))::get : Map.of("g6/Screen", screen(true))::get, null);
-        port.newCode = new JarPort.GameCode(learn ? Map.of("g6/Title", title(false), "g6/Screen", screen(false))::get : Map.of("g6/Screen", screen(false))::get, null);
+        port.oldCode = new JarPort.GameCode(Map.of("g6/Title", title(true), "g6/Screen", screen(true))::get, null);
+        port.newCode = new JarPort.GameCode(Map.of("g6/Title", title(false), "g6/Screen", screen(false))::get, null);
 
         List<Map<String, Object>> results = new ArrayList<>();
-        Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/MyScreen.class", myScreen(), "m6/MyChild.class", myChild())), "retype.jar", results));
+        Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/MyScreen.class", myScreen(), "m6/MyChild.class", myChild(), "m6/Extra.class", extra())), "retype.jar", results));
         List<String> unlinked = Json.array(results.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(unlinked.isEmpty(), "a screen whose render and key moved to the new parameter types links: " + unlinked);
         Map<String, String> members = JarPortTest.members(ported.get("m6/MyScreen.class"));
@@ -72,6 +74,7 @@ final class JarPortRetypeTest {
         classes.put("g6/Screen", screen(false));
         classes.put("m6/MyScreen", ported.get("m6/MyScreen.class"));
         classes.put("m6/MyChild", ported.get("m6/MyChild.class"));
+        classes.put("m6/Extra", ported.get("m6/Extra.class"));
         ClassLoader loader = new ClassLoader(null) {
             @Override
             protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -87,11 +90,15 @@ final class JarPortRetypeTest {
             Class<?> screen = loader.loadClass("g6.Screen");
             screen.getMethod("run", screen).invoke(null, loader.loadClass("m6.MyScreen").getConstructor().newInstance());
             screen.getMethod("run", screen).invoke(null, loader.loadClass("m6.MyChild").getConstructor().newInstance());
+            screen.getMethod("run2", screen).invoke(null, loader.loadClass("m6.Extra").getConstructor().newInstance());
             trace = String.valueOf(loader.loadClass("g2.Log").getField("out").get(null));
         } catch (ReflectiveOperationException | LinkageError failed) {
             trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
         }
-        JarPortTest.expect(trace.equals("back;fill7;push;fill8;r;A;basekey;true;back;fill7;push;fill8;r;child;A;basekey;true;"),
+        JarPortTest.expect(trace.endsWith("push;a;true;dx5;basedrag;true;"),
+            "a method its family shows nothing for gets the conversion the game uses for that type elsewhere (pose()), a char comes from "
+                + "the event's code point, and drag distances that moved behind the event are passed on: " + trace);
+        JarPortTest.expect(trace.startsWith("back;fill7;push;fill8;r;A;basekey;true;back;fill7;push;fill8;r;child;A;basekey;true;"),
             "the game's new render and key reach the mod's code with graphics.pose() and event.code(), and its calls get the graphics and the event: " + trace);
     }
 
@@ -161,6 +168,51 @@ final class JarPortRetypeTest {
         k.visitInsn(Opcodes.IRETURN);
         k.visitMaxs(0, 0);
         k.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /**
+     * m6.Extra, for the old release: hover(pose) pushes it; chr(c, mods) logs a for 'a'; drag(x, y, dx, dy) logs dx5 when dx
+     * is 5 and returns super.drag(x, y, dx, dy).
+     */
+    static byte[] extra() {
+        ClassWriter w = writer("m6/Extra", "g6/Screen");
+        MethodVisitor h = w.visitMethod(Opcodes.ACC_PUBLIC, "hover", "(" + POSE + ")V", null, null);
+        h.visitCode();
+        h.visitVarInsn(Opcodes.ALOAD, 1);
+        h.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
+        h.visitInsn(Opcodes.RETURN);
+        h.visitMaxs(0, 0);
+        h.visitEnd();
+        MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC, "chr", "(CI)Z", null, null);
+        c.visitCode();
+        Label notA = new Label();
+        c.visitVarInsn(Opcodes.ILOAD, 1);
+        c.visitIntInsn(Opcodes.BIPUSH, 97);
+        c.visitJumpInsn(Opcodes.IF_ICMPNE, notA);
+        JarPortTest.append(c, "a;");
+        c.visitLabel(notA);
+        c.visitInsn(Opcodes.ICONST_1);
+        c.visitInsn(Opcodes.IRETURN);
+        c.visitMaxs(0, 0);
+        c.visitEnd();
+        MethodVisitor d = w.visitMethod(Opcodes.ACC_PUBLIC, "drag", "(IIII)Z", null, null);
+        d.visitCode();
+        Label not5 = new Label();
+        d.visitVarInsn(Opcodes.ILOAD, 3);
+        d.visitInsn(Opcodes.ICONST_5);
+        d.visitJumpInsn(Opcodes.IF_ICMPNE, not5);
+        JarPortTest.append(d, "dx5;");
+        d.visitLabel(not5);
+        d.visitVarInsn(Opcodes.ALOAD, 0);
+        for (int i = 1; i <= 4; i++) {
+            d.visitVarInsn(Opcodes.ILOAD, i);
+        }
+        d.visitMethodInsn(Opcodes.INVOKESPECIAL, "g6/Screen", "drag", "(IIII)Z", false);
+        d.visitInsn(Opcodes.IRETURN);
+        d.visitMaxs(0, 0);
+        d.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }
@@ -259,6 +311,45 @@ final class JarPortRetypeTest {
         k.visitInsn(Opcodes.IRETURN);
         k.visitMaxs(0, 0);
         k.visitEnd();
+        // chr: the old char compared with 'a', the new event's code point as a char; drag: x and dx must be positive.
+        MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC, "chr", old ? "(CI)Z" : "(" + KEY + ")Z", null, null);
+        c.visitCode();
+        Label notA = new Label();
+        if (old) {
+            c.visitVarInsn(Opcodes.ILOAD, 1);
+        } else {
+            c.visitVarInsn(Opcodes.ALOAD, 1);
+            c.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Key", "code", "()I", false);
+            c.visitInsn(Opcodes.I2C);
+        }
+        c.visitIntInsn(Opcodes.BIPUSH, 97);
+        c.visitJumpInsn(Opcodes.IF_ICMPNE, notA);
+        c.visitInsn(Opcodes.ICONST_1);
+        c.visitInsn(Opcodes.IRETURN);
+        c.visitLabel(notA);
+        c.visitInsn(Opcodes.ICONST_0);
+        c.visitInsn(Opcodes.IRETURN);
+        c.visitMaxs(0, 0);
+        c.visitEnd();
+        MethodVisitor d = w.visitMethod(Opcodes.ACC_PUBLIC, "drag", old ? "(IIII)Z" : "(" + KEY + "II)Z", null, null);
+        d.visitCode();
+        Label stop = new Label();
+        if (old) {
+            d.visitVarInsn(Opcodes.ILOAD, 1);
+        } else {
+            d.visitVarInsn(Opcodes.ALOAD, 1);
+            d.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Key", "code", "()I", false);
+        }
+        d.visitJumpInsn(Opcodes.IFLE, stop);
+        d.visitVarInsn(Opcodes.ILOAD, old ? 3 : 2);
+        d.visitJumpInsn(Opcodes.IFLE, stop);
+        d.visitInsn(Opcodes.ICONST_1);
+        d.visitInsn(Opcodes.IRETURN);
+        d.visitLabel(stop);
+        d.visitInsn(Opcodes.ICONST_0);
+        d.visitInsn(Opcodes.IRETURN);
+        d.visitMaxs(0, 0);
+        d.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }
@@ -276,6 +367,9 @@ final class JarPortRetypeTest {
         JarPortTest.traced(w, "key", old ? "(III)Z" : "(" + KEY + ")Z", "basekey;", m -> { });
         JarPortTest.traced(w, "old", "()V", "old;", m -> { });
         JarPortTest.traced(w, "kept", "()V", "kept;", m -> { });
+        JarPortTest.traced(w, "hover", "(" + p + ")V", "basehover;", m -> { });
+        JarPortTest.traced(w, "chr", old ? "(CI)Z" : "(" + KEY + ")Z", "basechr;", m -> { });
+        JarPortTest.traced(w, "drag", old ? "(IIII)Z" : "(" + KEY + "II)Z", "basedrag;", m -> { });
         JarPortTest.traced(w, "tick", "()V", "tick;", m -> {
             if (old) {
                 m.visitVarInsn(Opcodes.ALOAD, 0);
@@ -306,6 +400,33 @@ final class JarPortRetypeTest {
             m.visitInsn(Opcodes.RETURN);
             m.visitMaxs(0, 0);
             m.visitEnd();
+            // run2(screen): hover with a new Graphics, then what chr(new Key(97)) and drag(new Key(1), 5, 6) say.
+            MethodVisitor r = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "run2", "(Lg6/Screen;)V", null, null);
+            r.visitCode();
+            r.visitVarInsn(Opcodes.ALOAD, 0);
+            r.visitTypeInsn(Opcodes.NEW, "g6/Graphics");
+            r.visitInsn(Opcodes.DUP);
+            r.visitMethodInsn(Opcodes.INVOKESPECIAL, "g6/Graphics", "<init>", "()V", false);
+            r.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Screen", "hover", "(" + GFX + ")V", false);
+            for (String call : List.of("chr", "drag")) {
+                r.visitFieldInsn(Opcodes.GETSTATIC, "g2/Log", "out", "Ljava/lang/StringBuilder;");
+                r.visitVarInsn(Opcodes.ALOAD, 0);
+                r.visitTypeInsn(Opcodes.NEW, "g6/Key");
+                r.visitInsn(Opcodes.DUP);
+                r.visitIntInsn(Opcodes.BIPUSH, call.equals("chr") ? 97 : 1);
+                r.visitMethodInsn(Opcodes.INVOKESPECIAL, "g6/Key", "<init>", "(I)V", false);
+                if (call.equals("drag")) {
+                    r.visitInsn(Opcodes.ICONST_5);
+                    r.visitIntInsn(Opcodes.BIPUSH, 6);
+                }
+                r.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Screen", call, call.equals("chr") ? "(" + KEY + ")Z" : "(" + KEY + "II)Z", false);
+                r.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Z)Ljava/lang/StringBuilder;", false);
+                r.visitInsn(Opcodes.POP);
+                JarPortTest.append(r, ";");
+            }
+            r.visitInsn(Opcodes.RETURN);
+            r.visitMaxs(0, 0);
+            r.visitEnd();
         }
         w.visitEnd();
         return w.toByteArray();
