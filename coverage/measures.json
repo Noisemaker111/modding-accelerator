@@ -861,6 +861,30 @@
    "target": {"value": 50, "by": "2026-12-08", "step": "47"}
   },
   {
+   "id": "port.jar-links.newest",
+   "area": "port",
+   "name": "Mods of the most-used release whose ported jar links on the newest game, Fabric and NeoForge",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "What people ask for: the 150 most-downloaded mods of the release with the most mods on Modrinth (Fabric 1.20.1, NeoForge 1.21.1) ported in one go to the newest release (26.3), 22 and 15 updates away, and linked against it and its loader. python bench/exposure.py jars --loader fabric --from 1.20.1 --to 26.3, or tools/cloud-run exposure, which runs both among its jumps. A mod has to get through every update on the way, so this is far below any one update's count.",
+   "info": true,
+   "points": [
+    {"date": "2026-11-20", "value": 11, "n": 294, "note": "first measurement: Fabric 1.20.1 -> 26.3 5 of 147, NeoForge 1.21.1 -> 26.3 6 of 147. Every hub to 26.3, measured once in the same run: 5 to 39 of 147, under 15 from 1.16.5 on except the last three hubs", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44821929843, PR #140 before main's #139"}
+   ]
+  },
+  {
+   "id": "port.jar-links.big-updates",
+   "area": "port",
+   "name": "Most-downloaded mods whose ported jar links, the big updates only, Fabric and NeoForge",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "port.jar-links.every-update without the updates that change almost nothing: only the 35 updates into another family of releases (coverage/changes/index.json: the game broke at least 1 in 100 of its names). Across the other 29, 93% of mods link untouched, which is why every update together reads 62%.",
+   "info": true,
+   "points": [
+    {"date": "2026-11-20", "value": 1861, "n": 5149, "note": "35 big updates; the 29 small ones 3986 of 4274; the 23 jumps of several updates 1138 of 3384", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44821929843, PR #140 before main's #139"}
+   ]
+  },
+  {
    "id": "port.jar-links.every-update",
    "area": "port",
    "name": "Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge",
