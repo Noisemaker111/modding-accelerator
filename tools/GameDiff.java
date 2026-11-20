@@ -5548,9 +5548,19 @@ public final class GameDiff {
                 }
             }
             List<Reading> out = new ArrayList<>();
+            StringBuilder log = Learner.LEARN_LOG.isEmpty() ? null : new StringBuilder();
+            for (String key : misses.keySet()) {
+                sites.putIfAbsent(key, new IdentityHashMap<>());
+            }
             for (var e : sites.entrySet()) {
                 int[] tally = new int[2];
                 String best = Learner.vote(e.getValue().values(), tally);
+                if (log != null) {
+                    log.append(e.getKey()).append('\t').append(tally[1]).append('\t').append(tally[0]).append('\t').append(best == null ? "" : best).append('\t');
+                    e.getValue().values().stream().flatMap(Set::stream).distinct().limit(4).forEach(r -> log.append(r).append(" ;; "));
+                    misses.getOrDefault(e.getKey(), List.of()).stream().limit(3).forEach(m -> log.append("MISS ").append(m).append(" ;; "));
+                    log.append('\n');
+                }
                 // Kept with 80% of the uses agreeing, as Learner keeps one; or when every use that reads as anything agrees
                 // and two thirds read: a use the game rewrote past any reading (centred another way, its float math
                 // folded) is not another answer.
@@ -5562,6 +5572,13 @@ public final class GameDiff {
                 String[] key = e.getKey().split("#");
                 Ref r = refs.get(key[0]);
                 out.add(new Reading(r.owner().replace('/', '.'), r.name(), r.desc(), Integer.parseInt(key[1]), key[2], best, tally[0], tally[1]));
+            }
+            if (log != null) {
+                try {
+                    Files.writeString(Path.of(Learner.LEARN_LOG + "-retyped-" + h.a.version + "-" + h.b.version + ".tsv"), log, StandardCharsets.UTF_8);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
             }
             return out;
         }

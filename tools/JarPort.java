@@ -5239,7 +5239,9 @@ public final class JarPort {
             } else {
                 FieldHit f = fieldNew(mod, callers, o, name);
                 GameDiff.Cls holder = Exposure.declaring(b, o, 'f', name, null);
-                if (f == null || !f.open() || holder == null || ((holder.fields.get(name).flags & Opcodes.ACC_STATIC) != 0) != isStatic) {
+                // A closed field the game's own code reads there (this.font in its screens) is opened when the loader lets the mod.
+                if (f == null || !f.open() && !opened(mod, callers, o, 'f', name, null) || holder == null
+                    || ((holder.fields.get(name).flags & Opcodes.ACC_STATIC) != 0) != isStatic) {
                     throw new Refused("no field " + name + " the caller may read on " + o);
                 }
                 desc = f.desc();
