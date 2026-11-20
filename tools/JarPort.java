@@ -62,7 +62,7 @@ public final class JarPort {
         final Map<String, List<Listener>> listenerMethods = new HashMap<>();
         final Map<String, List<Listener>> split = new HashMap<>(); // mixed subscriber -> its mod-bus listeners, moved to a companion
         final Map<String, byte[]> bytes = new HashMap<>(); // class -> its bytes as read, for what a method body reads
-        final Map<String, Injector> injectors = new HashMap<>(); // mixin class.handler+desc -> its @Inject
+        final Map<String, Injector> injectors = new HashMap<>(); // mixin class.handler+desc -> its @Inject, @Redirect...
         final Map<String, String> retargets = new HashMap<>(); // class.handler+desc + " " + annotation string -> what is written instead
         final Map<String, Adapter> adapters = new HashMap<>(); // class.handler+desc -> the handler re-declared for its target's new parameters
         final Map<String, List<Bridge>> bridges = new HashMap<>(); // class -> methods added with a game method's new signature
@@ -598,8 +598,8 @@ public final class JarPort {
                                 }
                             };
                         }
-                        if (annotation.equals(INJECT)) {
-                            Injector inj = new Injector(new ArrayList<>(), new ArrayList<>());
+                        if (INJECTORS.contains(annotation)) {
+                            Injector inj = new Injector(annotation, new ArrayList<>(), new ArrayList<>());
                             mod.injectors.put(rc.name + "." + name + desc, inj);
                             return injection(inj, null);
                         }
@@ -632,8 +632,17 @@ public final class JarPort {
         "org/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable"
     );
 
-    /** A handler's @Inject: the target method strings, and each @At's {value, target, ordinal} (in @Slice too). */
-    record Injector(List<String> methods, List<String[]> ats) {}
+    /** Mixin's and MixinExtras' annotations that inject at an @At into a target method. */
+    static final Set<String> INJECTORS = Set.of(INJECT,
+        "Lorg/spongepowered/asm/mixin/injection/Redirect;", "Lorg/spongepowered/asm/mixin/injection/ModifyArg;",
+        "Lorg/spongepowered/asm/mixin/injection/ModifyArgs;", "Lorg/spongepowered/asm/mixin/injection/ModifyVariable;",
+        "Lorg/spongepowered/asm/mixin/injection/ModifyConstant;",
+        "Lcom/llamalad7/mixinextras/injector/wrapoperation/WrapOperation;", "Lcom/llamalad7/mixinextras/injector/WrapWithCondition;",
+        "Lcom/llamalad7/mixinextras/injector/v2/WrapWithCondition;", "Lcom/llamalad7/mixinextras/injector/ModifyExpressionValue;",
+        "Lcom/llamalad7/mixinextras/injector/ModifyReturnValue;", "Lcom/llamalad7/mixinextras/injector/ModifyReceiver;");
+
+    /** A handler's injector (its annotation): the target method strings, and each @At's {value, target, ordinal} (in @Slice too). */
+    record Injector(String kind, List<String> methods, List<String[]> ats) {}
 
     /**
      * A handler re-declared with its target's new parameters (desc, new names) and the original body moved to name$mmt:
@@ -642,8 +651,14 @@ public final class JarPort {
      */
     record Adapter(String desc, int[] from, int captured) {}
 
-    /** A method added to a mod class with a game method's new name and signature (new names), calling the mod's own. */
-    record Bridge(String name, String desc, String target, String targetDesc, int[] from, int access) {}
+    /**
+     * A method added to a mod class with a game method's new name and signature (new names), calling the mod's own
+     * (target). Each old argument i is the new parameter from[i], or a default when from[i] is -1. When via is not null
+     * the game method's parameters changed type, and the mod's method is replaced: its body moves to the new signature,
+     * with each old parameter worked out first from new parameter from[i] through the steps via[i] (null: as it is), so
+     * calls in the body that need what the game passes now get it (see Retype).
+     */
+    record Bridge(String name, String desc, String target, String targetDesc, int[] from, int access, String[][] via) {}
 
     /** Collects an @Inject's method strings and @At values; at is the @At being read, or null. */
     static AnnotationVisitor injection(Injector inj, String[] at) {
@@ -1172,8 +1187,11 @@ public final class JarPort {
                         shadowMethod(mod, rc.name, targets, m.name, m.desc, m.flags);
                     }
                     Injector inj = mod.injectors.get(key);
-                    if (inj != null) {
+                    if (inj != null && inj.kind().equals(INJECT)) {
                         retarget(mod, key, targets, m, inj);
+                    }
+                    if (inj != null) {
+                        pointsGone(mod, rc.name, targets, inj);
                     }
                 }
                 continue;
@@ -1272,8 +1290,9 @@ public final class JarPort {
             mod.change("override renamed");
             return;
         }
-        if (bridge(mod, rc, m, moved, mapped, supers)) {
-            mod.change("override bridged to the game method's new signature");
+        if (bridge(mod, rc, m, decl.owner(), moved, mapped, supers)) {
+            boolean body = mod.bridges.get(rc.name).get(mod.bridges.get(rc.name).size() - 1).via() != null;
+            mod.change(body ? "override moved to the game method's new parameter types" : "override bridged to the game method's new signature");
             return;
         }
         // The game no longer calls it: the class still loads, the hook is silent.
@@ -1286,7 +1305,7 @@ public final class JarPort {
      * new ones by type (same types in another order, some added, one now narrower), or a default where the mod's body
      * never reads it. The result must serve as the new one. Anything else stays an override the game no longer calls.
      */
-    boolean bridge(Mod mod, GameDiff.RawCls rc, GameDiff.RawMeth m, String[] moved, String mapped, List<String> supers) {
+    boolean bridge(Mod mod, GameDiff.RawCls rc, GameDiff.RawMeth m, String gameOwner, String[] moved, String mapped, List<String> supers) {
         GameDiff.Meth now = null;
         for (String s : supers) {
             GameDiff.Cls holder = Exposure.declaring(b, s, 'm', moved[1], moved[2]);
@@ -1309,25 +1328,89 @@ public final class JarPort {
         if (!result.equals(wanted) && (wanted.getSort() == Type.VOID || !usable(result, wanted))) {
             return false;
         }
-        Type[] was = Type.getArgumentTypes(mapped);
-        int[] from = convert(Type.getArgumentTypes(moved[2]), was, unread(mod, rc.name, m.name, m.desc, (m.flags & Opcodes.ACC_STATIC) != 0, was.length));
-        if (from == null) {
-            return false;
-        }
+        Type[] was = Type.getArgumentTypes(mapped), params = Type.getArgumentTypes(moved[2]);
+        boolean[] unread = unread(mod, rc.name, m.name, m.desc, (m.flags & Opcodes.ACC_STATIC) != 0, was.length);
+        int[] from = convert(params, was, unread);
         int access = (rc.flags & Opcodes.ACC_INTERFACE) != 0 ? Opcodes.ACC_PUBLIC : m.flags & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED);
-        mod.bridges.computeIfAbsent(rc.name, k -> new ArrayList<>()).add(new Bridge(moved[1], moved[2], m.name, m.desc, from, access | Opcodes.ACC_SYNTHETIC));
+        if (from != null) {
+            mod.bridges.computeIfAbsent(rc.name, k -> new ArrayList<>()).add(new Bridge(moved[1], moved[2], m.name, m.desc, from, access | Opcodes.ACC_SYNTHETIC, null));
+            return true;
+        }
+        // Parameters that changed type: each old one from a new one, through what the game's own overrides use for it.
+        if ((rc.flags & Opcodes.ACC_INTERFACE) != 0 || (m.flags & Opcodes.ACC_ABSTRACT) != 0 || mod.bytes.get(rc.name) == null
+            || (new ClassReader(mod.bytes.get(rc.name)).readShort(6) & 0xFFFF) < Opcodes.V1_6) {
+            return false; // a moved body needs stack map frames to carry over
+        }
+        int[] paired = pair(params, was);
+        String[][] via = retype.conversions(gameOwner, m.name, m.desc, moved, paired);
+        from = new int[was.length];
+        String[][] steps = new String[was.length][];
+        for (int i = 0; i < was.length; i++) {
+            if (paired[i] >= 0) {
+                from[i] = paired[i];
+            } else if (via != null && via[i] != null) {
+                from[i] = Integer.parseInt(via[i][0]);
+                steps[i] = Arrays.copyOfRange(via[i], 1, via[i].length);
+            } else if (unread != null && unread[i] || onlyPassed(mod, rc.name, m, slots(was)[i])) {
+                from[i] = -1;
+            } else {
+                return false;
+            }
+        }
+        mod.bridges.computeIfAbsent(rc.name, k -> new ArrayList<>()).add(new Bridge(moved[1], moved[2], m.name, m.desc, from, m.flags & ~Opcodes.ACC_ABSTRACT, steps));
         return true;
     }
 
     /**
-     * For each parameter of to (new names), the parameter of from that supplies it, or -1 where unread says to's method
-     * never reads it; null when one cannot be supplied. A type found once on each side is taken wherever it stands; a
-     * type that appears several times pairs up in order only when both sides have it as often. A parameter with no
-     * match takes the one parameter of from whose type now serves as it (a subtype).
+     * Whether a mod method only ever passes the parameter in slot to game methods whose parameters changed: then it needs
+     * no value of its own in a moved body, because each such call is given what the game passes now instead (Sites.given;
+     * keyPressed(key, scan, mods) only passing scan and mods on to super.keyPressed). Read as GameDiff reads bodies.
      */
-    int[] convert(Type[] from, Type[] to, boolean[] unread) {
+    boolean onlyPassed(Mod mod, String owner, GameDiff.RawMeth m, int slot) {
+        byte[] bytes = mod.bytes.get(owner);
+        GameDiff.Origin o = new GameDiff.Origin(bytes, Map.of(), null, new GameDiff.Names(null), new HashMap<>());
+        for (MethodModel mm : ClassFile.of().parse(bytes).methods()) {
+            if (mm.methodName().stringValue().equals(m.name) && mm.methodType().stringValue().equals(m.desc)) {
+                GameDiff.Body body = new GameDiff.Decoder(o, owner).run(mm);
+                if (body == null) {
+                    return false;
+                }
+                int[] seen = new int[1];
+                for (GameDiff.Node s : body.statements) {
+                    if (!passedOnly(mod, s, slot, seen)) {
+                        return false;
+                    }
+                }
+                return seen[0] > 0;
+            }
+        }
+        return false;
+    }
+
+    boolean passedOnly(Mod mod, GameDiff.Node n, int slot, int[] seen) {
+        for (GameDiff.Node k : n.kids) {
+            if (k.op == 'p' && Integer.valueOf(slot).equals(k.value)) {
+                seen[0]++;
+                if (!(n.op == 'v' || n.op == 's') || n.ref == null || n.ref.kind() != 'm') {
+                    return false;
+                }
+                Decl decl = n.ref.owner().startsWith("[") ? null : declaringOld(mod, n.ref.owner(), 'm', n.ref.name(), n.ref.desc());
+                if (decl == null || !decl.game() || route.method(decl.owner(), n.ref.name(), n.ref.desc())[2].equals(desc(n.ref.desc()))) {
+                    return false;
+                }
+            } else if (!passedOnly(mod, k, slot, seen)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * For each parameter of to, the parameter of from with the same type: a type found once on each side wherever it
+     * stands, or in order when both sides have it equally often; -2 where there is none.
+     */
+    static int[] pair(Type[] from, Type[] to) {
         int[] out = new int[to.length];
-        boolean[] taken = new boolean[from.length];
         for (int j = 0; j < to.length; j++) {
             out[j] = -2;
             List<Integer> same = new ArrayList<>();
@@ -1342,6 +1425,18 @@ public final class JarPort {
                 out[j] = same.get(nth);
             }
         }
+        return out;
+    }
+
+    /**
+     * For each parameter of to (new names), the parameter of from that supplies it, or -1 where unread says to's method
+     * never reads it; null when one cannot be supplied. A type found once on each side is taken wherever it stands; a
+     * type that appears several times pairs up in order only when both sides have it as often. A parameter with no
+     * match takes the one parameter of from whose type now serves as it (a subtype).
+     */
+    int[] convert(Type[] from, Type[] to, boolean[] unread) {
+        int[] out = pair(from, to);
+        boolean[] taken = new boolean[from.length];
         for (int j = 0; j < to.length; j++) {
             if (out[j] >= 0) {
                 taken[out[j]] = true;
@@ -1679,6 +1774,9 @@ public final class JarPort {
                     newName = renamed[0];
                     newDesc = oldDesc(renamed[1]);
                 }
+                if (mod.bridges.getOrDefault(self[0], List.of()).stream().anyMatch(br -> br.via() != null && br.target().equals(name) && br.targetDesc().equals(desc))) {
+                    return null; // its body moves to the game method's new signature (visitEnd)
+                }
                 String key = self[0] + "." + name + desc;
                 Adapter adapter = mod.adapters.get(key);
                 String originalSignature = signature;
@@ -1709,7 +1807,11 @@ public final class JarPort {
             @Override
             public void visitEnd() {
                 for (Bridge br : mod.bridges.getOrDefault(self[0], List.of())) {
-                    bridgeCode(super.visitMethod(br.access(), br.name(), oldDesc(br.desc()), null, null), self[0], mod.selfInterface, br);
+                    if (br.via() != null) {
+                        moved(mod, bytes, self[0], br, remap);
+                    } else {
+                        bridgeCode(super.visitMethod(br.access(), br.name(), oldDesc(br.desc()), null, null), self[0], mod.selfInterface, br);
+                    }
                 }
                 for (Added m : mod.added.values()) {
                     MethodVisitor mv = super.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, m.name(), m.desc(), null, null);
@@ -2023,6 +2125,40 @@ public final class JarPort {
         }
     }
 
+    /**
+     * An injector into a method that still links, whose @At names a call or field that method made in the old release and
+     * no longer makes in the new one (or not as often as its ordinal needs), finds no place there: Mixin scans 0 targets
+     * and, with the require most mods set, stops the game (1.21.2's LoadingOverlay.render stopped calling
+     * RenderSystem.blendFunc). Reported for every injector, not only the ones retarget moves.
+     */
+    void pointsGone(Mod mod, String mixin, List<String> targets, Injector inj) {
+        for (String text : inj.methods()) {
+            Found into = find(targets, "method", text);
+            GameDiff.Meth before = oldMethod(targets, text);
+            GameDiff.Meth now = into.kind() == 'm' && into.desc() != null ? b.method(into.owner(), into.name(), into.desc()) : null;
+            if (now == null || before == null) {
+                continue;
+            }
+            for (String[] point : inj.ats()) {
+                if (point[0] == null || point[1] == null || !Set.of("INVOKE", "INVOKE_ASSIGN", "FIELD").contains(point[0])) {
+                    continue;
+                }
+                Found at = find(targets, "target", point[1]);
+                Matcher m = MEMBER.matcher(point[1]);
+                if ((at.kind() != 'm' && at.kind() != 'f') || !m.matches()) {
+                    continue;
+                }
+                int had = uses(code(a), a, before, at.kind(), m.group(1), m.group(2), m.group(3) != null ? m.group(3) : m.group(4));
+                int has = uses(code(b), b, now, at.kind(), at.owner(), at.name(), at.desc());
+                int needed = point[2] == null ? 1 : Integer.parseInt(point[2]) + 1;
+                if (had >= needed && has >= 0 && has < needed) {
+                    mod.unlinked.add("mixin injection point gone: " + Exposure.dotted(at.owner()) + "." + at.name() + (at.desc() == null ? "" : at.desc())
+                        + " in " + Exposure.dotted(now.owner.name) + "." + now.name + now.desc + " (in " + Exposure.dotted(mixin) + ")");
+                }
+            }
+        }
+    }
+
     /** Whether every @At of an injector still finds its place in the methods it injects into, in the new release. */
     boolean pointsKept(List<String> targets, Injector inj, List<Found> into, List<Found> ats) {
         List<GameDiff.Meth[]> methods = enclosing(targets, inj, into);
@@ -2213,6 +2349,352 @@ public final class JarPort {
         }
     }
 
+    final Retype retype = new Retype();
+
+    /**
+     * How the game turns a method's new parameters into its old ones, learned from its own code. A game method whose
+     * parameter changed type (1.20's Screen.render(PoseStack, ...) -> render(GuiGraphics, ...); 1.21.9's
+     * keyPressed(int, int, int) -> keyPressed(KeyEvent)) is overridden by Mojang's own classes in both releases. Their
+     * old and new bodies are read as GameDiff reads them (statements of value trees) and lined up statement by statement
+     * the way GameDiff's learner lines them up: a statement that is the same on both sides except where the old body
+     * used the old parameter says what the new body uses there instead. Where that is the new parameter read through
+     * no-argument calls or fields (graphics.pose(), event.key()) giving the old parameter's type, it is a conversion; the
+     * game's uses must agree (80%, see Retype.agreed). Statements line up through the route map, so a call whose
+     * signature changed matches its new form.
+     */
+    final class Retype {
+
+        final Map<String, String[][]> learned = new HashMap<>(); // game method key -> per old parameter: {from, steps...} or null
+
+        /**
+         * For each old parameter of a game method (old owner, name, desc) that paired leaves without a new parameter of the
+         * same type (-2), the new parameter it comes from and the steps that give it ("m:owner.name()desc" a call,
+         * "f:owner.name:desc" a field read, new names); null where the game's code shows none. moved is the method's new
+         * owner, name and desc.
+         */
+        String[][] conversions(String owner, String name, String desc, String[] moved, int[] paired) {
+            return learned.computeIfAbsent(owner + "." + name + desc + "->" + moved[1] + moved[2], k -> learn(owner, name, desc, moved, paired));
+        }
+
+        String[][] learn(String owner, String name, String desc, String[] moved, int[] paired) {
+            GameCode oldCode = code(a), newCode = code(b);
+            if (oldCode == null || newCode == null) {
+                return null;
+            }
+            Type[] was = Type.getArgumentTypes(desc), now = Type.getArgumentTypes(moved[2]);
+            int[] oldSlots = slots(was), newSlots = slots(now);
+            Map<Integer, Integer> holes = new HashMap<>(); // old slot -> old parameter that needs a conversion
+            Map<Integer, Integer> same = new HashMap<>(); // old slot -> new slot of the parameter paired with it
+            same.put(0, 0);
+            for (int i = 0; i < was.length; i++) {
+                if (paired[i] >= 0) {
+                    same.put(oldSlots[i], newSlots[paired[i]]);
+                } else {
+                    holes.put(oldSlots[i], i);
+                }
+            }
+            Map<Integer, Integer> newParam = new HashMap<>(); // new slot -> new parameter
+            for (int j = 0; j < now.length; j++) {
+                newParam.put(newSlots[j], j);
+            }
+            List<Map<String, Integer>> votes = new ArrayList<>();
+            for (int i = 0; i < was.length; i++) {
+                votes.add(new HashMap<>());
+            }
+            for (String c : overriders(owner, name, desc)) {
+                String nc = cls(c);
+                GameDiff.Cls holder = b.classes.get(nc);
+                if (holder == null || !holder.methods.containsKey(moved[1] + moved[2])) {
+                    continue;
+                }
+                GameDiff.Body x = body(oldCode, c, name + desc), y = body(newCode, nc, moved[1] + moved[2]);
+                if (x != null && y != null) {
+                    new Lining(holes, same).pair(x, y, (i, m) -> {
+                        String read = reading(m, newParam, was[holes.get(i)]);
+                        if (read != null) {
+                            votes.get(holes.get(i)).merge(read, 1, Integer::sum);
+                        }
+                    });
+                }
+            }
+            String[][] out = new String[was.length][];
+            boolean any = false;
+            for (int i = 0; i < was.length; i++) {
+                String best = agreed(votes.get(i));
+                if (best != null && stepsLink(best)) {
+                    out[i] = best.split(" ");
+                    any = true;
+                }
+            }
+            return any ? out : null;
+        }
+
+        /** The reading most of the game's uses agree on: at least 80% of them, and two unless it is the only use. */
+        static String agreed(Map<String, Integer> votes) {
+            int total = votes.values().stream().mapToInt(Integer::intValue).sum();
+            return votes.entrySet().stream()
+                .filter(e -> e.getValue() * 10 >= total * 8 && (e.getValue() >= 2 || total == 1))
+                .map(Map.Entry::getKey).findFirst().orElse(null);
+        }
+
+        /** Every step reads a member of the new release a mod may use. */
+        boolean stepsLink(String reading) {
+            String[] parts = reading.split(" ");
+            for (int s = 1; s < parts.length; s++) {
+                String[] step = step(parts[s]);
+                if (step[0].equals("m")) {
+                    GameDiff.Meth m = b.method(step[1], step[2], step[3]);
+                    if (m == null || (m.flags & Opcodes.ACC_PUBLIC) == 0 || (m.flags & Opcodes.ACC_STATIC) != 0) {
+                        return false;
+                    }
+                } else {
+                    GameDiff.Fld f = b.field(step[1], step[2]);
+                    if (f == null || (f.flags & Opcodes.ACC_PUBLIC) == 0 || (f.flags & Opcodes.ACC_STATIC) != 0) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /** {kind, owner, name, desc} of one step. */
+        static String[] step(String text) {
+            int dot = text.lastIndexOf('.', text.indexOf(text.charAt(0) == 'm' ? '(' : ':', 2));
+            String owner = text.substring(2, dot), rest = text.substring(dot + 1);
+            if (text.charAt(0) == 'm') {
+                int p = rest.indexOf('(');
+                return new String[] { "m", owner, rest.substring(0, p), rest.substring(p) };
+            }
+            int colon = rest.indexOf(':');
+            return new String[] { "f", owner, rest.substring(0, colon), rest.substring(colon + 1) };
+        }
+
+        /**
+         * What the new body computes where the old one used a parameter, as a conversion: "j step..." for new parameter j
+         * read through no-argument calls or fields, giving the old parameter's type. Anything else (the new parameter
+         * passed as it is to a call that changed with it, or other code) is no conversion.
+         */
+        String reading(GameDiff.Node m, Map<Integer, Integer> newParam, Type wanted) {
+            if (!(m.type.equals(desc(wanted.getDescriptor())) || wanted.getSort() == Type.OBJECT && m.type.startsWith("L")
+                && subtype(b, m.type.substring(1, m.type.length() - 1), cls(wanted.getInternalName())))) {
+                return null;
+            }
+            Deque<String> steps = new ArrayDeque<>();
+            GameDiff.Node n = m;
+            while (steps.size() < 4 && n.kids.length == 1 && (n.op == 'v' && n.value == null && n.ref.desc().startsWith("()") || n.op == 'f')) {
+                steps.push(n.op == 'v' ? "m:" + n.ref.owner() + "." + n.ref.name() + n.ref.desc() : "f:" + n.ref.owner() + "." + n.ref.name() + ":" + n.ref.desc());
+                n = n.kids[0];
+            }
+            Integer j = n.op == 'p' && n.value instanceof Integer slot ? newParam.get(slot) : null;
+            if (j == null || steps.isEmpty()) {
+                return null;
+            }
+            return j + " " + String.join(" ", steps);
+        }
+
+        /** The old release's classes that declare name+desc and are owner or extend it. */
+        List<String> overriders(String owner, String name, String desc) {
+            List<String> out = new ArrayList<>();
+            for (GameDiff.Cls c : a.classes.values()) {
+                if (c.methods.containsKey(name + desc) && subtype(a, c.name, owner)) {
+                    out.add(c.name);
+                }
+            }
+            Collections.sort(out);
+            return out;
+        }
+
+        /** A game method's body as GameDiff reads it (Mojang names), or null. */
+        GameDiff.Body body(GameCode code, String owner, String key) {
+            String jar = code.toJar.getOrDefault(owner, owner);
+            byte[] bytes = code.bytes.apply(jar);
+            if (bytes == null) {
+                return null;
+            }
+            Map<String, GameDiff.RawCls> raw = new HashMap<>() {
+                @Override
+                public GameDiff.RawCls get(Object k) {
+                    return code.raw((String) k);
+                }
+            };
+            GameDiff.Origin o = new GameDiff.Origin(bytes, raw, null, code.names, new HashMap<>());
+            for (MethodModel mm : ClassFile.of().parse(bytes).methods()) {
+                String rn = mm.methodName().stringValue(), rd = mm.methodType().stringValue();
+                if ((code.names.method(jar, rn, rd) + code.names.desc(rd)).equals(key)) {
+                    return new GameDiff.Decoder(o, jar).run(mm);
+                }
+            }
+            return null;
+        }
+    }
+
+    /** Whether class c is sup or extends or implements it in one release. */
+    static boolean subtype(GameDiff.Snap s, String c, String sup) {
+        Deque<String> todo = new ArrayDeque<>(List.of(c));
+        Set<String> seen = new HashSet<>();
+        while (!todo.isEmpty()) {
+            String k = todo.poll();
+            if (k.equals(sup)) {
+                return true;
+            }
+            GameDiff.Cls held = seen.add(k) ? s.classes.get(k) : null;
+            if (held != null) {
+                if (held.sup != null) {
+                    todo.add(held.sup);
+                }
+                todo.addAll(held.ifaces);
+            }
+        }
+        return false;
+    }
+
+    /** Each parameter's local slot in an instance method. */
+    static int[] slots(Type[] params) {
+        int[] out = new int[params.length];
+        int next = 1;
+        for (int i = 0; i < params.length; i++) {
+            out[i] = next;
+            next += params[i].getSize();
+        }
+        return out;
+    }
+
+    /**
+     * Two bodies of one method, the old release's (x) and the new one's (y), lined up statement by statement as
+     * GameDiff.Learner lines them up: equal statements (through the route map) are anchors, and in the gaps between them
+     * a statement of x that uses a hole parameter is matched against each of y's; where it matches everywhere else, y's
+     * code at each use of the parameter is reported. same maps old parameter slots to the new slots of the same values.
+     */
+    final class Lining {
+        final Map<Integer, Integer> holes, same;
+        final Map<GameDiff.Node, Long> hashX = new IdentityHashMap<>(), hashY = new IdentityHashMap<>();
+        int budget;
+
+        Lining(Map<Integer, Integer> holes, Map<Integer, Integer> same) {
+            this.holes = holes;
+            this.same = same;
+        }
+
+        boolean hole(GameDiff.Node n) {
+            return n.op == 'p' && n.value instanceof Integer s && holes.containsKey(s);
+        }
+
+        void pair(GameDiff.Body x, GameDiff.Body y, java.util.function.BiConsumer<Integer, GameDiff.Node> found) {
+            long[] tx = new long[x.statements.size()], ty = new long[y.statements.size()];
+            for (int i = 0; i < tx.length; i++) {
+                tx[i] = hash(x.statements.get(i), true);
+            }
+            for (int j = 0; j < ty.length; j++) {
+                ty[j] = hash(y.statements.get(j), false);
+            }
+            List<int[]> bounds = new ArrayList<>(GameDiff.Learner.matches(tx, ty));
+            bounds.add(new int[] { tx.length, ty.length });
+            int i0 = 0, j0 = 0;
+            for (int[] p : bounds) {
+                int na = p[0] - i0, nb = p[1] - j0;
+                for (int i = i0; i < p[0] && nb > 0; i++) {
+                    GameDiff.Node sx = x.statements.get(i);
+                    if (!holed(sx)) {
+                        continue;
+                    }
+                    boolean bare = sx.kids.length == 1 && sx.kids[0].kids.length == 0;
+                    for (int j = j0; j < p[1]; j++) {
+                        if (bare && !(na == nb && j - j0 == i - i0 || nb == 1)) {
+                            continue;
+                        }
+                        Map<GameDiff.Node, GameDiff.Node> at = new IdentityHashMap<>();
+                        budget = 20_000;
+                        if (match(sx, y.statements.get(j), at)) {
+                            at.forEach((h, m) -> found.accept((Integer) h.value, m));
+                        }
+                    }
+                }
+                i0 = p[0] + 1;
+                j0 = p[1] + 1;
+            }
+        }
+
+        boolean holed(GameDiff.Node n) {
+            if (hole(n)) {
+                return true;
+            }
+            for (GameDiff.Node k : n.kids) {
+                if (holed(k)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /** A node's own part, in the new release's names: a member by its new name and descriptor. */
+        String head(GameDiff.Node n, boolean old) {
+            String ref = n.ref == null ? "" : switch (n.ref.kind()) {
+                case 'c' -> old ? cls(n.ref.owner()) : n.ref.owner();
+                case 'f' -> old ? route.field(n.ref.owner(), n.ref.name())[1] : n.ref.name();
+                case 'm' -> {
+                    if (!old) {
+                        yield n.ref.name() + n.ref.desc();
+                    }
+                    String[] moved = route.method(n.ref.owner(), n.ref.name(), n.ref.desc());
+                    yield moved[1] + moved[2];
+                }
+                default -> n.ref.owner();
+            };
+            return switch (n.op) {
+                case 'p' -> (old ? same.getOrDefault((Integer) n.value, -1) : n.value) + ":" + (old ? desc(n.type) : n.type);
+                case 'l' -> n.value + ":" + (old ? desc(n.type) : n.type);
+                case 'k' -> n.type + ":" + n.value;
+                case 'x' -> n.type;
+                case 'o', 'S', 'y' -> n.value + ref;
+                default -> String.valueOf(n.value) + ref;
+            };
+        }
+
+        long hash(GameDiff.Node n, boolean old) {
+            Map<GameDiff.Node, Long> memo = old ? hashX : hashY;
+            Long known = memo.get(n);
+            if (known != null) {
+                return known;
+            }
+            long h;
+            if (old && hole(n) || GameDiff.Decoder.phi(n)) {
+                h = 0x9E3779B97F4A7C15L * (System.identityHashCode(n) + 1L) + (old ? 0 : 1);
+            } else {
+                h = GameDiff.fnv(n.op + head(n, old));
+                for (GameDiff.Node k : n.kids) {
+                    h = h * 1_000_003L + hash(k, old);
+                }
+            }
+            memo.put(n, h);
+            return h;
+        }
+
+        boolean match(GameDiff.Node x, GameDiff.Node y, Map<GameDiff.Node, GameDiff.Node> at) {
+            if (--budget < 0) {
+                return false;
+            }
+            if (hole(x)) {
+                GameDiff.Node had = at.putIfAbsent(x, y);
+                return had == null || had == y;
+            }
+            if (GameDiff.Decoder.phi(x) || GameDiff.Decoder.phi(y)) {
+                return false;
+            }
+            if (hash(x, true) == hash(y, false)) {
+                return true;
+            }
+            if (x.op != y.op || x.kids.length != y.kids.length || !head(x, true).equals(head(y, false))) {
+                return false;
+            }
+            for (int i = 0; i < x.kids.length; i++) {
+                if (!match(x.kids[i], y.kids[i], at)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
     /** The old release's method a mixin "method" string names in one of the targets, or null. */
     GameDiff.Meth oldMethod(List<String> targets, String text) {
         Matcher m = MEMBER.matcher(text);
@@ -2283,6 +2765,224 @@ public final class JarPort {
             handler.visitInsn(Opcodes.RETURN);
             handler.visitMaxs(stack + 1, next);
             handler.visitEnd();
+        }
+    }
+
+    /**
+     * A mod method whose game method's parameters changed type, written with the new signature (br): its old parameters
+     * are worked out from the new ones first, its body follows with every local moved past the new parameters, and calls
+     * in it that need what the game passes now get it (Sites.given). Read with expanded frames, which are rewritten with
+     * the new parameters in front.
+     */
+    void moved(Mod mod, byte[] bytes, String owner, Bridge br, ClassVisitor out) {
+        Set<Integer> stored = new HashSet<>();
+        ClassReader reader = new ClassReader(bytes);
+        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                return !name.equals(br.target()) || !desc.equals(br.targetDesc()) ? null : new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitVarInsn(int opcode, int var) {
+                        if (opcode >= Opcodes.ISTORE && opcode <= Opcodes.ASTORE) {
+                            stored.add(var);
+                        }
+                    }
+
+                    @Override
+                    public void visitIincInsn(int var, int increment) {
+                        stored.add(var);
+                    }
+                };
+            }
+        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                if (!name.equals(br.target()) || !desc.equals(br.targetDesc())) {
+                    return null;
+                }
+                String newDesc = oldDesc(br.desc());
+                Track track = new Track(owner, access, br.name(), newDesc, out.visitMethod(access, br.name(), newDesc, null, exceptions));
+                Shift shift = new Shift(track, br, desc, stored);
+                String key = owner + "." + name + desc;
+                Sites sites = new Sites(mod, shift, mod.maxLocals.getOrDefault(key, 0), List.of(), List.of(owner), key, Exposure.dotted(owner) + "." + name);
+                sites.moved = shift;
+                return sites;
+            }
+        }, ClassReader.EXPAND_FRAMES);
+    }
+
+    /**
+     * The stack as the JVM's verifier sees it (asm-commons' AnalyzerAdapter), where a moved method's old parameters keep
+     * who they are: each load of one pushes a mark, so a call can tell which of its arguments is which old parameter.
+     */
+    static final class Track extends org.objectweb.asm.commons.AnalyzerAdapter {
+        final Map<Integer, Object> marks = new HashMap<>(); // slot -> mark
+        final Map<Object, Integer> params = new IdentityHashMap<>(); // mark -> old parameter
+
+        Track(String owner, int access, String name, String desc, MethodVisitor mv) {
+            super(Opcodes.ASM9, owner, access, name, desc, mv);
+        }
+
+        void mark(int slot, int param, Type t) {
+            Object mark = t.getSort() == Type.OBJECT ? new String(t.getInternalName()) : t.getSort() == Type.ARRAY ? new String(t.getDescriptor()) : new Object();
+            marks.put(slot, mark);
+            params.put(mark, param);
+        }
+
+        @Override
+        public void visitVarInsn(int opcode, int var) {
+            super.visitVarInsn(opcode, var);
+            Object mark = marks.get(var);
+            // A long or double is two entries, its value first.
+            int at = stack == null ? -1 : stack.size() - (opcode == Opcodes.LLOAD || opcode == Opcodes.DLOAD ? 2 : 1);
+            if (mark != null && opcode >= Opcodes.ILOAD && opcode <= Opcodes.ALOAD && at >= 0) {
+                stack.set(at, mark);
+            }
+        }
+
+        /** For each argument of a call about to be made (on top of the stack), the old parameter it is, or null. */
+        Integer[] sources(Type[] args) {
+            if (stack == null) {
+                return null;
+            }
+            Integer[] out = new Integer[args.length];
+            int at = stack.size();
+            for (int k = args.length - 1; k >= 0; k--) {
+                at -= args[k].getSize();
+                if (at < 0) {
+                    return null;
+                }
+                out[k] = params.get(stack.get(at));
+            }
+            return out;
+        }
+    }
+
+    /**
+     * A moved body (Bridge.via): the old parameters worked out from the new ones and stored past them, and every local
+     * of the old body moved by as much. loadNew pushes a new parameter itself.
+     */
+    final class Shift extends MethodVisitor {
+        final Track track;
+        final Bridge br;
+        final Type[] now, was;
+        final int[] nowSlots, wasSlots;
+        final int base;
+        final Set<Integer> stored;
+
+        Shift(Track track, Bridge br, String oldDesc, Set<Integer> stored) {
+            super(Opcodes.ASM9, track);
+            this.track = track;
+            this.br = br;
+            this.stored = stored;
+            now = Type.getArgumentTypes(oldDesc(br.desc()));
+            was = Type.getArgumentTypes(oldDesc);
+            nowSlots = slots(now);
+            wasSlots = slots(was);
+            base = 1 + Arrays.stream(now).mapToInt(Type::getSize).sum();
+        }
+
+        int at(int var) {
+            return var == 0 ? 0 : var + base - 1;
+        }
+
+        void loadNew(int j) {
+            mv.visitVarInsn(now[j].getOpcode(Opcodes.ILOAD), nowSlots[j]);
+        }
+
+        /** Whether a call's arguments include an old parameter the body has only a default for. */
+        boolean defaulted(Type[] args) {
+            Integer[] src = track.sources(args);
+            return src != null && Arrays.stream(src).anyMatch(s -> s != null && br.from()[s] < 0);
+        }
+
+        @Override
+        public void visitCode() {
+            super.visitCode();
+            for (int i = 0; i < was.length; i++) {
+                int f = br.from()[i];
+                if (f < 0) {
+                    pushDefault(mv, was[i]);
+                } else {
+                    loadNew(f);
+                    for (String text : br.via()[i] == null ? new String[0] : br.via()[i]) {
+                        String[] s = Retype.step(text);
+                        String owner = inverse.getOrDefault(s[1], s[1]);
+                        if (s[0].equals("m")) {
+                            GameDiff.Cls holder = b.classes.get(s[1]);
+                            boolean itf = holder != null && (holder.flags & Opcodes.ACC_INTERFACE) != 0;
+                            mv.visitMethodInsn(itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, owner, s[2], oldDesc(s[3]), itf);
+                        } else {
+                            mv.visitFieldInsn(Opcodes.GETFIELD, owner, s[2], oldDesc(s[3]));
+                        }
+                    }
+                }
+                mv.visitVarInsn(was[i].getOpcode(Opcodes.ISTORE), at(wasSlots[i]));
+                if (!stored.contains(wasSlots[i])) {
+                    track.mark(at(wasSlots[i]), i, was[i]);
+                }
+            }
+        }
+
+        @Override
+        public void visitVarInsn(int opcode, int var) {
+            super.visitVarInsn(opcode, at(var));
+        }
+
+        @Override
+        public void visitIincInsn(int var, int increment) {
+            super.visitIincInsn(at(var), increment);
+        }
+
+        @Override
+        public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
+            super.visitLocalVariable(name, desc, signature, start, end, at(index));
+        }
+
+        @Override
+        public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
+            if (type != Opcodes.F_NEW || nLocal == 0) {
+                super.visitFrame(type, nLocal, local, nStack, stack);
+                return;
+            }
+            Object[] out = new Object[nLocal + now.length];
+            out[0] = local[0];
+            for (int j = 0; j < now.length; j++) {
+                out[1 + j] = switch (now[j].getSort()) {
+                    case Type.BOOLEAN, Type.CHAR, Type.BYTE, Type.SHORT, Type.INT -> Opcodes.INTEGER;
+                    case Type.FLOAT -> Opcodes.FLOAT;
+                    case Type.LONG -> Opcodes.LONG;
+                    case Type.DOUBLE -> Opcodes.DOUBLE;
+                    case Type.ARRAY -> now[j].getDescriptor();
+                    default -> now[j].getInternalName();
+                };
+            }
+            System.arraycopy(local, 1, out, 1 + now.length, nLocal - 1);
+            super.visitFrame(type, out.length, out, nStack, stack);
+        }
+
+        @Override
+        public void visitMaxs(int maxStack, int maxLocals) {
+            super.visitMaxs(maxStack + 2, maxLocals + base - 1);
+        }
+
+        @Override
+        public void visitParameter(String name, int access) {
+        }
+
+        @Override
+        public void visitAnnotableParameterCount(int parameterCount, boolean visible) {
+        }
+
+        @Override
+        public AnnotationVisitor visitParameterAnnotation(int parameter, String descriptor, boolean visible) {
+            return null;
+        }
+
+        @Override
+        public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String descriptor, boolean visible) {
+            return null;
         }
     }
 
@@ -2440,6 +3140,16 @@ public final class JarPort {
                 return;
             }
             Decl decl = owner.startsWith("[") ? null : declaringOld(mod, owner, 'm', name, desc);
+            Bridge body = decl == null || decl.game() ? null : mod.bridges.getOrDefault(decl.owner(), List.of()).stream()
+                .filter(br -> br.via() != null && br.target().equals(name) && br.targetDesc().equals(desc)).findFirst().orElse(null);
+            if (body != null) {
+                // The mod's own method moved to the game's new parameter types: a call made where they are at hand follows it.
+                if (moved == null || !given(opcode, owner, desc, List.<String[]>of(new String[] { decl.owner(), body.name(), body.desc(), "mod" }))) {
+                    mod.unlinked.add("call: " + Exposure.dotted(decl.owner()) + "." + name + desc + " (moved to the game's new parameter types)");
+                    super.visitMethodInsn(opcode, owner, name, desc, itf);
+                }
+                return;
+            }
             if (decl == null || !decl.game()) {
                 if (decl != null) {
                     String[] inherited = mod.renamedDecl.get(decl.owner() + "." + name + desc);
@@ -2454,6 +3164,22 @@ public final class JarPort {
             String[] t = target(mod, callers, owner, 'm', name, desc, decl);
             String key = decl.owner() + "." + name + desc;
             boolean superCall = opcode == Opcodes.INVOKESPECIAL;
+            if (t == null && moved != null) {
+                List<String[]> now = new ArrayList<>();
+                String[] m = route.method(decl.owner(), name, desc);
+                now.add(new String[] { m[0], m[1], m[2], opcode == Opcodes.INVOKESTATIC ? "static" : "" });
+                for (Call c : rewrites.getOrDefault(key, List.of())) {
+                    now.add(new String[] { c.owner(), c.name(), c.desc(), c.isStatic() ? "static" : "" });
+                }
+                if (given(opcode, owner, desc, now)) {
+                    return;
+                }
+                if (moved.defaulted(Type.getArgumentTypes(desc))) {
+                    mod.unlinked.add("call: " + Exposure.dotted(decl.owner()) + "." + name + desc + " (needs what the game passes now)");
+                    super.visitMethodInsn(opcode, owner, name, desc, itf);
+                    return;
+                }
+            }
             if (t == null && !superCall && rewritten(key, owner, desc, opcode)) {
                 return;
             }
@@ -2812,6 +3538,108 @@ public final class JarPort {
                 super.visitVarInsn(args[i].getOpcode(Opcodes.ISTORE), slots[i]);
             }
             return slots;
+        }
+
+        Shift moved; // set when this body moved to a game method's new parameter types
+
+        /**
+         * A call that does not link, made in a body moved to a game method's new parameter types (moved), to a method that
+         * now takes what the game passes: each candidate {owner, name, desc, "static" | "" | "mod"} (new names) is tried in
+         * order. Each new parameter is an argument of its type (paired as convert pairs them), or the moved method's own new
+         * parameter that the old arguments of the call were worked out from (renderBackground(poseStack) inside render(
+         * GuiGraphics...) becomes renderBackground(graphics); keyPressed(key, scan, mods) becomes keyPressed(event)), or the
+         * moved method's new parameter that no old one came from, the one of its type. Every old argument must be passed
+         * or be worked out from a new parameter that is passed. A static call may become a call on that parameter
+         * (GuiComponent.fill(poseStack, ...) -> graphics.fill(...)).
+         */
+        boolean given(int opcode, String owner, String desc, List<String[]> candidates) {
+            Type[] args = Type.getArgumentTypes(desc);
+            Integer[] src = moved.track.sources(args);
+            if (src == null || Arrays.stream(src).allMatch(Objects::isNull)) {
+                return false;
+            }
+            Type[] mine = Type.getArgumentTypes(moved.br.desc());
+            int[] from = moved.br.from();
+            Type[] argsNew = Arrays.stream(args).map(t -> Type.getType(desc(t.getDescriptor()))).toArray(Type[]::new);
+            boolean isStatic = opcode == Opcodes.INVOKESTATIC;
+            for (String[] c : candidates) {
+                boolean own = c[3].equals("mod"), cStatic = c[3].equals("static");
+                if (!isStatic && cStatic || !own && !linksNew(mod, callers, c[0], 'm', c[1], c[2])) {
+                    continue;
+                }
+                List<Type> params = new ArrayList<>();
+                boolean receiver = isStatic && !cStatic;
+                if (receiver) {
+                    params.add(Type.getObjectType(c[0]));
+                }
+                params.addAll(Arrays.asList(Type.getArgumentTypes(c[2])));
+                Type[] want = params.toArray(Type[]::new);
+                int[] argOf = pair(argsNew, want), newOf = new int[want.length];
+                boolean[] used = new boolean[args.length];
+                Set<Integer> passed = new HashSet<>();
+                boolean ok = true;
+                for (int j = 0; j < want.length && ok; j++) {
+                    newOf[j] = -1;
+                    // An old parameter the moved body has no value for (a default) is never passed on as a value.
+                    if (argOf[j] >= 0 && !used[argOf[j]] && (src[argOf[j]] == null || from[src[argOf[j]]] >= 0)) {
+                        used[argOf[j]] = true;
+                        continue;
+                    }
+                    argOf[j] = -1;
+                    for (int r = 0; r < mine.length && newOf[j] < 0; r++) {
+                        if (!mine[r].equals(want[j])) {
+                            continue;
+                        }
+                        for (int k = 0; k < args.length; k++) {
+                            if (!used[k] && src[k] != null && from[src[k]] == r) {
+                                newOf[j] = r;
+                            }
+                        }
+                    }
+                    if (newOf[j] < 0) {
+                        List<Integer> free = new ArrayList<>();
+                        for (int r = 0; r < mine.length; r++) {
+                            int rr = r;
+                            if (mine[r].equals(want[j]) && Arrays.stream(from).noneMatch(f -> f == rr)) {
+                                free.add(r);
+                            }
+                        }
+                        newOf[j] = free.size() == 1 ? free.get(0) : -1;
+                    }
+                    ok = newOf[j] >= 0;
+                    if (ok) {
+                        passed.add(newOf[j]);
+                    }
+                }
+                for (int k = 0; k < args.length && ok; k++) {
+                    ok = used[k] || src[k] != null && (from[src[k]] < 0 || passed.contains(from[src[k]]));
+                }
+                Type was = Type.getType(desc(Type.getReturnType(desc).getDescriptor())), now = Type.getReturnType(c[2]);
+                if (!ok || !(was.equals(now) || was.getSort() == Type.VOID || usable(now, was))) {
+                    continue;
+                }
+                int[] slots = spill(args, 0);
+                for (int j = 0; j < want.length; j++) {
+                    if (argOf[j] >= 0) {
+                        super.visitVarInsn(args[argOf[j]].getOpcode(Opcodes.ILOAD), slots[argOf[j]]);
+                    } else {
+                        moved.loadNew(newOf[j]);
+                    }
+                }
+                extraStack = Math.max(extraStack, 2 * want.length);
+                GameDiff.Cls holder = b.classes.get(c[0]);
+                boolean itf = own ? mod.classes.get(c[0]) != null && (mod.classes.get(c[0]).flags & Opcodes.ACC_INTERFACE) != 0
+                    : holder != null && (holder.flags & Opcodes.ACC_INTERFACE) != 0;
+                int op = opcode == Opcodes.INVOKESPECIAL ? opcode : cStatic ? Opcodes.INVOKESTATIC : itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL;
+                String site = opcode == Opcodes.INVOKESPECIAL ? owner : own ? c[0] : inverse.getOrDefault(c[0], c[0]);
+                super.visitMethodInsn(op, site, c[1], oldDesc(c[2]), itf);
+                if (was.getSort() == Type.VOID && now.getSort() != Type.VOID) {
+                    super.visitInsn(now.getSize() == 2 ? Opcodes.POP2 : Opcodes.POP);
+                }
+                mod.change("call given what the game passes now");
+                return true;
+            }
+            return false;
         }
 
         /** Takes the arguments not in keep off the stack: all are stored in fresh locals and the kept ones loaded back. */
