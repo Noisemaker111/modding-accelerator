@@ -217,6 +217,18 @@ gradle.afterProject { p ->
             if (delegate.hasProperty('failOnNoDiscoveredTests')) failOnNoDiscoveredTests = false
             testLogging { events 'passed', 'failed', 'skipped' }
         }
+        // The build's own test task may carry its loader's test launch: ModDevGradle's unitTest adds a prepare task,
+        // a working directory holding mainargs.txt and JVM arguments, and without them no test, pure or not, can start.
+        p.gradle.projectsEvaluated {
+            def own = p.tasks.findByName('test')
+            if (own instanceof Test) p.tasks.named('mmtPure').configure { t ->
+                t.dependsOn(own.dependsOn)
+                t.workingDir = own.workingDir
+                t.jvmArgs(own.jvmArgs)
+                t.jvmArgumentProviders.addAll(own.jvmArgumentProviders)
+                t.systemProperties(own.systemProperties)
+            }
+        }
     }
     // plugin-check: build the plugin's jar with its own task and resolve MockBukkit with the plugin's Paper API
     // in a detached configuration, so the build's own configurations are never changed. Off unless asked for.
