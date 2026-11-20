@@ -27,6 +27,18 @@
 
 Everything runs locally on your machine with no AI or cloud calls, using official Mojang, Fabric, and NeoForge data plus checked rules.
 
+## What works where
+
+| Feature | Fabric | NeoForge | Forge | Quilt | Paper |
+|---|---|---|---|---|---|
+| **Port `.jar`** (no source) | 1.14.4 – 26.3 | 1.20.5 – 26.3 | — | — | — |
+| **Port source folder** | 1.14.4 – 26.3 | 1.14.4 – 26.3 | — | — | Lists edits |
+| **Switch loader** (source) | ↔ NeoForge | ↔ Fabric | — | — | — |
+| **Fix modpacks** | All versions | All versions | All versions | All versions | — |
+| **Test in real game** | Client & server | Client & server | Loads only | — | 1.8+ bot server |
+| **Build & logic tests** | Yes | Yes | Yes | Via Fabric | Yes |
+| **Profile performance** | Yes | Yes | Planned | — | — |
+
 ## What you can do today
 
 Open the desktop app and drop a mod's `.jar`, a mod's source folder, or a modpack onto the window:
