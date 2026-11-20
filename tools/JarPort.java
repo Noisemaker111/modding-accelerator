@@ -128,7 +128,10 @@ public final class JarPort {
             String owner = Exposure.Route.internal(Json.text(w, "owner", "")), from = Json.text(w, "from", ""), desc = Json.text(w, "desc", "");
             String member = from.endsWith("=") ? from.substring(0, from.length() - 1) : from; // "name=": a write
             boolean named = desc.isEmpty() ? a.field(owner, member) != null : a.method(owner, from, desc) != null;
-            if (majority(w) && named && covers(Json.text(w, "step", ""), "")) {
+            if (majority(w) && named && covers(Json.text(w, "step", ""), "") && Json.text(w, "expr", "").isEmpty()) {
+                // A call the game removed with nothing in its place: dropped as a removal is, its operands still evaluated.
+                removals.computeIfAbsent(owner + "." + from + desc, k -> new ArrayList<>()).add(w);
+            } else if (majority(w) && named && covers(Json.text(w, "step", ""), "")) {
                 fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game " + Json.text(w, "step", ""),
                     Pattern.compile(Pattern.quote(from)), desc.isEmpty() ? null : desc.substring(0, desc.indexOf(')') + 1), Json.text(w, "expr", "")));
             }
@@ -2860,9 +2863,12 @@ public final class JarPort {
                 String[] t = target(mod, callers, h.getOwner(), 'm', h.getName(), h.getDesc(), decl);
                 if (t == null || !t[2].equals(desc(h.getDesc()))) {
                     int tag = h.getTag();
-                    if (tag == Opcodes.H_INVOKESTATIC || tag == Opcodes.H_INVOKEVIRTUAL || tag == Opcodes.H_INVOKEINTERFACE) {
-                        String opDesc = tag == Opcodes.H_INVOKESTATIC ? h.getDesc() : "(L" + h.getOwner() + ";" + h.getDesc().substring(1);
-                        String[] added = fix(List.of(h.getOwner(), decl.owner()), h.getName(), h.getDesc(), opDesc, tag != Opcodes.H_INVOKESTATIC);
+                    if (tag == Opcodes.H_INVOKESTATIC || tag == Opcodes.H_INVOKEVIRTUAL || tag == Opcodes.H_INVOKEINTERFACE || tag == Opcodes.H_NEWINVOKESPECIAL) {
+                        // X::new takes the arguments and gives an X, as the factory replacing X's constructor does.
+                        String opDesc = tag == Opcodes.H_INVOKESTATIC ? h.getDesc()
+                            : tag == Opcodes.H_NEWINVOKESPECIAL ? h.getDesc().substring(0, h.getDesc().indexOf(')') + 1) + "L" + h.getOwner() + ";"
+                            : "(L" + h.getOwner() + ";" + h.getDesc().substring(1);
+                        String[] added = fix(List.of(h.getOwner(), decl.owner()), h.getName(), h.getDesc(), opDesc, tag != Opcodes.H_INVOKESTATIC && tag != Opcodes.H_NEWINVOKESPECIAL);
                         if (added != null) {
                             mod.change("method reference replaced by a port rule");
                             return new Handle(Opcodes.H_INVOKESTATIC, mod.self, added[0], added[1], mod.selfInterface);

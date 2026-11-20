@@ -1881,6 +1881,7 @@ final class PackCheck {
                 if (Files.isDirectory(p)) Files.createDirectories(target);
                 else {
                     Files.createDirectories(target.getParent());
+                    writable(target);
                     Files.copy(p, target, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
@@ -1890,7 +1891,18 @@ final class PackCheck {
     static void deleteTree(Path path) throws IOException {
         if (!Files.exists(path)) return;
         try (var walk = Files.walk(path)) {
-            for (Path p : walk.sorted(Comparator.reverseOrder()).toList()) Files.delete(p);
+            for (Path p : walk.sorted(Comparator.reverseOrder()).toList()) {
+                writable(p);
+                Files.delete(p);
+            }
+        }
+    }
+
+    /** A mod may mark its own files read-only (Euphoria Patcher's config/euphoria_patcher/.data.json); Windows then refuses to replace or delete them. */
+    static void writable(Path p) throws IOException {
+        var dos = Files.getFileAttributeView(p, java.nio.file.attribute.DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+        if (dos != null && Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS) && dos.readAttributes().isReadOnly()) {
+            dos.setReadOnly(false);
         }
     }
 }
