@@ -92,14 +92,15 @@ final class JarPortRetypeTest {
             "a class the mod's own nested jar carries, from a package the new release dropped, is the mod's; one from a package it kept is gone: " + outer);
 
         List<Map<String, Object>> others = new ArrayList<>();
-        Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin(),
-            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ScreenMixin\"], \"injectors\": {\"defaultRequire\": 1}}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "other.jar", others));
+        Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin(), "m6/ByName.class", byName(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ScreenMixin\", \"ByName\"], \"injectors\": {\"defaultRequire\": 1}}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "other.jar", others));
         List<String> stays = Json.array(others.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(stays.contains("call: g6.Gui.fill(Lg6/Pose;I)V"),
             "a pose the game did not pass, and one outside a moved body, still get no graphics: " + stays);
         JarPortTest.expect(stays.contains("mixin injection point gone: g6.Screen.old()V in g6.Screen.tick()V (in m6.ScreenMixin)")
             && stays.contains("mixin injection point gone: STORE #1 of a int local in g6.Screen.tick()V (in m6.ScreenMixin)")
-            && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 2,
+            && stays.contains("mixin injection point gone: g6.Screen.old()V in g6.Screen.tick()V (in m6.ByName)")
+            && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 3,
             "an @Inject at a call the new method no longer makes, and a @ModifyVariable at a second int store it no longer has, are reported; "
                 + "one at a call it still makes is not: " + stays);
         List<Map<String, Object>> quiet = new ArrayList<>();
@@ -395,6 +396,19 @@ final class JarPortRetypeTest {
             m.visitVarInsn(Opcodes.ALOAD, 1);
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
         });
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.ByName: an @Inject into the method a regular expression names (tick), at its call of old(), which the new tick no longer makes. */
+    static byte[] byName() {
+        ClassWriter w = writer("m6/ByName", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Screen"));
+        value.visitEnd();
+        target.visitEnd();
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onOld", "(" + CI + ")V", "/^(tick|method_1)$/", "INVOKE", "Lg6/Screen;old()V", null);
         w.visitEnd();
         return w.toByteArray();
     }

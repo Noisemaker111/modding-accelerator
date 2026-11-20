@@ -280,7 +280,12 @@ public final class PortableAgent {
             Object flows = call(client, "createWorldOpenFlows", "createIntegratedServerLoader");
             // Before openWorld: it holds this thread until the built-in server has started, and by then it has ticked.
             if (Boolean.TRUE.equals(request.get("freeze"))) freezeAtLoad();
-            invoke(flows, new String[]{"openWorld", "start"}, world, (Runnable)() -> {});
+            try {
+                invoke(flows, new String[]{"openWorld", "start"}, world, (Runnable)() -> {});
+            } catch (NoSuchMethodException older) {
+                // Before 1.20.3 a world opens from the screen it is chosen on: loadLevel(screen, name).
+                invoke(flows, new String[]{"loadLevel", "start"}, screen(), world);
+            }
             done.complete(Json.map("ok", true, "requestedWorld", world));
         } else if (command.equals("connect")) {
             String address = Json.text(request, "address", "127.0.0.1:25565");

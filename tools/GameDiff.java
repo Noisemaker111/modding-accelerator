@@ -5625,7 +5625,10 @@ public final class GameDiff {
                 // so does the new parameter, standing where the old one was.
                 Node[] tokens = new Node[use.kids.length];
                 for (int i = 0; i < tokens.length; i++) {
-                    tokens[i] = use.kids[i].op == 'k' ? use.kids[i] : new Node('p', null, -1000 - i, "V");
+                    Node kid = use.kids[i];
+                    // A constant widened ((float) 0) is that constant of the operand's type, so b's 0 there is a choice too.
+                    tokens[i] = kid.op == 'k' ? kid : kid.op == 'x' && kid.kids.length == 1 && kid.kids[0].op == 'k'
+                        ? new Node('k', null, kid.kids[0].value, kid.type) : new Node('p', null, -1000 - i, "V");
                 }
                 Node over = tokens(m, use.kids, tokens, k, (Integer) to[0]);
                 String key = use.ref.owner() + "." + use.ref.name() + use.ref.desc() + "#" + (k + first) + "#" + to[1];
@@ -5667,6 +5670,9 @@ public final class GameDiff {
         Node tokens(Node n, Node[] ops, Node[] tokens, int k, int slot) {
             if (n.op == 'p' && Integer.valueOf(slot).equals(n.value)) {
                 return tokens[k];
+            }
+            if (n.op == 'k') {
+                return n; // a constant b passes is read as Learner reads one: itself, or a choice among operands holding it
             }
             for (int i = 0; i < ops.length; i++) {
                 l.budget = 2_000;

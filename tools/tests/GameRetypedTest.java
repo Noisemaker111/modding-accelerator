@@ -25,14 +25,15 @@ final class GameRetypedTest {
         hop.run();
         List<String> lines = new ArrayList<>();
         String draw = "nothing learned";
-        for (GameDiff.Retyped.Reading r : new GameDiff.Retyped(hop, new GameDiff.Learner(hop)).learn()) {
+        GameDiff.Retyped retyped = new GameDiff.Retyped(hop, new GameDiff.Learner(hop));
+        for (GameDiff.Retyped.Reading r : retyped.learn()) {
             lines.add(r.json("1.0 -> 2.0"));
             if (r.name().equals("draw")) {
                 draw = r.at() + " " + r.as() + " " + r.expr();
             }
         }
         JarPortTest.expect(draw.equals("1 " + GFX + " $1.drawString($0, $2, (int) $3, (int) $4, $5, false)"),
-            "font.draw(pose, ...) is learned as the graphics that took the pose's place drawing with the font, its float positions narrowed back: " + draw);
+            "font.draw(pose, ...) is learned as the graphics that took the pose's place drawing with the font, its float positions narrowed back: " + draw + " " + retyped.misses);
 
         Path map = scratch.resolve("route-retyped.json");
         Files.writeString(map, "{\"signatures\": [{\"owner\": \"net.minecraft.r.Screen\", \"from\": \"render\", \"desc\": \"(" + POSE + "I)V\", \"to\": \"render\", \"newDesc\": \"(" + GFX + "I)V\"}],"
@@ -118,11 +119,20 @@ final class GameRetypedTest {
      * color, false) in 2.0's (pose: the slot of the pose or graphics, x: the slot of an int).
      */
     static void draw(MethodVisitor m, int self, int pose, String text, int x, float y, int color, boolean two) {
+        draw(m, self, pose, text, x, y, color, two, null);
+    }
+
+    /** The same with the font read through a synthetic accessor of the game's own Title (accessor: its name), as javac writes one. */
+    static void draw(MethodVisitor m, int self, int pose, String text, int x, float y, int color, boolean two, String accessor) {
         if (two) {
             m.visitVarInsn(Opcodes.ALOAD, pose);
         }
         m.visitVarInsn(Opcodes.ALOAD, self);
-        m.visitFieldInsn(Opcodes.GETFIELD, R + "Screen", "font", FONT);
+        if (accessor == null) {
+            m.visitFieldInsn(Opcodes.GETFIELD, R + "Screen", "font", FONT);
+        } else {
+            m.visitMethodInsn(Opcodes.INVOKESTATIC, R + "Title", accessor, "(L" + R + "Title;)" + FONT, false);
+        }
         if (!two) {
             m.visitVarInsn(Opcodes.ALOAD, pose);
         }
@@ -245,10 +255,35 @@ final class GameRetypedTest {
             m.visitMethodInsn(Opcodes.INVOKESTATIC, R + "Screen", "stamp", "(" + POSE + ")V", false);
             draw(m, 0, 1, "title", 2, 2.0F, 5, two);
             draw(m, 0, 1, "sub", 2, 12.0F, 6, two);
-            draw(m, 0, 1, "foot", 2, 30.0F, 7, two);
+            // javac numbers its synthetic accessors anew in each release: access$100 in 1.0 is access$200 in 2.0.
+            draw(m, 0, 1, "foot", 2, 30.0F, 7, two, two ? "access$200" : "access$100");
+            // At x 0, written (float) 0 in 1.0: the constant false that 2.0 passes after it is not that operand narrowed back.
+            m.visitInsn(Opcodes.ICONST_0);
+            m.visitVarInsn(Opcodes.ISTORE, 3);
+            draw(m, 0, 1, "zero", 3, 3.0F, 4, two);
+            // Twice at a position that depends on the path taken (x > 0 ? 5 : 6): such a use abstains.
+            for (int round = 0; round < 2; round++) {
+                Label other = new Label(), join = new Label();
+                m.visitVarInsn(Opcodes.ILOAD, 2);
+                m.visitJumpInsn(Opcodes.IFLE, other);
+                m.visitInsn(Opcodes.ICONST_5);
+                m.visitJumpInsn(Opcodes.GOTO, join);
+                m.visitLabel(other);
+                m.visitIntInsn(Opcodes.BIPUSH, 6);
+                m.visitLabel(join);
+                m.visitVarInsn(Opcodes.ISTORE, 3);
+                draw(m, 0, 1, "row", 3, 40.0F, 8, two);
+            }
             m.visitInsn(Opcodes.RETURN);
             m.visitMaxs(0, 0);
             m.visitEnd();
+            MethodVisitor access = w.visitMethod(Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, two ? "access$200" : "access$100", "(L" + R + "Title;)" + FONT, null, null);
+            access.visitCode();
+            access.visitVarInsn(Opcodes.ALOAD, 0);
+            access.visitFieldInsn(Opcodes.GETFIELD, R + "Screen", "font", FONT);
+            access.visitInsn(Opcodes.ARETURN);
+            access.visitMaxs(0, 0);
+            access.visitEnd();
         }));
         return out;
     }

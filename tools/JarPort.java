@@ -2492,12 +2492,11 @@ public final class JarPort {
 
     void pointsGone(Mod mod, String mixin, List<String> targets, Injector inj, String handlerDesc) {
         for (String text : inj.methods()) {
-            Found into = find(targets, "method", text);
-            GameDiff.Meth before = oldMethod(targets, text);
-            GameDiff.Meth now = into.kind() == 'm' && into.desc() != null ? b.method(into.owner(), into.name(), into.desc()) : null;
-            if (now == null || before == null) {
+            List<List<GameDiff.Meth>> into = selected(targets, text);
+            if (into == null) {
                 continue;
             }
+            List<GameDiff.Meth> before = into.get(0), now = into.get(1);
             for (String[] point : inj.ats()) {
                 String gone = null;
                 int needed = point[2] == null ? 1 : Integer.parseInt(point[2]) + 1;
@@ -2506,7 +2505,7 @@ public final class JarPort {
                     // that many of them at all (an upper bound, so a place it reports gone is gone).
                     Type local = Type.getReturnType(handlerDesc);
                     boolean store = point[0].equals("STORE");
-                    int had = locals(code(a), before, store, local), has = locals(code(b), now, store, local);
+                    int had = most(before, m -> locals(code(a), m, store, local)), has = most(now, m -> locals(code(b), m, store, local));
                     if (had >= needed && has >= 0 && has < needed) {
                         gone = point[0] + " #" + point[2] + " of a " + local.getClassName() + " local";
                     }
@@ -2516,8 +2515,8 @@ public final class JarPort {
                     if ((at.kind() != 'm' && at.kind() != 'f') || !m.matches()) {
                         continue;
                     }
-                    int had = uses(code(a), a, before, at.kind(), m.group(1), m.group(2), m.group(3) != null ? m.group(3) : m.group(4));
-                    int has = uses(code(b), b, now, at.kind(), at.owner(), at.name(), at.desc());
+                    int had = most(before, x -> uses(code(a), a, x, at.kind(), m.group(1), m.group(2), m.group(3) != null ? m.group(3) : m.group(4)));
+                    int has = most(now, x -> uses(code(b), b, x, at.kind(), at.owner(), at.name(), at.desc()));
                     if (had >= needed && has >= 0 && has < needed) {
                         gone = Exposure.dotted(at.owner()) + "." + at.name() + (at.desc() == null ? "" : at.desc());
                     }
@@ -2526,11 +2525,61 @@ public final class JarPort {
                     // Mixin stops the game only where the injector requires a place (its require, or its config's
                     // defaultRequire); otherwise the hook is quiet, as an override the game no longer calls is.
                     int require = inj.require()[0] >= 0 ? inj.require()[0] : mod.requires.getOrDefault(mixin, 0);
-                    gone += " in " + Exposure.dotted(now.owner.name) + "." + now.name + now.desc + " (in " + Exposure.dotted(mixin) + ")";
+                    String where = now.size() == 1 ? Exposure.dotted(now.get(0).owner.name) + "." + now.get(0).name + now.get(0).desc : text;
+                    gone += " in " + where + " (in " + Exposure.dotted(mixin) + ")";
                     (require > 0 ? mod.unlinked : mod.silent).add((require > 0 ? "mixin injection point gone: " : "mixin injection finds no place: ") + gone);
                 }
             }
         }
+    }
+
+    /** The most any of the methods gives (an injector finds its place if one of the methods it selects has it); -1 when one cannot be read. */
+    static int most(List<GameDiff.Meth> methods, java.util.function.ToIntFunction<GameDiff.Meth> count) {
+        int best = 0;
+        for (GameDiff.Meth m : methods) {
+            int n = count.applyAsInt(m);
+            if (n < 0) {
+                return -1;
+            }
+            best = Math.max(best, n);
+        }
+        return best;
+    }
+
+    /**
+     * The methods a mixin "method" string selects in the targets, {old release's, new release's}, or null when it cannot
+     * be read or selects nothing on a side. A plain string names one method; a regular expression ("/^(connect|m_1)$/", or
+     * "name=/.../ desc=/.../") selects every method of the target classes whose name (and descriptor) it matches, as
+     * Mixin selects them, so a name either release has is found.
+     */
+    List<List<GameDiff.Meth>> selected(List<String> targets, String text) {
+        Matcher regex = Pattern.compile("^(?:name=)?/(.+?)/(?:\\s+desc=/(.+)/)?$").matcher(text.trim());
+        if (!regex.matches()) {
+            Found into = find(targets, "method", text);
+            GameDiff.Meth before = oldMethod(targets, text);
+            GameDiff.Meth now = into.kind() == 'm' && into.desc() != null ? b.method(into.owner(), into.name(), into.desc()) : null;
+            return now == null || before == null ? null : List.of(List.of(before), List.of(now));
+        }
+        Pattern name, desc;
+        try {
+            name = Pattern.compile(regex.group(1));
+            desc = regex.group(2) == null ? null : Pattern.compile(regex.group(2));
+        } catch (PatternSyntaxException unreadable) {
+            return null;
+        }
+        List<GameDiff.Meth> before = new ArrayList<>(), now = new ArrayList<>();
+        for (String t : targets) {
+            for (var side : List.of(new Object[] { a, t, before }, new Object[] { b, cls(t), now })) {
+                GameDiff.Cls c = ((GameDiff.Snap) side[0]).classes.get((String) side[1]);
+                for (GameDiff.Meth m : c == null ? List.<GameDiff.Meth>of() : c.methods.values()) {
+                    if (name.matcher(m.name).find() && (desc == null || desc.matcher(m.desc).find())) {
+                        @SuppressWarnings("unchecked") List<GameDiff.Meth> into = (List<GameDiff.Meth>) side[2];
+                        into.add(m);
+                    }
+                }
+            }
+        }
+        return before.isEmpty() || now.isEmpty() ? null : List.of(before, now);
     }
 
     /** Whether every @At of an injector still finds its place in the methods it injects into, in the new release. */
