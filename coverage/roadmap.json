@@ -601,6 +601,22 @@
      ]
     },
     {
+     "id": "58",
+     "title": "The porter learns calls the game removed and classes it replaced",
+     "part": "Port by changed game part",
+     "status": "done",
+     "text": "Most of the top blockers left after step 56 are two kinds of change the learner did not read. Calls the game simply removed: in its own code each use is gone and nothing replaces it (VertexConsumer.endVertex() in 1.21, RenderSystem.disableTexture() in 1.19.4). A void call whose uses vanish, or whose place holds only its receiver chain, is learned as dropped (a fluent one as its receiver), with the same voting as other readings; JarPort drops it as it drops a removal, still evaluating its receiver and arguments. Classes the game replaced: the class map is learned from the types the game's linked methods, fields and values switched to (1.19's TextComponent became MutableComponent), and the gone class's members are then read through it (new TextComponent(s) -> Component.literal(s), also as TextComponent::new).",
+     "start": "2026-11-19",
+     "target": "2026-11-26",
+     "finish": "port.jar-links.every-update up from 5,775 of 9,149 with no update lower, the learned share in exposure.py steps up from 2,462 of 49,503, and every linked standalone mod loading on real servers for 1.20.6 -> 1.21 and 1.21.1 -> 1.21.2",
+     "wrongIf": "an update's count drops, or a mod that links only through a dropped call or a class map entry fails to load because of it",
+     "measures": [
+      "port.jar-links.every-update"
+     ],
+     "done": "2026-11-20",
+     "result": "2026-11-20: port.jar-links.every-update 5,826 -> 5,854 of 9,423 on top of #127 (64 updates), no update lower (Fabric 1.18.2 -> 1.19 34 -> 49, 1.20.6 -> 1.21 49 -> 52, NeoForge 1.21.3 -> 1.21.4 77 -> 80, 1.20.6 -> 1.21 57 -> 58). Learned share 2,472 -> 2,634 of 49,503 (main measured the same way). Real 1.21 server: 31 of 34 linked standalone mods load, 3 client-only, none that link fails; client 32 of 34 (FerriteCore and Necronomicon, which link on main too: a mixin cast to ResourceLocation that 1.21 split from ModelResourceLocation, and a Forge-only mods.toml NeoForge skips). Real 1.21.2: links unchanged, server 21 of 24 (TerraBlender and Dungeons and Taverns fail on data files, as before), client 22 of 22. Next: Tesselator.getBuilder() + BufferBuilder.begin() merged into one call in 1.21 (43 Fabric mods) needs a two-statement rewrite; JOML in 1.19.3 needs the game's libraries read."
+    },
+    {
      "id": "54",
      "title": "The porter learns each replacement from how the game ported its own code",
      "part": "Port by changed game part",
