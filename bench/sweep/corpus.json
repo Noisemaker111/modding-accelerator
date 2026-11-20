@@ -800,6 +800,38 @@
     "client-ui",
     "networking"
    ]
+  },
+  {
+   "id": "dragonminez-1.21.1",
+   "mod": "DragonMine Z",
+   "repo": "https://github.com/AgentMelinda/dragonminez-1.21.1",
+   "branch": "pr/neoforge-1.21.1-v2.2",
+   "commit": "6184d9751ebdab9b7385930b7e89ddfd56ccbb7a",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "items",
+    "entities",
+    "networking",
+    "library-dependent",
+    "shaders",
+    "datagen"
+   ],
+   "behaviour": [
+    {
+     "what": "DragonMine Z loaded its seven races from its config at start (ConfigManager.getLoadedRaces)",
+     "code": "String.valueOf(call(Class.forName(\"com.dragonminez.common.config.ConfigManager\", true, mc.getClass().getClassLoader()), \"getLoadedRaces\"))",
+     "expect": "[human, saiyan, namekian, frostdemon, bioandroid, majin, glind]"
+    },
+    {
+     "what": "DragonMine Z registered its 732 items",
+     "code": "net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().filter(k -> k.getNamespace().equals(\"dragonminez\")).count()",
+     "expect": "732"
+    }
+   ]
   }
  ]
 }

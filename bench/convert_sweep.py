@@ -44,7 +44,7 @@ OUT = ROOT / "coverage" / "sweeps" / "convert.json"
 WORK = ROOT / ".runs" / "convert-sweep"
 WINDOWS = os.name == "nt"
 MMT = [str(ROOT / ("mmt.cmd" if WINDOWS else "mmt"))]
-OTHER = {"fabric": "neoforge", "neoforge": "fabric"}
+OTHER = {"fabric": "neoforge", "neoforge": "fabric", "forge": "neoforge"}
 TIMEOUT = {"convert": 3600, "ui-check": 1500, "eval": 300, "game-stop": 300, "fingerprint": 3600}
 
 # Reads every registry entry in one namespace; works on 1.20.2 to 26.x (ResourceLocation or Identifier). Data attachment
