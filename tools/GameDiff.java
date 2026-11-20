@@ -5488,6 +5488,238 @@ public final class GameDiff {
         }
     }
 
+    /**
+     * What a call on a parameter the game retyped becomes, read from the game's own methods that took the new type. 1.20's
+     * screens took a GuiGraphics where they took a PoseStack, and where the old body called font.draw(poseStack, text, x, y,
+     * color) the new one calls graphics.drawString(font, text, x, y, color, false). In every pair of linked methods whose
+     * parameter changed type (the rest of the signature the same), both bodies are lined up as Learner lines them up; at a
+     * use of a changed member one of whose operands is that parameter, what the new body computes is written over the old
+     * member's operands, with that operand standing for the new parameter ($n is the GuiGraphics where it was the
+     * PoseStack), and a new value that is an old operand without its widening (int x where the old code passed (float) x)
+     * as that operand narrowed back. JarPort applies it where a mod's override moved to the new type passes the parameter
+     * the game passed (the "retyped" list of the route map). Uses vote as Learner's do.
+     */
+    static final class Retyped {
+
+        /** A call (owner, name, desc of a) whose operand at ($0 receiver) was the old parameter; expr has the new type as there. */
+        record Reading(String owner, String name, String desc, int at, String as, String expr, int votes, int of) {
+
+            String json(String step) {
+                return "{ \"step\": " + VersionMap.Diff.q(step) + ", \"owner\": " + VersionMap.Diff.q(owner) + ", \"from\": " + VersionMap.Diff.q(name) +
+                    ", \"desc\": " + VersionMap.Diff.q(desc) + ", \"at\": " + at + ", \"as\": " + VersionMap.Diff.q(as) + ", \"expr\": " + VersionMap.Diff.q(expr) +
+                    ", \"votes\": " + votes + ", \"of\": " + of + " }";
+            }
+        }
+
+        final Hop h;
+        final Learner l;
+        final Map<String, Map<Node, Set<String>>> sites = new LinkedHashMap<>(); // owner.name+desc#at#as -> use -> readings
+        final Map<String, Ref> refs = new HashMap<>();
+
+        Retyped(Hop h, Learner l) {
+            this.h = h;
+            this.l = l;
+        }
+
+        List<Reading> learn() {
+            for (var e : h.mAB.entrySet()) {
+                Meth x = e.getKey(), y = e.getValue();
+                if (!x.hasCode || !y.hasCode || x.isStatic() != y.isStatic()) {
+                    continue;
+                }
+                Map<Integer, Object[]> retyped = retyped(x, y);
+                if (!retyped.isEmpty()) {
+                    pair(l.decode(h.a, x.owner.name, x.name + x.desc, false), l.decode(h.b, y.owner.name, y.name + y.desc, false), retyped);
+                }
+            }
+            List<Reading> out = new ArrayList<>();
+            for (var e : sites.entrySet()) {
+                int[] tally = new int[2];
+                String best = Learner.vote(e.getValue().values(), tally);
+                if (best == null || !(tally[0] >= 2 && tally[0] * 10 >= tally[1] * 8 || tally[0] == 1 && tally[1] == 1)) {
+                    continue;
+                }
+                String[] key = e.getKey().split("#");
+                Ref r = refs.get(key[0]);
+                out.add(new Reading(r.owner().replace('/', '.'), r.name(), r.desc(), Integer.parseInt(key[1]), key[2], best, tally[0], tally[1]));
+            }
+            return out;
+        }
+
+        /**
+         * The parameters of x whose type y changed, by x's slot: {y's slot, y's type}. Only where both take as many
+         * parameters and each other one keeps its type, so the place says which new parameter took the old one's.
+         */
+        Map<Integer, Object[]> retyped(Meth x, Meth y) {
+            Map<Integer, Object[]> out = new HashMap<>();
+            List<ClassDesc> was = MethodTypeDesc.ofDescriptor(x.desc).parameterList(), now = MethodTypeDesc.ofDescriptor(y.desc).parameterList();
+            if (was.size() != now.size()) {
+                return out;
+            }
+            int sx = x.isStatic() ? 0 : 1, sy = sx;
+            for (int i = 0; i < was.size(); i++) {
+                String a = was.get(i).descriptorString(), b = now.get(i).descriptorString();
+                if (!h.descBA(b).equals(a)) {
+                    if (!a.startsWith("L") || !b.startsWith("L")) {
+                        return new HashMap<>();
+                    }
+                    out.put(sx, new Object[] { sy, b });
+                }
+                sx += a.equals("J") || a.equals("D") ? 2 : 1;
+                sy += b.equals("J") || b.equals("D") ? 2 : 1;
+            }
+            return out;
+        }
+
+        void pair(Body x, Body y, Map<Integer, Object[]> retyped) {
+            if (x == null || y == null) {
+                return;
+            }
+            long[] ta = new long[x.statements.size()], tb = new long[y.statements.size()];
+            for (int i = 0; i < ta.length; i++) {
+                ta[i] = l.hash(x.statements.get(i), true);
+            }
+            for (int j = 0; j < tb.length; j++) {
+                tb[j] = l.hash(y.statements.get(j), false);
+            }
+            List<int[]> bounds = new ArrayList<>(Learner.matches(ta, tb));
+            bounds.add(new int[] { ta.length, tb.length });
+            int i0 = 0, j0 = 0;
+            for (int[] p : bounds) {
+                int na = p[0] - i0, nb = p[1] - j0;
+                for (int i = i0; i < p[0] && nb > 0; i++) {
+                    Node sa = x.statements.get(i);
+                    if (!l.holed(sa)) {
+                        continue;
+                    }
+                    boolean bare = sa.kids.length == 1 && l.hole(sa.kids[0]) && (sa.value.equals("expr") || sa.value.equals("store"));
+                    for (int j = j0; j < p[1]; j++) {
+                        if (bare && !(na == nb && j - j0 == i - i0 || nb == 1)) {
+                            continue;
+                        }
+                        Map<Node, Node> holes = new IdentityHashMap<>();
+                        l.budget = 20_000;
+                        if (l.match(sa, y.statements.get(j), holes)) {
+                            holes.forEach((use, m) -> read(use, m, retyped));
+                        }
+                    }
+                }
+                i0 = p[0] + 1;
+                j0 = p[1] + 1;
+            }
+        }
+
+        /** b computes m where a used a changed member in use: a reading for each operand of use that is a retyped parameter. */
+        void read(Node use, Node m, Map<Integer, Object[]> retyped) {
+            if (use.op != 'v' && use.op != 's') {
+                return;
+            }
+            int first = use.op == 'v' ? 0 : 1;
+            for (int k = 0; k < use.kids.length; k++) {
+                Node op = use.kids[k];
+                Object[] to = op.op == 'p' && op.value instanceof Integer slot ? retyped.get(slot) : null;
+                if (to == null) {
+                    continue;
+                }
+                // Each operand (but a constant, which Learner reads as a choice) becomes a token both sides read alike, and
+                // so does the new parameter, standing where the old one was.
+                Node[] tokens = new Node[use.kids.length];
+                for (int i = 0; i < tokens.length; i++) {
+                    tokens[i] = use.kids[i].op == 'k' ? use.kids[i] : new Node('p', null, -1000 - i, "V");
+                }
+                Node over = tokens(m, use.kids, tokens, k, (Integer) to[0]);
+                String key = use.ref.owner() + "." + use.ref.name() + use.ref.desc() + "#" + (k + first) + "#" + to[1];
+                refs.putIfAbsent(use.ref.owner() + "." + use.ref.name() + use.ref.desc(), use.ref);
+                Set<String> readings = sites.computeIfAbsent(key, x -> new IdentityHashMap<>()).computeIfAbsent(use, x -> new LinkedHashSet<>());
+                String reading = use.type.equals("V") || l.fits(m.type, use.type) ? l.express(over, tokens, first, use.type, 0) : null;
+                if (reading != null) {
+                    readings.add(reading);
+                } else if (readings.isEmpty() && (l.merged(m) || Arrays.stream(use.kids).anyMatch(l::merged))) {
+                    // Unreadable only because a value depends on the path taken (a loop's variable): it abstains, as in Learner.
+                    sites.get(key).remove(use);
+                } else {
+                    misses.computeIfAbsent(key, x -> new ArrayList<>()).add(show(over, 0) + "  <-  " + show(use, 0));
+                }
+            }
+        }
+
+        final Map<String, List<String>> misses = new HashMap<>(); // uses that lined up and read as nothing, for the log
+
+        /** A value tree in short, for the log. */
+        static String show(Node n, int depth) {
+            String head = n.op + (n.ref != null ? n.ref.name() == null ? n.ref.owner() : n.ref.name() : "") + (n.value != null ? "=" + n.value : "");
+            if (n.kids.length == 0 || depth > 4) {
+                return head;
+            }
+            StringJoiner kids = new StringJoiner(", ", head + "(", ")");
+            for (Node k : n.kids) {
+                kids.add(show(k, depth + 1));
+            }
+            return kids.toString();
+        }
+
+        /**
+         * b's value n with what stands for an old operand written as that operand's token: b's parameter in slot as the
+         * retyped operand k; code the same as an operand (synthetic accessors renumbered between releases count as the
+         * same: access$1900 in a is access$2000 in b); and an operand without its widening ((float) x passed, int x now) as
+         * that operand converted back.
+         */
+        Node tokens(Node n, Node[] ops, Node[] tokens, int k, int slot) {
+            if (n.op == 'p' && Integer.valueOf(slot).equals(n.value)) {
+                return tokens[k];
+            }
+            for (int i = 0; i < ops.length; i++) {
+                l.budget = 2_000;
+                if (ops[i].op != 'k' && (l.match(ops[i], n, null) || sameAccess(ops[i], n))) {
+                    return tokens[i];
+                }
+            }
+            for (int i = 0; i < ops.length; i++) {
+                l.budget = 2_000;
+                Node op = ops[i];
+                if (op.op == 'x' && op.kids.length == 1 && (l.match(op.kids[0], n, null) || sameAccess(op.kids[0], n)) && Learner.primitive(n.type) != null) {
+                    return new Node('x', null, null, n.type, tokens[i]);
+                }
+            }
+            Node[] kids = n.kids.clone();
+            boolean changed = false;
+            for (int i = 0; i < kids.length; i++) {
+                kids[i] = tokens(n.kids[i], ops, tokens, k, slot);
+                changed |= kids[i] != n.kids[i];
+            }
+            if (!changed) {
+                return n;
+            }
+            Node out = new Node(n.op, n.ref, n.value, n.type, kids);
+            out.body = n.body;
+            return out;
+        }
+
+        /** a's x and b's y are the same code, where calls to synthetic accessors (access$N) may carry other numbers. */
+        boolean sameAccess(Node x, Node y) {
+            if (x.op == 's' && y.op == 's' && x.ref != null && y.ref != null && x.ref.name() != null && y.ref.name() != null
+                && x.ref.name().startsWith("access$") && y.ref.name().startsWith("access$") && x.kids.length == y.kids.length && h.descBA(y.type).equals(x.type)) {
+                for (int i = 0; i < x.kids.length; i++) {
+                    l.budget = 2_000;
+                    if (!l.match(x.kids[i], y.kids[i], null) && !sameAccess(x.kids[i], y.kids[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            if (x.op != y.op || x.kids.length != y.kids.length || x.kids.length == 0 || !l.head(x, true).equals(l.head(y, false))) {
+                return false;
+            }
+            for (int i = 0; i < x.kids.length; i++) {
+                l.budget = 2_000;
+                if (!l.match(x.kids[i], y.kids[i], null) && !sameAccess(x.kids[i], y.kids[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
     static final class Driver implements VersionMap.Chain.Loader {
 
         final List<String> versions;
@@ -5508,6 +5740,8 @@ public final class GameDiff {
         final List<String> argDefaults = new ArrayList<>();
         /** Replacements written as expressions over the old member's operands (Learner), applied like a rule's inClass. */
         final List<String> learned = new ArrayList<>();
+        /** Calls on a parameter the game retyped, written over the new type (Retyped). */
+        final List<String> retyped = new ArrayList<>();
         Snap prev;
         Path prevLoaderJar;
         String prevLoaderVersion;
@@ -5650,6 +5884,9 @@ public final class GameDiff {
                 for (Learner.Chained c : learner.chains) {
                     learned.add(c.json(prev.version + " -> " + s.version));
                 }
+                for (Retyped.Reading r : new Retyped(h, learner).learn()) {
+                    retyped.add(r.json(prev.version + " -> " + s.version));
+                }
                 List<Hop.ClassRewrite> rewrites = new ArrayList<>(h.classRewrites());
                 rewrites.addAll(learner.typeRewrites);
                 for (Hop.ClassRewrite r : rewrites) {
@@ -5753,6 +5990,11 @@ public final class GameDiff {
                 head.append(i == 0 ? "\n    " : ",\n    ").append(learned.get(i));
             }
             head.append(learned.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"retyped\": [");
+            for (int i = 0; i < retyped.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(retyped.get(i));
+            }
+            head.append(retyped.isEmpty() ? "],\n" : "\n  ],\n");
             if (loader != null) {
                 head.append("  \"loader\": { \"name\": \"neoforge\", \"source\": ").append(VersionMap.Diff.q(NEOFORGE)).append(", \"versions\": {");
                 int i = 0;

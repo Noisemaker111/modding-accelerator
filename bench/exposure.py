@@ -681,26 +681,37 @@ def fabric_meta(jar):
             return None
 
 
+FABRIC_MAVEN = "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/"
+
+
+def fabric_api_version(version, metadata):
+    """The newest Fabric API build for a game version in Fabric's maven metadata ("0.83.0+1.20" for 1.20), or None."""
+    import re
+    found = [v for v in re.findall(r"<version>([^<]+)</version>", metadata) if v.endswith("+" + version)]
+    return max(found, key=lambda v: [int(x) for x in re.findall(r"\d+", v.split("+")[0])]) if found else None
+
+
 def fabric_api(version):
-    """Fabric API's newest release for a game version, from Modrinth (kept in ~/.mmt/exposure/platform/), or None."""
+    """Fabric API's newest build for a game version, from Fabric's own maven (kept in ~/.mmt/exposure/platform/), or None."""
     folder = HOME / "platform"
-    have = sorted(folder.glob(f"fabric-api-for-{version}--*.jar"))
+    have = sorted(folder.glob(f"fabric-api-for-{version}--fabric-api-*+{version}.jar"))
     if have:
         return have[-1]
-    versions = api("project/fabric-api/version", {"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([version])}) or []
-    files = [f for v in versions for f in v.get("files", []) if f.get("primary")]
-    if not files:
+    with urllib.request.urlopen(urllib.request.Request(FABRIC_MAVEN + "maven-metadata.xml", headers=AGENT), timeout=60) as r:
+        build = fabric_api_version(version, r.read().decode("utf-8"))
+    if not build:
         return None
     folder.mkdir(parents=True, exist_ok=True)
-    target = folder / f"fabric-api-for-{version}--{files[0]['filename']}"
+    target = folder / f"fabric-api-for-{version}--fabric-api-{build}.jar"
     part = part_of(target)
-    with urllib.request.urlopen(urllib.request.Request(files[0]["url"], headers=AGENT), timeout=120) as r:
+    with urllib.request.urlopen(urllib.request.Request(f"{FABRIC_MAVEN}{build}/fabric-api-{build}.jar", headers=AGENT), timeout=300) as r:
         part.write_bytes(r.read())
     return publish(part, target)
 
 
-def standalone(jar):
-    """A mod whose metadata asks for no other mod and no other language loader (NeoForge, Forge or Fabric)."""
+def standalone(jar, platform=frozenset()):
+    """A mod whose metadata asks for no other mod and no other language loader (NeoForge, Forge or Fabric) beyond the
+    platform the pack runs on: for Fabric, Fabric API's modules (platform), which a pack starts with as it would for players."""
     import tomllib
     import zipfile
     meta = fabric_meta(jar)
@@ -708,7 +719,7 @@ def standalone(jar):
         own = {meta.get("id")} | set(meta.get("provides") or [])
         if any(e.get("adapter", "default") != "default" for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
             return False
-        return all(d in ("minecraft", "fabricloader", "java") or d in own for d in (meta.get("depends") or {}))
+        return all(d in ("minecraft", "fabricloader", "java") or d in own or d in platform for d in (meta.get("depends") or {}))
     with zipfile.ZipFile(jar) as z:
         names = [n for n in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml") if n in z.namelist()]
         if not names:
@@ -826,7 +837,9 @@ def load(loader, frm, to, save):
         jars(loader, frm, to)
     linked = [m["mod"] for m in json.loads(report.read_text(encoding="utf-8"))["mods"] if "error" not in m and not m["unlinked"]]
     folder = HOME / "jars" / f"{loader}-{frm}"
-    chosen = [folder / name for name in linked if standalone(folder / name)]
+    # A Fabric mod that needs Fabric API needs nothing beyond the platform the pack starts with.
+    provided = set(platform_ids(loader, to))
+    chosen = [folder / name for name in linked if standalone(folder / name, provided)]
     pack = ROOT / ".runs" / "exposure" / f"load-{loader}-{frm}-{to}"
     if pack.exists():
         shutil.rmtree(pack)

@@ -132,4 +132,16 @@ with tempfile.TemporaryDirectory() as tmp:
     out = E.with_hidden_code_unread(rep, {"e.jar": e})
 check(out["linked"] == 0 and "payload-1.jar" in out["mods"][0].get("error", ""), "such a mod is reported as not read instead of linking")
 
+meta = "<versions><version>0.83.0+1.20</version><version>0.92.2+1.20.1</version><version>0.83.1+1.20</version><version>0.9.0+1.20</version></versions>"
+check(E.fabric_api_version("1.20", meta) == "0.83.1+1.20" and E.fabric_api_version("1.20.1", meta) == "0.92.2+1.20.1"
+      and E.fabric_api_version("1.21", meta) is None,
+      "Fabric API's newest build for exactly that game version is taken from its maven, by number (0.83.1 over 0.9.0), never another version's")
+with tempfile.TemporaryDirectory() as tmp:
+    capes = Path(tmp) / "capes.jar"
+    capes.write_bytes(jar({"fabric.mod.json": json.dumps({"id": "capes", "depends": {"fabricloader": "*", "fabric-api": "*", "minecraft": "1.19.4"}})}))
+    other = Path(tmp) / "other.jar"
+    other.write_bytes(jar({"fabric.mod.json": json.dumps({"id": "o", "depends": {"cloth-config": "*"}})}))
+    check(E.standalone(capes, {"fabric-api", "fabric-api-base"}) and not E.standalone(capes) and not E.standalone(other, {"fabric-api"}),
+          "a mod that needs only Fabric API is started with the platform; one that needs another mod is not")
+
 print(f"exposure: {checks} checks passed")

@@ -112,8 +112,9 @@ final class JarPortRetypeTest {
         Map<String, String> handlers = JarPortFixesTest.strings(other.get("m6/ScreenMixin.class"));
         String onRender = JarPortTest.members(other.get("m6/ScreenMixin.class")).getOrDefault("method onRender(" + GFX + "I" + CI + ")V", "");
         JarPortTest.expect("render(Lg6/Graphics;I)V HEAD".equals(handlers.get("onRender(" + GFX + "I" + CI + ")V"))
-            && onRender.contains("call g6/Graphics.pose()Lg6/Pose;") && handlers.containsKey("onRender$mmt(" + POSE + "I" + CI + ")V"),
-            "a mixin handler that reads the old argument moves to the new signature and gets graphics.pose(): " + handlers + " " + onRender);
+            && onRender.contains("call g6/Graphics.pose()Lg6/Pose;") && onRender.contains("call g6/Pose.push()V")
+            && !handlers.containsKey("onRender(" + POSE + "I" + CI + ")V") && handlers.keySet().stream().noneMatch(k -> k.startsWith("onRender$mmt")),
+            "a mixin handler that reads the old argument moves whole to the new signature, its pose worked out as graphics.pose(): " + handlers + " " + onRender);
 
         Map<String, byte[]> classes = new HashMap<>(JarPortTest.newGame());
         classes.put("g6/Pose", JarPortTest.real("g6/Pose", "java/lang/Object", 0, new String[0], w -> JarPortTest.traced(w, "push", "()V", "push;", m -> { })));

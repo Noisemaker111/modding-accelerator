@@ -70,6 +70,7 @@ public final class JarPort {
         boolean canWiden; // the loader reads this jar's access transformer
         final Set<String> kept = new HashSet<>(); // name+desc of moved methods also kept as they were, for calls that cannot follow
         final Set<String> unmoved = new HashSet<>(); // class.name+desc of bodies a call in them cannot be given its arguments
+        final Map<String, Object[]> twins = new LinkedHashMap<>(); // class.name+desc -> {parameter, new type, steps} (Sites.twin)
         final Map<String, Integer> requires = new HashMap<>(); // mixin class -> its config's injectors.defaultRequire
 
         void change(String kind) {
@@ -133,6 +134,14 @@ public final class JarPort {
         // What the game's own code computes in place of a member (GameDiff's Learner), applied as a rule's inClass is: on
         // any update of the port whose old member the release ported from has by that name (a mod names it so), and
         // compiled against the release ported to, so an expression a later update broke is refused, not written.
+        for (Object o : Json.array(raw.getOrDefault("retyped", List.of()))) {
+            var w = Json.object(o);
+            String owner = Exposure.Route.internal(Json.text(w, "owner", ""));
+            if (majority(w) && covers(Json.text(w, "step", ""), "")) {
+                retypedCalls.computeIfAbsent(owner, k -> new ArrayList<>()).add(new RetypedCall(Json.text(w, "from", ""), Json.text(w, "desc", ""),
+                    ((Number) w.get("at")).intValue(), Json.text(w, "as", ""), Json.text(w, "expr", "")));
+            }
+        }
         for (Object o : Json.array(raw.getOrDefault("learned", List.of()))) {
             var w = Json.object(o);
             String owner = Exposure.Route.internal(Json.text(w, "owner", "")), from = Json.text(w, "from", ""), desc = Json.text(w, "desc", "");
@@ -239,6 +248,14 @@ public final class JarPort {
         pairs.add(new PortChains.Spec(field ? 'f' : 'm', xStatic, owner, from, desc, yOwner, yName, yDesc, y.isStatic(), at, first, fake, fakeDesc,
             (xc.flags & Opcodes.ACC_INTERFACE) != 0));
     }
+
+    /**
+     * A call whose operand at ($0 its receiver) was a parameter the game retyped, and what the game's own code wrote in its
+     * place with that operand as the new type (GameDiff.Retyped): font.draw(pose, ...) -> $1.drawString($0, ...).
+     */
+    record RetypedCall(String name, String desc, int at, String as, String expr) {}
+
+    final Map<String, List<RetypedCall>> retypedCalls = new HashMap<>(); // owner (old names) -> calls
 
     /** A replacement the game's own code shows in more than half of the places it changed. */
     static boolean majority(Map<String, Object> w) {
@@ -476,7 +493,8 @@ public final class JarPort {
         // hand there) is kept as well, as it was: that call still links, as it did before the port.
         Set<String> wasUnlinked = new TreeSet<>(mod.unlinked), wasSilent = new TreeSet<>(mod.silent), wasGranted = new TreeSet<>(mod.grants);
         Map<String, Integer> wasChanged = new TreeMap<>(mod.changed);
-        for (int pass = 0; pass < 4; pass++) {
+        Set<String> twinned = new HashSet<>();
+        for (int pass = 0; pass < 8; pass++) {
             int kept = mod.kept.size(), unmoved = mod.unmoved.size();
             rewritten.clear();
             for (var e : entries.entrySet()) {
@@ -484,7 +502,14 @@ public final class JarPort {
                     rewritten.put(e.getKey(), rewriteOrReport(mod, e.getValue()));
                 }
             }
-            if (mod.kept.size() == kept && mod.unmoved.size() == unmoved) {
+            // Helpers a moved body passes a worked-out parameter to move too, one level more each pass.
+            int added = 0;
+            for (var e : mod.twins.entrySet()) {
+                if (twinned.add(e.getKey())) {
+                    added += twin(mod, e.getKey(), e.getValue()) ? 1 : 0;
+                }
+            }
+            if (mod.kept.size() == kept && mod.unmoved.size() == unmoved && added == 0) {
                 break;
             }
             // A body that cannot be moved whole stays as it was, an override the game no longer calls, as before the port.
@@ -1884,6 +1909,37 @@ public final class JarPort {
     // ---- Rewriting one class.
 
     /**
+     * A helper of the mod (class.name+desc, old names) moved whole to take its parameter at want[0] as the new type
+     * want[1] (new names), the old value worked out first through the steps want[2], as the moved body that calls it
+     * worked it out: a Bridge with via, like an override's. False when it cannot move (no stack map frames).
+     */
+    boolean twin(Mod mod, String key, Object[] want) {
+        String owner = key.substring(0, key.indexOf('.')), member = key.substring(key.indexOf('.') + 1);
+        GameDiff.RawCls rc = mod.classes.get(owner);
+        GameDiff.RawMeth m = rc == null ? null : rc.methods.get(member);
+        byte[] bytes = mod.bytes.get(owner);
+        if (m == null || bytes == null || (new ClassReader(bytes).readShort(6) & 0xFFFF) < Opcodes.V1_6) {
+            return false;
+        }
+        int k = (Integer) want[0];
+        Type[] was = Type.getArgumentTypes(m.desc), now = new Type[was.length];
+        int[] from = new int[was.length];
+        String[][] via = new String[was.length][];
+        for (int i = 0; i < was.length; i++) {
+            now[i] = i == k ? Type.getType((String) want[1]) : Type.getType(desc(was[i].getDescriptor()));
+            from[i] = i;
+        }
+        via[k] = (String[]) want[2];
+        String newDesc = Type.getMethodDescriptor(Type.getType(desc(Type.getReturnType(m.desc).getDescriptor())), now);
+        if (rc.methods.containsKey(m.name + oldDesc(newDesc))) {
+            return false;
+        }
+        mod.bridges.computeIfAbsent(owner, x -> new ArrayList<>()).add(new Bridge(m.name, newDesc, m.name, m.desc, from, m.flags, via));
+        mod.change("helper moved to what the game passes now");
+        return true;
+    }
+
+    /**
      * rewrite, and when a body moved to a game method's new parameter types cannot be written (code the stack tracking
      * cannot follow), the class again without moving it: that override is reported, so the mod is not said to link.
      */
@@ -2356,7 +2412,17 @@ public final class JarPort {
                 }
                 Type[] desc = Arrays.copyOf(now, now.length + 1);
                 desc[now.length] = Type.getType(desc(params[captured].getDescriptor()));
-                mod.adapters.put(key, new Adapter(Type.getMethodDescriptor(Type.VOID_TYPE, desc), from, captured, via));
+                if (Arrays.stream(via).anyMatch(Objects::nonNull) && (mod.bytes.get(key.substring(0, key.indexOf('.'))) != null)
+                    && (new ClassReader(mod.bytes.get(key.substring(0, key.indexOf('.')))).readShort(6) & 0xFFFF) >= Opcodes.V1_6) {
+                    // An argument that changed type: the handler's body moves whole to the new parameters, as an override's
+                    // does, so the calls it makes on that argument get what the game passes now (Sites.given, onOrigin).
+                    int[] all = Arrays.copyOf(from, captured + 1);
+                    all[captured] = now.length;
+                    mod.bridges.computeIfAbsent(key.substring(0, key.indexOf('.')), k -> new ArrayList<>())
+                        .add(new Bridge(handler.name, Type.getMethodDescriptor(Type.VOID_TYPE, desc), handler.name, handler.desc, all, handler.flags, Arrays.copyOf(via, captured + 1)));
+                } else {
+                    mod.adapters.put(key, new Adapter(Type.getMethodDescriptor(Type.VOID_TYPE, desc), from, captured, via));
+                }
             }
             for (int i = 0; i < into.size(); i++) {
                 if (into.get(i).kind() == 's') {
@@ -3008,8 +3074,13 @@ public final class JarPort {
 
     /** Each parameter's local slot in an instance method. */
     static int[] slots(Type[] params) {
+        return slots(params, 1);
+    }
+
+    /** Each parameter's local slot, the first at first (0 in a static method). */
+    static int[] slots(Type[] params, int first) {
         int[] out = new int[params.length];
-        int next = 1;
+        int next = first;
         for (int i = 0; i < params.length; i++) {
             out[i] = next;
             next += params[i].getSize();
@@ -3262,9 +3333,15 @@ public final class JarPort {
                 }
                 String newDesc = oldDesc(br.desc());
                 Track track = new Track(owner, access, br.name(), newDesc, out.visitMethod(access, br.name(), newDesc, null, exceptions));
-                Shift shift = new Shift(track, br, desc, stored);
+                Shift shift = new Shift(track, br, desc, stored, (access & Opcodes.ACC_STATIC) != 0);
                 String key = owner + "." + name + desc;
-                Sites sites = new Sites(mod, shift, mod.maxLocals.getOrDefault(key, 0), List.of(), List.of(owner), key, Exposure.dotted(owner) + "." + name);
+                // A mixin handler's code runs in its targets, and its annotations name them (as in rewrite).
+                List<String> targets = mod.mixinTargets.getOrDefault(owner, List.of());
+                List<String> callers = new ArrayList<>(targets.isEmpty() ? List.of(owner) : targets.stream().map(JarPort.this::cls).toList());
+                if (targets.stream().anyMatch(t -> !mod.classes.containsKey(t) && !a.classes.containsKey(t))) {
+                    callers.add(owner);
+                }
+                Sites sites = new Sites(mod, shift, mod.maxLocals.getOrDefault(key, 0), targets, callers, key, Exposure.dotted(owner) + "." + name);
                 sites.moved = shift;
                 return sites;
             }
@@ -3327,23 +3404,24 @@ public final class JarPort {
         final Bridge br;
         final Type[] now, was;
         final int[] nowSlots, wasSlots;
-        final int base;
+        final int base, first; // first: the first parameter's slot, 0 in a static method
         final Set<Integer> stored;
 
-        Shift(Track track, Bridge br, String oldDesc, Set<Integer> stored) {
+        Shift(Track track, Bridge br, String oldDesc, Set<Integer> stored, boolean isStatic) {
             super(Opcodes.ASM9, track);
             this.track = track;
             this.br = br;
             this.stored = stored;
+            first = isStatic ? 0 : 1;
             now = Type.getArgumentTypes(oldDesc(br.desc()));
             was = Type.getArgumentTypes(oldDesc);
-            nowSlots = slots(now);
-            wasSlots = slots(was);
-            base = 1 + Arrays.stream(now).mapToInt(Type::getSize).sum();
+            nowSlots = slots(now, first);
+            wasSlots = slots(was, first);
+            base = first + Arrays.stream(now).mapToInt(Type::getSize).sum();
         }
 
         int at(int var) {
-            return var == 0 ? 0 : var + base - 1;
+            return var < first ? var : var + base - first;
         }
 
         void loadNew(int j) {
@@ -3391,14 +3469,14 @@ public final class JarPort {
 
         @Override
         public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
-            if (type != Opcodes.F_NEW || nLocal == 0) {
+            if (type != Opcodes.F_NEW || nLocal < first) {
                 super.visitFrame(type, nLocal, local, nStack, stack);
                 return;
             }
             Object[] out = new Object[nLocal + now.length];
-            out[0] = local[0];
+            System.arraycopy(local, 0, out, 0, first);
             for (int j = 0; j < now.length; j++) {
-                out[1 + j] = switch (now[j].getSort()) {
+                out[first + j] = switch (now[j].getSort()) {
                     case Type.BOOLEAN, Type.CHAR, Type.BYTE, Type.SHORT, Type.INT -> Opcodes.INTEGER;
                     case Type.FLOAT -> Opcodes.FLOAT;
                     case Type.LONG -> Opcodes.LONG;
@@ -3407,13 +3485,13 @@ public final class JarPort {
                     default -> now[j].getInternalName();
                 };
             }
-            System.arraycopy(local, 1, out, 1 + now.length, nLocal - 1);
+            System.arraycopy(local, first, out, first + now.length, nLocal - first);
             super.visitFrame(type, out.length, out, nStack, stack);
         }
 
         @Override
         public void visitMaxs(int maxStack, int maxLocals) {
-            super.visitMaxs(maxStack + 2, maxLocals + base - 1);
+            super.visitMaxs(maxStack + 2, maxLocals + base - first);
         }
 
         @Override
@@ -3617,6 +3695,9 @@ public final class JarPort {
                 }
                 return;
             }
+            if (moved != null && decl != null && !decl.game()) {
+                twin(decl.owner(), name, desc);
+            }
             if (decl == null || !decl.game()) {
                 if (decl != null) {
                     String[] inherited = mod.renamedDecl.get(decl.owner() + "." + name + desc);
@@ -3638,7 +3719,7 @@ public final class JarPort {
                 for (Call c : rewrites.getOrDefault(key, List.of())) {
                     now.add(new String[] { c.owner(), c.name(), c.desc(), c.isStatic() ? "static" : "" });
                 }
-                if (given(opcode, owner, desc, now)) {
+                if (given(opcode, owner, desc, now) || onOrigin(opcode, owner, decl.owner(), name, desc)) {
                     return;
                 }
                 if (moved.defaulted(Type.getArgumentTypes(desc))) {
@@ -3883,6 +3964,10 @@ public final class JarPort {
          * receiver, the first operand is the receiver ($0).
          */
         String[] fix(List<String> owners, String name, String args, String opDesc, boolean receiver) {
+            return fix(fixes, owners, name, args, opDesc, receiver);
+        }
+
+        String[] fix(Map<String, List<Fix>> book, List<String> owners, String name, String args, String opDesc, boolean receiver) {
             if (mod.selfInterface && mod.selfVersion < Opcodes.V9) {
                 return null;
             }
@@ -3897,7 +3982,7 @@ public final class JarPort {
             }
             Type newRet = Type.getType(desc(ret.getDescriptor()));
             for (String owner : new LinkedHashSet<>(owners)) {
-                for (Fix f : fixes.getOrDefault(owner, List.of())) {
+                for (Fix f : book.getOrDefault(owner, List.of())) {
                     Matcher n = f.name().matcher(name);
                     if (!n.matches() || f.args() != null && (args == null || !args.startsWith(f.args()))) {
                         continue;
@@ -4108,6 +4193,84 @@ public final class JarPort {
                     super.visitInsn(now.getSize() == 2 ? Opcodes.POP2 : Opcodes.POP);
                 }
                 mod.change("call given what the game passes now");
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * A call that does not link, in a moved body, one of whose arguments is an old parameter worked out from a new one
+         * (pose = graphics.pose()): written as the game's own code wrote it with the new value there (GameDiff.Retyped's
+         * reading, font.draw(pose, ...) -> graphics.drawString(font, ...)), the new parameter passed in the old one's place.
+         */
+        /**
+         * A call from a moved body to one of the mod's own helpers that cannot be overridden (static, private or final),
+         * passing an old parameter worked out from a new one (renderLabel(pose, ...) inside render(GuiGraphics, ...)): the
+         * helper is wanted with that parameter as the new type too, so the calls it makes on it get what the game passes
+         * now. port adds it and rewrites the mod again (Mod.twins).
+         */
+        void twin(String owner, String name, String desc) {
+            GameDiff.RawCls rc = mod.classes.get(owner);
+            GameDiff.RawMeth m = rc == null ? null : rc.methods.get(name + desc);
+            if (m == null || name.startsWith("<") || (m.flags & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0
+                || (m.flags & (Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL)) == 0 && (rc.flags & Opcodes.ACC_FINAL) == 0) {
+                return;
+            }
+            Type[] args = Type.getArgumentTypes(desc);
+            Integer[] src = moved.track.sources(args);
+            for (int k = 0; src != null && k < args.length; k++) {
+                if (src[k] == null || moved.br.via()[src[k]] == null || moved.br.from()[src[k]] < 0) {
+                    continue;
+                }
+                Type q = Type.getArgumentTypes(moved.br.desc())[moved.br.from()[src[k]]];
+                mod.twins.putIfAbsent(owner + "." + name + desc, new Object[] { k, q.getDescriptor(), moved.br.via()[src[k]] });
+                return;
+            }
+        }
+
+        static final boolean DEBUG = Boolean.getBoolean("jarport.debug");
+
+        boolean onOrigin(int opcode, String owner, String declOwner, String name, String desc) {
+            boolean isStatic = opcode == Opcodes.INVOKESTATIC;
+            Type[] args = Type.getArgumentTypes(desc);
+            Integer[] src = moved.track.sources(args);
+            if (DEBUG && name.equals("draw")) {
+                System.err.println("onOrigin " + declOwner + "." + name + desc + " src=" + Arrays.toString(src) + " calls=" + retypedCalls.getOrDefault(declOwner, List.of()).stream().map(RetypedCall::desc).toList());
+            }
+            for (RetypedCall c : retypedCalls.getOrDefault(declOwner, List.of())) {
+                int k = c.at() - 1; // $0 is the receiver, $1 the first argument (static calls have no $0)
+                if (!c.name().equals(name) || !c.desc().equals(desc) || src == null || k < 0 || k >= args.length || src[k] == null) {
+                    continue;
+                }
+                int r = moved.br.from()[src[k]];
+                if (r < 0 || moved.br.via()[src[k]] == null || !Type.getArgumentTypes(moved.br.desc())[r].getDescriptor().equals(c.as())) {
+                    continue;
+                }
+                List<Type> ops = new ArrayList<>();
+                if (!isStatic) {
+                    ops.add(Type.getObjectType(owner));
+                }
+                ops.addAll(Arrays.asList(args));
+                ops.set(isStatic ? k : c.at(), Type.getType(oldDesc(c.as())));
+                String opDesc = Type.getMethodDescriptor(Type.getReturnType(desc), ops.toArray(Type[]::new));
+                Fix fix = new Fix("game " + name, Pattern.compile(Pattern.quote(name)), null, c.expr());
+                String[] added = fix(Map.of(declOwner, List.of(fix)), List.of(declOwner), name, desc, opDesc, !isStatic);
+                if (DEBUG) {
+                    System.err.println("  fix " + c.expr() + " " + opDesc + " -> " + Arrays.toString(added));
+                }
+                if (added == null) {
+                    continue;
+                }
+                int[] slots = spill(args, 0);
+                for (int i = 0; i < args.length; i++) {
+                    if (i == k) {
+                        moved.loadNew(r);
+                    } else {
+                        super.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), slots[i]);
+                    }
+                }
+                invokeAdded(added);
+                mod.change("call written on what the game passes now, as the game's own code writes it");
                 return true;
             }
             return false;
