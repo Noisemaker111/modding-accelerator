@@ -616,7 +616,7 @@
      "measures": [
       "port.jar-links.every-update"
      ],
-     "result": ""
+     "result": "Every update 5,846 of 9,423, the same as main: Fabric 1.19.4 -> 1.20 42 -> 44 from rewritten screen calls, and FerriteCore no longer counted on 1.20.6 -> 1.21 (both loaders), whose mixin casts ModelResourceLocation to a ResourceLocation accessor. Real Fabric 1.20 server and client with Fabric API: every linked mod loads (21 on the server, 9 client-only, 30/30 in the client; Krypton loads alone and clashes with e4mc on 1.19.4 too). Real NeoForge 1.21: Necronomicon loads now that its dependency on forge asks for neoforge."
     },
     {
      "id": "56",
