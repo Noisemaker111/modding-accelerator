@@ -4852,7 +4852,8 @@ public final class GameDiff {
                 // An operand that depends on the path taken, or holds a changed member b showed nothing for, left out of the
                 // reading: b's code may be that operand's value
                 // written out (a builder made on one branch), which says nothing about the member, so the use abstains.
-                if ((merged(use.kids[i]) || holed(use.kids[i]) && !lined.containsKey(use.kids[i])) && !Pattern.compile("\\$" + (i + first) + "(?!\\d)").matcher(body).find()) {
+                if ((merged(use.kids[i]) || holed(use.kids[i]) && !lined.containsKey(use.kids[i])) && !Pattern.compile("\\$" + (i + first) + "(?!\\d)").matcher(body).find()
+                    && MADE.matcher(body).find()) {
                     body = null;
                     unsure = true;
                 }
@@ -4916,10 +4917,17 @@ public final class GameDiff {
         }
         final Map<Node, Map<Node, Node>> siblingUse = new IdentityHashMap<>();
 
+        /**
+         * A value made from nothing of the old member's: a call or a new with no operand among its arguments
+         * (UniformGenerator.between(0.0F, 1.0F), new ByteBufferBuilder(1536)). Where a reading leaves an operand out and has
+         * one, b may have written that operand's own replacement there; a fixed flag in its place (false) is the member's.
+         */
+        static final Pattern MADE = Pattern.compile("(?:new\\s+[\\w.]+|(?<![\\w$])[A-Za-z_]\\w*\\.\\w+)\\([^()$]*\\)");
+
         /** A reading that leaves out an operand depending on the path taken, or holding a changed member b showed nothing for: abstain. */
         boolean unsure(String r, Node[] ops) {
             for (int i = 0; i < ops.length; i++) {
-                if ((merged(ops[i]) || holed(ops[i]) && !lined.containsKey(ops[i])) && (r == null || !Pattern.compile("\\$" + (i + 1) + "(?!\\d)").matcher(r).find())) {
+                if ((merged(ops[i]) || holed(ops[i]) && !lined.containsKey(ops[i])) && (r == null || !Pattern.compile("\\$" + (i + 1) + "(?!\\d)").matcher(r).find() && MADE.matcher(r).find())) {
                     return true;
                 }
             }

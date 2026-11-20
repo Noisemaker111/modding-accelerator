@@ -156,6 +156,20 @@ public final class JarPort {
 
     final List<PortChains.Spec> pairs = new ArrayList<>();
 
+    /** A member of a library class that both releases declare with the same type and access. */
+    boolean unchangedLibrary(char kind, String owner, String name, String desc) {
+        GameDiff.Cls old = a.classes.get(owner), now = b.classes.get(owner);
+        if (old == null || now == null || !old.library) {
+            return false;
+        }
+        if (kind == 'f' || kind == 'r') {
+            GameDiff.Fld x = old.fields.get(name), y = now.fields.get(name);
+            return x != null && y != null && x.desc.equals(y.desc) && x.flags == y.flags;
+        }
+        GameDiff.Meth x = old.methods.get(name + desc), y = now.methods.get(name + desc);
+        return x != null && y != null && x.flags == y.flags;
+    }
+
     /** A library's abstract method the old release's copy of that library had too: a mod that skips it skipped it before the port. */
     boolean alreadyAbstract(GameDiff.Cls k, GameDiff.Meth m) {
         GameDiff.Cls old = k.library ? a.classes.get(k.name) : null;
@@ -1273,6 +1287,11 @@ public final class JarPort {
      */
     String[] target(Mod mod, List<String> callers, String siteOwner, char kind, String name, String desc, Decl decl) {
         String newSite = cls(siteOwner);
+        if (unchangedLibrary(kind, decl.owner(), name, desc)) {
+            // A library member both releases have as it was: whatever lets the mod use it (its own newer copy of the
+            // library, say) still does; only what changed inside a library is the port's.
+            return new String[] { newSite, name, desc(desc) };
+        }
         if (kind == 'f' || kind == 'r') {
             String[] moved = route.field(decl.owner(), name);
             String fieldDesc = desc(desc);
