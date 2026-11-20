@@ -152,6 +152,16 @@ public final class PackLogTests extends PackCheckFixtures {
             classSuspects.size() == 1 && classSuspects.get(0).get("jar").equals("cwb-5.0.jar"),
             "a mod the loader names only by a class is the jar with that class's package: " + classSuspects
         );
+        // ...and a mod whose loader service crashes only by the jar its frames ran from (CustomSkinLoader patching 1.21's SkinManager).
+        neo.providers.put("customskinloader", new ArrayList<>(List.of(new PackMods.Provider("csl-15.1.jar", "15.1", false, "META-INF/neoforge.mods.toml"))));
+        String service = "---- Minecraft Crash Report ----\nDescription: Initializing game\n\njava.lang.IllegalStateException: Transformation rule 'customskinloader:skin-manager-patch' did not modify any bytecode.\n"
+            + "\tat LAYER SERVICE/customskinloader.bootstrap@15.1/customskinloader.bootstrap.transformer.TransformationPlan.transform(TransformationPlan.java:160) ~[csl-15.1.jar%23217!/:15.1] {}\n"
+            + "\tat MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.4/cpw.mods.modlauncher.TransformerHolder.transform(TransformerHolder.java:38) ~[modlauncher-11.0.4.jar:?] {}\n\n";
+        var serviceSuspects = PackChecks.suspects("", List.of(service), neo, PackLoaders.find(harness, "neoforge"));
+        expect(
+            serviceSuspects.size() == 1 && serviceSuspects.get(0).get("jar").equals("csl-15.1.jar"),
+            "a crash in a mod's loader service is the jar its frame ran from, not the loader's own jar: " + serviceSuspects
+        );
         // ...and a mod whose data the new game cannot read only by its data pack (TerraBlender's biome on 1.21.2).
         neo.providers.put("terrablender", new ArrayList<>(List.of(new PackMods.Provider("TerraBlender.jar", "4.1", false, "META-INF/neoforge.mods.toml"))));
         String badData = "[main/ERROR] [minecraft/RegistryDataLoader]: Registry loading errors:\n>> Errors in element terrablender:deferred_placeholder:\njava.lang.IllegalStateException: Failed to parse terrablender:worldgen/biome/deferred_placeholder.json from pack mod/terrablender\n[main/WARN] [minecraft/Main]: Failed to load datapacks, can't proceed with server load.";

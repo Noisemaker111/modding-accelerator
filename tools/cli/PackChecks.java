@@ -487,7 +487,7 @@ final class PackChecks {
     }
 
     // ------------------------------------------------------------------ the log: which mod?
-    static final Pattern FRAME = Pattern.compile("^\\s*at (?:[\\w.$-]+//)?(?:[A-Z]+/([a-z0-9_.\\-]+)@[^/]+/)?([\\w$.]+)\\.[\\w$<>]+\\(");
+    static final Pattern FRAME = Pattern.compile("^\\s*at (?:[\\w.$-]+//)?(?:[A-Z]+(?: [A-Z]+)*/([a-z0-9_.\\-]+)@[^/]+/)?([\\w$.]+)\\.[\\w$<>]+\\(");
     static final Pattern MIXIN_CONFIG = Pattern.compile("([A-Za-z0-9_.\\-]+\\.mixins?\\.json|[A-Za-z0-9_.\\-]+\\.mixin\\.json|mixins\\.[A-Za-z0-9_.\\-]+\\.json)");
     static final Pattern HANDLER = Pattern.compile("\\$[a-z]{2,}[0-9a-f]{3}\\$([a-z0-9_]+)\\$");
     static final Pattern SUSPECTED = Pattern.compile("^\\s*([^\\n(]+) \\(([a-z0-9_.\\-]+)\\)");
@@ -591,6 +591,7 @@ final class PackChecks {
             String module = frame.group(1), type = frame.group(2);
             if (type.startsWith("mmt.packprobe")) continue;
             String jar = module != null && scan.providers.containsKey(module) ? null : owner(scan, type);
+            if (jar == null && (module == null || !scan.providers.containsKey(module))) jar = frameJar(scan, line);
             if (module != null && scan.providers.containsKey(module)) {
                 blame(found, scan, module, null, "its code (" + type + ") is in the stack: " + line.strip());
                 inCause = false;
@@ -685,6 +686,25 @@ final class PackChecks {
     /** Minecraft's colour codes (a section sign and one character), which Forge puts round mod names; a log read in the wrong code page shows the sign as U+FFFD. */
     static String plain(String text) {
         return text.replaceAll("[\u00a7\ufffd][0-9a-fk-orA-FK-OR]", "");
+    }
+
+    static final Pattern FRAME_JAR = Pattern.compile("\\[([^\\[\\]/\\\\%!]+\\.jar)(?:%23\\d+)?(?:!/)?[^\\]]*\\]");
+
+    /**
+     * The pack jar a stack frame says it ran from (`~[name.jar%23217!/:15.1]`): code a mod loads as a loader service, out of
+     * a jar nested in it, is in neither its packages nor its mod id (CustomSkinLoader's transformer).
+     */
+    static String frameJar(PackMods.Scan scan, String line) {
+        Matcher m = FRAME_JAR.matcher(line);
+        while (m.find()) {
+            String file = m.group(1);
+            for (List<PackMods.Provider> ps : scan.providers.values()) {
+                for (PackMods.Provider p : ps) {
+                    if (p.jar().split("!")[0].equals(file)) return file;
+                }
+            }
+        }
+        return null;
     }
 
     static String owner(PackMods.Scan scan, String type) {
