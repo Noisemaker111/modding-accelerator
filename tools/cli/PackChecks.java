@@ -843,17 +843,21 @@ final class PackChecks {
             "The server finished starting (" + plain(done).strip() + ") but mmt's probe never reported back: a fault of the probe, not of a mod in the pack."
         );
         List<String> lines = plain(unwrapStderr(log)).lines().toList(), out = new ArrayList<>();
-        // Forge logs a class a mixin only probed for, on the wrong side, at FATAL from RuntimeDistCleaner; that alone stops nothing.
         for (String line : lines) if (
             failed.stream().anyMatch(line::contains) ||
             line.startsWith("Caused by:") ||
             line.startsWith("Exception in thread") ||
             line.contains("Exception message:") ||
-            (line.contains("/FATAL]") && !line.contains("RuntimeDistCleaner"))
+            fatal(line)
         ) out.add(line.strip());
         if (out.isEmpty()) out.addAll(lines.subList(Math.max(0, lines.size() - 12), lines.size()));
         List<String> unique = new ArrayList<>(new LinkedHashSet<>(out));
         return String.join("\n", unique.subList(Math.max(0, unique.size() - 14), unique.size()));
+    }
+
+    /** A log line at the FATAL level. Forge logs a class a mixin only probed for, on the wrong side, at FATAL from RuntimeDistCleaner; that alone stops nothing. */
+    static boolean fatal(String line) {
+        return line.contains("/FATAL]") && !line.contains("RuntimeDistCleaner");
     }
 
     static String examples(List<String> items) {

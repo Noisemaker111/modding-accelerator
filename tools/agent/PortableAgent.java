@@ -32,6 +32,26 @@ public final class PortableAgent {
     static final boolean LEASED = !"false".equals(System.getProperty("mmt.lease"));
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
     private static boolean installed;
+    // The process's own standard output, not System.out: a mod may replace System.out or System.err, or redirect the
+    // streams under them (a crash helper sends stderr to its own file), and the agent's signals must still get out.
+    private static final OutputStream console = new FileOutputStream(FileDescriptor.out);
+    /** One line on the process's standard output in a single write, so no other thread's output lands inside it. */
+    static void say(String line) {
+        try { console.write((line + System.lineSeparator()).getBytes(StandardCharsets.UTF_8)); } catch (IOException closed) { }
+    }
+    /**
+     * The agent cannot control this game: said, and written to agent-failed.txt beside agent.json, so whoever waits for
+     * agent.json stops waiting whatever happened to the game's output.
+     */
+    static void failed(String line) {
+        say(line);
+        String state = System.getProperty("mmt.state");
+        // Written whole, then renamed: a reader that sees the file sees the reason.
+        if (state != null) try {
+            Path part = Files.write(Paths.get(state, "agent-failed.tmp"), (line + "\n").getBytes(StandardCharsets.UTF_8));
+            Files.move(part, Paths.get(state, "agent-failed.txt"), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException unwritable) { }
+    }
     public static synchronized void premain(String args, Instrumentation instrumentation) {
         if ("legacy".equals(args) && System.getProperty("sun.java.command", "").startsWith("org.gradle.launcher.daemon.bootstrap.GradleDaemon")) return;
         GameLaunchAgent.install(instrumentation);
@@ -41,8 +61,7 @@ public final class PortableAgent {
         if (installed) return;
         installed = true;
         // A game Gradle launched is no descendant of mmt; a start that fails ends it by this pid.
-        System.out.println("MMT_PID " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
-        System.out.flush();
+        say("MMT_PID " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
@@ -83,9 +102,9 @@ public final class PortableAgent {
                             return delegate;
                         }
                     }, 0);
-                    if (hooks[0] == 0) { System.err.println("MMT_AGENT_UNSUPPORTED no render hook in " + name); return null; }
+                    if (hooks[0] == 0) { failed("MMT_AGENT_UNSUPPORTED no render hook in " + name); return null; }
                     return writer.toByteArray();
-                } catch (Throwable error) { System.err.println("MMT_AGENT_ERROR " + error); return null; }
+                } catch (Throwable error) { failed("MMT_AGENT_ERROR " + name + ": " + error); return null; }
             }
         });
     }
@@ -128,7 +147,7 @@ public final class PortableAgent {
                     "token", token, "pid", Long.parseLong(runtime), "port", server.getLocalPort(), "clientClass", client.getClass().getName(), "started", System.currentTimeMillis(),
                     "background", Boolean.getBoolean("mmt.background"), "quiet", Boolean.getBoolean("mmt.quiet")));
             Json.save(Paths.get(System.getProperty("mmt.state"), "agent.json"), identity);
-            System.out.println("MMT_READY " + Json.write(identity)); System.out.flush();
+            say("MMT_READY " + Json.write(identity));
             boolean hidden = Boolean.getBoolean("mmt.background");
             long lastContact = System.nanoTime();
             if (hidden) server.setSoTimeout(60000);
@@ -157,12 +176,11 @@ public final class PortableAgent {
                 } catch (Throwable error) { System.err.println("MMT_CONTROL_ERROR " + cause(error)); }
                 finally { if (serving) { lastRequest = System.nanoTime(); lastContact = lastRequest; serving = false; answered = true; } }
             }
-        } catch (Throwable error) { System.err.println("MMT_AGENT_ERROR " + cause(error)); }
+        } catch (Throwable error) { failed("MMT_AGENT_ERROR " + cause(error)); }
     }
     /** Stops the game the way quit does; a game thread too stuck to stop within 2 minutes is ended. */
     private static void leaseEnded() {
-        System.out.println("MMT_LEASE_ENDED no mmt request for " + LEASE / 60000000000L + " minutes; stopping this hidden game");
-        System.out.flush();
+        say("MMT_LEASE_ENDED no mmt request for " + LEASE / 60000000000L + " minutes; stopping this hidden game");
         pending.add(new Runnable() { public void run() {
             try { perform(Json.map("command", "quit"), new CompletableFuture<Map<String, Object>>()); }
             catch (Throwable error) { System.err.println("MMT_AGENT_ERROR " + cause(error)); }

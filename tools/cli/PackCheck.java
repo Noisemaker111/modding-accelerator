@@ -313,8 +313,10 @@ final class PackCheck {
             findings.add(Json.map("kind", "client-start", "severity", "problem", "summary", String.valueOf(client.get("toolError"))));
         } else if (!Boolean.TRUE.equals(client.get("opened"))) {
             List<Object> suspects = Json.array(client.getOrDefault("suspects", List.of()));
+            List<String> reached = Json.array(client.getOrDefault("reached", List.of())).stream().map(String::valueOf).toList();
             findings.add(Json.map("kind", "client-start", "severity", "problem", "summary",
-                "The pack's client did not get through " + client.get("reached") + " and on: " + client.get("failure")
+                "The pack's client " + (reached.isEmpty() ? "did not reach the title screen" : "reached " + String.join(", ", reached) + ", then stopped")
+                    + ": " + client.get("failure")
                     + (suspects.isEmpty() ? "" : ". The log names " + PackChecks.names(suspects.stream().map(Json::object).toList()) + "."),
                 "suspects", suspects, "evidence", client.get("failure")));
         }
