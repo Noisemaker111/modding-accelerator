@@ -220,17 +220,14 @@ final class PackClient {
         for (PackCheck.Mod mod : mods) PackCheck.link(mod.jar(), instance.resolve("mods").resolve(mod.file()));
         Path world = Fingerprint.template(owner.harness, pack.minecraft(), 0, context.report());
         PackCheck.copyTree(world, instance.resolve("saves/lab"));
-        Path asm;
-        try (var walk = Files.walk(install.resolve("libraries/org/ow2/asm/asm"))) {
-            asm = walk.filter(p -> p.getFileName().toString().matches("asm-[0-9.]+\\.jar")).max(Comparator.naturalOrder()).orElseThrow();
-        }
-        Path agent = Game.agentJar(owner.harness, asm, PackCheck.receipts().resolve("agents"), instance, context.report());
+        Path agent = Game.agentJar(owner.harness, asm(install, pack.minecraft()), PackCheck.receipts().resolve("agents"), instance, context.report());
         Map<String, Object> preferences = Preferences.read(Preferences.file());
         String token = UUID.randomUUID().toString();
+        Path state = Files.createDirectories(instance.resolve(".mmt"));
         List<String> options = new ArrayList<>(List.of(
             "-Xmx4G", "-XX:TieredStopAtLevel=1",
             "-javaagent:" + agent,
-            "-Dmmt.token=" + token, "-Dmmt.state=" + Files.createDirectories(instance.resolve(".mmt")), "-Dmmt.root=" + instance,
+            "-Dmmt.token=" + token, "-Dmmt.state=" + state, "-Dmmt.root=" + instance,
             "-Dmmt.fingerprint=pack-check-client", "-Dmmt.c1=true",
             "-Dmmt.background=" + preferences.get("background"), "-Dmmt.quiet=" + preferences.get("quiet")
         ));
@@ -259,8 +256,10 @@ final class PackClient {
         Files.writeString(instance.resolve("mmt-launch.txt"), String.join("\n", command) + "\n");
         long since = System.currentTimeMillis();
         java.time.Instant launched = java.time.Instant.now();
+        AgentWait agentWait = new AgentWait(state, token);
+        CompletableFuture<Map<String, Object>> ready = agentWait.ready;
         Process process = PackChecks.windowless(new ProcessBuilder(command)).directory(instance.toFile()).redirectErrorStream(true).start();
-        CompletableFuture<Map<String, Object>> ready = new CompletableFuture<>();
+        List<String> failed = owner.loader.failed();
         // Programs a mod starts from the game, seen while it runs: one started as the game dies has no parent left to find it by.
         Set<ProcessHandle> started = ConcurrentHashMap.newKeySet();
         Thread reader = new Thread(() -> {
@@ -272,8 +271,9 @@ final class PackClient {
                     out.write(line);
                     out.newLine();
                     out.flush();
-                    int at = line.indexOf("MMT_READY ");
-                    if (at >= 0) ready.complete(Json.object(Json.parse(line.substring(at + "MMT_READY ".length()))));
+                    // The loader's error screen follows its fatal loading error; once it is said, nothing more will start.
+                    String loading = ready.isDone() ? null : loadingFailure(line, failed);
+                    if (loading != null) ready.completeExceptionally(new LoadingFailed(loading));
                 }
             } catch (Exception unreadable) {
                 ready.completeExceptionally(unreadable);
@@ -299,6 +299,8 @@ final class PackClient {
                 session = ready.get(15, TimeUnit.MINUTES);
             } catch (ExecutionException stopped) {
                 throw stopped.getCause() instanceof Exception e ? e : stopped;
+            } finally {
+                agentWait.close();
             }
             session.put("log", log.toString());
             session.put("processStart", ProcessHandle.of(((Number) session.get("pid")).longValue()).flatMap(p -> p.info().startInstant()).map(Object::toString).orElse(""));
@@ -338,6 +340,7 @@ final class PackClient {
             }
         } catch (Exception failure) {
             result.put("opened", false);
+            process.descendants().forEach(started::add);
             String message = String.valueOf(failure.getMessage());
             if (process.isAlive() && message.contains("Snippet did not compile")) {
                 // pack-check's own step does not fit this game version: no mod is at fault.
@@ -345,7 +348,18 @@ final class PackClient {
                 result.put("toolError", "pack-check's client step does not compile against Minecraft " + pack.minecraft() + ": " + message);
                 return result;
             }
-            if (!process.waitFor(2, TimeUnit.MINUTES)) process.destroyForcibly();
+            if (failure instanceof AgentFailed) {
+                process.destroyForcibly();
+                result.put("toolError", "mmt's control agent cannot run in this client: " + message);
+                return result;
+            }
+            // A loader that failed shows its error screen until someone closes it: there is nothing left to wait for.
+            if (failure instanceof LoadingFailed) process.destroyForcibly();
+            else if (!process.waitFor(2, TimeUnit.MINUTES)) process.destroyForcibly();
+            process.waitFor();
+            // The rest of what the game said is still in the pipe. The reader ends where it does; a program the game started
+            // can hold the pipe open after the game is gone, which is why the wait has a bound.
+            reader.join(TimeUnit.SECONDS.toMillis(30));
             String text = Files.isRegularFile(log) ? new String(Files.readAllBytes(log), StandardCharsets.UTF_8) : "";
             List<String> reports = PackChecks.crashReports(instance, since);
             result.put("failure", String.valueOf(failure.getMessage()).lines().findFirst().orElse("") + (reports.isEmpty() ? "" : "; " + PackChecks.failure(reports.get(0), List.of())));
@@ -360,6 +374,84 @@ final class PackClient {
             result.put("seconds", (System.nanoTime() - began) / 1e9);
         }
         return result;
+    }
+
+    /** The ASM library the launch puts on the class path (the loader's, as merged): the agent is built against it, so it reads the game's classes. */
+    static Path asm(Path install, String minecraft) throws IOException {
+        for (Object o : Json.array(merged(install, minecraft).get("libraries"))) {
+            var library = Json.object(o);
+            String[] name = Json.text(library, "name", "").split(":");
+            if (name.length != 3 || !name[0].equals("org.ow2.asm") || !name[1].equals("asm") || !allowed(library.get("rules"))) continue;
+            String[] artifact = artifact(library);
+            if (artifact != null) return install.resolve("libraries").resolve(artifact[0]);
+        }
+        throw new IOException("The client's launch lists no ASM library (org.ow2.asm:asm) to build mmt's control agent against");
+    }
+
+    /** The agent could not hook the game; it said why in agent-failed.txt. */
+    static final class AgentFailed extends IOException {
+        AgentFailed(String why) {
+            super(why);
+        }
+    }
+
+    /** The loader logged that loading failed; it shows its error screen next. */
+    static final class LoadingFailed extends IOException {
+        LoadingFailed(String line) {
+            super("the loader reported a failed start: " + line.strip());
+        }
+    }
+
+    /** The line, when it says loading failed: one of the loader's own failure words, or a line logged at FATAL. Else null. */
+    static String loadingFailure(String line, List<String> failed) {
+        return PackChecks.fatal(line) || failed.stream().anyMatch(line::contains) ? line : null;
+    }
+
+    /**
+     * The agent's own word on a start, from its state folder: ready completes with agent.json once it is written for this
+     * start's token, and fails with AgentFailed when the agent writes agent-failed.txt. Files, so neither depends on what a
+     * mod does to the game's output (a crash helper takes over stderr and logging). Others may complete ready too.
+     */
+    static final class AgentWait implements AutoCloseable {
+        final CompletableFuture<Map<String, Object>> ready = new CompletableFuture<>();
+        private final WatchService watch = FileSystems.getDefault().newWatchService();
+
+        AgentWait(Path state, String token) throws IOException {
+            state.register(watch, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY);
+            Thread observer = new Thread(() -> {
+                try {
+                    while (!read(state, token)) {
+                        WatchKey key = watch.take();
+                        key.pollEvents();
+                        if (!key.reset()) break;
+                    }
+                } catch (InterruptedException | ClosedWatchServiceException stopped) {
+                    // the start is over
+                }
+            }, "mmt-client-agent");
+            observer.setDaemon(true);
+            observer.start();
+        }
+
+        /** True once ready is done. */
+        private boolean read(Path state, String token) {
+            Path failed = state.resolve("agent-failed.txt"), agent = state.resolve("agent.json");
+            try {
+                if (Files.isRegularFile(failed)) ready.completeExceptionally(new AgentFailed(Files.readString(failed).strip()));
+                else if (Files.isRegularFile(agent)) {
+                    var value = Json.read(agent);
+                    if (token.equals(value.get("token"))) ready.complete(value);
+                }
+            } catch (IOException | RuntimeException notWrittenYet) {
+                // the next change to the folder tries again
+            }
+            return ready.isDone();
+        }
+
+        @Override
+        public void close() throws IOException {
+            watch.close();
+        }
     }
 
     /**

@@ -1,4 +1,5 @@
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 
@@ -19,11 +20,13 @@ public final class PackServerTests extends PackCheckFixtures {
             loaders(harness, scratch);
             fingerprintVerdict(scratch);
             clientLaunch(scratch);
+            agentSignals(harness, scratch);
             System.out.println(
                 count +
                 " pack server checks passed: which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones, a --focus set)," +
                 " a library jar's bundled mods, four loader adapters, --fingerprint's verdict (a failed recording fails; a reload change is a note)," +
-                " the client launch built from a loader's version file over the game's (one version of a library, this system's rules)"
+                " the client launch built from a loader's version file over the game's (one version of a library, this system's rules, the agent built on the launch's ASM)," +
+                " the client agent's ready and failed signals whatever the game does to its output, a fatal loading line ends the wait"
             );
         } finally {
             System.setProperty("user.home", home);
@@ -61,7 +64,7 @@ public final class PackServerTests extends PackCheckFixtures {
         Json.save(install.resolve("versions/loader-1/loader-1.json"), Json.map(
             "id", "loader-1", "inheritsFrom", "1.21.2", "mainClass", "loader.Boot",
             // Fabric's launcher profile names a library by its maven coordinates under its repository, with no downloads entry.
-            "libraries", List.of(library("org.ow2.asm:asm:9.7", null), Json.map("name", "net.fabricmc:fabric-loader:0.16.7", "url", "https://maven.fabricmc.net/")),
+            "libraries", List.of(library("org.ow2.asm:asm:9.10.1", null), Json.map("name", "net.fabricmc:fabric-loader:0.16.7", "url", "https://maven.fabricmc.net/")),
             "arguments", Json.map("jvm", List.of("-DlibraryDirectory=${library_directory}"), "game", List.of("--launchTarget", "client"))
         ));
         Files.write(install.resolve("versions/loader-1/loader-1.jar"), new byte[0]);
@@ -83,12 +86,127 @@ public final class PackServerTests extends PackCheckFixtures {
                 && table.contains("m\tnet/minecraft/client/Minecraft\trunTick\t(Z)V\tmethod_1523\n")
                 && table.contains("m\tnet/minecraft/client/Minecraft\tgetInstance\t()Lnet/minecraft/client/Minecraft;\tmethod_1551\n"),
             "each class, field and method gets its run-time name, members matched by their obfuscated descriptor: " + table);
-        expect(classpath.contains("asm-9.7.jar") && !classpath.contains("asm-9.3.jar"), "a library both version files list is on the class path once, the loader's: " + classpath);
+        expect(classpath.contains("asm-9.10.1.jar") && !classpath.contains("asm-9.3.jar"), "a library both version files list is on the class path once, the loader's: " + classpath);
+        // NeoForge 1.21.1's installer leaves its own ASM 9.3 beside the loader's 9.10.1, and "asm-9.3.jar" sorts after
+        // "asm-9.10.1.jar": an agent built on 9.3 cannot read Java 21's classes, never hooks a frame, and the check waited 15 minutes.
+        for (String version : List.of("9.3", "9.10.1")) {
+            Path jar = install.resolve("libraries/org/ow2/asm/asm/" + version + "/asm-" + version + ".jar");
+            Files.createDirectories(jar.getParent());
+            Files.write(jar, new byte[0]);
+        }
+        Path asm = PackClient.asm(install, "1.21.2");
+        expect(asm.getFileName().toString().equals("asm-9.10.1.jar"), "the agent is built on the ASM the launch runs, not another one on disk: " + asm);
         expect(classpath.contains("natives-" + PackClient.OS) && !classpath.contains("natives-" + other), "a library for another system is left out: " + classpath);
         expect(!command.contains("-XstartOnFirstThread") && !command.contains("--demo"), "an argument for another system or a launcher feature is left out: " + command);
         int main = command.indexOf("loader.Boot");
         expect(main > command.indexOf("-Xmx1G") && main > command.indexOf("-cp") && main < command.indexOf("--launchTarget"), "options, then the loader's main class, then the game's arguments: " + command);
         expect(command.contains(instance.toString()) && command.contains("18") && command.stream().noneMatch(a -> a.contains("${")), "every ${value} is filled: " + command);
+    }
+
+    // ------------------------------------------------------------------ the client agent's signals
+    static final String GAME = """
+        package net.minecraft.client;
+        public class Minecraft {
+            static final Minecraft INSTANCE = new Minecraft();
+            public final Options options = new Options();
+            public static Minecraft getInstance() { return INSTANCE; }
+            public void runTick(boolean render) { }
+        }
+        """;
+    static final String OPTIONS = "package net.minecraft.client; public class Options { public boolean pauseOnLostFocus = true; }";
+    /** A game whose frame method the agent does not know: the agent cannot hook it. */
+    static final String UNHOOKABLE = """
+        package net.minecraft.client;
+        public class Minecraft {
+            static final Minecraft INSTANCE = new Minecraft();
+            public static Minecraft getInstance() { return INSTANCE; }
+            public void tick() { }
+        }
+        """;
+    /**
+     * Takes over the game's output the way Crash Assistant does (System.out and System.err replaced, and the streams under
+     * the old ones pointed at a sink), then runs frames until the agent has answered in its state folder.
+     */
+    static final String RUN = """
+        import java.io.*;
+        import java.lang.reflect.Field;
+        import java.nio.file.*;
+        public class Run {
+            public static void main(String[] a) throws Exception {
+                OutputStream sink = OutputStream.nullOutputStream();
+                Field out = FilterOutputStream.class.getDeclaredField("out");
+                out.setAccessible(true);
+                for (PrintStream stream : new PrintStream[] { System.out, System.err }) {
+                    OutputStream inner = stream;
+                    while (out.get(inner) instanceof FilterOutputStream next) inner = next;
+                    out.set(inner, sink);
+                }
+                System.setOut(new PrintStream(sink));
+                System.setErr(new PrintStream(sink));
+                Path state = Path.of(a[0]);
+                net.minecraft.client.Minecraft game = net.minecraft.client.Minecraft.getInstance();
+                for (int frame = 0; frame < 3000 && !Files.exists(state.resolve("agent.json")) && !Files.exists(state.resolve("agent-failed.txt")); frame++) {
+                    for (java.lang.reflect.Method tick : game.getClass().getMethods()) if (tick.getName().equals("runTick")) tick.invoke(game, true);
+                    Thread.sleep(10);
+                }
+            }
+        }
+        """;
+
+    /**
+     * pack-check's client waits on mmt's real agent in a game that takes over its output: the agent's agent.json, and its
+     * MMT_READY on the process's own standard output, still arrive; a game the agent cannot hook ends the wait at once with
+     * the agent's reason; a line where the loader says loading failed ends it too.
+     */
+    static void agentSignals(Path harness, Path scratch) throws Exception {
+        Path dir = scratch.resolve("agent-signals");
+        Path agent = Game.agentJar(harness, harness.resolve("tools/perf/lib/asm-9.9.jar"), dir.resolve("agents"), dir, new Mmt.Report(dir, "pack-check"));
+        var compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        Map<String, Map<String, String>> games = Map.of(
+            "hookable", Map.of("net/minecraft/client/Minecraft.java", GAME, "net/minecraft/client/Options.java", OPTIONS, "Run.java", RUN),
+            "unhookable", Map.of("net/minecraft/client/Minecraft.java", UNHOOKABLE, "Run.java", RUN)
+        );
+        String vm = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+        Map<String, String> output = new HashMap<>();
+        Map<String, Object> outcome = new HashMap<>();
+        for (var game : games.entrySet()) {
+            Path classes = dir.resolve(game.getKey()), state = Files.createDirectories(dir.resolve(game.getKey() + "-state"));
+            List<String> arguments = new ArrayList<>(List.of("-nowarn", "-d", classes.toString()));
+            for (var source : game.getValue().entrySet()) {
+                Path file = dir.resolve("src-" + game.getKey()).resolve(source.getKey());
+                Files.createDirectories(file.getParent());
+                Files.writeString(file, source.getValue());
+                arguments.add(file.toString());
+            }
+            expect(compiler.run(null, null, null, arguments.toArray(String[]::new)) == 0, "the stand-in game compiles: " + game.getKey());
+            String token = UUID.randomUUID().toString();
+            try (var wait = new PackClient.AgentWait(state, token)) {
+                Process run = new ProcessBuilder(vm, "--add-opens", "java.base/java.io=ALL-UNNAMED", "-javaagent:" + agent,
+                    "-Dmmt.token=" + token, "-Dmmt.state=" + state, "-Dmmt.fingerprint=test", "-cp", classes.toString(), "Run", state.toString())
+                    .redirectErrorStream(true).start();
+                output.put(game.getKey(), new String(run.getInputStream().readAllBytes(), StandardCharsets.UTF_8));
+                run.waitFor();
+                try {
+                    outcome.put(game.getKey(), wait.ready.get(30, java.util.concurrent.TimeUnit.SECONDS));
+                } catch (java.util.concurrent.ExecutionException failed) {
+                    outcome.put(game.getKey(), failed.getCause());
+                } catch (java.util.concurrent.TimeoutException none) {
+                    outcome.put(game.getKey(), "no answer");
+                }
+            }
+        }
+        expect(outcome.get("hookable") instanceof Map<?, ?> ready && "test".equals(ready.get("fingerprint")),
+            "the agent's agent.json ends the wait in a game that took over its output: " + outcome.get("hookable") + "\n" + output.get("hookable"));
+        expect(output.get("hookable").contains("MMT_READY "), "MMT_READY reaches the process's standard output past a replaced System.out: " + output.get("hookable"));
+        expect(outcome.get("unhookable") instanceof PackClient.AgentFailed failed && failed.getMessage().contains("no render hook"),
+            "a game the agent cannot hook ends the wait with the agent's reason: " + outcome.get("unhookable") + "\n" + output.get("unhookable"));
+        List<String> failedWords = List.of("Loading errors encountered");
+        expect(PackClient.loadingFailure("[11:51:11] [Render thread/FATAL] [ne.ne.fm.ModLoader/CORE]: Error during pre-loading phase: Mod clumps requires minecraft 1.21.4", failedWords) != null
+                && PackClient.loadingFailure("[11:51:12] [Render thread/ERROR] [ne.ne.fm.ModLoader/]: Loading errors encountered", failedWords) != null,
+            "a line logged at FATAL, or one of the loader's failure words, ends the client's wait");
+        expect(PackClient.loadingFailure("[11:51:11] [Render thread/WARN] [minecraft/Pack]: Missing metadata in pack programmer_art", failedWords) == null
+                && PackClient.loadingFailure("[main/FATAL] [cpw.mods.modlauncher.RuntimeDistCleaner/DISTXFORM]: Attempted to load class net/minecraft/client/A for invalid dist DEDICATED_SERVER", failedWords) == null,
+            "a warning, or Forge's FATAL for a class a mixin only probed for, does not end it");
     }
 
     static Map<String, Object> library(String name, List<?> rules) {
