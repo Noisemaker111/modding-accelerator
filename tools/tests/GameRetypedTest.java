@@ -46,8 +46,9 @@ final class GameRetypedTest {
         List<String> unlinked = Json.array(results.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(unlinked.isEmpty(), "the mod's render and the helper it passes its pose to link, their font.draw calls rewritten: " + unlinked);
         Map<String, String> members = JarPortTest.members(ported.get("m8/Panel.class"));
-        JarPortTest.expect(members.containsKey("method label(" + GFX + "I)V") && !members.containsKey("method label(" + POSE + "I)V"),
-            "the helper moved to the Graphics too: " + members.keySet());
+        JarPortTest.expect(members.containsKey("method label(" + GFX + "I)V") && !members.containsKey("method label(" + POSE + "I)V")
+            && members.containsKey("method sign(" + GFX + ")V") && !members.containsKey("method sign(" + POSE + ")V"),
+            "the helpers moved to the Graphics too, the static one and an instance one nothing overrides: " + members.keySet());
 
         Map<String, byte[]> classes = new HashMap<>(newGame);
         classes.put("m8/Panel", ported.get("m8/Panel.class"));
@@ -69,7 +70,7 @@ final class GameRetypedTest {
         } catch (ReflectiveOperationException | LinkageError failed) {
             trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
         }
-        JarPortTest.expect(trace.equals("draw:hi,7,3,9,false;draw:lo,8,4,1,false;"),
+        JarPortTest.expect(trace.equals("draw:hi,7,3,9,false;draw:lo,8,4,1,false;draw:si,5,6,2,false;"),
             "the game's render(graphics, 7) reaches the mod, whose calls draw on that graphics with the mod's font, text, positions and color: " + trace);
         if (JarPortTest.failures > 0) {
             System.exit(1);
@@ -91,9 +92,20 @@ final class GameRetypedTest {
         m.visitInsn(Opcodes.ICONST_1);
         m.visitInsn(Opcodes.IADD);
         m.visitMethodInsn(Opcodes.INVOKESTATIC, "m8/Panel", "label", "(" + POSE + "I)V", false);
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        m.visitVarInsn(Opcodes.ALOAD, 1);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "m8/Panel", "sign", "(" + POSE + ")V", false);
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();
+        MethodVisitor s = w.visitMethod(Opcodes.ACC_PUBLIC, "sign", "(" + POSE + ")V", null, null);
+        s.visitCode();
+        s.visitInsn(Opcodes.ICONST_5);
+        s.visitVarInsn(Opcodes.ISTORE, 2);
+        draw(s, 0, 1, "si", 2, 6.0F, 2, false);
+        s.visitInsn(Opcodes.RETURN);
+        s.visitMaxs(0, 0);
+        s.visitEnd();
         MethodVisitor l = w.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "label", "(" + POSE + "I)V", null, null);
         l.visitCode();
         l.visitTypeInsn(Opcodes.NEW, R + "Font");
@@ -261,6 +273,25 @@ final class GameRetypedTest {
             m.visitInsn(Opcodes.ICONST_0);
             m.visitVarInsn(Opcodes.ISTORE, 3);
             draw(m, 0, 1, "zero", 3, 3.0F, 4, two);
+            // Twice where 2.0 computes the height another way (x * 2 where 1.0 passed 50.0F): no reading, and not another one.
+            for (String text : List.of("odd1", "odd2")) {
+                if (two) {
+                    m.visitVarInsn(Opcodes.ALOAD, 1);
+                    m.visitVarInsn(Opcodes.ALOAD, 0);
+                    m.visitFieldInsn(Opcodes.GETFIELD, R + "Screen", "font", FONT);
+                    m.visitLdcInsn(text);
+                    m.visitVarInsn(Opcodes.ILOAD, 2);
+                    m.visitVarInsn(Opcodes.ILOAD, 2);
+                    m.visitInsn(Opcodes.ICONST_2);
+                    m.visitInsn(Opcodes.IMUL);
+                    m.visitLdcInsn(9);
+                    m.visitInsn(Opcodes.ICONST_0);
+                    m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, R + "Graphics", "drawString", "(" + FONT + STR + "IIIZ)I", false);
+                    m.visitInsn(Opcodes.POP);
+                } else {
+                    draw(m, 0, 1, text, 2, 50.0F, 9, false);
+                }
+            }
             // Twice at a position that depends on the path taken (x > 0 ? 5 : 6): such a use abstains.
             for (int round = 0; round < 2; round++) {
                 Label other = new Label(), join = new Label();

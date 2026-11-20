@@ -3415,8 +3415,101 @@ public final class JarPort {
             params.put(mark, param);
         }
 
+        // A frame gives the stack as types, so the marks on values a jump carries ("a ? b : c" as an argument) are kept
+        // here per label, where every way in agrees, and put back when the label's frame comes.
+        final Map<Label, Object[]> carried = new HashMap<>();
+        final List<Label> arrived = new ArrayList<>();
+
+        void carry(Label label) {
+            if (stack == null) {
+                return;
+            }
+            Object[] now = stack.stream().map(v -> params.containsKey(v) ? v : null).toArray();
+            carried.merge(label, now, (had, add) -> {
+                if (had.length != add.length) {
+                    return new Object[0];
+                }
+                Object[] both = new Object[had.length];
+                for (int i = 0; i < had.length; i++) {
+                    both[i] = had[i] == add[i] ? had[i] : null;
+                }
+                return both;
+            });
+        }
+
+        @Override
+        public void visitJumpInsn(int opcode, Label label) {
+            if (opcode == Opcodes.GOTO) {
+                carry(label);
+                super.visitJumpInsn(opcode, label);
+            } else {
+                super.visitJumpInsn(opcode, label);
+                carry(label);
+            }
+            arrived.clear();
+        }
+
+        @Override
+        public void visitLabel(Label label) {
+            carry(label); // the way in from the instruction before, when it falls through
+            arrived.add(label);
+            super.visitLabel(label);
+        }
+
+        @Override
+        public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
+            super.visitFrame(type, nLocal, local, nStack, stack);
+            for (Label l : arrived) {
+                Object[] marks = carried.get(l);
+                if (marks != null && this.stack != null && marks.length == this.stack.size()) {
+                    for (int i = 0; i < marks.length; i++) {
+                        if (marks[i] != null) {
+                            this.stack.set(i, marks[i]);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void visitInsn(int opcode) {
+            super.visitInsn(opcode);
+            arrived.clear();
+        }
+
+        @Override
+        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+            arrived.clear();
+            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+        }
+
+        @Override
+        public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+            arrived.clear();
+            super.visitFieldInsn(opcode, owner, name, descriptor);
+        }
+
+        @Override
+        public void visitLdcInsn(Object value) {
+            arrived.clear();
+            super.visitLdcInsn(value);
+        }
+
+        @Override
+        public void visitIntInsn(int opcode, int operand) {
+            arrived.clear();
+            super.visitIntInsn(opcode, operand);
+        }
+
+        @Override
+        public void visitTypeInsn(int opcode, String type) {
+            arrived.clear();
+            super.visitTypeInsn(opcode, type);
+        }
+
         @Override
         public void visitVarInsn(int opcode, int var) {
+            arrived.clear();
             super.visitVarInsn(opcode, var);
             Object mark = marks.get(var);
             // A long or double is two entries, its value first.
@@ -4266,7 +4359,7 @@ public final class JarPort {
             GameDiff.RawCls rc = mod.classes.get(owner);
             GameDiff.RawMeth m = rc == null ? null : rc.methods.get(name + desc);
             if (m == null || name.startsWith("<") || (m.flags & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0
-                || (m.flags & (Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL)) == 0 && (rc.flags & Opcodes.ACC_FINAL) == 0) {
+                || (m.flags & (Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL)) == 0 && (rc.flags & Opcodes.ACC_FINAL) == 0 && !alone(rc, m)) {
                 return;
             }
             Type[] args = Type.getArgumentTypes(desc);
@@ -4279,6 +4372,24 @@ public final class JarPort {
                 mod.twins.putIfAbsent(owner + "." + name + desc, new Object[] { k, q.getDescriptor(), moved.br.via()[src[k]] });
                 return;
             }
+        }
+
+        /**
+         * Whether an instance method of the mod can move like a final one: no other class of the mod declares that name
+         * and descriptor (nothing of the mod overrides it, or is overridden by it), and it overrides nothing of the game
+         * or the loader, so every call reaches this one body.
+         */
+        boolean alone(GameDiff.RawCls rc, GameDiff.RawMeth m) {
+            for (GameDiff.RawCls other : mod.classes.values()) {
+                if (other != rc && other.methods.containsKey(m.name + m.desc)) {
+                    return false;
+                }
+            }
+            List<String> parents = new ArrayList<>(rc.ifaces);
+            if (rc.sup != null) {
+                parents.add(0, rc.sup);
+            }
+            return gameRoot(mod, parents, m.name, m.desc) == null;
         }
 
         static final boolean DEBUG = Boolean.getBoolean("jarport.debug");

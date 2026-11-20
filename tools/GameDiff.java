@@ -5536,7 +5536,12 @@ public final class GameDiff {
             for (var e : sites.entrySet()) {
                 int[] tally = new int[2];
                 String best = Learner.vote(e.getValue().values(), tally);
-                if (best == null || !(tally[0] >= 2 && tally[0] * 10 >= tally[1] * 8 || tally[0] == 1 && tally[1] == 1)) {
+                // Kept with 80% of the uses agreeing, as Learner keeps one; or when every use that reads as anything agrees
+                // and two thirds read: a use the game rewrote past any reading (centred another way, its float math
+                // folded) is not another answer.
+                long read = e.getValue().values().stream().filter(s -> !s.isEmpty()).count();
+                boolean unanimous = tally[0] == read && tally[0] >= 2 && tally[0] * 3 >= tally[1] * 2;
+                if (best == null || !(tally[0] >= 2 && tally[0] * 10 >= tally[1] * 8 || unanimous || tally[0] == 1 && tally[1] == 1)) {
                     continue;
                 }
                 String[] key = e.getKey().split("#");

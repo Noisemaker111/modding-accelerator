@@ -148,7 +148,7 @@ final class JarPortRetypeTest {
         JarPortTest.expect(trace.endsWith("push;a;true;dx5;basedrag;true;"),
             "a method its family shows nothing for gets the conversion the game uses for that type elsewhere (pose()), a char comes from "
                 + "the event's code point, and drag distances that moved behind the event are passed on: " + trace);
-        JarPortTest.expect(trace.startsWith("back;fill7;push;fill8;r;A;basekey;true;back;fill7;push;fill8;r;child;A;basekey;true;"),
+        JarPortTest.expect(trace.startsWith("back;fill7;push;fill8;fill1;r;A;basekey;true;back;fill7;push;fill8;fill1;r;child;A;basekey;true;"),
             "the game's new render and key reach the mod's code with graphics.pose() and event.code(), and its calls get the graphics and the event: " + trace);
     }
 
@@ -197,6 +197,18 @@ final class JarPortRetypeTest {
         m.visitVarInsn(Opcodes.ISTORE, 3);
         m.visitVarInsn(Opcodes.ALOAD, 1);
         m.visitVarInsn(Opcodes.ILOAD, 3);
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, "g6/Gui", "fill", "(" + POSE + "I)V", false);
+        // Gui.fill(pose, x > 5 ? 1 : 2): the pose crosses a branch on the stack.
+        Label two = new Label(), joined = new Label();
+        m.visitVarInsn(Opcodes.ALOAD, 1);
+        m.visitVarInsn(Opcodes.ILOAD, 2);
+        m.visitInsn(Opcodes.ICONST_5);
+        m.visitJumpInsn(Opcodes.IF_ICMPLE, two);
+        m.visitInsn(Opcodes.ICONST_1);
+        m.visitJumpInsn(Opcodes.GOTO, joined);
+        m.visitLabel(two);
+        m.visitInsn(Opcodes.ICONST_2);
+        m.visitLabel(joined);
         m.visitMethodInsn(Opcodes.INVOKESTATIC, "g6/Gui", "fill", "(" + POSE + "I)V", false);
         JarPortTest.append(m, "r;");
         m.visitInsn(Opcodes.RETURN);
