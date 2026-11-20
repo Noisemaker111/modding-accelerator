@@ -105,6 +105,10 @@ final class JarPortLoaderTest {
             <dependency><groupId>net.neoforged</groupId><artifactId>bus</artifactId><version>8.0.1</version></dependency>
             </dependencies></project>
             """;
+        String manifest = "Manifest-Version: 1.0\r\nImplementation-Version: 1\r\n\r\nName: net/neoforged/neoforge/internal/versions/neoforge/\r\nImplementation-Version: 20.2.88\r\n"
+            + "\r\nName: net/neoforged/neoforge/versions/neoform/\r\nImplementation-Title: MCP\r\nImplementation-Version: 1.20.2-20231019.153440\r\n";
+        expect("1.20.2-20231019.153440".equals(Exposure.manifestVersion(manifest, "net/neoforged/neoforge/versions/neoform/")),
+            "NeoForge's own manifest names the NeoForm build it was made from, in its own section: " + Exposure.manifestVersion(manifest, "net/neoforged/neoforge/versions/neoform/"));
         List<String> found = Exposure.dependencies(pom).stream().map(d -> String.join(":", d)).toList();
         expect(found.contains("net.neoforged.fancymodloader:loader:4.0.23") && found.contains("net.neoforged:bus:8.0.1"),
             "NeoForge's pom gives its loader and event bus with their versions: " + found);

@@ -433,12 +433,71 @@ def data_check(frm, to, mods):
 LOADER_REF = re.compile(r": (?:net\.neoforged|net\.fabricmc)\.")
 
 
+def platform_ids(loader, to):
+    """The mod ids the platform a pack runs on provides for the new release: Fabric API's modules. Fabric Loader keeps the
+    newest copy of each mod id, so a copy of one nested in a mod is not what runs; NeoForge has no such modules."""
+    if loader != "fabric":
+        return set()
+    api = fabric_api(to)
+    return set(nested_ids(api.read_bytes())) if api else set()
+
+
+def nested_ids(data):
+    """Every fabric.mod.json id in a jar and the jars nested in it, by the nested jar's file name (the jar's own as "")."""
+    import io
+    import zipfile
+    out = {}
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        for entry in z.namelist():
+            if entry == "fabric.mod.json":
+                meta = json.loads(z.read(entry).decode("utf-8", "replace"), strict=False)
+                out[meta.get("id")] = ""
+                for p in meta.get("provides") or []:
+                    out[p] = ""
+            elif entry.startswith("META-INF/jars/") and entry.endswith(".jar"):
+                for i in nested_ids(z.read(entry)):
+                    out[i] = entry.rsplit("/", 1)[1]
+    return out
+
+
+def without_platform_copies(report, provided, jars):
+    """JarPort's report without what mods' nested copies of platform modules reference (a nested jar named
+    "MOD.jar!INNER.jar: ..."): that copy never runs. Each mod's counts are made again from what is left."""
+    if not provided:
+        return report
+    for m in report["mods"]:
+        if "error" in m or not any("!" in u.split(": ", 1)[0] for u in m["unlinked"]):
+            continue
+        names = {}
+        try:
+            import zipfile
+            with zipfile.ZipFile(jars[m["mod"]]) as z:
+                for entry in z.namelist():
+                    if entry.startswith("META-INF/jars/") and entry.endswith(".jar"):
+                        for i, inner in nested_ids(z.read(entry)).items():
+                            names.setdefault(inner or entry.rsplit("/", 1)[1], set()).add(i)
+        except (OSError, KeyError, ValueError):
+            continue
+        m["unlinked"] = [u for u in m["unlinked"]
+                         if not any(names.get(part, set()) & provided for part in u.split(": ", 1)[0].split("!")[1:])]
+    counts = {}
+    for m in report["mods"]:
+        for member in {re.sub(r" \(in [^)]*\)$", "", u.split(": ", 1)[1]) for u in m.get("unlinked", [])}:
+            counts[member] = counts.get(member, 0) + 1
+    report["unlinkedByMods"] = [{"member": k, "mods": v} for k, v in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+    report["linked"] = sum(1 for m in report["mods"] if "error" not in m and not m["unlinked"])
+    return report
+
+
 def jars(loader, frm, to, save=None, out=None, quiet=False):
     """The jar scoreboard: what every top mod's classes and mixins reference, linked against the new release as the JVM and Mixin do."""
     mods, unread = mojang_names(loader, frm, fetch(loader, frm))
     work = ROOT / ".runs" / "exposure" / f"jars-{loader}-{frm}-{to}"
     report = jar_port(loader, frm, to, mods, work / "mods", work / "report.json") if mods else {"linked": 0, "mods": [], "unlinkedByMods": []}
     shutil.rmtree(work / "mods", ignore_errors=True)  # only the report is read; load ports the mods it starts itself
+    if mods:
+        report = without_platform_copies(report, platform_ids(loader, to), {m.name: m for m in mods})
+        (work / "report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
     said = game_says(loader, frm, to, work / "report.json") if report["unlinkedByMods"] else {}
     rows = [m for m in report["mods"] if "error" not in m]
     data = data_check(frm, to, fetch(loader, frm))

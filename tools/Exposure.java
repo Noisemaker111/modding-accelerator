@@ -178,6 +178,28 @@ public final class Exposure {
         return compare(version, "1.20.5") < 0;
     }
 
+    /**
+     * The NeoForm build a NeoForge build was made from, as its own jar's manifest names it (the section
+     * net/neoforged/neoforge/versions/neoform/); every build from 1.20.2 on writes it, while its pom does only sometimes.
+     */
+    static String neoformVersion(String lv) throws Exception {
+        Path universal = VersionMap.fetch(GameDiff.NEOFORGE + lv + "/neoforge-" + lv + "-universal.jar", "neoforge-" + lv + "-universal.jar");
+        return manifestVersion(VersionMap.zipEntry(universal, "META-INF/MANIFEST.MF"), "net/neoforged/neoforge/versions/neoform/");
+    }
+
+    /** Implementation-Version of one named section of a jar manifest, or null. */
+    static String manifestVersion(String manifest, String section) {
+        boolean inside = false;
+        for (String line : manifest.split("\r?\n")) {
+            if (line.startsWith("Name:")) {
+                inside = line.substring(5).trim().equals(section);
+            } else if (inside && line.startsWith("Implementation-Version:")) {
+                return line.substring("Implementation-Version:".length()).trim();
+            }
+        }
+        return null;
+    }
+
     static String neoforgePom(String lv) throws Exception {
         return VersionMap.fetchText(GameDiff.NEOFORGE + lv + "/neoforge-" + lv + ".pom", "neoforge-" + lv + ".pom");
     }
@@ -505,12 +527,7 @@ public final class Exposure {
                 return cached;
             }
             String lv = neoforgeVersion(version);
-            String nf = lv == null ? null : dependencies(neoforgePom(lv)).stream().filter(d -> d[1].equals("neoform")).map(d -> d[2]).findFirst().orElse(null);
-            if (nf == null) {
-                // The pom lists NeoForm with a type (a zip), which dependencies() leaves out: read it directly.
-                Matcher m = lv == null ? null : Pattern.compile("<artifactId>neoform</artifactId>\\s*<version>([^<]+)</version>").matcher(neoforgePom(lv));
-                nf = m != null && m.find() ? m.group(1) : null;
-            }
+            String nf = lv == null ? null : neoformVersion(lv);
             if (nf == null) {
                 throw new java.io.IOException("no NeoForge build with NeoForm mappings for " + version);
             }

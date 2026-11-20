@@ -1,8 +1,15 @@
-"""The port scoreboard's shared cache (~/.mmt/exposure) is safe for worktrees that run at once: entries are keyed by the
-content of the tools that build them, and a finished file is moved into place whole, the first one kept. Before, entries
-were keyed by file times, and one worktree's newer tools wiped a folder another was reading (#126).
-Run: python bench/test_exposure_cache.py"""
+"""The port scoreboard (bench/exposure.py) counts what users would see.
+- Its shared cache (~/.mmt/exposure) is safe for worktrees that run at once: entries are keyed by the content of the
+  tools that build them, and a finished file is moved into place whole, the first one kept. Before, entries were keyed
+  by file times, and one worktree's newer tools wiped a folder another was reading (#126).
+- A copy of a platform module (a Fabric API module) nested in a mod is not what runs: Fabric Loader keeps the newest copy
+  of a mod id, the platform's. What only that copy references does not hold the mod back; a copy of a module the platform
+  no longer has does.
+Run: python bench/test_exposure.py"""
+import io
+import json
 import os
+import zipfile
 import sys
 import tempfile
 import threading
@@ -75,4 +82,38 @@ with tempfile.TemporaryDirectory() as tmp:
     check(len(set(seen)) == 1, "one writer's file is kept and the others are dropped")
     check(not list(third.glob("*.part")), "no part file is left behind")
 
-print(f"exposure cache: {checks} checks passed")
+
+
+def jar(files):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as z:
+        for name, data in files.items():
+            z.writestr(name, data)
+    return buffer.getvalue()
+
+
+def module(mod_id):
+    return jar({"fabric.mod.json": json.dumps({"schemaVersion": 1, "id": mod_id, "version": "1"})})
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    mod = Path(tmp) / "m.jar"
+    mod.write_bytes(jar({"fabric.mod.json": json.dumps({"id": "m", "jars": [{"file": "META-INF/jars/api-base-1.jar"}]}),
+                         "META-INF/jars/api-base-1.jar": module("fabric-api-base"),
+                         "META-INF/jars/old-module-1.jar": module("fabric-gone-v1")}))
+    report = {"linked": 0, "mods": [
+        {"mod": "m.jar", "silent": [], "unlinked": [
+            "m.jar!api-base-1.jar: class gone: net.fabricmc.fabric.impl.base.Phase (in net.fabricmc.fabric.impl.base.Event)",
+            "m.jar!old-module-1.jar: call: net.minecraft.Gone.run()V"]},
+        {"mod": "n.jar", "silent": [], "unlinked": ["n.jar: call: net.minecraft.Gone.run()V (in n.Main)"]},
+        {"mod": "o.jar", "silent": [], "unlinked": []}],
+        "unlinkedByMods": []}
+    out = E.without_platform_copies(report, {"fabric-api-base", "fabric-api"}, {"m.jar": mod})
+    m = out["mods"][0]["unlinked"]
+    check(len(m) == 1 and "old-module" in m[0], f"a nested copy of a platform module is not counted; one of a module the platform lacks is: {m}")
+    check(out["unlinkedByMods"] == [{"member": "call: net.minecraft.Gone.run()V", "mods": 2}] and out["linked"] == 1,
+          f"each reference counts once a mod and the mods that link are counted again: {out['unlinkedByMods']} {out['linked']}")
+    check(E.nested_ids(mod.read_bytes()) == {"m": "", "fabric-api-base": "api-base-1.jar", "fabric-gone-v1": "old-module-1.jar"},
+          "every id in a jar and its nested jars is read with the nested jar's name")
+
+print(f"exposure: {checks} checks passed")
