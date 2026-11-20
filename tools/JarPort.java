@@ -1470,6 +1470,8 @@ public final class JarPort {
                     Injector inj = mod.injectors.get(key);
                     if (inj != null && inj.kind().equals(INJECT)) {
                         retarget(mod, key, targets, m, inj);
+                    } else if (inj != null) {
+                        retargetOther(mod, key, targets, m, inj);
                     }
                     if (inj != null) {
                         pointsGone(mod, rc.name, targets, inj, m.desc);
@@ -2512,6 +2514,53 @@ public final class JarPort {
      * still calls the new one: an @Inject's handler takes the target method's arguments, not the call's. Other injectors
      * (@Redirect, @ModifyArg, @WrapOperation...) take the call's arguments and stay reported.
      */
+    /**
+     * Any other injector (@ModifyExpressionValue, @Redirect, @ModifyArg...) into a method that only took other parameters:
+     * its handler takes what the injection point gives, then, optionally, the target method's first arguments (Mixin's
+     * argument capture). Its selector moves to the new signature when the arguments it captures, if any, are the same in
+     * the new method, its result and staticness are, and its injection points are still in the new method.
+     */
+    void retargetOther(Mod mod, String key, List<String> targets, GameDiff.RawMeth handler, Injector inj) {
+        List<Found> into = inj.methods().stream().map(s -> find(targets, "method", s)).toList();
+        if (into.stream().noneMatch(f -> f.kind() == 's')) {
+            return;
+        }
+        Type[] hp = Type.getArgumentTypes(desc(handler.desc));
+        for (int i = 0; i < into.size(); i++) {
+            Found f = into.get(i);
+            if (f.kind() != 's') {
+                continue;
+            }
+            GameDiff.Meth before = oldMethod(targets, inj.methods().get(i));
+            GameDiff.Meth after = f.desc() == null ? null : b.method(f.owner(), f.name(), f.desc());
+            if (before == null || after == null || f.changed() == null || !Type.getReturnType(desc(before.desc)).equals(Type.getReturnType(after.desc))
+                || ((before.flags ^ after.flags) & Opcodes.ACC_STATIC) != 0) {
+                return;
+            }
+            Type[] bp = Type.getArgumentTypes(desc(before.desc)), ap = Type.getArgumentTypes(after.desc);
+            if (inj.kind().endsWith("/ModifyVariable;") && !Arrays.equals(Arrays.stream(bp).mapToInt(Type::getSize).toArray(), Arrays.stream(ap).mapToInt(Type::getSize).toArray())) {
+                return; // a local named by its slot would be another one
+            }
+            for (int n = Math.min(hp.length, bp.length); n >= 1; n--) {
+                if (Arrays.equals(Arrays.copyOfRange(hp, hp.length - n, hp.length), Arrays.copyOf(bp, n))) {
+                    if (ap.length < n || !Arrays.equals(Arrays.copyOf(ap, n), Arrays.copyOf(bp, n))) {
+                        return; // it captures an argument that changed
+                    }
+                    break;
+                }
+            }
+        }
+        List<Found> ats = inj.ats().stream().map(at -> at[1] == null ? null : find(targets, "target", at[1])).toList();
+        if (!pointsKept(targets, inj, into, ats)) {
+            return;
+        }
+        for (int i = 0; i < into.size(); i++) {
+            if (into.get(i).kind() == 's') {
+                mod.retargets.put(key + " " + inj.methods().get(i), into.get(i).changed());
+            }
+        }
+    }
+
     void retarget(Mod mod, String key, List<String> targets, GameDiff.RawMeth handler, Injector inj) {
         List<Found> into = inj.methods().stream().map(s -> find(targets, "method", s)).toList();
         List<Found> ats = inj.ats().stream().map(at -> at[1] == null ? null : find(targets, "target", at[1])).toList();
@@ -4556,11 +4605,6 @@ public final class JarPort {
         }
 
         /**
-         * A call that does not link, in a moved body, one of whose arguments is an old parameter worked out from a new one
-         * (pose = graphics.pose()): written as the game's own code wrote it with the new value there (GameDiff.Retyped's
-         * reading, font.draw(pose, ...) -> graphics.drawString(font, ...)), the new parameter passed in the old one's place.
-         */
-        /**
          * A call from a moved body to one of the mod's own helpers that cannot be overridden (static, private or final),
          * passing an old parameter worked out from a new one (renderLabel(pose, ...) inside render(GuiGraphics, ...)): the
          * helper is wanted with that parameter as the new type too, so the calls it makes on it get what the game passes
@@ -4605,6 +4649,11 @@ public final class JarPort {
 
         static final boolean DEBUG = Boolean.getBoolean("jarport.debug");
 
+        /**
+         * A call that does not link, in a moved body, one of whose arguments is an old parameter worked out from a new one
+         * (pose = graphics.pose()): written as the game's own code wrote it with the new value there (GameDiff.Retyped's
+         * reading, font.draw(pose, ...) -> graphics.drawString(font, ...)), the new parameter passed in the old one's place.
+         */
         boolean onOrigin(int opcode, String owner, String declOwner, String name, String desc) {
             boolean isStatic = opcode == Opcodes.INVOKESTATIC;
             Type[] args = Type.getArgumentTypes(desc);

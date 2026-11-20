@@ -115,6 +115,17 @@ final class JarPortRetypeTest {
             && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 3,
             "an @Inject at a call the new method no longer makes, and a @ModifyVariable at a second int store it no longer has, are reported; "
                 + "one at a call it still makes is not: " + stays);
+        // Other injectors into render: one that takes none of its arguments follows render to its new signature; one that
+        // captures the pose, which render now takes as graphics, stays reported.
+        List<Map<String, Object>> varRuns = new ArrayList<>();
+        Map<String, byte[]> vars = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/ByVar.class", byVar(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ByVar\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "var.jar", varRuns));
+        List<String> varUnlinked = Json.array(varRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        Map<String, String> varStrings = JarPortFixesTest.strings(vars.get("m6/ByVar.class"));
+        JarPortTest.expect("render(Lg6/Graphics;I)V HEAD".equals(varStrings.get("onX(I)I"))
+            && varUnlinked.equals(List.of("mixin target changed signature: g6.Screen.render(Lg6/Pose;I)V")),
+            "a @ModifyVariable that takes nothing of render's moves to render's new signature, one capturing the pose stays reported: " + varStrings + " " + varUnlinked);
+
         // A mixin casting its own this to an accessor of Loc relies on ModelLoc being a Loc, which 2.0 ends; Title is still a Screen.
         List<Map<String, Object>> castRuns = new ArrayList<>();
         port.port(JarPortTest.jar(Map.of("m6/LocAccess.class", locAccess(), "m6/ModelLocMixin.class", selfCast("m6/ModelLocMixin", "g6/ModelLoc", "m6/LocAccess"),
@@ -502,6 +513,27 @@ final class JarPortRetypeTest {
         body.visitInsn(Opcodes.RETURN);
         body.visitMaxs(0, 0);
         body.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.ByVar: @ModifyVariable handlers into Screen.render at HEAD, onX(int) taking only the int and onPosed(int, pose) also capturing the pose. */
+    static byte[] byVar() {
+        ClassWriter w = writer("m6/ByVar", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Screen"));
+        value.visitEnd();
+        target.visitEnd();
+        String modify = "Lorg/spongepowered/asm/mixin/injection/ModifyVariable;";
+        JarPortFixesTest.handler(w, modify, "onX", "(I)I", "render(" + POSE + "I)V", "HEAD", null, m -> {
+            m.visitVarInsn(Opcodes.ILOAD, 1);
+            m.visitInsn(Opcodes.IRETURN);
+        });
+        JarPortFixesTest.handler(w, modify, "onPosed", "(I" + POSE + ")I", "render(" + POSE + "I)V", "HEAD", null, m -> {
+            m.visitVarInsn(Opcodes.ILOAD, 1);
+            m.visitInsn(Opcodes.IRETURN);
+        });
         w.visitEnd();
         return w.toByteArray();
     }
