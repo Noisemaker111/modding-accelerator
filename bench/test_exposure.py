@@ -116,4 +116,20 @@ with tempfile.TemporaryDirectory() as tmp:
     check(E.nested_ids(mod.read_bytes()) == {"m": "", "fabric-api-base": "api-base-1.jar", "fabric-gone-v1": "old-module-1.jar"},
           "every id in a jar and its nested jars is read with the nested jar's name")
 
+game_class = b"\xca\xfe\xba\xbe....net/minecraft/world/item/ElytraItem"
+payload = jar({"gg/x/Mixin.class": game_class})
+check(E.hidden_code(jar({"fabric.mod.json": json.dumps({"id": "e"}), "payload-1.jar": payload})) == "payload-1.jar",
+      "game code in a jar no loader metadata lists is found: the port never reads it")
+check(E.hidden_code(jar({"fabric.mod.json": json.dumps({"id": "e", "jars": [{"file": "META-INF/jars/payload.jar"}]}), "META-INF/jars/payload.jar": payload})) is None
+      and E.hidden_code(jar({"META-INF/jarjar/metadata.json": json.dumps({"jars": [{"path": "META-INF/jarjar/p.jar"}]}), "META-INF/jarjar/p.jar": payload})) is None,
+      "a jar fabric.mod.json or NeoForge's jarjar list nests is read by the port, so it is not hidden")
+check(E.hidden_code(jar({"fabric.mod.json": "{}", "lib.jar": jar({"org/lib/A.class": b"\xca\xfe\xba\xbe org/lib"})})) is None,
+      "a library jar with no game code is not the mod's hidden code")
+rep = {"linked": 1, "mods": [{"mod": "e.jar", "unlinked": [], "silent": []}], "unlinkedByMods": []}
+with tempfile.TemporaryDirectory() as tmp:
+    e = Path(tmp) / "e.jar"
+    e.write_bytes(jar({"fabric.mod.json": "{}", "payload-1.jar": payload}))
+    out = E.with_hidden_code_unread(rep, {"e.jar": e})
+check(out["linked"] == 0 and "payload-1.jar" in out["mods"][0].get("error", ""), "such a mod is reported as not read instead of linking")
+
 print(f"exposure: {checks} checks passed")
