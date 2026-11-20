@@ -137,6 +137,15 @@ public final class PortRepairTests {
             if (after.equals(test.get("before")) || !after.equals(test.get("after"))) throw new AssertionError(
                 id + ": rewrite gave\n" + after + "\nexpected\n" + test.get("after")
             );
+            // The same file from a Windows checkout (core.autocrlf): the rule still fires and the file keeps CRLF.
+            String windowsBefore = test.get("before").toString().replace("\r\n", "\n").replace("\n", "\r\n");
+            if (!"line".equals(rule.get("scope")) && !windowsBefore.equals(test.get("before"))) {
+                String windowsAfter = Port.rewrite(rule, windowsBefore);
+                String expected = test.get("after").toString().replace("\r\n", "\n").replace("\n", "\r\n");
+                if (!windowsAfter.equals(expected)) throw new AssertionError(
+                    id + ": on CRLF source the rewrite gave\n" + windowsAfter + "\nexpected\n" + expected
+                );
+            }
             String[] range = Json.text(rule, "jump", "").replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
             if (
                 rule.containsKey("silent") &&

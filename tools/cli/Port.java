@@ -4315,7 +4315,7 @@ final class Port {
         boolean changed = false;
         for (Path file : reportedLines(errors, match).keySet()) {
             String original = Files.readString(file);
-            String text = neoConfigConvert(original);
+            String text = keepingLineEndings(original, Port::neoConfigConvert);
             if (!text.equals(original)) {
                 Files.writeString(file, deferImports(file, original, text));
                 changed = true;
@@ -4586,7 +4586,7 @@ final class Port {
         String overlayOwner = "";
         for (Path file : reportedLines(errors, match).keySet()) {
             String original = Files.readString(file);
-            String text = neoSubscriberConvert(original);
+            String text = keepingLineEndings(original, Port::neoSubscriberConvert);
             if (text.equals(original)) continue;
             Files.writeString(file, deferImports(file, original, text));
             changed = true;
@@ -4609,7 +4609,7 @@ final class Port {
             }
             if (manager != null) {
                 String original = Files.readString(manager);
-                String text = barsModern(original);
+                String text = keepingLineEndings(original, Port::barsModern);
                 if (!text.equals(original)) {
                     Files.writeString(manager, deferImports(manager, original, text));
                     changed = true;
@@ -4619,7 +4619,7 @@ final class Port {
         Path mod = findSource("@Mod(");
         if (mod != null && (!subscribers.isEmpty() || overlayOwner.isEmpty())) {
             String original = Files.readString(mod);
-            String text = wireModEntry(original, mod, subscribers);
+            String text = keepingLineEndings(original, source -> wireModEntry(source, mod, subscribers));
             if (!text.equals(original)) {
                 Files.writeString(mod, deferImports(mod, original, text));
                 changed = true;
@@ -4766,6 +4766,26 @@ final class Port {
     }
 
     static String rewrite(Map<String, Object> rule, String original) {
+        return keepingLineEndings(original, text -> rewriteLf(rule, text));
+    }
+
+    interface SourceTransform<E extends Exception> {
+        String apply(String text) throws E;
+    }
+
+    /**
+     * Rules and source transforms are written against LF. A Windows checkout (core.autocrlf) has CRLF, where a find
+     * spanning lines with \n never matched and a line's trailing \r defeated .*: the 1.7.10 key, tick, GUI, config and
+     * mixin conversions skipped every Windows port. The transform runs on LF and the file keeps CRLF.
+     */
+    static <E extends Exception> String keepingLineEndings(String original, SourceTransform<E> transform) throws E {
+        if (!original.contains("\r\n")) return transform.apply(original);
+        String lf = original.replace("\r\n", "\n");
+        String text = transform.apply(lf);
+        return text.equals(lf) ? original : text.replace("\r\n", "\n").replace("\n", "\r\n");
+    }
+
+    static String rewriteLf(Map<String, Object> rule, String original) {
         var apply = Json.object(rule.get("apply"));
         String text = original;
         String when = Json.text(rule, "when", "");

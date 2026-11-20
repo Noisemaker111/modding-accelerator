@@ -990,7 +990,9 @@ final class Target {
 
     /**
      * The scaffold build: the direct RFG plugin from the GTNH example, with the port's toolchain
-     * (Java 17 compiles the modern sources, bytecode stays 8) instead of the example's Java 8.
+     * (Java 17 compiles the modern sources, bytecode stays 8) instead of the example's Java 8. No vendor: RFG copies
+     * this toolchain's vendor into its own game tasks, and the JDKs mmt hands Gradle are Temurin, so pinning Azul
+     * stopped the build on any machine without one.
      */
     static String rfgBuildGradle(String rfg) {
         return String.join(
@@ -1004,7 +1006,6 @@ final class Target {
             "java {",
             "    toolchain {",
             "        languageVersion.set(JavaLanguageVersion.of(17))",
-            "        vendor.set(org.gradle.jvm.toolchain.JvmVendorSpec.AZUL)",
             "    }",
             "    withSourcesJar()",
             "}",
