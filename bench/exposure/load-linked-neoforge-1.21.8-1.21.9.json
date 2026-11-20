@@ -1,0 +1,45 @@
+{
+ "loader": "neoforge",
+ "from": "1.21.8",
+ "to": "1.21.9",
+ "mods": 22,
+ "loaded": 18,
+ "linkedAndLoaded": 18,
+ "linked": 22,
+ "failedButLinked": [
+  "ferrite-core--ferritecore-8.0.4-neoforge.jar"
+ ],
+ "failedDataOnly": [],
+ "verdicts": {
+  "cubes-without-borders--cwb-5.0.0+1.21.2.neoforge.jar": "client-only: a server start showed it reaches client-only code",
+  "ferrite-core--ferritecore-8.0.4-neoforge.jar": "failed: its mixin config ferritecore.fastmap.mixin.json is in the failure; its mixin config ferritecore.blockstatecache.mixin.json is in the failure; its mixin config ferritecore.threaddetec.mixin.json is in the failure",
+  "almanac--Almanac-1.21.5-6-7-8-neoforge-1.5.0.jar": "client-only: a server start showed it reaches client-only code",
+  "modelfix--modelfix-1.21.5-1.12.jar": "client-only: a server start showed it reaches client-only code",
+  "ai-improvements--AI-Improvements-1.21.6-0.5.4.jar": "loaded",
+  "better-third-person--BetterThirdPerson-neoforge-1.21.5-1.9.0.jar": "loaded",
+  "boat-item-view--boatiview-neoforge-0.0.6-1.21.7.jar": "loaded",
+  "clumps--Clumps-neoforge-1.21.8-26.0.0.1.jar": "loaded",
+  "dungeons-and-taverns--dungeons-and-taverns-v4.7.3.jar": "loaded",
+  "e4mc--e4mc-neoforge-6.2.3.jar": "loaded",
+  "fast-ip-ping--fast-ip-ping-v1.0.12-mc1.21.8-neoforge.jar": "loaded",
+  "forge-config-api-port--ForgeConfigAPIPort-v21.8.2-1.21.8-NeoForge.jar": "loaded",
+  "i18nupdatemod--I18nUpdateMod-3.8.0-all.jar": "loaded",
+  "make_bubbles_pop--make_bubbles_pop-0.4.0-beta.2-neoforge-mc1.21.6-1.21.8.jar": "loaded",
+  "melody--melody_neoforge_1.0.12_MC_1.21.6.jar": "loaded",
+  "mru--mru-1.0.21+edge+1.21.8+neoforge.jar": "loaded",
+  "packet-fixer--packetfixer-3.3.1-1.20.5-1.21.X-merged.jar": "loaded",
+  "prickle--prickle-neoforge-1.21.8-21.8.2.jar": "loaded",
+  "rhino--rhino-2101.2.7-build.81.jar": "loaded",
+  "supermartijn642s-config-lib--supermartijn642configlib-1.1.8-neoforge-mc1.21.jar": "loaded",
+  "terrablender--TerraBlender-neoforge-1.21.8-6.0.0.3.jar": "loaded",
+  "yeetus-experimentus--yeetusexperimentus-neoforge-87.0.0.jar": "loaded"
+ },
+ "client": {
+  "mods": 21,
+  "loaded": 0,
+  "verdicts": {},
+  "notRun": "The client stopped before its first frame (exit 1)",
+  "receipt": "C:\\Users\\Jk101\\.mmt\\packs\\.runs\\portable\\2026-11-20T21-43-26.840446400Z-f61403eb\\result.json"
+ },
+ "loadedOnServerFailedInClient": []
+}
