@@ -484,6 +484,22 @@
         "renderers",
         "menus"
       ]
+    },
+    {
+      "id": "dragonminez",
+      "name": "DragonMine Z",
+      "repo": "https://github.com/DragonMineZ/dragonminez",
+      "branch": "main",
+      "commit": "a49f3856a7b2541e939ac814f1fae9267b95f298",
+      "loader": "forge",
+      "features": [
+        "forge to neoforge",
+        "capabilities",
+        "simplechannel networking",
+        "mixins",
+        "geckolib",
+        "datagen"
+      ]
     }
   ]
 }

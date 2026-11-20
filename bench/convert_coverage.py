@@ -41,6 +41,7 @@ CORPUS = ROOT / "bench" / "convert-sweep" / "corpus.json"
 LOADER = {
     "fabric": ("net/fabricmc/fabric/api/", "net/fabricmc/loader/api/", "net/fabricmc/api/"),
     "neoforge": ("net/neoforged/neoforge/", "net/neoforged/fml/", "net/neoforged/bus/", "net/neoforged/api/"),
+    "forge": ("net/minecraftforge/",),
 }
 GAME = ("net/minecraft/", "com/mojang/")
 
@@ -121,7 +122,7 @@ def mod_references(path):
             own[name] = (supers, set(declared))
         except (ValueError, IndexError, KeyError, struct.error):
             pass
-    keep = lambda name: name.startswith(LOADER["fabric"] + LOADER["neoforge"] + GAME)
+    keep = lambda name: name.startswith(sum(LOADER.values(), ()) + GAME)
 
     # A member the mod reaches through its own class (this.modLoc() in a subclass of NeoForge's BlockStateProvider) is
     # the first loader or game class's up its supertypes that the mod does not declare it in.

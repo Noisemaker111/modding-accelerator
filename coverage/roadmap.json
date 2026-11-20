@@ -883,10 +883,21 @@
     },
     {
      "id": "19",
-     "title": "Forge → NeoForge and Fabric → Quilt",
+     "title": "Forge → NeoForge, proven on DragonMine Z",
+     "part": "Loader pairs",
+     "status": "next",
+     "text": "Forge 1.20.1 holds the largest set of mods that never moved to NeoForge, and their players are asked for it. DragonMine Z (Forge 1.20.1, about 960,000 downloads, GPL) shows the cost: a contributor re-ports every release to NeoForge 1.21.1 by hand (its pull requests 265, 269 and 303, the last 760 files). mmt convert takes the mod's Forge source to NeoForge with the rules read from the loaders' own files, as steps 40 and 41 did for Fabric and NeoForge (NeoForge forked from Forge at 1.20.1, so every rename since is in its own history), and the porter carries the result on to 1.21.1. What Forge mods use that the rules lack is listed from the most-downloaded Forge 1.20.1 jars, most-used first, as step 48 does for the bridge. DragonMine Z is the proof mod, in the convert corpus (Forge) and the port corpus (its hand-made NeoForge 1.21.1 port); nothing is made for it alone.",
+     "finish": "DragonMine Z's Forge 1.20.1 source comes out on NeoForge 1.21.1 with no hand edits, builds, and in the client loads its seven races and 732 items, the same two checks its hand-made port passes (bench/sweep/corpus.json); and the most-downloaded Forge 1.20.1 mods are counted by what the rules still lack",
+     "wrongIf": "DragonMine Z gets through but the count of Forge mods with nothing missing does not rise, which would mean the rules fit one mod",
+     "start": "2026-11-20",
+     "target": "2026-12-18"
+    },
+    {
+     "id": "19b",
+     "title": "Fabric → Quilt",
      "part": "Loader pairs",
      "status": "later",
-     "text": "Forge → NeoForge and Fabric → Quilt, which are close pairs.",
+     "text": "Fabric → Quilt, a close pair: Quilt loads most Fabric mods as they are.",
      "start": "2027-02-01",
      "target": "2027-02-26"
     },
@@ -1009,6 +1020,11 @@
    "question": "What does someone hand over: the mod's source, or its .jar?",
    "choice": "Either (Jon, 2026-11-18): the mod's source folder, which comes back as source, or its .jar, which comes back as a .jar, through the command line and the desktop app. Until now port and convert took a source folder only, so only a mod's author could use them. Step 50 adds the .jar and comes first, because how it is done decides whether the source-based steps 44 and 47 stay as written",
    "date": "2026-11-18"
+  },
+  {
+   "question": "Does Forge → NeoForge get its own step, and which mod proves it?",
+   "choice": "Yes (Jon, 2026-11-20): Forge → NeoForge is the next loader pair after Fabric and NeoForge, proven on DragonMine Z, whose NeoForge port is redone by hand each release. DragonMine Z joins the convert and port corpora as a test input; the rules stay general (step 19)",
+   "date": "2026-11-20"
   }
  ]
 }
