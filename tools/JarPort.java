@@ -1410,6 +1410,7 @@ public final class JarPort {
                         mod.unlinked.add("mixin target class gone: " + Exposure.dotted(t) + " (in " + Exposure.dotted(rc.name) + ")");
                     }
                 }
+                selfCasts(mod, rc.name, targets);
                 for (var f : rc.fields.entrySet()) {
                     shadowField(mod, rc.name, targets, f.getKey(), f.getValue()[0]);
                 }
@@ -1441,6 +1442,107 @@ public final class JarPort {
                 abstracts(mod, rc);
             }
         }
+    }
+
+    /**
+     * A mixin's code that casts its own this ((Access) (Object) this) relies on each target being that type, or, when the
+     * type is another of the mod's mixins (an accessor), one of that mixin's targets. A target the new release no longer
+     * makes one fails the cast when the code runs.
+     */
+    void selfCasts(Mod mod, String mixin, List<String> targets) {
+        byte[] bytes = mod.bytes.get(mixin);
+        if (bytes == null) {
+            return;
+        }
+        Set<String> casts = new TreeSet<>();
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                return (access & Opcodes.ACC_STATIC) != 0 ? null : new SelfCast(casts);
+            }
+        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        for (String cast : casts) {
+            List<String> wanted = cast.equals(mixin) ? List.of()
+                : mod.mixinTargets.containsKey(cast) ? mod.mixinTargets.get(cast) : a.classes.containsKey(cast) ? List.of(cast) : List.of();
+            for (String t : targets) {
+                if (!wanted.isEmpty() && b.classes.containsKey(cls(t)) && wanted.stream().anyMatch(w -> isA(a, t, w))
+                    && wanted.stream().noneMatch(w -> isA(b, cls(t), cls(w)))) {
+                    mod.unlinked.add("mixin target no longer a " + wanted.stream().map(Exposure::dotted).collect(java.util.stream.Collectors.joining(" or ")) + ": "
+                        + Exposure.dotted(t) + " (in " + Exposure.dotted(mixin) + ")");
+                }
+            }
+        }
+    }
+
+    /** Collects the types this (local 0) is cast to straight after it is loaded. */
+    static final class SelfCast extends MethodVisitor {
+        final Set<String> casts;
+        boolean self;
+
+        SelfCast(Set<String> casts) {
+            super(Opcodes.ASM9);
+            this.casts = casts;
+        }
+
+        @Override
+        public void visitVarInsn(int opcode, int var) {
+            self = opcode == Opcodes.ALOAD && var == 0;
+        }
+
+        @Override
+        public void visitTypeInsn(int opcode, String type) {
+            if (self && opcode == Opcodes.CHECKCAST) {
+                casts.add(type);
+            }
+            self = false;
+        }
+
+        @Override
+        public void visitInsn(int opcode) {
+            self = false;
+        }
+
+        @Override
+        public void visitIntInsn(int opcode, int operand) {
+            self = false;
+        }
+
+        @Override
+        public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+            self = false;
+        }
+
+        @Override
+        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+            self = false;
+        }
+
+        @Override
+        public void visitJumpInsn(int opcode, Label label) {
+            self = false;
+        }
+
+        @Override
+        public void visitLdcInsn(Object value) {
+            self = false;
+        }
+    }
+
+    /** Whether c is target or extends or implements it, through one release's classes and libraries. */
+    static boolean isA(GameDiff.Snap s, String c, String target) {
+        Deque<String> queue = new ArrayDeque<>(List.of(c));
+        Set<String> seen = new HashSet<>();
+        while (!queue.isEmpty()) {
+            String k = queue.poll();
+            if (k.equals(target)) {
+                return true;
+            }
+            GameDiff.Cls game = s.classes.getOrDefault(k, s.libraries.get(k));
+            if (game != null && seen.add(k)) {
+                queue.addAll(GameDiff.supertypes(game));
+            }
+        }
+        return false;
     }
 
     /**
@@ -5201,6 +5303,11 @@ public final class JarPort {
                 };
                 if (range != null) {
                     block = block.replaceFirst("versionRange\\s*=\\s*\"[^\"]*\"", Matcher.quoteReplacement("versionRange=\"" + range + "\""));
+                }
+                // NeoForge's own releases (from 1.20.2) provide the mod "neoforge" and none called "forge", so a Forge jar's
+                // dependency on the loader fails before anything loads.
+                if (id.group(1).equals("forge") && loader.equals("neoforge") && compareVersions(to, "1.20.2") >= 0) {
+                    block = block.replaceFirst("modId\\s*=\\s*\"forge\"", "modId=\"neoforge\"");
                 }
             }
             m.appendReplacement(sb, Matcher.quoteReplacement(block));
