@@ -505,7 +505,7 @@ final class ServerCheck {
             HttpResponse<String> answer = send(
                 client,
                 HttpRequest.newBuilder(URI.create(endpoint))
-                    .header("User-Agent", "mmt server-check (github.com/Noisemaker111/modding-accelerator)")
+                    .header("User-Agent", "mmt server-check (github.com/Noisemaker111/minecraft-modding-tools)")
                     .timeout(Duration.ofSeconds(30))
                     .GET()
                     .build(),

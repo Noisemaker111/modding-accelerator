@@ -166,6 +166,18 @@ final class PackLoaders {
             return context.cache().resolve("loaders").resolve(id + "-" + minecraft + "-" + version);
         }
 
+        /**
+         * Whether the install in dir finished (its marker is written). An install that stopped part way leaves files the
+         * installer trusts on the next run, such as a cut-off server jar it never checks again, so an unfinished folder
+         * is emptied for a fresh install.
+         */
+        static boolean finished(Path dir) throws IOException {
+            if (Files.isRegularFile(dir.resolve("mmt-installed"))) return true;
+            if (Files.exists(dir)) PackCheck.deleteTree(dir);
+            Files.createDirectories(dir);
+            return false;
+        }
+
         void runInstaller(Context context, Path installer, List<String> arguments, Path dir, String version)
             throws Exception {
             List<String> command = new ArrayList<>(List.of(context.java().java().toString(), "-jar", installer.toString()));
@@ -229,8 +241,7 @@ final class PackLoaders {
 
         public Path install(Context context, String minecraft, String version) throws Exception {
             Path dir = installed(context, minecraft, version), done = dir.resolve("mmt-installed");
-            if (Files.isRegularFile(done)) return dir;
-            Files.createDirectories(dir);
+            if (finished(dir)) return dir;
             Path installer = dir.resolve("installer.jar");
             PackCheck.download(fill(setting(minecraft, "installer"), minecraft, version, null), installer, null);
             List<String> arguments = new ArrayList<>();
@@ -298,8 +309,7 @@ final class PackLoaders {
 
         public Path install(Context context, String minecraft, String version) throws Exception {
             Path dir = installed(context, minecraft, version), done = dir.resolve("mmt-installed");
-            if (Files.isRegularFile(done)) return dir;
-            Files.createDirectories(dir);
+            if (finished(dir)) return dir;
             String installerUrl = "";
             String installerSha1 = null;
             String newest = "";

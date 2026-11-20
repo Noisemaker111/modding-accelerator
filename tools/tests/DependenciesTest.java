@@ -17,6 +17,48 @@ public final class DependenciesTest {
         var corelib = List.of("1.21.1-2.1.11", "1.21.2-2.1.9", "1.21.2-2.1.12", "1.21.2-2.1.13-beta", "1.21.10-2.1.20", "1.21.2-2.1.2");
         require("1.21.2-2.1.12".equals(Dependencies.chooseGameRelease(corelib, "1.21.1-2.1.11", "1.21.1", "1.21.2")), "newest same-shape release for the target game");
         require(Dependencies.chooseGameRelease(corelib, "1.21.1-2.1.11", "1.21.1", "1.21.6") == null, "no release for the target game is no choice");
+        // Whether a dependency with no target release may be disabled: only what the mod's own metadata does not require.
+        String toml = "modId=\"farmersdelight\"\n[[dependencies.${mod_id}]]\n    modId=\"jei\"\n    type=\"optional\"\n"
+            + "[[dependencies.${mod_id}]]\n    modId=\"curios\"\n    type=\"required\"\n[[dependencies.${mod_id}]]\n    modId=\"patchouli\"\n    mandatory=false\n";
+        require(!Dependencies.requiredInToml(toml, "jei"), "type=optional is optional");
+        require(Dependencies.requiredInToml(toml, "curios"), "type=required blocks");
+        require(!Dependencies.requiredInToml(toml, "patchouli"), "mandatory=false is optional");
+        require(!Dependencies.requiredInToml(toml, "geckolib"), "not named at all is optional");
+        require(Dependencies.requiredInFabric("{\"depends\": {\"minecraft\": \"*\", \"trinkets\": \"*\"}, \"suggests\": {\"modmenu\": \"*\"}}", "trinkets"), "fabric depends blocks");
+        // A declaration written with the build's properties (Sophisticated Backpacks: "mezz.jei:jei-${jei_mc_version}:${jei_version}")
+        // is found once they are filled in; a declaration of another artifact is not.
+        Path written = Files.createTempDirectory("mmt-written-");
+        Files.writeString(written.resolve("settings.gradle"), "");
+        Files.writeString(written.resolve("gradle.properties"), "jei_mc_version=1.21.1-neoforge\njei_version=19.32.0.359\n");
+        Files.writeString(written.resolve("build.gradle"), "dependencies {\n    compileOnly \"mezz.jei:jei-${jei_mc_version}:${jei_version}\"\n    implementation \"other:lib-${jei_version}:1\"\n}\n");
+        var declared = Dependencies.written(new Target.Setup(null, Json.map(), "1.21.2", List.of()), written.resolve("build.gradle"), "mezz.jei:jei-1.21.1-neoforge");
+        require(declared.equals(List.of("    compileOnly \"mezz.jei:jei-${jei_mc_version}:${jei_version}\"")), "a property-built declaration is found: " + declared);
+        // Two libraries at the same version (Enchantment Descriptions: bookshelf_version and prickle_version both 21.1.2): each
+        // dependency's version lives in the property named after it, so renaming one never moves the other.
+        Files.writeString(written.resolve("gradle.properties"), "bookshelf_version=21.1.2\nprickle_version=21.1.2\n");
+        var model = new ProjectModel(written);
+        require(Dependencies.propertyKeys(model, "21.1.2", "net.darkhax.pricklemc", "prickle-fabric-1.21.1").equals(Set.of("prickle_version")), "the property named after the artifact owns it");
+        require(Dependencies.propertyKeys(model, "21.1.2", "other", "lib").size() == 2, "no named owner leaves both, so nothing is guessed");
+        require(!Dependencies.requiredInFabric("{\"depends\": {\"minecraft\": \"*\"}, \"suggests\": {\"modmenu\": \"*\"}}", "modmenu"), "fabric suggests is optional");
+        librarySourceCommit();
+        // An integration class the mod still calls stays as a stub saying the optional mod is absent: isLoaded() is false,
+        // a void method does nothing, and nothing of the library or its imports is left (Corpse's OpenHudIntegration).
+        String integration = "package de.maxhenkel.corpse.integration.openhud;\n\nimport de.maxhenkel.openhud.api.OpenHud;\n"
+            + "import net.minecraft.client.gui.screens.Screen;\nimport net.minecraft.core.BlockPos;\nimport net.neoforged.fml.ModList;\n\n"
+            + "public class OpenHudIntegration {\n\n    private static Boolean loaded;\n\n    public static boolean isLoaded() {\n"
+            + "        if (loaded == null) {\n            loaded = ModList.get().isLoaded(\"openhud\");\n        }\n        return loaded;\n    }\n\n"
+            + "    public static void openWaypointScreen(Screen screen, BlockPos pos) {\n        OpenHud.getClientUtils().open(screen, pos);\n    }\n\n"
+            + "    static OpenHud api() {\n        return OpenHud.get();\n    }\n}\n";
+        String stub = Dependencies.absentStub(integration, Set.of("OpenHud"));
+        require(
+            stub != null && stub.contains("public static boolean isLoaded() { return false; }")
+                && stub.contains("public static void openWaypointScreen(Screen screen, BlockPos pos) {}"),
+            "the stub keeps the calls the mod makes: " + stub
+        );
+        require(
+            !stub.contains("OpenHud.") && !stub.contains("api()") && !stub.contains("ModList") && stub.contains("import net.minecraft.core.BlockPos;"),
+            "nothing of the library is left, and the types the stub uses stay imported: " + stub
+        );
         require("1.4.0+1.21.6".equals(Dependencies.chooseGameRelease(List.of("1.3.0+1.21.1", "1.4.0+1.21.6", "1.3.2+1.21.6"), "1.3.0+1.21.1", "1.21.1", "1.21.6")), "game as a build suffix");
         var found = Dependencies.findPublishedProject(
             SOURCE,
@@ -550,6 +592,36 @@ public final class DependenciesTest {
 
     static Map<String, Object> project(String source, String loader, String version) {
         return Json.map("source_url", source, "loaders", List.of(loader), "game_versions", List.of(version));
+    }
+
+    /**
+     * A library ported from source is built from the commit of the release the mod used: its tag when one names it, else
+     * the last commit on the branch for its game version before the release was published (Bookshelf numbers releases by
+     * build, so no file in the source names 21.1.2). A later commit, or one on another branch, would be another library.
+     */
+    static void librarySourceCommit() throws Exception {
+        Path upstream = Files.createTempDirectory("mmt-library-");
+        LibraryPort.git(upstream, "init", "--quiet", "-b", "1.21.1");
+        LibraryPort.git(upstream, "config", "user.email", "test@example.invalid");
+        LibraryPort.git(upstream, "config", "user.name", "test");
+        String[] dates = { "2024-09-01T00:00:00Z", "2024-09-20T00:00:00Z", "2024-10-05T00:00:00Z" };
+        List<String> commits = new ArrayList<>();
+        for (String date : dates) {
+            Files.writeString(upstream.resolve("file.txt"), date);
+            LibraryPort.git(upstream, "add", "file.txt");
+            ProcessBuilder commit = new ProcessBuilder("git", "commit", "--quiet", "-m", date).directory(upstream.toFile());
+            commit.environment().put("GIT_COMMITTER_DATE", date);
+            commit.environment().put("GIT_AUTHOR_DATE", date);
+            require(commit.start().waitFor() == 0, "test commit");
+            commits.add(LibraryPort.git(upstream, "rev-parse", "HEAD").trim());
+        }
+        LibraryPort.git(upstream, "tag", "v3.0.1", commits.get(0));
+        Path work = Files.createTempDirectory("mmt-library-clone-").resolve("clone");
+        LibraryPort.git(work.getParent(), "clone", "--quiet", "--no-checkout", upstream.toUri().toString(), "clone");
+        var byDate = LibraryPort.commit(work, "21.1.2", "1.21.1", "2024-09-26T12:00:00Z");
+        require(byDate[0].equals(commits.get(1)), "the last commit before the release: " + Arrays.toString(byDate));
+        var byTag = LibraryPort.commit(work, "3.0.1+1.21.1", "1.21.1", "2024-10-10T00:00:00Z");
+        require(byTag[0].equals(commits.get(0)) && byTag[1].equals("tag v3.0.1"), "a tag naming the release wins: " + Arrays.toString(byTag));
     }
 
     static void require(boolean condition, String label) {

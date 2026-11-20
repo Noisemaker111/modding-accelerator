@@ -80,7 +80,7 @@ jobs:
       - name: Convert, compile, start, convert back
         run: |
           set -o pipefail
-          python bench/convert_sweep.py run --only "$MOD" --jobs 1 --label "$LABEL" | tee sweep.txt
+          python bench/convert_sweep.py run --only "$MOD" --jobs 1 --label "$LABEL" --references | tee sweep.txt
           { echo '```'; head -n 1 sweep.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Stop the games
         if: always()
@@ -116,6 +116,7 @@ jobs:
           mkdir -p .runs/convert-sweep/runs
           find artifacts -path '*/.runs/convert-sweep/runs/*.json' -exec cp {} .runs/convert-sweep/runs/ \;
           python bench/convert_sweep.py table --label "$LABEL" | tee summary.md
+          python bench/convert_coverage.py collect .runs/convert-sweep/runs
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
@@ -123,4 +124,5 @@ jobs:
           path: |
             summary.md
             coverage/sweeps/convert.json
+            coverage/convert-references.json
           retention-days: 14

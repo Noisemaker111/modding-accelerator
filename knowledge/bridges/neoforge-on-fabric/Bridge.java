@@ -47,6 +47,8 @@ public final class Bridge {
         Bus.INSTANCE.post(new ${package}.capabilities.RegisterCapabilitiesEvent());
         hook();
         Bus.INSTANCE.post(new RegisterPayloadHandlersEvent());
+        // Data maps: NeoForge's own types and the mod's (RegisterDataMapTypesEvent), loaded with the data packs.
+        ${package}.datamaps.DataMaps.start(() -> Bus.INSTANCE.post(new ${package}.datamaps.RegisterDataMapTypesEvent()));
         Bus.INSTANCE.post(new FMLCommonSetupEvent(container(modid)));
         lifecycle(modid);
     }
@@ -65,6 +67,10 @@ public final class Bridge {
         ServerTickEvents.END_SERVER_TICK.register(server -> Bus.INSTANCE.post(new ServerTickEvent.Post(server)));
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> Bus.INSTANCE.post(new RegisterCommandsEvent(dispatcher, selection, context)));
         CreativeModeTabEvents.MODIFY_OUTPUT_ALL.register((tab, output) -> Bus.INSTANCE.post(new BuildCreativeModeTabContentsEvent(tab, output)));
+        // NeoForge's BlockEntity.onLoad, when a block entity joins a loaded level (only with the bridge's BlockEntityHooksMixin).
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerBlockEntityEvents.BLOCK_ENTITY_LOAD.register((blockEntity, level) -> {
+            if (blockEntity instanceof ${package}.extensions.BlockEntityHooks hooks) hooks.onLoad();
+        });
     }
 
     // ---- player interaction, block and lifecycle hooks ----

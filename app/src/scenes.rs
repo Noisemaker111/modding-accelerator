@@ -176,6 +176,31 @@ pub const SCENES: &[(&str, fn(&mut App))] = &[
         s.port.converted = Some(fixture("convert"));
         s.screen = Screen::Port;
     }),
+    ("port-jar", |s| {
+        crate::port::chosen_jar(s, PathBuf::from(r"C:\mods\appleskin-neoforge-mc1.21.1-3.0.5.jar"));
+        s.port.jar_to = TextEdit::new("1.21.2");
+        s.port.jar_result = Some(Outcome {
+            exit: Some(0),
+            json: Some(serde_json::json!({
+                "ok": true,
+                "exit": 0,
+                "seconds": 4.2,
+                "result": {
+                    "ok": true,
+                    "jar": r"C:\mods\appleskin-neoforge-mc1.21.1-3.0.5.jar",
+                    "out": r"C:\mods\appleskin-neoforge-mc1.21.2-3.0.5.jar",
+                    "from": "1.21.1",
+                    "to": "1.21.2",
+                    "changed": {"classes": 2, "methods": 14},
+                    "unlinked": [],
+                    "silent": []
+                }
+            })),
+            text: String::new(),
+            cancelled: false,
+        });
+        s.screen = Screen::Port;
+    }),
     ("pack-idle", |s| s.screen = Screen::Pack),
     ("pack-running", |s| {
         crate::pack::chosen(s, PathBuf::from(r"C:\packs\demo-pack"));

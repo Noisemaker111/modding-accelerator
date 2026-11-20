@@ -4,12 +4,14 @@
     python tools/cloud-run.py packs [--ref BRANCH] [-f packs=atm10-neoforge-1.21.1] [-f focus=MODID] [-f fix=true]
     python tools/cloud-run.py ports [-f cases=jade-neoforge-1.21.1-1.21.6]
     python tools/cloud-run.py convert [-f mods=theoneprobe-fabric] [-f label=round-4]
+    python tools/cloud-run.py exposure [-f only=fabric:1.21.1,neoforge:1.21.1]
     python tools/cloud-run.py --run RUN_ID        wait for and download a run already started
     tools/cloud-run ... (POSIX) and tools\\cloud-run.cmd ... (Windows) are the same
 
 packs is .github/workflows/cloud-packs.yml (pack-check, one job per pack), ports is cloud-ports.yml (the port board,
 one job per case), convert is
-cloud-convert.yml (the convert sweep, one job per mod, in the game and back); any other
+cloud-convert.yml (the convert sweep, one job per mod, in the game and back), exposure is cloud-exposure.yml (the jar
+scoreboard, one job per update and loader, joined into bench/exposure/all.json); any other
 name is taken as a workflow file. The workflow runs the commit the branch (--ref, default the current one) has on
 GitHub, so push first: a branch whose local commit is not on origin is refused (--allow-unpushed runs origin's).
 
@@ -29,7 +31,7 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-WORKFLOWS = {"packs": "cloud-packs.yml", "ports": "cloud-ports.yml", "convert": "cloud-convert.yml"}
+WORKFLOWS = {"packs": "cloud-packs.yml", "ports": "cloud-ports.yml", "convert": "cloud-convert.yml", "exposure": "cloud-exposure.yml"}
 
 
 def gh_path():
@@ -42,8 +44,20 @@ def gh_path():
     raise SystemExit("cloud-run needs the GitHub CLI (gh): https://cli.github.com, then gh auth login")
 
 
-def gh(*args, check=True):
-    done = subprocess.run([gh_path(), *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
+TRANSIENT = ("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504", "timeout", "connection reset", "TLS handshake", "EOF")
+
+
+def transient(output):
+    """A GitHub hiccup worth retrying (a 5xx, a dropped connection), not an answer: a sweep hours long must not end on one."""
+    return any(sign.lower() in (output or "").lower() for sign in TRANSIENT)
+
+
+def gh(*args, check=True, tries=6, run=subprocess.run, sleep=time.sleep):
+    for attempt in range(tries):
+        done = run([gh_path(), *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if not done.returncode or not transient(done.stderr or done.stdout) or attempt == tries - 1:
+            break
+        sleep(min(60, 5 * 2 ** attempt))
     if check and done.returncode:
         raise SystemExit(f"gh {' '.join(args[:3])} failed: {(done.stderr or done.stdout).strip()[-800:]}")
     return done.stdout

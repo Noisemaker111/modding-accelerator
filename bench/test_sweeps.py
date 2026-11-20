@@ -77,4 +77,50 @@ finally:
     C.run_one = real
 check(failed == ["bad"], f"a raising run is reported as failed: {failed}")
 
+# The table on a checkout with no runs of its own prints the saved sweep and leaves the file alone; with runs it writes it.
+import json  # noqa: E402
+import tempfile  # noqa: E402
+with tempfile.TemporaryDirectory() as tmp:
+    real_out, real_work = C.OUT, C.WORK
+    C.OUT, C.WORK = Path(tmp) / "convert.json", Path(tmp) / "work"
+    try:
+        rates = C.summarize([], "kept")[1]
+        saved = json.dumps({"latest": dict(rates, runs=35), "history": [], "gaps": [], "runs": [{"id": "krypton", "outcome": "loads"}]})
+        C.OUT.write_text(saved, encoding="utf-8")
+        shown = C.table_command("latest")
+        check(C.OUT.read_text(encoding="utf-8") == saved, "the table of a checkout with no runs leaves the saved sweep as it is")
+        check("35 runs" in shown and "krypton: loads" in shown, "and prints it: " + shown)
+        (C.WORK / "runs").mkdir(parents=True)
+        (C.WORK / "runs" / "x.json").write_text(json.dumps({"id": "x", "outcome": "refused", "concepts": {}}), encoding="utf-8")
+        C.table_command("latest")
+        check([r["id"] for r in json.loads(C.OUT.read_text(encoding="utf-8"))["runs"]] == ["x"], "a checkout with runs writes them")
+    finally:
+        C.OUT, C.WORK = real_out, real_work
+
+# The port sweep's error classes: "package Foo does not exist" for a game class used as a qualifier is not a missing
+# library, while one imported from a library is.
+import sweep as S  # noqa: E402
+with tempfile.TemporaryDirectory() as tmp:
+    src = Path(tmp) / "Gen.java"
+    src.write_text("package mod;\nimport net.minecraft.advancements.critereon.*;\nimport top.theillusivec4.curios.api.SlotContext;\n"
+                   "class Gen { Object a = InventoryChangeTrigger.TriggerInstance.hasItems(); Object b = SlotContext.Builder.of(); }\n")
+    rec = {"names": "mojmap", "to": "26.3"}
+    game = S.error_class({"message": "package InventoryChangeTrigger does not exist", "file": str(src), "line": 4}, rec)
+    lib = S.error_class({"message": "package SlotContext does not exist", "file": str(src), "line": 4}, rec)
+    real_lib = S.error_class({"message": "package top.theillusivec4.curios.api does not exist", "file": str(src), "line": 3}, rec)
+check(game[0] != "dependency-unavailable" and game[1] == "InventoryChangeTrigger", f"a game class used as a qualifier: {game}")
+check(lib == ("dependency-unavailable", "top.theillusivec4.curios.api.SlotContext"), f"a library class used as a qualifier: {lib}")
+check(real_lib[0] == "dependency-unavailable", f"a library package: {real_lib}")
+import tempfile  # noqa: E402
+
+with tempfile.TemporaryDirectory() as tmp:
+    gradle = 'dependencies {\n    implementation "a:b:1"\n    runtimeOnly "mekanism:Mekanism:1"\n    localRuntime("x:y:2")\n}\n'
+    (Path(tmp) / "build.gradle").write_text(gradle, encoding="utf-8")
+    left = C.without_runtime_mods(tmp)
+    text = (Path(tmp) / "build.gradle").read_text(encoding="utf-8")
+    check(len(left) == 2 and '\n    implementation "a:b:1"' in text and "\n    runtimeOnly" not in text and "\n    localRuntime(" not in text,
+          f"the original's runtime-only mods are left out for the behaviour check, its own dependencies kept: {text}")
+    C.restore_runtime_mods(tmp, left)
+    check((Path(tmp) / "build.gradle").read_text(encoding="utf-8") == gradle, "and put back as they were")
+
 print(f"{checks} sweep checks passed")

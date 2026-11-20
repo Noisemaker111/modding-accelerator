@@ -76,7 +76,7 @@ final class Console {
             else body.append(line).append('\n');
         }
         String text = body.toString().trim();
-        boolean minecraft = loads(game, "net.minecraft.client.Minecraft");
+        boolean minecraft = loads(game, runtimeClass("net.minecraft.client.Minecraft"));
         // Fabric builds on Yarn names call the same class MinecraftClient; mc must exist there too.
         boolean yarn = !minecraft && loads(game, "net.minecraft.client.MinecraftClient");
         // An expression is returned as it is; statements return what they return, or null.
@@ -99,19 +99,27 @@ final class Console {
             source.append("  void print(Object value) { out.append(String.valueOf(value)).append('\\n'); }\n");
             source.append("  @SuppressWarnings(\"unchecked\") <T> T get(String key) { return (T) vars.get(key); }\n");
             source.append("  Map<String, Object> vars;\n");
-            // Reach private and package-private members: snippets live in another package and loader.
+            // Reach private and package-private members: snippets live in another package and loader. A member is named
+            // in Mojang's names; where the game runs other names the agent's table (mmt.rename) gives its run-time ones.
+            source.append(
+                "  @SuppressWarnings(\"unchecked\") static List<String> names(Class<?> c, String name) {\n" +
+                "    List<String> all = new ArrayList<>(Arrays.asList(name));\n" +
+                "    Object rename = System.getProperties().get(\"mmt.rename\");\n" +
+                "    if (rename != null) all.addAll(((java.util.function.BiFunction<Class<?>, String, List<String>>) rename).apply(c, name));\n" +
+                "    return all;\n  }\n"
+            );
             source.append(
                 "  static Object call(Object target, String name, Object... args) throws Exception {\n" +
                 "    Class<?> type = target instanceof Class ? (Class<?>) target : target.getClass();\n" +
                 "    for (Class<?> c = type; c != null; c = c.getSuperclass()) for (java.lang.reflect.Method m : c.getDeclaredMethods())\n" +
-                "      if (m.getName().equals(name) && m.getParameterCount() == args.length) { m.setAccessible(true);\n" +
+                "      if (names(c, name).contains(m.getName()) && m.getParameterCount() == args.length) { m.setAccessible(true);\n" +
                 "        return m.invoke(java.lang.reflect.Modifier.isStatic(m.getModifiers()) ? null : target, args); }\n" +
                 "    throw new NoSuchMethodException(type.getName() + \".\" + name + \" with \" + args.length + \" arguments\");\n  }\n"
             );
             source.append(
                 "  static Object field(Object target, String name) throws Exception {\n" +
                 "    Class<?> type = target instanceof Class ? (Class<?>) target : target.getClass();\n" +
-                "    for (Class<?> c = type; c != null; c = c.getSuperclass()) try { java.lang.reflect.Field f = c.getDeclaredField(name); f.setAccessible(true);\n" +
+                "    for (Class<?> c = type; c != null; c = c.getSuperclass()) for (String n : names(c, name)) try { java.lang.reflect.Field f = c.getDeclaredField(n); f.setAccessible(true);\n" +
                 "      return f.get(java.lang.reflect.Modifier.isStatic(f.getModifiers()) ? null : target); } catch (NoSuchFieldException next) { }\n" +
                 "    throw new NoSuchFieldException(type.getName() + \".\" + name);\n  }\n"
             );
@@ -174,9 +182,13 @@ final class Console {
                 return source;
             }
         };
+        // A loader's production launch keeps the game in a module layer, off the class path: mmt.classpath names its jars.
+        String extra = System.getProperty("mmt.classpath", "");
+        // Its jars come first: a game run in other names than Mojang's has its obfuscated jar on the class path, and the
+        // snippet is compiled in Mojang's names (PortableAgent.Names renames it before it is loaded).
         List<String> options = Arrays.asList(
             "-classpath",
-            System.getProperty("java.class.path"),
+            (extra.isEmpty() ? "" : extra + File.pathSeparator) + System.getProperty("java.class.path"),
             "-proc:none",
             "-g",
             "-nowarn"
@@ -193,16 +205,32 @@ final class Console {
         return errors.toString().trim();
     }
 
-    private static ClassLoader define(ClassLoader game, final Map<String, ByteArrayOutputStream> classes) {
+    private static ClassLoader define(final ClassLoader game, final Map<String, ByteArrayOutputStream> classes) {
         return new ClassLoader(game) {
             @Override
             protected Class<?> findClass(String name) throws ClassNotFoundException {
                 ByteArrayOutputStream bytes = classes.get(name);
                 if (bytes == null) throw new ClassNotFoundException(name);
-                byte[] code = bytes.toByteArray();
+                byte[] code = runtimeNames(bytes.toByteArray(), game);
                 return defineClass(name, code, 0, code.length);
             }
         };
+    }
+
+    /*
+     * A game run in other names than Mojang's: the agent's table (PortableAgent.Names) publishes these two through system
+     * properties, so this class compiles and runs on its own (perf's toggles use it without the agent).
+     */
+    @SuppressWarnings("unchecked")
+    private static String runtimeClass(String mojang) {
+        Object f = System.getProperties().get("mmt.runtimeClass");
+        return f == null ? mojang : ((java.util.function.Function<String, String>) f).apply(mojang);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static byte[] runtimeNames(byte[] code, ClassLoader game) {
+        Object f = System.getProperties().get("mmt.remap");
+        return f == null ? code : ((java.util.function.BiFunction<byte[], ClassLoader, byte[]>) f).apply(code, game);
     }
 
     private static boolean loads(ClassLoader loader, String name) {

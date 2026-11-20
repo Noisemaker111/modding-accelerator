@@ -155,6 +155,7 @@ public final class Mmt {
             "quiet",
             "pack",
             "focus",
+            "side",
             "minecraft",
             "loader",
             "memory",
@@ -244,6 +245,7 @@ public final class Mmt {
         "port",
         "convert",
         "explain",
+        "port-plan",
         "dependencies",
         "mixin-check",
         "data-check",
@@ -359,11 +361,22 @@ public final class Mmt {
                 );
                 System.exit(exit);
             }
+            if (options.command.equals("port") && options.values.containsKey("jar")) {
+                // A compiled mod, not a source checkout: no Gradle build and no project lock.
+                report = new Report(Path.of(System.getProperty("user.home"), ".mmt", "jar-port"), options.command);
+                Map<String, Object> result = PortJar.run(home, options, report);
+                exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.println(String.valueOf(result.get("details")) + "\nReceipt: " + output.get("receipt"));
+                System.exit(exit);
+            }
             Path root = Path.of(options.get("root", "."));
             if (
                 Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar")
             ) throw new IllegalArgumentException(
-                "--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run mmt discover --root SOURCE."
+                "--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run mmt discover --root SOURCE" +
+                (options.command.equals("port") ? ", or move the compiled NeoForge or Fabric mod with mmt port --jar FILE --to VERSION." : ".")
             );
             if (!COMMANDS.contains(options.command)) throw new IllegalArgumentException(
                 unknownCommand(options.command)
@@ -499,6 +512,10 @@ public final class Mmt {
                     case "convert" -> {
                         result = preview ? Convert.preview(project.root, home, options) : new Convert(build).run(options);
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                    }
+                    case "port-plan" -> {
+                        result = PortPlan.run(build, model, options);
+                        exit = 0;
                     }
                     case "explain" -> {
                         result = new Explain(build, model).run(options);
@@ -910,7 +927,11 @@ public final class Mmt {
             "Background keeps the client hidden and prevents cursor capture (default off).\n" +
             "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off,\n" +
             "and the next game gets back the sound, narrator and first-launch options quiet changed in its folder.";
-            case "port" -> "Port a Gradle mod source checkout (not a JAR):\n" +
+            case "port" -> "Port a compiled NeoForge mod (1.20.5 and newer) or Fabric mod (1.14.4 and newer), no source and no build:\n" +
+            "  mmt port --jar MOD.jar --to 1.21.2 [--from 1.21.1] [--out PORTED.jar] [--json]\n" +
+            "Every reference its classes and mixins make to the game is relinked against the new release; what does not link is named,\n" +
+            "never guessed, and the command fails. --from comes from the jar's metadata when it names one release.\n" +
+            "Port a Gradle mod source checkout:\n" +
             "  mmt discover --root SOURCE\n" +
             "  mmt dependencies --root SOURCE --to 1.21.6 --json\n" +
             "  mmt port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n" +
@@ -923,6 +944,8 @@ public final class Mmt {
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .mmt/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "convert" -> "Move a mod's source to another loader on the same Minecraft version: mmt convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +
             "  mmt convert --root SOURCE --undo [ID]   restore every file the conversion changed, byte for byte\n" +
+            "  mmt convert --root SOURCE --to fabric --names mojang   move a yarn-named Fabric mod to Mojang's names (sources, mixin\n" +
+            "    strings, access widener, build) and keep it on Fabric; convert --to neoforge does this first by itself\n" +
             "Fabric to NeoForge (any version with a NeoForge release) and NeoForge to Fabric (Minecraft 26.1 and later, where both use Mojang's names).\n" +
             "It rewrites the build (Loom <-> ModDevGradle, the newest loader releases for that Minecraft version), the metadata (fabric.mod.json <->\n" +
             "META-INF/neoforge.mods.toml), the entrypoints (ModInitializer <-> @Mod classes that run it in NeoForge's first registry event), and the\n" +
@@ -933,6 +956,10 @@ public final class Mmt {
             "receipt): it lists each file that would change or be removed and what would be left, compiles nothing, and exits 0 when it ran.\n" +
             "A compile is not proof: check the mod in the game with ui-check or world-check and --assert.\n" +
             "Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
+            case "port-plan" -> "Every place a mod's code touches game or loader code, found by the compiler on the mod's own version, and with --map what\n" +
+            "a target version did to each (renamed, moved to another class, takes different arguments, the game shows the replacement, removed):\n" +
+            "  mmt port-plan --root SOURCE [--project :p] [--map CHANGE-MAP.json] [--json]\n" +
+            "The places are written to .mmt/portable/port-plan.json; bench/port_plans.py ranks them for the whole corpus.";
             case "explain" -> "Explain a port's compiler errors: mmt explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
             "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n" +
@@ -1040,6 +1067,10 @@ public final class Mmt {
             "is your pack changed: an instance folder in place (undo with --undo), an export or .mrpack as a fixed copy.\n" +
             "--focus MODID,MODID is a minimal repro: only the jars providing those ids and their required dependencies (from the jars'\n" +
             "metadata) and loader plugins start, so one fault is proven in minutes, not a whole pack's start; --fix then never changes your pack.\n" +
+            "--side client starts the pack's own client instead (both: server and client): the loader's own installer or launcher profile installs it, it runs hidden and muted\n" +
+            "as your preferences say, loads every mod to the title screen, opens a flat world, shows the inventory and every creative tab, and quits.\n" +
+            "A client that does not get through names the mods its log and crash report point at. NeoForge (its installer) and Fabric (its launcher profile);\n" +
+            "a Fabric client before 26.1 runs intermediary, which mmt's agent reads through Mojang's and Fabric's mappings.\n" +
             "--memory 6G sets the server's heap. A start is judged by its log: --timeout SECONDS (default 600) stops one whose log stops growing,\n" +
             "and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that never finishes. How to add a loader, input, check or\n" +
             "repair: tools/packcheck/CONTRIBUTING.md.";
@@ -1049,6 +1080,7 @@ public final class Mmt {
             "  fast, test             logic tests, no game    mixin-check        Mixin applies the mixins, no game\n" +
             "  data-check             what the game loads for the mod (items, recipes, errors), no game\n" +
             "  port                   move to another version explain            explain compiler errors\n" +
+            "  port-plan              every place the mod touches game code, and what a target version did to it\n" +
             "  convert                move to another loader (Fabric <-> NeoForge), with undo\n" +
             "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n" +
             "  eval, reload           talk to the running game          game-status, game-stop\n" +

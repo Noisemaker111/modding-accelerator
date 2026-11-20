@@ -332,7 +332,15 @@ def error_class(e, rec):
         return "mixin-target-change", api
     if ACCESS.search(msg):
         return "access-transformer", api
-    if pkg and third_party(pkg.group(1), own):
+    # "package InventoryChangeTrigger does not exist" is a class used as a qualifier (Foo.Bar) that did not resolve:
+    # it belongs to whoever the file imports it from, not to a library by default.
+    bare = pkg and "." not in pkg.group(1) and pkg.group(1)[:1].isupper()
+    if bare:
+        where = imported(lines, pkg.group(1)) if lines else None
+        if where and third_party(where, own):
+            return "dependency-unavailable", where
+        symbol = symbol or pkg.group(1)
+    elif pkg and third_party(pkg.group(1), own):
         return "dependency-unavailable", pkg.group(1)
     if NOT_FOUND.search(msg) and symbol:
         where = imported(lines, symbol) if lines else None
@@ -500,9 +508,10 @@ def mod_metadata(work, mod):
                 keys = json.loads(p.read_text(encoding="utf-8", errors="replace"))
             except ValueError:
                 continue
-            for key in keys:
+            for key, text in keys.items():
                 m = re.fullmatch(r"(block|item|entity)\." + re.escape(modid) + r"\.([a-z0-9_/]+)", key)
-                if m:
+                # A name that takes arguments ("Corpse of %s") is a message about the thing, not the thing's own name.
+                if m and not (isinstance(text, str) and re.search(r"%(?:\d+\$)?[sd]", text)):
                     wanted.add(f"{kinds[m.group(1)]} {modid}:{m.group(2)}")
         for kind, folder in (("BLOCK", "blockstates"), ("ITEM", "models/item")):
             for p in work.rglob(f"assets/{modid}/{folder}/*.json"):
@@ -528,7 +537,8 @@ def game_checks(mod, rec, work):
     rec["modid"] = modid
     if code == 0 and modid:
         snippet = (f'net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("{modid}")' if mod["loader"] == "fabric"
-                   else f'net.neoforged.fml.ModList.get().isLoaded("{modid}")')
+                   # The mod list itself: on NeoForge 21.2 ModList.isLoaded answered false for a mod getMods() listed.
+                   else f'net.neoforged.fml.ModList.get().getMods().stream().anyMatch(m -> m.getModId().equals("{modid}"))')
         code, out, err = sh(MMT + ["eval", "--root", work, "--code", snippet, "--json"] + proj, timeout=600)
         res = last_json(out) or {}
         value = str((res.get("result") or res).get("value"))

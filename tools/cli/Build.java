@@ -306,6 +306,10 @@ final class Build {
             command.add("-Dorg.gradle.java.installations.paths=" + String.join(",", toolchains));
         }
         if (!selected.isBlank()) command.add("-Dmmt.project=" + selected);
+        Path pins = project.state().resolve("plugin-pins.txt");
+        if (Files.isRegularFile(pins)) command.add("-Dmmt.pluginPins=" + Files.readString(pins).trim());
+        // Libraries mmt ported from source (LibraryPort) resolve from its local repository, and only from there.
+        if (Files.isDirectory(LibraryPort.store())) command.add("-Dmmt.portedLibraries=" + LibraryPort.store());
         // Loom skips dependency source remapping for CLI checks; compiled dependency remapping still runs.
         command.add("-Dfabric.loom.ci=true");
         command.add("-Dmmt.runId=" + report.id);
@@ -322,9 +326,23 @@ final class Build {
         return model(refresh, false);
     }
 
+    /** Kept beside the selected project's model files, so an every-project read does not replace them. */
+    String cacheSuffix = "";
+
+    /**
+     * The same build with no project selected: its planning model lists every project, which a multi-loader port uses to
+     * move the other loaders' libraries too. Cached in files of its own.
+     */
+    Build allProjects() throws Exception {
+        Build all = new Build(project, harness, "", report);
+        all.cacheSuffix = "-all";
+        all.jdk = jdk;
+        return all;
+    }
+
     Map<String, Object> model(boolean refresh, boolean planning) throws Exception {
-        Path model = project.state().resolve(planning ? "plan-model.json" : "model.json");
-        Path stamp = project.state().resolve(planning ? "plan-model-stamp.json" : "model-stamp.json");
+        Path model = project.state().resolve((planning ? "plan-model" : "model") + cacheSuffix + ".json");
+        Path stamp = project.state().resolve((planning ? "plan-model-stamp" : "model-stamp") + cacheSuffix + ".json");
         String key =
             project.configurationHash(init) + "|" + selected + "|" + jdk.home() + "|" + (planning ? "plan" : "full");
         if (!refresh && Files.isRegularFile(model) && Files.isRegularFile(stamp)) {
@@ -336,9 +354,9 @@ final class Build {
                 return Json.read(model);
             }
         }
-        List<String> task = planning
-            ? List.of("-Dmmt.metadataMode=plan", ":mmtMetadata")
-            : List.of(":mmtMetadata");
+        List<String> task = new ArrayList<>(planning ? List.of("-Dmmt.metadataMode=plan", ":mmtMetadata") : List.of(":mmtMetadata"));
+        // The init script writes the model under this name, so an every-project read never replaces the selected one's.
+        task.add(0, "-Dmmt.modelFile=" + model.getFileName());
         String stage = planning ? "metadata-plan" : "metadata";
         Run.Result result = gradle(task, stage);
         // The first read downloads Gradle and the build's dependencies, and the wrapper gives up after one 10 s try:
@@ -354,6 +372,21 @@ final class Build {
                 report.stages.add(Json.map("name", "java-for-loom", "gradleJava", needed.version(), "evidence", needs.group(0)));
                 jdk = needed;
                 result = gradle(task, stage + "-java-" + needed.version());
+            }
+        }
+        // A plugin asked for by a range ("1.+") resolves to its newest release, which can need a newer Java than the
+        // build's Gradle runs on (Curios 1.21.1: CurseForgeGradle 1.3.33 needs Java 25, Gradle 8.8 runs on 21). The
+        // release's own Gradle metadata states its Java, so mmt pins the newest release of that major line that runs.
+        if (result.exit() != 0) {
+            String log = new String(Files.readAllBytes(result.log()), java.nio.charset.StandardCharsets.UTF_8);
+            String pin = pluginPin(log);
+            if (pin != null) {
+                Path pins = project.state().resolve("plugin-pins.txt");
+                Files.createDirectories(pins.getParent());
+                String existing = Files.isRegularFile(pins) ? Files.readString(pins).trim() : "";
+                Files.writeString(pins, existing.isEmpty() ? pin : existing + "," + pin);
+                report.stages.add(Json.map("name", "plugin-pin", "pin", pin));
+                result = gradle(task, stage + "-pinned");
             }
         }
         String unreachable = result.exit() == 0
@@ -389,6 +422,40 @@ final class Build {
         Map<String, Object> value = Json.read(model);
         Json.save(stamp, Json.map("key", key));
         return value;
+    }
+
+    /** "pluginId=version" for a plugin whose resolved release needs a newer Java than Gradle runs on, or null. */
+    String pluginPin(String log) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+            "Could not resolve ([\\w.-]+):([\\w.-]+):([\\w.-]+)\\.\\s+Required by:\\s+[^\\n]*> ([\\w.-]+):\\4\\.gradle\\.plugin:[\\w.-]+\\s+> Dependency requires at least JVM runtime version (\\d+)"
+        ).matcher(log);
+        if (!m.find() || Integer.parseInt(m.group(5)) <= jdk.version()) return null;
+        String base = "https://plugins.gradle.org/m2/" + m.group(1).replace('.', '/') + "/" + m.group(2) + "/";
+        String major = m.group(3).split("\\.")[0];
+        try {
+            List<String> versions = new ArrayList<>();
+            java.util.regex.Matcher v = java.util.regex.Pattern.compile("<version>([^<]+)</version>").matcher(
+                Target.fetch(this, base + "maven-metadata.xml")
+            );
+            while (v.find()) if (v.group(1).split("\\.")[0].equals(major)) versions.add(v.group(1));
+            for (int i = versions.size() - 1; i >= 0; i--) {
+                String candidate = versions.get(i);
+                String module;
+                try {
+                    module = Target.fetch(this, base + candidate + "/" + m.group(2) + "-" + candidate + ".module");
+                } catch (IOException none) {
+                    // Releases without Gradle metadata predate the Java attribute; they ran on the Java of their time.
+                    return m.group(4) + "=" + candidate;
+                }
+                int needs = 0;
+                java.util.regex.Matcher jvm = java.util.regex.Pattern.compile("\"org\\.gradle\\.jvm\\.version\":\\s*(\\d+)").matcher(module);
+                while (jvm.find()) needs = Math.max(needs, Integer.parseInt(jvm.group(1)));
+                if (needs <= jdk.version()) return m.group(4) + "=" + candidate;
+            }
+        } catch (Exception unreachable) {
+            return null;
+        }
+        return null;
     }
 
     /** What stopped mmt reading the build, in a few words, ahead of Gradle's own detail. */

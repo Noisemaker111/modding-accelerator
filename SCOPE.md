@@ -16,6 +16,7 @@ on the way, not a result. This file says which platform has reached what, and ho
 | Behaviour in a hidden client (`ui-check`, `world-check`) | Yes | Yes | Loads only | No | Not applicable |
 | Dedicated server plus client or test player (`mp-check`, `server-check`) | Partly | Partly | No | No | Yes: real Paper 1.8 and up, with a test player |
 | Port between versions (`port`) | Yes, 1.14.4 to 26.3 | Yes, 1.14.4 to 26.3 | No | No | No: `port` names the edits instead |
+| Port a compiled `.jar` (`port --jar`) | 1.14.4 and newer | 1.20.5 and newer | No | No | No |
 | Switch loader (`convert`) | To NeoForge | To Fabric (26.1+ and 1.21.1) | No | No | No |
 | Modpacks on their own server (`pack-check`) | Yes | Yes | Yes | Yes | Not applicable |
 | Performance (`perf`, `perf-optimize`) | Yes | Yes | Not yet proven | No | No |
@@ -31,15 +32,14 @@ Windows and partly on Linux, not on macOS.
 | What | Corpus | Result | Source |
 |---|---|---|---|
 | Ports proven in the game, no hand edits | 3 mods, 7 routes | All pass their own in-game check | `coverage/ledger.json` |
-| Port sweep | 46 mods, 126 routes | 9 build, 7 load, 1 passes its behaviour check | `bench/sweep/results/after2.json` |
-| Convert sweep | 35 mods | 28 not refused, 5 compile, 5 match the original's behaviour in the game, 5 convert back | `coverage/sweeps/convert.json` |
+| Port sweep | 46 mods, 126 routes | 16 build, 15 load, 6 pass their behaviour check | `coverage/measures.json` (`port.corpus-builds`), cloud run 44352252266 |
+| Convert sweep | 35 mods | 28 not refused, 14 compile and load in the game, 10 behave the same as the original (fingerprint), 9 convert back | `coverage/sweeps/convert.json` |
 | Pack sweep | 24 packs, 1.16.5 to 26.3 | 21 pass as shipped, 24 with repairs | `coverage/sweeps/pack.json` |
 | Accepted speedups, exact gates | 4 mods | Cyclic 15.7×, Simple Storage Network 5–6×, Diorama 1.6–2.2×, Pipez 1.2–1.3× | `coverage/perf-runs.json` |
 
 ## Who it is for
 
-- People who write mods or plugins from source. Porting and converting need the source; a compiled jar is only read
-  when a modpack is checked.
+- People who have a compiled mod `.jar` (Fabric 1.14.4+ or NeoForge 1.20.5+) to port to another Minecraft version, or mod/plugin authors working from source. Converting between loaders still needs source.
 - Modpack users and makers who need their installed mods to work together.
 - Fabric and NeoForge come first, then Forge (older modpacks), then Paper (servers). Quilt rides on Fabric.
 

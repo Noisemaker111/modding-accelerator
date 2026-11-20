@@ -46,6 +46,8 @@ PORT-REPORT.md
 # Game files that must never land in the repo root
 saves/
 world/
+# ...except bridge source packages named world (biome modifiers)
+!knowledge/**/world/
 screenshots/
 options.txt
 # ...except the options a perf-optimize experiment copies into each launch

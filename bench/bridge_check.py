@@ -12,8 +12,9 @@ and runs mmt compile on it, against the loaders' own published jars: first with 
 mixins add to game classes injected (as most converted mods get it), then with all of them. Then the bridge's runtime tests, JUnit sources in
 knowledge/bridge-tests/ID (at the path of the package they test, ${package} as in the bridge; never copied into a
 converted mod), run there with mmt test: they exercise bridge code that needs no running game (transactions, packet
-contexts, entrypoints, network codecs). The work folder is .runs/bridge-check/; the result is printed as JSON (exit 0
-when it compiled and every test passed). Launches no game.
+contexts, entrypoints, network codecs). Last, mmt mixin-check lets Mixin apply every bridge mixin to that game's classes.
+The work folder is .runs/bridge-check/; the result is printed as JSON (exit 0 when it compiled, every test passed and
+every mixin applied). Launches no game.
 """
 import argparse
 import json
@@ -30,7 +31,9 @@ import convert_sweep  # noqa: E402  (the sweep's clone and copy helpers)
 
 WORK = ROOT / ".runs" / "bridge-check"
 HOSTS = {("neoforge-on-fabric", "26.3"): "mdk-mdg-26.3", ("neoforge-on-fabric", "1.21.1"): "mdk-mdg-1.21.1",
-         ("fabric-on-neoforge", "26.3"): "mdk-mdg-26.3"}
+         ("fabric-on-neoforge", "26.3"): "mdk-mdg-26.3", ("fabric-on-neoforge", "1.21.1"): "mdk-mdg-1.21.1", ("neoforge-on-fabric", "26.1"): "mdk-mdg-26.3"}
+# A host built on another game release than its own: the gradle.properties values that pin it there.
+PINS = {("neoforge-on-fabric", "26.1"): {"minecraft_version": "26.1.2", "minecraft_version_range": "[26.1.2]", "neo_version": "26.1.2.126"}}
 
 
 def bridge(rules, bridge_id):
@@ -50,6 +53,13 @@ def layer_of(b, minecraft):
         if best is None or key(layer["minecraft"]) > key(best["minecraft"]):
             best = layer
     return best
+
+
+def rewrite(text, layer):
+    """A version layer's whole-word renames for the bridge's base files (Convert.layerRewrites)."""
+    for name, to in (layer or {}).get("rewrites", {}).items():
+        text = re.sub(r"(?<![\w$])" + re.escape(name) + r"(?![\w$])", lambda m: to, text)
+    return text
 
 
 def templates(b, layer):
@@ -82,25 +92,42 @@ test {
 """
 
 
-def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric):
-    """Copies knowledge/bridge-tests/ID into the host's tests and runs them; None when the bridge has none."""
+def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric, drops=(), layer_name=None, layer=None):
+    """Copies knowledge/bridge-tests/ID into the host's tests and runs them; None when the bridge has none. A test under a
+    path the version layer drops (the bridge has no such classes there) is left out, as the classes are."""
     folder = TESTS / bridge_id
-    sources = sorted(folder.rglob("*.java")) if folder.is_dir() else []
+    # As the bridge's own files: a version layer's tests (a sub-folder named by a game version) replace the bridge's
+    # tests of the same path for that version; the others are read only as their layer.
+    by_path = {}
+    for f in sorted(folder.rglob("*.java")) if folder.is_dir() else []:
+        rel = f.relative_to(folder).as_posix()
+        if not rel.split("/")[0][:1].isdigit():
+            by_path[rel] = f
+    if layer_name and (folder / layer_name).is_dir():
+        for f in sorted((folder / layer_name).rglob("*.java")):
+            by_path[f.relative_to(folder / layer_name).as_posix()] = f
+    # A test of a class the layer drops (FooTest.java for Foo.java) goes with it.
+    sources = [f for rel, f in sorted(by_path.items())
+               if not any(rel.startswith(d) or rel.removesuffix("Test.java") + ".java" == d for d in drops)]
+    test_root = {f: rel for rel, f in by_path.items()}
     if not sources:
         return None
     test_java = work / "src" / "test" / "java" / pkg_rel
     convert_sweep.rmtree(work / "src" / "test" / "java")
     for f in sources:
-        target = test_java / f.relative_to(folder)
+        target = test_java / test_root[f]
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(f.read_text(encoding="utf-8").replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
+        text = rewrite(f.read_text(encoding="utf-8"), layer)
+        target.write_text(text.replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
     build = work / "build.gradle"
     text = build.read_text(encoding="utf-8")
     if "bench/bridge_check.py: the bridge's runtime tests" not in text:
         # ModDevGradle gives the game to the main source set only; Loom gives it to the tests too. Its unit tests run inside
         # FML with the host mod loaded, so the bridge's mixins apply as in the game (tests that use injected interfaces).
         # NeoForge's test framework starts a server for a test that asks for one (tags and item components bound).
-        extra = "" if to_fabric else ("\nneoForge {\n    unitTest {\n        enable()\n        testedMod = mods.getByName(mod_id)\n    }\n}\n"
+        # On Fabric, fabric-loader-junit runs them inside Fabric Loader's Knot, so Fabric API's mixins (item and fluid
+        # variants) and the bridge's own apply as in the game.
+        extra = ("\ndependencies {\n    testImplementation \"net.fabricmc:fabric-loader-junit:${project.loader_version}\"\n}\n") if to_fabric else ("\nneoForge {\n    unitTest {\n        enable()\n        testedMod = mods.getByName(mod_id)\n    }\n}\n"
                                       "dependencies {\n    testImplementation \"net.neoforged:testframework:${neo_version}\"\n}\n")
         build.write_text(text + TEST_BUILD + extra, encoding="utf-8")
     code, result, seconds = convert_sweep.mmt(["test", "--root", str(work), "--json"], 3600)
@@ -149,14 +176,30 @@ def main():
     work = WORK / f"{args.bridge}-{args.minecraft}"
     to_fabric = b["to"] == "fabric"
     if not (args.keep and work.is_dir()):
+        # A mixin-check on the last host leaves its Gradle daemon holding the host's folder.
+        if work.is_dir():
+            convert_sweep.mmt(["game-stop", "--root", str(work), "--json"], 120)
         convert_sweep.rmtree(work)
         shutil.copytree(convert_sweep.extended(src), convert_sweep.extended(work),
                         ignore=shutil.ignore_patterns(".git", ".gradle", "build", ".mmt-sweep-commit"))
+        props = work / "gradle.properties"
+        for key, value in PINS.get((args.bridge, args.minecraft), {}).items():
+            props.write_text(re.sub(rf"(?m)^{re.escape(key)}\s*=.*$", f"{key}={value}", props.read_text(encoding="utf-8")), encoding="utf-8")
         if to_fabric:
+            # A bridge class standing in for a static method NeoForge adds reads game members that a converted mod opens
+            # only when it calls that method (bridges[].statics, accessTransformers). The host calls none and gets every
+            # bridge file, so it opens them all, in its own access transformer, which convert carries to Fabric.
+            opened = [line for s in b.get("statics", {}).values() for line in s.get("accessTransformers", [])]
+            if opened:
+                at = work / "src" / "main" / "resources" / "META-INF" / "accesstransformer.cfg"
+                at.parent.mkdir(parents=True, exist_ok=True)
+                at.write_text((at.read_text(encoding="utf-8") if at.is_file() else "") + "\n".join(opened) + "\n", encoding="utf-8")
             code, result, _ = convert_sweep.mmt(["convert", "--root", str(work), "--to", "fabric", "--no-compile", "--json"], 3600)
             if code not in (0, 1) or "error" in result and "from" not in result:
                 print(json.dumps({"ok": False, "stage": "convert", "result": result}, indent=1))
                 return 1
+    # A kept host still holds the last run's tests; they are copied again (and filtered for this layer) before running.
+    convert_sweep.rmtree(work / "src" / "test" / "java")
     java = work / "src" / "main" / "java"
     if to_fabric:
         pkg_dir = next(p.parent for p in java.rglob("Bridge.java") if "What a NeoForge @Mod class" in p.read_text(encoding="utf-8"))
@@ -169,9 +212,10 @@ def main():
     for rel, f in files.items():
         target = pkg_dir / rel
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(f.read_text(encoding="utf-8").replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
+        text = rewrite(f.read_text(encoding="utf-8"), layer)
+        target.write_text(text.replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
     mixins = (layer or {}).get("mixins") if (layer or {}).get("mixins") is not None else b.get("mixins") or []
-    mixins = [m for m in mixins if "mixin/" + m["mixin"] + ".java" in files]
+    mixins = [m for m in mixins if "mixin/" + m["mixin"].replace(".", "/") + ".java" in files]
     if mixins:
         config = {"required": True, "minVersion": "0.8", "package": pkg + ".mixin",
                   "compatibilityLevel": "JAVA_21" if args.minecraft.startswith("1.") else "JAVA_25",
@@ -217,10 +261,18 @@ def main():
             out["errors"] = ["with the interfaces injected: " + f"{Path(e['file']).name}:{e['line']}: {e['message']} {e['symbol']}".strip()
                              for e in (convert_sweep.compile_errors(logs[-1].read_text(encoding="utf-8", errors="replace")) if logs else [])][:200]
     if code == 0:
-        tests = run_tests(work, pkg_dir.relative_to(java), pkg, modid, args.bridge, to_fabric)
+        tests = run_tests(work, pkg_dir.relative_to(java), pkg, modid, args.bridge, to_fabric, (layer or {}).get("drops", []), (layer or {}).get("minecraft"), layer)
         if tests is not None:
             out["tests"] = tests
             out["ok"] = tests["ok"]
+    if code == 0 and mixins:
+        # Compiling proves no injection point: Mixin itself applies every bridge mixin to this game's classes.
+        _, checked, _ = convert_sweep.mmt(["mixin-check", "--root", str(work), "--json"], 1800)
+        found = checked or {}
+        out["mixinCheck"] = {"ok": bool(found.get("ok")), "mixins": found.get("mixins"),
+                             "failures": [f"{(f.get('mixin') or f.get('target') or '').split('.')[-1]}: {(f.get('message') or '')[:400]}"
+                                          for f in found.get("failures", []) + found.get("dead", [])]}
+        out["ok"] = out["ok"] and out["mixinCheck"]["ok"]
     convert_sweep.mmt(["game-stop", "--root", str(work), "--json"], 300)
     print(json.dumps(out, indent=1))
     return 0 if out["ok"] else 1

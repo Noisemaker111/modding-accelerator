@@ -45,6 +45,17 @@ public final class CommonHooks {
 
     private CommonHooks() {}
 
+    /** Posts CropGrowEvent.Pre: whether the crop grows (a listener's GROW or DO_NOT_GROW, else the crop's own answer). */
+    public static boolean canCropGrow(Level level, BlockPos pos, BlockState state, boolean def) {
+        CropGrowEvent.Pre event = Bus.INSTANCE.post(new CropGrowEvent.Pre(level, pos, state));
+        return event.getResult() == CropGrowEvent.Pre.Result.GROW || (event.getResult() == CropGrowEvent.Pre.Result.DEFAULT && def);
+    }
+
+    /** Posts CropGrowEvent.Post with the state the crop grew from and the one it has now. */
+    public static void fireCropGrowPost(Level level, BlockPos pos, BlockState state) {
+        Bus.INSTANCE.post(new CropGrowEvent.Post(level, pos, state, level.getBlockState(pos)));
+    }
+
     /** Posts LivingDropsEvent; true when it was cancelled (the drops are then not added to the level). */
     public static boolean onLivingDrops(LivingEntity entity, DamageSource source, Collection<ItemEntity> drops, boolean recentlyHit) {
         return Bus.INSTANCE.post(new LivingDropsEvent(entity, source, drops, recentlyHit)).isCanceled();

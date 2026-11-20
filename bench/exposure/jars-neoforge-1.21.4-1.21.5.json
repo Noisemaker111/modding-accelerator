@@ -1,0 +1,170 @@
+{
+ "loader": "neoforge",
+ "from": "1.21.4",
+ "to": "1.21.5",
+ "modsRead": 150,
+ "modsThatLink": 36,
+ "silentOnly": 0,
+ "top": [
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.disableBlend()V",
+   "mods": 43
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.enableDepthTest()V",
+   "mods": 40
+  },
+  {
+   "member": "class gone: net.minecraft.client.renderer.ShaderProgram",
+   "mods": 34
+  },
+  {
+   "member": "call: com.mojang.blaze3d.vertex.PoseStack.mulPose(Lorg/joml/Quaternionf;)V",
+   "mods": 33
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc()V",
+   "mods": 31
+  },
+  {
+   "member": "call: net.minecraft.nbt.CompoundTag.getCompound(Ljava/lang/String;)Lnet/minecraft/nbt/CompoundTag;",
+   "mods": 27
+  },
+  {
+   "member": "call: net.minecraft.nbt.CompoundTag.getList(Ljava/lang/String;I)Lnet/minecraft/nbt/ListTag;",
+   "mods": 27
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.setShader(Lnet/minecraft/client/renderer/ShaderProgram;)Lnet/minecraft/client/renderer/CompiledShaderProgram;",
+   "mods": 26
+  },
+  {
+   "member": "call: com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(Lcom/mojang/blaze3d/vertex/MeshData;)V",
+   "mods": 26
+  },
+  {
+   "member": "call: net.minecraft.nbt.CompoundTag.getString(Ljava/lang/String;)Ljava/lang/String;",
+   "mods": 26
+  },
+  {
+   "member": "call: net.minecraft.nbt.CompoundTag.getInt(Ljava/lang/String;)I",
+   "mods": 23
+  },
+  {
+   "member": "call: net.minecraft.nbt.CompoundTag.getBoolean(Ljava/lang/String;)Z",
+   "mods": 21
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(ILnet/minecraft/resources/ResourceLocation;)V",
+   "mods": 20
+  },
+  {
+   "member": "class gone: com.mojang.blaze3d.platform.GlStateManager$DestFactor",
+   "mods": 20
+  },
+  {
+   "member": "class gone: com.mojang.blaze3d.platform.GlStateManager$SourceFactor",
+   "mods": 20
+  },
+  {
+   "member": "call: net.minecraft.nbt.CompoundTag.contains(Ljava/lang/String;I)Z",
+   "mods": 19
+  },
+  {
+   "member": "call: net.minecraft.network.chat.ClickEvent.<init>(Lnet/minecraft/network/chat/ClickEvent$Action;Ljava/lang/String;)V",
+   "mods": 19
+  },
+  {
+   "member": "class gone: net.minecraft.client.renderer.RenderStateShard$ShaderStateShard",
+   "mods": 17
+  },
+  {
+   "member": "call: net.minecraft.client.renderer.texture.DynamicTexture.<init>(Lcom/mojang/blaze3d/platform/NativeImage;)V",
+   "mods": 16
+  },
+  {
+   "member": "class gone: net.minecraft.client.renderer.RenderStateShard$TransparencyStateShard",
+   "mods": 16
+  },
+  {
+   "member": "field: com.mojang.blaze3d.platform.GlStateManager$SourceFactor.SRC_ALPHA",
+   "mods": 16
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.blendFuncSeparate(Lcom/mojang/blaze3d/platform/GlStateManager$SourceFactor;Lcom/mojang/blaze3d/platform/GlStateManager$DestFactor;Lcom/mojang/blaze3d/platform/GlStateManager$SourceFactor;Lcom/mojang/blaze3d/platform/GlStateManager$DestFactor;)V",
+   "mods": 15
+  },
+  {
+   "member": "field: net.minecraft.client.renderer.CoreShaders.POSITION_TEX",
+   "mods": 15
+  },
+  {
+   "member": "call: net.minecraft.client.renderer.RenderType$CompositeState$CompositeStateBuilder.setShaderState(Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;)Lnet/minecraft/client/renderer/RenderType$CompositeState$CompositeStateBuilder;",
+   "mods": 14
+  },
+  {
+   "member": "call: net.minecraft.nbt.ListTag.getCompound(I)Lnet/minecraft/nbt/CompoundTag;",
+   "mods": 14
+  },
+  {
+   "member": "call: net.minecraft.network.chat.HoverEvent.<init>(Lnet/minecraft/network/chat/HoverEvent$Action;Ljava/lang/Object;)V",
+   "mods": 14
+  },
+  {
+   "member": "field: com.mojang.blaze3d.platform.GlStateManager$DestFactor.ONE_MINUS_SRC_ALPHA",
+   "mods": 14
+  },
+  {
+   "member": "field: com.mojang.blaze3d.platform.GlStateManager$SourceFactor.ONE",
+   "mods": 14
+  },
+  {
+   "member": "call: net.minecraft.client.renderer.RenderType$CompositeState$CompositeStateBuilder.setTransparencyState(Lnet/minecraft/client/renderer/RenderStateShard$TransparencyStateShard;)Lnet/minecraft/client/renderer/RenderType$CompositeState$CompositeStateBuilder;",
+   "mods": 13
+  },
+  {
+   "member": "class gone: net.minecraft.client.renderer.RenderStateShard$DepthTestStateShard",
+   "mods": 13
+  },
+  {
+   "member": "field: net.minecraft.client.renderer.CoreShaders.POSITION_COLOR",
+   "mods": 13
+  },
+  {
+   "member": "call: com.mojang.blaze3d.pipeline.RenderTarget.getColorTextureId()I",
+   "mods": 11
+  },
+  {
+   "member": "call: com.mojang.blaze3d.vertex.PoseStack.mulPose(Lorg/joml/Matrix4f;)V",
+   "mods": 11
+  },
+  {
+   "member": "class gone: net.minecraft.client.renderer.RenderStateShard$WriteMaskStateShard",
+   "mods": 11
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.blendFunc(Lcom/mojang/blaze3d/platform/GlStateManager$SourceFactor;Lcom/mojang/blaze3d/platform/GlStateManager$DestFactor;)V",
+   "mods": 10
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.clear(I)V",
+   "mods": 10
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.depthFunc(I)V",
+   "mods": 10
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.disableCull()V",
+   "mods": 10
+  },
+  {
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(II)V",
+   "mods": 10
+  },
+  {
+   "member": "call: net.minecraft.nbt.Tag.getAsString()Ljava/lang/String;",
+   "mods": 10
+  }
+ ]
+}

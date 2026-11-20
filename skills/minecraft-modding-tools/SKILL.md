@@ -1,5 +1,5 @@
 ---
-name: modding-accelerator
+name: minecraft-modding-tools
 description: Fast checks for Minecraft Fabric, NeoForge and Forge mods. Use when changing mod code: run logic, screen-pixel, block-behaviour, server or multiplayer checks in seconds instead of launching a client and clicking, and use port -Check/-Log/-Fix when moving a mod to a new Minecraft version. Includes measured timings and the rules for trusting a result.
 ---
 

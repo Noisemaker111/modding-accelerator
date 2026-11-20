@@ -675,6 +675,33 @@
    ]
   },
   {
+   "id": "loader.real-mods-clear",
+   "area": "loader",
+   "name": "Most-downloaded NeoForge mods for 1.21.1 that use nothing the NeoForge-on-Fabric bridge lacks",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 (python bench/exposure.py fetch) and counts the ones whose every NeoForge class and member, and every method NeoForge adds to a game class, is in the bridge or rewritten by a rule. No mod is built; it takes about two minutes. It predicts that a mod compiles after converting, not that it behaves the same.",
+   "points": [
+    {"date": "2026-11-18", "value": 68, "n": 150, "note": "442 classes and members hold the other 82; the next 20 on the list would make it 94", "source": "python bench/convert_coverage.py real --loader neoforge --version 1.21.1"}
+   ],
+   "target": {"value": 100, "by": "2026-12-05", "step": "48"}
+  },
+  {
+   "id": "loader.convert-corpus",
+   "area": "loader",
+   "name": "Corpus mods that convert, compile and load in the game",
+   "unit": "mods",
+   "better": "higher",
+   "target": {"value": 17, "by": "2026-12-05", "step": "48"},
+   "points": [
+    {"date": "2026-11-14", "value": 1, "note": "first full sweep, 12 not refused", "source": "coverage/sweeps/convert.json history baseline"},
+    {"date": "2026-11-15", "value": 5, "note": "28 not refused", "source": "coverage/sweeps/convert.json history round-2"},
+    {"date": "2026-11-16", "value": 10, "note": "bridge methods generated from NeoForge's jars", "source": "coverage/sweeps/convert.json history after"},
+    {"date": "2026-11-17", "value": 14, "note": "NeoForge's own LGPL classes copied with failing members left out; curios is new", "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44178034767"},
+    {"date": "2026-11-18", "value": 15, "n": 28, "note": "a Fabric mod's own test mod is set aside instead of converted; satin is new", "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44403521118"}
+   ]
+  },
+  {
    "id": "loader.rules",
    "area": "loader",
    "name": "Loader-change rules, each with every class and member it names found in the loaders' published jars",
@@ -802,6 +829,1147 @@
     {"date": "2026-11-14", "value": 24.2, "n": 6, "note": "with bench/diorama/tint-carry-over.patch and dirty-only-gpu-spots.patch, mean of 6 paired launches", "source": "coverage/perf-runs.json#2026-11-15T06-25-41.604795900Z-ad5239e8"}
    ],
    "info": true
+  },
+  {
+   "id": "port.real-mods-clear",
+   "area": "port",
+   "name": "Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "Retired with python bench/exposure.py run on 2026-11-19 (step 44): it read what mods use without porting them and could not see mixins, field types or access transformers. The jar scoreboard counts this now: port.jar-links for 1.21.1 to 1.21.2, port.jar-links.every-update for every update. python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and counts the ones that use no game class, method or field the porter cannot carry to 1.21.2 (unchanged, renamed, moved, rewritten from the game's own code, or named by a rule). No mod is built; it takes about half a minute.",
+   "points": [
+    {"date": "2026-11-18", "value": 58, "n": 150, "note": "637 changed game parts hold the other 92; 313 of them are used by one mod each", "source": "python bench/exposure.py run --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/neoforge-1.21.1-1.21.2.json)"}
+   ],
+   "target": {"value": 100, "by": "2026-12-22", "step": "46"}
+  },
+  {
+   "id": "port.jar-links",
+   "area": "port",
+   "name": "Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "of": 150,
+   "explain": "python bench/exposure.py jars ports the jars of the 150 most-downloaded NeoForge mods for 1.21.1 with mmt port --jar's tools/JarPort.java and counts the ones in which every reference to the game (calls, fields with their types, method references, overrides, mixin shadows and targets, access transformers, nested mods too) links against 1.21.2. About a minute and a half; no build. It is stricter than port.real-mods-clear, which cannot see mixins, field types or access transformers.",
+   "points": [
+    {"date": "2026-11-18", "value": 32, "n": 150, "note": "1 of them keeps an override 1.21.2 no longer calls; the old scoreboard clears 58", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-18", "value": 30, "n": 150, "note": "after review fixes: access, changed signatures, removed interfaces, new abstract methods and mixin accessors now checked", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-18", "value": 31, "n": 150, "note": "the game's own replacements applied in classes (calls switched, added arguments filled, chains, narrower fields): 5,640 broken uses down to 5,234; blit's default learned from the new game's own calls", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-18", "value": 41, "n": 150, "note": "port rules carry inClass replacements JarPort compiles into the class (57 on 33 rules); broken uses 5,234 -> 4,147", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-19", "value": 43, "n": 150, "note": "porter fixes that need nothing learned (step 47b): mixin @Inject moved to a target's new signature, override bridges, access transformers opened or cleaned; broken references 5,191 -> 4,556; on 1.21.4 -> 1.21.5 33 -> 36", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json), PR #120"},
+    {"date": "2026-11-19", "value": 45, "n": 150, "note": "GameDiff's Learner on top of #120: the game's own replacement for any expression, applied like a rule's inClass; frees Controlling and TerraBlender; broken references 4,556 -> 4,425", "source": "python bench/exposure.py jars --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/jars-neoforge-1.21.1-1.21.2.json), PR #121"}
+   ],
+   "target": {"value": 50, "by": "2026-12-08", "step": "47"}
+  },
+  {
+   "id": "port.jar-links.every-update",
+   "area": "port",
+   "name": "Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py all (or tools/cloud-run exposure, about 7 minutes) ports the 150 most-downloaded mods of each release (pinned in bench/exposure/mods/) to the next release with mmt port --jar's tools/JarPort.java and links every reference to the game, for each of the 43 Fabric updates from 1.14.4 and the 18 NeoForge updates from 1.20.5. Fabric jars are read in Mojang's names through intermediary first (tools/ModNames.java). Counts the mod ports that link, out of every one read; byUpdate holds each update's count. NeoForge 1.20.2 to 1.20.5 is not read yet (SRG names).",
+   "info": true,
+   "points": [
+    {
+     "date": "2026-11-19",
+     "value": 5018,
+     "n": 9149,
+     "note": "54.8% over 61 updates, before #120; Fabric 3734/6449, NeoForge 1284/2700; NeoForge 1.21.1 -> 1.21.2 is 41 as in port.jar-links",
+     "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44464554330 (bench/exposure/all.json)",
+     "byUpdate": {
+      "fabric 1.14.4 -> 1.15": [
+       75,
+       150
+      ],
+      "fabric 1.15 -> 1.15.1": [
+       143,
+       150
+      ],
+      "fabric 1.15.1 -> 1.15.2": [
+       141,
+       150
+      ],
+      "fabric 1.15.2 -> 1.16": [
+       59,
+       150
+      ],
+      "fabric 1.16 -> 1.16.1": [
+       139,
+       150
+      ],
+      "fabric 1.16.1 -> 1.16.2": [
+       119,
+       150
+      ],
+      "fabric 1.16.2 -> 1.16.3": [
+       137,
+       150
+      ],
+      "fabric 1.16.3 -> 1.16.4": [
+       136,
+       150
+      ],
+      "fabric 1.16.4 -> 1.16.5": [
+       137,
+       150
+      ],
+      "fabric 1.16.5 -> 1.17": [
+       36,
+       150
+      ],
+      "fabric 1.17 -> 1.17.1": [
+       130,
+       150
+      ],
+      "fabric 1.17.1 -> 1.18": [
+       99,
+       150
+      ],
+      "fabric 1.18 -> 1.18.1": [
+       128,
+       150
+      ],
+      "fabric 1.18.1 -> 1.18.2": [
+       101,
+       150
+      ],
+      "fabric 1.18.2 -> 1.19": [
+       32,
+       150
+      ],
+      "fabric 1.19 -> 1.19.1": [
+       102,
+       150
+      ],
+      "fabric 1.19.1 -> 1.19.2": [
+       116,
+       149
+      ],
+      "fabric 1.19.2 -> 1.19.3": [
+       29,
+       150
+      ],
+      "fabric 1.19.3 -> 1.19.4": [
+       55,
+       150
+      ],
+      "fabric 1.19.4 -> 1.20": [
+       36,
+       150
+      ],
+      "fabric 1.20 -> 1.20.1": [
+       125,
+       150
+      ],
+      "fabric 1.20.1 -> 1.20.2": [
+       47,
+       150
+      ],
+      "fabric 1.20.2 -> 1.20.3": [
+       80,
+       150
+      ],
+      "fabric 1.20.3 -> 1.20.4": [
+       132,
+       150
+      ],
+      "fabric 1.20.4 -> 1.20.5": [
+       32,
+       150
+      ],
+      "fabric 1.20.5 -> 1.20.6": [
+       131,
+       150
+      ],
+      "fabric 1.20.6 -> 1.21": [
+       27,
+       150
+      ],
+      "fabric 1.21 -> 1.21.1": [
+       124,
+       150
+      ],
+      "fabric 1.21.1 -> 1.21.2": [
+       38,
+       150
+      ],
+      "fabric 1.21.2 -> 1.21.3": [
+       125,
+       150
+      ],
+      "fabric 1.21.3 -> 1.21.4": [
+       77,
+       150
+      ],
+      "fabric 1.21.4 -> 1.21.5": [
+       33,
+       150
+      ],
+      "fabric 1.21.5 -> 1.21.6": [
+       40,
+       150
+      ],
+      "fabric 1.21.6 -> 1.21.7": [
+       130,
+       150
+      ],
+      "fabric 1.21.7 -> 1.21.8": [
+       129,
+       150
+      ],
+      "fabric 1.21.8 -> 1.21.9": [
+       32,
+       150
+      ],
+      "fabric 1.21.9 -> 1.21.10": [
+       130,
+       150
+      ],
+      "fabric 1.21.10 -> 1.21.11": [
+       38,
+       150
+      ],
+      "fabric 1.21.11 -> 26.1": [
+       41,
+       150
+      ],
+      "fabric 26.1 -> 26.1.1": [
+       94,
+       150
+      ],
+      "fabric 26.1.1 -> 26.1.2": [
+       97,
+       150
+      ],
+      "fabric 26.1.2 -> 26.2": [
+       38,
+       150
+      ],
+      "fabric 26.2 -> 26.3": [
+       44,
+       150
+      ],
+      "neoforge 1.20.5 -> 1.20.6": [
+       117,
+       150
+      ],
+      "neoforge 1.20.6 -> 1.21": [
+       38,
+       150
+      ],
+      "neoforge 1.21 -> 1.21.1": [
+       104,
+       150
+      ],
+      "neoforge 1.21.1 -> 1.21.2": [
+       41,
+       150
+      ],
+      "neoforge 1.21.2 -> 1.21.3": [
+       120,
+       150
+      ],
+      "neoforge 1.21.3 -> 1.21.4": [
+       65,
+       150
+      ],
+      "neoforge 1.21.4 -> 1.21.5": [
+       33,
+       150
+      ],
+      "neoforge 1.21.5 -> 1.21.6": [
+       44,
+       150
+      ],
+      "neoforge 1.21.6 -> 1.21.7": [
+       97,
+       150
+      ],
+      "neoforge 1.21.7 -> 1.21.8": [
+       106,
+       150
+      ],
+      "neoforge 1.21.8 -> 1.21.9": [
+       34,
+       150
+      ],
+      "neoforge 1.21.9 -> 1.21.10": [
+       112,
+       150
+      ],
+      "neoforge 1.21.10 -> 1.21.11": [
+       40,
+       150
+      ],
+      "neoforge 1.21.11 -> 26.1": [
+       45,
+       150
+      ],
+      "neoforge 26.1 -> 26.1.1": [
+       107,
+       150
+      ],
+      "neoforge 26.1.1 -> 26.1.2": [
+       105,
+       150
+      ],
+      "neoforge 26.1.2 -> 26.2": [
+       32,
+       150
+      ],
+      "neoforge 26.2 -> 26.3": [
+       44,
+       150
+      ]
+     }
+    },
+    {
+     "date": "2026-11-19",
+     "value": 5258,
+     "n": 9149,
+     "note": "57.5% after #120 (mixins, overrides and access transformers kept working): Fabric 3790/6449, NeoForge 1468/2700; NeoForge 1.21.1 -> 1.21.2 is 43 and 1.21.4 -> 1.21.5 is 36, as #120 measured them one at a time",
+     "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44537242009 (bench/exposure/all.json)",
+     "byUpdate": {
+      "fabric 1.14.4 -> 1.15": [
+       77,
+       150
+      ],
+      "fabric 1.15 -> 1.15.1": [
+       143,
+       150
+      ],
+      "fabric 1.15.1 -> 1.15.2": [
+       142,
+       150
+      ],
+      "fabric 1.15.2 -> 1.16": [
+       60,
+       150
+      ],
+      "fabric 1.16 -> 1.16.1": [
+       140,
+       150
+      ],
+      "fabric 1.16.1 -> 1.16.2": [
+       120,
+       150
+      ],
+      "fabric 1.16.2 -> 1.16.3": [
+       137,
+       150
+      ],
+      "fabric 1.16.3 -> 1.16.4": [
+       136,
+       150
+      ],
+      "fabric 1.16.4 -> 1.16.5": [
+       137,
+       150
+      ],
+      "fabric 1.16.5 -> 1.17": [
+       36,
+       150
+      ],
+      "fabric 1.17 -> 1.17.1": [
+       133,
+       150
+      ],
+      "fabric 1.17.1 -> 1.18": [
+       99,
+       150
+      ],
+      "fabric 1.18 -> 1.18.1": [
+       128,
+       150
+      ],
+      "fabric 1.18.1 -> 1.18.2": [
+       101,
+       150
+      ],
+      "fabric 1.18.2 -> 1.19": [
+       33,
+       150
+      ],
+      "fabric 1.19 -> 1.19.1": [
+       102,
+       150
+      ],
+      "fabric 1.19.1 -> 1.19.2": [
+       116,
+       149
+      ],
+      "fabric 1.19.2 -> 1.19.3": [
+       29,
+       150
+      ],
+      "fabric 1.19.3 -> 1.19.4": [
+       55,
+       150
+      ],
+      "fabric 1.19.4 -> 1.20": [
+       37,
+       150
+      ],
+      "fabric 1.20 -> 1.20.1": [
+       127,
+       150
+      ],
+      "fabric 1.20.1 -> 1.20.2": [
+       48,
+       150
+      ],
+      "fabric 1.20.2 -> 1.20.3": [
+       81,
+       150
+      ],
+      "fabric 1.20.3 -> 1.20.4": [
+       134,
+       150
+      ],
+      "fabric 1.20.4 -> 1.20.5": [
+       35,
+       150
+      ],
+      "fabric 1.20.5 -> 1.20.6": [
+       134,
+       150
+      ],
+      "fabric 1.20.6 -> 1.21": [
+       29,
+       150
+      ],
+      "fabric 1.21 -> 1.21.1": [
+       127,
+       150
+      ],
+      "fabric 1.21.1 -> 1.21.2": [
+       40,
+       150
+      ],
+      "fabric 1.21.2 -> 1.21.3": [
+       132,
+       150
+      ],
+      "fabric 1.21.3 -> 1.21.4": [
+       81,
+       150
+      ],
+      "fabric 1.21.4 -> 1.21.5": [
+       33,
+       150
+      ],
+      "fabric 1.21.5 -> 1.21.6": [
+       40,
+       150
+      ],
+      "fabric 1.21.6 -> 1.21.7": [
+       130,
+       150
+      ],
+      "fabric 1.21.7 -> 1.21.8": [
+       130,
+       150
+      ],
+      "fabric 1.21.8 -> 1.21.9": [
+       35,
+       150
+      ],
+      "fabric 1.21.9 -> 1.21.10": [
+       132,
+       150
+      ],
+      "fabric 1.21.10 -> 1.21.11": [
+       39,
+       150
+      ],
+      "fabric 1.21.11 -> 26.1": [
+       43,
+       150
+      ],
+      "fabric 26.1 -> 26.1.1": [
+       97,
+       150
+      ],
+      "fabric 26.1.1 -> 26.1.2": [
+       100,
+       150
+      ],
+      "fabric 26.1.2 -> 26.2": [
+       38,
+       150
+      ],
+      "fabric 26.2 -> 26.3": [
+       44,
+       150
+      ],
+      "neoforge 1.20.5 -> 1.20.6": [
+       124,
+       150
+      ],
+      "neoforge 1.20.6 -> 1.21": [
+       53,
+       150
+      ],
+      "neoforge 1.21 -> 1.21.1": [
+       118,
+       150
+      ],
+      "neoforge 1.21.1 -> 1.21.2": [
+       43,
+       150
+      ],
+      "neoforge 1.21.2 -> 1.21.3": [
+       134,
+       150
+      ],
+      "neoforge 1.21.3 -> 1.21.4": [
+       79,
+       150
+      ],
+      "neoforge 1.21.4 -> 1.21.5": [
+       36,
+       150
+      ],
+      "neoforge 1.21.5 -> 1.21.6": [
+       48,
+       150
+      ],
+      "neoforge 1.21.6 -> 1.21.7": [
+       112,
+       150
+      ],
+      "neoforge 1.21.7 -> 1.21.8": [
+       131,
+       150
+      ],
+      "neoforge 1.21.8 -> 1.21.9": [
+       41,
+       150
+      ],
+      "neoforge 1.21.9 -> 1.21.10": [
+       132,
+       150
+      ],
+      "neoforge 1.21.10 -> 1.21.11": [
+       44,
+       150
+      ],
+      "neoforge 1.21.11 -> 26.1": [
+       50,
+       150
+      ],
+      "neoforge 26.1 -> 26.1.1": [
+       123,
+       150
+      ],
+      "neoforge 26.1.1 -> 26.1.2": [
+       121,
+       150
+      ],
+      "neoforge 26.1.2 -> 26.2": [
+       33,
+       150
+      ],
+      "neoforge 26.2 -> 26.3": [
+       46,
+       150
+      ]
+     }
+    },
+    {"date": "2026-11-19", "value": 5302, "n": 9149, "note": "GameDiff's Learner: the game's own replacement for any expression, every update; fabric 3,820, neoforge 1,482; no update lower, up to +6 on one", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44540189228 (bench/exposure/all.json), PR #121"},
+    {
+     "date": "2026-11-19",
+     "value": 5302,
+     "n": 9149,
+     "note": "58.0% on main after #121; 5,285 of them also name no game id in their data the new release dropped (17 do)",
+     "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44596651341 (bench/exposure/all.json)",
+     "byUpdate": {
+      "fabric 1.14.4 -> 1.15": [
+       83,
+       150
+      ],
+      "fabric 1.15 -> 1.15.1": [
+       144,
+       150
+      ],
+      "fabric 1.15.1 -> 1.15.2": [
+       142,
+       150
+      ],
+      "fabric 1.15.2 -> 1.16": [
+       61,
+       150
+      ],
+      "fabric 1.16 -> 1.16.1": [
+       140,
+       150
+      ],
+      "fabric 1.16.1 -> 1.16.2": [
+       120,
+       150
+      ],
+      "fabric 1.16.2 -> 1.16.3": [
+       137,
+       150
+      ],
+      "fabric 1.16.3 -> 1.16.4": [
+       136,
+       150
+      ],
+      "fabric 1.16.4 -> 1.16.5": [
+       137,
+       150
+      ],
+      "fabric 1.16.5 -> 1.17": [
+       38,
+       150
+      ],
+      "fabric 1.17 -> 1.17.1": [
+       133,
+       150
+      ],
+      "fabric 1.17.1 -> 1.18": [
+       99,
+       150
+      ],
+      "fabric 1.18 -> 1.18.1": [
+       128,
+       150
+      ],
+      "fabric 1.18.1 -> 1.18.2": [
+       101,
+       150
+      ],
+      "fabric 1.18.2 -> 1.19": [
+       34,
+       150
+      ],
+      "fabric 1.19 -> 1.19.1": [
+       103,
+       150
+      ],
+      "fabric 1.19.1 -> 1.19.2": [
+       116,
+       149
+      ],
+      "fabric 1.19.2 -> 1.19.3": [
+       30,
+       150
+      ],
+      "fabric 1.19.3 -> 1.19.4": [
+       55,
+       150
+      ],
+      "fabric 1.19.4 -> 1.20": [
+       41,
+       150
+      ],
+      "fabric 1.20 -> 1.20.1": [
+       127,
+       150
+      ],
+      "fabric 1.20.1 -> 1.20.2": [
+       50,
+       150
+      ],
+      "fabric 1.20.2 -> 1.20.3": [
+       82,
+       150
+      ],
+      "fabric 1.20.3 -> 1.20.4": [
+       134,
+       150
+      ],
+      "fabric 1.20.4 -> 1.20.5": [
+       35,
+       150
+      ],
+      "fabric 1.20.5 -> 1.20.6": [
+       134,
+       150
+      ],
+      "fabric 1.20.6 -> 1.21": [
+       30,
+       150
+      ],
+      "fabric 1.21 -> 1.21.1": [
+       127,
+       150
+      ],
+      "fabric 1.21.1 -> 1.21.2": [
+       42,
+       150
+      ],
+      "fabric 1.21.2 -> 1.21.3": [
+       132,
+       150
+      ],
+      "fabric 1.21.3 -> 1.21.4": [
+       81,
+       150
+      ],
+      "fabric 1.21.4 -> 1.21.5": [
+       34,
+       150
+      ],
+      "fabric 1.21.5 -> 1.21.6": [
+       41,
+       150
+      ],
+      "fabric 1.21.6 -> 1.21.7": [
+       130,
+       150
+      ],
+      "fabric 1.21.7 -> 1.21.8": [
+       130,
+       150
+      ],
+      "fabric 1.21.8 -> 1.21.9": [
+       35,
+       150
+      ],
+      "fabric 1.21.9 -> 1.21.10": [
+       132,
+       150
+      ],
+      "fabric 1.21.10 -> 1.21.11": [
+       40,
+       150
+      ],
+      "fabric 1.21.11 -> 26.1": [
+       43,
+       150
+      ],
+      "fabric 26.1 -> 26.1.1": [
+       97,
+       150
+      ],
+      "fabric 26.1.1 -> 26.1.2": [
+       100,
+       150
+      ],
+      "fabric 26.1.2 -> 26.2": [
+       41,
+       150
+      ],
+      "fabric 26.2 -> 26.3": [
+       45,
+       150
+      ],
+      "neoforge 1.20.5 -> 1.20.6": [
+       126,
+       150
+      ],
+      "neoforge 1.20.6 -> 1.21": [
+       54,
+       150
+      ],
+      "neoforge 1.21 -> 1.21.1": [
+       118,
+       150
+      ],
+      "neoforge 1.21.1 -> 1.21.2": [
+       45,
+       150
+      ],
+      "neoforge 1.21.2 -> 1.21.3": [
+       134,
+       150
+      ],
+      "neoforge 1.21.3 -> 1.21.4": [
+       79,
+       150
+      ],
+      "neoforge 1.21.4 -> 1.21.5": [
+       36,
+       150
+      ],
+      "neoforge 1.21.5 -> 1.21.6": [
+       48,
+       150
+      ],
+      "neoforge 1.21.6 -> 1.21.7": [
+       112,
+       150
+      ],
+      "neoforge 1.21.7 -> 1.21.8": [
+       131,
+       150
+      ],
+      "neoforge 1.21.8 -> 1.21.9": [
+       41,
+       150
+      ],
+      "neoforge 1.21.9 -> 1.21.10": [
+       132,
+       150
+      ],
+      "neoforge 1.21.10 -> 1.21.11": [
+       45,
+       150
+      ],
+      "neoforge 1.21.11 -> 26.1": [
+       50,
+       150
+      ],
+      "neoforge 26.1 -> 26.1.1": [
+       123,
+       150
+      ],
+      "neoforge 26.1.1 -> 26.1.2": [
+       121,
+       150
+      ],
+      "neoforge 26.1.2 -> 26.2": [
+       39,
+       150
+      ],
+      "neoforge 26.2 -> 26.3": [
+       48,
+       150
+      ]
+     }
+    },
+    {
+     "date": "2026-11-19",
+     "value": 5743,
+     "n": 9149,
+     "note": "step 52: Fabric jars handed back, extendable constructors, generic methods and Fabric rules; main's own full run gave 5,302 (Fabric 3,820, NeoForge 1,482), no update lower",
+     "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44593766127 (bench/exposure/all.json), PR #124",
+     "byUpdate": {
+      "fabric 1.14.4 -> 1.15": [
+       83,
+       150
+      ],
+      "fabric 1.15 -> 1.15.1": [
+       146,
+       150
+      ],
+      "fabric 1.15.1 -> 1.15.2": [
+       144,
+       150
+      ],
+      "fabric 1.15.2 -> 1.16": [
+       61,
+       150
+      ],
+      "fabric 1.16 -> 1.16.1": [
+       145,
+       150
+      ],
+      "fabric 1.16.1 -> 1.16.2": [
+       123,
+       150
+      ],
+      "fabric 1.16.2 -> 1.16.3": [
+       145,
+       150
+      ],
+      "fabric 1.16.3 -> 1.16.4": [
+       145,
+       150
+      ],
+      "fabric 1.16.4 -> 1.16.5": [
+       145,
+       150
+      ],
+      "fabric 1.16.5 -> 1.17": [
+       43,
+       150
+      ],
+      "fabric 1.17 -> 1.17.1": [
+       144,
+       150
+      ],
+      "fabric 1.17.1 -> 1.18": [
+       107,
+       150
+      ],
+      "fabric 1.18 -> 1.18.1": [
+       139,
+       150
+      ],
+      "fabric 1.18.1 -> 1.18.2": [
+       108,
+       150
+      ],
+      "fabric 1.18.2 -> 1.19": [
+       34,
+       150
+      ],
+      "fabric 1.19 -> 1.19.1": [
+       126,
+       150
+      ],
+      "fabric 1.19.1 -> 1.19.2": [
+       144,
+       149
+      ],
+      "fabric 1.19.2 -> 1.19.3": [
+       30,
+       150
+      ],
+      "fabric 1.19.3 -> 1.19.4": [
+       56,
+       150
+      ],
+      "fabric 1.19.4 -> 1.20": [
+       45,
+       150
+      ],
+      "fabric 1.20 -> 1.20.1": [
+       144,
+       150
+      ],
+      "fabric 1.20.1 -> 1.20.2": [
+       51,
+       150
+      ],
+      "fabric 1.20.2 -> 1.20.3": [
+       84,
+       150
+      ],
+      "fabric 1.20.3 -> 1.20.4": [
+       146,
+       150
+      ],
+      "fabric 1.20.4 -> 1.20.5": [
+       35,
+       150
+      ],
+      "fabric 1.20.5 -> 1.20.6": [
+       147,
+       150
+      ],
+      "fabric 1.20.6 -> 1.21": [
+       43,
+       150
+      ],
+      "fabric 1.21 -> 1.21.1": [
+       143,
+       150
+      ],
+      "fabric 1.21.1 -> 1.21.2": [
+       42,
+       150
+      ],
+      "fabric 1.21.2 -> 1.21.3": [
+       141,
+       150
+      ],
+      "fabric 1.21.3 -> 1.21.4": [
+       83,
+       150
+      ],
+      "fabric 1.21.4 -> 1.21.5": [
+       34,
+       150
+      ],
+      "fabric 1.21.5 -> 1.21.6": [
+       42,
+       150
+      ],
+      "fabric 1.21.6 -> 1.21.7": [
+       142,
+       150
+      ],
+      "fabric 1.21.7 -> 1.21.8": [
+       144,
+       150
+      ],
+      "fabric 1.21.8 -> 1.21.9": [
+       36,
+       150
+      ],
+      "fabric 1.21.9 -> 1.21.10": [
+       142,
+       150
+      ],
+      "fabric 1.21.10 -> 1.21.11": [
+       40,
+       150
+      ],
+      "fabric 1.21.11 -> 26.1": [
+       46,
+       150
+      ],
+      "fabric 26.1 -> 26.1.1": [
+       146,
+       150
+      ],
+      "fabric 26.1.1 -> 26.1.2": [
+       146,
+       150
+      ],
+      "fabric 26.1.2 -> 26.2": [
+       44,
+       150
+      ],
+      "fabric 26.2 -> 26.3": [
+       52,
+       150
+      ],
+      "neoforge 1.20.5 -> 1.20.6": [
+       137,
+       150
+      ],
+      "neoforge 1.20.6 -> 1.21": [
+       54,
+       150
+      ],
+      "neoforge 1.21 -> 1.21.1": [
+       133,
+       150
+      ],
+      "neoforge 1.21.1 -> 1.21.2": [
+       45,
+       150
+      ],
+      "neoforge 1.21.2 -> 1.21.3": [
+       137,
+       150
+      ],
+      "neoforge 1.21.3 -> 1.21.4": [
+       79,
+       150
+      ],
+      "neoforge 1.21.4 -> 1.21.5": [
+       36,
+       150
+      ],
+      "neoforge 1.21.5 -> 1.21.6": [
+       48,
+       150
+      ],
+      "neoforge 1.21.6 -> 1.21.7": [
+       118,
+       150
+      ],
+      "neoforge 1.21.7 -> 1.21.8": [
+       140,
+       150
+      ],
+      "neoforge 1.21.8 -> 1.21.9": [
+       41,
+       150
+      ],
+      "neoforge 1.21.9 -> 1.21.10": [
+       136,
+       150
+      ],
+      "neoforge 1.21.10 -> 1.21.11": [
+       45,
+       150
+      ],
+      "neoforge 1.21.11 -> 26.1": [
+       50,
+       150
+      ],
+      "neoforge 26.1 -> 26.1.1": [
+       137,
+       150
+      ],
+      "neoforge 26.1.1 -> 26.1.2": [
+       132,
+       150
+      ],
+      "neoforge 26.1.2 -> 26.2": [
+       40,
+       150
+      ],
+      "neoforge 26.2 -> 26.3": [
+       49,
+       150
+      ]
+     }
+    },
+    {"date": "2026-11-19", "value": 5731, "n": 9149, "note": "main at 77b7438 measured again on the same runners: the 5,743 recorded with #124 came from its branch before rebasing and does not reproduce (Fabric 26.1.2 -> 26.2 gives 37, not 44)", "source": "tools/cloud-run exposure --ref main https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44606173217"},
+    {"date": "2026-11-19", "value": 5775, "n": 9149, "note": "members the game closed, moved or made generic learned from the game's own code (closed constructors behind factories, moved fields, accessors, generic results); +44 on main measured the same way, no update lower; +12 NeoForge and +9 Fabric on 1.20.6 -> 1.21", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44603073553 (bench/exposure/all.json), PR #126"},
+    {"date": "2026-11-20", "value": 5826, "n": 9423, "note": "64 updates (21 NeoForge: 1.20.2 to 1.20.4 read through NeoForm's SRG names); mods linked against their loader too (NeoForge with FML and its event bus, Fabric Loader and Fabric API); mods whose game code is in a jar their own loader unpacks (Essential, Crash Assistant, CustomSkinLoader) counted as not read. On the 61 updates main measured: 5,775 -> 5,586", "source": "tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44656866160 (bench/exposure/all.json), PR #127"}
+   ],
+   "history": []
+  },
+  {
+   "id": "port.jar-loads",
+   "area": "port",
+   "name": "Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py load: the 35 standalone mods exposure.py run cleared (retired 2026-11-19; port.jar-loads.linked carries on from the jar scoreboard's list) are ported with mmt port --jar and started together on a real NeoForge 1.21.2 server (mmt pack-check: a new world, every block item placed, the world opened again); a failed start drops the mod its log names. Counts the ones that load, out of the ones chosen.",
+   "points": [
+    {"date": "2026-11-18", "value": 28, "n": 35, "note": "6 failed on game code 1.21.2 changed, all 6 flagged by the link check; 1 client-only; 13 link and all 13 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-18", "value": 29, "n": 35, "note": "Jade now loads: calls whose parameters changed are no longer given a descriptor their stack does not fit; 12 link and all 12 load", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-18", "value": 30, "n": 35, "note": "19 link and all 19 load; mru loads once its event subscriber is put on the mod bus", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json)"},
+    {"date": "2026-11-19", "value": 30, "n": 35, "note": "21 link, 20 load, 1 client-only, none fails; on 1.21.5 25 of 29 load, 19 link, 18 load, 1 client-only, none fails", "source": "python bench/exposure.py load (bench/exposure/load-neoforge-1.21.1-1.21.2.json, load-neoforge-1.21.4-1.21.5.json), PR #120"},
+    {"date": "2026-11-19", "value": 34, "n": 39, "note": "the 35 run clears plus every standalone mod that links (Dungeons and Taverns left out: its data does not parse on 1.21.2) and Controlling with Searchables; 26 link, 24 load, 1 client-only; TerraBlender links but fails on a biome data file 1.21.2 cannot parse, the same error as before it linked", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 (bench/exposure/load-neoforge-1.21.1-1.21.2.json), PR #121"}
+   ],
+   "target": {"value": 33, "by": "2026-12-08", "step": "47"}
+  },
+  {
+   "id": "port.jar-loads.linked",
+   "area": "port",
+   "name": "Standalone mods the jar scoreboard says link whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py load: the mods python bench/exposure.py jars says link that need no other mod are ported with mmt port --jar and started together on a real NeoForge 1.21.2 server (mmt pack-check: a new world, every block item placed, the world opened again); a failed start drops the mod its log names. Counts the ones that load, out of the ones chosen. A mod with no game code links trivially, so one that fails on its data is reported apart (failedDataOnly).",
+   "info": true,
+   "points": [
+    {"date": "2026-11-19", "value": 23, "n": 25, "note": "after #120: 25 standalone mods link; 23 load, cubes-without-borders is client-only, and Dungeons and Taverns, which has no code, fails on its data (an enchantment effect 1.21.2 removed); none fails on code", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 --save load-linked-neoforge-1.21.1-1.21.2 (bench/exposure/load-linked-neoforge-1.21.1-1.21.2.json)"}
+   ],
+   "history": []
+  },
+  {
+   "id": "port.jar-loads.client",
+   "area": "port",
+   "name": "Ported mods that load in a real game client, NeoForge 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py load, after its server starts: the mods that loaded on the 1.21.2 server, and the ones it left out as client-only, start together in NeoForge's own 1.21.2 client (mmt pack-check --side client: installed by NeoForge's installer, hidden and muted, the title screen, a flat world, the inventory and every creative tab). A failed start drops the mod its log names. Counts the ones that load, out of the ones started.",
+   "info": true,
+   "points": [
+    {"date": "2026-11-19", "value": 23, "n": 24, "note": "Puzzle loads on the server and links but fails in the client: its splash-screen injection points at RenderSystem.blendFunc inside LoadingOverlay.render, which 1.21.2 no longer calls there; cubes-without-borders, client-only on the server, loads", "source": "python bench/exposure.py load --loader neoforge --from 1.21.1 --to 1.21.2 --save load-linked-neoforge-1.21.1-1.21.2 (bench/exposure/load-linked-neoforge-1.21.1-1.21.2.json)"}
+   ],
+   "history": []
+  },
+  {
+   "id": "port.game-learned",
+   "area": "port",
+   "name": "Game members with no counterpart in the next release that the game's own code gives a replacement, all 43 updates",
+   "unit": "items",
+   "better": "higher",
+   "of": 49503,
+   "explain": "python bench/exposure.py steps links every release from 1.14.4 to 26.3 to the next from the game's own bytecode and counts the classes, methods and fields with no counterpart (49,503), and how many of them the porter has a replacement for, read from how the game ported its own uses of them: a call switched, a chain, a class replaced, or any expression the game's new code computes from the old operands (GameDiff's Learner). Each member counts once. About four minutes; no mods.",
+   "points": [
+    {"date": "2026-11-18", "value": 1413, "n": 49503, "note": "call rewrites, chains and class replacements only", "source": "python bench/exposure.py steps (bench/exposure/steps.json)"},
+    {"date": "2026-11-19", "value": 2462, "n": 49503, "note": "the learner: what the game's new code computes in place of the member, written over its operands and applied like a rule's inClass; uses it cannot read count against it", "source": "python bench/exposure.py steps (bench/exposure/steps.json), PR #121"}
+   ],
+   "target": {"value": 2462, "by": "2026-11-26", "step": "54"}
+  },
+  {
+   "id": "port.corpus-builds",
+   "area": "port",
+   "name": "Corpus ports that build with no hand edits",
+   "unit": "updates",
+   "better": "higher",
+   "explain": "bench/sweep.py run over the whole corpus (bench/sweep/corpus.json, every mod and target version): ports whose port builds with no edit by hand, out of the ports run. Measured on the cloud runners for a PR's result; locally between.",
+   "points": [
+    {"date": "2026-11-16", "value": 10, "n": 126, "source": "https://github.com/Noisemaker111/modding-accelerator/actions/runs/43813284276 (cloud sweep, PR #97 before 2026-11-17)"},
+    {"date": "2026-11-17", "value": 15, "n": 125, "note": "before the step-back; 33 ports crashed on a dependency bug fixed in bb1d85c", "source": "local sweep tag full1, .runs/sweep/runs/full1 (commit 102e396)"},
+    {"date": "2026-11-18", "value": 16, "n": 126, "note": "33 ports that crashed on the NeoForge dependency bug re-run after its fix", "source": "local sweeps full1 + full2 (.runs/sweep/runs), commit 102e396 + bb1d85c"},
+    {"date": "2026-11-18", "value": 16, "n": 126, "note": "15 load in the game, 6 pass their behaviour check", "source": "https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44352252266 (cloud sweep, PR #97 final)"}
+   ],
+   "target": {"value": 60, "by": "2026-12-22", "step": "44"}
+  },
+  {
+   "id": "port.fabric-jar-loads",
+   "area": "port",
+   "name": "Linked standalone Fabric mods whose ported jar loads on a real server, 1.21.1 to 1.21.2",
+   "unit": "mods",
+   "better": "higher",
+   "explain": "python bench/exposure.py load --loader fabric: the standalone mods the jar scoreboard says link are ported with mmt port --jar, handed back in the target release's intermediary, and started together on a real Fabric server with Fabric API (mmt pack-check). Counts the ones that load, of those a server runs (client-only mods are left out by the server).",
+   "points": [
+    {"date": "2026-11-19", "value": 8, "n": 8, "note": "8 more are client-only; on 1.20.6 -> 1.21 10 of 10 load (11 client-only); none fails", "source": "python bench/exposure.py load --loader fabric --from 1.21.1 --to 1.21.2 (bench/exposure/load-fabric-1.21.1-1.21.2.json, load-fabric-1.20.6-1.21.json)"}
+   ],
+   "target": {"value": 8, "by": "2026-11-26", "step": "52"}
   }
  ]
 }

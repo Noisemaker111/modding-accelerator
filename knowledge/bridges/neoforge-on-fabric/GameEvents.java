@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -21,6 +22,8 @@ final class GameEvents {
         IEntityExtension.register(); // bridge: when IEntityExtension
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> Bus.INSTANCE.post(new PlayerEvent.PlayerLoggedInEvent(handler.player)));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> Bus.INSTANCE.post(new PlayerEvent.PlayerLoggedOutEvent(handler.player)));
+        EntityTrackingEvents.START_TRACKING.register((entity, player) -> Bus.INSTANCE.post(new PlayerEvent.StartTracking(player, entity)));
+        EntityTrackingEvents.STOP_TRACKING.register((entity, player) -> Bus.INSTANCE.post(new PlayerEvent.StopTracking(player, entity)));
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> Bus.INSTANCE.post(new PlayerEvent.PlayerRespawnEvent(newPlayer, alive)));
         ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> IEntityExtension.copyPersisted(oldPlayer, newPlayer)); // bridge: when IEntityExtension
         ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> Bus.INSTANCE.post(new PlayerEvent.Clone(newPlayer, oldPlayer, !alive)));

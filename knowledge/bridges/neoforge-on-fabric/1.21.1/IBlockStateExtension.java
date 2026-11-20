@@ -6,7 +6,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.projectile.WitherSkull;
+import net.minecraft.core.Direction;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FarmBlock;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -32,5 +37,20 @@ public final class IBlockStateExtension {
             return state.isAir() || WitherBoss.canDestroy(state);
         }
         return true;
+    }
+
+    /** Whether the soil decides a plant may grow on it: NeoForge's default leaves it to the plant (DEFAULT). */
+    public static TriState canSustainPlant(BlockState state, BlockGetter level, BlockPos soilPosition, Direction facing, BlockState plant) {
+        return TriState.DEFAULT;
+    }
+
+    /** Whether the soil makes crops on it grow faster: NeoForge's default, moist farmland. */
+    public static boolean isFertile(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.is(Blocks.FARMLAND) && state.getValue(FarmBlock.MOISTURE) > 0;
+    }
+
+    /** Whether a fluid near the block keeps it moist: NeoForge's default, water. */
+    public static boolean canBeHydrated(BlockState state, BlockGetter getter, BlockPos pos, FluidState fluid, BlockPos fluidPos) {
+        return fluid.is(FluidTags.WATER);
     }
 }

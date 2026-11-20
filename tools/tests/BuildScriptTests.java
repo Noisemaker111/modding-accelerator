@@ -42,6 +42,56 @@ public final class BuildScriptTests {
             "a Loom build rewritten for the unobfuscated game: " + unobfuscated
         );
         check(Target.unobfuscatedLoom("plugins { id 'java' }\nmappings x\n", 25).equals("plugins { id 'java' }\nmappings x\n"), "a build without Loom is left alone");
+        // Architectury Loom on the unobfuscated game: its no-remap plugin, no layered Yarn mappings, plain configurations.
+        String architectury = Target.unobfuscatedLoom(
+            "plugins {\n    id \"dev.architectury.loom\" version \"1.10-SNAPSHOT\" apply false\n}\nsubprojects {\n    apply plugin: \"dev.architectury.loom\"\n" +
+            "    dependencies {\n        minecraft \"com.mojang:minecraft:1\"\n        mappings loom.layered {\n            it.mappings(\"net.fabricmc:yarn:1:v2\")\n        }\n" +
+            "        modImplementation \"x:y:1\"\n    }\n}\n", 25);
+        check(
+            architectury.equals(
+                "plugins {\n    id \"dev.architectury.loom-no-remap\" version \"1.10-SNAPSHOT\" apply false\n}\nsubprojects {\n    apply plugin: \"dev.architectury.loom-no-remap\"\n" +
+                "    dependencies {\n        minecraft \"com.mojang:minecraft:1\"\n        implementation \"x:y:1\"\n    }\n}\n"
+            ),
+            "an Architectury Loom build rewritten for the unobfuscated game: " + architectury
+        );
+        // A script applied by a Loom script (Waystones' fabric/dependencies.gradle) names no plugin but drops remapping too.
+        check(
+            Target.plainConfigurations("dependencies {\n    modImplementation(\"net.blay09.mods:balm-fabric:1\") { changing = true }\n    modCompileOnly x\n    myModImplementationHelper()\n}\n")
+                .equals("dependencies {\n    implementation(\"net.blay09.mods:balm-fabric:1\") { changing = true }\n    compileOnly x\n    myModImplementationHelper()\n}\n"),
+            "an applied script's remapping configurations become plain ones, other names untouched"
+        );
+        // A settings filter that passes only net.fabricmc (TorchMaster) must pass Loom's subgroups: its 26.x plugin marker
+        // (net.fabricmc.fabric-loom) and libraries (net.fabricmc.unpick).
+        check(
+            Target.fabricSubgroups("filter {\n    includeGroup('net.fabricmc')\n    includeGroup('fabric-loom')\n    includeGroup(\"net.fabricmc.unpick\")\n}\n")
+                .equals("filter {\n    includeGroupAndSubgroups('net.fabricmc')\n    includeGroup('fabric-loom')\n    includeGroup(\"net.fabricmc.unpick\")\n}\n"),
+            "includeGroup('net.fabricmc') widened to its subgroups, other groups untouched"
+        );
+        check(Target.removedDsl("def main = jar.archivePath\ndef n = jar.archiveName\ninto jar.destinationDir\njar.archivePathname = 1\n", true, false)
+            .equals("def main = jar.archiveFile.get().asFile\ndef n = jar.archiveFileName.get()\ninto jar.destinationDirectory.get().asFile\njar.archivePathname = 1\n"), "Gradle 8's removed archive properties -> their Provider forms");
+        check(Target.removedDsl("def main = jar.archivePath\n", false, false).equals("def main = jar.archivePath\n"), "archivePath stays on Gradle 7");
+        check(Target.removedDsl("configurations {\n    archivesBaseName = rootProject.name\n}\n", true, true).equals("configurations {\n    project.base.archivesName = rootProject.name\n}\n"),
+            "archivesBaseName set inside a block names the project's base extension");
+        check(Target.remapTasks("remapJar {\n    inputFile.set shadowJar.archiveFile\n    archiveClassifier = null\n}\n").equals("jar {\n    archiveClassifier = null\n}\n"),
+            "remapJar's input goes with it: " + Target.remapTasks("remapJar {\n    inputFile.set shadowJar.archiveFile\n    archiveClassifier = null\n}\n"));
+        check(Target.remapTasks("def main = name == 'Fabric' ? remapJar.archivePath : jar.archivePath\ntasks.remapSourcesJar { }\nmyRemapJarTask()\n")
+            .equals("def main = name == 'Fabric' ? jar.archivePath : jar.archivePath\ntasks.sourcesJar { }\nmyRemapJarTask()\n"), "a convention script's remap tasks become the plain ones");
+        check(Target.withoutAdditionalRuntimeClasspath("additionalRuntimeClasspath(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n").equals("runtimeOnly(shade('lucene'))\nmyAdditionalRuntimeClasspath2 x\n"), "NeoForge's removed additional classpath -> runtimeOnly");
+        // Loom 1.12+ in a multi-project build: the subproject drops its version and the root declares Loom with apply false.
+        check(Target.withoutLoomVersion("plugins {\n    id 'fabric-loom' version '1.10-SNAPSHOT'\n}\n").equals("plugins {\n    id 'fabric-loom'\n}\n"), "subproject Loom loses its version");
+        check(
+            "plugins {\n    id 'fabric-loom' version '1.19.4' apply false\n    id 'idea'\n}\n".equals(Target.rootLoom("plugins {\n    id 'idea'\n}\n", "fabric-loom", "1.19.4", "'", false)),
+            "root plugins block gains Loom with apply false"
+        );
+        check("plugins {\n    id(\"net.fabricmc.fabric-loom\") version \"1.19.4\" apply false\n}\n\nversion = 1\n".equals(Target.rootLoom("version = 1\n", "net.fabricmc.fabric-loom", "1.19.4", "'", true)), "a Kotlin root with no plugins block gets one");
+        check(Target.rootLoom("buildscript { }\napply plugin: 'java'\n", "fabric-loom", "1.19.4", "'", false) == null, "a buildscript-only root is not rewritten");
+        // NeoForm numbers 26.x releases (26.3-1) where 1.21.x used timestamps; snapshots of a later game are not releases.
+        String neoForm = "<version>1.21.1-20240808.144430</version><version>1.21.1-20240801.000000</version><version>26.3-snapshot-1-1</version>"
+            + "<version>26.2-1</version><version>26.2-10</version><version>26.2-2</version><version>26.3-1</version><version>26.4-snapshot-8-1</version>";
+        check("26.2-10".equals(Target.neoFormRelease(neoForm, "26.2")), "NeoForm's newest numbered release: " + Target.neoFormRelease(neoForm, "26.2"));
+        check("26.3-1".equals(Target.neoFormRelease(neoForm, "26.3")), "a snapshot is not a 26.3 release");
+        check("1.21.1-20240808.144430".equals(Target.neoFormRelease(neoForm, "1.21.1")), "a timestamped release still resolves");
+        check(Target.neoFormRelease(neoForm, "26.4") == null, "no release for a game NeoForm only has snapshots of");
         // A decompiler-only plugin no repository publishes any more is removed with its block; restorePending puts it back.
         {
             Path dead = Files.createDirectories(scratch.resolve("dead-plugin"));
@@ -135,6 +185,16 @@ public final class BuildScriptTests {
             "Forge leaves a longer include list"
         );
         check(Target.withoutForgeInclude("include 'Forge', 'Fabric'\n").equals("include 'Fabric'\n"), "Forge first in the list");
+        check(
+            Target.withoutForgeInclude("rootProject.name = 'ncr'\ninclude('forge')\nproject(\":forge\").name = \"Forge\"").equals("rootProject.name = 'ncr'\n"),
+            "the line naming the Forge project goes with its include"
+        );
+        // A lost annotation library comes back compileOnly, once, in the script's own dialect.
+        String groovy = "plugins { id 'java' }\ndependencies {\n    implementation 'a:b:1'\n}\n";
+        String restored = Port.withCompileOnly(groovy, List.of("com.google.code.findbugs:jsr305:3.0.2"), false);
+        check(restored.contains("    compileOnly \"com.google.code.findbugs:jsr305:3.0.2\"\n    implementation"), "jsr305 added to dependencies");
+        check(Port.withCompileOnly(restored, List.of("com.google.code.findbugs:jsr305:3.0.2"), false).equals(restored), "not added twice");
+        check(Port.withCompileOnly("dependencies {\n}\n", List.of("org.jspecify:jspecify:1.0.0"), true).contains("compileOnly(\"org.jspecify:jspecify:1.0.0\")"), "Kotlin form");
         // A rename that changes what the member returns (getMaxBuildHeight -> getMaxY is one lower) leaves the map; the rest stays.
         {
             Path meaningMap = scratch.resolve("meaning-map.json");

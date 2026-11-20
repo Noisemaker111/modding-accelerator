@@ -1,0 +1,285 @@
+{
+ "loader": "fabric",
+ "from": "1.21.1",
+ "to": "1.21.2",
+ "modsRead": 150,
+ "modsThatLink": 42,
+ "modsThatLinkAndData": 41,
+ "dataTop": [
+  {
+   "member": "data id gone: minecraft:attribute minecraft:generic.movement_speed",
+   "mods": 1
+  },
+  {
+   "member": "data id gone: minecraft:enchantment_entity_effect_type minecraft:damage_item",
+   "mods": 1
+  }
+ ],
+ "silentOnly": 0,
+ "brokenUses": 2554,
+ "unreadable": {},
+ "top": [
+  {
+   "mods": 15,
+   "member": "class gone: net.minecraft.client.renderer.block.model.ItemOverrides",
+   "game": "redesigned",
+   "gameDetail": "2 uses, 0 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 15,
+   "member": "mixin target changed signature: net.minecraft.client.renderer.LevelRenderer.renderLevel(Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/GameRenderer;Lnet/minecraft/client/renderer/LightTexture;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 13,
+   "member": "call: net.minecraft.world.item.crafting.Ingredient.getItems()[Lnet/minecraft/world/item/ItemStack;",
+   "game": "redesigned",
+   "gameDetail": "5 uses, 1 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 12,
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.setProjectionMatrix(Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/vertex/VertexSorting;)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 12,
+   "member": "call: net.minecraft.world.level.Level.<init>(Lnet/minecraft/world/level/storage/WritableLevelData;Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/core/RegistryAccess;Lnet/minecraft/core/Holder;Ljava/util/function/Supplier;ZZJI)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 12,
+   "member": "call: net.minecraft.world.level.block.entity.BlockEntityType$Builder.of(Lnet/minecraft/world/level/block/entity/BlockEntityType$BlockEntitySupplier;[Lnet/minecraft/world/level/block/Block;)Lnet/minecraft/world/level/block/entity/BlockEntityType$Builder;",
+   "game": "redesigned",
+   "gameDetail": "44 uses, 44 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 11,
+   "member": "call: net.minecraft.client.renderer.RenderStateShard$TextureStateShard.<init>(Lnet/minecraft/resources/ResourceLocation;ZZ)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 10,
+   "member": "abstract method not written: net.minecraft.client.renderer.entity.layers.RenderLayer.render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/renderer/entity/state/EntityRenderState;FF)V"
+  },
+  {
+   "mods": 10,
+   "member": "call: net.minecraft.client.renderer.RenderStateShard$ShaderStateShard.<init>(Ljava/util/function/Supplier;)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 10,
+   "member": "call: net.minecraft.client.renderer.ShaderInstance.<init>(Lnet/minecraft/server/packs/resources/ResourceProvider;Ljava/lang/String;Lcom/mojang/blaze3d/vertex/VertexFormat;)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 10,
+   "member": "call: net.minecraft.world.entity.EntityType$Builder.build(Ljava/lang/String;)Lnet/minecraft/world/entity/EntityType;",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 10,
+   "member": "mixin target changed signature: net.minecraft.client.renderer.FogRenderer.setupFog(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/FogRenderer$FogMode;FZF)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 10,
+   "member": "mixin target gone: net.minecraft.client.renderer.LevelRenderer.renderSnowAndRain(Lnet/minecraft/client/renderer/LightTexture;FDDD)V",
+   "game": "redesigned",
+   "gameDetail": "2 uses, 2 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 9,
+   "member": "abstract method not written: net.minecraft.client.gui.components.toasts.Toast.getWantedVisibility()Lnet/minecraft/client/gui/components/toasts/Toast$Visibility;"
+  },
+  {
+   "mods": 9,
+   "member": "abstract method not written: net.minecraft.client.gui.components.toasts.Toast.render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;J)V"
+  },
+  {
+   "mods": 9,
+   "member": "abstract method not written: net.minecraft.client.gui.components.toasts.Toast.update(Lnet/minecraft/client/gui/components/toasts/ToastManager;J)V"
+  },
+  {
+   "mods": 9,
+   "member": "abstract method not written: net.minecraft.client.renderer.entity.EntityRenderer.createRenderState()Lnet/minecraft/client/renderer/entity/state/EntityRenderState;"
+  },
+  {
+   "mods": 9,
+   "member": "call: net.minecraft.client.renderer.entity.LivingEntityRenderer.getShadowRadius(Lnet/minecraft/world/entity/LivingEntity;)F",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 9,
+   "member": "call: net.minecraft.client.resources.model.BakedModel.getOverrides()Lnet/minecraft/client/renderer/block/model/ItemOverrides;",
+   "game": "redesigned",
+   "gameDetail": "3 uses, 2 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 9,
+   "member": "call: net.minecraft.world.item.Item.getCraftingRemainingItem()Lnet/minecraft/world/item/Item;",
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (5 uses)",
+   "portable": false
+  },
+  {
+   "mods": 9,
+   "member": "call: net.minecraft.world.level.block.entity.BlockEntityType$Builder.build(Lcom/mojang/datafixers/types/Type;)Lnet/minecraft/world/level/block/entity/BlockEntityType;",
+   "game": "split",
+   "gameDetail": "c net.minecraft.world.level.block.entity.BlockEntityType ; m java.util.Set.of([Ljava.lang.Object;)Ljava.util.Set; ; m net.minecraft.world.level.block.entity.BlockEntityType.<init>(Lnet.minecraft.world.level.block.entity.BlockEntityType$BlockEntitySupplier;Ljava.util.Set;)V at 1 of 1 rewritten uses (1 uses)",
+   "portable": false
+  },
+  {
+   "mods": 9,
+   "member": "mixin target changed signature: net.minecraft.world.entity.LivingEntity.hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z",
+   "game": "split",
+   "gameDetail": "m net.minecraft.world.entity.LivingEntity.hurtServer(Lnet.minecraft.server.level.ServerLevel;Lnet.minecraft.world.damagesource.DamageSource;F)Z at 2 of 4 rewritten uses (63 uses)",
+   "portable": false
+  },
+  {
+   "mods": 9,
+   "member": "mixin target class gone: net.minecraft.tags.TagManager",
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (1 uses)",
+   "portable": false
+  },
+  {
+   "mods": 9,
+   "member": "mixin target gone: net.minecraft.client.renderer.GameRenderer.reloadShaders(Lnet/minecraft/server/packs/resources/ResourceProvider;)V",
+   "game": "unused",
+   "gameDetail": "the game never uses it",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.setShaderFogStart(F)V",
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (2 uses)",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "call: net.minecraft.client.renderer.block.model.BakedQuad.<init>([IILnet/minecraft/core/Direction;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;Z)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "call: net.minecraft.world.InteractionResultHolder.<init>(Lnet/minecraft/world/InteractionResult;Ljava/lang/Object;)V",
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (5 uses)",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "call: net.minecraft.world.level.biome.Biome.getPrecipitationAt(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/biome/Biome$Precipitation;",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "class gone: net.minecraft.tags.TagManager",
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (1 uses)",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "class gone: net.minecraft.world.entity.vehicle.Boat$Type",
+   "game": "redesigned",
+   "gameDetail": "13 uses, 0 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "mixin target changed signature: net.minecraft.client.renderer.entity.LivingEntityRenderer.render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 8,
+   "member": "mixin target gone: net.minecraft.server.ReloadableServerResources.updateRegistryTags()V",
+   "game": "unused",
+   "gameDetail": "the game never uses it",
+   "portable": false
+  },
+  {
+   "mods": 7,
+   "member": "abstract method not written: net.minecraft.client.resources.model.UnbakedModel.resolveDependencies(Lnet/minecraft/client/resources/model/UnbakedModel$Resolver;)V"
+  },
+  {
+   "mods": 7,
+   "member": "call: net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen.<init>(Lnet/minecraft/world/inventory/AbstractContainerMenu;Lnet/minecraft/world/entity/player/Inventory;Lnet/minecraft/network/chat/Component;)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 7,
+   "member": "call: net.minecraft.client.multiplayer.ClientLevel.getRecipeManager()Lnet/minecraft/world/item/crafting/RecipeManager;",
+   "game": "unused",
+   "gameDetail": "the game never uses it",
+   "portable": false
+  },
+  {
+   "mods": 7,
+   "member": "call: net.minecraft.client.renderer.ItemBlockRenderTypes.getRenderType(Lnet/minecraft/world/level/block/state/BlockState;Z)Lnet/minecraft/client/renderer/RenderType;",
+   "game": "split",
+   "gameDetail": "m net.minecraft.client.renderer.ItemBlockRenderTypes.getRenderType(Lnet.minecraft.world.level.block.state.BlockState;)Lnet.minecraft.client.renderer.RenderType; at 1 of 1 rewritten uses (2 uses)",
+   "portable": false
+  },
+  {
+   "mods": 7,
+   "member": "call: net.minecraft.client.renderer.Sheets.translucentCullBlockSheet()Lnet/minecraft/client/renderer/RenderType;",
+   "game": "redesigned",
+   "gameDetail": "4 uses, 1 in methods b kept, none line up",
+   "portable": false
+  },
+  {
+   "mods": 7,
+   "member": "call: net.minecraft.client.renderer.entity.EntityRenderer.render(Lnet/minecraft/world/entity/Entity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false
+  },
+  {
+   "mods": 7,
+   "member": "call: net.minecraft.client.resources.model.UnbakedModel.resolveParents(Ljava/util/function/Function;)V",
+   "game": "unused",
+   "gameDetail": "the game never uses it",
+   "portable": false
+  },
+  {
+   "mods": 7,
+   "member": "call: net.minecraft.server.ReloadableServerRegistries$Holder.get()Lnet/minecraft/core/RegistryAccess$Frozen;",
+   "game": "unused",
+   "gameDetail": "the game never uses it",
+   "portable": false
+  }
+ ]
+}

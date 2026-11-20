@@ -28,7 +28,7 @@ PYTHON = ["bench/test_measures.py", "bench/test_record.py", "bench/test_ledger_r
           "bench/test_loader_api.py", "bench/test_sweeps.py", "bench/test_session_cost.py", "bench/test_perf_sessions.py",
           "bench/test_performance.py", "bench/test_perf_verdicts.py", "bench/test_cloud_run.py", "bench/test_budgets.py",
           "bench/diorama/test_budget.py", "bench/diorama/test_prepare_comparison.py", "bench/diorama/test_prepare_world.py",
-          "bench/test_scoreboard.py"]
+          "bench/test_scoreboard.py", "bench/test_convert_coverage.py", "bench/test_exposure.py"]
 
 
 def java(*args):
@@ -52,6 +52,20 @@ def port_preflight():
     yield java("-cp", str(out), "LegacyMapTest")
 
 
+def jar_port():
+    out = ROOT / ".runs" / "jarport-tests"
+    asm = SEP.join(["tools/perf/lib/asm-9.9.jar", "tools/perf/lib/asm-commons-9.9.jar"])
+    yield ["javac", "--release", "25", "-encoding", "UTF-8", "-cp", asm, "-d", str(out), "tools/JarPort.java", "tools/FixExpr.java", "tools/Exposure.java",
+           "tools/GameDiff.java", "tools/VersionMap.java", "tools/ModNames.java", "tools/cli/Json.java", "tools/tests/JarPortTest.java", "tools/tests/JarPortRulesTest.java",
+           "tools/tests/JarPortFixesTest.java", "tools/tests/JarPortFabricTest.java", "tools/tests/ModNamesTest.java", "tools/tests/GameLearnTest.java",
+           "tools/tests/GameMeaningTest.java", "tools/tests/JarPortLoaderTest.java"]
+    yield java("-cp", str(out) + SEP + asm, "JarPortTest", str(out / "scratch"))
+    yield java("-cp", str(out) + SEP + asm, "ModNamesTest")
+    yield java("-cp", str(out) + SEP + asm, "GameLearnTest", str(out / "scratch"))
+    yield java("-cp", str(out) + SEP + asm, "GameMeaningTest", str(out / "scratch"))
+    yield java("-cp", str(out) + SEP + asm, "JarPortLoaderTest", str(out / "scratch"))
+
+
 def legacy_agent():
     """Windows: the legacy launch agent in JAVA_TOOL_OPTIONS keeps system properties strings, and Gradle still runs."""
     prepared = subprocess.run(java("-jar", JAR, "legacy-agent", "--root", FIXTURE, "--json"), cwd=ROOT,
@@ -70,8 +84,10 @@ CHECKS = {
     "checkout-data": (True, None, checkout_data),
     "fingerprint": (True, None, [[sys.executable, "bench/test_fingerprint.py", JAR]]),
     "port-preflight": (False, None, port_preflight),
+    "jar-port": (False, None, jar_port),
     "zip": (True, None, [java("tools/tests/PackageAcceptanceTest.java", ZIP, ZIP + ".sha256", tempfile.gettempdir())]),
     "fast": (True, None, [java("-jar", JAR, "fast", "--root", FIXTURE, "--json")]),
+    "port-plan": (True, None, [java("tools/tests/PortPlanCacheTest.java", FIXTURE, JAR)]),
     "hidden-window": (True, None, [java("tools/tests/BackgroundWindowsTest.java", FIXTURE, JAR)]),
     "fastlane-isolation": (True, None, [java("tools/tests/FastLaneIsolationTest.java", ".", JAR)]),
     "runtime-natives": (True, ("posix",), [java("tools/tests/RuntimeNativesTest.java", ".", JAR)]),
