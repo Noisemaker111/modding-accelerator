@@ -54,6 +54,7 @@ pub enum Purpose {
     PortPreview,
     PortApply,
     PortUndo,
+    PortJar,
     Convert,
     ConvertUndo,
     Pack(pack::PackAction),
@@ -246,6 +247,7 @@ impl App {
                 }
                 self.port.undone = Some(outcome);
             }
+            Purpose::PortJar => self.port.jar_result = Some(outcome),
             Purpose::Convert => {
                 self.port.convert_undone = None;
                 self.port.converted = Some(outcome);
@@ -306,11 +308,15 @@ fn view(s: &App, cx: &mut Cx<App>) -> El {
     shell::frame(s, cx, page)
 }
 
-/// Files dropped on the window: a folder is a project (or a pack on the modpack page), a .zip a pack.
+/// Files dropped on the window: a .jar ports it, a .zip/.mrpack opens Modpack, a folder opens the project (or pack on Modpack).
 pub fn dropped(s: &mut App, files: &[PathBuf]) {
     let Some(path) = files.first().cloned() else { return };
     let zip = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("zip") || e.eq_ignore_ascii_case("mrpack"));
-    if zip || s.screen == Screen::Pack {
+    let jar = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("jar"));
+    if jar {
+        port::chosen_jar(s, path);
+        s.screen = Screen::Port;
+    } else if zip || s.screen == Screen::Pack {
         pack::chosen(s, path);
         s.screen = Screen::Pack;
     } else if path.is_dir() {
@@ -319,7 +325,28 @@ pub fn dropped(s: &mut App, files: &[PathBuf]) {
     }
 }
 
+fn check_standalone() -> ! {
+    let launcher = match Launcher::find() {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("FAIL standalone launcher: {e}");
+            std::process::exit(1);
+        }
+    };
+    let out = launcher.run_sync(&["support", "--json"], &launcher.home);
+    let ok = out.ok() && out.json.as_ref().is_some_and(|j| j["result"]["testedExamples"].is_array());
+    if ok {
+        println!("PASS standalone launcher ({})", launcher.home.display());
+        std::process::exit(0);
+    }
+    eprintln!("FAIL standalone support check: {}", out.summary());
+    std::process::exit(1);
+}
+
 fn main() {
+    if std::env::args().any(|a| a == "--check-standalone") {
+        check_standalone();
+    }
     let spec = AppSpec {
         min_size: Some((860.0, 600.0)),
         scenes: scenes::SCENES,

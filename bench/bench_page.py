@@ -506,11 +506,11 @@ TEMPLATE = r"""<!doctype html>
 
 <section class="hero">
   <div class="hero-text">
-    <p class="eyebrow">Minecraft Modding Tools · beta {VERSION}</p>
-    <h1><span>Test a Minecraft mod in seconds.</span> <span>Port it to any version.</span></h1>
-    <p class="lede">One command for mod, plugin and modpack work. It runs your checks in the real game without you opening it, moves your source between Minecraft versions, and finds what breaks a modpack.</p>
-    <div class="cta"><a class="btn primary" href="https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest">Download the beta</a><a class="btn" href="https://github.com/Noisemaker111/minecraft-modding-tools#quick-start">Quick start</a></div>
-    <p class="small">Needs Java 17 or newer. Windows, Linux and macOS. Fabric, NeoForge, Forge and Paper.</p>
+    <p class="eyebrow">Minecraft Modding Tools · {VERSION}</p>
+    <h1><span>Port, test, and fix Minecraft mods.</span> <span>Proven in the real game.</span></h1>
+    <p class="lede">A desktop app and command line for mods, plugins, and modpacks. Drop a .jar or source folder to port versions, switch Fabric and NeoForge, fix broken modpacks, test in a hidden game, or profile what makes Minecraft slow.</p>
+    <div class="cta"><a class="btn primary" href="https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest/download/mmt-desktop.exe">Download for Windows (.exe)</a><a class="btn" href="https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest">Linux &amp; CLI files</a></div>
+    <p class="small">Single-file Windows app (downloads Java automatically if needed). Linux &amp; macOS via binary or CLI. Fabric, NeoForge, Forge, Quilt, and Paper.</p>
   </div>
   <pre class="term" aria-label="Example commands"><code>{TERMINAL}</code></pre>
 </section>
