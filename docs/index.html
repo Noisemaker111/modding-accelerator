@@ -374,11 +374,11 @@ header.top { position:sticky; top:0; z-index:5; background:color-mix(in srgb, va
 
 <section class="hero">
   <div class="hero-text">
-    <p class="eyebrow">Minecraft Modding Tools · beta dev</p>
-    <h1><span>Test a Minecraft mod in seconds.</span> <span>Port it to any version.</span></h1>
-    <p class="lede">One command for mod, plugin and modpack work. It runs your checks in the real game without you opening it, moves your source between Minecraft versions, and finds what breaks a modpack.</p>
-    <div class="cta"><a class="btn primary" href="https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest">Download the beta</a><a class="btn" href="https://github.com/Noisemaker111/minecraft-modding-tools#quick-start">Quick start</a></div>
-    <p class="small">Needs Java 17 or newer. Windows, Linux and macOS. Fabric, NeoForge, Forge and Paper.</p>
+    <p class="eyebrow">Minecraft Modding Tools · dev</p>
+    <h1><span>Port, test, and fix Minecraft mods.</span> <span>Proven in the real game.</span></h1>
+    <p class="lede">A desktop app and command line for mods, plugins, and modpacks. Drop a .jar or source folder to port versions, switch Fabric and NeoForge, fix broken modpacks, test in a hidden game, or profile what makes Minecraft slow.</p>
+    <div class="cta"><a class="btn primary" href="https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest/download/mmt-desktop.exe">Download for Windows (.exe)</a><a class="btn" href="https://github.com/Noisemaker111/minecraft-modding-tools/releases/latest">Linux &amp; CLI files</a></div>
+    <p class="small">Single-file Windows app (downloads Java automatically if needed). Linux &amp; macOS via binary or CLI. Fabric, NeoForge, Forge, Quilt, and Paper.</p>
   </div>
   <pre class="term" aria-label="Example commands"><code><span class="t-say"># logic tests in seconds, then the real game with no window</span><span class="t-run"><i aria-hidden="true">$ </i>mmt fast --root my-mod</span><span class="t-run"><i aria-hidden="true">$ </i>mmt ui-check --root my-mod</span><span class="t-say"># move to another Minecraft version; every edit can be undone</span><span class="t-run"><i aria-hidden="true">$ </i>mmt port --root my-mod --from 1.21.5 --to 1.21.6 --fix</span><span class="t-say"># find and repair what breaks a modpack</span><span class="t-run"><i aria-hidden="true">$ </i>mmt pack-check --pack my-pack.zip --fix</span><span class="t-say"># move a Fabric mod to NeoForge, then check it in the game</span><span class="t-run"><i aria-hidden="true">$ </i>mmt convert --root my-mod --to neoforge</span><span class="t-run"><i aria-hidden="true">$ </i>mmt ui-check --root my-mod</span><span class="t-say"># put every file back</span><span class="t-run"><i aria-hidden="true">$ </i>mmt convert --root my-mod --undo</span></code></pre>
 </section>
