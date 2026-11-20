@@ -33,12 +33,17 @@ final class JarPortRetypeTest {
         JarPortTest.snap(a, "g6/Title", 0, "g6/Screen", "render(" + POSE + "I)V", "key(III)Z", "chr(CI)Z", "drag(IIII)Z");
         JarPortTest.snap(b, "g6/Title", 0, "g6/Screen", "render(" + GFX + "I)V", "key(" + KEY + ")Z", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z");
         JarPortTest.snap(a, "g6/Loc", 0, null);
+        // g6.Part goes in 2.0 and the game's own Title2 extends Object instead, though the map follows Part's members to Graphics.
+        JarPortTest.snap(a, "g6/Part", 0, null, "own()V");
+        JarPortTest.snap(a, "g6/Title2", 0, "g6/Part");
+        JarPortTest.snap(b, "g6/Title2", 0, null);
         JarPortTest.snap(b, "g6/Loc", 0, null);
         JarPortTest.snap(a, "g6/ModelLoc", 0, "g6/Loc");
         JarPortTest.snap(b, "g6/ModelLoc", 0, null);
         Path map = scratch.resolve("route-retype.json");
         Files.writeString(map, """
-            {"signatures": [{"owner": "g6.Screen", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"},
+            {"classes": [{"from": "g6.Part", "to": "g6.Graphics"}],
+             "signatures": [{"owner": "g6.Screen", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"},
                             {"owner": "g6.Screen", "from": "back", "desc": "(Lg6/Pose;)V", "to": "back", "newDesc": "(Lg6/Graphics;)V"},
                             {"owner": "g6.Screen", "from": "key", "desc": "(III)Z", "to": "key", "newDesc": "(Lg6/Key;)Z"},
                             {"owner": "g6.Screen", "from": "hover", "desc": "(Lg6/Pose;)V", "to": "hover", "newDesc": "(Lg6/Graphics;)V"},
@@ -53,7 +58,7 @@ final class JarPortRetypeTest {
         port.newCode = new JarPort.GameCode(Map.of("g6/Title", title(false), "g6/Screen", screen(false))::get, null);
 
         List<Map<String, Object>> results = new ArrayList<>();
-        Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/MyScreen.class", myScreen(), "m6/MyChild.class", myChild(), "m6/Extra.class", extra())), "retype.jar", results));
+        Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/MyScreen.class", myScreen(), "m6/MyChild.class", myChild(), "m6/Extra.class", extra(), "m6/Lambda.class", lambda())), "retype.jar", results));
         List<String> unlinked = Json.array(results.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(unlinked.isEmpty(), "a screen whose render and key moved to the new parameter types links: " + unlinked);
         Map<String, String> members = JarPortTest.members(ported.get("m6/MyScreen.class"));
@@ -139,6 +144,7 @@ final class JarPortRetypeTest {
         classes.put("m6/MyScreen", ported.get("m6/MyScreen.class"));
         classes.put("m6/MyChild", ported.get("m6/MyChild.class"));
         classes.put("m6/Extra", ported.get("m6/Extra.class"));
+        classes.put("m6/Lambda", ported.get("m6/Lambda.class"));
         ClassLoader loader = new ClassLoader(null) {
             @Override
             protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -159,6 +165,39 @@ final class JarPortRetypeTest {
         } catch (ReflectiveOperationException | LinkageError failed) {
             trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
         }
+        String lambdaTrace;
+        try {
+            Class<?> screen = loader.loadClass("g6.Screen");
+            StringBuilder log = (StringBuilder) loader.loadClass("g2.Log").getField("out").get(null);
+            int before = log.length();
+            screen.getMethod("run", screen).invoke(null, loader.loadClass("m6.Lambda").getConstructor().newInstance());
+            lambdaTrace = log.substring(before);
+        } catch (ReflectiveOperationException | LinkageError failed) {
+            lambdaTrace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
+        }
+        JarPortTest.expect(lambdaTrace.startsWith("fill7;L;"),
+            "a lambda made in a moved render that captures the pose moves with it, and its Gui.fill(pose, x) gets the graphics: " + lambdaTrace);
+
+        // A mod class on the removed Part extends what the game's own subclasses of it extend now, not Graphics.
+        List<Map<String, Object>> partRuns = new ArrayList<>();
+        Map<String, byte[]> parts = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Plain.class", writer("m6/Plain", "g6/Part").toByteArray())), "plain.jar", partRuns));
+        List<String> plainUnlinked = Json.array(partRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        String plainSuper = new ClassReader(parts.get("m6/Plain.class")).getSuperName();
+        classes.put("m6/Plain", parts.get("m6/Plain.class"));
+        String made;
+        try {
+            made = loader.loadClass("m6.Plain").getConstructor().newInstance().getClass().getSuperclass().getName();
+        } catch (ReflectiveOperationException | LinkageError failed) {
+            made = "failed: " + failed;
+        }
+        JarPortTest.expect(plainUnlinked.isEmpty() && plainSuper.equals("java/lang/Object") && made.equals("java.lang.Object"),
+            "a class on a superclass the game removed extends what the game's own subclasses extend now, and runs: " + plainUnlinked + " " + plainSuper + " " + made);
+        List<Map<String, Object>> ownRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/Panel.class", panel())), "panel.jar", ownRuns);
+        List<String> panelUnlinked = Json.array(ownRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(panelUnlinked.equals(List.of("inherited from a removed superclass: g6.Part.own()V (in m6.Panel)")),
+            "an instance method it inherited from that superclass, which what it extends now lacks, is reported: " + panelUnlinked);
+
         JarPortTest.expect(trace.endsWith("push;a;true;dx5;basedrag;true;"),
             "a method its family shows nothing for gets the conversion the game uses for that type elsewhere (pose()), a char comes from "
                 + "the event's code point, and drag distances that moved behind the event are passed on: " + trace);
@@ -435,6 +474,48 @@ final class JarPortRetypeTest {
         value.visitEnd();
         target.visitEnd();
         JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onOld", "(" + CI + ")V", "/^(tick|method_1)$/", "INVOKE", "Lg6/Screen;old()V", null);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.Lambda, for the old release: render(pose, x) runs () -> Gui.fill(pose, x), then logs L. */
+    static byte[] lambda() {
+        ClassWriter w = writer("m6/Lambda", "g6/Screen");
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "render", "(" + POSE + "I)V", null, null);
+        m.visitCode();
+        m.visitVarInsn(Opcodes.ALOAD, 1);
+        m.visitVarInsn(Opcodes.ILOAD, 2);
+        Handle factory = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false);
+        m.visitInvokeDynamicInsn("run", "(" + POSE + "I)Ljava/lang/Runnable;", factory, Type.getType("()V"),
+            new Handle(Opcodes.H_INVOKESTATIC, "m6/Lambda", "lambda$render$0", "(" + POSE + "I)V", false), Type.getType("()V"));
+        m.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/lang/Runnable", "run", "()V", true);
+        JarPortTest.append(m, "L;");
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        MethodVisitor body = w.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, "lambda$render$0", "(" + POSE + "I)V", null, null);
+        body.visitCode();
+        body.visitVarInsn(Opcodes.ALOAD, 0);
+        body.visitVarInsn(Opcodes.ILOAD, 1);
+        body.visitMethodInsn(Opcodes.INVOKESTATIC, "g6/Gui", "fill", "(" + POSE + "I)V", false);
+        body.visitInsn(Opcodes.RETURN);
+        body.visitMaxs(0, 0);
+        body.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.Panel extends g6.Part, which 2.0 removes: use() calls own(), which it inherited. */
+    static byte[] panel() {
+        ClassWriter w = writer("m6/Panel", "g6/Part");
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "use", "()V", null, null);
+        m.visitCode();
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "m6/Panel", "own", "()V", false);
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }
