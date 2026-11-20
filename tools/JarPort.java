@@ -974,11 +974,13 @@ public final class JarPort {
         return mapDesc(d, inverse);
     }
 
+    static final Pattern CLASS_IN_DESC = Pattern.compile("L([^;<]+)([;<])");
+
     static String mapDesc(String d, Map<String, String> names) {
         if (d == null) {
             return null;
         }
-        Matcher m = Pattern.compile("L([^;<]+)([;<])").matcher(d);
+        Matcher m = CLASS_IN_DESC.matcher(d);
         StringBuilder sb = new StringBuilder();
         while (m.find()) {
             m.appendReplacement(sb, Matcher.quoteReplacement("L" + names.getOrDefault(m.group(1), m.group(1)) + m.group(2)));
@@ -3161,16 +3163,20 @@ public final class JarPort {
             return steps.isEmpty() ? String.valueOf(j) : j + " " + String.join(" ", steps);
         }
 
-        /** The old release's classes that declare name+desc and are owner or extend it. */
+        final Map<String, List<String>> overridersOf = new HashMap<>();
+
+        /** The old release's classes that declare name+desc and are owner or extend it. Asked again for every override of a mod, and the answer is every game class read once. */
         List<String> overriders(String owner, String name, String desc) {
-            List<String> out = new ArrayList<>();
-            for (GameDiff.Cls c : a.classes.values()) {
-                if (c.methods.containsKey(name + desc) && subtype(a, c.name, owner)) {
-                    out.add(c.name);
+            return overridersOf.computeIfAbsent(owner + "." + name + desc, k -> {
+                List<String> out = new ArrayList<>();
+                for (GameDiff.Cls c : a.classes.values()) {
+                    if (c.methods.containsKey(name + desc) && subtype(a, c.name, owner)) {
+                        out.add(c.name);
+                    }
                 }
-            }
-            Collections.sort(out);
-            return out;
+                Collections.sort(out);
+                return List.copyOf(out);
+            });
         }
 
         /** A game method's body as GameDiff reads it (Mojang names), or null. */
@@ -4707,7 +4713,7 @@ public final class JarPort {
         if (desc == null) {
             return;
         }
-        Matcher m = Pattern.compile("L([^;<]+)[;<]").matcher(desc);
+        Matcher m = CLASS_IN_DESC.matcher(desc);
         while (m.find()) {
             String t = m.group(1);
             if (a.classes.containsKey(t) && !b.classes.containsKey(cls(t)) && provided(t) == null) {

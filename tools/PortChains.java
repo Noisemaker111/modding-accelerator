@@ -42,6 +42,16 @@ final class PortChains {
         } catch (IllegalArgumentException unreadable) {
             return bytes;
         }
+        // A pair is two members named in this class; most classes name neither, and decoding every method to find that out was a tenth of a port.
+        Set<String> named = new HashSet<>();
+        for (var entry : cm.constantPool()) {
+            if (entry instanceof java.lang.classfile.constantpool.Utf8Entry text) {
+                named.add(text.stringValue());
+            }
+        }
+        if (specs.stream().noneMatch(s -> named.contains(s.xName()) && named.contains(s.yName()))) {
+            return bytes;
+        }
         String self = cm.thisClass().asInternalName();
         GameDiff.Origin origin = new GameDiff.Origin(bytes, Map.of(), null, new GameDiff.Names(null), new HashMap<>());
         Map<String, Map<Integer, Edit>> edits = new HashMap<>();

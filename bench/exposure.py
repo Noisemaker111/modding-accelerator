@@ -316,6 +316,45 @@ def jar_tools():
     return os.pathsep.join([str(out)] + [str(a) for a in ASM])
 
 
+# Each process that reads jars loads two releases of the game first and starts cold, so more piles stop paying:
+# 150 NeoForge mods took 144 s in one pile, 66 s in four and 75 s in nine.
+PILE = 36
+# Processors this run may use; all runs every update side by side and gives each its share.
+CORES = os.cpu_count() or 1
+
+
+def piles(jars):
+    """The jars dealt into piles that take about as long, one per processor: every next-biggest jar goes on the lightest pile."""
+    count = max(1, min(CORES, len(jars) // PILE))
+    dealt = [[0, []] for _ in range(count)]
+    for jar in sorted(jars, key=lambda j: (-j.stat().st_size, j.name)):
+        pile = min(dealt, key=lambda d: d[0])
+        pile[0] += jar.stat().st_size
+        pile[1].append(jar)
+    return [pile for _, pile in dealt]
+
+
+def side_by_side(command, jars, report):
+    """Runs a tool that reads jars one at a time (JarPort, ModNames) on every processor at once: a jar's result does not
+    depend on the jars beside it, and one process used one of this machine's processors (150 mods took 140 s on one of
+    24). Returns the reports' rows in the order the jars were given."""
+    dealt = piles(jars)
+    if len(dealt) > 1:
+        # The piles share the memory one process had.
+        command = [f"-Xmx{max(3, 10 // len(dealt))}g" if c.startswith("-Xmx") else c for c in command]
+    parts = [report.with_name(f"{report.stem}.{i}{report.suffix}") for i in range(len(dealt))]
+    running = [subprocess.Popen(command + ["--report", str(part)] + [str(j) for j in pile], stdout=subprocess.DEVNULL) for part, pile in zip(parts, dealt)]
+    codes = [process.wait() for process in running]
+    if any(codes):
+        raise SystemExit(f"{' '.join(command[:1] + [c for c in command if c in ('JarPort', 'ModNames')])} failed on a pile of jars (exit {max(codes, key=abs)}); its output is above")
+    rows = {}
+    for part in parts:
+        for row in json.loads(part.read_text(encoding="utf-8"))["mods"]:
+            rows[row["mod"]] = row
+        part.unlink()
+    return [rows[j.name] for j in jars if j.name in rows]
+
+
 def mojang_names(loader, version, jars):
     """The jars in Mojang's names: Fabric's before 26.1 read through intermediary by tools/ModNames.java (kept in
     ~/.mmt/exposure/mojang/ until ModNames or VersionMap changes), every other one as it is. A jar it cannot read is
@@ -330,10 +369,8 @@ def mojang_names(loader, version, jars):
         # ModNames writes each jar under a name of its own and moves it into place, so a run beside this one never reads half a jar.
         report = ROOT / ".runs" / "exposure" / f"names-{loader}-{version}-{os.getpid()}.json"
         report.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run([java(), "-Xmx4g", "-cp", jar_tools(), "ModNames", "--version", version, "--loader", loader, "--out", str(out), "--report", str(report)]
-                       + [str(j) for j in missing], check=True, stdout=subprocess.DEVNULL)
-        failed = {m["mod"]: m["error"] for m in json.loads(report.read_text(encoding="utf-8"))["mods"] if "error" in m}
-        report.unlink()
+        rows = side_by_side([java(), "-Xmx4g", "-cp", jar_tools(), "ModNames", "--version", version, "--loader", loader, "--out", str(out)], missing, report)
+        failed = {m["mod"]: m["error"] for m in rows if "error" in m}
     return [out / j.name for j in jars if (out / j.name).is_file()], failed
 
 
@@ -354,11 +391,16 @@ def jar_port(loader, frm, to, jars, out_dir, report, runtime=False):
     route = route_map(frm, to, loader, compile_tools())
     out_dir.mkdir(parents=True, exist_ok=True)
     args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
-            "--report", str(report), "--loader", loader] + (["--runtime-names"] if runtime else [])
-    done = subprocess.run(args + [str(j) for j in jars], stdout=subprocess.DEVNULL)
-    if done.returncode:
-        raise SystemExit(f"JarPort failed (exit {done.returncode}); its output is above")
-    return json.loads(report.read_text(encoding="utf-8"))
+            "--loader", loader] + (["--runtime-names"] if runtime else [])
+    rows = side_by_side(args, jars, report)
+    counts = {}
+    for m in rows:
+        for member in left(m):
+            counts[member] = counts.get(member, 0) + 1
+    merged = {"from": frm, "to": to, "loader": loader, "linked": sum(1 for m in rows if "error" not in m and not m["unlinked"]), "mods": rows,
+              "unlinkedByMods": [{"member": k, "mods": v} for k, v in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]}
+    report.write_text(json.dumps(merged, indent=1), encoding="utf-8")
+    return merged
 
 
 def game_says(loader, frm, to, report):
@@ -611,17 +653,33 @@ def shown(member):
 
 def jars(loader, frm, to, save=None, out=None, quiet=False):
     """The jar scoreboard: what every top mod's classes and mixins reference, linked against the new release as the JVM and Mixin do."""
-    mods, unread = mojang_names(loader, frm, fetch(loader, frm))
+    seconds = {}
+
+    def timed(stage, work, *args):
+        started = time.monotonic()
+        try:
+            return work(*args)
+        finally:
+            seconds[stage] = round(seconds.get(stage, 0) + time.monotonic() - started, 1)
+
+    pinned = timed("download", fetch, loader, frm)
+    classes = compile_tools()
+    # Reading the jars' names, the game's change map and the data reports need nothing from each other.
+    with ThreadPoolExecutor(3) as pool:
+        named = pool.submit(timed, "names", mojang_names, loader, frm, pinned)
+        mapped = pool.submit(timed, "map", route_map, frm, to, loader, classes)
+        checked = pool.submit(timed, "data", data_check, frm, to, pinned)
+        (mods, unread), data = named.result(), checked.result()
+        mapped.result()
     work = ROOT / ".runs" / "exposure" / f"jars-{loader}-{frm}-{to}"
-    report = jar_port(loader, frm, to, mods, work / "mods", work / "report.json") if mods else {"linked": 0, "mods": [], "unlinkedByMods": []}
+    report = timed("port", jar_port, loader, frm, to, mods, work / "mods", work / "report.json") if mods else {"linked": 0, "mods": [], "unlinkedByMods": []}
     shutil.rmtree(work / "mods", ignore_errors=True)  # only the report is read; load ports the mods it starts itself
     if mods:
         report = without_platform_copies(report, platform_ids(loader, to), {m.name: m for m in mods})
         report = with_hidden_code_unread(report, {m.name: m for m in mods})
         (work / "report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
-    said = game_says(loader, frm, to, work / "report.json") if report["unlinkedByMods"] else {}
+    said = timed("game", game_says, loader, frm, to, work / "report.json") if report["unlinkedByMods"] else {}
     rows = [m for m in report["mods"] if "error" not in m]
-    data = data_check(frm, to, fetch(loader, frm))
     data_by = {}
     for mod, refs in (data or {}).items():
         for ref in refs:
@@ -639,6 +697,8 @@ def jars(loader, frm, to, save=None, out=None, quiet=False):
         "modsHeldOnlyByLoader": sum(1 for m in rows if m["unlinked"] and all(LOADER_REF.search(u) for u in m["unlinked"])),
         "unreadable": {**unread, **{m["mod"]: m["error"] for m in report["mods"] if "error" in m}},
         "top": [{**r, **said.get(r["member"], {})} for r in report["unlinkedByMods"][:40]],
+        # Where this run's time went: download, names, map and data ran side by side; port and game after them.
+        "seconds": seconds,
     }
     order = nearest(rows, data, said)
     summary["nearest"] = [{**turn, "members": turn["members"][:25]} for turn in order[:40]]
@@ -648,6 +708,7 @@ def jars(loader, frm, to, save=None, out=None, quiet=False):
               f"({summary['brokenUses']} broken uses; {summary['silentOnly']} keep an override the game no longer calls)"
               + ("" if data is None else f"; {summary['modsThatLinkAndData']} of them also name nothing in their data that {to} dropped")
               + f"; {summary['loaderUses']} broken uses are of the loader's API, and {summary['modsHeldOnlyByLoader']} mods break on nothing else")
+        print("seconds: " + ", ".join(f"{stage} {took:g}" for stage, took in seconds.items()))
         print("\nNearest to done, in the order to work (each mod with the references it still needs):")
         for turn in summary["nearest"][:12]:
             also = f", and frees {len(turn['alsoFrees'])} more" if turn["alsoFrees"] else ""
@@ -670,6 +731,8 @@ def every_update(loaders, only, jobs, save):
     todo = [(lo, a, b) for lo in loaders for a, b in updates(lo) + jumps(lo) if not only or f"{lo}:{a}" in only]
     jar_tools()
     compile_tools()
+    global CORES
+    CORES = max(1, (os.cpu_count() or 1) // max(1, jobs))
     out = ROOT / ".runs" / "exposure" / "all"
     out.mkdir(parents=True, exist_ok=True)
 
