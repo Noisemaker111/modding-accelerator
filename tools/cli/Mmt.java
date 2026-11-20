@@ -22,6 +22,12 @@ public final class Mmt {
 
         Path log(String name) {
             Path log = directory.resolve(stages.size() + "-" + name + ".log");
+            try {
+                // A stage that runs before anything else wrote to the receipt (the client's first test world) needs its folder.
+                Files.createDirectories(directory);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
             Run.progress(name, log);
             return log;
         }

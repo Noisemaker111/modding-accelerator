@@ -229,6 +229,7 @@ public final class GameDiff {
         final Map<String, Fld> fields = new LinkedHashMap<>(); // name
         final List<Cls> children = new ArrayList<>();
         String id;
+        boolean library; // read from one of the release's library jars (addLibraries)
 
         Cls(String name, int flags, String sup, List<String> ifaces, boolean loader) {
             this.name = name;
@@ -819,6 +820,7 @@ public final class GameDiff {
                     ifs.add(e.asInternalName());
                 }
                 Cls c = new Cls(name, cm.flags().flagsMask(), cm.superclass().map(ClassEntry::asInternalName).orElse(null), ifs, true);
+                c.library = true;
                 for (FieldModel fm : cm.fields()) {
                     c.fields.put(fm.fieldName().stringValue(), new Fld(c, fm.fieldName().stringValue(), fm.fieldType().stringValue(), fm.flags().flagsMask()));
                 }
@@ -4538,13 +4540,19 @@ public final class GameDiff {
                     // line up by: only the statement in the same place of a gap of the same length counts.
                     boolean bare = sa.kids.length == 1 && hole(sa.kids[0]) && (sa.value.equals("expr") || sa.value.equals("store"));
                     for (int j = j0; j < p[1]; j++) {
-                        if (bare && !(na == nb && j - j0 == i - i0 || nb == 1 || i == i0 && j == j0 || p[0] - i == 1 && p[1] - j == 1)) {
+                        // Next to the same anchor on both sides: a store against a store lines up; a call against a call is weak, read
+                        // only for chains and for the value it lines up, never as a vote on one member.
+                        boolean edge = (i == i0 && j == j0 || p[0] - i == 1 && p[1] - j == 1) && sa.value.equals(y.statements.get(j).value);
+                        boolean strong = !bare || na == nb && j - j0 == i - i0 || nb == 1 || edge && "store".equals(sa.value);
+                        if (bare && !strong && !edge) {
                             continue;
                         }
                         Map<Node, Node> holes = new IdentityHashMap<>();
                         budget = 20_000;
                         if (match(sa, y.statements.get(j), holes)) {
+                            weak = !strong;
                             holes.forEach(this::read);
+                            weak = false;
                             lambdas(sa, y.statements.get(j), lambdas);
                         }
                     }
@@ -4804,8 +4812,13 @@ public final class GameDiff {
         void read(Node use, Node m) {
             String key = use.ref.owner() + "." + use.ref.name() + (use.ref.kind() == 'm' ? use.ref.desc() : "");
             keys.putIfAbsent(key, use.ref);
-            lined.computeIfAbsent(use, k -> Collections.newSetFromMap(new IdentityHashMap<>())).add(m);
+            if (!weak) {
+                lined.computeIfAbsent(use, k -> Collections.newSetFromMap(new IdentityHashMap<>())).add(m);
+            }
             chain(use, m);
+            if (weak) {
+                return;
+            }
             Set<String> readings = sites.computeIfAbsent(key, k -> new IdentityHashMap<>()).computeIfAbsent(use, k -> new LinkedHashSet<>());
             int first = use.op == 'v' || use.op == 'f' ? 0 : 1;
             String cast = "";
@@ -5108,6 +5121,7 @@ public final class GameDiff {
 
         List<Node[]> deferred = new ArrayList<>(); // uses whose new value fits only once the class map is known
         List<Node[]> later = new ArrayList<>(); // uses with an operand whose new value no statement had shown yet
+        boolean weak; // the statement lined up only by standing next to the same anchor: chains only, no vote
         final Map<Cls, Map<Cls, Integer>> typeVotes = new HashMap<>();
         final List<Hop.ClassRewrite> typeRewrites = new ArrayList<>();
 

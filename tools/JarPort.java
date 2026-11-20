@@ -85,6 +85,13 @@ public final class JarPort {
         to = b.version;
         loaderTo = b.loaderVersion;
         route = Exposure.Route.read(map);
+        // A library the new release no longer lists may still be there at run time (the loader brings ASM, for one): only
+        // what changed inside a library both releases list is checked.
+        for (GameDiff.Cls c : a.classes.values()) {
+            if (c.library && !b.classes.containsKey(c.name)) {
+                b.classes.put(c.name, c);
+            }
+        }
         classMap.putAll(route.classes);
         for (var e : route.classRewrites.entrySet()) {
             classMap.putIfAbsent(e.getKey(), e.getValue());
@@ -148,6 +155,13 @@ public final class JarPort {
     }
 
     final List<PortChains.Spec> pairs = new ArrayList<>();
+
+    /** A library's abstract method the old release's copy of that library had too: a mod that skips it skipped it before the port. */
+    boolean alreadyAbstract(GameDiff.Cls k, GameDiff.Meth m) {
+        GameDiff.Cls old = k.library ? a.classes.get(k.name) : null;
+        GameDiff.Meth before = old == null ? null : old.methods.get(m.name + m.desc);
+        return before != null && (before.flags & Opcodes.ACC_ABSTRACT) != 0;
+    }
 
     /**
      * Two old members replaced together (GameDiff's chains): a stand-in static method of the first one's class, taking both
@@ -1751,7 +1765,8 @@ public final class JarPort {
         }
         for (GameDiff.Cls k : supers) {
             for (GameDiff.Meth m : k.methods.values()) {
-                if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !written.contains(m.name + m.desc) && !OBJECT.contains(m.name + m.desc) && !generic(supers, m)) {
+                if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !written.contains(m.name + m.desc) && !OBJECT.contains(m.name + m.desc) && !generic(supers, m)
+                    && !alreadyAbstract(k, m)) {
                     mod.unlinked.add("abstract method not written: " + Exposure.dotted(k.name) + "." + m.name + m.desc + " (in " + Exposure.dotted(rc.name) + ")");
                 }
             }
