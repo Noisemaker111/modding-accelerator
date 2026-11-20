@@ -42,6 +42,8 @@ final class GameRemovedTest {
             "the class the game's own types and values switched to is the class map: " + classes);
         check(learned, r + "Text.<init>(" + STR + ")V", r + "Mut.literal($1)", "a gone class's constructor is learned through the class map");
         check(learned, r + "GL.tell(" + STR + "I)V", r + "GL.say($1)", "an operand lines up with the game's new code also where it holds another changed call");
+        check(learned, r + "GL.enableTexture()V", "", "a call with no operands paired only as the one statement left in its gap is no vote against its drop");
+        check(learned, r + "Env.dist", r + "Ldr.current().dist()", "a one-line wrapper and its body are one reading");
 
         Path map = scratch.resolve("route-removed.json");
         Files.writeString(map, "{\"learned\": [" + String.join(",\n", lines) + "], \"classRewrites\": [" + String.join(",\n", classes) + "]}");
@@ -51,7 +53,7 @@ final class GameRemovedTest {
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("game-removed: 8 checks passed");
+        System.out.println("game-removed: 10 checks passed");
     }
 
     static void check(Map<String, String> learned, String key, String want, String what) {
@@ -231,7 +233,7 @@ final class GameRemovedTest {
             say.visitInsn(Opcodes.RETURN);
             say.visitMaxs(0, 0);
             say.visitEnd();
-            for (String name : two ? List.of("enableBlend", "commit") : List.of("enableBlend", "disableTexture", "flush")) {
+            for (String name : two ? List.of("enableBlend", "commit") : List.of("enableBlend", "disableTexture", "flush", "enableTexture")) {
                 MethodVisitor g = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, "()V", null, null);
                 g.visitCode();
                 g.visitLdcInsn(name.substring(0, 2));
@@ -345,8 +347,95 @@ final class GameRemovedTest {
             state(w, two);
             say(w, two);
             report(w, two);
+            textures(w, two);
+            envs(w, two);
+        }));
+        // Env.dist (a static field) in 1.0; Env.getDist(), a one-line wrapper of Ldr.current().dist(), in 2.0.
+        out.put(U + "Ldr", cls("Ldr", w -> {
+            noArgs(w);
+            w.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "CURRENT", "L" + U + "Ldr;", null, null).visitEnd();
+            MethodVisitor s = w.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+            s.visitCode();
+            s.visitTypeInsn(Opcodes.NEW, U + "Ldr");
+            s.visitInsn(Opcodes.DUP);
+            s.visitMethodInsn(Opcodes.INVOKESPECIAL, U + "Ldr", "<init>", "()V", false);
+            s.visitFieldInsn(Opcodes.PUTSTATIC, U + "Ldr", "CURRENT", "L" + U + "Ldr;");
+            s.visitInsn(Opcodes.RETURN);
+            s.visitMaxs(0, 0);
+            s.visitEnd();
+            MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "current", "()L" + U + "Ldr;", null, null);
+            c.visitCode();
+            c.visitFieldInsn(Opcodes.GETSTATIC, U + "Ldr", "CURRENT", "L" + U + "Ldr;");
+            c.visitInsn(Opcodes.ARETURN);
+            c.visitMaxs(0, 0);
+            c.visitEnd();
+            MethodVisitor d = w.visitMethod(Opcodes.ACC_PUBLIC, "dist", "()" + OBJ, null, null);
+            d.visitCode();
+            d.visitLdcInsn("client");
+            d.visitInsn(Opcodes.ARETURN);
+            d.visitMaxs(0, 0);
+            d.visitEnd();
+        }));
+        out.put(U + "Env", cls("Env", w -> {
+            noArgs(w);
+            if (two) {
+                MethodVisitor g = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "getDist", "()" + OBJ, null, null);
+                g.visitCode();
+                g.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ldr", "current", "()L" + U + "Ldr;", false);
+                g.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Ldr", "dist", "()" + OBJ, false);
+                g.visitInsn(Opcodes.ARETURN);
+                g.visitMaxs(0, 0);
+                g.visitEnd();
+            } else {
+                w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "dist", OBJ, null, "client").visitEnd();
+            }
         }));
         return out;
+    }
+
+    /**
+     * textures(): log("t" + i); GL.enableTexture() three times, which 2.0 drops; then log("x"); GL.enableTexture(); log("y"),
+     * which 2.0 writes log("x"); GL.enableBlend(); log("y"): a neighbour, not a replacement.
+     */
+    static void textures(ClassWriter w, boolean two) {
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "textures", "()V", null, null);
+        m.visitCode();
+        for (int i = 0; i < 3; i++) {
+            m.visitLdcInsn("t" + i);
+            m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", "log", "(" + STR + ")V", false);
+            if (!two) {
+                m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", "enableTexture", "()V", false);
+            }
+        }
+        m.visitLdcInsn("x");
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", "log", "(" + STR + ")V", false);
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", two ? "enableBlend" : "enableTexture", "()V", false);
+        m.visitLdcInsn("y");
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", "log", "(" + STR + ")V", false);
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+    }
+
+    /** envA/envB/envC(sink): sink.take(Env.dist); 2.0 writes Env.getDist() in two and Ldr.current().dist() in the third. */
+    static void envs(ClassWriter w, boolean two) {
+        for (String name : List.of("envA", "envB", "envC")) {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, "(L" + U + "Sink;)V", null, null);
+            m.visitCode();
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+            if (!two) {
+                m.visitFieldInsn(Opcodes.GETSTATIC, U + "Env", "dist", OBJ);
+            } else if (name.equals("envC")) {
+                m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ldr", "current", "()L" + U + "Ldr;", false);
+                m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Ldr", "dist", "()" + OBJ, false);
+            } else {
+                m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Env", "getDist", "()" + OBJ, false);
+            }
+            m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Sink", "take", "(" + OBJ + ")V", false);
+            m.visitInsn(Opcodes.RETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }
     }
 
     /** report(i): GL.tell(GL.name(i).trim(), i) twice; 2.0 writes GL.say(GL.name((long) i).trim()), name having changed too. */

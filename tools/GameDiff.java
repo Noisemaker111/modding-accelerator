@@ -91,8 +91,8 @@ public final class GameDiff {
                 default -> usage();
             }
         }
-        if (loader != null && !loader.equals("neoforge")) {
-            System.err.println("only --loader neoforge is supported");
+        if (loader != null && !loader.equals("neoforge") && !loader.equals("fabric")) {
+            System.err.println("--loader is neoforge or fabric");
             System.exit(2);
         }
         if (!compare.isEmpty()) {
@@ -132,7 +132,7 @@ public final class GameDiff {
 
     static void usage() {
         System.err.println(
-            "usage: java GameDiff --chain <v1,v2,...> --out map.json [--loader neoforge] [--loader-versions a,b,...] [--cache dir]\n" +
+            "usage: java GameDiff --chain <v1,v2,...> --out map.json [--loader neoforge|fabric] [--loader-versions a,b,...] [--cache dir]\n" +
             "       java GameDiff --compare <A> <B> [--all] [--report disagreements.txt]"
         );
         System.exit(2);
@@ -863,6 +863,11 @@ public final class GameDiff {
 
     /** One release from Mojang, plus a loader jar when given. */
     static Snap load(String version, Path loaderJar, String loaderVersion) throws Exception {
+        return load(version, loaderJar == null ? List.of() : classes(loaderJar, "net/neoforged/"), loaderVersion);
+    }
+
+    /** One release from Mojang, plus the loader's classes (in Mojang names) when given. */
+    static Snap load(String version, List<byte[]> loader, String loaderVersion) throws Exception {
         long t0 = System.nanoTime();
         String vj = versionJson(version);
         Path jar = verified(download(vj, "client"), "client-" + version + ".jar");
@@ -871,8 +876,7 @@ public final class GameDiff {
         if (m != null) {
             pg = VersionMap.Proguard.parse(Files.readString(verified(m, "client-" + version + ".txt"), StandardCharsets.UTF_8));
         }
-        List<byte[]> loader = loaderJar == null ? List.of() : classes(loaderJar, "net/neoforged/");
-        Snap s = read(version, classes(jar, null), pg, loader);
+       Snap s = read(version, classes(jar, null), pg, loader);
         addLibraries(s.libraries, libraries(vj));
         s.loaderVersion = loaderVersion;
         System.out.printf(
@@ -4547,7 +4551,11 @@ public final class GameDiff {
                         // Next to the same anchor on both sides: a store against a store lines up; a call against a call is weak, read
                         // only for chains and for the value it lines up, never as a vote on one member.
                         boolean edge = (i == i0 && j == j0 || p[0] - i == 1 && p[1] - j == 1) && sa.value.equals(y.statements.get(j).value);
-                        boolean strong = !bare || na == nb && j - j0 == i - i0 || nb == 1 || edge && "store".equals(sa.value);
+                        // A bare call with no operands has nothing to check a pairing by (the statement next to a dropped call reads as
+                        // its replacement): such pairings are weak, and its drops come from the gap check.
+                        boolean operandless = bare && sa.kids[0].kids.length == 0;
+                        boolean strong = !operandless && (!bare || na == nb && j - j0 == i - i0 || nb == 1 || edge && "store".equals(sa.value));
+                        edge |= operandless && (na == nb && j - j0 == i - i0 || nb == 1);
                         if (bare && !strong && !edge) {
                             continue;
                         }
@@ -4871,6 +4879,13 @@ public final class GameDiff {
             }
             if (reading != null) {
                 readings.add(reading);
+                // A one-line static wrapper reads the same as its body: uses that wrote either agree
+                // (FMLEnvironment.getDist() is FMLLoader.getCurrent().getDist()).
+                Node inner = m.op == 's' && cast.isEmpty() ? oneLine(m) : null;
+                String alt = inner == null ? null : express(inner, use.kids, first, use.type, 0);
+                if (alt != null) {
+                    readings.add(alt);
+                }
             }
         }
 
@@ -5767,10 +5782,32 @@ public final class GameDiff {
             this.pinned = pinned;
         }
 
+        List<byte[]> prevPlatform;
+
         @Override
         public VersionMap.Table load(String version) throws Exception {
             Path jar = null;
             String lv = null;
+            if (loader != null && (pinned == null || "fabric".equals(loader))) {
+                // The loader as a mod runs on it, the classes the link check reads (Exposure.snap): NeoForge's universal jar
+                // with FML and its other net.neoforged libraries, or Fabric Loader with Fabric API's modules, in Mojang
+                // names. Its own code uses its own API, so a change to it is learned like the game's.
+                Exposure.Platform p = "fabric".equals(loader) ? Exposure.fabric(version) : Exposure.neoforge(version);
+                List<byte[]> classes = p.classes();
+                if (!classes.isEmpty()) {
+                    prevPlatform = classes;
+                    prevLoaderVersion = p.version();
+                    loaderUsed.put(version, p.version() == null ? loader : p.version());
+                } else if (prevPlatform != null) {
+                    classes = prevPlatform;
+                    loaderNotes.add(version + ": no " + loader + " release; carried " + prevLoaderVersion);
+                    loaderUsed.put(version, null);
+                } else {
+                    loaderNotes.add(version + ": no " + loader + " release; loader classes start at a later release");
+                    loaderUsed.put(version, null);
+                }
+                return next(GameDiff.load(version, classes, p.version()), null, p.version());
+            }
             if (loader != null) {
                 int i = versions.indexOf(version);
                 lv = pinned != null && i < pinned.size() && !pinned.get(i).isBlank() ? pinned.get(i) : null;
@@ -6086,8 +6123,8 @@ public final class GameDiff {
 
         static void run(String va, String vb, boolean nonPrivate, Path report) throws Exception {
             long t0 = System.nanoTime();
-            Snap a = load(va, null, null);
-            Snap b = load(vb, null, null);
+            Snap a = load(va, (Path) null, null);
+            Snap b = load(vb, (Path) null, null);
             Hop h = new Hop(a, b);
             h.run();
             double secs = (System.nanoTime() - t0) / 1e9;
