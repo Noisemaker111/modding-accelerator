@@ -323,14 +323,31 @@ public final class JarPort {
     byte[] port(byte[] jar, String name, List<Map<String, Object>> results, Set<String> grants) throws IOException {
         Map<String, Long> times = new HashMap<>();
         Map<String, byte[]> entries = entries(jar, name, times);
+        // NeoForge's loader reads META-INF/mods.toml up to 1.20.4 (FML 2) and only META-INF/neoforge.mods.toml from 1.20.5
+        // (FML 3); a jar keeping the old name is skipped without a word.
+        boolean renamed = false;
+        if (loader.equals("neoforge") && compareVersions(to, "1.20.5") >= 0 && entries.containsKey("META-INF/mods.toml")
+            && !entries.containsKey("META-INF/neoforge.mods.toml")) {
+            Map<String, byte[]> moved = new LinkedHashMap<>();
+            entries.forEach((k, v) -> moved.put(k.equals("META-INF/mods.toml") ? "META-INF/neoforge.mods.toml" : k, v));
+            entries = moved;
+            times.put("META-INF/neoforge.mods.toml", times.getOrDefault("META-INF/mods.toml", 0L));
+            renamed = true;
+        }
         Set<String> nested = nested(entries);
         if (grants == null) {
+            Map<String, GameDiff.RawCls> all = new HashMap<>();
+            carried(entries, all);
+            tree = all;
             grants = new HashSet<>();
             for (String text : accessTransformers(entries, name)) {
                 widen(grants, text);
             }
         }
         Mod mod = new Mod();
+        if (renamed) {
+            mod.change("metadata renamed to neoforge.mods.toml");
+        }
         mod.widened.addAll(grants);
         // NeoForge's loader (FML 4 to 11) reads the access transformers neoforge.mods.toml lists, or else
         // META-INF/accesstransformer.cfg, for every mod file, nested ones included.
@@ -843,6 +860,48 @@ public final class JarPort {
 
     record Decl(String owner, boolean game) {}
 
+    Map<String, GameDiff.RawCls> tree = Map.of(); // every class the jar being ported and its nested jars carry
+
+    /**
+     * A class the jar carries in one of its own nested jars, which the new release lacks and whose package the new release
+     * no longer has (a module the platform stopped shipping, so the bundled copy is what runs): it is the mod's, not
+     * gone. A class whose package the new release still has is left to the game: the platform's newer copy runs.
+     */
+    GameDiff.RawCls provided(String c) {
+        GameDiff.RawCls own = tree.get(c);
+        if (own == null || b.classes.containsKey(cls(c))) {
+            return null;
+        }
+        return packagesB().contains(pkg(c)) ? null : own;
+    }
+
+    Set<String> packagesB;
+
+    Set<String> packagesB() {
+        if (packagesB == null) {
+            packagesB = new HashSet<>();
+            b.classes.keySet().forEach(k -> packagesB.add(pkg(k)));
+        }
+        return packagesB;
+    }
+
+    /** Every class in a jar and its nested jars, by name. */
+    static void carried(Map<String, byte[]> entries, Map<String, GameDiff.RawCls> out) throws IOException {
+        for (var e : entries.entrySet()) {
+            if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
+                try {
+                    GameDiff.RawCls rc = GameDiff.parse(e.getValue());
+                    out.putIfAbsent(rc.name, rc);
+                } catch (RuntimeException unreadable) {
+                    // read() skips such a class too
+                }
+            }
+        }
+        for (String n : nested(entries)) {
+            carried(entries(entries.get(n), n, new HashMap<>()), out);
+        }
+    }
+
     /** The class that declares a member reached through owner in the old release: the mod's own classes first, then the game. */
     Decl declaringOld(Mod mod, String owner, char kind, String name, String desc) {
         Deque<String> queue = new ArrayDeque<>(List.of(owner));
@@ -853,6 +912,9 @@ public final class JarPort {
                 continue;
             }
             GameDiff.RawCls own = mod.classes.get(c);
+            if (own == null) {
+                own = provided(c);
+            }
             if (own != null) {
                 if (kind == 'f' ? own.fields.containsKey(name) : own.methods.containsKey(name + desc)) {
                     return new Decl(c, false);
@@ -1226,7 +1288,7 @@ public final class JarPort {
                         retarget(mod, key, targets, m, inj);
                     }
                     if (inj != null) {
-                        pointsGone(mod, rc.name, targets, inj);
+                        pointsGone(mod, rc.name, targets, inj, m.desc);
                     }
                 }
                 continue;
@@ -2237,7 +2299,19 @@ public final class JarPort {
      * and, with the require most mods set, stops the game (1.21.2's LoadingOverlay.render stopped calling
      * RenderSystem.blendFunc). Reported for every injector, not only the ones retarget moves.
      */
-    void pointsGone(Mod mod, String mixin, List<String> targets, Injector inj) {
+    static final String MODIFY_VARIABLE = "Lorg/spongepowered/asm/mixin/injection/ModifyVariable;";
+
+    /** How many loads (or stores) of a local of type t a method's own code makes (lambdas apart); -1 when it cannot be read. */
+    int locals(GameCode code, GameDiff.Meth m, boolean store, Type t) {
+        int[] counts = code == null ? null : code.locals(m.owner.name, m.name, m.desc);
+        if (counts == null) {
+            return -1;
+        }
+        int op = t.getOpcode(store ? Opcodes.ISTORE : Opcodes.ILOAD);
+        return counts[op];
+    }
+
+    void pointsGone(Mod mod, String mixin, List<String> targets, Injector inj, String handlerDesc) {
         for (String text : inj.methods()) {
             Found into = find(targets, "method", text);
             GameDiff.Meth before = oldMethod(targets, text);
@@ -2246,23 +2320,34 @@ public final class JarPort {
                 continue;
             }
             for (String[] point : inj.ats()) {
-                if (point[0] == null || point[1] == null || !Set.of("INVOKE", "INVOKE_ASSIGN", "FIELD").contains(point[0])) {
-                    continue;
-                }
-                Found at = find(targets, "target", point[1]);
-                Matcher m = MEMBER.matcher(point[1]);
-                if ((at.kind() != 'm' && at.kind() != 'f') || !m.matches()) {
-                    continue;
-                }
-                int had = uses(code(a), a, before, at.kind(), m.group(1), m.group(2), m.group(3) != null ? m.group(3) : m.group(4));
-                int has = uses(code(b), b, now, at.kind(), at.owner(), at.name(), at.desc());
+                String gone = null;
                 int needed = point[2] == null ? 1 : Integer.parseInt(point[2]) + 1;
-                if (had >= needed && has >= 0 && has < needed) {
+                if (point[0] != null && Set.of("LOAD", "STORE").contains(point[0]) && inj.kind().equals(MODIFY_VARIABLE) && point[2] != null) {
+                    // @ModifyVariable at the nth load or store of a local of its type: the new method must still have
+                    // that many of them at all (an upper bound, so a place it reports gone is gone).
+                    Type local = Type.getReturnType(handlerDesc);
+                    boolean store = point[0].equals("STORE");
+                    int had = locals(code(a), before, store, local), has = locals(code(b), now, store, local);
+                    if (had >= needed && has >= 0 && has < needed) {
+                        gone = point[0] + " #" + point[2] + " of a " + local.getClassName() + " local";
+                    }
+                } else if (point[0] != null && point[1] != null && Set.of("INVOKE", "INVOKE_ASSIGN", "FIELD").contains(point[0])) {
+                    Found at = find(targets, "target", point[1]);
+                    Matcher m = MEMBER.matcher(point[1]);
+                    if ((at.kind() != 'm' && at.kind() != 'f') || !m.matches()) {
+                        continue;
+                    }
+                    int had = uses(code(a), a, before, at.kind(), m.group(1), m.group(2), m.group(3) != null ? m.group(3) : m.group(4));
+                    int has = uses(code(b), b, now, at.kind(), at.owner(), at.name(), at.desc());
+                    if (had >= needed && has >= 0 && has < needed) {
+                        gone = Exposure.dotted(at.owner()) + "." + at.name() + (at.desc() == null ? "" : at.desc());
+                    }
+                }
+                if (gone != null) {
                     // Mixin stops the game only where the injector requires a place (its require, or its config's
                     // defaultRequire); otherwise the hook is quiet, as an override the game no longer calls is.
                     int require = inj.require()[0] >= 0 ? inj.require()[0] : mod.requires.getOrDefault(mixin, 0);
-                    String gone = Exposure.dotted(at.owner()) + "." + at.name() + (at.desc() == null ? "" : at.desc())
-                        + " in " + Exposure.dotted(now.owner.name) + "." + now.name + now.desc + " (in " + Exposure.dotted(mixin) + ")";
+                    gone += " in " + Exposure.dotted(now.owner.name) + "." + now.name + now.desc + " (in " + Exposure.dotted(mixin) + ")";
                     (require > 0 ? mod.unlinked : mod.silent).add((require > 0 ? "mixin injection point gone: " : "mixin injection finds no place: ") + gone);
                 }
             }
@@ -2424,6 +2509,33 @@ public final class JarPort {
                 queue.addAll(rc.ifaces);
             }
             return owner;
+        }
+
+        /** A method's own loads and stores of locals, counted by opcode (ILOAD..ALOAD, ISTORE..ASTORE); null when it is not in the jar. */
+        int[] locals(String owner, String name, String desc) {
+            String jarOwner = toJar.getOrDefault(owner, owner);
+            byte[] file = bytes.apply(jarOwner);
+            if (file == null) {
+                return null;
+            }
+            int[] out = new int[256];
+            boolean[] found = new boolean[1];
+            new ClassReader(file).accept(new ClassVisitor(Opcodes.ASM9) {
+                @Override
+                public MethodVisitor visitMethod(int access, String n, String d, String signature, String[] exceptions) {
+                    if (found[0] || !names.method(jarOwner, n, d).equals(name) || !names.desc(d).equals(desc)) {
+                        return null;
+                    }
+                    found[0] = true;
+                    return new MethodVisitor(Opcodes.ASM9) {
+                        @Override
+                        public void visitVarInsn(int opcode, int var) {
+                            out[opcode]++;
+                        }
+                    };
+                }
+            }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            return found[0] ? out : null;
         }
 
         /** {kind, owner, name, desc} of each call and field access in a method's own code; null when it is not in the jar. */
@@ -4056,7 +4168,7 @@ public final class JarPort {
         Matcher m = Pattern.compile("L([^;<]+)[;<]").matcher(desc);
         while (m.find()) {
             String t = m.group(1);
-            if (a.classes.containsKey(t) && !b.classes.containsKey(cls(t))) {
+            if (a.classes.containsKey(t) && !b.classes.containsKey(cls(t)) && provided(t) == null) {
                 mod.unlinked.add("class gone: " + Exposure.dotted(t) + " (in " + where + ")");
             }
         }

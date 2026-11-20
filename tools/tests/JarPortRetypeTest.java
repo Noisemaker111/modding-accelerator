@@ -25,6 +25,8 @@ final class JarPortRetypeTest {
         JarPortTest.snap(b, "g6/Graphics", 0, null, "pose()" + POSE, "fill(I)V");
         JarPortTest.snap(b, "g6/Key", 0, null, "code()I", "scan()I");
         JarPortTest.snap(a, "g6/Gui", 0, null);
+        JarPortTest.snap(a, "g7/Bundled", 0, null, "run()V");
+        JarPortTest.snap(a, "g6/Dropped", 0, null, "run()V");
         a.classes.get("g6/Gui").methods.put("fill(" + POSE + "I)V", new GameDiff.Meth(a.classes.get("g6/Gui"), "fill", "(" + POSE + "I)V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
         JarPortTest.snap(a, "g6/Screen", 0, null, "render(" + POSE + "I)V", "back(" + POSE + ")V", "key(III)Z", "tick()V", "old()V", "kept()V", "hover(" + POSE + ")V", "chr(CI)Z", "drag(IIII)Z", "scroll(III)Z");
         JarPortTest.snap(b, "g6/Screen", 0, null, "render(" + GFX + "I)V", "back(" + GFX + ")V", "key(" + KEY + ")Z", "tick()V", "old()V", "kept()V", "hover(" + GFX + ")V", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z", "scroll(IIII)Z");
@@ -70,6 +72,25 @@ final class JarPortRetypeTest {
             "a body with a call that cannot be given what the game passes now (no value for a parameter it only passes on) stays as it was: "
                 + scroller.keySet() + " " + scrollSilent);
 
+        // A NeoForge jar from before 1.20.5 names its metadata META-INF/mods.toml, which NeoForge 1.20.5 on no longer reads.
+        Map<String, byte[]> toml = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("META-INF/mods.toml",
+            "modLoader=\"javafml\"\n[[dependencies.m6]]\nmodId=\"minecraft\"\nversionRange=\"[1.0]\"\n".getBytes(java.nio.charset.StandardCharsets.UTF_8))),
+            "old.jar", new ArrayList<>()));
+        JarPortTest.expect(!toml.containsKey("META-INF/mods.toml") && new String(toml.getOrDefault("META-INF/neoforge.mods.toml", new byte[0]),
+                java.nio.charset.StandardCharsets.UTF_8).contains("versionRange=\"[2.0]\""),
+            "a jar ported past 1.20.5 gets its metadata as META-INF/neoforge.mods.toml, asking for the new release: " + toml.keySet());
+
+        // A class the new release lacks but the mod carries in its own nested jar: where the release has no such package any
+        // more (a module the platform stopped shipping), the bundled copy runs; where it still has the package, it does not.
+        List<Map<String, Object>> bundled = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/UsesLib.class", usesLib(), "META-INF/jarjar/lib.jar",
+            JarPortTest.jar(Map.of("g7/Bundled.class", JarPortTest.real("g7/Bundled", "java/lang/Object", 0, new String[0], w -> JarPortTest.traced(w, "run", "()V", "", m -> { })),
+                "g6/Dropped.class", JarPortTest.real("g6/Dropped", "java/lang/Object", 0, new String[0], w -> JarPortTest.traced(w, "run", "()V", "", m -> { })))))),
+            "bundled.jar", bundled);
+        List<String> outer = Json.array(bundled.stream().filter(b2 -> "bundled.jar".equals(b2.get("jar"))).findFirst().orElseThrow().get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(outer.stream().noneMatch(u -> u.contains("g7.Bundled")) && outer.stream().anyMatch(u -> u.contains("g6.Dropped")),
+            "a class the mod's own nested jar carries, from a package the new release dropped, is the mod's; one from a package it kept is gone: " + outer);
+
         List<Map<String, Object>> others = new ArrayList<>();
         Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin(),
             "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ScreenMixin\"], \"injectors\": {\"defaultRequire\": 1}}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "other.jar", others));
@@ -77,8 +98,10 @@ final class JarPortRetypeTest {
         JarPortTest.expect(stays.contains("call: g6.Gui.fill(Lg6/Pose;I)V"),
             "a pose the game did not pass, and one outside a moved body, still get no graphics: " + stays);
         JarPortTest.expect(stays.contains("mixin injection point gone: g6.Screen.old()V in g6.Screen.tick()V (in m6.ScreenMixin)")
-            && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 1,
-            "an @Inject at a call the new method no longer makes is reported, one at a call it still makes is not: " + stays);
+            && stays.contains("mixin injection point gone: STORE #1 of a int local in g6.Screen.tick()V (in m6.ScreenMixin)")
+            && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 2,
+            "an @Inject at a call the new method no longer makes, and a @ModifyVariable at a second int store it no longer has, are reported; "
+                + "one at a call it still makes is not: " + stays);
         List<Map<String, Object>> quiet = new ArrayList<>();
         port.port(JarPortTest.jar(Map.of("m6/ScreenMixin.class", mixin())), "quiet.jar", quiet);
         List<String> quietUnlinked = Json.array(quiet.get(0).get("unlinked")).stream().map(String::valueOf).toList();
@@ -259,6 +282,24 @@ final class JarPortRetypeTest {
         return w.toByteArray();
     }
 
+    /** m6.UsesLib.use() calls g7.Bundled.run() and g6.Dropped.run(). */
+    static byte[] usesLib() {
+        ClassWriter w = writer("m6/UsesLib", "java/lang/Object");
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "use", "()V", null, null);
+        m.visitCode();
+        for (String c : List.of("g7/Bundled", "g6/Dropped")) {
+            m.visitTypeInsn(Opcodes.NEW, c);
+            m.visitInsn(Opcodes.DUP);
+            m.visitMethodInsn(Opcodes.INVOKESPECIAL, c, "<init>", "()V", false);
+            m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, c, "run", "()V", false);
+        }
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
     /** m6.Caller.call() renders a MyScreen with a pose it made itself: no graphics are at hand there. */
     static byte[] caller() {
         ClassWriter w = writer("m6/Caller", "java/lang/Object");
@@ -334,6 +375,21 @@ final class JarPortRetypeTest {
         target.visitEnd();
         JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onOld", "(" + CI + ")V", "tick()V", "INVOKE", "Lg6/Screen;old()V", null);
         JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onKept", "(" + CI + ")V", "tick()V", "INVOKE", "Lg6/Screen;kept()V", null);
+        MethodVisitor store = w.visitMethod(Opcodes.ACC_PRIVATE, "onStore", "(I)I", null, null);
+        AnnotationVisitor modify = store.visitAnnotation("Lorg/spongepowered/asm/mixin/injection/ModifyVariable;", false);
+        AnnotationVisitor into = modify.visitArray("method");
+        into.visit(null, "tick()V");
+        into.visitEnd();
+        AnnotationVisitor point = modify.visitAnnotation("at", "Lorg/spongepowered/asm/mixin/injection/At;");
+        point.visit("value", "STORE");
+        point.visit("ordinal", 1);
+        point.visitEnd();
+        modify.visitEnd();
+        store.visitCode();
+        store.visitVarInsn(Opcodes.ILOAD, 1);
+        store.visitInsn(Opcodes.IRETURN);
+        store.visitMaxs(0, 0);
+        store.visitEnd();
         JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onRender", "(" + POSE + "I" + CI + ")V", "render(" + POSE + "I)V", "HEAD", null, m -> {
             m.visitVarInsn(Opcodes.ALOAD, 1);
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
@@ -433,6 +489,11 @@ final class JarPortRetypeTest {
         JarPortTest.traced(w, "chr", old ? "(CI)Z" : "(" + KEY + ")Z", "basechr;", m -> { });
         JarPortTest.traced(w, "drag", old ? "(IIII)Z" : "(" + KEY + "II)Z", "basedrag;", m -> { });
         JarPortTest.traced(w, "tick", "()V", "tick;", m -> {
+            // An int local stored twice in the old tick, once in the new one.
+            for (int i = 0; i < (old ? 2 : 1); i++) {
+                m.visitInsn(Opcodes.ICONST_1);
+                m.visitVarInsn(Opcodes.ISTORE, 1);
+            }
             if (old) {
                 m.visitVarInsn(Opcodes.ALOAD, 0);
                 m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Screen", "old", "()V", false);
