@@ -1,0 +1,39 @@
+{
+ "loader": "fabric",
+ "from": "1.19.2",
+ "to": "1.19.3",
+ "mods": 15,
+ "loaded": 8,
+ "linkedAndLoaded": 8,
+ "linked": 14,
+ "failedButLinked": [
+  "ferrite-core--ferritecore-5.0.3-fabric.jar",
+  "memoryleakfix--memoryleakfix-fabric-1.17+-1.1.5.jar"
+ ],
+ "failedDataOnly": [],
+ "verdicts": {
+  "better-third-person--BetterThirdPerson-Fabric-1.19-1.9.0.jar": "client-only: client-only (folder, its own metadata)",
+  "bobby--bobby-4.0.1.jar": "client-only: client-only (folder, its own metadata)",
+  "cubes-without-borders--cwb-5.0.0+1.19.0.fabric.jar": "client-only: client-only (folder, its own metadata)",
+  "fast-ip-ping--fast-ip-ping-v1.0.12-mc1.19.4-fabric.jar": "client-only: client-only (folder, its own metadata)",
+  "morechathistory--morechathistory-1.3.0.jar": "client-only: client-only (folder, its own metadata)",
+  "memoryleakfix--memoryleakfix-fabric-1.17+-1.1.5.jar": "failed: the loader names it: [13:58:12] [main/ERROR]: Mixin apply for mod memoryleakfix failed memoryleakfix.mixins.json:entityMemoriesLeak.Entity_clearMemoriesMixin from mod memoryleakfix -> net.minecraft.class_1297: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException Critical inject...; the loader names it: Caused by: org.spongepowered.asm.mixin.throwables.MixinApplyError: Mixin [",
+  "ferrite-core--ferritecore-5.0.3-fabric.jar": "failed: a mixin handler of this mod is in the stack; its code (malte0811.ferritecore.impl.BlockStateCacheImpl) is in the stack: at malte0811.ferritecore.impl.BlockStateCacheImpl.lambda$static$1(BlockStateCacheImpl.java:36) ~[ferrite-core--ferritecore-5.0.3-fabric.jar:?]",
+  "clumps--Clumps-fabric-1.19.2-9.0.0+14.jar": "loaded",
+  "fabric-language-kotlin--fabric-language-kotlin-1.14.2+kotlin.2.4.21.jar": "loaded",
+  "krypton--krypton-0.2.1.jar": "loaded",
+  "mixintrace--mixintrace-1.1.1+1.17.jar": "loaded",
+  "packet-fixer--packetfixer-3.3.2-1.18-1.20.4-merged.jar": "loaded",
+  "placeholder-api--placeholder-api-2.0.0-pre.1+1.19.2.jar": "loaded",
+  "rhino--rhino-fabric-1902.2.3-build.284.jar": "loaded",
+  "yosbr--yosbr-0.1.2.jar": "loaded"
+ },
+ "client": {
+  "mods": 13,
+  "loaded": 0,
+  "verdicts": {},
+  "notRun": "Game action failed: java.lang.NoSuchMethodException: net.minecraft.class_7196 [openWorld, start]/2",
+  "receipt": "C:\\Users\\Jk101\\.mmt\\packs\\.runs\\portable\\2026-11-20T18-59-50.014467100Z-60838ab9\\result.json"
+ },
+ "loadedOnServerFailedInClient": []
+}

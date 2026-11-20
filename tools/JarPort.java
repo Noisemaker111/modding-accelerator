@@ -85,6 +85,13 @@ public final class JarPort {
         to = b.version;
         loaderTo = b.loaderVersion;
         route = Exposure.Route.read(map);
+        // A library the new release no longer lists may still be there at run time (the loader brings ASM, for one): only
+        // what changed inside a library both releases list is checked.
+        for (GameDiff.Cls c : a.classes.values()) {
+            if (c.library && !b.classes.containsKey(c.name)) {
+                b.classes.put(c.name, c);
+            }
+        }
         classMap.putAll(route.classes);
         for (var e : route.classRewrites.entrySet()) {
             classMap.putIfAbsent(e.getKey(), e.getValue());
@@ -131,6 +138,12 @@ public final class JarPort {
             String owner = Exposure.Route.internal(Json.text(w, "owner", "")), from = Json.text(w, "from", ""), desc = Json.text(w, "desc", "");
             String member = from.endsWith("=") ? from.substring(0, from.length() - 1) : from; // "name=": a write
             boolean named = desc.isEmpty() ? a.field(owner, member) != null : a.method(owner, from, desc) != null;
+            if (w.get("then") != null) {
+                if (majority(w) && named && covers(Json.text(w, "step", ""), "")) {
+                    chain(w, owner, from, desc);
+                }
+                continue;
+            }
             if (majority(w) && named && covers(Json.text(w, "step", ""), "") && Json.text(w, "expr", "").isEmpty()) {
                 // A call the game removed with nothing in its place: dropped as a removal is, its operands still evaluated.
                 removals.computeIfAbsent(owner + "." + from + desc, k -> new ArrayList<>()).add(w);
@@ -139,6 +152,92 @@ public final class JarPort {
                     Pattern.compile(Pattern.quote(from)), desc.isEmpty() ? null : desc.substring(0, desc.indexOf(')') + 1), Json.text(w, "expr", "")));
             }
         }
+    }
+
+    final List<PortChains.Spec> pairs = new ArrayList<>();
+
+    /** A member of a library class that both releases declare with the same type and access. */
+    boolean unchangedLibrary(char kind, String owner, String name, String desc) {
+        GameDiff.Cls old = a.classes.get(owner), now = b.classes.get(owner);
+        if (old == null || now == null || !old.library) {
+            return false;
+        }
+        if (kind == 'f' || kind == 'r') {
+            GameDiff.Fld x = old.fields.get(name), y = now.fields.get(name);
+            return x != null && y != null && x.desc.equals(y.desc) && x.flags == y.flags;
+        }
+        GameDiff.Meth x = old.methods.get(name + desc), y = now.methods.get(name + desc);
+        return x != null && y != null && x.flags == y.flags;
+    }
+
+    /** A library's abstract method the old release's copy of that library had too: a mod that skips it skipped it before the port. */
+    boolean alreadyAbstract(GameDiff.Cls k, GameDiff.Meth m) {
+        GameDiff.Cls old = k.library ? a.classes.get(k.name) : null;
+        GameDiff.Meth before = old == null ? null : old.methods.get(m.name + m.desc);
+        return before != null && (before.flags & Opcodes.ACC_ABSTRACT) != 0;
+    }
+
+    /**
+     * Two old members replaced together (GameDiff's chains): a stand-in static method of the first one's class, taking both
+     * members' operands, is added to the old release with the learned expression as its replacement; PortChains rewrites
+     * the mod's pair into a call of it before the class is read.
+     */
+    void chain(Map<String, Object> w, String owner, String from, String desc) {
+        var then = Json.object(w.get("then"));
+        String yOwner = Exposure.Route.internal(Json.text(then, "owner", "")), yName = Json.text(then, "from", ""), yDesc = Json.text(then, "desc", "");
+        GameDiff.Cls xc = a.classes.get(owner);
+        boolean field = desc.isEmpty();
+        GameDiff.Fld f = field ? a.field(owner, from) : null;
+        GameDiff.Meth m = field ? null : a.method(owner, from, desc);
+        GameDiff.Meth y = a.method(yOwner, yName, yDesc);
+        int at = then.get("at") instanceof Number n ? n.intValue() : 0;
+        if (xc == null || y == null) {
+            return;
+        }
+        boolean xStatic = field ? (f.flags & Opcodes.ACC_STATIC) != 0 : m.isStatic();
+        boolean first = "first".equals(Json.text(w, "result", ""));
+        StringBuilder params = new StringBuilder("(");
+        if (at < 0) {
+            // A sibling: Y on X's receiver, with X's value (kept in a local) passed after Y's receiver.
+            if (field || y.isStatic() || xStatic) {
+                return;
+            }
+            params.append('L').append(yOwner).append(';').append(desc.substring(desc.indexOf(')') + 1)).append(yDesc, 1, yDesc.indexOf(')')).append(')');
+            String fake = from + "+" + yName + "+r", fakeDesc = params + yDesc.substring(yDesc.indexOf(')') + 1);
+            xc.methods.put(fake + fakeDesc, new GameDiff.Meth(xc, fake, fakeDesc, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+            fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game chain " + Json.text(w, "step", ""), Pattern.compile(Pattern.quote(fake)),
+                params.toString(), Json.text(w, "expr", "")));
+            pairs.add(new PortChains.Spec('m', false, owner, from, desc, yOwner, yName, yDesc, false, -1, false, fake, fakeDesc,
+                (xc.flags & Opcodes.ACC_INTERFACE) != 0));
+            return;
+        }
+        if (!xStatic) {
+            params.append('L').append(owner).append(';');
+        }
+        if (!field) {
+            params.append(desc, 1, desc.indexOf(')'));
+        }
+        List<Type> yOps = new ArrayList<>();
+        if (!y.isStatic()) {
+            yOps.add(Type.getObjectType(yOwner));
+        }
+        yOps.addAll(List.of(Type.getArgumentTypes(yDesc)));
+        if (at >= yOps.size()) {
+            return;
+        }
+        for (int i = 0; i < yOps.size(); i++) {
+            if (i != at) {
+                params.append(yOps.get(i).getDescriptor());
+            }
+        }
+        params.append(')');
+        String result = first ? (field ? f.desc : desc.substring(desc.indexOf(')') + 1)) : yDesc.substring(yDesc.indexOf(')') + 1);
+        String fake = from + "+" + yName + (at == 0 ? "" : "+" + at), fakeDesc = params + result;
+        xc.methods.put(fake + fakeDesc, new GameDiff.Meth(xc, fake, fakeDesc, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+        fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game chain " + Json.text(w, "step", ""), Pattern.compile(Pattern.quote(fake)),
+            params.toString(), Json.text(w, "expr", "")));
+        pairs.add(new PortChains.Spec(field ? 'f' : 'm', xStatic, owner, from, desc, yOwner, yName, yDesc, y.isStatic(), at, first, fake, fakeDesc,
+            (xc.flags & Opcodes.ACC_INTERFACE) != 0));
     }
 
     /** A replacement the game's own code shows in more than half of the places it changed. */
@@ -356,6 +455,10 @@ public final class JarPort {
         mod.canWiden = entries.containsKey("META-INF/neoforge.mods.toml") || fmj != null;
         for (var e : entries.entrySet()) {
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
+                e.setValue(PortChains.apply(e.getValue(), pairs, (o, k, n, d) -> {
+                    GameDiff.Cls c = Exposure.declaring(a, o, k, n, d);
+                    return c == null ? null : c.name;
+                }));
                 read(mod, e.getValue());
             }
         }
@@ -1184,6 +1287,11 @@ public final class JarPort {
      */
     String[] target(Mod mod, List<String> callers, String siteOwner, char kind, String name, String desc, Decl decl) {
         String newSite = cls(siteOwner);
+        if (unchangedLibrary(kind, decl.owner(), name, desc)) {
+            // A library member both releases have as it was: whatever lets the mod use it (its own newer copy of the
+            // library, say) still does; only what changed inside a library is the port's.
+            return new String[] { newSite, name, desc(desc) };
+        }
         if (kind == 'f' || kind == 'r') {
             String[] moved = route.field(decl.owner(), name);
             String fieldDesc = desc(desc);
@@ -1676,7 +1784,8 @@ public final class JarPort {
         }
         for (GameDiff.Cls k : supers) {
             for (GameDiff.Meth m : k.methods.values()) {
-                if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !written.contains(m.name + m.desc) && !OBJECT.contains(m.name + m.desc) && !generic(supers, m)) {
+                if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !written.contains(m.name + m.desc) && !OBJECT.contains(m.name + m.desc) && !generic(supers, m)
+                    && !alreadyAbstract(k, m)) {
                     mod.unlinked.add("abstract method not written: " + Exposure.dotted(k.name) + "." + m.name + m.desc + " (in " + Exposure.dotted(rc.name) + ")");
                 }
             }

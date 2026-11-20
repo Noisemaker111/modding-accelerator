@@ -276,7 +276,7 @@ def route_map(frm, to, loader, classes):
 
 
 ASM = [ROOT / "tools" / "perf" / "lib" / "asm-9.9.jar", ROOT / "tools" / "perf" / "lib" / "asm-commons-9.9.jar"]
-JAR_SOURCES = ("JarPort.java", "FixExpr.java", "Exposure.java", "GameDiff.java", "VersionMap.java", "ModNames.java")
+JAR_SOURCES = ("JarPort.java", "FixExpr.java", "PortChains.java", "Exposure.java", "GameDiff.java", "VersionMap.java", "ModNames.java")
 
 
 def jar_tools():
@@ -792,8 +792,12 @@ def client_starts(loader, to, server_pack, names, platform=()):
                 if top in present:
                     blamed.setdefault(top, "; ".join(s.get("why", []))[:400] + " | " + str(res.get("client", {}).get("failure", ""))[:300])
         if not blamed:
+            # The client itself could not be driven (the start names no mod, say an older release the driver cannot open a
+            # world in): the server's verdicts stand, and the client is reported as not run, with why.
             print(res.get("details", done.stdout[-2000:]))
-            raise SystemExit(f"a client start failed and named no mod; receipt {result.get('receipt')}")
+            failure = str(res.get("client", {}).get("failure") or res.get("error") or done.stdout[-300:])[:400]
+            print(f"a client start failed and named no mod; the client is not run: {failure}")
+            return {"mods": len(names), "loaded": 0, "verdicts": {}, "notRun": failure, "receipt": result.get("receipt")}
         for name, why in blamed.items():
             verdicts[name] = "failed: " + why
             (pack / "mods" / name).rename(pack / "dropped" / name)
