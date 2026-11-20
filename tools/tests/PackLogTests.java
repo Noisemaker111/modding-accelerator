@@ -17,10 +17,12 @@ public final class PackLogTests extends PackCheckFixtures {
         try {
             logs(harness, scratch);
             culprits(harness, scratch);
+            windowless(scratch);
             System.out.println(
                 count +
                 " pack log checks passed: failed-start words, client-only mods, the mod a crash names (only the failure's own lines; the Java build when the JDK lacks what the loader calls; only the mod reaching a client class)," +
-                " client-only code read from server entrypoints, the Java build a loader needs, a port lost to the other server, a free voice chat port"
+                " client-only code read from server entrypoints, the Java build a loader needs, a port lost to the other server, a free voice chat port," +
+                " no window from a program a test game starts"
             );
         } finally {
             System.setProperty("user.home", home);
@@ -28,6 +30,22 @@ public final class PackLogTests extends PackCheckFixtures {
                 for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ windowless
+    // A crash helper a mod starts from the game is a grandchild of pack-check (Crash Assistant restarts itself once), so
+    // the check is one level further down than the game: it must still find no desktop to open a window on.
+    static void windowless(Path scratch) throws Exception {
+        String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+        Path leaf = Files.writeString(scratch.resolve("Leaf.java"),
+            "public class Leaf { public static void main(String[] a) { System.out.println(\"headless=\" + java.awt.GraphicsEnvironment.isHeadless()); } }");
+        Path helper = Files.writeString(scratch.resolve("Helper.java"),
+            "public class Helper { public static void main(String[] a) throws Exception {" +
+            " System.exit(new ProcessBuilder(a[0], a[1]).inheritIO().start().waitFor()); } }");
+        Process game = PackChecks.windowless(new ProcessBuilder(java, helper.toString(), java, leaf.toString())).redirectErrorStream(true).start();
+        String out = new String(game.getInputStream().readAllBytes());
+        game.waitFor();
+        expect(out.contains("headless=true"), "a program started from a test game could open a window: " + out);
     }
 
     // ------------------------------------------------------------------ logs
