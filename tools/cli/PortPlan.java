@@ -259,13 +259,25 @@ final class PortPlan {
     static Map<String, Object> run(Build build, Map<String, Object> model, Mmt.Options options) throws Exception {
         // The mod's own compile runs once on its version, recording the sources and classpath javac is given (the init
         // script's mmt.recordCompile): what the build model names can differ (NeoGradle's placeholder game jar), and the
-        // compile proves the original builds.
+        // compile proves the original builds. Keep Gradle authoritative but skip the refork when nothing that determines
+        // the records changed: hash the build inputs AND the records' bytes, the same contract fast keeps for compiled
+        // outputs (FastLane). The touch-point scan below always re-runs on the current sources, so a hit skips only Gradle.
         Path records = build.project.state().resolve("compile-records");
-        if (Files.isDirectory(records)) LibraryPort.deleteTree(records);
-        List<String> tasks = new ArrayList<>(build.tasks(model, "classes"));
-        tasks.add(0, "-Dmmt.recompile=true");
-        tasks.add(0, "-Dmmt.recordCompile=" + records);
-        var compiled = build.gradle(tasks, "port-plan-compile");
+        Path stamp = build.project.state().resolve("port-plan-stamp.json");
+        String key = Fingerprints.build(model, build.project, build.init);
+        boolean reuse = false;
+        if (Files.isDirectory(records) && Files.exists(stamp) && !options.has("refresh")) {
+            var cached = Json.read(stamp);
+            reuse = key.equals(cached.get("inputs")) && Fingerprints.files(List.of(records)).equals(cached.get("outputs"));
+        }
+        Run.Result compiled = null;
+        if (!reuse) {
+            if (Files.isDirectory(records)) LibraryPort.deleteTree(records);
+            List<String> tasks = new ArrayList<>(build.tasks(model, "classes"));
+            tasks.add(0, "-Dmmt.recompile=true");
+            tasks.add(0, "-Dmmt.recordCompile=" + records);
+            compiled = build.gradle(tasks, "port-plan-compile");
+        }
         Set<Path> sourceSet = new LinkedHashSet<>(), entries = new LinkedHashSet<>();
         if (Files.isDirectory(records)) try (var list = Files.list(records)) {
             for (Path record : list.filter(f -> f.toString().endsWith(".json")).toList()) {
@@ -277,10 +289,12 @@ final class PortPlan {
         List<Path> sources = new ArrayList<>(sourceSet), classpath = new ArrayList<>(entries);
         if (sources.isEmpty() || classpath.isEmpty()) throw new IOException(
             "The mod's own compile recorded no Java sources or classpath (" + sources.size() + " sources, " + classpath.size()
-                + " entries); its build log: " + compiled.log()
+                + " entries); its build log: " + (compiled == null ? "reused compile-records" : compiled.log())
         );
+        if (!reuse) Json.save(stamp, Json.map("inputs", key, "outputs", Fingerprints.files(List.of(records))));
         List<Place> places = record(sources, classpath);
         Map<String, Object> result = new LinkedHashMap<>();
+        result.put("compileRecords", reuse ? "cached" : "recorded");
         result.put("sourceFiles", sources.size());
         if (options.values.containsKey("map")) result.putAll(join(places, Json.read(Path.of(options.get("map", "")))));
         else result.put("placesTouchingGameCode", places.size());

@@ -85,6 +85,7 @@ CHECKS = {
     "jar-port": (False, None, jar_port),
     "zip": (True, None, [java("tools/tests/PackageAcceptanceTest.java", ZIP, ZIP + ".sha256", tempfile.gettempdir())]),
     "fast": (True, None, [java("-jar", JAR, "fast", "--root", FIXTURE, "--json")]),
+    "port-plan": (True, None, [java("tools/tests/PortPlanCacheTest.java", FIXTURE, JAR)]),
     "hidden-window": (True, None, [java("tools/tests/BackgroundWindowsTest.java", FIXTURE, JAR)]),
     "fastlane-isolation": (True, None, [java("tools/tests/FastLaneIsolationTest.java", ".", JAR)]),
     "runtime-natives": (True, ("posix",), [java("tools/tests/RuntimeNativesTest.java", ".", JAR)]),
