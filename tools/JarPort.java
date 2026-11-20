@@ -3690,6 +3690,9 @@ public final class JarPort {
             if (body != null) {
                 // The mod's own method moved to the game's new parameter types: a call made where they are at hand follows it.
                 if (moved == null || !given(opcode, owner, desc, List.<String[]>of(new String[] { decl.owner(), body.name(), body.desc(), "mod" }))) {
+                    if (DEBUG) {
+                        System.err.println("kept " + name + desc + " for a call in " + where + " moved=" + (moved != null) + " src=" + (moved == null ? "" : Arrays.toString(moved.track.sources(Type.getArgumentTypes(desc)))));
+                    }
                     mod.kept.add(name + desc); // the old methods of that name stay for this call (see port)
                     super.visitMethodInsn(opcode, owner, name, desc, itf);
                 }
@@ -4119,7 +4122,8 @@ public final class JarPort {
             Type[] argsNew = Arrays.stream(args).map(t -> Type.getType(desc(t.getDescriptor()))).toArray(Type[]::new);
             boolean isStatic = opcode == Opcodes.INVOKESTATIC;
             for (String[] c : candidates) {
-                boolean own = c[3].equals("mod"), cStatic = c[3].equals("static");
+                // The mod's own moved method is static exactly where the call is (a helper moved with its parameter).
+                boolean own = c[3].equals("mod"), cStatic = c[3].equals("static") || own && isStatic;
                 if (!isStatic && cStatic || !own && !linksNew(mod, callers, c[0], 'm', c[1], c[2])) {
                     continue;
                 }
