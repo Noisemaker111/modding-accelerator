@@ -681,30 +681,23 @@ def fabric_meta(jar):
             return None
 
 
-FABRIC_MAVEN = "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/"
-
-
-def fabric_api_version(version, metadata):
-    """The newest Fabric API build for a game version in Fabric's maven metadata ("0.83.0+1.20" for 1.20), or None."""
-    import re
-    found = [v for v in re.findall(r"<version>([^<]+)</version>", metadata) if v.endswith("+" + version)]
-    return max(found, key=lambda v: [int(x) for x in re.findall(r"\d+", v.split("+")[0])]) if found else None
-
-
 def fabric_api(version):
-    """Fabric API's newest build for a game version, from Fabric's own maven (kept in ~/.mmt/exposure/platform/), or None."""
+    """Fabric API's newest release for a game version (kept in ~/.mmt/exposure/platform/), or None: the jar players install,
+    from Fabric's own Modrinth project. Fabric's maven publishes fabric-api as metadata only, and its pom leaves out the
+    deprecated modules the released jar carries (1.19.1: fabric-networking-v0 and eight more), so a pack built from it would
+    start on another Fabric API than players have. A cached jar without its modules is not taken."""
     folder = HOME / "platform"
-    have = sorted(folder.glob(f"fabric-api-for-{version}--fabric-api-*+{version}.jar"))
+    have = [p for p in sorted(folder.glob(f"fabric-api-for-{version}--*.jar")) if len(nested_ids(p.read_bytes())) > 1]
     if have:
         return have[-1]
-    with urllib.request.urlopen(urllib.request.Request(FABRIC_MAVEN + "maven-metadata.xml", headers=AGENT), timeout=60) as r:
-        build = fabric_api_version(version, r.read().decode("utf-8"))
-    if not build:
+    versions = api("project/fabric-api/version", {"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([version])}) or []
+    files = [f for v in versions for f in v.get("files", []) if f.get("primary")]
+    if not files:
         return None
     folder.mkdir(parents=True, exist_ok=True)
-    target = folder / f"fabric-api-for-{version}--fabric-api-{build}.jar"
+    target = folder / f"fabric-api-for-{version}--{files[0]['filename']}"
     part = part_of(target)
-    with urllib.request.urlopen(urllib.request.Request(f"{FABRIC_MAVEN}{build}/fabric-api-{build}.jar", headers=AGENT), timeout=300) as r:
+    with urllib.request.urlopen(urllib.request.Request(files[0]["url"], headers=AGENT), timeout=120) as r:
         part.write_bytes(r.read())
     return publish(part, target)
 
