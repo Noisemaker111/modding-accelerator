@@ -4001,6 +4001,9 @@ public final class JarPort {
                     drop(desc, new int[0]);
                     if (opcode != Opcodes.INVOKESTATIC) {
                         super.visitInsn(Opcodes.POP);
+                    } else if (Type.getArgumentTypes(desc).length == 0) {
+                        // Nothing else is written in its place: a frame after it would fall on the frame before it.
+                        super.visitInsn(Opcodes.NOP);
                     }
                     mod.change("call removed");
                     return;

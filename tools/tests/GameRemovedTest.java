@@ -77,7 +77,21 @@ final class GameRemovedTest {
         m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Buf", "endVertex", "()V", false);
         m.visitLdcInsn("tex");
         m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", "log", "(" + STR + ")V", false);
+        // Object t = sink; if (buf == null) { t = 0; GL.log("none"); } else GL.disableTexture(); the dropped call is all there is
+        // between two frames, and the second differs from the first (t is no longer one type after the join).
+        Label notNull = new Label(), after = new Label();
+        m.visitVarInsn(Opcodes.ALOAD, 1);
+        m.visitVarInsn(Opcodes.ASTORE, 3);
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        m.visitJumpInsn(Opcodes.IFNONNULL, notNull);
+        m.visitInsn(Opcodes.ICONST_0);
+        m.visitVarInsn(Opcodes.ISTORE, 3);
+        m.visitLdcInsn("none");
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", "log", "(" + STR + ")V", false);
+        m.visitJumpInsn(Opcodes.GOTO, after);
+        m.visitLabel(notNull);
         m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", "disableTexture", "()V", false);
+        m.visitLabel(after);
         m.visitLdcInsn("n4");
         m.visitIntInsn(Opcodes.BIPUSH, 9);
         m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "GL", "tell", "(" + STR + "I)V", false);
