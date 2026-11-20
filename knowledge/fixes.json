@@ -9207,6 +9207,32 @@
       }
     },
     {
+      "id": "server-player-teleport-relatives-1212",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "members": [
+        "net.minecraft.server.level.ServerPlayer.teleportTo"
+      ],
+      "inClass": {
+        "net.minecraft.server.level.ServerPlayer.teleportTo(Lnet/minecraft/server/level/ServerLevel;DDDFF)": "$0.teleportTo($1, $2, $3, $4, java.util.Set.of(), $5, $6, true)"
+      },
+      "match": "no suitable method found for teleportTo\\(ServerLevel,[\\w.]+,[\\w.]+,[\\w.]+,[\\w.]+,[\\w.]+\\)",
+      "apply": {
+        "find": "\\.\\s*teleportTo\\s*\\(\\s*((?:(?:[^(),]|\\([^()]*\\))+?\\s*,\\s*){3}(?:[^(),]|\\([^()]*\\))+?)\\s*,\\s*((?:[^(),]|\\([^()]*\\))+?\\s*,\\s*(?:[^(),]|\\([^()]*\\))+?)\\s*\\)",
+        "replace": ".teleportTo($1, java.util.Set.of(), $2, true)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 dropped ServerPlayer.teleportTo(level, x, y, z, yRot, xRot). It set the camera back to the player, stopped riding and moved to an absolute place; the method left takes the relative-movement set (empty: every value absolute) and whether to set the camera (true, as the old one always did).",
+      "verified": "Mojang's 1.21.1 and 1.21.2 client jars and mappings: 1.21.1 ServerPlayer.teleportTo(ServerLevel,double,double,double,float,float) calls setCamera(this) and stopRiding() first; 1.21.2 has only teleportTo(ServerLevel,double,double,double,Set,float,float,boolean), which calls setCamera(this) when the boolean is set",
+      "test": {
+        "error": "Warp.java:3: error: no suitable method found for teleportTo(ServerLevel,double,double,double,float,float)\n        player.teleportTo(level, pos.x(), pos.y(), pos.z(), yaw, 0.0F);\n              ^\n",
+        "before": "class Warp {\n    void f(ServerPlayer player, ServerLevel level, Vec3 pos, float yaw) {\n        player.teleportTo(level, pos.x(), pos.y(), pos.z(), yaw, 0.0F);\n    }\n}\n",
+        "after": "class Warp {\n    void f(ServerPlayer player, ServerLevel level, Vec3 pos, float yaw) {\n        player.teleportTo(level, pos.x(), pos.y(), pos.z(), java.util.Set.of(), yaw, 0.0F, true);\n    }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
       "id": "item-cooldowns-stack-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
