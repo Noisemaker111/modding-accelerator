@@ -760,6 +760,55 @@ public final class GameDiff {
         return new String[] { VersionMap.jsonString(obj, "url", 0), VersionMap.jsonString(obj, "sha1", 0) };
     }
 
+    /**
+     * The jars of the libraries a release runs with (JOML, DataFixerUpper, Brigadier, fastutil, LWJGL...), as its
+     * version json lists them, each fetched once and checked by its sha1. Natives are left out: they hold no classes.
+     */
+    static List<Path> libraries(String versionJson) throws Exception {
+        List<Path> out = new ArrayList<>();
+        Matcher m = Pattern.compile("\"artifact\"\\s*:\\s*\\{([^}]*)}").matcher(versionJson);
+        Set<String> seen = new HashSet<>();
+        while (m.find()) {
+            String obj = m.group(1);
+            String path = VersionMap.jsonString(obj, "path", 0);
+            if (path == null || !path.endsWith(".jar") || path.contains("natives") || !seen.add(path)) {
+                continue;
+            }
+            out.add(verified(new String[] { VersionMap.jsonString(obj, "url", 0), VersionMap.jsonString(obj, "sha1", 0) },
+                "lib-" + path.substring(path.lastIndexOf('/') + 1)));
+        }
+        return out;
+    }
+
+    /**
+     * Library classes as the JVM resolves a mod's references against them: declarations only, no code, marked as not the
+     * game's (as the loader's are). A class the snapshot already has (the game's, the loader's, an earlier jar's) is kept.
+     */
+    static void addLibraries(Map<String, Cls> into, List<Path> jars) throws IOException {
+        for (Path jar : jars) {
+            for (byte[] bytes : classes(jar, null)) {
+                ClassModel cm = ClassFile.of().parse(bytes);
+                String name = cm.thisClass().asInternalName();
+                if (into.containsKey(name)) {
+                    continue;
+                }
+                List<String> ifs = new ArrayList<>();
+                for (ClassEntry e : cm.interfaces()) {
+                    ifs.add(e.asInternalName());
+                }
+                Cls c = new Cls(name, cm.flags().flagsMask(), cm.superclass().map(ClassEntry::asInternalName).orElse(null), ifs, true);
+                for (FieldModel fm : cm.fields()) {
+                    c.fields.put(fm.fieldName().stringValue(), new Fld(c, fm.fieldName().stringValue(), fm.fieldType().stringValue(), fm.flags().flagsMask()));
+                }
+                for (MethodModel mm : cm.methods()) {
+                    Meth m = new Meth(c, mm.methodName().stringValue(), mm.methodType().stringValue(), mm.flags().flagsMask());
+                    c.methods.put(m.name + m.desc, m);
+                }
+                into.put(name, c);
+            }
+        }
+    }
+
     static Path verified(String[] dl, String name) throws Exception {
         Path p = VersionMap.fetch(dl[0], name);
         String sha = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(Files.readAllBytes(p)));
