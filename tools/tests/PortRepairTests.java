@@ -387,6 +387,15 @@ public final class PortRepairTests {
             ),
             "a moved game class inside a string gets its full new name, in descriptor and dotted form; code and comments are left to the other renames"
         );
+        // DragonMine Z keeps a 47 KB string literal on one line; the scan once overflowed the stack on it.
+        String data = "x".repeat(60000) + "\\\"" + "y".repeat(60000);
+        String huge = "String a = \"" + data + " net.minecraft.client.item.TooltipData\";\n";
+        check(
+            Port.classNamesInStrings(huge, classes).equals(
+                "String a = \"" + data + " net.minecraft.item.tooltip.TooltipData\";\n"
+            ),
+            "a string literal tens of kilobytes long with an escape inside is scanned, and the game class at its end renamed"
+        );
         String stack =
             "\t@Inject(at = @At(\"RETURN\"), method = \"getTooltip(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/tooltip/TooltipType;)Ljava/util/List;\")\n\tprivate void getTooltipFromItem(PlayerEntity player, TooltipType context, CallbackInfoReturnable<List> info)\n\t{\n\t}\n";
         String named = Port.repairMixinSource(
