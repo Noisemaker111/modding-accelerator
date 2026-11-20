@@ -93,12 +93,38 @@ final class PortChains {
                 todo.push(k);
             }
         }
+        Map<Integer, Integer> storesTo = new HashMap<>(); // local -> how many stores the method makes to it
+        Map<Integer, GameDiff.Node> storeAt = new HashMap<>(); // instruction -> the store statement there
+        for (GameDiff.Node st : body.statements) {
+            if ("store".equals(st.value)) {
+                storesTo.merge(st.slot, 1, Integer::sum);
+                storeAt.put(st.at, st);
+            }
+        }
         Map<Integer, Edit> out = new HashMap<>();
         for (GameDiff.Node y : seen) {
             if (y.op != 'v' && y.op != 's' || y.kids.length == 0 || y.at < 0) {
                 continue;
             }
             for (Spec s : specs) {
+                if (s.at() < 0) {
+                    // A sibling: Y on the receiver X was called on, earlier, with X's value kept in a local the method stores
+                    // to only there, so that local holds it wherever Y runs.
+                    if (y.op != 'v' || out.containsKey(y.at) || !y.ref.name().equals(s.yName()) || !y.ref.desc().equals(s.yDesc())
+                        || !s.yOwner().equals(declarer.declaring(y.ref.owner(), 'm', y.ref.name(), y.ref.desc()))) {
+                        continue;
+                    }
+                    for (GameDiff.Node x : parents.getOrDefault(y.kids[0], List.of())) {
+                        GameDiff.Node st = x.at < 0 ? null : storeAt.get(x.at + 1);
+                        if (x.op == 'v' && x != y && x.kids.length > 0 && x.kids[0] == y.kids[0] && x.at < y.at && x.ref.name().equals(s.xName())
+                            && x.ref.desc().equals(s.xDesc()) && s.xOwner().equals(declarer.declaring(x.ref.owner(), 'm', x.ref.name(), x.ref.desc()))
+                            && st != null && st.kids[0] == x && storesTo.get(st.slot) == 1) {
+                            out.put(y.at, new Edit(s, true, st.slot));
+                            break;
+                        }
+                    }
+                    continue;
+                }
                 if (s.at() >= y.kids.length) {
                     continue;
                 }
@@ -218,6 +244,15 @@ final class PortChains {
                 return false;
             }
             Spec s = e.spec();
+            if (s.at() < 0) {
+                // Y's receiver stays where it is; X's value is loaded from its local after it, then Y's arguments.
+                Type[] args = Type.getArgumentTypes(s.yDesc());
+                int[] slots = spill(args);
+                super.visitVarInsn(Opcodes.ALOAD, e.slot());
+                load(args, slots);
+                super.visitMethodInsn(Opcodes.INVOKESTATIC, s.xOwner(), s.fake(), s.fakeDesc(), s.ownerInterface());
+                return true;
+            }
             Type[] xs = firstOperands(s);
             if (!e.second()) {
                 int[] slots = spill(xs);

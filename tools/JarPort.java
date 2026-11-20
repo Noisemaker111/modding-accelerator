@@ -169,6 +169,20 @@ public final class JarPort {
         boolean xStatic = field ? (f.flags & Opcodes.ACC_STATIC) != 0 : m.isStatic();
         boolean first = "first".equals(Json.text(w, "result", ""));
         StringBuilder params = new StringBuilder("(");
+        if (at < 0) {
+            // A sibling: Y on X's receiver, with X's value (kept in a local) passed after Y's receiver.
+            if (field || y.isStatic() || xStatic) {
+                return;
+            }
+            params.append('L').append(yOwner).append(';').append(desc.substring(desc.indexOf(')') + 1)).append(yDesc, 1, yDesc.indexOf(')')).append(')');
+            String fake = from + "+" + yName + "+r", fakeDesc = params + yDesc.substring(yDesc.indexOf(')') + 1);
+            xc.methods.put(fake + fakeDesc, new GameDiff.Meth(xc, fake, fakeDesc, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+            fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game chain " + Json.text(w, "step", ""), Pattern.compile(Pattern.quote(fake)),
+                params.toString(), Json.text(w, "expr", "")));
+            pairs.add(new PortChains.Spec('m', false, owner, from, desc, yOwner, yName, yDesc, false, -1, false, fake, fakeDesc,
+                (xc.flags & Opcodes.ACC_INTERFACE) != 0));
+            return;
+        }
         if (!xStatic) {
             params.append('L').append(owner).append(';');
         }
