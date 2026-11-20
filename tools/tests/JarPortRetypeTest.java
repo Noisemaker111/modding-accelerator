@@ -52,13 +52,18 @@ final class JarPortRetypeTest {
             && members.containsKey("method key(" + KEY + ")Z"), "the old methods are replaced by the new signatures: " + members.keySet());
 
         List<Map<String, Object>> others = new ArrayList<>();
-        port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin())), "other.jar", others);
+        Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin())), "other.jar", others));
         List<String> stays = Json.array(others.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(stays.contains("call: g6.Gui.fill(Lg6/Pose;I)V"),
             "a pose the game did not pass, and one outside a moved body, still get no graphics: " + stays);
         JarPortTest.expect(stays.contains("mixin injection point gone: g6.Screen.old()V in g6.Screen.tick()V (in m6.ScreenMixin)")
             && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 1,
             "an @Inject at a call the new method no longer makes is reported, one at a call it still makes is not: " + stays);
+        Map<String, String> handlers = JarPortFixesTest.strings(other.get("m6/ScreenMixin.class"));
+        String onRender = JarPortTest.members(other.get("m6/ScreenMixin.class")).getOrDefault("method onRender(" + GFX + "I" + CI + ")V", "");
+        JarPortTest.expect("render(Lg6/Graphics;I)V HEAD".equals(handlers.get("onRender(" + GFX + "I" + CI + ")V"))
+            && onRender.contains("call g6/Graphics.pose()Lg6/Pose;") && handlers.containsKey("onRender$mmt(" + POSE + "I" + CI + ")V"),
+            "a mixin handler that reads the old argument moves to the new signature and gets graphics.pose(): " + handlers + " " + onRender);
 
         Map<String, byte[]> classes = new HashMap<>(JarPortTest.newGame());
         classes.put("g6/Pose", JarPortTest.real("g6/Pose", "java/lang/Object", 0, new String[0], w -> JarPortTest.traced(w, "push", "()V", "push;", m -> { })));
@@ -202,7 +207,10 @@ final class JarPortRetypeTest {
         return w.toByteArray();
     }
 
-    /** m6.ScreenMixin: @Inject into tick() at its call of old(), which the new tick no longer makes, and at kept(), which it does. */
+    /**
+     * m6.ScreenMixin: @Inject into tick() at its call of old(), which the new tick no longer makes, and at kept(), which it
+     * does; and into render(pose, x) with a handler that pushes the pose.
+     */
     static byte[] mixin() {
         ClassWriter w = writer("m6/ScreenMixin", "java/lang/Object");
         AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
@@ -212,6 +220,10 @@ final class JarPortRetypeTest {
         target.visitEnd();
         JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onOld", "(" + CI + ")V", "tick()V", "INVOKE", "Lg6/Screen;old()V", null);
         JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onKept", "(" + CI + ")V", "tick()V", "INVOKE", "Lg6/Screen;kept()V", null);
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onRender", "(" + POSE + "I" + CI + ")V", "render(" + POSE + "I)V", "HEAD", null, m -> {
+            m.visitVarInsn(Opcodes.ALOAD, 1);
+            m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
+        });
         w.visitEnd();
         return w.toByteArray();
     }

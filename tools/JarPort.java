@@ -649,7 +649,7 @@ public final class JarPort {
      * each of the first captured parameters of the original comes from the new parameter from[i], or is a default
      * where the body never reads it.
      */
-    record Adapter(String desc, int[] from, int captured) {}
+    record Adapter(String desc, int[] from, int captured, String[][] via) {}
 
     /**
      * A method added to a mod class with a game method's new name and signature (new names), calling the mod's own
@@ -2100,13 +2100,30 @@ public final class JarPort {
                 if (!Arrays.equals(was, Arrays.copyOf(Type.getArgumentTypes(desc(before.desc)), captured))) {
                     return; // not the target's own arguments
                 }
-                int[] from = convert(now, was, unread(mod, key.substring(0, key.indexOf('.')), handler.name, handler.desc, (handler.flags & Opcodes.ACC_STATIC) != 0, captured));
+                boolean[] unread = unread(mod, key.substring(0, key.indexOf('.')), handler.name, handler.desc, (handler.flags & Opcodes.ACC_STATIC) != 0, captured);
+                int[] from = convert(now, was, unread);
+                String[][] via = new String[captured][];
                 if (from == null) {
-                    return;
+                    // Arguments that changed type: worked out from the new ones as the game's own overrides do (Retype).
+                    int[] paired = pair(now, was);
+                    String[][] learned = retype.conversions(before.owner.name, before.name, before.desc, new String[] { f.owner(), f.name(), f.desc() }, paired);
+                    from = new int[captured];
+                    for (int i = 0; i < captured; i++) {
+                        if (paired[i] >= 0) {
+                            from[i] = paired[i];
+                        } else if (learned != null && learned[i] != null) {
+                            from[i] = Integer.parseInt(learned[i][0]);
+                            via[i] = Arrays.copyOfRange(learned[i], 1, learned[i].length);
+                        } else if (unread != null && unread[i]) {
+                            from[i] = -1;
+                        } else {
+                            return;
+                        }
+                    }
                 }
                 Type[] desc = Arrays.copyOf(now, now.length + 1);
                 desc[now.length] = Type.getType(desc(params[captured].getDescriptor()));
-                mod.adapters.put(key, new Adapter(Type.getMethodDescriptor(Type.VOID_TYPE, desc), from, captured));
+                mod.adapters.put(key, new Adapter(Type.getMethodDescriptor(Type.VOID_TYPE, desc), from, captured, via));
             }
             for (int i = 0; i < into.size(); i++) {
                 if (into.get(i).kind() == 's') {
@@ -2757,6 +2774,7 @@ public final class JarPort {
                     pushDefault(handler, was[j]);
                 } else {
                     handler.visitVarInsn(now[f].getOpcode(Opcodes.ILOAD), slots[f]);
+                    steps(handler, adapter.via()[j]);
                 }
                 stack += was[j].getSize();
             }
@@ -2906,17 +2924,7 @@ public final class JarPort {
                     pushDefault(mv, was[i]);
                 } else {
                     loadNew(f);
-                    for (String text : br.via()[i] == null ? new String[0] : br.via()[i]) {
-                        String[] s = Retype.step(text);
-                        String owner = inverse.getOrDefault(s[1], s[1]);
-                        if (s[0].equals("m")) {
-                            GameDiff.Cls holder = b.classes.get(s[1]);
-                            boolean itf = holder != null && (holder.flags & Opcodes.ACC_INTERFACE) != 0;
-                            mv.visitMethodInsn(itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, owner, s[2], oldDesc(s[3]), itf);
-                        } else {
-                            mv.visitFieldInsn(Opcodes.GETFIELD, owner, s[2], oldDesc(s[3]));
-                        }
-                    }
+                    steps(mv, br.via()[i]);
                 }
                 mv.visitVarInsn(was[i].getOpcode(Opcodes.ISTORE), at(wasSlots[i]));
                 if (!stored.contains(wasSlots[i])) {
@@ -2986,6 +2994,20 @@ public final class JarPort {
         }
     }
 
+    /** The steps a conversion reads (Retype.step) on the value on top of the stack, written in the old release's names. */
+    void steps(MethodVisitor mv, String[] steps) {
+        for (String text : steps == null ? new String[0] : steps) {
+            String[] s = Retype.step(text);
+            String owner = inverse.getOrDefault(s[1], s[1]);
+            if (s[0].equals("m")) {
+                GameDiff.Cls holder = b.classes.get(s[1]);
+                boolean itf = holder != null && (holder.flags & Opcodes.ACC_INTERFACE) != 0;
+                mv.visitMethodInsn(itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, owner, s[2], oldDesc(s[3]), itf);
+            } else {
+                mv.visitFieldInsn(Opcodes.GETFIELD, owner, s[2], oldDesc(s[3]));
+            }
+        }
+    }
     /** The bridge's code: the mod's own method called on this with the arguments it takes, its result returned. */
     void bridgeCode(MethodVisitor mv, String owner, boolean itf, Bridge br) {
         Type[] now = Type.getArgumentTypes(oldDesc(br.desc()));
