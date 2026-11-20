@@ -69,6 +69,8 @@ public final class JarPort {
         final Set<String> grants = new TreeSet<>(); // lines the port adds to the mod's access transformer (new names)
         boolean canWiden; // the loader reads this jar's access transformer
         final Set<String> kept = new HashSet<>(); // name+desc of moved methods also kept as they were, for calls that cannot follow
+        final Set<String> unmoved = new HashSet<>(); // class.name+desc of bodies a call in them cannot be given its arguments
+        final Map<String, Integer> requires = new HashMap<>(); // mixin class -> its config's injectors.defaultRequire
 
         void change(String kind) {
             changed.merge(kind, 1, Integer::sum);
@@ -340,6 +342,7 @@ public final class JarPort {
                 read(mod, e.getValue());
             }
         }
+        requires(mod, entries);
         plan(mod);
         buses(mod);
         for (var e : mod.split.entrySet()) {
@@ -354,15 +357,22 @@ public final class JarPort {
         Set<String> wasUnlinked = new TreeSet<>(mod.unlinked), wasSilent = new TreeSet<>(mod.silent), wasGranted = new TreeSet<>(mod.grants);
         Map<String, Integer> wasChanged = new TreeMap<>(mod.changed);
         for (int pass = 0; pass < 4; pass++) {
-            int kept = mod.kept.size();
+            int kept = mod.kept.size(), unmoved = mod.unmoved.size();
             rewritten.clear();
             for (var e : entries.entrySet()) {
                 if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
                     rewritten.put(e.getKey(), rewriteOrReport(mod, e.getValue()));
                 }
             }
-            if (mod.kept.size() == kept) {
+            if (mod.kept.size() == kept && mod.unmoved.size() == unmoved) {
                 break;
+            }
+            // A body that cannot be moved whole stays as it was, an override the game no longer calls, as before the port.
+            for (String key : mod.unmoved) {
+                String owner = key.substring(0, key.indexOf('.')), member = key.substring(key.indexOf('.') + 1);
+                if (mod.bridges.getOrDefault(owner, new ArrayList<>()).removeIf(br -> br.via() != null && (br.target() + br.targetDesc()).equals(member))) {
+                    wasSilent.add("override no longer called: " + Exposure.dotted(owner) + "." + member + " (a call in it needs what the game passes now)");
+                }
             }
             mod.unlinked.clear();
             mod.unlinked.addAll(wasUnlinked);
@@ -619,7 +629,7 @@ public final class JarPort {
                             };
                         }
                         if (INJECTORS.contains(annotation)) {
-                            Injector inj = new Injector(annotation, new ArrayList<>(), new ArrayList<>());
+                            Injector inj = new Injector(annotation, new ArrayList<>(), new ArrayList<>(), new int[] { -1 });
                             mod.injectors.put(rc.name + "." + name + desc, inj);
                             return injection(inj, null);
                         }
@@ -661,8 +671,11 @@ public final class JarPort {
         "Lcom/llamalad7/mixinextras/injector/v2/WrapWithCondition;", "Lcom/llamalad7/mixinextras/injector/ModifyExpressionValue;",
         "Lcom/llamalad7/mixinextras/injector/ModifyReturnValue;", "Lcom/llamalad7/mixinextras/injector/ModifyReceiver;");
 
-    /** A handler's injector (its annotation): the target method strings, and each @At's {value, target, ordinal} (in @Slice too). */
-    record Injector(String kind, List<String> methods, List<String[]> ats) {}
+    /**
+     * A handler's injector (its annotation): the target method strings, each @At's {value, target, ordinal} (in @Slice
+     * too), and its require (-1: the mixin config's defaultRequire).
+     */
+    record Injector(String kind, List<String> methods, List<String[]> ats, int[] require) {}
 
     /**
      * A handler re-declared with its target's new parameters (desc, new names) and the original body moved to name$mmt:
@@ -685,7 +698,9 @@ public final class JarPort {
         return new AnnotationVisitor(Opcodes.ASM9) {
             @Override
             public void visit(String n, Object v) {
-                if (at != null && v instanceof String s && ("value".equals(n) || "target".equals(n))) {
+                if (at == null && "require".equals(n) && v instanceof Integer i) {
+                    inj.require()[0] = i;
+                } else if (at != null && v instanceof String s && ("value".equals(n) || "target".equals(n))) {
                     at["value".equals(n) ? 0 : 1] = s;
                 } else if (at != null && "ordinal".equals(n) && v instanceof Integer i && i >= 0) {
                     at[2] = String.valueOf(i);
@@ -2186,6 +2201,37 @@ public final class JarPort {
     }
 
     /**
+     * Each mixin class's config's injectors.defaultRequire (0 when the config gives none, as Mixin takes it), read from
+     * every mixin config in the jar: a JSON file naming a package and its mixin classes.
+     */
+    static void requires(Mod mod, Map<String, byte[]> entries) {
+        for (var e : entries.entrySet()) {
+            if (!e.getKey().endsWith(".json") || e.getKey().contains("/lang/")) {
+                continue;
+            }
+            Map<String, Object> config;
+            try {
+                config = Json.object(Json.parse(new String(e.getValue(), StandardCharsets.UTF_8)));
+            } catch (RuntimeException notJson) {
+                continue;
+            }
+            Object pkg = config.get("package");
+            if (!(pkg instanceof String p)) {
+                continue;
+            }
+            Object injectors = config.get("injectors");
+            int require = injectors instanceof Map<?, ?> m && m.get("defaultRequire") instanceof Number n ? n.intValue() : 0;
+            for (String list : List.of("mixins", "client", "server")) {
+                for (Object c : config.get(list) instanceof List<?> l ? l : List.of()) {
+                    if (c instanceof String name) {
+                        mod.requires.put((p + "." + name).replace('.', '/'), require);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * An injector into a method that still links, whose @At names a call or field that method made in the old release and
      * no longer makes in the new one (or not as often as its ordinal needs), finds no place there: Mixin scans 0 targets
      * and, with the require most mods set, stops the game (1.21.2's LoadingOverlay.render stopped calling
@@ -2212,8 +2258,12 @@ public final class JarPort {
                 int has = uses(code(b), b, now, at.kind(), at.owner(), at.name(), at.desc());
                 int needed = point[2] == null ? 1 : Integer.parseInt(point[2]) + 1;
                 if (had >= needed && has >= 0 && has < needed) {
-                    mod.unlinked.add("mixin injection point gone: " + Exposure.dotted(at.owner()) + "." + at.name() + (at.desc() == null ? "" : at.desc())
-                        + " in " + Exposure.dotted(now.owner.name) + "." + now.name + now.desc + " (in " + Exposure.dotted(mixin) + ")");
+                    // Mixin stops the game only where the injector requires a place (its require, or its config's
+                    // defaultRequire); otherwise the hook is quiet, as an override the game no longer calls is.
+                    int require = inj.require()[0] >= 0 ? inj.require()[0] : mod.requires.getOrDefault(mixin, 0);
+                    String gone = Exposure.dotted(at.owner()) + "." + at.name() + (at.desc() == null ? "" : at.desc())
+                        + " in " + Exposure.dotted(now.owner.name) + "." + now.name + now.desc + " (in " + Exposure.dotted(mixin) + ")";
+                    (require > 0 ? mod.unlinked : mod.silent).add((require > 0 ? "mixin injection point gone: " : "mixin injection finds no place: ") + gone);
                 }
             }
         }
@@ -3367,7 +3417,8 @@ public final class JarPort {
                     return;
                 }
                 if (moved.defaulted(Type.getArgumentTypes(desc))) {
-                    mod.unlinked.add("call: " + Exposure.dotted(decl.owner()) + "." + name + desc + " (needs what the game passes now)");
+                    // The body has no value to pass here: it is not moved after all (see port), and stays as it was.
+                    mod.unmoved.add(Sites.this.key);
                     super.visitMethodInsn(opcode, owner, name, desc, itf);
                     return;
                 }

@@ -26,8 +26,8 @@ final class JarPortRetypeTest {
         JarPortTest.snap(b, "g6/Key", 0, null, "code()I", "scan()I");
         JarPortTest.snap(a, "g6/Gui", 0, null);
         a.classes.get("g6/Gui").methods.put("fill(" + POSE + "I)V", new GameDiff.Meth(a.classes.get("g6/Gui"), "fill", "(" + POSE + "I)V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
-        JarPortTest.snap(a, "g6/Screen", 0, null, "render(" + POSE + "I)V", "back(" + POSE + ")V", "key(III)Z", "tick()V", "old()V", "kept()V", "hover(" + POSE + ")V", "chr(CI)Z", "drag(IIII)Z");
-        JarPortTest.snap(b, "g6/Screen", 0, null, "render(" + GFX + "I)V", "back(" + GFX + ")V", "key(" + KEY + ")Z", "tick()V", "old()V", "kept()V", "hover(" + GFX + ")V", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z");
+        JarPortTest.snap(a, "g6/Screen", 0, null, "render(" + POSE + "I)V", "back(" + POSE + ")V", "key(III)Z", "tick()V", "old()V", "kept()V", "hover(" + POSE + ")V", "chr(CI)Z", "drag(IIII)Z", "scroll(III)Z");
+        JarPortTest.snap(b, "g6/Screen", 0, null, "render(" + GFX + "I)V", "back(" + GFX + ")V", "key(" + KEY + ")Z", "tick()V", "old()V", "kept()V", "hover(" + GFX + ")V", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z", "scroll(IIII)Z");
         JarPortTest.snap(a, "g6/Title", 0, "g6/Screen", "render(" + POSE + "I)V", "key(III)Z", "chr(CI)Z", "drag(IIII)Z");
         JarPortTest.snap(b, "g6/Title", 0, "g6/Screen", "render(" + GFX + "I)V", "key(" + KEY + ")Z", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z");
         Path map = scratch.resolve("route-retype.json");
@@ -37,7 +37,8 @@ final class JarPortRetypeTest {
                             {"owner": "g6.Screen", "from": "key", "desc": "(III)Z", "to": "key", "newDesc": "(Lg6/Key;)Z"},
                             {"owner": "g6.Screen", "from": "hover", "desc": "(Lg6/Pose;)V", "to": "hover", "newDesc": "(Lg6/Graphics;)V"},
                             {"owner": "g6.Screen", "from": "chr", "desc": "(CI)Z", "to": "chr", "newDesc": "(Lg6/Key;)Z"},
-                            {"owner": "g6.Screen", "from": "drag", "desc": "(IIII)Z", "to": "drag", "newDesc": "(Lg6/Key;II)Z"}],
+                            {"owner": "g6.Screen", "from": "drag", "desc": "(IIII)Z", "to": "drag", "newDesc": "(Lg6/Key;II)Z"},
+                            {"owner": "g6.Screen", "from": "scroll", "desc": "(III)Z", "to": "scroll", "newDesc": "(IIII)Z"}],
              "rewrites": [{"owner": "g6.Gui", "from": "fill", "desc": "(Lg6/Pose;I)V", "static": true, "toOwner": "g6.Graphics", "to": "fill",
                            "newDesc": "(I)V", "newStatic": false, "votes": 3, "of": 3}]}
             """);
@@ -61,14 +62,30 @@ final class JarPortRetypeTest {
             && keptUnlinked.stream().noneMatch(u -> u.contains("Caller") || u.contains("MyScreen.render")),
             "a moved method that a call elsewhere cannot follow is also kept as it was, so that call still links: " + kept.keySet() + " " + keptUnlinked);
 
+        List<Map<String, Object>> scrolled = new ArrayList<>();
+        Map<String, String> scroller = JarPortTest.members(JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Scroller.class", scroller())), "scroll.jar", scrolled)).get("m6/Scroller.class"));
+        List<String> scrollSilent = Json.array(scrolled.get(0).get("silent")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(scroller.containsKey("method scroll(III)Z") && !scroller.containsKey("method scroll(IIII)Z")
+            && scrollSilent.stream().anyMatch(s -> s.startsWith("override no longer called: m6.Scroller.scroll(III)Z")),
+            "a body with a call that cannot be given what the game passes now (no value for a parameter it only passes on) stays as it was: "
+                + scroller.keySet() + " " + scrollSilent);
+
         List<Map<String, Object>> others = new ArrayList<>();
-        Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin())), "other.jar", others));
+        Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ScreenMixin\"], \"injectors\": {\"defaultRequire\": 1}}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "other.jar", others));
         List<String> stays = Json.array(others.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(stays.contains("call: g6.Gui.fill(Lg6/Pose;I)V"),
             "a pose the game did not pass, and one outside a moved body, still get no graphics: " + stays);
         JarPortTest.expect(stays.contains("mixin injection point gone: g6.Screen.old()V in g6.Screen.tick()V (in m6.ScreenMixin)")
             && stays.stream().filter(u -> u.startsWith("mixin injection point gone")).count() == 1,
             "an @Inject at a call the new method no longer makes is reported, one at a call it still makes is not: " + stays);
+        List<Map<String, Object>> quiet = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/ScreenMixin.class", mixin())), "quiet.jar", quiet);
+        List<String> quietUnlinked = Json.array(quiet.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        List<String> quietSilent = Json.array(quiet.get(0).get("silent")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(quietUnlinked.stream().noneMatch(u -> u.contains("injection point"))
+            && quietSilent.contains("mixin injection finds no place: g6.Screen.old()V in g6.Screen.tick()V (in m6.ScreenMixin)"),
+            "where nothing requires the place (no defaultRequire), a gone injection point is a quiet hook, not a break: " + quietUnlinked + " " + quietSilent);
         Map<String, String> handlers = JarPortFixesTest.strings(other.get("m6/ScreenMixin.class"));
         String onRender = JarPortTest.members(other.get("m6/ScreenMixin.class")).getOrDefault("method onRender(" + GFX + "I" + CI + ")V", "");
         JarPortTest.expect("render(Lg6/Graphics;I)V HEAD".equals(handlers.get("onRender(" + GFX + "I" + CI + ")V"))
@@ -221,6 +238,23 @@ final class JarPortRetypeTest {
         d.visitInsn(Opcodes.IRETURN);
         d.visitMaxs(0, 0);
         d.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.Scroller.scroll(x, y, d) returns super.scroll(x, y, d); the game's scroll took a fourth int. */
+    static byte[] scroller() {
+        ClassWriter w = writer("m6/Scroller", "g6/Screen");
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "scroll", "(III)Z", null, null);
+        m.visitCode();
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        for (int i = 1; i <= 3; i++) {
+            m.visitVarInsn(Opcodes.ILOAD, i);
+        }
+        m.visitMethodInsn(Opcodes.INVOKESPECIAL, "g6/Screen", "scroll", "(III)Z", false);
+        m.visitInsn(Opcodes.IRETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }
