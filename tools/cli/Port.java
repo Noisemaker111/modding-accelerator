@@ -262,6 +262,155 @@ final class Port {
             out.put(kind + "Removed", removed);
         }
         out.put("history", route.getOrDefault("history", List.of()));
+        // The game's call-site rewrites, as they are (for code the map has already moved to Mojang's names) and, where the
+        // removed member is one of the source release's, keyed by its yarn name too (what javac reports before then).
+        Map<String, Map<String, Object>> yarnOf = new HashMap<>();
+        for (Object o : Json.array(names.get("methods"))) {
+            var m = Json.object(o);
+            String owner = Json.text(m, "owner", ""), mojangOwner = Json.text(m, "newOwner", mojang.apply(owner));
+            yarnOf.put(mojangOwner + "." + Json.text(m, "to", "") + Json.text(m, "newDesc", ""), m);
+        }
+        List<Object> rewrites = new ArrayList<>();
+        for (Object o : Json.array(route.get("rewrites"))) {
+            var r = Json.object(o);
+            rewrites.add(r);
+            var y = yarnOf.get(Json.text(r, "owner", "") + "." + Json.text(r, "from", "") + Json.text(r, "desc", ""));
+            if (y == null) continue;
+            Map<String, Object> yarnKeyed = new LinkedHashMap<>(r);
+            yarnKeyed.put("owner", y.get("owner"));
+            yarnKeyed.put("from", y.get("from"));
+            yarnKeyed.put("desc", y.get("desc"));
+            rewrites.add(yarnKeyed);
+        }
+        out.put("rewrites", rewrites);
+        List<Object> classRewrites = new ArrayList<>();
+        for (Object o : Json.array(route.getOrDefault("classRewrites", List.of()))) {
+            var r = Json.object(o);
+            classRewrites.add(r);
+            String yarnName = fromMojang.get(Json.text(r, "from", ""));
+            if (yarnName == null) continue;
+            Map<String, Object> yarnKeyed = new LinkedHashMap<>(r);
+            yarnKeyed.put("from", yarnName);
+            classRewrites.add(yarnKeyed);
+        }
+        out.put("classRewrites", classRewrites);
+        return out;
+    }
+
+    /** The game's class rewrites (Mojang names) in yarn: the removed class as the source names it, its replacement as the target. */
+    static List<Object> yarnClassRewrites(List<Object> game, Map<String, Object> source, Map<String, Object> target) {
+        Map<String, String> sourceYarn = new HashMap<>(), targetYarn = new HashMap<>();
+        for (Object o : Json.array(source.get("classes"))) sourceYarn.put(Json.text(Json.object(o), "to", ""), Json.text(Json.object(o), "from", ""));
+        for (Object o : Json.array(target.get("classes"))) targetYarn.put(Json.text(Json.object(o), "to", ""), Json.text(Json.object(o), "from", ""));
+        List<Object> out = new ArrayList<>();
+        for (Object o : game) {
+            var r = Json.object(o);
+            String from = sourceYarn.get(Json.text(r, "from", "")), to = targetYarn.get(Json.text(r, "to", ""));
+            if (from == null || to == null) continue;
+            Map<String, Object> yarn = new LinkedHashMap<>(r);
+            yarn.put("from", from);
+            yarn.put("to", to);
+            out.add(yarn);
+        }
+        return out;
+    }
+
+    /**
+     * A yarn route (Fabric's tables) knows names, not what the game's own code does at a call site: the game's call-site
+     * rewrites come from GameDiff over the same releases, in Mojang's names, and are added to the route map in yarn names,
+     * the removed member by the source release's table and its replacement by the target's. A rewrite either side cannot
+     * name in yarn is left out; without GameDiff or a table, the route map stays as it was.
+     */
+    static void yarnRewrites(JavaTools tools, List<String> chain, String from, String to, Path map) {
+        try {
+            Path game = map.resolveSibling(map.getFileName().toString().replace(".json", ".game.json"));
+            var diff = tools.run("GameDiff", List.of("--chain", String.join(",", chain), "--out", game.toString()), "mapping-rewrites");
+            if (diff.exit() != 0) return;
+            Map<String, Map<String, Object>> tables = new HashMap<>();
+            for (String version : new LinkedHashSet<>(List.of(from, to))) {
+                Path table = map.resolveSibling("names-yarn-" + version + ".json");
+                if (!Files.isRegularFile(table)) {
+                    var made = tools.run(
+                        "VersionMap",
+                        List.of(version, version, "--from-names", "yarn", "--to-names", "mojmap", "--names", "yarn", "--out", table.toString()),
+                        "mapping-yarn-" + version
+                    );
+                    if (made.exit() != 0) return;
+                }
+                tables.put(version, Json.read(table));
+            }
+            var gameMap = Json.read(game);
+            Map<String, Object> route = new LinkedHashMap<>(Json.read(map));
+            // What Fabric's tables call removed but the game's own map links (1.20.2: PacketByteBuf.getVarIntLength, Mojang's
+            // FriendlyByteBuf.getVarIntSize, moved to VarInt.getByteSize): those links are rewrites too, static-ness read
+            // from the call.
+            Set<String> removed = new HashSet<>();
+            for (Object o : Json.array(route.getOrDefault("methodsRemoved", List.of()))) {
+                var m = Json.object(o);
+                removed.add(Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""));
+            }
+            List<Object> linked = new ArrayList<>();
+            for (String list : List.of("methods", "methodsMoved", "signatures")) for (Object o : Json.array(gameMap.getOrDefault(list, List.of()))) {
+                var m = Json.object(o);
+                Map<String, Object> asRewrite = new LinkedHashMap<>();
+                asRewrite.put("owner", m.get("owner"));
+                asRewrite.put("from", m.get("from"));
+                asRewrite.put("desc", m.get("desc"));
+                asRewrite.put("toOwner", m.getOrDefault("newOwner", m.get("owner")));
+                asRewrite.put("to", m.get("to"));
+                asRewrite.put("newDesc", m.getOrDefault("newDesc", m.get("desc")));
+                linked.add(asRewrite);
+            }
+            List<Object> rewrites = yarnRewrites(Json.array(gameMap.get("rewrites")), tables.get(from), tables.get(to));
+            for (Object o : yarnRewrites(linked, tables.get(from), tables.get(to))) {
+                var r = Json.object(o);
+                if (removed.contains(Json.text(r, "owner", "") + "." + Json.text(r, "from", "") + Json.text(r, "desc", ""))) rewrites.add(r);
+            }
+            List<Object> classRewrites = yarnClassRewrites(Json.array(gameMap.getOrDefault("classRewrites", List.of())), tables.get(from), tables.get(to));
+            route.put("rewrites", rewrites);
+            route.put("classRewrites", classRewrites);
+            saveMap(map, route);
+        } catch (Exception unavailable) {
+            System.err.println("Warning: the game's call-site rewrites are not in this yarn route: " + unavailable.getMessage());
+        }
+    }
+
+    /** The game's rewrites (Mojang names) in yarn: the removed member as the source table names it, the replacement as the target's. */
+    static List<Object> yarnRewrites(List<Object> game, Map<String, Object> source, Map<String, Object> target) {
+        Map<String, Map<String, Object>> sourceMember = new HashMap<>(), targetMember = new HashMap<>();
+        for (var side : List.of(Map.entry(source, sourceMember), Map.entry(target, targetMember))) {
+            Map<String, String> mojangClass = new HashMap<>();
+            for (Object o : Json.array(side.getKey().get("classes"))) {
+                var c = Json.object(o);
+                mojangClass.put(Json.text(c, "from", ""), Json.text(c, "to", ""));
+            }
+            for (Object o : Json.array(side.getKey().get("methods"))) {
+                var m = Json.object(o);
+                String owner = Json.text(m, "owner", "");
+                String mojangOwner = Json.text(m, "newOwner", mojangClass.getOrDefault(owner, owner));
+                side.getValue().put(mojangOwner + "." + Json.text(m, "to", "") + Json.text(m, "newDesc", ""), m);
+            }
+        }
+        List<Object> out = new ArrayList<>();
+        for (Object o : game) {
+            var r = Json.object(o);
+            var old = sourceMember.get(Json.text(r, "owner", "") + "." + Json.text(r, "from", "") + Json.text(r, "desc", ""));
+            var neu = targetMember.get(Json.text(r, "toOwner", "") + "." + Json.text(r, "to", "") + Json.text(r, "newDesc", ""));
+            boolean deleted = Json.text(r, "to", "").isEmpty();
+            if (old == null || (neu == null && !deleted)) continue;
+            Map<String, Object> yarn = new LinkedHashMap<>(r);
+            yarn.put("owner", old.get("owner"));
+            yarn.put("from", old.get("from"));
+            yarn.put("desc", old.get("desc"));
+            if (deleted) {
+                out.add(yarn); // a call the game deleted has nothing to name on the target side
+                continue;
+            }
+            yarn.put("toOwner", neu.get("owner"));
+            yarn.put("to", neu.get("from"));
+            yarn.put("newDesc", neu.get("desc"));
+            out.add(yarn);
+        }
         return out;
     }
 
@@ -310,28 +459,51 @@ final class Port {
      * renamed where javac looked it up on LocalPlayer. Null when the log names none.
      */
     Path supertypes(Path log) throws IOException {
-        Matcher located = Pattern.compile("location: (?:variable \\w+ of type |class |interface )([\\w.$]+)").matcher(
-            logText(log)
-        );
+        String text = logText(log);
+        Matcher located = Pattern.compile("location: (?:variable \\w+ of type |class |interface )([\\w.$]+)").matcher(text);
         Set<String> types = new TreeSet<>();
         while (located.find()) types.add(located.group(1).replaceAll("<.*", ""));
-        if (types.isEmpty()) return null;
+        Map<String, Set<String>> overriders = overridingClasses(text);
+        if (types.isEmpty() && overriders.isEmpty()) return null;
         if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
         StringBuilder out = new StringBuilder();
         for (String type : types) {
             List<String> found = supertypeIndex.resolve(type, List.of());
-            if (found.isEmpty()) continue;
-            Set<String> supers = new LinkedHashSet<>();
-            Deque<String> queue = new ArrayDeque<>(List.of(found.get(0)));
-            while (!queue.isEmpty()) {
-                Explain.ClassInfo info = supertypeIndex.info(queue.poll());
-                if (info == null) continue;
-                List<String> next = new ArrayList<>(info.interfaces());
-                if (info.superName() != null && !info.superName().equals("java/lang/Object")) next.add(0, info.superName());
-                for (String parent : next) if (supers.add(parent)) queue.add(parent);
+            if (found.isEmpty()) {
+                // A class of the mod itself: its game supertypes, read through its own source.
+                String simple = simpleName(type.replace('/', '.'));
+                Set<String> parents = new LinkedHashSet<>();
+                for (Path file : sources(build.project)) if (file.getFileName().toString().equals(simple + ".java")) {
+                    sourceParents(Files.readString(file), simple, parents, 0);
+                    break;
+                }
+                Set<String> supers = new LinkedHashSet<>();
+                for (String parent : parents) {
+                    supers.add(parent);
+                    supers.addAll(gameSupertypes(parent));
+                }
+                if (supers.isEmpty()) continue;
+                out.append(simple);
+                for (String parent : supers) out.append(' ').append(simpleName(parent.replace('/', '.')));
+                out.append('\n');
+                continue;
             }
+            Set<String> supers = gameSupertypes(found.get(0));
             if (supers.isEmpty()) continue;
             out.append(simpleName(type.replace('/', '.')));
+            for (String parent : supers) out.append(' ').append(simpleName(parent.replace('/', '.')));
+            out.append('\n');
+        }
+        // A mod class whose @Override stopped overriding: its own game supertypes, so the fixer renames the method the
+        // way the game renamed it on that supertype (Screen.render -> extractRenderState), not on some other owner.
+        for (var entry : overriders.entrySet()) {
+            Set<String> supers = new LinkedHashSet<>();
+            for (String parent : entry.getValue()) {
+                supers.add(parent.replace('/', '.'));
+                supers.addAll(gameSupertypes(parent));
+            }
+            if (supers.isEmpty()) continue;
+            out.append(entry.getKey());
             for (String parent : supers) out.append(' ').append(simpleName(parent.replace('/', '.')));
             out.append('\n');
         }
@@ -339,6 +511,79 @@ final class Port {
         Path file = log.resolveSibling(log.getFileName().toString().replaceFirst("\\.log$", "") + "-supertypes.txt");
         Files.writeString(file, out.toString(), StandardCharsets.UTF_8);
         return file;
+    }
+
+    /** Every supertype of a classpath class (internal names), nearest first. */
+    Set<String> gameSupertypes(String internal) {
+        Set<String> supers = new LinkedHashSet<>();
+        Deque<String> queue = new ArrayDeque<>(List.of(internal));
+        while (!queue.isEmpty()) {
+            Explain.ClassInfo info = supertypeIndex.info(queue.poll());
+            if (info == null) continue;
+            List<String> next = new ArrayList<>(info.interfaces());
+            if (info.superName() != null && !info.superName().equals("java/lang/Object")) next.add(0, info.superName());
+            for (String parent : next) if (supers.add(parent)) queue.add(parent);
+        }
+        return supers;
+    }
+
+    /**
+     * For each "method does not override" error, the enclosing class (simple name) and the classpath classes it extends
+     * or implements (internal names). A parent the mod declares itself is followed through its own source, up to four
+     * levels, until it reaches a class of the classpath.
+     */
+    Map<String, Set<String>> overridingClasses(String log) throws IOException {
+        Map<String, Set<String>> out = new TreeMap<>();
+        Matcher error = Pattern.compile("(?m)^\\s*" + FILE + ":(\\d+): error: method does not override").matcher(log);
+        while (error.find()) {
+            Path file = Path.of(error.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            if (!Files.isRegularFile(file)) continue;
+            List<String> lines = Files.readAllLines(file);
+            int line = Integer.parseInt(error.group(2));
+            String enclosing = null;
+            for (int back = Math.min(lines.size(), line) - 1; back >= 0 && enclosing == null; back--) {
+                Matcher type = Pattern.compile("\\b(?:class|enum|record)\\s+(\\w+)").matcher(lines.get(back));
+                if (type.find()) enclosing = type.group(1);
+            }
+            if (enclosing == null || out.containsKey(enclosing)) continue;
+            if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+            Set<String> parents = new LinkedHashSet<>();
+            sourceParents(String.join("\n", lines), enclosing, parents, 0);
+            if (!parents.isEmpty()) out.put(enclosing, parents);
+        }
+        return out;
+    }
+
+    /** The classpath classes a class declared in this source extends or implements, through the mod's own classes. */
+    void sourceParents(String source, String type, Set<String> into, int depth) throws IOException {
+        if (depth > 4) return;
+        Matcher declared = Pattern.compile(
+            "\\b(?:class|enum|record)\\s+" + Pattern.quote(type) + "\\b[^{]*?(?:\\bextends\\s+([\\w.]+)(?:<[^{]*?>)?)?\\s*(?:\\bimplements\\s+([^{]+))?\\{"
+        ).matcher(source);
+        if (!declared.find()) return;
+        List<String> imports = new ArrayList<>();
+        Matcher imp = Pattern.compile("(?m)^import\\s+([\\w.]+)\\s*;").matcher(source);
+        while (imp.find()) imports.add(imp.group(1));
+        List<String> named = new ArrayList<>();
+        if (declared.group(1) != null) named.add(declared.group(1));
+        if (declared.group(2) != null) for (String part : declared.group(2).replaceAll("<[^<>]*>", "").split(",")) {
+            if (!part.isBlank()) named.add(part.trim());
+        }
+        for (String parent : named) {
+            List<String> found = supertypeIndex.resolve(parent, imports);
+            if (!found.isEmpty() && !found.get(0).startsWith("java/")) {
+                into.add(found.get(0));
+                continue;
+            }
+            // The mod's own class: read where it is declared.
+            String simple = parent.substring(parent.lastIndexOf('.') + 1);
+            for (Path other : sources(build.project)) {
+                if (!other.getFileName().toString().equals(simple + ".java")) continue;
+                sourceParents(Files.readString(other), simple, into, depth + 1);
+                break;
+            }
+        }
     }
 
     /**
@@ -383,6 +628,277 @@ final class Port {
         }
         if (changed > 0) rulesApplied.putIfAbsent("import-missing-game-class", List.of());
         return changed;
+    }
+
+    /**
+     * A game class the target removed (1.21.2's BlockEntityType.Builder) is carried into the mod: its source in the old
+     * game, from the decompiled game the old build set up, becomes a class of the mod's own package, and every use
+     * follows. The next repair round ports the carried code like the mod's own, with the same map; javac decides whether
+     * it stands. Only a top-level class or a static nested one is carried.
+     */
+    int carryRemovedClasses(Path log, String from) throws Exception {
+        String errors = logText(log);
+        Matcher reported = Pattern.compile(
+            "(?m)^\\s*" + FILE + ":[0-9]+: error: cannot find symbol\\R(?:.*\\R){0,2}?\\s*symbol:\\s+class ([A-Z]\\w*)\\R\\s*location:\\s+(class|package) ([\\w.]+)"
+        ).matcher(errors);
+        int carried = 0;
+        Set<String> done = new HashSet<>();
+        while (reported.find()) {
+            Path file = Path.of(reported.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            file = file.normalize();
+            if (!file.startsWith(build.project.root) || !Files.isRegularFile(file)) continue;
+            String text = Files.readString(file), simple = reported.group(2), outer = null, pkg;
+            if (reported.group(3).equals("package")) pkg = reported.group(4);
+            else {
+                String owner = reported.group(4);
+                Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+)\\." + Pattern.quote(owner) + "\\s*;").matcher(text);
+                if (owner.contains(".")) {
+                    pkg = owner.substring(0, owner.lastIndexOf('.'));
+                    outer = owner.substring(owner.lastIndexOf('.') + 1);
+                } else if (imported.find()) {
+                    pkg = imported.group(1);
+                    outer = owner;
+                } else continue;
+            }
+            if (!pkg.startsWith("net.minecraft") && !pkg.startsWith("com.mojang")) continue;
+            // Only a class the game map records as removed is carried; one it moves or replaces is the map's own step.
+            if (!mappedClasses().contains(pkg + "." + (outer == null ? simple : outer + "$" + simple))) continue;
+            Matcher declared =Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
+            if (!declared.find()) continue;
+            String[] parts = declared.group(1).split("\\.");
+            String home = String.join(".", Arrays.copyOf(parts, Math.min(3, parts.length))) + ".mmt.carried";
+            String name = outer == null ? simple : outer + simple;
+            Path root = file;
+            for (int i = 0; i < parts.length + 1 && root != null; i++) root = root.getParent();
+            if (root == null) continue;
+            Path target = root.resolve(home.replace('.', '/')).resolve(name + ".java");
+            if (done.add(target.toString()) && !Files.isRegularFile(target)) {
+                String source = oldGameSource(pkg.replace('.', '/') + "/" + (outer == null ? simple : outer) + ".java", from);
+                if (source == null) continue;
+                String body = outer == null ? topLevel(source, simple) : nestedDeclaration(source, simple);
+                if (body == null) continue;
+                StringBuilder imports = new StringBuilder();
+                Matcher imp = Pattern.compile("(?m)^import\\s+[^;]+;").matcher(source);
+                while (imp.find()) imports.append(imp.group()).append('\n');
+                if (outer != null) imports.append("import ").append(pkg).append('.').append(outer).append(";\nimport ").append(pkg).append('.').append(outer).append(".*;\n");
+                else imports.append("import ").append(pkg).append(".*;\n");
+                body = body.replaceAll("\\b" + (outer == null ? "" : Pattern.quote(outer) + "\\.") + Pattern.quote(simple) + "\\b", name);
+                if (outer != null) body = body.replaceAll("(?<![\\w.])" + Pattern.quote(simple) + "\\b", name);
+                body = body.replaceFirst("^(\\s*(?:@\\w+(?:\\([^)]*\\))?\\s*)*)(?:(?:public|protected|private|static)\\s+)*", "$1public ");
+                String origin = pkg + "." + (outer == null ? simple : outer + "." + simple);
+                String carriedSource = "package " + home + ";\n\n" + imports + "\n/** Carried by mmt port from Minecraft " + from + " (" + origin
+                    + "), which the target removed. */\n" + body.strip() + "\n";
+                track(target);
+                Files.createDirectories(target.getParent());
+                Files.writeString(target, carriedSource);
+                carried++;
+            }
+            if (!Files.isRegularFile(target)) continue;
+            // Every use in the mod follows, not only the ones javac reported this round.
+            for (Path user : sources(build.project)) {
+                if (user.equals(target)) continue;
+                String before = Files.readString(user);
+                String uses = outer == null
+                    ? before.replaceAll("(?m)^import\\s+" + Pattern.quote(pkg + "." + simple) + "\\s*;", "import " + home + "." + name + ";")
+                    : before.replaceAll("\\b" + Pattern.quote(outer) + "\\." + Pattern.quote(simple) + "\\b", name);
+                if (uses.equals(before)) continue;
+                if (outer != null && !uses.contains("package " + home + ";")) uses = addImport(uses, home + "." + name);
+                Files.writeString(user, uses);
+            }
+        }
+        carried += carryInaccessible(errors, from);
+        if (carried > 0) rulesApplied.computeIfAbsent("carry-removed-game-class", k -> new ArrayList<>()).add(carried + " class(es)");
+        return carried;
+    }
+
+    /**
+     * Carried code may name a game type only the game's own package can use (BlockEntityType.BlockEntitySupplier, which
+     * the removed Builder used from inside): that functional interface is carried too, public, and where a carried value
+     * of it goes back to the game, it is passed as a method reference to its one method (factory::create), which the
+     * game's own interface accepts. Only inside carried classes.
+     */
+    int carryInaccessible(String errors, String from) throws Exception {
+        int carried = 0;
+        Matcher hidden = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error: (\\w+) is not public in ([\\w.]+); cannot be accessed from outside package").matcher(errors);
+        Set<String> done = new HashSet<>();
+        while (hidden.find()) {
+            Path file = Path.of(hidden.group(1)).normalize();
+            String simple = hidden.group(2), owner = hidden.group(3);
+            if (!file.toString().replace('\\', '/').contains("/mmt/carried/") || !Files.isRegularFile(file)) continue;
+            String text = Files.readString(file);
+            String outer = owner.contains(".") ? owner.substring(owner.lastIndexOf('.') + 1) : owner;
+            Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+)\\." + Pattern.quote(outer) + "\\s*;").matcher(text);
+            String pkg = owner.contains(".") ? owner.substring(0, owner.lastIndexOf('.')) : imported.find() ? imported.group(1) : null;
+            if (pkg == null) continue;
+            String home = text.replaceFirst("(?s)^\\s*package\\s+([\\w.]+);.*", "$1"), name = outer + simple;
+            Path target = file.resolveSibling(name + ".java");
+            if (done.add(name) && !Files.isRegularFile(target)) {
+                String source = oldGameSource(pkg.replace('.', '/') + "/" + outer + ".java", from);
+                String body = source == null ? null : nestedDeclaration(source, simple);
+                if (body == null || !body.matches("(?s)[^{]*\\binterface\\b.*")) continue;
+                body = body.replaceAll("(?<![\\w.])" + Pattern.quote(simple) + "\\b", name);
+                body = body.replaceFirst("^(\\s*(?:@\\w+(?:\\([^)]*\\))?\\s*)*)(?:(?:public|protected|private|static)\\s+)*", "$1public ");
+                StringBuilder imports = new StringBuilder();
+                Matcher imp = Pattern.compile("(?m)^import\\s+[^;]+;").matcher(source);
+                while (imp.find()) imports.append(imp.group()).append('\n');
+                track(target);
+                String header = "package " + home + ";\n\n" + imports + "import " + pkg + "." + outer + ";\n\n";
+                String why = "/** Carried by mmt port from Minecraft " + from + " (" + pkg + "." + outer + "." + simple + "), which only the game's own package can use. */\n";
+                Files.writeString(target, header + why + body.strip() + "\n");
+                carried++;
+            }
+            String uses = text.replaceAll("\\b" + Pattern.quote(outer) + "\\." + Pattern.quote(simple) + "\\b", name);
+            // A carried value of it handed to a game constructor goes as a reference to its one method, which the game's
+            // own interface accepts (new BlockEntityType<>(this.factory::create, ..)).
+            Pattern abstractMethod = Pattern.compile("(?m)^\\s*(?:@\\w+\\s+)*(?:public\\s+)?(?:abstract\\s+)?[\\w<>?,. \\[\\]]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*;");
+            Matcher method = Files.isRegularFile(target) ? abstractMethod.matcher(Files.readString(target)) : null;
+            if (method != null && method.find()) {
+                Set<String> values = new HashSet<>();
+                Matcher typed = Pattern.compile("\\b" + Pattern.quote(name) + "(?:<[^;()]*?>)?\\s+(\\w+)\\s*[;,)=]").matcher(uses);
+                while (typed.find()) values.add(typed.group(1));
+                Matcher call = Pattern.compile("\\bnew\\s+(\\w+)\\s*(?:<[^()]*>)?\\s*(?:/\\*mmt-diamond\\*/)?\\(").matcher(uses);
+                StringBuilder out = new StringBuilder();
+                int last = 0;
+                while (call.find()) {
+                    if (Files.isRegularFile(file.resolveSibling(call.group(1) + ".java"))) continue;
+                    int open = call.end() - 1, close = closeParen(uses, open);
+                    if (close < 0) continue;
+                    String args = uses.substring(open + 1, close);
+                    String adapted = args;
+                    for (String v : values) adapted = adapted.replaceAll("(?<![\\w.:])((?:this\\.)?" + Pattern.quote(v) + ")(?![\\w(:])", "$1::" + method.group(1));
+                    if (adapted.equals(args)) continue;
+                    out.append(uses, last, open + 1).append(adapted);
+                    last = close;
+                }
+                out.append(uses.substring(last));
+                uses = out.toString();
+            }
+            if (!uses.equals(text)) Files.writeString(file, uses);
+        }
+        // A carried functional value passed where the game's interface of that name is wanted: pass its method instead.
+        Matcher mismatch = Pattern.compile("(?m)^\\s*" + FILE + ":([0-9]+): error: [^\\n]*?(\\w+)(?:<[^>\\n]*>)? cannot be converted to [^\\n]*\\n([^\\n]*)\\n([ \\t]*)\\^").matcher(errors);
+        while (mismatch.find()) {
+            Path file = Path.of(mismatch.group(1)).normalize();
+            if (!file.toString().replace('\\', '/').contains("/mmt/carried/")) continue;
+            Path iface = file.resolveSibling(mismatch.group(3) + ".java");
+            if (!Files.isRegularFile(iface)) continue;
+            Matcher method = Pattern.compile("(?m)^\\s*(?:@\\w+\\s+)*(?:public\\s+)?(?:abstract\\s+)?[\\w<>?,. \\[\\]]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*;").matcher(Files.readString(iface));
+            if (!method.find()) continue;
+            List<String> lines = new ArrayList<>(Arrays.asList(Files.readString(file).split("\n", -1)));
+            int at = Integer.parseInt(mismatch.group(2)) - 1, column = mismatch.group(5).length();
+            if (at >= lines.size() || column >= lines.get(at).length()) continue;
+            String line = lines.get(at);
+            Matcher value = Pattern.compile("[\\w.]+").matcher(line);
+            if (!value.find(column) || value.start() != column || line.startsWith("::", value.end())) continue;
+            lines.set(at, line.substring(0, value.end()) + "::" + method.group(1) + line.substring(value.end()));
+            Files.writeString(file, String.join("\n", lines));
+            carried++;
+        }
+        return carried;
+    }
+
+    /**
+     * javac names no required and found arguments for a constructor call written with a diamond (new BlockEntityType<>(..)
+     * after 1.21.2 dropped a parameter: "cannot infer type arguments ... argument lists differ in length"), so the typed
+     * repair has nothing to match. The call loses its diamond for a round, javac then lists both, and the repair that
+     * drops or converts arguments acts; the diamond comes back once that line compiles.
+     */
+    int undiamond(Path log) throws Exception {
+        Matcher m = Pattern.compile("(?m)^\\s*" + FILE + ":([0-9]+): error: (?:incompatible types: )?cannot infer type arguments for (\\w+)<>\\n(?:[^\\n]*\\n){0,3}?\\s*reason: (?:cannot infer type-variable\\(s\\) [^\\n]*\\n\\s*\\((?:actual and formal argument lists differ in length|argument mismatch[^\\n]*)\\)|actual and formal)").matcher(logText(log));
+        int changed = 0;
+        while (m.find()) {
+            Path file = Path.of(m.group(1)).normalize();
+            if (!file.startsWith(build.project.root) || !Files.isRegularFile(file)) continue;
+            List<String> lines = new ArrayList<>(Arrays.asList(Files.readString(file).split("\n", -1)));
+            int at = Integer.parseInt(m.group(2)) - 1;
+            if (at >= lines.size()) continue;
+            String line = lines.get(at), raw = line.replaceFirst("\\bnew\\s+" + Pattern.quote(m.group(3)) + "<>\\(", "new " + m.group(3) + "/*mmt-diamond*/(");
+            if (raw.equals(line)) continue;
+            lines.set(at, raw);
+            Files.writeString(file, String.join("\n", lines));
+            changed++;
+        }
+        // A line that compiles again gets its diamond back.
+        String errors = logText(log);
+        for (Path source : sources(build.project)) {
+            if (!source.toString().endsWith(".java")) continue;
+            String text = Files.readString(source);
+            if (!text.contains("/*mmt-diamond*/")) continue;
+            List<String> lines = new ArrayList<>(Arrays.asList(text.split("\n", -1)));
+            boolean restored = false;
+            for (int i = 0; i < lines.size(); i++) if (lines.get(i).contains("/*mmt-diamond*/") && !errors.contains(source.toString() + ":" + (i + 1) + ":")) {
+                lines.set(i, lines.get(i).replace("/*mmt-diamond*/", "<>"));
+                restored = true;
+            }
+            if (restored) Files.writeString(source, String.join("\n", lines));
+        }
+        return changed;
+    }
+
+    Set<String> mappedClasses;
+
+    /** Old class names the route map records as removed with no replacement (dotted, nested with $). */
+    Set<String> mappedClasses() throws IOException {
+        if (mappedClasses != null) return mappedClasses;
+        mappedClasses = new HashSet<>();
+        if (mapFile == null || !Files.isRegularFile(mapFile)) return mappedClasses;
+        var map = Json.read(mapFile);
+        for (Object o : Json.array(map.get("classesRemoved"))) mappedClasses.add(String.valueOf(o).replace('/', '.'));
+        // A verified rule for a removed class (BlockEntityType.Builder -> the 1.21.2 constructor) goes before carrying it.
+        for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
+            if (Json.object(item).get("members") instanceof List<?> members) for (Object member : members) mappedClasses.remove(String.valueOf(member));
+        }
+        for (String list : List.of("classes", "classRewrites")) for (Object o : Json.array(map.get(list))) mappedClasses.remove(Json.text(Json.object(o), "from", ""));
+        return mappedClasses;
+    }
+
+    /** The old game's source of one file, from a decompiled game jar the build set up for `from` (ModDevGradle, Loom). */
+    String oldGameSource(String entry, String from) throws IOException {
+        List<Path> jars = new ArrayList<>();
+        String neo = "neoforge-" + Target.neoForgePrefix(from);
+        Files.walkFileTree(build.project.root, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, java.nio.file.attribute.BasicFileAttributes attrs) {
+                String n = dir.getFileName() == null ? "" : dir.getFileName().toString();
+                return (n.startsWith(".") || n.equals("src")) && !dir.equals(build.project.root) ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attrs) {
+                String n = file.getFileName().toString();
+                if (n.endsWith("-sources.jar") && file.toString().contains("moddev") && (n.startsWith("vanilla-" + from + "-") || n.startsWith(neo))) jars.add(file);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        for (Path jar : jars) try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+            var e = zip.getEntry(entry);
+            if (e != null) return new String(zip.getInputStream(e).readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        return null;
+    }
+
+    /** A static nested type's declaration (annotations to closing brace) in a class's source, or null. */
+    static String nestedDeclaration(String source, String simple) {
+        Matcher head = Pattern.compile("(?m)^([ \\t]*)((?:@\\w+(?:\\([^)]*\\))?\\s+)*(?:(?:public|protected|private|static|final|abstract)\\s+)*)(class|interface|enum|record)\\s+" + Pattern.quote(simple) + "\\b[^{]*\\{").matcher(source);
+        if (!head.find()) return null;
+        String modifiers = head.group(2);
+        if (head.group(3).equals("class") && !modifiers.contains("static")) return null;
+        int depth = 0;
+        for (int i = head.end() - 1; i < source.length(); i++) {
+            char c = source.charAt(i);
+            if (c == '{') depth++;
+            else if (c == '}' && --depth == 0) return source.substring(head.start(), i + 1);
+        }
+        return null;
+    }
+
+    /** A top-level type's declaration in its own file, or null. */
+    static String topLevel(String source, String simple) {
+        Matcher head = Pattern.compile("(?m)^((?:@\\w+(?:\\([^)]*\\))?\\s+)*(?:(?:public|final|abstract)\\s+)*)(class|interface|enum|record)\\s+" + Pattern.quote(simple) + "\\b").matcher(source);
+        if (!head.find()) return null;
+        int end = source.lastIndexOf('}');
+        return end < head.start() ? null : source.substring(head.start(), end + 1);
     }
 
     /** The route map this port uses (for mixin target names, which javac never checks). */
@@ -466,9 +982,15 @@ final class Port {
         return dropped;
     }
 
-    /** A build log as text: javac on Windows writes in the console's code page, so bytes that are not UTF-8 never stop a port. */
+    /**
+     * A build log as text: javac on Windows writes in the console's code page, so bytes that are not UTF-8 never stop a
+     * port, and ends lines with \r\n, which become \n: a rule's match spans lines with \n.
+     */
     static String logText(Path log) throws IOException {
-        return new String(Files.readAllBytes(log), StandardCharsets.UTF_8);
+        // javac calls a missing class a variable when the code names it as a qualifier (BlockEntityType.Builder.of(..)):
+        // a capitalised name with lower case in it is a class by Java's naming, so rules written for "class X" match it.
+        return new String(Files.readAllBytes(log), StandardCharsets.UTF_8).replace("\r\n", "\n")
+            .replaceAll("(symbol:\\s+)variable ([A-Z][a-z][\\w$]*)", "$1class $2");
     }
 
     static List<Path> sources(ProjectModel project) throws IOException {
@@ -559,6 +1081,8 @@ final class Port {
         Path selectionFile = selectionFile(options);
         List<Dependencies.Selection> selections = Dependencies.selections(selectionFile);
         long targetStart = System.nanoTime();
+        // A required library with no target release may be ported from its own source on the way (LibraryPort).
+        if (options.has("fix") && !options.has("dry-run")) Dependencies.portFrom = from;
         Target.Setup setup = planTargets(build, model, to, selections, actual, options);
         List<Target.Edit> target = setup == null ? Target.manifestEditsForModel(model, to) : setup.edits();
         List<Path> excluded = setup == null ? List.of() : setup.excluded;
@@ -731,7 +1255,10 @@ final class Port {
                 if (mapped.exit() != 0) throw new IOException(
                     "No verified mapping along the route " + String.join(" -> ", chain) + ". " + Run.tail(mapped.log())
                 );
+                if (!own && names.equals("yarn")) yarnRewrites(tools, chain, from, to, map);
             }
+            // A yarn route map made before the game's rewrites were added to it gets them now (once: the key marks it).
+            if (current && !own && !bridge && names.equals("yarn") && !Json.read(map).containsKey("rewrites")) yarnRewrites(tools, chain, from, to, map);
             build.report.stages.add(
                 Json.map("name", "route", "waypoints", route.waypoints, "mapped", chain, "cached", current)
             );
@@ -988,7 +1515,9 @@ final class Port {
             repairTasks.add(0, "--continue");
             applySilentRules(from, to);
             renameClassesInStrings(map);
+            portAccessTransformer(mapFile);
             var initial = build.gradle(tasks, explicitTask ? "port-initial-compile" : "port-initial-build");
+            if (initial.exit() != 0 && dropMissingAccessTargets(initial.log()) > 0) initial = build.gradle(tasks, explicitTask ? "port-initial-compile-at" : "port-initial-build-at");
             log = initial.log();
             compiled = initial.exit() == 0;
             // The errors the port started from (every one: port builds lift javac's 100-error cap), before any repair.
@@ -1009,6 +1538,9 @@ final class Port {
                 }
                 applyRules(log);
                 importMissingClasses(log);
+                carryRemovedClasses(log, from);
+                undiamond(log);
+                restoreAnnotationLibraries(log);
                 // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
                 if (!corpusLoaded && options.has("learn-from-mods")) {
                     learned = Corpus.rules(build, model, tools, map, from, to, names);
@@ -1882,6 +2414,42 @@ final class Port {
         return loaderFits(rule, loaders);
     }
 
+    static final Pattern GAME_CLASS = Pattern.compile(
+        "\\b(?:net\\.minecraft|com\\.mojang|net\\.neoforged|net\\.fabricmc)(?:\\.[a-z]\\w*)+\\.[A-Z]\\w*"
+    );
+
+    /**
+     * Whether every game class a rule writes (its ensureImports, and a qualified name in its replacement) is in the target
+     * game. A rule from an earlier update can write a class a later one removed again (1.21.2's CoreShaders, gone in
+     * 1.21.5): on a longer jump it would only trade one error for another, so it is skipped and the error stays named
+     * by the later update. True when the target's classpath cannot be read.
+     */
+    boolean targetHas(Map<String, Object> rule) throws IOException {
+        var apply = Json.object(rule.get("apply"));
+        Set<String> written = new TreeSet<>(ProjectModel.strings(apply.get("ensureImports")));
+        Matcher named = GAME_CLASS.matcher(Json.text(apply, "replace", ""));
+        while (named.find()) written.add(named.group());
+        written.removeIf(name -> !GAME_CLASS.matcher(name).matches());
+        if (written.isEmpty()) return true;
+        if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+        if (supertypeIndex.bySimple.getOrDefault("Minecraft", List.of()).isEmpty()) return true;
+        for (String name : written) if (supertypeIndex.qualified(name) == null && !mapRenames(name)) return false;
+        return true;
+    }
+
+    Set<String> mapClassesFrom;
+
+    /** Whether the route map renames this class (dotted, nested with '.'): the typed fixer carries it to the target's name. */
+    boolean mapRenames(String name) throws IOException {
+        if (mapClassesFrom == null) {
+            mapClassesFrom = new HashSet<>();
+            if (mapFile != null && Files.isRegularFile(mapFile)) for (Object o : Json.array(Json.read(mapFile).get("classes"))) {
+                mapClassesFrom.add(Json.text(Json.object(o), "from", "").replace('$', '.'));
+            }
+        }
+        return mapClassesFrom.contains(name);
+    }
+
     static boolean loaderFits(Map<String, Object> rule, Set<String> loaders) {
         String loader = Json.text(rule, "loader", "");
         return loader.isEmpty() || loaders.contains(loader);
@@ -1988,7 +2556,11 @@ final class Port {
      * without an alpha byte still compiles and draws nothing.
      */
     void applySilentRules(String from, String to) throws Exception {
-        List<Path> all = ownedJava();
+        // The project's own sources and those of the modules beside it (a multi-loader mod's common code is compiled
+        // into each loader's project, and the compiler never reports what these rules fix).
+        List<Path> all = new ArrayList<>(ownedJava());
+        for (Path p : buildSources()) if (!all.contains(p)) all.add(p);
+        String modId = null;
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
             if (!rule.containsKey("silent") || !loaderFits(rule) || !ownRule(rule, learnFromMods)) continue;
@@ -1996,8 +2568,11 @@ final class Port {
                 ? List.of()
                 : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null ? covered.isEmpty() : !crosses(Json.text(rule, "jump", ""), from, to)) continue;
+            if (!targetHas(rule)) continue;
+            boolean ids = "registry-ids".equals(Json.object(rule.get("apply")).get("transform"));
+            if (ids && modId == null) modId = singleModId();
             for (Path file : all) {
-                String original = Files.readString(file), text = rewrite(rule, original);
+                String original = Files.readString(file), text = ids ? registryIds(original, modId) : rewrite(rule, original);
                 if (!text.equals(original)) {
                     Files.writeString(file, text);
                     rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
@@ -2027,6 +2602,194 @@ final class Port {
                 rulesApplied.putIfAbsent("class-names-in-strings", List.of());
             }
         }
+    }
+
+    /**
+     * 1.21.2 builds a block's and an item's description and loot from an id its Properties must carry before the
+     * constructor runs; a mod that registers through its own helpers compiles and then fails at start-up ("Block id not
+     * set"). Where a registration names what it makes, every Properties built in it, or passed to it by name, gets that
+     * id: register(NAME, () -> new X(... Properties ...)) under the mod's id, and Registry.register(BuiltInRegistries.
+     * BLOCK|ITEM, ID, new X(...)) under ID. A Properties that already sets an id is left alone.
+     */
+    static String registryIds(String text, String modId) {
+        Matcher call = Pattern.compile("\\bregister\\s*\\(").matcher(text);
+        List<int[]> calls = new ArrayList<>();
+        while (call.find()) {
+            int close = closeParen(text, call.end() - 1);
+            if (close > 0) calls.add(new int[] { call.end() - 1, close });
+        }
+        StringBuilder out = new StringBuilder(text);
+        for (int c = calls.size() - 1; c >= 0; c--) {
+            int open = calls.get(c)[0], close = calls.get(c)[1];
+            List<int[]> args = splitArgs(text, open + 1, close);
+            String key = null, kind = null;
+            int from, to;
+            if (args.size() == 3) {
+                Matcher reg = Pattern.compile("^\\s*(?:net\\.minecraft\\.core\\.registries\\.)?BuiltInRegistries\\.(BLOCK|ITEM)\\s*$")
+                    .matcher(text.substring(args.get(0)[0], args.get(0)[1]));
+                if (!reg.find()) continue;
+                kind = reg.group(1);
+                key = text.substring(args.get(1)[0], args.get(1)[1]).strip();
+                from = args.get(2)[0];
+                to = args.get(2)[1];
+            } else if (args.size() == 2 && modId != null && text.substring(args.get(1)[0], args.get(1)[1]).strip().startsWith("()")) {
+                String name = text.substring(args.get(0)[0], args.get(0)[1]).strip();
+                boolean stringName = name.matches("\"[^\"]*\"") || name.endsWith(".getPath()")
+                    || name.matches("[A-Za-z_$][\\w$]*") && Pattern.compile("\\bString\\s+" + Pattern.quote(name) + "\\b").matcher(text).find();
+                if (!stringName) continue;
+                key = "net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(\"" + modId + "\", " + name + ")";
+                from = args.get(1)[0];
+                to = args.get(1)[1];
+            } else {
+                continue;
+            }
+            // Inside the registration, last first so earlier offsets hold.
+            List<int[]> inserts = new ArrayList<>(); // {offset, kind 0 block / 1 item, wrapEnd or -1}
+            Matcher props = Pattern.compile(
+                "(?:(?:BlockBehaviour|Block)\\.)?Properties\\.(?:of|ofFullCopy|ofLegacyCopy)\\s*\\(|new\\s+(?:Item\\.)?Properties\\s*\\(\\s*\\)"
+            ).matcher(text);
+            props.region(from, to);
+            while (props.find()) {
+                boolean item = props.group().startsWith("new");
+                int end = item ? props.end() : closeParen(text, props.end() - 1) + 1;
+                end = chainEnd(text, end, to);
+                if (end > 0 && !text.substring(props.start(), end).contains(".setId(")) inserts.add(new int[] { end, item ? 1 : 0, -1 });
+            }
+            if (inserts.isEmpty()) {
+                // A Properties the code passes by name (built before the registration, or a parameter).
+                Matcher named = Pattern.compile("[(,]\\s*([a-z][\\w$]*)\\s*(?=[,)])").matcher(text);
+                named.region(from, to);
+                while (named.find()) {
+                    String n = named.group(1);
+                    Matcher decl = Pattern.compile(
+                        "(?:\\b(Item|BlockBehaviour|Block)\\.Properties\\s+" + Pattern.quote(n) + "\\b|\\bvar\\s+" + Pattern.quote(n)
+                            + "\\s*=\\s*(new\\s+Item\\.Properties|(?:BlockBehaviour|Block)\\.Properties\\.of))"
+                    ).matcher(text);
+                    if (!decl.find()) continue;
+                    boolean item = "Item".equals(decl.group(1)) || decl.group(2) != null && decl.group(2).startsWith("new");
+                    inserts.add(new int[] { named.end(1), item ? 1 : 0, -1 });
+                }
+            }
+            for (int i = inserts.size() - 1; i >= 0; i--) {
+                int[] at = inserts.get(i);
+                String registry = at[1] == 1 ? "ITEM" : "BLOCK";
+                if (kind != null && !kind.equals(registry)) continue;
+                out.insert(at[0], ".setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries." + registry + ", " + key + "))");
+            }
+        }
+        return out.toString();
+    }
+
+    /** Past a call chain (.a(..).b(..)) that starts at AT, within LIMIT; -1 when a call does not close. */
+    static int chainEnd(String text, int at, int limit) {
+        if (at <= 0) return -1;
+        while (true) {
+            Matcher next = Pattern.compile("\\G\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(").matcher(text);
+            next.region(at, limit);
+            if (!next.find()) return at;
+            int close = closeParen(text, next.end() - 1);
+            if (close < 0 || close >= limit) return at;
+            at = close + 1;
+        }
+    }
+
+    /** The index of the parenthesis that closes the one at OPEN, skipping strings and characters; -1 if none. */
+    static int closeParen(String text, int open) {
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"' || ch == '\'') {
+                for (i++; i < text.length() && text.charAt(i) != ch; i++) if (text.charAt(i) == '\\') i++;
+            } else if (ch == '(') depth++;
+            else if (ch == ')' && --depth == 0) return i;
+        }
+        return -1;
+    }
+
+    /** Top-level argument spans between FROM and TO (exclusive), split on commas outside brackets and strings. */
+    static List<int[]> splitArgs(String text, int from, int to) {
+        List<int[]> out = new ArrayList<>();
+        int depth = 0, start = from;
+        for (int i = from; i < to; i++) {
+            char ch = text.charAt(i);
+            if (ch == '"' || ch == '\'') {
+                for (i++; i < to && text.charAt(i) != ch; i++) if (text.charAt(i) == '\\') i++;
+            } else if ("([{".indexOf(ch) >= 0) depth++;
+            else if (")]}".indexOf(ch) >= 0) depth--;
+            else if (ch == ',' && depth == 0) {
+                out.add(new int[] { start, i });
+                start = i + 1;
+            }
+        }
+        if (to > from && !text.substring(start, to).isBlank()) out.add(new int[] { start, to });
+        return out;
+    }
+
+    /** The directory of the whole build: the nearest one up from the project with a Gradle settings file. */
+    Path buildRoot() {
+        Path start = build.project.root.toAbsolutePath().normalize();
+        for (Path p = start; p != null; p = p.getParent()) {
+            if (Files.isRegularFile(p.resolve("settings.gradle")) || Files.isRegularFile(p.resolve("settings.gradle.kts"))) return p;
+        }
+        return start;
+    }
+
+    /** Files under the build root whose path contains PART, skipping build output, run folders and dot folders. */
+    List<Path> buildFiles(String part) throws IOException {
+        Path root = buildRoot();
+        List<Path> out = new ArrayList<>();
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
+                String n = dir.getFileName() == null ? "" : dir.getFileName().toString();
+                return !dir.equals(root) && (n.startsWith(".") || List.of("build", "run", "runs", "out", "bin").contains(n))
+                    ? FileVisitResult.SKIP_SUBTREE
+                    : FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                if (file.toString().replace('\\', '/').contains(part)) out.add(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException unreadable) {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return out;
+    }
+
+    List<Path> buildSources() throws IOException {
+        List<Path> out = new ArrayList<>();
+        for (Path p : buildFiles("/src/main/java/")) if (p.toString().endsWith(".java")) out.add(p);
+        return out;
+    }
+
+    /** The mod's id, when the sources' metadata names exactly one (neoforge.mods.toml, mods.toml or fabric.mod.json). */
+    String singleModId() throws IOException {
+        Set<String> ids = new LinkedHashSet<>();
+        // A multi-loader mod keeps its id in the build root's gradle.properties.
+        Path root = buildRoot();
+        java.util.Properties gradle = Files.isRegularFile(root.resolve("gradle.properties"))
+            ? ProjectModel.properties(root.resolve("gradle.properties"))
+            : new java.util.Properties();
+        for (Path p : buildFiles("/src/main/resources/")) {
+            String name = p.getFileName().toString();
+            Matcher id = null;
+            if (name.equals("neoforge.mods.toml") || name.equals("mods.toml")) {
+                id = Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"").matcher(Files.readString(p));
+            } else if (name.equals("fabric.mod.json")) {
+                id = Pattern.compile("\"id\"\\s*:\\s*\"([^\"]+)\"").matcher(Files.readString(p));
+            }
+            if (id == null || !id.find()) continue;
+            String value = id.group(1);
+            Matcher template = Pattern.compile("^\\$\\{(\\w+)}$").matcher(value);
+            if (template.find()) value = gradle.getProperty(template.group(1));
+            if (value != null && value.strip().matches("[a-z0-9_.-]+")) ids.add(value.strip());
+        }
+        return ids.size() == 1 ? ids.iterator().next() : null;
     }
 
     static String classNamesInStrings(String text, Map<String, String> classes) {
@@ -2237,8 +3000,9 @@ final class Port {
             denied.group(4) + "." + denied.group(2) + "(" + denied.group(3) + ")",
             new String[] { denied.group(2), denied.group(3), denied.group(4) }
         );
-        // An overloaded call names the private candidate in its list: "(m(args) has private access in Y)".
-        Matcher candidate = Pattern.compile("\\((\\w+)\\(([^)]*)\\) has private access in ([\\w.$]+)\\)").matcher(errors);
+        // An overloaded call names the private candidate in its list: "(m(args) has private access in Y)"; a call to
+        // the one candidate gives it as javac's reason ("reason: m(args) has private access in Y").
+        Matcher candidate = Pattern.compile("(?:\\(|reason: )(\\w+)\\(([^)]*)\\) has private access in ([\\w.$]+)").matcher(errors);
         while (candidate.find()) wanted.putIfAbsent(
             candidate.group(3) + "." + candidate.group(1) + "(" + candidate.group(2) + ")",
             new String[] { candidate.group(1), candidate.group(2), candidate.group(3) }
@@ -2263,7 +3027,8 @@ final class Port {
             String entry = null;
             for (Explain.Member m : info.members()) {
                 if (!m.name().equals(member[0]) || m.method() != (member[1] != null)) continue;
-                if (m.method() && !parameters(m.descriptor()).equals(member[1].replace(" ", ""))) continue;
+                // javac writes type arguments (Function<ResourceLocation,RenderType>); a descriptor has none.
+                if (m.method() && !parameters(m.descriptor()).equals(withoutTypeArguments(member[1]).replace(" ", ""))) continue;
                 entry = "public " + owner.replace('/', '.') + " " + m.name() + (m.method() ? m.descriptor() : "");
                 break;
             }
@@ -2282,6 +3047,18 @@ final class Port {
         return lines;
     }
 
+    /** Java type text without its type arguments: Function<ResourceLocation,RenderType>,int -> Function,int. */
+    static String withoutTypeArguments(String types) {
+        StringBuilder out = new StringBuilder();
+        int depth = 0;
+        for (char c : types.toCharArray()) {
+            if (c == '<') depth++;
+            else if (c == '>') depth--;
+            else if (depth == 0) out.append(c);
+        }
+        return out.toString();
+    }
+
     /** A descriptor's parameter types written the way javac's messages write them: (ILjava/lang/String;)V -> int,String. */
     static String parameters(String descriptor) {
         List<String> types = new ArrayList<>();
@@ -2291,6 +3068,93 @@ final class Port {
     }
 
     /** The NeoForge access transformer the build applies: NeoGradle's accessTransformers file, or META-INF/accesstransformer.cfg. */
+    /**
+     * The access transformer follows the game before the first build: an entry for a class, field or method the map moves,
+     * renames or re-types names it as the target has it (descriptors included). What the map cannot place stays, for the
+     * build to name.
+     */
+    int portAccessTransformer(Path mapFile) throws Exception {
+        Path at = accessTransformer();
+        if (at == null || mapFile == null || !Files.isRegularFile(at) || !Files.isRegularFile(mapFile)) return 0;
+        var map = Json.read(mapFile);
+        Map<String, String> classes = new HashMap<>();
+        for (Object o : Json.array(map.get("classes"))) classes.put(Json.text(Json.object(o), "from", ""), Json.text(Json.object(o), "to", ""));
+        Map<String, String[]> members = new HashMap<>(); // owner name desc -> {owner, name, desc}
+        for (String list : List.of("methods", "methodsMoved", "signatures", "fields")) for (Object o : Json.array(map.get(list))) {
+            var m = Json.object(o);
+            String owner = Json.text(m, "owner", ""), desc = Json.text(m, "desc", "");
+            members.putIfAbsent(owner + " " + Json.text(m, "from", "") + (list.equals("fields") ? "" : desc), new String[] {
+                Json.text(m, "newOwner", classes.getOrDefault(owner, owner)), Json.text(m, "to", ""), list.equals("fields") ? "" : Json.text(m, "newDesc", desc)
+            });
+        }
+        if (classes.isEmpty() && members.isEmpty()) return 0;
+        List<String> lines = new ArrayList<>(Arrays.asList(Files.readString(at, StandardCharsets.UTF_8).split("\n", -1)));
+        int changed = followMap(lines, classes, members);
+        if (changed == 0) return 0;
+        track(at);
+        Files.writeString(at, String.join("\n", lines), StandardCharsets.UTF_8);
+        rulesApplied.computeIfAbsent("access-transformer-follows-map", k -> new ArrayList<>()).add(changed + " entr(y/ies)");
+        return changed;
+    }
+
+    /** Access transformer lines rewritten for the map's class moves and member renames ({owner, name, desc} by "owner namedesc"). */
+    static int followMap(List<String> lines, Map<String, String> classes, Map<String, String[]> members) {
+        Pattern entry = Pattern.compile("^(\\s*(?:public|protected|private|default)(?:[-+]f)?\\s+)([\\w.$]+)(?:(\\s+)([\\w$<>]+)(\\([^)\\s]*\\)\\S+)?)?(.*)$");
+        int changed = 0;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            Matcher m = entry.matcher(line.replace("\r", ""));
+            if (!m.find()) continue;
+            String owner = m.group(2), name = m.group(4), desc = m.group(5) == null ? "" : m.group(5);
+            String[] to = name == null ? null : members.get(owner + " " + name + desc);
+            String newOwner = to != null ? to[0] : classes.getOrDefault(owner, owner), newName = to != null ? to[1] : name, newDesc = to != null ? to[2] : desc;
+            // Classes inside a descriptor follow their moves too.
+            if (!newDesc.isEmpty()) {
+                Matcher type = Pattern.compile("L([\\w/$]+);").matcher(newDesc);
+                StringBuilder out = new StringBuilder();
+                while (type.find()) {
+                    String dotted = type.group(1).replace('/', '.');
+                    type.appendReplacement(out, Matcher.quoteReplacement("L" + classes.getOrDefault(dotted, dotted).replace('.', '/') + ";"));
+                }
+                type.appendTail(out);
+                newDesc = out.toString();
+            }
+            String rewritten = m.group(1) + newOwner + (name == null ? "" : m.group(3) + newName + newDesc) + m.group(6) + (line.endsWith("\r") ? "\r" : "");
+            if (!rewritten.equals(line)) {
+                lines.set(i, rewritten);
+                changed++;
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * Entries the build says name nothing in the target game (NeoForge's validation: "access-transformer:missing-target:
+     * The target X does not exist. @ file:line") are commented out with why, so the build goes on and javac names the
+     * code that still needs them.
+     */
+    int dropMissingAccessTargets(Path log) throws Exception {
+        Matcher missing = Pattern.compile("access-transformer:missing-target: The target (.+?) does not exist\\. @ (.+?):(\\d+)").matcher(logText(log));
+        Map<Path, Map<Integer, String>> byFile = new LinkedHashMap<>();
+        while (missing.find()) byFile.computeIfAbsent(Path.of(missing.group(2).strip()), f -> new TreeMap<>()).put(Integer.parseInt(missing.group(3)), missing.group(1));
+        int dropped = 0;
+        for (var e : byFile.entrySet()) {
+            Path at = e.getKey();
+            if (!Files.isRegularFile(at) || !at.toAbsolutePath().normalize().startsWith(build.project.root)) continue;
+            List<String> lines = new ArrayList<>(Arrays.asList(Files.readString(at, StandardCharsets.UTF_8).split("\n", -1)));
+            for (var line : e.getValue().entrySet()) {
+                int i = line.getKey() - 1;
+                if (i < 0 || i >= lines.size() || lines.get(i).stripLeading().startsWith("#")) continue;
+                lines.set(i, "# mmt port: the target game has no " + line.getValue() + "\n# " + lines.get(i));
+                dropped++;
+            }
+            track(at);
+            Files.writeString(at, String.join("\n", lines), StandardCharsets.UTF_8);
+        }
+        if (dropped > 0) rulesApplied.computeIfAbsent("access-transformer-missing-target", k -> new ArrayList<>()).add(dropped + " entr(y/ies)");
+        return dropped;
+    }
+
     Path accessTransformer() throws IOException {
         for (String script : List.of("build.gradle", "build.gradle.kts")) {
             Path file = build.project.root.resolve(script);
@@ -2367,9 +3231,143 @@ final class Port {
         return new ArrayList<>(entries);
     }
 
+    /**
+     * Annotation-only libraries an older game or loader brought along and a newer one does not (Trinkets 1.20.1 -> 1.21.1
+     * lost javax.annotation): only nullness annotations, never read at run time, so compileOnly is safe.
+     */
+    static final Map<String, String> ANNOTATION_LIBRARIES = Map.of(
+        "javax.annotation",
+        "com.google.code.findbugs:jsr305:3.0.2",
+        "org.jetbrains.annotations",
+        "org.jetbrains:annotations:26.0.2",
+        "org.jspecify.annotations",
+        "org.jspecify:jspecify:1.0.0"
+    );
+
+    /** Adds the compileOnly annotation libraries the log says are missing to the selected project's build script. */
+    void restoreAnnotationLibraries(Path log) throws Exception {
+        String errors = logText(log);
+        List<String> wanted = new ArrayList<>();
+        for (var library : ANNOTATION_LIBRARIES.entrySet()) if (
+            errors.contains("package " + library.getKey() + " does not exist")
+        ) wanted.add(library.getValue());
+        if (wanted.isEmpty()) return;
+        for (Object p : Json.array(model.get("projects"))) {
+            Object script = Json.object(p).get("buildFile");
+            if (script == null || !Files.isRegularFile(Path.of(script.toString()))) continue;
+            Path file = Path.of(script.toString());
+            String text = Files.readString(file), after = withCompileOnly(text, wanted, file.toString().endsWith(".kts"));
+            if (after.equals(text)) continue;
+            track(file);
+            Files.writeString(file, after);
+            rulesApplied.putIfAbsent("annotation-library-compile-only", List.of());
+        }
+    }
+
+    /** A build script with each coordinate added as compileOnly to its top-level dependencies block (not twice). */
+    static String withCompileOnly(String text, List<String> coordinates, boolean kotlin) {
+        Matcher block = Pattern.compile("(?m)^dependencies\\s*\\{[ \\t]*\\r?\\n").matcher(text);
+        if (!block.find()) return text;
+        StringBuilder lines = new StringBuilder();
+        for (String coordinate : coordinates) {
+            String name = coordinate.substring(0, coordinate.lastIndexOf(':'));
+            if (text.contains(name)) continue;
+            lines.append(kotlin ? "    compileOnly(\"" + coordinate + "\")\n" : "    compileOnly \"" + coordinate + "\"\n");
+        }
+        if (lines.length() == 0) return text;
+        return text.substring(0, block.end()) + "    // mmt port: annotation-only library the target no longer brings along\n" + lines + text.substring(block.end());
+    }
+
+    /**
+     * A mixin that extends a game class must declare a constructor, and Mixin never runs it (the mixin's own constructors
+     * are dropped when it is applied). When the game changes that class's constructors (1.21.2: Level, MinecartChest), the
+     * super call stops compiling for no reason the game cares about: its arguments become typed placeholders (null for an
+     * object, zero or false otherwise) for a constructor the target class has, the one with fewest parameters. Only in
+     * files annotated @Mixin, only on a super(...) call javac reported. Returns the calls changed.
+     */
+    int mixinConstructors(Path log) throws Exception {
+        Matcher reported = Pattern.compile(
+            "(?m)^\\s*" + FILE + ":(\\d+): error: constructor (\\w+) in class ([\\w.$]+)(?:<[^>]*>)? cannot be applied to given types"
+        ).matcher(logText(log));
+        Map<Path, List<String[]>> sites = new LinkedHashMap<>();
+        while (reported.find()) {
+            Path file = Path.of(reported.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            if (Files.isRegularFile(file)) sites.computeIfAbsent(file.normalize(), f -> new ArrayList<>()).add(new String[] { reported.group(2), reported.group(4) });
+        }
+        int changed = 0;
+        for (var entry : sites.entrySet()) {
+            String text = Files.readString(entry.getKey());
+            if (!text.contains("@Mixin")) continue;
+            List<String> imports = new ArrayList<>();
+            Matcher imp = Pattern.compile("(?m)^import\\s+([\\w.]+)\\s*;").matcher(text);
+            while (imp.find()) imports.add(imp.group(1));
+            String after = text;
+            for (String[] site : entry.getValue()) {
+                if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+                List<String> found = supertypeIndex.resolve(site[1].replaceAll(".*\\.", ""), imports);
+                Explain.ClassInfo info = found.isEmpty() ? null : supertypeIndex.info(found.get(0));
+                if (info == null) continue;
+                Explain.Member ctor = null;
+                for (Explain.Member m : info.members()) {
+                    if (!m.method() || !m.name().equals("<init>") || (m.access() & 0x0002) != 0) continue;
+                    if (ctor == null || placeholders(m.descriptor()).size() < placeholders(ctor.descriptor()).size()) ctor = m;
+                }
+                if (ctor == null) continue;
+                int lineStart = 0;
+                for (int i = 1; i < Integer.parseInt(site[0]); i++) lineStart = after.indexOf('\n', lineStart) + 1;
+                Matcher superCall = Pattern.compile("\\bsuper\\s*\\(").matcher(after);
+                if (!superCall.find(lineStart) || after.substring(lineStart, superCall.start()).contains("\n")) continue;
+                int open = superCall.end() - 1, close = closingParen(after, open);
+                if (close < 0) continue;
+                after = after.substring(0, open + 1) + String.join(", ", placeholders(ctor.descriptor())) + after.substring(close);
+            }
+            if (!after.equals(text)) {
+                Files.writeString(entry.getKey(), after);
+                changed++;
+            }
+        }
+        if (changed > 0) rulesApplied.putIfAbsent("mixin-constructor-placeholders", List.of());
+        return changed;
+    }
+
+    /** Typed placeholder arguments for a descriptor's parameters: (fully.Qualified) null, or the primitive's zero. */
+    static List<String> placeholders(String descriptor) {
+        List<String> out = new ArrayList<>();
+        Matcher p = Pattern.compile("(\\[*)(?:L([^;]+);|([ZBCSIJFD]))").matcher(descriptor.substring(descriptor.indexOf('(') + 1, descriptor.indexOf(')')));
+        while (p.find()) {
+            if (!p.group(1).isEmpty() || p.group(2) != null) {
+                String base = p.group(2) != null ? p.group(2).replace('/', '.').replace('$', '.') : switch (p.group(3)) {
+                    case "Z" -> "boolean";
+                    case "B" -> "byte";
+                    case "C" -> "char";
+                    case "S" -> "short";
+                    case "I" -> "int";
+                    case "J" -> "long";
+                    case "F" -> "float";
+                    default -> "double";
+                };
+                out.add("(" + base + "[]".repeat(p.group(1).length()) + ") null");
+                continue;
+            }
+            out.add(switch (p.group(3)) {
+                case "Z" -> "false";
+                case "J" -> "0L";
+                case "F" -> "0.0F";
+                case "D" -> "0.0D";
+                case "C" -> "(char) 0";
+                case "B" -> "(byte) 0";
+                case "S" -> "(short) 0";
+                default -> "0";
+            });
+        }
+        return out;
+    }
+
     void applyRules(Path log) throws Exception {
         removeDeadMixinTargets(log);
         repairAccess(log);
+        mixinConstructors(log);
         String errors = logText(log);
         List<Path> all = ownedJava();
         Set<Path> logged = new HashSet<>();
@@ -2398,6 +3396,7 @@ final class Port {
                 ? List.of()
                 : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null && covered.isEmpty()) continue;
+            if (!targetHas(rule)) continue;
             Object transform = Json.object(rule.get("apply")).get("transform");
             if ("accessor".equals(transform) || "payload-bytes".equals(transform) || "neo-config".equals(transform) || "neo-entry".equals(transform)) {
                 boolean applied = "neo-entry".equals(transform) ? applyNeoEntry(rule, errors)
@@ -2405,6 +3404,25 @@ final class Port {
                     : "payload-bytes".equals(transform) ? applyPayloadBytes(rule, errors)
                     : applyAccessor(rule, errors);
                 if (applied) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
+                continue;
+            }
+            if ("food-consumable".equals(transform)) {
+                // The foods are built in one class, and every item made from one, anywhere in the mod, eats as it said.
+                Pattern when = Pattern.compile(Json.text(rule, "when", "."));
+                for (Path file : logged) {
+                    if (!all.contains(file)) continue;
+                    String original = Files.readString(file);
+                    if (!when.matcher(original).find()) continue;
+                    String built = foodConsumables(original);
+                    if (built.equals(original)) continue;
+                    Files.writeString(file, built);
+                    String owner = foodOwner(built);
+                    for (Path user : all) {
+                        String text = Files.readString(user), used = foodUses(text, owner);
+                        if (!used.equals(text)) Files.writeString(user, used);
+                    }
+                    rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
+                }
                 continue;
             }
             if ("line".equals(rule.get("scope"))) {
@@ -2610,6 +3628,422 @@ final class Port {
      * (client, handler, buf, responseSender) or (server, player, handler, buf, responseSender) gets the new
      * (payload, context) one with the old names declared first, so its body runs unchanged. Every line when lines is null.
      */
+    /**
+     * A method that now takes a different argument type, written the same way for every argument: in each statement that
+     * starts with apply.statement (a regex), every top-level argument of a call to one of apply.calls, across lines, is
+     * rewritten by apply.wrap ($0 is the argument), unless it already matches apply.skip. 26.2's TagAppender.add takes a
+     * ResourceKey: tag(T).add(BLOCK_A, BLOCK_B.get()) -> add(BLOCK_A.builtInRegistryHolder().key(), ...).
+     */
+    /**
+     * 1.21.2 took eating from FoodProperties: its builder lost effect(effect, chance) and fast(), which now describe the
+     * item's consumable (Consumables.defaultFood().consumeSeconds(0.8F).onConsume(new ApplyStatusEffectsConsumeEffect(
+     * effect, chance))), set with Item.Properties.food(food, consumable). Each builder chain that used them keeps the rest
+     * and is passed through mmtFood, which remembers that food's consumable by identity; foodUses makes every
+     * Item.Properties.food(food) in the mod set it, so a food handed through the mod's own helpers keeps its effects.
+     * Lines are kept: the helpers go at the end of the class.
+     */
+    static String foodConsumables(String text) {
+        Matcher chain = Pattern.compile("(\\(\\s*)?new\\s+(?:net\\.minecraft\\.world\\.food\\.)?FoodProperties\\s*\\.\\s*Builder\\s*\\(\\s*\\)(\\s*\\))?").matcher(text);
+        StringBuilder out = new StringBuilder();
+        int done = 0;
+        while (chain.find()) {
+            if (chain.start() < done) continue;
+            // (new FoodProperties.Builder()) is the chain's start; a lone '(' or ')' belongs to the code around it.
+            boolean wrapped = chain.group(1) != null && chain.group(2) != null;
+            int start = chain.group(1) != null && !wrapped ? chain.start() + chain.group(1).length() : chain.start();
+            int at = chain.group(2) != null && !wrapped ? chain.end() - chain.group(2).length() : chain.end();
+            StringBuilder kept = new StringBuilder(text.substring(start, at));
+            StringBuilder consumable = new StringBuilder("net.minecraft.world.item.component.Consumables.defaultFood()");
+            boolean changed = false, built = false;
+            Matcher call = Pattern.compile("\\G(\\s*)\\.\\s*(\\w+)\\s*\\(").matcher(text);
+            while (!built && call.find(at)) {
+                int open = call.end() - 1, close = closingParen(text, open);
+                if (close < 0) break;
+                String name = call.group(2), args = text.substring(open + 1, close);
+                at = close + 1;
+                List<String> parts = topLevelArguments(args);
+                // A dropped call keeps its line breaks, so javac's line numbers hold.
+                String breaks = call.group(1).replaceAll("[^\\n]", "") + args.replaceAll("[^\\n]", "");
+                if (name.equals("fast") && args.isBlank()) {
+                    consumable.append(".consumeSeconds(0.8F)");
+                    kept.append(breaks);
+                    changed = true;
+                } else if (name.equals("effect") && parts.size() == 2) {
+                    consumable.append(".onConsume(new net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect(mmtEffect(")
+                        .append(parts.get(0).strip()).append("), ").append(parts.get(1).strip()).append("))");
+                    kept.append(breaks);
+                    changed = true;
+                } else {
+                    kept.append(text, call.start(), at);
+                    built = name.equals("build");
+                }
+            }
+            if (!changed || !built) continue;
+            out.append(text, done, start).append("mmtFood(").append(kept).append(", ").append(consumable).append(".build())");
+            done = at;
+        }
+        if (done == 0) return text;
+        String result = out.append(text.substring(done)).toString();
+        Matcher owner = Pattern.compile("\\b(?:class|interface|enum|record)\\s+\\w+[^{]*\\{").matcher(result);
+        if (!owner.find()) return text;
+        int close = closingBrace(result, owner.end() - 1);
+        if (close < 0) return text;
+        String food = "net.minecraft.world.food.FoodProperties", item = "net.minecraft.world.item.component.Consumable",
+            effect = "net.minecraft.world.effect.MobEffectInstance";
+        String helpers =
+            "\n    /** Written by mmt port: how each food was eaten before 1.21.2 moved eating to the item's consumable. */\n" +
+            "    private static " + food + " mmtFood(" + food + " food, " + item + " consumable) {\n" +
+            "        MmtFoods.CONSUMABLES.put(food, consumable);\n        return food;\n    }\n\n" +
+            "    public static " + item + " mmtConsumable(" + food + " food) {\n" +
+            "        return MmtFoods.CONSUMABLES.getOrDefault(food, net.minecraft.world.item.component.Consumables.DEFAULT_FOOD);\n    }\n\n" +
+            "    private static " + effect + " mmtEffect(" + effect + " effect) {\n        return effect;\n    }\n\n" +
+            "    private static " + effect + " mmtEffect(java.util.function.Supplier<" + effect + "> effect) {\n        return effect.get();\n    }\n\n" +
+            "    private static final class MmtFoods {\n" +
+            "        static final java.util.Map<" + food + ", " + item + "> CONSUMABLES = new java.util.IdentityHashMap<>();\n    }\n";
+        return result.substring(0, close) + helpers + result.substring(close);
+    }
+
+    /** The qualified name of the class foodConsumables gave its helpers. */
+    static String foodOwner(String text) {
+        Matcher pkg = Pattern.compile("(?m)^\\s*package\\s+([\\w.]+)\\s*;").matcher(text);
+        Matcher owner = Pattern.compile("\\b(?:class|interface|enum|record)\\s+(\\w+)").matcher(text);
+        return (pkg.find() ? pkg.group(1) + "." : "") + (owner.find() ? owner.group(1) : "");
+    }
+
+    /** Item.Properties.food(food) also sets the consumable that food's builder described (Consumables.DEFAULT_FOOD otherwise, as food(food) does). */
+    static String foodUses(String text, String owner) {
+        if (!text.contains("Properties")) return text;
+        Matcher use = Pattern.compile("\\.\\s*food\\s*\\(").matcher(text);
+        StringBuilder out = new StringBuilder();
+        int done = 0;
+        while (use.find()) {
+            int open = use.end() - 1, close = closingParen(text, open);
+            if (close < 0 || open < done) continue;
+            List<String> args = topLevelArguments(text.substring(open + 1, close));
+            if (args.size() != 1 || args.get(0).isBlank() || text.startsWith(".component(net.minecraft.core.component.DataComponents.CONSUMABLE", close + 1)) continue;
+            out.append(text, done, close + 1).append(".component(net.minecraft.core.component.DataComponents.CONSUMABLE, ").append(owner)
+                .append(".mmtConsumable(").append(args.get(0).strip()).append("))");
+            done = close + 1;
+        }
+        return done == 0 ? text : out.append(text.substring(done)).toString();
+    }
+
+    /**
+     * 1.21.2 moved a food's eating effects from FoodProperties.effects() (PossibleEffect: effect(), probability()) to the
+     * stack's consumable component (ApplyStatusEffectsConsumeEffect: effects(), probability()). The old list is rebuilt
+     * from the stack the food came from: stack.get(DataComponents.FOOD).effects(), stack.getFoodProperties(e).effects(),
+     * and a FoodProperties variable declared from either. PossibleEffect becomes the class's own record with the same
+     * accessors, so loops over the list read as before. A food not traced to its stack is left to the compiler.
+     */
+    static String foodEffects(String text) {
+        String stackExpr = "([\\w$]+(?:\\.[\\w$]+(?:\\(\\))?)*)";
+        String fromStack = "\\.(?:get\\s*\\(\\s*(?:net\\.minecraft\\.core\\.component\\.)?DataComponents\\.FOOD\\s*\\)|getFoodProperties\\s*\\([^()]*\\))";
+        String out = text.replaceAll(stackExpr + fromStack + "\\s*\\.\\s*effects\\s*\\(\\s*\\)", "mmtFoodEffects($1)");
+        Matcher declared = Pattern.compile("\\bFoodProperties\\s+(\\w+)\\s*=\\s*" + stackExpr + fromStack + "\\s*;").matcher(out);
+        StringBuilder sb = new StringBuilder();
+        int done = 0;
+        while (declared.find()) {
+            // The variable's uses up to the end of the block it is declared in.
+            int depth = 0, end = declared.end();
+            while (end < out.length() && depth >= 0) {
+                char ch = out.charAt(end);
+                depth += ch == '{' ? 1 : ch == '}' ? -1 : 0;
+                end++;
+            }
+            if (declared.end() < done) continue;
+            sb.append(out, done, declared.end());
+            String uses = "\\b" + declared.group(1) + "\\s*\\.\\s*effects\\s*\\(\\s*\\)";
+            String stack = Matcher.quoteReplacement(declared.group(2));
+            sb.append(out.substring(declared.end(), end).replaceAll(uses, "mmtFoodEffects(" + stack + ")"));
+            done = end;
+        }
+        out = sb.append(out.substring(done)).toString();
+        if (out.equals(text)) return text;
+        out = out.replaceAll("\\b(?:net\\.minecraft\\.world\\.food\\.)?FoodProperties\\s*\\.\\s*PossibleEffect\\b", "MmtPossibleEffect");
+        int close = out.lastIndexOf('}');
+        String helper =
+            "\n    /** Written by mmt port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n" +
+            "    private static java.util.List<MmtPossibleEffect> mmtFoodEffects(net.minecraft.world.item.ItemStack stack) {\n" +
+            "        java.util.List<MmtPossibleEffect> effects = new java.util.ArrayList<>();\n" +
+            "        net.minecraft.world.item.component.Consumable consumable = stack.get(net.minecraft.core.component.DataComponents.CONSUMABLE);\n" +
+            "        if (consumable == null) return effects;\n" +
+            "        for (net.minecraft.world.item.consume_effects.ConsumeEffect effect : consumable.onConsumeEffects())\n" +
+            "            if (effect instanceof net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect apply)\n" +
+            "                for (net.minecraft.world.effect.MobEffectInstance instance : apply.effects()) effects.add(new MmtPossibleEffect(instance, apply.probability()));\n" +
+            "        return effects;\n    }\n\n" +
+            "    /** What FoodProperties.PossibleEffect was before 1.21.2: an effect and its chance. */\n" +
+            "    private record MmtPossibleEffect(net.minecraft.world.effect.MobEffectInstance effect, float probability) {}\n";
+        return out.substring(0, close) + helper + out.substring(close);
+    }
+
+    /**
+     * 1.21.2 split a toast's Visibility render(GuiGraphics, ToastComponent, long) into update(ToastManager, long),
+     * getWantedVisibility() and void render(GuiGraphics, Font, long); ToastComponent became ToastManager, with the same
+     * methods. Every toast in the file keeps its drawing code unchanged as mmtRender: update keeps the manager, render
+     * draws through mmtRender and keeps the visibility it answers, and getWantedVisibility hands that to the game, which
+     * asks after each update. A toast that already has getWantedVisibility is left alone.
+     */
+    static String toastVisibility(String text) {
+        Matcher old = Pattern.compile(
+            "(?:@Override\\s+)?public\\s+((?:[\\w.]*\\.)?Visibility)\\s+render\\s*\\(\\s*(?:final\\s+)?GuiGraphics\\s+(\\w+)\\s*,\\s*" +
+            "(?:final\\s+)?(?:[\\w.]*\\.)?(?:ToastComponent|ToastManager)\\s+(\\w+)\\s*,\\s*(?:final\\s+)?long\\s+(\\w+)\\s*\\)\\s*\\{"
+        ).matcher(text);
+        StringBuilder out = new StringBuilder();
+        int done = 0;
+        while (old.find()) {
+            int close = closingBrace(text, old.end() - 1);
+            int classOpen = text.lastIndexOf("class ", old.start());
+            if (close < 0 || classOpen < 0 || text.substring(classOpen, old.start()).contains("getWantedVisibility")) continue;
+            String manager = "net.minecraft.client.gui.components.toasts.ToastManager";
+            String visibility = "net.minecraft.client.gui.components.toasts.Toast.Visibility";
+            out.append(text, done, old.start())
+                .append("private ").append(visibility).append(" mmtRender(GuiGraphics ").append(old.group(2)).append(", ").append(manager)
+                .append(' ').append(old.group(3)).append(", long ").append(old.group(4)).append(") {")
+                .append(text, old.end(), close + 1)
+                .append("\n\n    private ").append(manager).append(" mmtToastManager;\n")
+                .append("    private ").append(visibility).append(" mmtVisibility = ").append(visibility).append(".SHOW;\n\n")
+                .append("    @Override\n    public void update(").append(manager).append(" manager, long time) {\n")
+                .append("        this.mmtToastManager = manager;\n    }\n\n")
+                .append("    @Override\n    public ").append(visibility).append(" getWantedVisibility() {\n")
+                .append("        return this.mmtVisibility;\n    }\n\n")
+                .append("    @Override\n    public void render(GuiGraphics graphics, net.minecraft.client.gui.Font font, long time) {\n")
+                .append("        this.mmtVisibility = mmtRender(graphics, this.mmtToastManager, time);\n    }");
+            done = close + 1;
+        }
+        return done == 0 ? text : out.append(text.substring(done)).toString();
+    }
+
+    /**
+     * 1.21.2's models pose from a render state: EntityModel<T extends Entity>.setupAnim(entity, limbSwing, limbSwingAmount,
+     * ageInTicks, netHeadYaw, headPitch) became EntityModel<S extends EntityRenderState>.setupAnim(S). The renderer that
+     * computed those five values in 1.21.1 (LivingEntityRenderer.render) now stores the same ones in the state
+     * (walkAnimationPos, walkAnimationSpeed, ageInTicks, yRot, xRot). A mod model extending a game model XModel<..> takes
+     * XRenderState, and its setupAnim keeps its body with the old names read back from the state; super.setupAnim passes
+     * the state. The entity itself is not in the state: a body that still reads it is left for javac to name.
+     */
+    static String entityModelRenderState(String text) {
+        Matcher cls = Pattern.compile("\\bclass\\s+\\w+\\s*(?:<[^{]*?>)?\\s+extends\\s+(\\w*)Model\\s*<\\s*([^<>{]+?)\\s*>").matcher(text);
+        if (!cls.find()) return text;
+        String prefix = cls.group(1).isEmpty() ? "Entity" : cls.group(1);
+        String state = prefix + "RenderState";
+        boolean living = !prefix.equals("Entity");
+        Matcher setup = Pattern.compile(
+            "(public\\s+void\\s+setupAnim\\s*\\()\\s*[\\w.<>?, ]+?\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*,\\s*float\\s+(\\w+)\\s*\\)\\s*\\{"
+        ).matcher(text);
+        if (!setup.find() || !living) return text;
+        String var = Pattern.compile("\\bstate\\b").matcher(text).find() ? "mmtState" : "state";
+        int bodyOpen = setup.end() - 1, bodyClose = closingBrace(text, bodyOpen);
+        if (bodyClose < 0) return text;
+        String indent = text.substring(text.lastIndexOf('\n', setup.start()) + 1, setup.start()).replaceAll("\\S.*", "") + "    ";
+        String[] names = { setup.group(3), setup.group(4), setup.group(5), setup.group(6), setup.group(7) };
+        String[] fields = { "walkAnimationPos", "walkAnimationSpeed", "ageInTicks", "yRot", "xRot" };
+        StringBuilder prologue = new StringBuilder();
+        for (int i = 0; i < 5; i++) prologue.append('\n').append(indent).append("float ").append(names[i]).append(" = ").append(var).append('.').append(fields[i]).append(';');
+        String body = text.substring(bodyOpen + 1, bodyClose).replaceAll(
+            "\\bsuper\\s*\\.\\s*setupAnim\\s*\\(\\s*" + Pattern.quote(setup.group(2)) + "\\s*,[^;]*\\)\\s*;",
+            Matcher.quoteReplacement("super.setupAnim(" + var + ");")
+        );
+        String out = text.substring(0, setup.start()) + setup.group(1) + state + " " + var + ") {" + prologue + body + text.substring(bodyClose);
+        out = out.substring(0, cls.start()) + text.substring(cls.start(), cls.end()).replaceFirst(
+            "Model\\s*<\\s*" + Pattern.quote(cls.group(2)) + "\\s*>$",
+            Matcher.quoteReplacement("Model<" + state + ">")
+        ) + out.substring(cls.end());
+        return addImport(out, "net.minecraft.client.renderer.entity.state." + state);
+    }
+
+    /**
+     * 1.21.2 split entity rendering into extracting a render state and drawing it: EntityRenderer<T> became
+     * EntityRenderer<T, S extends EntityRenderState>, and render(T entity, float yaw, float partialTicks, PoseStack,
+     * MultiBufferSource, int) became render(S state, PoseStack, MultiBufferSource, int). A renderer that extends
+     * EntityRenderer<E> directly keeps its drawing code unchanged behind a state of its own that carries what the old
+     * method was given: the entity, the partial tick, and the yaw the 1.21.1 dispatcher computed
+     * (Mth.lerp(partialTick, yRotO, getYRot())). The old parameter names are read back from it at the top of render, and
+     * super.render passes the state. getTextureLocation(E) stays as a plain method: EntityRenderer has none any more.
+     * Another renderer's render(entity, yaw, partialTicks, ...) is drawn through createRenderState(entity, partialTicks).
+     * A generic renderer (class R<T> extends EntityRenderer<T>) is left to the compiler.
+     */
+    static String entityRenderState(String text) {
+        Matcher cls = Pattern.compile("\\bclass\\s+(\\w+)\\s+extends\\s+EntityRenderer\\s*<\\s*([\\w.]+)\\s*>").matcher(text);
+        if (!cls.find()) return text;
+        String renderer = cls.group(1), entity = cls.group(2);
+        int open = text.indexOf('{', cls.end());
+        int close = open < 0 ? -1 : closingBrace(text, open);
+        if (close < 0) return text;
+        String body = text.substring(open + 1, close);
+        Matcher render = Pattern.compile(
+            "((?:@Override\\s+)?public\\s+void\\s+render\\s*)\\(\\s*(?:final\\s+)?" + Pattern.quote(entity) +
+            "\\s+(\\w+)\\s*,\\s*(?:final\\s+)?float\\s+(\\w+)\\s*,\\s*(?:final\\s+)?float\\s+(\\w+)\\s*,\\s*" +
+            "((?:final\\s+)?PoseStack\\s+(\\w+)\\s*,\\s*(?:final\\s+)?MultiBufferSource\\s+(\\w+)\\s*,\\s*(?:final\\s+)?int\\s+(\\w+))\\s*\\)\\s*\\{"
+        ).matcher(body);
+        if (!render.find()) return text;
+        String entityName = render.group(2), yawName = render.group(3), tickName = render.group(4);
+        int renderClose = closingBrace(body, render.end() - 1);
+        if (renderClose < 0) return text;
+        String renderBody = body.substring(render.end(), renderClose);
+        // super.render(entity, yaw, partialTicks, poseStack, buffer, light) -> super.render(state, poseStack, buffer, light)
+        StringBuilder sb = new StringBuilder();
+        Matcher superRender = Pattern.compile("\\bsuper\\s*\\.\\s*render\\s*\\(").matcher(renderBody);
+        int done = 0;
+        while (superRender.find()) {
+            int callOpen = superRender.end() - 1, callClose = closingParen(renderBody, callOpen);
+            if (callClose < 0) break;
+            List<String> args = topLevelArguments(renderBody.substring(callOpen + 1, callClose));
+            if (args.size() != 6) continue;
+            sb.append(renderBody, done, callOpen + 1).append("state, ").append(args.get(3).strip()).append(", ").append(args.get(4).strip())
+                .append(", ").append(args.get(5).strip()).append(')');
+            done = callClose + 1;
+        }
+        sb.append(renderBody.substring(done));
+        String indent = "        ";
+        String newRender =
+            render.group(1) + "(MmtState state, " + render.group(5) + ") {\n" +
+            indent + entity + " " + entityName + " = state.mmtEntity;\n" +
+            indent + "float " + yawName + " = state.mmtYaw;\n" +
+            indent + "float " + tickName + " = state.mmtPartialTick;" +
+            sb;
+        String added =
+            "\n\n    @Override\n    public MmtState createRenderState() {\n        return new MmtState();\n    }\n\n" +
+            "    @Override\n    public void extractRenderState(" + entity + " entity, MmtState state, float partialTick) {\n" +
+            "        super.extractRenderState(entity, state, partialTick);\n" +
+            "        state.mmtEntity = entity;\n        state.mmtPartialTick = partialTick;\n" +
+            "        state.mmtYaw = net.minecraft.util.Mth.lerp(partialTick, entity.yRotO, entity.getYRot());\n    }\n\n" +
+            "    /** What render was given before 1.21.2 split it into extracting and drawing a render state. */\n" +
+            "    public static class MmtState extends EntityRenderState {\n        public " + entity + " mmtEntity;\n" +
+            "        public float mmtPartialTick;\n        public float mmtYaw;\n    }\n";
+        String newBody = body.substring(0, render.start()) + newRender + body.substring(renderClose) ;
+        // EntityRenderer no longer declares getTextureLocation: the mod's stays as a plain method.
+        newBody = newBody.replaceAll(
+            "(?m)^([ \\t]*)@Override\\s+(public\\s+[\\w.]+\\s+getTextureLocation\\s*\\(\\s*" + Pattern.quote(entity) + "\\b)",
+            "$1$2"
+        );
+        // Another renderer drawn with an entity: through its own render state.
+        Matcher delegate = Pattern.compile("([\\w.]+(?:\\([^()]*\\))?)\\s*\\.\\s*render\\s*\\(").matcher(newBody);
+        StringBuilder withDelegates = new StringBuilder();
+        done = 0;
+        while (delegate.find()) {
+            if (delegate.group(1).equals("super")) continue;
+            int callOpen = delegate.end() - 1, callClose = closingParen(newBody, callOpen);
+            if (callClose < 0) continue;
+            List<String> args = topLevelArguments(newBody.substring(callOpen + 1, callClose));
+            if (args.size() != 6) continue;
+            // getRenderer(entity) is an EntityRenderer<? super T, ?>: its own state only goes back in through the raw type.
+            String target = "((net.minecraft.client.renderer.entity.EntityRenderer) " + delegate.group(1) + ")";
+            withDelegates.append(newBody, done, delegate.start()).append(target).append(".render(").append(target).append(".createRenderState(").append(args.get(0).strip())
+                .append(", ").append(args.get(2).strip()).append("), ").append(args.get(3).strip()).append(", ").append(args.get(4).strip())
+                .append(", ").append(args.get(5).strip()).append(')');
+            done = callClose + 1;
+        }
+        withDelegates.append(newBody.substring(done));
+        String header = text.substring(0, cls.start()) + text.substring(cls.start(), cls.end()).replaceFirst(
+            "EntityRenderer\\s*<\\s*" + Pattern.quote(entity) + "\\s*>",
+            Matcher.quoteReplacement("EntityRenderer<" + entity + ", " + renderer + ".MmtState>")
+        );
+        String out = header + text.substring(cls.end(), open + 1) + withDelegates + added + text.substring(close);
+        return addImport(out, "net.minecraft.client.renderer.entity.state.EntityRenderState");
+    }
+
+    static int closingBrace(String text, int open) {
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"') i = stringEnd(text, i);
+            else if (ch == '{') depth++;
+            else if (ch == '}' && --depth == 0) return i;
+        }
+        return -1;
+    }
+
+    static String callArguments(String text, Map<String, Object> apply) {
+        Pattern statement = Pattern.compile(Json.text(apply, "statement", ""));
+        // A method call (.name( ) or a constructor call (new Name( ); "rename" gives the call a new name, "argument" (from 0)
+        // rewrites that argument alone.
+        Pattern call = Pattern.compile("(\\.|\\bnew\\s+)(" + String.join("|", ProjectModel.strings(apply.get("calls"))) + ")(\\s*\\()");
+        String skip = Json.text(apply, "skip", ""), wrap = Json.text(apply, "wrap", "$0"), rename = Json.text(apply, "rename", "");
+        int only = apply.get("argument") instanceof Number n ? n.intValue() : -1;
+        StringBuilder out = new StringBuilder();
+        int done = 0;
+        Matcher start = statement.matcher(text);
+        while (start.find(done)) {
+            int end = statementEnd(text, start.start());
+            if (end < 0) break;
+            out.append(text, done, start.start());
+            String body = text.substring(start.start(), end);
+            StringBuilder rewritten = new StringBuilder();
+            int at = 0;
+            Matcher c = call.matcher(body);
+            while (c.find(at)) {
+                int close = closingParen(body, c.end() - 1);
+                if (close < 0) break;
+                rewritten.append(body, at, c.start()).append(c.group(1)).append(rename.isEmpty() ? c.group(2) : rename).append(c.group(3));
+                List<String> parts = topLevelArguments(body.substring(c.end(), close));
+                for (int i = 0; i < parts.size(); i++) {
+                    String part = parts.get(i), arg = part.strip();
+                    boolean keep = arg.isEmpty() || (only >= 0 && i != only) || (!skip.isEmpty() && Pattern.compile(skip).matcher(arg).find());
+                    String lead = part.substring(0, part.indexOf(arg.isEmpty() ? part : arg)), tail = part.substring(lead.length() + arg.length());
+                    rewritten.append(lead).append(keep ? arg : wrap.replace("$0", arg)).append(tail);
+                    if (i < parts.size() - 1) rewritten.append(',');
+                }
+                rewritten.append(')');
+                at = close + 1;
+            }
+            rewritten.append(body.substring(at));
+            out.append(rewritten);
+            done = end;
+        }
+        return out.append(text.substring(done)).toString();
+    }
+
+    /** The index just after the ';' that ends the statement starting at from, outside brackets and strings; -1 if none. */
+    static int statementEnd(String text, int from) {
+        int depth = 0;
+        for (int i = from; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"') i = stringEnd(text, i);
+            else if (ch == '(' || ch == '{' || ch == '[') depth++;
+            else if (ch == ')' || ch == '}' || ch == ']') depth--;
+            else if (ch == ';' && depth <= 0) return i + 1;
+        }
+        return -1;
+    }
+
+    /** The index of the ')' closing the '(' at open; -1 if none. */
+    static int closingParen(String text, int open) {
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"') i = stringEnd(text, i);
+            else if (ch == '(') depth++;
+            else if (ch == ')' && --depth == 0) return i;
+        }
+        return -1;
+    }
+
+    static int stringEnd(String text, int quote) {
+        for (int i = quote + 1; i < text.length(); i++) {
+            if (text.charAt(i) == '\\') i++;
+            else if (text.charAt(i) == '"') return i;
+        }
+        return text.length() - 1;
+    }
+
+    /** An argument list split at its top-level commas, each part with its own whitespace. */
+    static List<String> topLevelArguments(String args) {
+        List<String> parts = new ArrayList<>();
+        int depth = 0, from = 0;
+        for (int i = 0; i < args.length(); i++) {
+            char ch = args.charAt(i);
+            if (ch == '"') i = stringEnd(args, i);
+            else if (ch == '(' || ch == '{' || ch == '[') depth++;
+            else if (ch == ')' || ch == '}' || ch == ']') depth--;
+            else if (ch == ',' && depth == 0) {
+                parts.add(args.substring(from, i));
+                from = i + 1;
+            }
+        }
+        parts.add(args.substring(from));
+        return parts;
+    }
+
     static String payloadCalls(String text, String name, Set<Integer> lines) {
         Matcher call = Pattern.compile(
             "\\b(?:(Client|Server)PlayNetworking\\s*\\.\\s*(registerGlobalReceiver|send)|new\\s+CustomPayload(?:S2C|C2S)Packet)\\s*\\("
@@ -3312,6 +4746,25 @@ final class Port {
     }
 
     /** One knowledge rule on one source text: its `when` gate, the literal or regex rewrite, then any imports it needs. */
+    /**
+     * A rule's replacement for one match: $N is group N as usual, and $^N is group N in UPPER_SNAKE case, for a getter the
+     * game turned into a constant (1.21.2's GameRenderer::getPositionTexShader -> CoreShaders.POSITION_TEX). The result
+     * is still a Matcher replacement: replaceAll expands the plain $N itself.
+     */
+    static String expandReplacement(String replace, java.util.regex.MatchResult match) {
+        Matcher token = Pattern.compile("\\$\\^(\\d)").matcher(replace);
+        StringBuilder out = new StringBuilder();
+        while (token.find()) {
+            String group = match.group(Integer.parseInt(token.group(1)));
+            String upper = group == null
+                ? ""
+                : group.replaceAll("([a-z0-9])([A-Z])", "$1_$2").replaceAll("([A-Z])([A-Z][a-z])", "$1_$2").toUpperCase(Locale.ROOT);
+            // Quoted twice: once for this appendReplacement, once for the replaceAll that reads the result.
+            token.appendReplacement(out, Matcher.quoteReplacement(Matcher.quoteReplacement(upper)));
+        }
+        return token.appendTail(out).toString();
+    }
+
     static String rewrite(Map<String, Object> rule, String original) {
         var apply = Json.object(rule.get("apply"));
         String text = original;
@@ -3321,6 +4774,13 @@ final class Port {
         // A rule's test for a loader-swap transform converts one file: the entry-point wiring has no single-file form.
         else if ("neo-config".equals(apply.get("transform"))) text = neoConfigConvert(text);
         else if ("neo-entry".equals(apply.get("transform"))) text = neoSubscriberConvert(text);
+        else if ("call-arguments".equals(apply.get("transform"))) text = callArguments(text, apply);
+        else if ("entity-render-state".equals(apply.get("transform"))) text = entityRenderState(text);
+        else if ("entity-model-render-state".equals(apply.get("transform"))) text = entityModelRenderState(text);
+        else if ("toast-visibility".equals(apply.get("transform"))) text = toastVisibility(text);
+        else if ("food-effects".equals(apply.get("transform"))) text = foodEffects(text);
+        else if ("food-consumable".equals(apply.get("transform"))) text = foodConsumables(text);
+        else if ("registry-ids".equals(apply.get("transform"))) text = registryIds(text, "examplemod");
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(
             text,
@@ -3339,7 +4799,7 @@ final class Port {
         );
         else if (apply.containsKey("find")) text = Pattern.compile(apply.get("find").toString())
             .matcher(text)
-            .replaceAll(Json.text(apply, "replace", ""));
+            .replaceAll(match -> expandReplacement(Json.text(apply, "replace", ""), match));
         if (!text.equals(original)) for (String name : ProjectModel.strings(apply.get("ensureImports"))) text =
             addImport(text, name);
         return text;
@@ -3350,6 +4810,9 @@ final class Port {
      * find or replace stands for the symbol that error names. Used where the same call is right elsewhere in the file:
      * getCategory() needs .value() only where its receiver became a RegistryEntry.
      */
+    /** A pattern that matches nothing: a {receiver} javac named no variable for leaves the line alone. */
+    static final String NOTHING = "(?!)";
+
     static String rewriteReported(
         Map<String, Object> rule,
         String text,
@@ -3360,7 +4823,7 @@ final class Port {
         if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return text;
         Pattern match = Pattern.compile(rule.get("match").toString());
         List<String> log = errors.lines().toList();
-        Map<Integer, String> sites = new TreeMap<>();
+        Map<Integer, String> sites = new TreeMap<>(), looked = new HashMap<>();
         for (int i = 0; i < log.size(); i++) {
             Matcher error = ERROR.matcher(log.get(i));
             if (!error.find() || !sameFile.test(error.group(1))) continue;
@@ -3371,6 +4834,9 @@ final class Port {
             if (!match.matcher(block).find()) continue;
             Matcher symbol = Pattern.compile("symbol:\\s+\\w+ (\\w+)").matcher(block);
             sites.put(Integer.parseInt(error.group(2)), symbol.find() ? symbol.group(1) : "");
+            // {receiver}: the variable javac looked the symbol up on ("location: variable stack of type ItemStack").
+            Matcher receiver = Pattern.compile("location:\\s+variable (\\w+) of type").matcher(block);
+            looked.put(Integer.parseInt(error.group(2)), receiver.find() ? receiver.group(1) : NOTHING);
         }
         if (sites.isEmpty()) return text;
         String[] lines = text.split("\n", -1);
@@ -3392,7 +4858,7 @@ final class Port {
             );
             for (String key : List.of("find", "replace", "literal")) if (
                 apply.get(key) instanceof String value
-            ) apply.put(key, value.replace("{symbol}", site.getValue()));
+            ) apply.put(key, value.replace("{symbol}", site.getValue()).replace("{receiver}", looked.getOrDefault(site.getKey(), NOTHING)));
             apply.remove("ensureImports");
             bound.put("apply", apply);
             bound.put("when", "");
@@ -4287,7 +5753,7 @@ final class Port {
         for (Path transaction : transactions(project)) {
             Map<String, Object> state;
             try {
-                state = Json.read(transaction.resolve("transaction.json"));
+                state = withJournal(transaction, Json.read(transaction.resolve("transaction.json")));
             } catch (IOException | IllegalArgumentException unreadable) {
                 continue;
             }
@@ -4319,6 +5785,35 @@ final class Port {
     }
 
     /** Backed-up files that now differ from their backup, or are gone. */
+    /** The journal a run appends each file to before it first writes it (tracked.tsv: path, tab, hash or empty when new). */
+    static final String JOURNAL = "tracked.tsv";
+
+    /**
+     * An unfinished run's record with the files its journal lists: convert appends a line per file instead of saving the
+     * whole record before every write (which grew with the square of the files it writes). Undo restores or deletes them.
+     */
+    static Map<String, Object> withJournal(Path transaction, Map<String, Object> state) throws IOException {
+        Path journal = transaction.resolve(JOURNAL);
+        if (!"in-progress".equals(state.get("status")) || !Files.isRegularFile(journal)) return state;
+        Map<String, Object> before = new LinkedHashMap<>(Json.object(state.get("before")));
+        Map<String, Object> plan = new LinkedHashMap<>(Json.object(state.getOrDefault("plan", Map.of())));
+        List<String> edits = new ArrayList<>(ProjectModel.strings(plan.get("edits")));
+        for (String line : Files.readAllLines(journal, StandardCharsets.UTF_8)) {
+            int tab = line.indexOf('\t');
+            if (tab < 0) continue;
+            String relative = line.substring(0, tab);
+            String hash = line.substring(tab + 1).strip();
+            if (before.containsKey(relative)) continue;
+            before.put(relative, hash.isEmpty() ? null : hash);
+            edits.add(relative);
+        }
+        Map<String, Object> out = new LinkedHashMap<>(state);
+        out.put("before", before);
+        plan.put("edits", edits);
+        out.put("plan", plan);
+        return out;
+    }
+
     static List<String> changedSince(ProjectModel project, Map<String, Object> state) throws Exception {
         List<String> changed = new ArrayList<>();
         for (var entry : Json.object(state.get("before")).entrySet()) {
@@ -4368,7 +5863,7 @@ final class Port {
             project.state().resolve(folder) +
             "."
         );
-        var state = Json.read(transaction.resolve("transaction.json"));
+        var state = withJournal(transaction, Json.read(transaction.resolve("transaction.json")));
         if (!project.root.toString().equals(state.get("root"))) throw new IOException(
             "Undo belongs to a different project."
         );

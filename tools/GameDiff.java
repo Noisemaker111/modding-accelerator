@@ -55,6 +55,7 @@ public final class GameDiff {
 
     static final String MANIFEST = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     static final String NEOFORGE = "https://maven.neoforged.net/releases/net/neoforged/neoforge/";
+    static final int ACC_PUBLIC = 0x0001;
     static final int ACC_PRIVATE = 0x0002;
     static final int ACC_STATIC = 0x0008;
     static final int ACC_BRIDGE = 0x0040;
@@ -147,7 +148,7 @@ public final class GameDiff {
         final Cls owner;
         final String name;
         final String desc;
-        final int flags;
+        int flags; // widened by the loader's access transformer (Exposure.loaderAccess)
         String ops = "";
         Ref[] refs = new Ref[0];
         boolean hasCode;
@@ -203,7 +204,7 @@ public final class GameDiff {
         final Cls owner;
         final String name;
         final String desc;
-        final int flags;
+        int flags; // widened by the loader's access transformer (Exposure.loaderAccess)
         final List<Meth> accessors = new ArrayList<>();
         String constant; // a compile-time constant's value: javac inlines these, so nothing reads the field
         String id; // our stable id (field_g<n>)
@@ -220,7 +221,7 @@ public final class GameDiff {
     static final class Cls {
 
         final String name;
-        final int flags;
+        int flags; // widened by the loader's access transformer (Exposure.loaderAccess)
         final String sup;
         final List<String> ifaces;
         final boolean loader;
@@ -254,6 +255,7 @@ public final class GameDiff {
         String loaderVersion;
         final Map<String, Cls> classes = new LinkedHashMap<>();
         final Set<String> fixPairs = new HashSet<>(); // "old\0new" ids from the game's own datafixes
+        final Map<String, Origin> origins = new HashMap<>(); // class -> its bytes, so Learner can read a body again
 
         Snap(String version) {
             this.version = version;
@@ -301,8 +303,12 @@ public final class GameDiff {
         final List<String> lambdas = new ArrayList<>(); // name + desc in the same class
     }
 
+    /** Where a class of a snapshot came from: its bytes and how its references are named and resolved. */
+    record Origin(byte[] bytes, Map<String, RawCls> raw, Map<String, RawCls> fallback, Names names, Map<String, Ref> resolved) {}
+
     static final class RawCls {
 
+        byte[] bytes;
         String name;
         int flags;
         String sup;
@@ -330,6 +336,7 @@ public final class GameDiff {
     static RawCls parse(byte[] bytes) {
         ClassModel cm = ClassFile.of().parse(bytes);
         RawCls rc = new RawCls();
+        rc.bytes = bytes;
         rc.name = cm.thisClass().asInternalName();
         rc.flags = cm.flags().flagsMask();
         rc.sup = cm.superclass().map(ClassEntry::asInternalName).orElse(null);
@@ -610,7 +617,7 @@ public final class GameDiff {
                     s.fixPairs.add(id(p[0]) + "\0" + id(p[1]));
                 }
             }
-            boolean inside = loader ? n.startsWith("net/neoforged/") : gameClass(n);
+            boolean inside = loader ? !gameClass(n) : gameClass(n); // the loader's classes are the ones its caller chose (Exposure.snap)
             if (!inside || anonymous(n) || (rc.flags & ACC_SYNTHETIC) != 0) {
                 continue;
             }
@@ -654,8 +661,9 @@ public final class GameDiff {
                 return c;
             })
             .toList();
-        for (Cls c : made) {
-            s.classes.put(c.name, c);
+        for (int i = 0; i < made.size(); i++) {
+            s.classes.put(made.get(i).name, made.get(i));
+            s.origins.put(made.get(i).name, new Origin(keep.get(i).bytes, raw, fallback, names, resolved));
         }
     }
 
@@ -1845,6 +1853,825 @@ public final class GameDiff {
             }
         }
 
+        /** A call the game rewrote: what its own code called in a's release and calls at the same place in b's. */
+        record Rewrite(Meth from, Meth to, int votes, int total) {}
+
+        /**
+         * Call-site rewrites, read from the game's own code once linking is done. In every pair of linked methods the
+         * references are aligned (through the links, so what stayed the same lines up); where a method of a that has no
+         * link (removed, or its signature changed) sits opposite a method of b, that is a vote for b's method as its
+         * replacement (1.20.2: PacketByteBuf.getVarIntLength -> VarInt.getByteSize). Unlike a link, the replacement may
+         * have another owner, descriptor or static-ness: the porter maps the arguments. Kept when at least two call sites
+         * agree and 80% of the removed method's aligned call sites name the same replacement.
+         */
+        List<Rewrite> rewrites() {
+            Map<Meth, Map<Meth, Integer>> votes = new HashMap<>();
+            Map<Meth, Integer> totals = new HashMap<>();
+            for (var e : mAB.entrySet()) {
+                Meth x = e.getKey();
+                Meth y = e.getValue();
+                if (x.refs.length == 0 || y.refs.length == 0) {
+                    continue;
+                }
+                long[] ta = new long[x.refs.length];
+                long[] tb = new long[y.refs.length];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = fnv(token(x.refs[i], true));
+                }
+                for (int j = 0; j < tb.length; j++) {
+                    tb[j] = fnv(token(y.refs[j], false));
+                }
+                for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
+                    Ref ra = x.refs[p[0]];
+                    Ref rb = y.refs[p[1]];
+                    if (ra.kind() != 'm' || rb.kind() != 'm') {
+                        continue;
+                    }
+                    Meth ma = a.method(ra.owner(), ra.name(), ra.desc());
+                    Meth mb = b.method(rb.owner(), rb.name(), rb.desc());
+                    if (ma == null || mb == null || mAB.containsKey(ma) || ma.special() || mb.special()) {
+                        continue;
+                    }
+                    votes.computeIfAbsent(ma, k -> new HashMap<>()).merge(mb, 1, Integer::sum);
+                    totals.merge(ma, 1, Integer::sum);
+                }
+            }
+            // Calls the game deleted: a removed void method whose call sites in linked methods lost the call while what was
+            // around it stayed (1.21.2: RenderSystem.applyModelViewMatrix()). Counted against every call site seen.
+            Map<Meth, Integer> dropped = new HashMap<>(), seen = new HashMap<>();
+            for (var e : mAB.entrySet()) {
+                Meth x = e.getKey();
+                Meth y = e.getValue();
+                if (x.refs.length == 0) {
+                    continue;
+                }
+                long[] ta = new long[x.refs.length];
+                long[] tb = new long[y.refs.length];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = fnv(token(x.refs[i], true));
+                }
+                for (int j = 0; j < tb.length; j++) {
+                    tb[j] = fnv(token(y.refs[j], false));
+                }
+                Set<Integer> gone = droppedIndices(ta, tb);
+                for (int i = 0; i < x.refs.length; i++) {
+                    Ref ra = x.refs[i];
+                    if (ra.kind() != 'm' || !ra.desc().endsWith(")V")) {
+                        continue;
+                    }
+                    Meth ma = a.method(ra.owner(), ra.name(), ra.desc());
+                    if (ma == null || mAB.containsKey(ma) || ma.special()) {
+                        continue;
+                    }
+                    seen.merge(ma, 1, Integer::sum);
+                    if (gone.contains(i)) {
+                        dropped.merge(ma, 1, Integer::sum);
+                    }
+                }
+            }
+            List<Rewrite> out = new ArrayList<>();
+            for (var e : dropped.entrySet()) {
+                int all = seen.get(e.getKey());
+                if (e.getValue() >= 2 && e.getValue() * 10 >= all * 8 && !votes.containsKey(e.getKey())) {
+                    out.add(new Rewrite(e.getKey(), null, e.getValue(), all));
+                }
+            }
+            for (var e : votes.entrySet()) {
+                Meth best = null;
+                int c1 = 0;
+                for (var f : e.getValue().entrySet()) {
+                    if (f.getValue() > c1) {
+                        c1 = f.getValue();
+                        best = f.getKey();
+                    }
+                }
+                int total = totals.get(e.getKey());
+                // The game's own code may call a private helper in place of what it removed; a mod cannot.
+                boolean reachable = (best.flags & ACC_PRIVATE) == 0 || (e.getKey().flags & ACC_PRIVATE) != 0;
+                if (reachable && receiverCarries(e.getKey(), best) && (c1 >= 2 && c1 * 10 >= total * 8 || c1 == 1 && total == 1 && typeSafe(e.getKey(), best))) {
+                    out.add(new Rewrite(e.getKey(), best, c1, total));
+                }
+            }
+            out.sort(Comparator.comparing((Rewrite r) -> r.from().sig()));
+            return out;
+        }
+
+        /**
+         * What the game's own code says about one member of a that has no link: how many places in a use it, how many of
+         * those sit in methods that b still has (linked), how many of those line up with something in b, and the
+         * reference of b most of them line up with. Says why the miner gave no replacement: nothing in the game used it,
+         * every user was redesigned, or the users disagree.
+         */
+        record Evidence(int sites, int kept, int aligned, String best, int votes, String template, int templateVotes, int templateSites) {}
+
+        /**
+         * Removed methods whose old code can go with the mod: every class, method and field the body uses is outside the
+         * game (the JDK, a library) or is still in b, linked and public, or is another removed method of the same class
+         * that passes the same test. Such a body, copied into the mod as a helper and renamed through the map, still
+         * compiles and does what it did. Keyed as Exposure keys them.
+         */
+        Set<String> portable() {
+            Set<String> out = new HashSet<>();
+            Map<Meth, Boolean> memo = new HashMap<>();
+            for (Cls c : a.classes.values()) {
+                for (Meth m : c.methods.values()) {
+                    if (!mAB.containsKey(m) && (m.flags & ACC_PUBLIC) != 0 && portable(m, memo, 0)) {
+                        out.add(m.owner.name.replace('/', '.') + "." + m.name + m.desc);
+                    }
+                }
+            }
+            return out;
+        }
+
+        boolean portable(Meth m, Map<Meth, Boolean> memo, int depth) {
+            Boolean known = memo.get(m);
+            if (known != null) {
+                return known;
+            }
+            if (!m.hasCode || depth > 4) {
+                return false;
+            }
+            memo.put(m, false); // a cycle is not portable
+            boolean ok = m.isStatic() || publicInB(cAB.get(m.owner));
+            for (Ref r : m.refs) {
+                if (!ok) {
+                    break;
+                }
+                Cls owner = a.classes.get(r.owner());
+                if (owner == null) {
+                    continue; // the JDK or a library
+                }
+                switch (r.kind()) {
+                    case 'm' -> {
+                        Meth x = null;
+                        for (Cls k = owner; k != null && x == null; k = k.sup == null ? null : a.classes.get(k.sup)) {
+                            x = k.methods.get(r.name() + r.desc());
+                        }
+                        if (x == null) {
+                            ok = false;
+                        } else if (mAB.containsKey(x)) {
+                            Meth y = mAB.get(x);
+                            ok = (y.flags & ACC_PUBLIC) != 0 && publicInB(y.owner);
+                        } else {
+                            ok = x.owner == m.owner && portable(x, memo, depth + 1);
+                        }
+                    }
+                    case 'f' -> {
+                        Fld x = null;
+                        for (Cls k = owner; k != null && x == null; k = k.sup == null ? null : a.classes.get(k.sup)) {
+                            x = k.fields.get(r.name());
+                        }
+                        Fld y = x == null ? null : fAB.get(x);
+                        ok = y != null && (y.flags & ACC_PUBLIC) != 0 && publicInB(y.owner);
+                    }
+                    default -> ok = publicInB(cAB.get(owner));
+                }
+            }
+            memo.put(m, ok);
+            return ok;
+        }
+
+        static boolean publicInB(Cls c) {
+            return c != null && (c.flags & ACC_PUBLIC) != 0;
+        }
+
+        /** The references of b each template string stands for, and the reference of a each evidence key came from. */
+        final Map<String, List<Ref>> templateRefs = new HashMap<>();
+        final Map<String, Ref> unlinkedMember = new HashMap<>();
+
+        /**
+         * A member the game replaced with a chain on the same receiver (1.21.2: input.up -> input.keyPresses.forward()):
+         * steps are "f:name" or "m:name" joined by commas; the last takes the old call's arguments.
+         */
+        record Chain(String owner, String newOwner, String name, String desc, boolean field, String steps, int votes, int of) {}
+
+        /**
+         * Templates the game's own code agrees on (two uses, 60%) that are a type-correct chain: the first step is a member
+         * of the old owner's class in b, every step is an instance member of what the step before returns, every step but
+         * the last is a field or a no-argument method, and the last gives what the old member gave (same field type, or
+         * the same parameters and return type) after the map's renames.
+         */
+        /** A method moved to an unrelated class that one holder keeps beside the old one, each in a public field of its own. */
+        record Sibling(Meth from, Meth to, String holder, String fromField, String toField) {}
+
+        /**
+         * 26.2 moved LevelRenderer.blockChanged to LevelExtractor, and Minecraft keeps both (levelRenderer, levelExtractor):
+         * a call through holder.levelRenderer goes through holder.levelExtractor. Only a holder with exactly one public
+         * field of each type in b counts, and only a move between classes neither of which extends the other.
+         */
+        List<Sibling> siblings() {
+            List<Sibling> out = new ArrayList<>();
+            for (var e : mAB.entrySet()) {
+                Meth a = e.getKey(), m = e.getValue();
+                if (a.isStatic() || m.isStatic() || (m.flags & ACC_PUBLIC) == 0) {
+                    continue;
+                }
+                Cls mapped = cAB.get(a.owner);
+                String oldOwner = mapped == null ? null : mapped.name, newOwner = m.owner.name;
+                if (oldOwner == null || oldOwner.equals(newOwner) || subtypeB(oldOwner, newOwner) || subtypeB(newOwner, oldOwner)) {
+                    continue;
+                }
+                Sibling found = null;
+                int holders = 0;
+                for (Cls c : b.classes.values()) {
+                    String fromField = null, toField = null;
+                    int fromCount = 0, toCount = 0;
+                    for (Fld f : c.fields.values()) {
+                        if ((f.flags & ACC_PUBLIC) == 0 || (f.flags & ACC_STATIC) != 0) {
+                            continue;
+                        }
+                        if (f.desc.equals("L" + oldOwner + ";")) {
+                            fromField = f.name;
+                            fromCount++;
+                        } else if (f.desc.equals("L" + newOwner + ";")) {
+                            toField = f.name;
+                            toCount++;
+                        }
+                    }
+                    if (fromCount == 1 && toCount == 1) {
+                        holders++;
+                        found = new Sibling(a, m, c.name.replace('/', '.'), fromField, toField);
+                    }
+                }
+                if (holders == 1) {
+                    out.add(found);
+                }
+            }
+            out.sort(Comparator.comparing((Sibling s) -> s.from().owner.name + "." + s.from().name + s.from().desc));
+            return out;
+        }
+
+        List<Chain> chains() {
+            Map<String, Evidence> ev = evidence();
+            List<Chain> out = new ArrayList<>();
+            for (var e : ev.entrySet()) {
+                Evidence x = e.getValue();
+                Ref old = unlinkedMember.get(e.getKey());
+                boolean agreed = x.templateVotes() >= 2 && x.templateVotes() * 10 >= x.templateSites() * 6 || x.templateSites() == 1;
+                if (old == null || x.template() == null || !agreed) {
+                    continue;
+                }
+                String steps = chain(old, templateRefs.get(x.template()));
+                if (steps == null) {
+                    continue;
+                }
+                String key = e.getKey();
+                int cut = old.kind() == 'm' ? key.lastIndexOf('.', key.indexOf('(')) : key.lastIndexOf('.');
+                String owner = key.substring(0, cut);
+                Cls oa = a.classes.get(owner.replace('.', '/'));
+                Cls ob = oa == null ? null : cAB.get(oa);
+                out.add(new Chain(owner, ob == null ? owner : ob.name.replace('/', '.'), old.name(), old.kind() == 'm' ? old.desc() : "",
+                    old.kind() != 'm', steps, x.templateVotes(), x.templateSites()));
+            }
+            out.sort(Comparator.comparing(Chain::owner).thenComparing(Chain::name));
+            return out;
+        }
+
+        /** The steps of a type-correct chain from old's receiver, or null. */
+        String chain(Ref old, List<Ref> refs) {
+            if (refs == null || refs.isEmpty() || old.kind() == 'c' || old.kind() == 'k') {
+                return null;
+            }
+            Cls oa = a.classes.get(old.owner());
+            Cls cur = oa == null ? null : cAB.get(oa);
+            String want;
+            if (old.kind() == 'm') {
+                Meth m = a.method(old.owner(), old.name(), old.desc());
+                if (m == null || m.isStatic() || m.special()) {
+                    return null;
+                }
+                want = old.desc();
+            } else {
+                Fld f = a.field(old.owner(), old.name());
+                if (f == null || (f.flags & ACC_STATIC) != 0) {
+                    return null;
+                }
+                want = f.desc;
+            }
+            StringBuilder steps = new StringBuilder();
+            for (int i = 0; i < refs.size(); i++) {
+                Ref r = refs.get(i);
+                boolean last = i == refs.size() - 1;
+                Meth stepMethod = r.kind() == 'm' ? b.method(r.owner(), r.name(), r.desc()) : null;
+                Fld stepField = r.kind() == 'f' ? b.field(r.owner(), r.name()) : null;
+                boolean hidden = stepMethod != null && (stepMethod.flags & ACC_PRIVATE) != 0 || stepField != null && (stepField.flags & ACC_PRIVATE) != 0;
+                if (cur == null || hidden || (r.kind() != 'm' && r.kind() != 'f') || r.name().contains("$") || !subtypeB(cur.name, r.owner())) {
+                    return null;
+                }
+                String type;
+                if (r.kind() == 'm') {
+                    Meth m = b.method(r.owner(), r.name(), r.desc());
+                    if (m != null && m.isStatic() || r.name().startsWith("<") || !last && !r.desc().startsWith("()")) {
+                        return null;
+                    }
+                    String mapped = descBA(r.desc());
+                    if (last && (old.kind() == 'm' ? !mapped.equals(want) : !mapped.equals("()" + want))) {
+                        return null;
+                    }
+                    type = r.desc().substring(r.desc().indexOf(')') + 1);
+                } else {
+                    Fld f = b.field(r.owner(), r.name());
+                    if (f != null && (f.flags & ACC_STATIC) != 0 || last && (old.kind() == 'm' || !descBA(r.desc()).equals(want))) {
+                        return null;
+                    }
+                    type = r.desc();
+                }
+                steps.append(i == 0 ? "" : ",").append(r.kind()).append(':').append(r.name());
+                cur = type.startsWith("L") ? b.classes.get(type.substring(1, type.length() - 1)) : null;
+            }
+            return steps.toString();
+        }
+
+        /** sub is sup, or extends or implements it, in b. */
+        boolean subtypeB(String sub, String sup) {
+            Deque<String> todo = new ArrayDeque<>(List.of(sub));
+            Set<String> seen = new HashSet<>();
+            while (!todo.isEmpty()) {
+                String c = todo.pop();
+                if (c.equals(sup)) {
+                    return true;
+                }
+                Cls k = b.classes.get(c);
+                if (k == null || !seen.add(c)) {
+                    continue;
+                }
+                if (k.sup != null) {
+                    todo.push(k.sup);
+                }
+                k.ifaces.forEach(todo::push);
+            }
+            return false;
+        }
+
+        /** Evidence for every unlinked class, method and field of a, keyed as Exposure keys them (dotted owner, name, desc). */
+        Map<String, Evidence> evidence() {
+            Map<String, int[]> counts = new HashMap<>();
+            Map<String, Map<String, Integer>> votes = new HashMap<>();
+            Map<String, Map<String, Integer>> templates = new HashMap<>();
+            templateRefs.clear();
+            unlinkedMember.clear();
+            for (Cls c : a.classes.values()) {
+                for (Meth x : c.methods.values()) {
+                    Meth y = mAB.get(x);
+                    long[] ta = new long[x.refs.length];
+                    for (int i = 0; i < ta.length; i++) {
+                        ta[i] = fnv(token(x.refs[i], true));
+                    }
+                    Map<Integer, Ref> opposite = new HashMap<>();
+                    if (y != null && y.refs.length > 0) {
+                        long[] tb = new long[y.refs.length];
+                        for (int j = 0; j < tb.length; j++) {
+                            tb[j] = fnv(token(y.refs[j], false));
+                        }
+                        for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
+                            opposite.put(p[0], y.refs[p[1]]);
+                        }
+                        // A stretch the game rewrote into another number of references (a field read that became a call
+                        // chain): the new stretch, in b's names, is a vote for a template for every unlinked thing in it.
+                        for (int[] g : gaps(ta, tb)) {
+                            int na = g[1] - g[0], nb = g[3] - g[2];
+                            if (na == nb || na == 0 || na > 3 || nb > 4) {
+                                continue;
+                            }
+                            StringBuilder t = new StringBuilder();
+                            for (int j = g[2]; j < g[3]; j++) {
+                                Ref rb = y.refs[j];
+                                t.append(t.length() == 0 ? "" : " ; ").append(rb.kind()).append(' ')
+                                    .append(rb.kind() == 'm' ? rb.owner() + "." + rb.name() + rb.desc() : rb.kind() == 'c' || rb.kind() == 'k' ? rb.owner() : rb.owner() + "." + rb.name());
+                            }
+                            String ts = t.toString().replace('/', '.');
+                            templateRefs.putIfAbsent(ts, List.of(Arrays.copyOfRange(y.refs, g[2], g[3])));
+                            for (int k = g[0]; k < g[1]; k++) {
+                                String key = unlinkedKey(x.refs[k]);
+                                if (key != null) {
+                                    templates.computeIfAbsent(key, z -> new HashMap<>()).merge(ts, 1, Integer::sum);
+                                    unlinkedMember.putIfAbsent(key, x.refs[k]);
+                                }
+                            }
+                        }
+                    }
+                    for (int i = 0; i < x.refs.length; i++) {
+                        String key = unlinkedKey(x.refs[i]);
+                        if (key == null) {
+                            continue;
+                        }
+                        int[] n = counts.computeIfAbsent(key, k -> new int[3]);
+                        n[0]++;
+                        if (y != null) {
+                            n[1]++;
+                        }
+                        Ref rb = opposite.get(i);
+                        if (rb != null) {
+                            n[2]++;
+                            String to = rb.kind() == 'm' ? rb.owner() + "." + rb.name() + rb.desc() : rb.kind() == 'c' ? rb.owner() : rb.owner() + "." + rb.name();
+                            votes.computeIfAbsent(key, k -> new HashMap<>()).merge(to.replace('/', '.'), 1, Integer::sum);
+                        }
+                    }
+                }
+            }
+            Map<String, Evidence> out = new HashMap<>();
+            for (var e : counts.entrySet()) {
+                String best = null;
+                int top = 0;
+                for (var v : votes.getOrDefault(e.getKey(), Map.of()).entrySet()) {
+                    if (v.getValue() > top) {
+                        top = v.getValue();
+                        best = v.getKey();
+                    }
+                }
+                String template = null;
+                int tTop = 0, tAll = 0;
+                for (var v : templates.getOrDefault(e.getKey(), Map.of()).entrySet()) {
+                    tAll += v.getValue();
+                    if (v.getValue() > tTop) {
+                        tTop = v.getValue();
+                        template = v.getKey();
+                    }
+                }
+                int[] n = e.getValue();
+                out.put(e.getKey(), new Evidence(n[0], n[1], n[2], best, top, template, tTop, tAll));
+            }
+            Evidence none = new Evidence(0, 0, 0, null, 0, null, 0, 0);
+            for (Cls c : a.classes.values()) {
+                if (!cAB.containsKey(c)) {
+                    out.putIfAbsent(c.name.replace('/', '.'), none);
+                }
+                for (Meth m : c.methods.values()) {
+                    if (!mAB.containsKey(m)) {
+                        out.putIfAbsent(m.owner.name.replace('/', '.') + "." + m.name + m.desc, none);
+                    }
+                }
+                for (Fld f : c.fields.values()) {
+                    if (!fAB.containsKey(f)) {
+                        out.putIfAbsent(f.owner.name.replace('/', '.') + "." + f.name, none);
+                    }
+                }
+            }
+            return out;
+        }
+
+        /** The Exposure key of what a reference names, when that is a class, method or field of a with no link to b. */
+        String unlinkedKey(Ref r) {
+            if (r.kind() == 'k') {
+                return null;
+            }
+            if (r.kind() == 'c') {
+                Cls c = a.classes.get(r.owner());
+                return c == null || cAB.containsKey(c) ? null : c.name.replace('/', '.');
+            }
+            Meth m = null;
+            Fld f = null;
+            // A reference names the class it was compiled against; the member may be declared by a supertype.
+            for (Cls c = a.classes.get(r.owner()); c != null && m == null && f == null; c = c.sup == null ? null : a.classes.get(c.sup)) {
+                if (r.kind() == 'm') {
+                    m = c.methods.get(r.name() + r.desc());
+                } else {
+                    f = c.fields.get(r.name());
+                }
+            }
+            if (m != null) {
+                return mAB.containsKey(m) ? null : m.owner.name.replace('/', '.') + "." + m.name + m.desc;
+            }
+            return f == null || fAB.containsKey(f) ? null : f.owner.name.replace('/', '.') + "." + f.name;
+        }
+
+        /**
+         * A replacement seen at a single call site is kept only when the types prove the porter can write it: it returns
+         * what the old method returned (after the map's renames), each of its parameters is filled by an old argument or
+         * the old receiver of the same type, and an instance replacement's receiver is the old receiver or an old argument.
+         */
+        boolean typeSafe(Meth from, Meth to) {
+            if (from.special() || to.special()) {
+                return false;
+            }
+            String oldRet = from.desc.substring(from.desc.indexOf(')') + 1);
+            String newRet = descBA(to.desc.substring(to.desc.indexOf(')') + 1));
+            if (!oldRet.equals(newRet)) {
+                return false;
+            }
+            List<String> have = new ArrayList<>(VersionMap.Fix.paramTypes(from.desc));
+            if (!from.isStatic()) {
+                have.add(from.owner.name.replace('/', '.'));
+            }
+            if (!to.isStatic()) {
+                Cls owner = cBA.get(to.owner);
+                String receiver = owner == null ? null : owner.name.replace('/', '.');
+                if (receiver == null || !have.remove(receiver)) {
+                    return false;
+                }
+            }
+            for (String p : VersionMap.Fix.paramTypes(descBA(to.desc))) {
+                if (!have.remove(p)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * An instance call the game moved to another instance method keeps its receiver only when the new owner is the old
+         * class (as b has it) or related to it: 1.21.2's game replaced player.sendSystemMessage(c) with
+         * minecraft.gui.getChat().addMessage(c), a call on another object a mod's receiver cannot stand in for. A call that
+         * becomes or stops being static carries its receiver as an argument, which the porter checks by type.
+         */
+        boolean receiverCarries(Meth from, Meth to) {
+            if (to == null || from.isStatic() || to.isStatic()) {
+                return true;
+            }
+            // A class b no longer has goes with it (ItemInteractionResult -> InteractionResult): the mod's variable is
+            // retyped by the class rewrite, so its value is the new owner's.
+            Cls mapped = cAB.get(from.owner);
+            if (mapped == null && !b.classes.containsKey(from.owner.name)) {
+                return true;
+            }
+            String old = mapped == null ? from.owner.name : mapped.name;
+            return subtypeB(old, to.owner.name) || subtypeB(to.owner.name, old);
+        }
+
+        static String simpleName(String internal) {
+            return internal.substring(Math.max(internal.lastIndexOf('/'), internal.lastIndexOf('$')) + 1);
+        }
+
+        /** A parameter the game added to a method, and the one value its own code passes there (a Java expression). */
+        record ArgDefault(Meth from, Meth to, int index, String value, int votes, int of) {}
+
+        /**
+         * Added arguments with one value, read from the game's own calls: where a linked method gained exactly one
+         * parameter, the code b inserted before each of its calls (in methods both releases have, aligned through the
+         * links) is the value b passes. A method reference, a static field or a static no-argument call that two calls
+         * agree on, at 80%, is the value (1.21.2: GuiGraphics.blitSprite(RenderType::guiTextured, ...)).
+         */
+        List<ArgDefault> argDefaults(List<Rewrite> rewrites) {
+            Map<List<Meth>, Map<String, Integer>> votes = new HashMap<>();
+            Map<List<Meth>, Integer> totals = new HashMap<>();
+            for (var e : mAB.entrySet()) {
+                Meth x = e.getKey();
+                Meth y = e.getValue();
+                if (x.refs.length == 0 || y.refs.length == 0) {
+                    continue;
+                }
+                long[] ta = new long[x.refs.length];
+                long[] tb = new long[y.refs.length];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = fnv(token(x.refs[i], true));
+                }
+                for (int j = 0; j < tb.length; j++) {
+                    tb[j] = fnv(token(y.refs[j], false));
+                }
+                // What a's code called at each place of b's: the same method linked, or another the game rewrote it to.
+                Map<Integer, Ref> before = new HashMap<>();
+                for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
+                    before.put(p[1], x.refs[p[0]]);
+                }
+                for (int[] g : gaps(ta, tb)) {
+                    if (g[1] != g[0] || g[3] - g[2] < 1 || g[3] - g[2] > 2) {
+                        continue; // only code b inserted, one or two references long
+                    }
+                    // The first call after it that both sides make, to a method that gained one parameter.
+                    for (int j = g[3]; j < y.refs.length && j < g[3] + 6; j++) {
+                        Ref rb = y.refs[j];
+                        if (rb.kind() != 'm') {
+                            continue;
+                        }
+                        Meth mb = b.method(rb.owner(), rb.name(), rb.desc());
+                        Meth ma = mb == null ? null : mBA.get(mb);
+                        Ref ra = before.get(j);
+                        if (ma == null && ra != null && ra.kind() == 'm') {
+                            ma = a.method(ra.owner(), ra.name(), ra.desc());
+                        }
+                        if (ma == null || mb == null || !gainedOne(ma, mb)) {
+                            continue;
+                        }
+                        String value = valueOf(Arrays.copyOfRange(y.refs, g[2], g[3]));
+                        List<Meth> pair = List.of(ma, mb);
+                        totals.merge(pair, 1, Integer::sum);
+                        if (value != null) {
+                            votes.computeIfAbsent(pair, k -> new HashMap<>()).merge(value, 1, Integer::sum);
+                        }
+                        break;
+                    }
+                }
+            }
+            List<ArgDefault> out = new ArrayList<>();
+            for (var e : votes.entrySet()) {
+                String best = null;
+                int c1 = 0;
+                for (var v : e.getValue().entrySet()) {
+                    if (v.getValue() > c1) {
+                        c1 = v.getValue();
+                        best = v.getKey();
+                    }
+                }
+                int total = totals.get(e.getKey());
+                if (c1 >= 2 && c1 * 10 >= total * 8) {
+                    Meth ma = e.getKey().get(0), mb = e.getKey().get(1);
+                    out.add(new ArgDefault(ma, mb, addedIndex(ma, mb), best, c1, total));
+                }
+            }
+            out.addAll(passedByNewCalls(rewrites, out));
+            out.sort(Comparator.comparing((ArgDefault d) -> d.to().sig()));
+            return out;
+        }
+
+        /**
+         * Added arguments that b's own calls fill with one method reference, counted over every call b makes to the new
+         * method. For a method the game changed in more than one way at once, its old and new calls do not line up, so
+         * argDefaults() sees no inserted code (1.21.2: GuiGraphics.blit took a Function and float texture coordinates
+         * together); its new calls still show the value (RenderType::guiTextured at 38 of 46). The value is the method
+         * reference created last before the call in the same statement that makes the added parameter's
+         * functional interface; at 80% of all calls, as above.
+         */
+        List<ArgDefault> passedByNewCalls(List<Rewrite> rewrites, List<ArgDefault> known) {
+            Map<Meth, Meth> pairs = new HashMap<>();
+            for (Rewrite r : rewrites) {
+                if (r.to() != null && gainedOne(r.from(), r.to())) {
+                    pairs.put(r.to(), r.from());
+                }
+            }
+            for (ArgDefault d : known) {
+                pairs.remove(d.to());
+            }
+            Map<Meth, Map<String, Integer>> votes = new HashMap<>();
+            Map<Meth, Integer> totals = new HashMap<>();
+            for (Cls c : b.classes.values()) {
+                for (Meth y : c.methods.values()) {
+                    for (int j = 0; j < y.refs.length; j++) {
+                        Ref call = y.refs[j];
+                        Meth mb = call.kind() == 'm' ? b.method(call.owner(), call.name(), call.desc()) : null;
+                        if (mb == null || !pairs.containsKey(mb)) {
+                            continue;
+                        }
+                        totals.merge(mb, 1, Integer::sum);
+                        String value = null;
+                        String sam = samName(MethodTypeDesc.ofDescriptor(mb.desc).parameterList().get(addedIndex(pairs.get(mb), mb)).descriptorString());
+                        // Back to the statement before (a call returning nothing ends one); number constants count as references.
+                        for (int k = j - 2; k >= Math.max(0, j - 32); k--) {
+                            Ref r = y.refs[k];
+                            if (r.kind() == 'm' && r.desc() != null && r.desc().endsWith(")V")) {
+                                break;
+                            }
+                            // The reference must make the added parameter's functional interface, not a later argument's.
+                            if (r.kind() == 'k' && String.valueOf(r.owner()).equals("indy:" + sam)) {
+                                value = valueOf(new Ref[] { r, y.refs[k + 1] });
+                                break;
+                            }
+                        }
+                        if (value != null) {
+                            votes.computeIfAbsent(mb, x -> new HashMap<>()).merge(value, 1, Integer::sum);
+                        }
+                    }
+                }
+            }
+            List<ArgDefault> out = new ArrayList<>();
+            for (var e : votes.entrySet()) {
+                var best = e.getValue().entrySet().stream().max(Map.Entry.comparingByValue()).get();
+                int total = totals.get(e.getKey());
+                Meth ma = pairs.get(e.getKey());
+                int index = addedIndex(ma, e.getKey());
+                if (index >= 0 && best.getValue() >= 2 && best.getValue() * 10 >= total * 8) {
+                    out.add(new ArgDefault(ma, e.getKey(), index, best.getKey(), best.getValue(), total));
+                }
+            }
+            return out;
+        }
+
+        /** The name of the one abstract method of a functional interface (b's own or the JDK's), or null. */
+        String samName(String type) {
+            if (!type.startsWith("L")) {
+                return null;
+            }
+            String internal = type.substring(1, type.length() - 1);
+            Set<String> names = new HashSet<>();
+            Cls c = b.classes.get(internal);
+            if (c != null) {
+                for (Meth m : c.methods.values()) {
+                    if ((m.flags & 0x0400) != 0) {
+                        names.add(m.name);
+                    }
+                }
+            } else if (internal.startsWith("java/")) {
+                try {
+                    for (java.lang.reflect.Method m : Class.forName(internal.replace('/', '.'), false, null).getMethods()) {
+                        if (java.lang.reflect.Modifier.isAbstract(m.getModifiers()) && !Set.of("equals", "hashCode", "toString").contains(m.getName())) {
+                            names.add(m.getName());
+                        }
+                    }
+                } catch (ClassNotFoundException | LinkageError absent) {
+                    return null;
+                }
+            }
+            return names.size() == 1 ? names.iterator().next() : null;
+        }
+
+        /** b's method takes a's parameters (after the map's renames) with exactly one more, inserted anywhere. */
+        boolean gainedOne(Meth ma, Meth mb) {
+            return addedIndex(ma, mb) >= 0;
+        }
+
+        int addedIndex(Meth ma, Meth mb) {
+            List<String> before = VersionMap.Fix.paramTypes(ma.desc), after = VersionMap.Fix.paramTypes(descBA(mb.desc));
+            if (after.size() != before.size() + 1) {
+                return -1;
+            }
+            for (int i = 0; i < after.size(); i++) {
+                List<String> rest = new ArrayList<>(after);
+                rest.remove(i);
+                if (rest.equals(before)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        /** Java for a value b's code made from these references: Owner::method, Owner.FIELD or Owner.method(). */
+        String valueOf(Ref[] refs) {
+            String owner;
+            if (refs.length == 2 && refs[0].kind() == 'k' && refs[0].owner().startsWith("indy:") && refs[1].kind() == 'm') {
+                owner = refs[1].owner();
+                return owner.startsWith("net/minecraft/") || owner.startsWith("com/mojang/")
+                    ? owner.replace('/', '.').replace('$', '.') + "::" + refs[1].name()
+                    : null;
+            }
+            if (refs.length != 1) {
+                return null;
+            }
+            Ref r = refs[0];
+            owner = r.owner() == null ? "" : r.owner().replace('/', '.').replace('$', '.');
+            if (!owner.startsWith("net.minecraft.") && !owner.startsWith("com.mojang.")) {
+                return null;
+            }
+            if (r.kind() == 'f') {
+                Fld f = b.field(r.owner(), r.name());
+                return f != null && (f.flags & ACC_STATIC) != 0 ? owner + "." + r.name() : null;
+            }
+            if (r.kind() == 'm' && r.desc().startsWith("()")) {
+                Meth m = b.method(r.owner(), r.name(), r.desc());
+                return m != null && m.isStatic() ? owner + "." + r.name() + "()" : null;
+            }
+            return null;
+        }
+
+        /** A class the game stopped using and what its own code uses in its place. */
+        record ClassRewrite(Cls from, Cls to, int votes, int total) {}
+
+        /**
+         * Removed classes and their replacements, read the same way as method rewrites: where an unlinked class of a is
+         * referenced (a type, a cast, a new instance, the owner of a call) and the aligned reference of b names another
+         * class, that is a vote (1.21.2: DirectionProperty -> EnumProperty, LootContextParam -> ContextKey). Kept with two
+         * agreeing votes and 80% agreement.
+         */
+        List<ClassRewrite> classRewrites() {
+            Map<Cls, Map<Cls, Integer>> votes = new HashMap<>();
+            Map<Cls, Integer> totals = new HashMap<>();
+            for (var e : mAB.entrySet()) {
+                Meth x = e.getKey();
+                Meth y = e.getValue();
+                if (x.refs.length == 0 || y.refs.length == 0) {
+                    continue;
+                }
+                long[] ta = new long[x.refs.length];
+                long[] tb = new long[y.refs.length];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = fnv(token(x.refs[i], true));
+                }
+                for (int j = 0; j < tb.length; j++) {
+                    tb[j] = fnv(token(y.refs[j], false));
+                }
+                for (int[] p : align(ta, tb, x.ops.equals(y.ops))) {
+                    Ref ra = x.refs[p[0]];
+                    Ref rb = y.refs[p[1]];
+                    if (ra.kind() == 'k' || rb.kind() == 'k') {
+                        continue;
+                    }
+                    Cls ca = a.classes.get(ra.owner());
+                    Cls cb = b.classes.get(rb.owner());
+                    if (ca == null || cb == null || cAB.containsKey(ca) || anonymous(ca.name)) {
+                        continue;
+                    }
+                    votes.computeIfAbsent(ca, k -> new HashMap<>()).merge(cb, 1, Integer::sum);
+                    totals.merge(ca, 1, Integer::sum);
+                }
+            }
+            List<ClassRewrite> out = new ArrayList<>();
+            for (var e : votes.entrySet()) {
+                Cls best = null;
+                int c1 = 0;
+                for (var f : e.getValue().entrySet()) {
+                    if (f.getValue() > c1) {
+                        c1 = f.getValue();
+                        best = f.getKey();
+                    }
+                }
+                int total = totals.get(e.getKey());
+                boolean moved = c1 == 1 && total == 1 && simpleName(best.name).equals(simpleName(e.getKey().name));
+                if ((c1 >= 2 && c1 * 10 >= total * 8 || moved) && best.kind() == e.getKey().kind()) {
+                    out.add(new ClassRewrite(e.getKey(), best, c1, total));
+                }
+            }
+            out.sort(Comparator.comparing((ClassRewrite r) -> r.from().name));
+            return out;
+        }
+
         boolean unlinkedRef(Meth m, boolean sideA) {
             for (Ref r : m.refs) {
                 if (target(r, sideA) != null) {
@@ -1941,6 +2768,88 @@ public final class GameDiff {
                 }
             }
             gap(gi, n, gj, m, out);
+            return out;
+        }
+
+        /** Indices of ta that the longest common subsequence leaves out where tb has nothing in their place (pure deletions). */
+        static Set<Integer> droppedIndices(long[] ta, long[] tb) {
+            Set<Integer> out = new HashSet<>();
+            int n = ta.length;
+            int m = tb.length;
+            if ((long) n * m > 250_000) {
+                return out;
+            }
+            int[][] l = new int[n + 1][m + 1];
+            for (int i = n - 1; i >= 0; i--) {
+                for (int j = m - 1; j >= 0; j--) {
+                    l[i][j] = ta[i] == tb[j] ? l[i + 1][j + 1] + 1 : Math.max(l[i + 1][j], l[i][j + 1]);
+                }
+            }
+            int i = 0;
+            int j = 0;
+            int gi = 0;
+            int gj = 0;
+            while (i < n && j < m) {
+                if (ta[i] == tb[j]) {
+                    if (j == gj) {
+                        for (int k = gi; k < i; k++) {
+                            out.add(k);
+                        }
+                    }
+                    i++;
+                    j++;
+                    gi = i;
+                    gj = j;
+                } else if (l[i + 1][j] >= l[i][j + 1]) {
+                    i++;
+                } else {
+                    j++;
+                }
+            }
+            if (j == gj && m == gj) {
+                for (int k = gi; k < n; k++) {
+                    out.add(k);
+                }
+            }
+            return out;
+        }
+
+        /** Every stretch the longest common subsequence leaves unmatched on both sides: {i0, i1, j0, j1}, either side possibly empty. */
+        static List<int[]> gaps(long[] ta, long[] tb) {
+            List<int[]> out = new ArrayList<>();
+            int n = ta.length;
+            int m = tb.length;
+            if ((long) n * m > 250_000) {
+                return out;
+            }
+            int[][] l = new int[n + 1][m + 1];
+            for (int i = n - 1; i >= 0; i--) {
+                for (int j = m - 1; j >= 0; j--) {
+                    l[i][j] = ta[i] == tb[j] ? l[i + 1][j + 1] + 1 : Math.max(l[i + 1][j], l[i][j + 1]);
+                }
+            }
+            int i = 0;
+            int j = 0;
+            int gi = 0;
+            int gj = 0;
+            while (i < n && j < m) {
+                if (ta[i] == tb[j]) {
+                    if (i > gi || j > gj) {
+                        out.add(new int[] { gi, i, gj, j });
+                    }
+                    i++;
+                    j++;
+                    gi = i;
+                    gj = j;
+                } else if (l[i + 1][j] >= l[i][j + 1]) {
+                    i++;
+                } else {
+                    j++;
+                }
+            }
+            if (n > gi || m > gj) {
+                out.add(new int[] { gi, n, gj, m });
+            }
             return out;
         }
 
@@ -2091,6 +3000,1871 @@ public final class GameDiff {
     // ------------------------------------------------------------------ ids and tables
 
     /** Walks the chain one release at a time, carrying ids forward, and hands VersionMap.Chain one table per release. */
+    // ------------------------------------------------------------------ replacements learned from the game's own code
+
+    /**
+     * One value or statement of a method body, rebuilt from its bytecode. op: p a parameter (value: its slot), l a local
+     * nothing was stored to, k a constant, n null, g a static field, f an instance field, s a static call, v an instance
+     * call, w new (ref: the constructor), u an object not constructed yet, t a checkcast, x a primitive conversion, y a
+     * lambda or method reference (value: the interface method), o any other operation (value: its name), S a statement
+     * (value: its kind). type is the value's descriptor, in the snapshot's names.
+     */
+    static final class Node {
+
+        final char op;
+        final Ref ref;
+        final Object value;
+        final String type;
+        final Node[] kids;
+        String body; // a lambda of the method's own class: its raw name + desc
+
+        Node(char op, Ref ref, Object value, String type, Node... kids) {
+            this.op = op;
+            this.ref = ref;
+            this.value = value;
+            this.type = type;
+            this.kids = kids;
+        }
+    }
+
+    /** A method body as statements, a local's value written into where it is read; and its own lambda bodies, in order. */
+    static final class Body {
+
+        final List<Node> statements = new ArrayList<>();
+        final List<String> lambdas = new ArrayList<>(); // raw name + desc in the same class
+    }
+
+    /** Stack machine over one method's bytecode: builds each value as a tree of what it is computed from. */
+    static final class Decoder {
+
+        final Origin o;
+        final String self;
+        final Body body = new Body();
+        final Map<Integer, Node> locals = new HashMap<>();
+        final Map<Label, State> saved = new HashMap<>();
+        List<Node> stack = new ArrayList<>();
+        boolean live = true;
+
+        Decoder(Origin o, String self) {
+            this.o = o;
+            this.self = self;
+        }
+
+        static String kind(TypeKind k) {
+            return k.upperBound().descriptorString();
+        }
+
+        static boolean wide(Node n) {
+            return n.type.equals("J") || n.type.equals("D");
+        }
+
+        Node pop() {
+            if (stack.isEmpty()) {
+                throw new IllegalStateException("stack underflow");
+            }
+            return stack.remove(stack.size() - 1);
+        }
+
+        Node[] pop(int n) {
+            Node[] out = new Node[n];
+            for (int i = n - 1; i >= 0; i--) {
+                out[i] = pop();
+            }
+            return out;
+        }
+
+        void push(Node n) {
+            stack.add(n);
+        }
+
+        void statement(String kind, Ref ref, Node... kids) {
+            body.statements.add(new Node('S', ref, kind, "V", kids));
+        }
+
+        /** The operand stack and locals a jump carries to its target. */
+        record State(List<Node> stack, Map<Integer, Node> locals) {}
+
+        void save(Label l) {
+            State have = saved.get(l);
+            saved.put(l, have == null ? new State(new ArrayList<>(stack), new HashMap<>(locals)) : new State(merge(have.stack(), stack), merge(have.locals(), locals)));
+        }
+
+        /** A value that depends on which way control came: it stands for neither, and Learner never matches it. */
+        static Node phi(String type) {
+            return new Node('o', null, "phi", type);
+        }
+
+        static boolean phi(Node n) {
+            return n.op == 'o' && "phi".equals(n.value);
+        }
+
+        static List<Node> merge(List<Node> x, List<Node> y) {
+            if (x.size() != y.size()) {
+                throw new IllegalStateException("stack heights differ");
+            }
+            List<Node> out = new ArrayList<>();
+            for (int i = 0; i < x.size(); i++) {
+                out.add(x.get(i) == y.get(i) ? x.get(i) : phi(x.get(i).type));
+            }
+            return out;
+        }
+
+        static Map<Integer, Node> merge(Map<Integer, Node> x, Map<Integer, Node> y) {
+            Map<Integer, Node> out = new HashMap<>();
+            Set<Integer> slots = new HashSet<>(x.keySet());
+            slots.addAll(y.keySet());
+            for (int s : slots) {
+                Node a = x.get(s), b = y.get(s);
+                out.put(s, a == b ? a : phi(a != null ? a.type : b.type));
+            }
+            return out;
+        }
+
+        Ref member(char kind, String owner, String name, String desc) {
+            return resolve(new RawRef(kind, owner, name, desc), o.raw(), o.fallback(), o.names(), o.resolved());
+        }
+
+        Ref cls(String raw) {
+            return new Ref('c', o.names().cls(raw), null, null);
+        }
+
+        String desc(String raw) {
+            return o.names().desc(raw);
+        }
+
+        Body run(MethodModel mm) {
+            CodeModel code = mm.code().orElse(null);
+            if (code == null) {
+                return null;
+            }
+            int slot = 0;
+            if ((mm.flags().flagsMask() & ACC_STATIC) == 0) {
+                locals.put(slot++, new Node('p', null, 0, "L" + o.names().cls(self) + ";"));
+            }
+            for (ClassDesc p : mm.methodTypeSymbol().parameterList()) {
+                locals.put(slot, new Node('p', null, slot, desc(p.descriptorString())));
+                slot += p.descriptorString().equals("J") || p.descriptorString().equals("D") ? 2 : 1;
+            }
+            Set<Label> handlers = new HashSet<>();
+            for (ExceptionCatch c : code.exceptionHandlers()) {
+                handlers.add(c.handler());
+            }
+            // Loop heads (targets of a jump back) and every local the method stores to: at a loop head or a handler
+            // those locals may hold any value they get later, so they are merged values there.
+            Set<Label> seen = new HashSet<>(), loops = new HashSet<>();
+            Set<Integer> stored = new HashSet<>();
+            for (CodeElement el : code) {
+                switch (el) {
+                    case LabelTarget lt -> seen.add(lt.label());
+                    case BranchInstruction bi -> {
+                        if (seen.contains(bi.target())) {
+                            loops.add(bi.target());
+                        }
+                    }
+                    case LookupSwitchInstruction ls -> ls.cases().stream().map(SwitchCase::target).filter(seen::contains).forEach(loops::add);
+                    case TableSwitchInstruction ts -> ts.cases().stream().map(SwitchCase::target).filter(seen::contains).forEach(loops::add);
+                    case StoreInstruction si -> stored.add(si.slot());
+                    case IncrementInstruction ii -> stored.add(ii.slot());
+                    default -> {
+                    }
+                }
+            }
+            try {
+                for (CodeElement el : code) {
+                    if (el instanceof LabelTarget lt) {
+                        State s = saved.remove(lt.label());
+                        if (handlers.contains(lt.label())) {
+                            stack = new ArrayList<>(List.of(phi("Ljava/lang/Throwable;")));
+                        } else if (!live) {
+                            stack = s == null ? new ArrayList<>() : new ArrayList<>(s.stack());
+                            if (s != null) {
+                                locals.clear();
+                                locals.putAll(s.locals());
+                            }
+                        } else if (s != null) {
+                            stack = merge(stack, s.stack());
+                            Map<Integer, Node> joined = merge(locals, s.locals());
+                            locals.clear();
+                            locals.putAll(joined);
+                        }
+                        if (handlers.contains(lt.label()) || loops.contains(lt.label())) {
+                            for (int s2 : stored) {
+                                Node had = locals.get(s2);
+                                locals.put(s2, phi(had == null ? "Ljava/lang/Object;" : had.type));
+                            }
+                        }
+                        live = true;
+                    } else if (el instanceof Instruction ins && live) {
+                        step(ins);
+                    }
+                }
+            } catch (IllegalStateException | IllegalArgumentException unreadable) {
+                return body.statements.isEmpty() ? null : body;
+            }
+            return body;
+        }
+
+        void step(Instruction ins) {
+            switch (ins) {
+                case LoadInstruction li -> {
+                    Node v = locals.get(li.slot());
+                    push(v != null ? v : new Node('l', null, li.slot(), kind(li.typeKind())));
+                }
+                case StoreInstruction si -> {
+                    Node v = pop();
+                    locals.put(si.slot(), v);
+                    statement("store", null, v);
+                }
+                case IncrementInstruction ii -> locals.put(ii.slot(), new Node('o', null, "iinc", "I"));
+                case ConstantInstruction ci -> {
+                    ConstantDesc v = ci.constantValue();
+                    if (ci.opcode() == Opcode.ACONST_NULL) {
+                        push(new Node('n', null, null, "null"));
+                    } else if (v instanceof Integer || v instanceof Long || v instanceof Float || v instanceof Double) {
+                        push(new Node('k', null, v, kind(ci.typeKind())));
+                    } else if (v instanceof String s) {
+                        push(new Node('k', null, s, "Ljava/lang/String;"));
+                    } else if (v instanceof ClassDesc cd) {
+                        push(new Node('o', cls(internal(cd)), "class", "Ljava/lang/Class;"));
+                    } else {
+                        push(new Node('o', null, "ldc", kind(ci.typeKind())));
+                    }
+                }
+                case StackInstruction si -> stack(si.opcode());
+                case OperatorInstruction oi -> {
+                    String name = oi.opcode().name();
+                    int n = name.endsWith("NEG") || name.equals("ARRAYLENGTH") ? 1 : 2;
+                    boolean compare = name.equals("ARRAYLENGTH") || name.endsWith("CMP") || name.endsWith("CMPL") || name.endsWith("CMPG");
+                    push(new Node('o', null, name, compare ? "I" : kind(oi.typeKind()), pop(n)));
+                }
+                case ConvertInstruction ci -> push(new Node('x', null, null, kind(ci.toType()), pop()));
+                case FieldInstruction fi -> {
+                    Ref r = member('f', fi.owner().asInternalName(), fi.name().stringValue(), fi.type().stringValue());
+                    switch (fi.opcode()) {
+                        case GETSTATIC -> push(new Node('g', r, null, r.desc()));
+                        case GETFIELD -> push(new Node('f', r, null, r.desc(), pop()));
+                        case PUTFIELD -> statement("put", r, pop(2));
+                        default -> statement("put", r, pop());
+                    }
+                }
+                case InvokeInstruction ii -> invoke(ii);
+                case InvokeDynamicInstruction di -> {
+                    Node[] args = pop(di.typeSymbol().parameterCount());
+                    String type = desc(di.typeSymbol().returnType().descriptorString());
+                    if (di.bootstrapMethod().owner().descriptorString().equals("Ljava/lang/invoke/LambdaMetafactory;")
+                        && di.bootstrapArgs().size() > 1 && di.bootstrapArgs().get(1) instanceof DirectMethodHandleDesc h) {
+                        String owner = internal(h.owner());
+                        if (owner.equals(self) && h.methodName().startsWith("lambda$")) {
+                            body.lambdas.add(h.methodName() + h.lookupDescriptor());
+                            Node lambda = new Node('y', null, di.name().stringValue(), type, args);
+                            lambda.body = h.methodName() + h.lookupDescriptor();
+                            push(lambda);
+                        } else {
+                            push(new Node('y', member('m', owner, h.methodName(), h.lookupDescriptor()), di.name().stringValue(), type, args));
+                        }
+                    } else {
+                        push(new Node('o', null, "indy:" + di.bootstrapMethod().methodName(), type, args));
+                    }
+                }
+                case NewObjectInstruction ni -> push(new Node('u', cls(ni.className().asInternalName()), null, "L" + o.names().cls(ni.className().asInternalName()) + ";"));
+                case NewPrimitiveArrayInstruction na -> push(new Node('o', null, "newarray", "[" + kind(na.typeKind()), pop()));
+                case NewReferenceArrayInstruction na -> push(new Node('o', cls(na.componentType().asInternalName()), "anewarray", "[Ljava/lang/Object;", pop()));
+                case NewMultiArrayInstruction na -> push(new Node('o', cls(na.arrayType().asInternalName()), "multianewarray", desc(na.arrayType().asInternalName()), pop(na.dimensions())));
+                case ArrayLoadInstruction al -> push(new Node('o', null, al.opcode().name(), kind(al.typeKind()), pop(2)));
+                case ArrayStoreInstruction as -> statement("astore", null, pop(3));
+                case TypeCheckInstruction tc -> {
+                    Ref c = cls(tc.type().asInternalName());
+                    String t = c.owner().startsWith("[") ? c.owner() : "L" + c.owner() + ";";
+                    push(tc.opcode() == Opcode.CHECKCAST ? new Node('t', c, null, t, pop()) : new Node('o', c, "instanceof", "I", pop()));
+                }
+                case BranchInstruction bi -> {
+                    String name = bi.opcode().name();
+                    if (name.startsWith("GOTO")) {
+                        save(bi.target());
+                        live = false;
+                        return;
+                    }
+                    int n = name.startsWith("IF_") ? 2 : 1;
+                    statement("if:" + name, null, pop(n));
+                    save(bi.target());
+                }
+                case LookupSwitchInstruction ls -> {
+                    statement("switch", null, pop());
+                    save(ls.defaultTarget());
+                    ls.cases().forEach(c -> save(c.target()));
+                    live = false;
+                }
+                case TableSwitchInstruction ts -> {
+                    statement("switch", null, pop());
+                    save(ts.defaultTarget());
+                    ts.cases().forEach(c -> save(c.target()));
+                    live = false;
+                }
+                case ReturnInstruction ri -> {
+                    if (ri.typeKind() == TypeKind.VOID) {
+                        statement("return", null);
+                    } else {
+                        statement("return", null, pop());
+                    }
+                    live = false;
+                }
+                case ThrowInstruction ti -> {
+                    statement("throw", null, pop());
+                    live = false;
+                }
+                case MonitorInstruction mi -> statement("monitor", null, pop());
+                case NopInstruction nop -> {
+                }
+                default -> throw new IllegalStateException("not read: " + ins.opcode());
+            }
+        }
+
+        void invoke(InvokeInstruction ii) {
+            MethodTypeDesc t = ii.typeSymbol();
+            String name = ii.name().stringValue();
+            Ref r = member('m', ii.owner().asInternalName(), name, ii.type().stringValue());
+            Node[] args = pop(t.parameterCount());
+            String ret = desc(t.returnType().descriptorString());
+            if (ii.opcode() == Opcode.INVOKESTATIC) {
+                result(new Node('s', r, null, ret, args));
+                return;
+            }
+            Node receiver = pop();
+            if (name.equals("<init>") && receiver.op == 'u') {
+                Node made = new Node('w', r, null, receiver.type, args);
+                stack.replaceAll(n -> n == receiver ? made : n);
+                locals.replaceAll((k, n) -> n == receiver ? made : n);
+                return;
+            }
+            Node[] all = new Node[args.length + 1];
+            all[0] = receiver;
+            System.arraycopy(args, 0, all, 1, args.length);
+            if (name.equals("<init>")) {
+                statement("init", r, all);
+                return;
+            }
+            result(new Node('v', r, ii.opcode() == Opcode.INVOKESPECIAL ? "special" : null, ret, all));
+        }
+
+        void result(Node call) {
+            if (call.type.equals("V")) {
+                statement("expr", null, call);
+            } else {
+                push(call);
+            }
+        }
+
+        void stack(Opcode op) {
+            switch (op) {
+                case POP -> discard(pop());
+                case POP2 -> {
+                    Node v = pop();
+                    discard(v);
+                    if (!wide(v)) {
+                        discard(pop());
+                    }
+                }
+                case DUP -> {
+                    Node v = pop();
+                    push(v);
+                    push(v);
+                }
+                case DUP_X1 -> {
+                    Node v1 = pop(), v2 = pop();
+                    push(v1);
+                    push(v2);
+                    push(v1);
+                }
+                case DUP_X2 -> {
+                    Node v1 = pop(), v2 = pop();
+                    if (wide(v2)) {
+                        push(v1);
+                        push(v2);
+                        push(v1);
+                    } else {
+                        Node v3 = pop();
+                        push(v1);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    }
+                }
+                case DUP2 -> {
+                    Node v1 = pop();
+                    if (wide(v1)) {
+                        push(v1);
+                        push(v1);
+                    } else {
+                        Node v2 = pop();
+                        push(v2);
+                        push(v1);
+                        push(v2);
+                        push(v1);
+                    }
+                }
+                case DUP2_X1 -> {
+                    Node v1 = pop();
+                    if (wide(v1)) {
+                        Node v2 = pop();
+                        push(v1);
+                        push(v2);
+                        push(v1);
+                    } else {
+                        Node v2 = pop(), v3 = pop();
+                        push(v2);
+                        push(v1);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    }
+                }
+                case DUP2_X2 -> throw new IllegalStateException("dup2_x2");
+                case SWAP -> {
+                    Node v1 = pop(), v2 = pop();
+                    push(v1);
+                    push(v2);
+                }
+                default -> throw new IllegalStateException("stack op " + op);
+            }
+        }
+
+        /** A value computed and dropped: a call made for what it does is a statement. */
+        void discard(Node v) {
+            if (v.op == 's' || v.op == 'v' || v.op == 'w') {
+                statement("expr", null, v);
+            }
+        }
+    }
+
+    /**
+     * Replacements for changed or removed game members, learned from how the game ported its own code. In every pair of
+     * linked methods where a uses such a member, both bodies are rebuilt as statements of value trees (Decoder) and
+     * lined up statement by statement through the links. Where a statement of a differs from its counterpart in b only
+     * at a use of the member, what b computes there is the replacement; written over the member's own operands (its
+     * receiver $0 and arguments $1..), it is kept as a Java expression (FixExpr, in b's names) when it reads nothing
+     * else of the method: only operands, constants, static fields, and calls, fields, constructors, casts and static
+     * method references over those. Every use that lines up is a vote, and the game's own uses must agree.
+     */
+    static final class Learner {
+
+        /** A replacement for old (a member of a); linked: the member has a counterpart whose signature changed. */
+        record Learned(String owner, String name, String desc, boolean field, boolean linked, String expr, int votes, int of) {
+
+            /** Its line in the route map's "learned" list, which JarPort reads. */
+            String json(String step) {
+                return "{ \"step\": " + VersionMap.Diff.q(step) + ", \"owner\": " + VersionMap.Diff.q(owner) + ", \"from\": " + VersionMap.Diff.q(name) +
+                    ", \"desc\": " + VersionMap.Diff.q(desc) + ", \"field\": " + field + ", \"linked\": " + linked + ", \"expr\": " + VersionMap.Diff.q(expr) +
+                    ", \"votes\": " + votes + ", \"of\": " + of + " }";
+            }
+        }
+
+        final Hop h;
+        final Map<String, ClassModel> models = new HashMap<>();
+        final Map<Node, Long> hashA = new IdentityHashMap<>(), hashB = new IdentityHashMap<>();
+        final Map<Ref, Boolean> brokenRefs = new HashMap<>();
+        final Map<Node, Boolean> holed = new IdentityHashMap<>();
+        final Map<String, Map<Node, Set<String>>> sites = new HashMap<>(); // member key -> use in a -> its readings in b
+        final Map<String, Ref> keys = new HashMap<>();
+        int budget;
+
+        Learner(Hop h) {
+            this.h = h;
+        }
+
+        List<Learned> learn() {
+            for (var e : h.mAB.entrySet()) {
+                Meth x = e.getKey(), y = e.getValue();
+                if (!x.hasCode || !y.hasCode) {
+                    continue;
+                }
+                boolean uses = false;
+                for (Ref r : x.refs) {
+                    if (broken(r)) {
+                        uses = true;
+                        String key = r.owner() + "." + r.name() + (r.kind() == 'm' ? r.desc() : "");
+                        keys.putIfAbsent(key, r);
+                        sites.computeIfAbsent(key, k -> new IdentityHashMap<>());
+                    }
+                }
+                if (uses) {
+                    Body bx = decode(h.a, x.owner.name, x.name + x.desc, false);
+                    Body by = decode(h.b, y.owner.name, y.name + y.desc, false);
+                    pair(x.owner.name, bx, y.owner.name, by, 0);
+                }
+            }
+            // With the class map settled, the uses whose new value had a type only it explains are read again.
+            typeMap();
+            List<Node[]> again = deferred;
+            deferred = null;
+            for (Node[] d : again) {
+                read(d[0], d[1]);
+            }
+            List<Learned> out = new ArrayList<>();
+            StringBuilder log = LEARN_LOG.isEmpty() ? null : new StringBuilder();
+            for (var e : sites.entrySet()) {
+                Ref old = keys.get(e.getKey());
+                int[] tally = new int[2];
+                String best = vote(e.getValue().values(), tally);
+                int top = tally[0], of = tally[1];
+                boolean agreed = top >= 2 && top * 10 >= of * 8 || top == 1 && of == 1 && usesAll(best, old, operands(old));
+                agreed = agreed && beyondLiterals(best, e.getValue());
+                if (log != null) {
+                    log.append(e.getKey()).append('\t').append(e.getValue().size()).append('\t').append(of).append('\t').append(top).append('\t')
+                        .append(agreed).append('\t').append(best == null ? "" : best).append('\t');
+                    e.getValue().values().stream().flatMap(Set::stream).distinct().limit(4).forEach(r -> log.append(r.replace(OPEN, '{').replace(OR, '|').replace(CLOSE, '}')).append(" ;; "));
+                    log.append('\n');
+                }
+                if (best == null || !agreed) {
+                    continue;
+                }
+                boolean field = old.kind() == 'f';
+                boolean linked = field ? h.fAB.containsKey(h.a.field(old.owner(), old.name())) : h.mAB.containsKey(h.a.method(old.owner(), old.name(), old.desc()));
+                out.add(new Learned(old.owner().replace('/', '.'), old.name(), field ? "" : old.desc(), field, linked, best, top, of));
+            }
+            out.addAll(sameMeaning(out, log));
+            out.addAll(accessors(out));
+            out.addAll(overrides(out));
+            out.sort(Comparator.comparing(Learned::owner).thenComparing(Learned::name).thenComparing(Learned::desc));
+            if (log != null) {
+                try {
+                    Files.writeString(Path.of(LEARN_LOG + "-" + h.a.version + "-" + h.b.version + ".tsv"), log, StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+            return out;
+        }
+
+        /**
+         * A call names the class it was made on, which may override the method the game's code was read for (a mod calls
+         * clientLevel.getRecipeManager(), the game level.getRecipeManager()). An override that changed the same way and
+         * has no reading of its own takes its nearest supertype's: the call dispatches the same way in both releases.
+         */
+        List<Learned> overrides(List<Learned> found) {
+            Map<String, Learned> byKey = new HashMap<>();
+            for (Learned l : found) {
+                if (!l.field()) {
+                    byKey.put(l.owner().replace('.', '/') + "." + l.name() + l.desc(), l);
+                }
+            }
+            List<Learned> out = new ArrayList<>();
+            for (Cls c : h.a.classes.values()) {
+                for (Meth m : c.methods.values()) {
+                    String key = c.name + "." + m.name + m.desc;
+                    // An override the game's own code shows something else for (its uses lined up, read or not) keeps
+                    // that evidence: it was rejected, so it is left unresolved rather than given its supertype's reading.
+                    if (m.isStatic() || m.special() || byKey.containsKey(key) || !sites.getOrDefault(key, Map.of()).isEmpty()
+                        || !broken(new Ref('m', c.name, m.name, m.desc))) {
+                        continue;
+                    }
+                    Learned up = null;
+                    Meth upMethod = null;
+                    Deque<String> todo = new ArrayDeque<>(supertypes(c));
+                    Set<String> seen = new HashSet<>();
+                    while (up == null && !todo.isEmpty()) {
+                        String s = todo.poll();
+                        Cls sc = h.a.classes.get(s);
+                        if (sc == null || !seen.add(s)) {
+                            continue;
+                        }
+                        up = byKey.get(s + "." + m.name + m.desc);
+                        upMethod = sc.methods.get(m.name + m.desc);
+                        todo.addAll(supertypes(sc));
+                    }
+                    if (up != null && stillOverrides(m, upMethod)) {
+                        out.add(new Learned(c.name.replace('/', '.'), m.name, m.desc, false, h.mAB.containsKey(m), up.expr(), up.votes(), up.of()));
+                    }
+                }
+            }
+            return out;
+        }
+
+        /**
+         * The new release keeps sub overriding sup: both dropped, or both linked to methods of the same name and
+         * descriptor where the one's class extends the other's. Anything else changed the two apart.
+         */
+        boolean stillOverrides(Meth sub, Meth sup) {
+            Meth ys = h.mAB.get(sub), yp = sup == null ? null : h.mAB.get(sup);
+            if (ys == null || yp == null) {
+                return ys == null && yp == null;
+            }
+            return ys.name.equals(yp.name) && ys.desc.equals(yp.desc) && h.subtypeB(ys.owner.name, yp.owner.name);
+        }
+
+        /** -Dgamediff.learnlog=PREFIX: every member's uses lined up, uses read, votes and readings, one file per update. */
+        static final String LEARN_LOG = System.getProperty("gamediff.learnlog", "");
+
+        /**
+         * A public method or constructor the game closed or dropped, read from what it computed: the public member of its
+         * class in b that takes the same parameters and gives the same type, and whose body (with the game methods it
+         * calls written in, three deep) does what the old body did. 1.21 made new ResourceLocation(ns, path) private: it
+         * validated both parts and stored them, which is what fromNamespaceAndPath does once createUntrusted is written
+         * in; withDefaultNamespace, which takes no namespace, and tryBuild, which checks without throwing, do less alike.
+         * Taken only when it is clearly the closest (see SAME, MARGIN) and nothing was learned from the game's uses.
+         */
+        List<Learned> sameMeaning(List<Learned> found, StringBuilder log) {
+            Set<String> have = new HashSet<>();
+            for (Learned l : found) {
+                have.add(l.owner().replace('.', '/') + "." + l.name() + l.desc());
+            }
+            List<Learned> out = new ArrayList<>();
+            for (Cls ca : h.a.classes.values()) {
+                Cls cb = h.cAB.get(ca);
+                if (cb == null || (ca.flags & ACC_PUBLIC) == 0) {
+                    continue;
+                }
+                for (Meth m : ca.methods.values()) {
+                    if ((m.flags & (ACC_PUBLIC | 0x0004)) == 0 || m.name.equals("<clinit>") || !m.hasCode || have.contains(ca.name + "." + m.name + m.desc)
+                        || !broken(new Ref('m', ca.name, m.name, m.desc))) {
+                        continue;
+                    }
+                    String params = m.desc.substring(0, m.desc.indexOf(')') + 1);
+                    String result = m.special() ? "L" + ca.name + ";" : m.desc.substring(m.desc.indexOf(')') + 1);
+                    long[] before = meaning(m, true);
+                    // A candidate is a public wrapper of the old member where b still has it (closed), taken as it is; or
+                    // what the game's own new code wrote at a use of it, weighed by what its body does.
+                    Meth alive = h.mAB.get(m);
+                    int n = MethodTypeDesc.ofDescriptor(m.desc).parameterCount();
+                    StringJoiner args = new StringJoiner(", ");
+                    for (int i = 1; i <= n; i++) {
+                        args.add("$" + i);
+                    }
+                    // What the game's uses wrote, choices settled every way they allow: only a plain call of a candidate
+                    // with the old operands in order counts (not one inside a conversion, as getPixel inside ARGB's).
+                    Set<String> written = new HashSet<>();
+                    for (Set<String> readings : sites.getOrDefault(ca.name + "." + m.name + m.desc, Map.of()).values()) {
+                        for (String r : readings) {
+                            written.add(CHOICE.matcher(r).replaceAll(x -> Matcher.quoteReplacement(x.group(1).split(String.valueOf(OR))[0])));
+                        }
+                    }
+                    Meth best = null;
+                    double top = 0, second = 0;
+                    for (Meth c : cb.methods.values()) {
+                        boolean wantStatic = m.special() || m.isStatic();
+                        if ((c.flags & ACC_PUBLIC) == 0 || c.special() || c.isStatic() != wantStatic || !c.hasCode
+                            || !h.descBA(c.desc).equals(params + result)) {
+                            continue;
+                        }
+                        String call = (c.isStatic() ? cb.name.replace('/', '.') : "$0") + "." + c.name + "(" + args + ")";
+                        if (alive != null && wraps(c, alive)) {
+                            // It is the closed member, called with the same arguments: nothing to weigh.
+                            best = c;
+                            top = 1;
+                            second = 0;
+                            break;
+                        }
+                        // Where b still has the old member, only a wrapper of it is the same thing; anything else calls
+                        // it and changes the result (getPixel converts what getPixelABGR returns).
+                        if (alive != null || !written.contains(call) || before.length < 3) {
+                            continue;
+                        }
+                        // Most of what the old body did, and not much else: a caller that also does it (die for
+                        // dropAllDeathLoot) covers the old body but is mostly something more.
+                        long[] now = meaning(c, false);
+                        double s = covered(now, before) < REST ? 0 : covered(before, now);
+                        if (s > top) {
+                            second = top;
+                            top = s;
+                            best = c;
+                        } else if (s > second) {
+                            second = s;
+                        }
+                    }
+                    if (log != null && best != null) {
+                        log.append("same meaning\t").append(ca.name).append('.').append(m.name).append(m.desc).append('\t').append(best.name)
+                            .append(String.format(Locale.ROOT, "\t%.2f\t%.2f\t%.2f\n", top, second, covered(meaning(best, false), before)));
+                    }
+                    if (best == null || top < SAME || top - second < MARGIN) {
+                        continue;
+                    }
+                    String expr = (best.isStatic() ? cb.name.replace('/', '.') : "$0") + "." + best.name + "(" + args + ")";
+                    out.add(new Learned(ca.name.replace('/', '.'), m.name, m.desc, false, h.mAB.containsKey(m), expr, 1, 1));
+                }
+            }
+            return out;
+        }
+
+        /**
+         * c's body is only `return alive(args)` (private one-line helpers written in), each argument c's own parameter in
+         * order, or passed through a check that returns it unchanged: fromNamespaceAndPath(ns, path) is createUntrusted,
+         * which is new ResourceLocation(assertValidNamespace(ns, path), assertValidPath(ns, path)), and each assert
+         * returns what it was given. getPixel, which converts what getPixelABGR returns, is not one.
+         */
+        boolean wraps(Meth c, Meth alive) {
+            Body body = decode(h.b, c.owner.name, c.name + c.desc, false);
+            if (body == null || body.statements.size() != 1 || !"return".equals(body.statements.get(0).value) || body.statements.get(0).kids.length != 1) {
+                return false;
+            }
+            Node e = body.statements.get(0).kids[0];
+            for (int depth = 0; depth < 3 && e.op == 's' && !same(e.ref, alive); depth++) {
+                Node inner = oneLine(e);
+                if (inner == null) {
+                    return false;
+                }
+                e = inner;
+            }
+            boolean call = (e.op == 'w' || e.op == 's' || e.op == 'v') && same(e.ref, alive);
+            if (!call) {
+                return false;
+            }
+            int[] slots = slots(c);
+            int first = e.op == 'v' ? 1 : 0;
+            if (e.op == 'v' && !(e.kids[0].op == 'p' && e.kids[0].value.equals(0))) {
+                return false;
+            }
+            if (e.kids.length - first != slots.length) {
+                return false;
+            }
+            for (int i = first; i < e.kids.length; i++) {
+                Node arg = through(e.kids[i], 0);
+                if (arg == null || arg.op != 'p' || !arg.value.equals(slots[i - first])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        boolean same(Ref r, Meth m) {
+            return r != null && r.kind() == 'm' && r.owner().equals(m.owner.name) && r.name().equals(m.name) && r.desc().equals(m.desc);
+        }
+
+        /** The local slot of each parameter of m. */
+        static int[] slots(Meth m) {
+            List<ClassDesc> ps = MethodTypeDesc.ofDescriptor(m.desc).parameterList();
+            int[] out = new int[ps.size()];
+            int slot = m.isStatic() ? 0 : 1;
+            for (int i = 0; i < out.length; i++) {
+                out[i] = slot;
+                slot += ps.get(i).descriptorString().matches("[JD]") ? 2 : 1;
+            }
+            return out;
+        }
+
+        /** A static game call whose body is one `return expr`: expr with the call's arguments for its parameters. */
+        Node oneLine(Node call) {
+            Meth callee = h.b.method(call.ref.owner(), call.ref.name(), call.ref.desc());
+            Body body = callee == null ? null : decode(h.b, callee.owner.name, callee.name + callee.desc, false);
+            if (body == null || body.statements.size() != 1 || !"return".equals(body.statements.get(0).value) || body.statements.get(0).kids.length != 1) {
+                return null;
+            }
+            int[] slots = slots(callee);
+            Map<Object, Node> bySlot = new HashMap<>();
+            for (int i = 0; i < slots.length; i++) {
+                bySlot.put(slots[i], call.kids[i]);
+            }
+            return substitute(body.statements.get(0).kids[0], bySlot);
+        }
+
+        static Node substitute(Node n, Map<Object, Node> bySlot) {
+            if (n.op == 'p') {
+                return bySlot.get(n.value);
+            }
+            Node[] kids = new Node[n.kids.length];
+            for (int i = 0; i < kids.length; i++) {
+                kids[i] = substitute(n.kids[i], bySlot);
+                if (kids[i] == null) {
+                    return null;
+                }
+            }
+            return new Node(n.op, n.ref, n.value, n.type, kids);
+        }
+
+        /** A value passed through checks that return what they were given, to what it was before them; or null. */
+        Node through(Node n, int depth) {
+            if (n.op == 'p' || depth > 3) {
+                return n.op == 'p' ? n : null;
+            }
+            if (n.op != 's') {
+                return null;
+            }
+            Meth callee = h.b.method(n.ref.owner(), n.ref.name(), n.ref.desc());
+            Body body = callee == null ? null : decode(h.b, callee.owner.name, callee.name + callee.desc, false);
+            if (body == null) {
+                return null;
+            }
+            int[] slots = slots(callee);
+            Object given = null;
+            for (Node s : body.statements) {
+                if (!"return".equals(s.value)) {
+                    continue;
+                }
+                if (s.kids.length != 1 || s.kids[0].op != 'p' || given != null && !given.equals(s.kids[0].value)) {
+                    return null;
+                }
+                given = s.kids[0].value;
+            }
+            for (int i = 0; given != null && i < slots.length; i++) {
+                if (given.equals(slots[i])) {
+                    return through(n.kids[i], depth + 1);
+                }
+            }
+            return null;
+        }
+
+        /**
+         * How much of the old body the candidate must also do, how far ahead of the next candidate, and how much of the
+         * candidate must be what the old body did.
+         */
+        static final double SAME = 0.8, MARGIN = 0.15, REST = 0.5;
+
+        /**
+         * A field b still has but closed, read or written through the accessor its class now has for it: a public method
+         * whose whole body is `return this.field` (1.17's Player.getInventory() for inventory) or `this.field = value`
+         * (1.19.3's AbstractWidget.setY for y). Exact, so no vote is needed. A write is learned as "name=" with $1 the
+         * value written.
+         */
+        List<Learned> accessors(List<Learned> found) {
+            Set<String> have = new HashSet<>();
+            for (Learned l : found) {
+                have.add(l.owner().replace('.', '/') + "." + l.name());
+            }
+            List<Learned> out = new ArrayList<>();
+            for (var e : h.fAB.entrySet()) {
+                Fld f = e.getKey(), y = e.getValue();
+                Cls ca = h.a.classes.get(f.owner.name);
+                if (!closed(f.flags, y.flags) || !h.descBA(y.desc).equals(f.desc) || ca == null || (ca.flags & ACC_PUBLIC) == 0) {
+                    continue;
+                }
+                boolean isStatic = (f.flags & ACC_STATIC) != 0;
+                String owner = y.owner.name.replace('/', '.');
+                for (Meth c : y.owner.methods.values()) {
+                    if ((c.flags & ACC_PUBLIC) == 0 || c.isStatic() != isStatic || c.special() || !c.hasCode) {
+                        continue;
+                    }
+                    boolean getter = c.desc.equals("()" + y.desc), setter = c.desc.equals("(" + y.desc + ")V");
+                    if (!getter && !setter) {
+                        continue;
+                    }
+                    Body body = decode(h.b, y.owner.name, c.name + c.desc, false);
+                    String call = (isStatic ? owner : "$0") + "." + c.name;
+                    String read = f.owner.name + "." + f.name, write = read + "=";
+                    if (getter && body != null && !have.contains(read) && reads(body, y, isStatic)) {
+                        out.add(new Learned(f.owner.name.replace('/', '.'), f.name, "", true, true, call + "()", 1, 1));
+                        have.add(read);
+                    } else if (setter && body != null && !have.contains(write) && writes(body, y, isStatic)) {
+                        out.add(new Learned(f.owner.name.replace('/', '.'), f.name + "=", "", true, true, call + "($1)", 1, 1));
+                        have.add(write);
+                    }
+                }
+            }
+            return out;
+        }
+
+        static boolean reads(Body body, Fld y, boolean isStatic) {
+            if (body.statements.size() != 1 || !"return".equals(body.statements.get(0).value) || body.statements.get(0).kids.length != 1) {
+                return false;
+            }
+            Node v = body.statements.get(0).kids[0];
+            return v.ref != null && v.ref.owner().equals(y.owner.name) && v.ref.name().equals(y.name)
+                && (isStatic ? v.op == 'g' : v.op == 'f' && v.kids[0].op == 'p' && v.kids[0].value.equals(0));
+        }
+
+        static boolean writes(Body body, Fld y, boolean isStatic) {
+            if (body.statements.size() != 2 || !"return".equals(body.statements.get(1).value) || body.statements.get(1).kids.length != 0) {
+                return false;
+            }
+            Node put = body.statements.get(0);
+            if (!"put".equals(put.value) || put.ref == null || !put.ref.owner().equals(y.owner.name) || !put.ref.name().equals(y.name)) {
+                return false;
+            }
+            boolean receiver = isStatic || put.kids[0].op == 'p' && put.kids[0].value.equals(0);
+            Node v = put.kids[put.kids.length - 1];
+            return receiver && v.op == 'p' && v.value.equals(isStatic ? 0 : 1);
+        }
+
+        /** The share of what the old body did that the candidate also does (both sorted, distinct). */
+        static double covered(long[] old, long[] now) {
+            int i = 0, j = 0, both = 0;
+            while (i < old.length && j < now.length) {
+                if (old[i] == now[j]) {
+                    both++;
+                    i++;
+                    j++;
+                } else if (old[i] < now[j]) {
+                    i++;
+                } else {
+                    j++;
+                }
+            }
+            return old.length == 0 ? 0 : (double) both / old.length;
+        }
+
+        final Map<Meth, long[]> meanings = new HashMap<>();
+
+        /**
+         * The distinct things a body references, with the game methods it calls written in five deep, each in a's names: a
+         * wrapper one level deeper (fromNamespaceAndPath calls createUntrusted, which does the work) reads the same.
+         */
+        long[] meaning(Meth m, boolean sideA) {
+            long[] known = meanings.get(m);
+            if (known != null) {
+                return known;
+            }
+            Set<Long> out = new HashSet<>();
+            gather(m, sideA, 0, new HashSet<>(), out);
+            long[] t = out.stream().mapToLong(Long::longValue).sorted().toArray();
+            meanings.put(m, t);
+            return t;
+        }
+
+        final Map<Node, Boolean> mergedMemo = new IdentityHashMap<>();
+
+        /** The tree holds a value that depends on the path taken. */
+        boolean merged(Node n) {
+            Boolean known = mergedMemo.get(n);
+            if (known != null) {
+                return known;
+            }
+            boolean out = Decoder.phi(n);
+            for (int i = 0; i < n.kids.length && !out; i++) {
+                out = merged(n.kids[i]);
+            }
+            mergedMemo.put(n, out);
+            return out;
+        }
+
+        /** The argument a b method gives back as its result, by its generic signature (`<T> T m(T)`), or null. */
+        Integer givesArgument(Ref r) {
+            Meth mb = h.b.method(r.owner(), r.name(), r.desc());
+            ClassModel cm = mb == null ? null : model(h.b, mb.owner.name);
+            if (cm == null) {
+                return null;
+            }
+            Origin o = h.b.origins.get(mb.owner.name);
+            String self = cm.thisClass().asInternalName();
+            for (MethodModel mm : cm.methods()) {
+                String rn = mm.methodName().stringValue(), rd = mm.methodType().stringValue();
+                if (!(o.names().method(self, rn, rd) + o.names().desc(rd)).equals(mb.name + mb.desc)) {
+                    continue;
+                }
+                var sig = mm.findAttribute(Attributes.signature());
+                if (sig.isEmpty()) {
+                    return null;
+                }
+                MethodSignature ms = MethodSignature.parseFrom(sig.get().signature().stringValue());
+                if (!(ms.result() instanceof Signature.TypeVarSig t)) {
+                    return null;
+                }
+                Integer found = null;
+                for (int i = 0; i < ms.arguments().size(); i++) {
+                    if (ms.arguments().get(i) instanceof Signature.TypeVarSig a && a.identifier().equals(t.identifier())) {
+                        if (found != null) {
+                            return null;
+                        }
+                        found = i;
+                    }
+                }
+                return found;
+            }
+            return null;
+        }
+
+        /** An a descriptor's class in b's names, dotted (through the links, or a class rewrite). */
+        String mappedName(String desc) {
+            String old = desc.substring(1, desc.length() - 1);
+            Cls ca = h.a.classes.get(old);
+            Cls cb = ca == null ? null : h.cAB.get(ca);
+            if (cb == null && ca != null) {
+                cb = classRewrites().get(ca);
+            }
+            return (cb != null ? cb.name : old).replace('/', '.');
+        }
+
+        void gather(Meth m, boolean sideA, int depth, Set<Meth> seen, Set<Long> out) {
+            if (!seen.add(m)) {
+                return;
+            }
+            Snap s = sideA ? h.a : h.b;
+            for (Ref r : m.refs) {
+                out.add(fnv(h.token(r, sideA)));
+                if (r.kind() == 'm' && depth < 5) {
+                    Meth callee = s.method(r.owner(), r.name(), r.desc());
+                    if (callee != null && callee.hasCode) {
+                        gather(callee, sideA, depth + 1, seen, out);
+                    }
+                }
+            }
+        }
+
+        /**
+         * A use that passed a literal shows the replacement only for that value: the game passed new ResourceLocation("stone")
+         * and now writes withDefaultNamespace("stone"), which is wrong for a mod's "mymod:stone". So the reading must also
+         * win among the uses whose operands were all computed, when there are two or more, and may not drop an operand the
+         * game passed as a literal at every use it read.
+         */
+        static boolean beyondLiterals(String best, Map<Node, Set<String>> uses) {
+            List<Set<String>> computed = new ArrayList<>();
+            Node any = null;
+            for (var u : uses.entrySet()) {
+                any = u.getKey();
+                if (Arrays.stream(any.kids).noneMatch(k -> k.op == 'k')) {
+                    computed.add(u.getValue());
+                }
+            }
+            if (computed.size() >= 2) {
+                int[] tally = new int[2];
+                String again = vote(computed, tally);
+                if (!best.equals(again) || tally[0] * 10 < tally[1] * 8) {
+                    return false;
+                }
+            }
+            int first = any.op == 'v' || any.op == 'f' ? 0 : 1;
+            for (int i = 0; i < any.kids.length; i++) {
+                int k = i;
+                boolean used = Pattern.compile("\\$" + (i + first) + "(?!\\d)").matcher(best).find();
+                if (!used && uses.entrySet().stream().filter(u -> !u.getValue().isEmpty()).allMatch(u -> u.getKey().kids[k].op == 'k')) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /** A choice inside a reading: a constant b passes that an operand also held, or code two operands share. */
+        static final char OPEN = '\u0001', OR = '\u0002', CLOSE = '\u0003';
+        static final Pattern CHOICE = Pattern.compile(OPEN + "([^" + CLOSE + "]*)" + CLOSE);
+        /** Every operand and constant is a choice, even of one option, so uses that pass a constant and uses that pass code share a shape. */
+        static String choice(List<String> options) {
+            return options.isEmpty() ? null : OPEN + String.join(String.valueOf(OR), options) + CLOSE;
+        }
+
+        /**
+         * The reading most uses agree on. Uses are grouped by the reading's shape (choices left open); in the shape most
+         * uses have, each choice takes the option most of them allow (an operand before a constant, then the next operand
+         * in order), and a use agrees when it allows every option taken. tally: {agreeing uses, uses read}.
+         */
+        static String vote(Collection<Set<String>> uses, int[] tally) {
+            Map<String, Integer> shapes = new HashMap<>();
+            // Every use that lined up counts, read or not: a use the new code rewrote into something no expression over
+            // the operands says (another parameter, a local) is evidence against every reading.
+            int of = uses.size();
+            for (Set<String> readings : uses) {
+                if (!readings.isEmpty()) {
+                    readings.stream().map(r -> CHOICE.matcher(r).replaceAll(OPEN + "" + CLOSE)).distinct().forEach(s -> shapes.merge(s, 1, Integer::sum));
+                }
+            }
+            tally[1] = of;
+            String shape = shapes.entrySet().stream().max(Map.Entry.<String, Integer>comparingByValue().thenComparing(Map.Entry::getKey, Comparator.reverseOrder()))
+                .map(Map.Entry::getKey).orElse(null);
+            if (shape == null) {
+                return null;
+            }
+            // For each use with this shape, the options it allows at each choice.
+            List<List<Set<String>>> allowed = new ArrayList<>();
+            for (Set<String> readings : uses) {
+                List<Set<String>> per = null;
+                for (String r : readings) {
+                    if (!CHOICE.matcher(r).replaceAll(OPEN + "" + CLOSE).equals(shape)) {
+                        continue;
+                    }
+                    Matcher m = CHOICE.matcher(r);
+                    List<Set<String>> mine = new ArrayList<>();
+                    while (m.find()) {
+                        mine.add(new HashSet<>(List.of(m.group(1).split(String.valueOf(OR)))));
+                    }
+                    if (per == null) {
+                        per = mine;
+                    } else {
+                        for (int i = 0; i < per.size(); i++) {
+                            per.get(i).addAll(mine.get(i));
+                        }
+                    }
+                }
+                if (per != null) {
+                    allowed.add(per);
+                }
+            }
+            int choices = allowed.get(0).size();
+            List<String> taken = new ArrayList<>();
+            int lastOperand = -1;
+            for (int i = 0; i < choices; i++) {
+                Map<String, Integer> count = new HashMap<>();
+                for (List<Set<String>> per : allowed) {
+                    per.get(i).forEach(o -> count.merge(o, 1, Integer::sum));
+                }
+                int last = lastOperand;
+                String pick = count.entrySet().stream().max(Comparator
+                    .<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue)
+                    .thenComparing(o -> o.getKey().contains("$"))
+                    .thenComparing(o -> operandIndex(o.getKey()) > last)
+                    .thenComparing(o -> -operandIndex(o.getKey()))).get().getKey();
+                taken.add(pick);
+                lastOperand = Math.max(lastOperand, operandIndex(pick));
+            }
+            int agree = 0;
+            for (List<Set<String>> per : allowed) {
+                boolean all = true;
+                for (int i = 0; i < choices && all; i++) {
+                    all = per.get(i).contains(taken.get(i));
+                }
+                agree += all ? 1 : 0;
+            }
+            tally[0] = agree;
+            Matcher m = Pattern.compile(OPEN + "" + CLOSE).matcher(shape);
+            StringBuilder out = new StringBuilder();
+            int i = 0;
+            while (m.find()) {
+                m.appendReplacement(out, Matcher.quoteReplacement(taken.get(i++)));
+            }
+            return m.appendTail(out).toString();
+        }
+
+        static int operandIndex(String option) {
+            Matcher m = Pattern.compile("\\$(\\d+)").matcher(option);
+            return m.find() ? Integer.parseInt(m.group(1)) : -1;
+        }
+
+        /** The old member's operands: its receiver (unless static) and its arguments. */
+        int operands(Ref old) {
+            if (old.kind() == 'f') {
+                Fld f = h.a.field(old.owner(), old.name());
+                return f == null || (f.flags & ACC_STATIC) != 0 ? 0 : 1;
+            }
+            Meth m = h.a.method(old.owner(), old.name(), old.desc());
+            int n = MethodTypeDesc.ofDescriptor(old.desc()).parameterCount();
+            return m == null || m.isStatic() || m.special() ? n : n + 1;
+        }
+
+        /** A reading seen once is kept only when it uses every operand and takes no constant: nothing in it is a guess. */
+        boolean usesAll(String expr, Ref old, int operands) {
+            Meth m = old.kind() == 'm' ? h.a.method(old.owner(), old.name(), old.desc()) : null;
+            int first = old.kind() == 'f' || m != null && !m.isStatic() && !m.special() ? 0 : 1;
+            for (int i = first; i < first + operands; i++) {
+                if (!Pattern.compile("\\$" + i + "(?!\\d)").matcher(expr).find()) {
+                    return false;
+                }
+            }
+            return !Pattern.compile("(^|[(, ])(-?\\d|\"|true|false|null)").matcher(expr).find();
+        }
+
+        ClassModel model(Snap s, String cls) {
+            Origin o = s.origins.get(cls);
+            if (o == null) {
+                return null;
+            }
+            return models.computeIfAbsent((s == h.a ? "a:" : "b:") + cls, k -> ClassFile.of().parse(o.bytes()));
+        }
+
+        /** One method's body, by its Mojang name + desc, or by its raw name + desc (a lambda of the same class). */
+        Body decode(Snap s, String cls, String key, boolean raw) {
+            ClassModel cm = model(s, cls);
+            if (cm == null) {
+                return null;
+            }
+            Origin o = s.origins.get(cls);
+            String self = cm.thisClass().asInternalName();
+            for (MethodModel mm : cm.methods()) {
+                String rn = mm.methodName().stringValue(), rd = mm.methodType().stringValue();
+                String k = raw ? rn + rd : o.names().method(self, rn, rd) + o.names().desc(rd);
+                if (k.equals(key)) {
+                    return new Decoder(o, self).run(mm);
+                }
+            }
+            return null;
+        }
+
+        /** Lines up two bodies and reads a replacement at every use of a changed member that lines up; then their lambdas. */
+        void pair(String ca, Body x, String cb, Body y, int depth) {
+            if (x == null || y == null) {
+                return;
+            }
+            long[] ta = new long[x.statements.size()], tb = new long[y.statements.size()];
+            for (int i = 0; i < ta.length; i++) {
+                ta[i] = hash(x.statements.get(i), true);
+            }
+            for (int j = 0; j < tb.length; j++) {
+                tb[j] = hash(y.statements.get(j), false);
+            }
+            List<int[]> same = matches(ta, tb);
+            // Lambdas are paired where the statements that make them line up; the game renumbers them freely.
+            Map<String, String> lambdas = new LinkedHashMap<>();
+            for (int[] p : same) {
+                lambdas(x.statements.get(p[0]), y.statements.get(p[1]), lambdas);
+            }
+            List<int[]> bounds = new ArrayList<>(same);
+            bounds.add(new int[] { ta.length, tb.length });
+            int i0 = 0, j0 = 0;
+            for (int[] p : bounds) {
+                int na = p[0] - i0, nb = p[1] - j0;
+                boolean dropped = dropped(x, i0, p[0], y, j0, p[1]);
+                for (int i = i0; i < p[0] && nb > 0; i++) {
+                    Node sa = x.statements.get(i);
+                    if (!holed(sa) || dropped && droppable(sa)) {
+                        continue;
+                    }
+                    // A statement that is only the use (a call made for what it does, a value stored) has no context to
+                    // line up by: only the statement in the same place of a gap of the same length counts.
+                    boolean bare = sa.kids.length == 1 && hole(sa.kids[0]) && (sa.value.equals("expr") || sa.value.equals("store"));
+                    for (int j = j0; j < p[1]; j++) {
+                        if (bare && !(na == nb && j - j0 == i - i0 || nb == 1)) {
+                            continue;
+                        }
+                        Map<Node, Node> holes = new IdentityHashMap<>();
+                        budget = 20_000;
+                        if (match(sa, y.statements.get(j), holes)) {
+                            holes.forEach(this::read);
+                            lambdas(sa, y.statements.get(j), lambdas);
+                        }
+                    }
+                }
+                i0 = p[0] + 1;
+                j0 = p[1] + 1;
+            }
+            if (x.lambdas.size() == y.lambdas.size()) {
+                Set<String> taken = new HashSet<>(lambdas.values());
+                for (int i = 0; i < x.lambdas.size(); i++) {
+                    if (!lambdas.containsKey(x.lambdas.get(i)) && !taken.contains(y.lambdas.get(i))) {
+                        lambdas.put(x.lambdas.get(i), y.lambdas.get(i));
+                    }
+                }
+            }
+            if (depth < 3) {
+                lambdas.forEach((la, lb) -> pair(ca, decode(h.a, ca, la, true), cb, decode(h.b, cb, lb, true), depth + 1));
+            }
+        }
+
+        /**
+         * A call the game simply removed: between two statements that line up, a's gap is b's gap plus statements that
+         * are only a call of a member b no longer has, made for what it does (1.21's endVertex(), 1.19.4's
+         * disableTexture()). Each such call either was dropped or lines up with a statement of b that is only its
+         * receiver (the vertex chain endVertex() ended); every other statement of the gap must line up with b's, in
+         * order. Each such call is a use whose reading is "nothing": empty for a void call, its receiver for one that
+         * returns it.
+         */
+        boolean dropped(Body x, int i0, int i1, Body y, int j0, int j1) {
+            boolean any = false;
+            for (int i = i0; i < i1 && !any; i++) {
+                any = droppable(x.statements.get(i));
+            }
+            long cells = (long) (i1 - i0 + 1) * (j1 - j0 + 1);
+            if (!any || cells > 40_000) {
+                return false;
+            }
+            byte[][] memo = new byte[i1 - i0 + 1][j1 - j0 + 1]; // 0 unknown, 1 explained, 2 not
+            if (!explained(x, i0, i1, y, j0, j1, i0, j0, memo)) {
+                return false;
+            }
+            List<Node> gone = new ArrayList<>();
+            for (int i = i0, j = j0; i < i1;) {
+                Node s = x.statements.get(i);
+                if (j < j1 && pairs(s, y.statements.get(j)) && explained(x, i0, i1, y, j0, j1, i + 1, j + 1, memo)) {
+                    j++;
+                } else if (!droppable(s)) {
+                    return false;
+                }
+                if (droppable(s)) {
+                    gone.add(s);
+                }
+                i++;
+            }
+            for (Node s : gone) {
+                Node use = s.kids[0];
+                String key = use.ref.owner() + "." + use.ref.name() + use.ref.desc();
+                keys.putIfAbsent(key, use.ref);
+                String reading = use.type.equals("V") ? "" : use.op == 'v' && returnsReceiver(use.ref) ? choice(List.of("$0")) : null;
+                Set<String> readings = sites.computeIfAbsent(key, k -> new IdentityHashMap<>()).computeIfAbsent(use, k -> new LinkedHashSet<>());
+                if (reading != null) {
+                    readings.add(reading);
+                }
+            }
+            return true;
+        }
+
+        /** a's statements from i and b's from j, to the gap's ends, line up with some removed calls left out. */
+        boolean explained(Body x, int i0, int i1, Body y, int j0, int j1, int i, int j, byte[][] memo) {
+            if (i == i1) {
+                return j == j1;
+            }
+            if (memo[i - i0][j - j0] != 0) {
+                return memo[i - i0][j - j0] == 1;
+            }
+            Node s = x.statements.get(i);
+            boolean ok = j < j1 && pairs(s, y.statements.get(j)) && explained(x, i0, i1, y, j0, j1, i + 1, j + 1, memo)
+                || droppable(s) && explained(x, i0, i1, y, j0, j1, i + 1, j, memo);
+            memo[i - i0][j - j0] = (byte) (ok ? 1 : 2);
+            return ok;
+        }
+
+        /** s lines up with t; a removed call only with a statement that is its receiver's value, as the game wrote it. */
+        boolean pairs(Node s, Node t) {
+            budget = 20_000;
+            if (!droppable(s)) {
+                return match(s, t, new IdentityHashMap<>());
+            }
+            Node use = s.kids[0];
+            if (!"expr".equals(t.value) || t.kids.length != 1 || use.op != 'v') {
+                return false;
+            }
+            return match(use.kids[0], t.kids[0], null) || linesUpThrough(use.kids[0], t.kids[0]) || use.kids.length == 1 && endsLike(use, t.kids[0]);
+        }
+
+        /** A statement that is only a call, made for what it does, of a member b removed (no counterpart at all). */
+        boolean droppable(Node s) {
+            if (!"expr".equals(s.value) || s.kids.length != 1 || !hole(s.kids[0]) || s.kids[0].op != 's' && s.kids[0].op != 'v') {
+                return false;
+            }
+            Meth m = h.a.method(s.kids[0].ref.owner(), s.kids[0].ref.name(), s.kids[0].ref.desc());
+            return m != null && !m.special() && h.mAB.get(m) == null;
+        }
+
+        /** A method that gives back the object it was called on, by its type: a builder's fluent step. */
+        boolean returnsReceiver(Ref r) {
+            String ret = r.desc().substring(r.desc().indexOf(')') + 1);
+            Meth m = h.a.method(r.owner(), r.name(), r.desc());
+            if (!ret.startsWith("L") || m == null || m.isStatic() || !subtypeA(r.owner(), ret.substring(1, ret.length() - 1))) {
+                return false;
+            }
+            // Where a has the body, every return gives back `this`; an interface's abstract step is taken by its type.
+            Body body = m.hasCode ? decode(h.a, m.owner.name, m.name + m.desc, false) : null;
+            return !m.hasCode || body != null && body.statements.stream().filter(s -> "return".equals(s.value))
+                .allMatch(s -> s.kids.length == 1 && s.kids[0].op == 'p' && s.kids[0].value.equals(0));
+        }
+
+        boolean subtypeA(String sub, String sup) {
+            Deque<String> todo = new ArrayDeque<>(List.of(sub));
+            Set<String> seen = new HashSet<>();
+            while (!todo.isEmpty()) {
+                String c = todo.poll();
+                if (c.equals(sup)) {
+                    return true;
+                }
+                Cls k = h.a.classes.get(c);
+                if (k != null && seen.add(c)) {
+                    todo.addAll(supertypes(k));
+                }
+            }
+            return false;
+        }
+
+        /** The lambdas two lined-up trees make at the same place (not inside a use of a changed member). */
+        void lambdas(Node x, Node y, Map<String, String> out) {
+            if (hole(x) || x.kids.length != y.kids.length) {
+                return;
+            }
+            if (x.body != null && y.body != null) {
+                out.putIfAbsent(x.body, y.body);
+            }
+            for (int i = 0; i < x.kids.length; i++) {
+                lambdas(x.kids[i], y.kids[i], out);
+            }
+        }
+
+        /**
+         * Index pairs of statements that are the same on both sides, in order: common start and end, then the longest
+         * common subsequence when that is small enough, else statements found exactly once on each side as anchors (in
+         * increasing order on both), and the same again between anchors.
+         */
+        static List<int[]> matches(long[] ta, long[] tb) {
+            List<int[]> out = new ArrayList<>();
+            matches(ta, 0, ta.length, tb, 0, tb.length, out, 0);
+            return out;
+        }
+
+        static void matches(long[] ta, int a0, int a1, long[] tb, int b0, int b1, List<int[]> out, int depth) {
+            List<int[]> tail = new ArrayList<>();
+            while (a0 < a1 && b0 < b1 && ta[a0] == tb[b0]) {
+                out.add(new int[] { a0++, b0++ });
+            }
+            while (a0 < a1 && b0 < b1 && ta[a1 - 1] == tb[b1 - 1]) {
+                tail.add(0, new int[] { --a1, --b1 });
+            }
+            int n = a1 - a0, m = b1 - b0;
+            if (n > 0 && m > 0 && (long) n * m <= 250_000) {
+                int[][] l = new int[n + 1][m + 1];
+                for (int i = n - 1; i >= 0; i--) {
+                    for (int j = m - 1; j >= 0; j--) {
+                        l[i][j] = ta[a0 + i] == tb[b0 + j] ? l[i + 1][j + 1] + 1 : Math.max(l[i + 1][j], l[i][j + 1]);
+                    }
+                }
+                for (int i = 0, j = 0; i < n && j < m;) {
+                    if (ta[a0 + i] == tb[b0 + j]) {
+                        out.add(new int[] { a0 + i++, b0 + j++ });
+                    } else if (l[i + 1][j] >= l[i][j + 1]) {
+                        i++;
+                    } else {
+                        j++;
+                    }
+                }
+            } else if (n > 0 && m > 0 && depth < 8) {
+                Map<Long, int[]> once = new HashMap<>(); // hash -> {count a, index a, count b, index b}
+                for (int i = a0; i < a1; i++) {
+                    int[] c = once.computeIfAbsent(ta[i], k -> new int[4]);
+                    c[0]++;
+                    c[1] = i;
+                }
+                for (int j = b0; j < b1; j++) {
+                    int[] c = once.computeIfAbsent(tb[j], k -> new int[4]);
+                    c[2]++;
+                    c[3] = j;
+                }
+                List<int[]> anchors = new ArrayList<>();
+                for (int[] c : once.values()) {
+                    if (c[0] == 1 && c[2] == 1) {
+                        anchors.add(new int[] { c[1], c[3] });
+                    }
+                }
+                anchors.sort(Comparator.comparingInt(p -> p[0]));
+                // Longest run increasing on b as well (patience sorting).
+                int[] prev = new int[anchors.size()];
+                List<Integer> piles = new ArrayList<>();
+                for (int k = 0; k < anchors.size(); k++) {
+                    int lo = 0, hi = piles.size();
+                    while (lo < hi) {
+                        int mid = (lo + hi) >>> 1;
+                        if (anchors.get(piles.get(mid))[1] < anchors.get(k)[1]) {
+                            lo = mid + 1;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                    prev[k] = lo == 0 ? -1 : piles.get(lo - 1);
+                    if (lo == piles.size()) {
+                        piles.add(k);
+                    } else {
+                        piles.set(lo, k);
+                    }
+                }
+                List<int[]> chain = new ArrayList<>();
+                for (int k = piles.isEmpty() ? -1 : piles.get(piles.size() - 1); k >= 0; k = prev[k]) {
+                    chain.add(0, anchors.get(k));
+                }
+                int i = a0, j = b0;
+                for (int[] p : chain) {
+                    matches(ta, i, p[0], tb, j, p[1], out, depth + 1);
+                    out.add(p);
+                    i = p[0] + 1;
+                    j = p[1] + 1;
+                }
+                if (!chain.isEmpty()) {
+                    matches(ta, i, a1, tb, j, b1, out, depth + 1);
+                }
+            }
+            out.addAll(tail);
+        }
+
+        /** b computes m where a used the changed member in use: every way to write m over use's operands. */
+        void read(Node use, Node m) {
+            String key = use.ref.owner() + "." + use.ref.name() + (use.ref.kind() == 'm' ? use.ref.desc() : "");
+            keys.putIfAbsent(key, use.ref);
+            Set<String> readings = sites.computeIfAbsent(key, k -> new IdentityHashMap<>()).computeIfAbsent(use, k -> new LinkedHashSet<>());
+            int first = use.op == 'v' || use.op == 'f' ? 0 : 1;
+            String cast = "";
+            if (!fits(m.type, use.type)) {
+                // A generic call gives back its argument's own type (<T extends GuiEventListener> T addRenderableWidget(T)):
+                // erased it says GuiEventListener, but javac gives the argument's type, so the value is cast back to it.
+                Integer j = (m.op == 'v' || m.op == 's') ? givesArgument(m.ref) : null;
+                Node arg = j == null ? null : m.kids[j + (m.op == 'v' ? 1 : 0)];
+                if (arg == null || !use.type.startsWith("L") || !fits(arg.type, use.type)) {
+                    if (deferred != null && typeVote(use.type, m.type)) {
+                        deferred.add(new Node[] { use, m });
+                    }
+                    return;
+                }
+                cast = "(" + mappedName(use.type) + ") ";
+            }
+            String body = express(m, use.kids, first, use.type, 0);
+            if (use.type.equals("V") && endsLike(use, m)) {
+                // A void call whose place b fills with only its receiver's value (the vertex chain endVertex() ended,
+                // even where the game also rewrote that chain: color(255, 255, 255, 255) became color(-1)) did nothing
+                // b still does: it is dropped.
+                body = "";
+            }
+            String reading = body == null ? null : cast.isEmpty() ? body : cast + receiver(body);
+            if (reading == null && readings.isEmpty() && (merged(m) || Arrays.stream(use.kids).anyMatch(this::merged))) {
+                // Unreadable only because a value depends on the path taken (a loop's variable): that says nothing
+                // either way, so the use abstains instead of counting against.
+                sites.get(key).remove(use);
+                return;
+            }
+            if (reading != null) {
+                readings.add(reading);
+            }
+        }
+
+        /** use is an instance call and m is the same call its receiver ends with: same member, same number of operands. */
+        boolean endsLike(Node use, Node m) {
+            if (use.op != 'v' || use.kids.length != 1) {
+                return false;
+            }
+            Node r = use.kids[0];
+            return (r.op == 'v' || r.op == 's') && !hole(r) && r.op == m.op && r.kids.length == m.kids.length && head(r, true).equals(head(m, false));
+        }
+
+        /** b's value of type got can stand where a's code had a value of type had: anything for nothing, else the same type or a subtype. */
+        boolean fits(String got, String had) {
+            if (had.equals("V")) {
+                return true;
+            }
+            if (got.equals("null")) {
+                return had.startsWith("L") || had.startsWith("[");
+            }
+            if (h.descBA(got).equals(had)) {
+                return true;
+            }
+            if (!got.startsWith("L") || !had.startsWith("L")) {
+                return false;
+            }
+            String old = had.substring(1, had.length() - 1);
+            Cls ca = h.a.classes.get(old);
+            Cls cb = ca == null ? null : h.cAB.get(ca);
+            if (cb == null && ca != null) {
+                cb = classRewrites().get(ca);
+            }
+            return h.subtypeB(got.substring(1, got.length() - 1), cb != null ? cb.name : old);
+        }
+
+        Map<Cls, Cls> rewritten;
+
+        /** Classes b dropped and the class the game's own code uses in their place: a mod's values of one become the other. */
+        Map<Cls, Cls> classRewrites() {
+            if (rewritten == null) {
+                rewritten = new HashMap<>();
+                for (Hop.ClassRewrite r : h.classRewrites()) {
+                    rewritten.put(r.from(), r.to());
+                }
+            }
+            return rewritten;
+        }
+
+        List<Node[]> deferred = new ArrayList<>(); // uses whose new value fits only once the class map is known
+        final Map<Cls, Map<Cls, Integer>> typeVotes = new HashMap<>();
+        final List<Hop.ClassRewrite> typeRewrites = new ArrayList<>();
+
+        /**
+         * A gone class of a where b has a value of another class: one vote that b's class took its place. Only a game class
+         * b dropped with no class rewrite yet, and a game class of b of the same kind.
+         */
+        boolean typeVote(String had, String got) {
+            if (!had.startsWith("L") || !got.startsWith("L")) {
+                return false;
+            }
+            Cls ca = h.a.classes.get(had.substring(1, had.length() - 1));
+            Cls cb = h.b.classes.get(got.substring(1, got.length() - 1));
+            if (ca == null || cb == null || h.cAB.containsKey(ca) || classRewrites().containsKey(ca) || anonymous(ca.name) || ca.kind() != cb.kind()) {
+                return false;
+            }
+            typeVotes.computeIfAbsent(ca, k -> new HashMap<>()).merge(cb, 1, Integer::sum);
+            return true;
+        }
+
+        /**
+         * The class map from the types the game's own code switched to: each linked method's parameters and result and
+         * each linked field's type, place by place, where a's is a class b dropped (1.19's TextComponent fields and
+         * results became MutableComponent), with the values b computes where a's code made one (votes from read). Kept
+         * as a class rewrite with two votes and 80% agreement, as the route map's own class rewrites are.
+         */
+        void typeMap() {
+            for (var e : h.mAB.entrySet()) {
+                List<ClassDesc> pa = MethodTypeDesc.ofDescriptor(e.getKey().desc).parameterList();
+                List<ClassDesc> pb = MethodTypeDesc.ofDescriptor(e.getValue().desc).parameterList();
+                if (pa.size() == pb.size()) {
+                    for (int i = 0; i < pa.size(); i++) {
+                        typeVote(pa.get(i).descriptorString(), pb.get(i).descriptorString());
+                    }
+                }
+                typeVote(MethodTypeDesc.ofDescriptor(e.getKey().desc).returnType().descriptorString(),
+                    MethodTypeDesc.ofDescriptor(e.getValue().desc).returnType().descriptorString());
+            }
+            for (var e : h.fAB.entrySet()) {
+                typeVote(e.getKey().desc, e.getValue().desc);
+            }
+            for (var e : typeVotes.entrySet()) {
+                Cls best = null;
+                int top = 0, of = 0;
+                for (var v : e.getValue().entrySet()) {
+                    of += v.getValue();
+                    if (v.getValue() > top || v.getValue() == top && best != null && v.getKey().name.compareTo(best.name) < 0) {
+                        top = v.getValue();
+                        best = v.getKey();
+                    }
+                }
+                if (top >= 2 && top * 10 >= of * 8) {
+                    classRewrites().put(e.getKey(), best);
+                    typeRewrites.add(new Hop.ClassRewrite(e.getKey(), best, top, of));
+                }
+            }
+            typeRewrites.sort(Comparator.comparing((Hop.ClassRewrite r) -> r.from().name));
+        }
+
+        /** Whether a's reference names a member a mod could use that b dropped or gave another signature. */
+        boolean broken(Ref r) {
+            if (r == null || r.kind() != 'm' && r.kind() != 'f') {
+                return false;
+            }
+            Boolean known = brokenRefs.get(r);
+            if (known != null) {
+                return known;
+            }
+            boolean out = false;
+            if (r.kind() == 'm') {
+                Meth m = h.a.method(r.owner(), r.name(), r.desc());
+                if (m != null && (m.flags & ACC_PRIVATE) == 0 && !m.name.equals("<clinit>")) {
+                    Meth y = h.mAB.get(m);
+                    out = y == null || y.isStatic() != m.isStatic() || !h.descBA(y.desc).equals(m.desc) || closed(m.flags, y.flags);
+                }
+            } else {
+                Fld f = h.a.field(r.owner(), r.name());
+                if (f != null && (f.flags & ACC_PRIVATE) == 0) {
+                    Fld y = h.fAB.get(f);
+                    // A field that moved to another class: the route map carries moved methods, not moved fields
+                    // (1.19.3's Registry.BLOCK, now BuiltInRegistries.BLOCK).
+                    out = y == null || ((y.flags ^ f.flags) & ACC_STATIC) != 0 || !h.descBA(y.desc).equals(f.desc) || closed(f.flags, y.flags)
+                        || y.owner != h.cAB.get(f.owner);
+                }
+            }
+            brokenRefs.put(r, out);
+            return out;
+        }
+
+        /** A member a mod could reach (public or protected) that b made private or package-private (1.21.2's PartPose.x). */
+        static boolean closed(int before, int after) {
+            return (before & (ACC_PUBLIC | 0x0004)) != 0 && (after & (ACC_PUBLIC | 0x0004)) == 0;
+        }
+
+        boolean hole(Node n) {
+            return (n.op == 'g' || n.op == 'f' || n.op == 's' || n.op == 'v' || n.op == 'w') && broken(n.ref);
+        }
+
+        boolean holed(Node n) {
+            Boolean known = holed.get(n);
+            if (known != null) {
+                return known;
+            }
+            boolean out = hole(n);
+            for (int i = 0; i < n.kids.length && !out; i++) {
+                out = holed(n.kids[i]);
+            }
+            holed.put(n, out);
+            return out;
+        }
+
+        String head(Node n, boolean sideA) {
+            return switch (n.op) {
+                case 'g', 'f', 's', 'v', 'w', 't' -> h.token(n.ref, sideA);
+                case 'y' -> (n.ref == null ? "lambda" : h.token(n.ref, sideA)) + n.value;
+                case 'k' -> n.type + ":" + n.value;
+                case 'x' -> n.type;
+                case 'o', 'S' -> n.value + (n.ref == null ? "" : h.token(n.ref, sideA));
+                case 'p', 'l' -> n.value + ":" + (sideA ? n.type : h.descBA(n.type));
+                default -> "";
+            };
+        }
+
+        /** A tree's hash in a's names; a use of a changed member hashes to itself alone, so it never equals b's code. */
+        long hash(Node n, boolean sideA) {
+            Map<Node, Long> memo = sideA ? hashA : hashB;
+            Long known = memo.get(n);
+            if (known != null) {
+                return known;
+            }
+            long x;
+            if (sideA && hole(n) || Decoder.phi(n)) {
+                x = 0x9E3779B97F4A7C15L * (System.identityHashCode(n) + 1L) + (sideA ? 0 : 1);
+            } else {
+                x = fnv(n.op + head(n, sideA));
+                for (Node k : n.kids) {
+                    x = x * 1_000_003L + hash(k, sideA);
+                }
+            }
+            memo.put(n, x);
+            return x;
+        }
+
+        /** a's x and b's y are the same code but where x uses a changed member; holes gets each such use and b's code there. */
+        boolean match(Node x, Node y, Map<Node, Node> holes) {
+            if (--budget < 0) {
+                return false;
+            }
+            if (holes != null && hole(x)) {
+                Node had = holes.putIfAbsent(x, y);
+                return had == null || had == y;
+            }
+            if (Decoder.phi(x) || Decoder.phi(y)) {
+                return false;
+            }
+            if (hash(x, true) == hash(y, false)) {
+                return true;
+            }
+            if (x.op != y.op || x.kids.length != y.kids.length || !head(x, true).equals(head(y, false))) {
+                return false;
+            }
+            for (int i = 0; i < x.kids.length; i++) {
+                if (!match(x.kids[i], y.kids[i], holes)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * b's value m written over the old member's operands ($first.. for ops), or null: an operand where m is that
+         * operand's code, a constant as itself or as an operand that held the same number (a choice, settled by vote);
+         * nothing that reads the method's parameters, locals or a member a mod may not use.
+         */
+        String express(Node m, Node[] ops, int first, String want, int depth) {
+            List<String> same = new ArrayList<>();
+            for (int i = 0; i < ops.length; i++) {
+                budget = 2_000;
+                if (match(ops[i], m, null) || linesUpThrough(ops[i], m)) {
+                    same.add("$" + (i + first));
+                }
+            }
+            if (m.op == 'k') {
+                String p = primitive(m.type);
+                for (int i = 0; i < ops.length; i++) {
+                    if (ops[i].op == 'k' && !ops[i].type.equals(m.type) && p != null && ops[i].value instanceof Number u && m.value instanceof Number v
+                        && u.doubleValue() == v.doubleValue()) {
+                        same.add("(" + p + ") $" + (i + first));
+                    }
+                }
+                String lit = literal(m, want);
+                if (lit != null) {
+                    same.add(lit);
+                }
+                return choice(same);
+            }
+            if (!same.isEmpty() || depth > 8) {
+                return choice(same);
+            }
+            return switch (m.op) {
+                case 'n' -> "null";
+                case 'g' -> open(m.ref, true) ? dotted(m.ref.owner()) + "." + m.ref.name() : null;
+                case 'f' -> {
+                    String t = open(m.ref, false) ? express(m.kids[0], ops, first, null, depth + 1) : null;
+                    yield t == null ? null : receiver(t) + "." + m.ref.name();
+                }
+                case 's', 'w' -> {
+                    String args = open(m.ref, m.op == 's') ? arguments(m, 0, ops, first, depth) : null;
+                    yield args == null ? null : (m.op == 's' ? dotted(m.ref.owner()) + "." + m.ref.name() : "new " + dotted(m.ref.owner())) + "(" + args + ")";
+                }
+                case 'v' -> {
+                    String t = open(m.ref, false) && m.value == null ? express(m.kids[0], ops, first, null, depth + 1) : null;
+                    String args = t == null ? null : arguments(m, 1, ops, first, depth);
+                    yield args == null ? null : receiver(t) + "." + m.ref.name() + "(" + args + ")";
+                }
+                case 't' -> {
+                    String t = m.ref.owner().startsWith("[") ? null : express(m.kids[0], ops, first, null, depth + 1);
+                    yield t == null ? null : "(" + dotted(m.ref.owner()) + ") " + t;
+                }
+                case 'x' -> {
+                    String p = primitive(m.type);
+                    String t = p == null ? null : express(m.kids[0], ops, first, null, depth + 1);
+                    if (t != null && t.charAt(0) == OPEN && t.indexOf(CLOSE) == t.length() - 1) {
+                        // A converted operand is one choice, as a constant that operand held would be: (float) $2.
+                        yield OPEN + "(" + p + ") " + t.substring(1, t.length() - 1).replace(String.valueOf(OR), OR + "(" + p + ") ") + CLOSE;
+                    }
+                    yield t == null ? null : "(" + p + ") " + t;
+                }
+                case 'y' -> {
+                    Meth impl = m.ref == null || m.kids.length > 0 ? null : h.b.method(m.ref.owner(), m.ref.name(), m.ref.desc());
+                    yield impl != null && impl.isStatic() && open(m.ref, true) ? dotted(m.ref.owner()) + "::" + m.ref.name() : null;
+                }
+                default -> null;
+            };
+        }
+
+        /**
+         * An operand that is b's code m except inside uses of other changed members, each where b has a value that can
+         * stand in its place: a mod's operand, ported, is what b computes there. 1.21's vertex chain
+         * vertex(x, y, z).color(c) before endVertex() is addVertex(x, y, z).setColor(c), vertex having changed too. The
+         * operand itself must line up, not be such a use.
+         */
+        boolean linesUpThrough(Node op, Node m) {
+            if (hole(op) || !holed(op)) {
+                return false;
+            }
+            Map<Node, Node> inner = new IdentityHashMap<>();
+            budget = 2_000;
+            if (!match(op, m, inner)) {
+                return false;
+            }
+            for (var e : inner.entrySet()) {
+                if (!fits(e.getValue().type, e.getKey().type)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /** A call's arguments (m's kids from index from), each typed for its parameter, or null. */
+        String arguments(Node m, int from, Node[] ops, int first, int depth) {
+            List<ClassDesc> params = MethodTypeDesc.ofDescriptor(m.ref.desc()).parameterList();
+            StringJoiner out = new StringJoiner(", ");
+            for (int i = from; i < m.kids.length; i++) {
+                int p = i - from;
+                String one = express(m.kids[i], ops, first, p < params.size() ? params.get(p).descriptorString() : null, depth + 1);
+                if (one == null) {
+                    return null;
+                }
+                out.add(one);
+            }
+            return out.toString();
+        }
+
+        /** A member of b a mod may name: b's own and not private, or the JDK's. */
+        boolean open(Ref r, boolean wantStatic) {
+            if (r.name() != null && r.name().contains("$")) {
+                return false;
+            }
+            if (r.kind() == 'm') {
+                Meth m = h.b.method(r.owner(), r.name(), r.desc());
+                if (m == null) {
+                    return r.owner().startsWith("java/");
+                }
+                return (m.flags & (ACC_PUBLIC | 0x0004)) != 0 && (m.flags & ACC_SYNTHETIC) == 0 && (m.special() || m.isStatic() == wantStatic) && !m.name.equals("<clinit>");
+            }
+            Fld f = h.b.field(r.owner(), r.name());
+            if (f == null) {
+                return r.owner().startsWith("java/");
+            }
+            return (f.flags & (ACC_PUBLIC | 0x0004)) != 0 && ((f.flags & ACC_STATIC) != 0) == wantStatic;
+        }
+
+        static String dotted(String internal) {
+            return internal.replace('/', '.');
+        }
+
+        /** A cast written as a receiver needs its own parentheses: ((T) x).m(). */
+        static String receiver(String t) {
+            return t.startsWith("(") ? "(" + t + ")" : t;
+        }
+
+        static String primitive(String desc) {
+            return switch (desc) {
+                case "Z" -> "boolean";
+                case "C" -> "char";
+                case "B" -> "byte";
+                case "S" -> "short";
+                case "I" -> "int";
+                case "J" -> "long";
+                case "F" -> "float";
+                case "D" -> "double";
+                default -> null;
+            };
+        }
+
+        /** A constant as FixExpr reads it, typed for where it goes (an int constant passed as a boolean is true or false). */
+        static String literal(Node k, String want) {
+            Object v = k.value;
+            if (v instanceof String s) {
+                return s.chars().anyMatch(c -> c < 0x20) ? null : "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+            }
+            if (v instanceof Integer i) {
+                if ("Z".equals(want)) {
+                    return i == 0 ? "false" : i == 1 ? "true" : null;
+                }
+                if ("C".equals(want) || "B".equals(want) || "S".equals(want)) {
+                    return "(" + primitive(want) + ") " + i;
+                }
+                return Integer.toString(i);
+            }
+            if (v instanceof Long l) {
+                return l + "L";
+            }
+            String text = v instanceof Float f ? Float.toString(f) + "F" : v instanceof Double d ? Double.toString(d) + "D" : null;
+            return text == null || text.contains("E") || text.contains("N") || text.contains("I") ? null : text;
+        }
+    }
+
     static final class Driver implements VersionMap.Chain.Loader {
 
         final List<String> versions;
@@ -2099,6 +4873,18 @@ public final class GameDiff {
         final Map<String, String> loaderUsed = new LinkedHashMap<>();
         final List<String> loaderNotes = new ArrayList<>();
         final List<String> hops = new ArrayList<>();
+        /** Call-site rewrites of every hop, one JSON object each (Hop.rewrites). */
+        final List<String> rewrites = new ArrayList<>();
+        /** Removed classes and the class the game's code uses in their place (Hop.classRewrites). */
+        final List<String> classRewrites = new ArrayList<>();
+        /** Members the game replaced with a chain on the same receiver (Hop.chains). */
+        final List<String> chains = new ArrayList<>();
+        /** Methods moved to a class one holder keeps beside the old one (Hop.siblings). */
+        final List<String> siblings = new ArrayList<>();
+        /** Parameters the game added with one value its own code always passes (Hop.argDefaults). */
+        final List<String> argDefaults = new ArrayList<>();
+        /** Replacements written as expressions over the old member's operands (Learner), applied like a rule's inClass. */
+        final List<String> learned = new ArrayList<>();
         Snap prev;
         Path prevLoaderJar;
         String prevLoaderVersion;
@@ -2179,6 +4965,75 @@ public final class GameDiff {
                 );
                 hops.add(line);
                 System.out.println("  " + line);
+                List<Hop.Rewrite> found = h.rewrites();
+                for (Hop.Rewrite r : found) {
+                    rewrites.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"owner\": " + VersionMap.Diff.q(r.from().owner.name.replace('/', '.')) +
+                        ", \"from\": " + VersionMap.Diff.q(r.from().name) +
+                        ", \"desc\": " + VersionMap.Diff.q(r.from().desc) +
+                        ", \"static\": " + r.from().isStatic() +
+                        // A call the game deleted has no replacement: an empty "to".
+                        ", \"toOwner\": " + VersionMap.Diff.q(r.to() == null ? "" : r.to().owner.name.replace('/', '.')) +
+                        ", \"to\": " + VersionMap.Diff.q(r.to() == null ? "" : r.to().name) +
+                        ", \"newDesc\": " + VersionMap.Diff.q(r.to() == null ? "" : r.to().desc) +
+                        ", \"newStatic\": " + (r.to() != null && r.to().isStatic()) +
+                        ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
+                    );
+                }
+                for (Hop.ArgDefault d : h.argDefaults(found)) {
+                    argDefaults.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"owner\": " + VersionMap.Diff.q(d.from().owner.name.replace('/', '.')) +
+                        ", \"from\": " + VersionMap.Diff.q(d.from().name) +
+                        ", \"desc\": " + VersionMap.Diff.q(d.from().desc) +
+                        ", \"toOwner\": " + VersionMap.Diff.q(d.to().owner.name.replace('/', '.')) +
+                        ", \"to\": " + VersionMap.Diff.q(d.to().name) +
+                        ", \"newDesc\": " + VersionMap.Diff.q(d.to().desc) +
+                        ", \"index\": " + d.index() +
+                        ", \"value\": " + VersionMap.Diff.q(d.value()) +
+                        ", \"votes\": " + d.votes() + ", \"of\": " + d.of() + " }"
+                    );
+                }
+                for (Hop.Sibling c : h.siblings()) {
+                    siblings.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"owner\": " + VersionMap.Diff.q(c.from().owner.name.replace('/', '.')) +
+                        ", \"from\": " + VersionMap.Diff.q(c.from().name) +
+                        ", \"desc\": " + VersionMap.Diff.q(c.from().desc) +
+                        ", \"holder\": " + VersionMap.Diff.q(c.holder()) +
+                        ", \"fromField\": " + VersionMap.Diff.q(c.fromField()) +
+                        ", \"toField\": " + VersionMap.Diff.q(c.toField()) +
+                        ", \"newOwner\": " + VersionMap.Diff.q(c.to().owner.name.replace('/', '.')) +
+                        ", \"newDesc\": " + VersionMap.Diff.q(c.to().desc) + " }"
+                    );
+                }
+                for (Hop.Chain c : h.chains()) {
+                    chains.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"owner\": " + VersionMap.Diff.q(c.owner()) +
+                        ", \"newOwner\": " + VersionMap.Diff.q(c.newOwner()) +
+                        ", \"from\": " + VersionMap.Diff.q(c.name()) +
+                        ", \"desc\": " + VersionMap.Diff.q(c.desc()) +
+                        ", \"field\": " + c.field() +
+                        ", \"steps\": " + VersionMap.Diff.q(c.steps()) +
+                        ", \"votes\": " + c.votes() + ", \"of\": " + c.of() + " }"
+                    );
+                }
+                Learner learner = new Learner(h);
+                for (Learner.Learned l : learner.learn()) {
+                    learned.add(l.json(prev.version + " -> " + s.version));
+                }
+                List<Hop.ClassRewrite> rewrites = new ArrayList<>(h.classRewrites());
+                rewrites.addAll(learner.typeRewrites);
+                for (Hop.ClassRewrite r : rewrites) {
+                    classRewrites.add(
+                        "{ \"step\": " + VersionMap.Diff.q(prev.version + " -> " + s.version) +
+                        ", \"from\": " + VersionMap.Diff.q(r.from().name.replace('/', '.')) +
+                        ", \"to\": " + VersionMap.Diff.q(r.to().name.replace('/', '.')) +
+                        ", \"votes\": " + r.votes() + ", \"of\": " + r.total() + " }"
+                    );
+                }
             }
             prev = s;
             prevLoaderJar = jar;
@@ -2241,6 +5096,37 @@ public final class GameDiff {
                 head.append(VersionMap.Diff.q(h.substring(h.indexOf(':') + 2)));
             }
             head.append("},\n");
+            // One per line, as the typed fixer reads the other lists (VersionMap.Known.load).
+            head.append("  \"rewrites\": [");
+            for (int i = 0; i < rewrites.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(rewrites.get(i));
+            }
+            head.append(rewrites.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"argDefaults\": [");
+            for (int i = 0; i < argDefaults.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(argDefaults.get(i));
+            }
+            head.append(argDefaults.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"siblings\": [");
+            for (int i = 0; i < siblings.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(siblings.get(i));
+            }
+            head.append(siblings.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"chains\": [");
+            for (int i = 0; i < chains.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(chains.get(i));
+            }
+            head.append(chains.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"classRewrites\": [");
+            for (int i = 0; i < classRewrites.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(classRewrites.get(i));
+            }
+            head.append(classRewrites.isEmpty() ? "],\n" : "\n  ],\n");
+            head.append("  \"learned\": [");
+            for (int i = 0; i < learned.size(); i++) {
+                head.append(i == 0 ? "\n    " : ",\n    ").append(learned.get(i));
+            }
+            head.append(learned.isEmpty() ? "],\n" : "\n  ],\n");
             if (loader != null) {
                 head.append("  \"loader\": { \"name\": \"neoforge\", \"source\": ").append(VersionMap.Diff.q(NEOFORGE)).append(", \"versions\": {");
                 int i = 0;

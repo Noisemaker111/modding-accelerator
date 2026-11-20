@@ -98,7 +98,7 @@ def mod_counts(versions, old):
     for v in versions:
         facets = json.dumps([[f"versions:{v}"], ["project_type:mod"]])
         url = "https://api.modrinth.com/v2/search?limit=1&facets=" + urllib.parse.quote(facets)
-        req = urllib.request.Request(url, headers={"User-Agent": "Noisemaker111/modding-accelerator change-index"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Noisemaker111/minecraft-modding-tools change-index"})
         with urllib.request.urlopen(req, timeout=30) as r:
             counts[v] = json.load(r)["total_hits"]
     return {"source": "https://api.modrinth.com/v2/search", "note": POPULAR_NOTE, "date": date.today().isoformat(), "counts": counts}

@@ -32,6 +32,9 @@ change; mmt only profiles, measures and gates. Reference: PERFORMANCE.md.
    worker, the work waits for it outside the measure (blocked time isn't CPU). Only a candidate gaining ~10% on
    that scope, or cutting allocation / GC copying, goes on to step 7; stop a paired run once decided (`stop` file).
    Profiles mislead on inlined code: a frame JFR names can be one it never ran; trust the pre-screen.
+   Decide by what other programs on the PC can't move: counts of the work (tiles drawn, chunks read, ticks waited),
+   allocated bytes, and CPU in one JVM. Wall time across launches only confirms: on a busy PC, Diorama's
+   saved-chunk draws timed 3x apart between runs, while the count (1,760 chunks redrawn where 19 were due) held.
    A per-call saving pays only as often as the call runs: multiply it by the calls a second in a perf capture
    (probe counts) before a paired run. A fast path for something done a few times a minute moves no frame.
 7. Measure locally: `perf-optimize --root R --experiment E --patch P --dry-run --out .runs/<mod>-opt/NAME` (it

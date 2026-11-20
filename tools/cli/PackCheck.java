@@ -28,7 +28,7 @@ import java.util.zip.*;
 final class PackCheck {
 
     static final String CURSEFORGE = "https://www.curseforge.com/api/v1/mods/", MODRINTH = "https://api.modrinth.com/v2/";
-    static final String AGENT = "Noisemaker111/modding-accelerator pack-check";
+    static final String AGENT = "Noisemaker111/minecraft-modding-tools pack-check";
     static final HttpClient HTTP = HttpClient.newBuilder()
         .followRedirects(HttpClient.Redirect.NORMAL)
         .connectTimeout(Duration.ofSeconds(20))
@@ -192,6 +192,17 @@ final class PackCheck {
         // A repair known from the jars is known now: the repaired pack's server starts beside the shipped one.
         List<Map<String, Object>> chosen = new ArrayList<>(options.has("fix") ? fixes : List.of());
         PackRepairs.Change change = PackRepairs.change(this, chosen, known);
+        String sides = options.get("side", "server");
+        if (!List.of("server", "client", "both").contains(sides)) throw new IllegalArgumentException("--side takes server, client or both; got " + sides);
+        if (!sides.equals("server")) result.put("client", client(checked, context));
+        if (sides.equals("client")) {
+            long problems = findings.stream().filter(f -> "problem".equals(Json.object(f).get("severity"))).count();
+            result.put("findings", findings);
+            result.put("checks", PackChecks.ALL.stream().map(PackChecks.Check::id).toList());
+            result.put("ok", problems == 0);
+            result.put("details", text(result));
+            return result;
+        }
         ServerLane shipped = new ServerLane(checked, new PackRepairs.Change(List.of(), List.of()), "", findings, context);
         shipped.prepare();
         ServerLane repaired = chosen.isEmpty() ? null : new ServerLane(checked, change, "repaired-", new ArrayList<>(), context);
@@ -282,6 +293,32 @@ final class PackCheck {
                 "evidence", trip.getOrDefault("changed", Map.of())));
         }
         return out;
+    }
+
+    /**
+     * --side client|both: every mod a client loads (all but server-only ones) in the loader's own client (PackClient). A
+     * start that does not reach the title screen, the world, the inventory and every creative tab is a problem naming
+     * the mods its log points at, as a failed server start is.
+     */
+    Map<String, Object> client(Pack pack, PackLoaders.Context context) throws Exception {
+        Path install = PackClient.install(context, loader, pack.minecraft(), pack.loaderVersion());
+        if (install == null) {
+            findings.add(Json.map("kind", "client-start", "severity", "note", "summary",
+                "pack-check cannot start " + loader.id() + "'s client yet: knowledge/pack-loaders.json gives it no installClient arguments."));
+            return Json.map("opened", false, "skipped", "no client installer for " + loader.id());
+        }
+        List<Mod> mods = pack.mods().stream().filter(m -> !"server".equals(m.side())).toList();
+        Map<String, Object> client = PackClient.check(this, pack, context, install, mods);
+        if (client.get("toolError") != null) {
+            findings.add(Json.map("kind", "client-start", "severity", "problem", "summary", String.valueOf(client.get("toolError"))));
+        } else if (!Boolean.TRUE.equals(client.get("opened"))) {
+            List<Object> suspects = Json.array(client.getOrDefault("suspects", List.of()));
+            findings.add(Json.map("kind", "client-start", "severity", "problem", "summary",
+                "The pack's client did not get through " + client.get("reached") + " and on: " + client.get("failure")
+                    + (suspects.isEmpty() ? "" : ". The log names " + PackChecks.names(suspects.stream().map(Json::object).toList()) + "."),
+                "suspects", suspects, "evidence", client.get("failure")));
+        }
+        return client;
     }
 
     static String failedStart(Map<String, Object> game) throws IOException {
@@ -1844,6 +1881,7 @@ final class PackCheck {
                 if (Files.isDirectory(p)) Files.createDirectories(target);
                 else {
                     Files.createDirectories(target.getParent());
+                    writable(target);
                     Files.copy(p, target, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
@@ -1853,7 +1891,18 @@ final class PackCheck {
     static void deleteTree(Path path) throws IOException {
         if (!Files.exists(path)) return;
         try (var walk = Files.walk(path)) {
-            for (Path p : walk.sorted(Comparator.reverseOrder()).toList()) Files.delete(p);
+            for (Path p : walk.sorted(Comparator.reverseOrder()).toList()) {
+                writable(p);
+                Files.delete(p);
+            }
+        }
+    }
+
+    /** A mod may mark its own files read-only (Euphoria Patcher's config/euphoria_patcher/.data.json); Windows then refuses to replace or delete them. */
+    static void writable(Path p) throws IOException {
+        var dos = Files.getFileAttributeView(p, java.nio.file.attribute.DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+        if (dos != null && Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS) && dos.readAttributes().isReadOnly()) {
+            dos.setReadOnly(false);
         }
     }
 }

@@ -1,10 +1,10 @@
 name: Release
 # One button: Actions > Release > Run workflow, on main. It numbers the release from the last one (0.MINOR.PATCH,
-# CONTRIBUTING.md says which to pick), builds the desktop app for Windows and Linux, packages it with the command
-# line into the portable ZIP, runs the self-test and the extracted-ZIP acceptance test on that exact build, then tags
-# the commit and publishes it. The notes are .github/whats-new.md, with the PRs merged since the last release folded
-# underneath; it refuses to publish when that file hasn't changed since the last release. Nothing is tagged or
-# published unless every step passes. Run on any other branch, it is a rehearsal: every step but tag and publish.
+# CONTRIBUTING.md says which to pick), builds and self-tests mmt.jar, builds the standalone desktop app for Windows
+# and Linux with mmt.jar embedded inside, proves each standalone binary in an empty folder, packages the portable ZIP
+# and runs its acceptance test, then tags the commit and publishes standalone binaries + ZIP + JAR.
+# Notes come from .github/whats-new.md (with merged PRs folded underneath); it refuses to publish if unchanged.
+# Run on any other branch, it is a rehearsal: every step runs except tag and publish.
 on:
   workflow_dispatch:
     inputs:
@@ -19,36 +19,12 @@ concurrency:
   group: release
   cancel-in-progress: false
 jobs:
-  desktop:
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            binary: mmt-desktop.exe
-          - os: ubuntu-latest
-            binary: mmt-desktop
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - if: runner.os == 'Linux'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxkbcommon-dev libwayland-dev >/dev/null
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: app
-          save-if: false
-      - run: cargo build --release --locked
-        working-directory: app
-      - uses: actions/upload-artifact@v4
-        with:
-          name: desktop-${{ runner.os }}
-          path: app/target/release/${{ matrix.binary }}
-          if-no-files-found: error
-
-  release:
-    needs: desktop
+  jar:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      previous: ${{ steps.ver.outputs.previous }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -57,10 +33,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
       - name: Number this release
+        id: ver
         env:
           GH_TOKEN: ${{ github.token }}
           BUMP: ${{ inputs.bump }}
@@ -72,10 +46,96 @@ jobs:
           version="$major.$minor.$patch"
           if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then echo "v$version already exists"; exit 1; fi
           previous=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName 2>/dev/null || true)
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "PREVIOUS=$previous" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
           echo "Releasing $version (notes since ${previous:-the first commit})"
       - name: Stamp the version into the build
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          sed -i "s/static final String VERSION = \"dev\";/static final String VERSION = \"$VERSION\";/" tools/cli/Support.java
+          grep -q "VERSION = \"$VERSION\"" tools/cli/Support.java
+      - name: Build and self-test mmt.jar
+        run: |
+          java tools/cli/Bootstrap.java . package --json
+          java -jar build/distributions/mmt.jar self-test --root . --json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mmt-jar
+          path: |
+            build/distributions/mmt.jar
+            build/distributions/mmt.jar.sha256
+          if-no-files-found: error
+
+  desktop:
+    needs: jar
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            binary: mmt-desktop.exe
+          - os: ubuntu-latest
+            binary: mmt-desktop
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxkbcommon-dev libwayland-dev >/dev/null
+      - uses: actions/download-artifact@v4
+        with:
+          name: mmt-jar
+          path: ${{ runner.temp }}/embed
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app
+          save-if: false
+      - name: Build standalone desktop app
+        env:
+          MMT_EMBED_JAR: ${{ runner.temp }}/embed/mmt.jar
+        run: cargo build --release --locked
+        working-directory: app
+      - name: Prove standalone binary in an empty folder (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'standalone-check'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item app/target/release/mmt-desktop.exe $dir/mmt-desktop.exe
+          & "$dir/mmt-desktop.exe" --check-standalone
+      - name: Prove standalone binary in an empty folder (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          dir="${{ runner.temp }}/standalone-check"
+          mkdir -p "$dir"
+          cp app/target/release/mmt-desktop "$dir/mmt-desktop"
+          chmod +x "$dir/mmt-desktop"
+          "$dir/mmt-desktop" --check-standalone
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ runner.os }}
+          path: app/target/release/${{ matrix.binary }}
+          if-no-files-found: error
+
+  release:
+    needs: [jar, desktop]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Stamp the version into the build
+        env:
+          VERSION: ${{ needs.jar.outputs.version }}
         run: |
           sed -i "s/static final String VERSION = \"dev\";/static final String VERSION = \"$VERSION\";/" tools/cli/Support.java
           grep -q "VERSION = \"$VERSION\"" tools/cli/Support.java
@@ -91,15 +151,16 @@ jobs:
           java tools/cli/Bootstrap.java . package --json
           unzip -l build/distributions/mmt-portable.zip | grep -E 'mmt-desktop(\.exe|-linux)$'
           test "$(unzip -l build/distributions/mmt-portable.zip | grep -cE 'mmt-desktop(\.exe|-linux)$')" = 2
-      - name: Self-test from the package
-        run: java -jar build/distributions/mmt.jar self-test --root . --json
       - name: Extracted ZIP acceptance
         run: java tools/tests/PackageAcceptanceTest.java build/distributions/mmt-portable.zip build/distributions/mmt-portable.zip.sha256 "${{ runner.temp }}"
       - name: Notes from what's new
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.jar.outputs.version }}
+          PREVIOUS: ${{ needs.jar.outputs.previous }}
         run: |
-          if [ -n "$PREVIOUS" ] && git cat-file -e "$PREVIOUS:.github/whats-new.md" 2>/dev/null              && git diff --quiet "$PREVIOUS" HEAD -- .github/whats-new.md; then
+          if [ -n "$PREVIOUS" ] && git cat-file -e "$PREVIOUS:.github/whats-new.md" 2>/dev/null \
+             && git diff --quiet "$PREVIOUS" HEAD -- .github/whats-new.md; then
             echo ".github/whats-new.md is the same as in $PREVIOUS. Write what's new in this release there, merge, then release."
             exit 1
           fi
@@ -114,16 +175,19 @@ jobs:
           cat "$notes"
       - name: Rehearsal, not published
         if: github.ref != 'refs/heads/main'
-        run: echo "Built and checked $VERSION from $GITHUB_REF_NAME; only a run on main tags and publishes."
+        run: echo "Built and checked ${{ needs.jar.outputs.version }} from $GITHUB_REF_NAME; only a run on main tags and publishes."
       - name: Tag and publish
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.jar.outputs.version }}
         run: |
           out="${{ runner.temp }}/assets"; mkdir -p "$out"
+          cp app/target/release/mmt-desktop.exe "$out/mmt-desktop.exe"
+          cp app/target/release/mmt-desktop "$out/mmt-desktop-linux"
           cp build/distributions/mmt.jar "$out/mmt-$VERSION.jar"
           cp build/distributions/mmt-portable.zip "$out/mmt-$VERSION-portable.zip"
           cd "$out"
-          for f in *.jar *.zip; do sha256sum "$f" > "$f.sha256"; done
+          for f in mmt-desktop.exe mmt-desktop-linux *.jar *.zip; do sha256sum "$f" > "$f.sha256"; done
           gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
             --title "Minecraft Modding Tools $VERSION" --notes-file "$NOTES" *

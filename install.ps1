@@ -887,9 +887,9 @@ public class StarterTest {
 }
 
 # 4. the onboarding skill, so an agent in this repo finds the loop
-$skillDir = Join-Path $root '.claude/skills/modding-accelerator'
+$skillDir = Join-Path $root '.claude/skills/minecraft-modding-tools'
 New-Item -ItemType Directory -Force $skillDir | Out-Null
-Copy-Item (Join-Path $here 'skills/modding-accelerator/SKILL.md') (Join-Path $skillDir 'SKILL.md') -Force
+Copy-Item (Join-Path $here 'skills/minecraft-modding-tools/SKILL.md') (Join-Path $skillDir 'SKILL.md') -Force
 
 # 5. ignore runtime state
 $ignore = Join-Path $root '.gitignore'

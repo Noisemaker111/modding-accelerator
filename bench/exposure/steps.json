@@ -1,0 +1,273 @@
+{
+ "from": "1.14.4",
+ "to": "26.3",
+ "updates": 43,
+ "gone": 49503,
+ "learned": 2634,
+ "steps": [
+  {
+   "step": "1.14.4 -> 1.15",
+   "gone": 2332,
+   "learned": 117,
+   "rewrites": 66,
+   "chains": 2,
+   "classRewrites": 10,
+   "learnerRows": 123
+  },
+  {
+   "step": "1.15 -> 1.15.1",
+   "gone": 3,
+   "learned": 1,
+   "learnerRows": 1
+  },
+  {
+   "step": "1.15.1 -> 1.15.2",
+   "gone": 58,
+   "learned": 9,
+   "rewrites": 6,
+   "learnerRows": 9
+  },
+  {
+   "step": "1.15.2 -> 1.16",
+   "gone": 3356,
+   "learned": 237,
+   "rewrites": 115,
+   "chains": 10,
+   "classRewrites": 32,
+   "learnerRows": 340
+  },
+  {
+   "step": "1.16.1 -> 1.16.2",
+   "gone": 1366,
+   "learned": 85,
+   "rewrites": 15,
+   "chains": 2,
+   "classRewrites": 24,
+   "learnerRows": 118
+  },
+  {
+   "step": "1.16.3 -> 1.16.4",
+   "gone": 7,
+   "learned": 1,
+   "learnerRows": 2
+  },
+  {
+   "step": "1.16.5 -> 1.17",
+   "gone": 2271,
+   "learned": 172,
+   "rewrites": 80,
+   "chains": 17,
+   "classRewrites": 15,
+   "learnerRows": 166
+  },
+  {
+   "step": "1.17 -> 1.17.1",
+   "gone": 59,
+   "learned": 6,
+   "rewrites": 4,
+   "classRewrites": 1,
+   "learnerRows": 5
+  },
+  {
+   "step": "1.17.1 -> 1.18",
+   "gone": 2662,
+   "learned": 78,
+   "rewrites": 25,
+   "chains": 3,
+   "classRewrites": 11,
+   "learnerRows": 73
+  },
+  {
+   "step": "1.18 -> 1.18.1",
+   "gone": 17,
+   "learned": 3,
+   "rewrites": 1,
+   "learnerRows": 3
+  },
+  {
+   "step": "1.18.1 -> 1.18.2",
+   "gone": 625,
+   "learned": 33,
+   "rewrites": 22,
+   "classRewrites": 5,
+   "learnerRows": 78
+  },
+  {
+   "step": "1.18.2 -> 1.19",
+   "gone": 1940,
+   "learned": 101,
+   "rewrites": 38,
+   "chains": 5,
+   "classRewrites": 17,
+   "learnerRows": 251
+  },
+  {
+   "step": "1.19 -> 1.19.1",
+   "gone": 335,
+   "learned": 10,
+   "rewrites": 1,
+   "classRewrites": 1,
+   "learnerRows": 16
+  },
+  {
+   "step": "1.19.1 -> 1.19.2",
+   "gone": 10,
+   "learned": 2,
+   "classRewrites": 1,
+   "learnerRows": 2
+  },
+  {
+   "step": "1.19.2 -> 1.19.3",
+   "gone": 2934,
+   "learned": 138,
+   "rewrites": 39,
+   "chains": 1,
+   "classRewrites": 16,
+   "learnerRows": 210
+  },
+  {
+   "step": "1.19.3 -> 1.19.4",
+   "gone": 974,
+   "learned": 106,
+   "rewrites": 42,
+   "chains": 6,
+   "classRewrites": 5,
+   "learnerRows": 92
+  },
+  {
+   "step": "1.19.4 -> 1.20",
+   "gone": 1020,
+   "learned": 75,
+   "rewrites": 44,
+   "classRewrites": 8,
+   "learnerRows": 55
+  },
+  {
+   "step": "1.20.1 -> 1.20.2",
+   "gone": 2004,
+   "learned": 72,
+   "rewrites": 30,
+   "chains": 7,
+   "classRewrites": 4,
+   "learnerRows": 85
+  },
+  {
+   "step": "1.20.2 -> 1.20.3",
+   "gone": 900,
+   "learned": 45,
+   "rewrites": 14,
+   "chains": 5,
+   "classRewrites": 7,
+   "learnerRows": 75
+  },
+  {
+   "step": "1.20.4 -> 1.20.5",
+   "gone": 2384,
+   "learned": 117,
+   "rewrites": 48,
+   "chains": 3,
+   "classRewrites": 11,
+   "learnerRows": 187
+  },
+  {
+   "step": "1.20.6 -> 1.21",
+   "gone": 1119,
+   "learned": 65,
+   "rewrites": 33,
+   "chains": 3,
+   "classRewrites": 7,
+   "learnerRows": 67
+  },
+  {
+   "step": "1.21 -> 1.21.1",
+   "gone": 1,
+   "learned": 1,
+   "learnerRows": 1
+  },
+  {
+   "step": "1.21.1 -> 1.21.2",
+   "gone": 3192,
+   "learned": 150,
+   "rewrites": 65,
+   "chains": 10,
+   "classRewrites": 17,
+   "learnerRows": 236
+  },
+  {
+   "step": "1.21.3 -> 1.21.4",
+   "gone": 881,
+   "learned": 57,
+   "rewrites": 20,
+   "chains": 4,
+   "classRewrites": 7,
+   "learnerRows": 73
+  },
+  {
+   "step": "1.21.4 -> 1.21.5",
+   "gone": 3236,
+   "learned": 142,
+   "rewrites": 83,
+   "chains": 10,
+   "classRewrites": 13,
+   "learnerRows": 157
+  },
+  {
+   "step": "1.21.5 -> 1.21.6",
+   "gone": 1139,
+   "learned": 67,
+   "rewrites": 44,
+   "classRewrites": 7,
+   "learnerRows": 47
+  },
+  {
+   "step": "1.21.6 -> 1.21.7",
+   "gone": 4,
+   "learned": 0,
+   "learnerRows": 1
+  },
+  {
+   "step": "1.21.8 -> 1.21.9",
+   "gone": 2292,
+   "learned": 82,
+   "rewrites": 33,
+   "chains": 9,
+   "classRewrites": 6,
+   "learnerRows": 114
+  },
+  {
+   "step": "1.21.10 -> 1.21.11",
+   "gone": 1604,
+   "learned": 104,
+   "rewrites": 25,
+   "classRewrites": 15,
+   "learnerRows": 155
+  },
+  {
+   "step": "1.21.11 -> 26.1",
+   "gone": 2900,
+   "learned": 163,
+   "rewrites": 64,
+   "chains": 12,
+   "classRewrites": 16,
+   "learnerRows": 209
+  },
+  {
+   "step": "26.1.2 -> 26.2",
+   "gone": 2910,
+   "learned": 197,
+   "rewrites": 30,
+   "chains": 22,
+   "classRewrites": 11,
+   "learnerRows": 413
+  },
+  {
+   "step": "26.2 -> 26.3",
+   "gone": 4968,
+   "learned": 198,
+   "rewrites": 90,
+   "chains": 2,
+   "classRewrites": 36,
+   "learnerRows": 305
+  }
+ ]
+}

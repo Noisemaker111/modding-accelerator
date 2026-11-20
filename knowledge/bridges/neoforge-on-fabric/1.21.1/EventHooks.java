@@ -162,4 +162,12 @@ public final class EventHooks {
         boolean vanillaValue = player.hasCorrectToolForDrops(state);
         return Bus.INSTANCE.post(new PlayerEvent.HarvestCheck(player, state, level, pos, vanillaValue)).canHarvest();
     }
+
+    /**
+     * NeoForge's onEffectRemoved (MobEffectEvent.Remove, which listeners may cancel): the bridge posts no MobEffectEvent,
+     * so the removal is never cancelled.
+     */
+    public static boolean onEffectRemoved(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.effect.MobEffectInstance effect, EffectCure cure) {
+        return false;
+    }
 }

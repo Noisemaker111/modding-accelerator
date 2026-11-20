@@ -352,6 +352,16 @@ public final class MixinCheckTest {
             ProjectModel.strings(record.get("arguments")).contains("--fml.mcVersion"),
             "main class and arguments are kept"
         );
+        // ModDevGradle 2's devlaunch.Main: the real main class is the first token of its @file, then that file's arguments.
+        Path programArgs = scratch.resolve("clientRunProgramArgs.txt");
+        Files.writeString(programArgs, "# Main Class\nnet.neoforged.fml.startup.Client\n\n# Arguments\n--version\n26.3.0.102\n", StandardCharsets.UTF_8);
+        jvm.put("command", "net.neoforged.devlaunch.Main @" + programArgs);
+        var devLaunch = MixinCheck.fromJvm(jvm, scratch.resolve("launch.json"));
+        require(
+            "net.neoforged.fml.startup.Client".equals(devLaunch.get("main")) &&
+            ProjectModel.strings(devLaunch.get("arguments")).equals(List.of("--version", "26.3.0.102")),
+            "ModDevGradle's devlaunch.Main is the main class its argument file names: " + devLaunch.get("main") + " " + devLaunch.get("arguments")
+        );
     }
 
     /** The check's classes build for Java 8, and the NeoForge target edit renames the side and empties runService. */

@@ -185,9 +185,15 @@ fn opener(s: &App) -> El {
             .padding(30.0)
             .gap(14.0)
             .fill(paper())
-            .child(theme::heading("Put your mod on the bench", 26.0))
-            .child(theme::body("Open the folder with its source code, the one with gradlew in it. Or drop the folder anywhere on the bench.", 16.0, graphite()))
-            .child(row().gap(10.0).pt(4.0).child(theme::button("choose-folder", "Open a folder…", Kind::Primary, !busy, choose_folder)))
+            .child(theme::heading("Put a mod on the bench", 26.0))
+            .child(theme::body("Open a mod's source folder (the one with gradlew), or pick a compiled .jar to port to another Minecraft version. You can drop a folder, .jar, or modpack anywhere on the bench.", 16.0, graphite()))
+            .child(
+                row()
+                    .gap(10.0)
+                    .pt(4.0)
+                    .child(theme::button("choose-folder", "Open a folder…", Kind::Primary, !busy, choose_folder))
+                    .child(theme::button("choose-jar", "Port a .jar…", Kind::Plain, !busy, crate::port::choose_jar)),
+            )
             .child(
                 row()
                     .w_full()
@@ -356,7 +362,7 @@ fn tools(s: &App) -> El {
         .gap(36.0)
         .items_start()
         .child(tool("go-checks", magnifier(), "Inspect", "Build, tests, then the real game", Screen::Checks, has, 0.0))
-        .child(tool("go-port", folded_map(), "Change version", "Move it to another Minecraft", Screen::Port, has, 22.0))
+        .child(tool("go-port", folded_map(), "Change version", "Port a .jar or source folder", Screen::Port, true, 22.0))
         .child(tool("go-pack", parts_tray(), "Modpack", "Lay out a pack, find what clashes", Screen::Pack, true, 6.0))
         .child(tool("go-perf", tape_measure(), "Measure", "Frame time and where it goes", Screen::Perf, true, 30.0))
 }

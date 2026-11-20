@@ -46,10 +46,14 @@ public final class PortableAgent {
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
+        Names.load();
         System.getProperties().put("mmt.frame", new Consumer<Object>() { public void accept(Object game) { frame(game); } });
+        final String minecraft = Names.cls("net/minecraft/client/Minecraft");
+        for (String m : new String[] {"render", "runTick"}) { String r = Names.methods.get("net/minecraft/client/Minecraft." + m + "(Z)V"); if (r != null) frameMethods.add(r); }
+        getInstance = Names.member(null, "net/minecraft/client/Minecraft", "getInstance", "()Lnet/minecraft/client/Minecraft;", true);
         instrumentation.addTransformer(new ClassFileTransformer() {
             public byte[] transform(ClassLoader loader, String name, Class<?> type, ProtectionDomain domain, byte[] bytes) {
-                if (name == null || (!name.equals("net/minecraft/client/Minecraft") && !name.equals("net/minecraft/client/MinecraftClient"))) return null;
+                if (name == null || (!name.equals(minecraft) && !name.equals("net/minecraft/client/MinecraftClient"))) return null;
                 try {
                     ClassReader reader = new ClassReader(bytes); final ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
                     final int[] hooks = {0};
@@ -59,7 +63,7 @@ public final class PortableAgent {
                             String singleton = hookGetter(method, desc);
                             if (singleton != null) {
                                 hooks[0]++;
-                                final String getter = singleton;
+                                final String getter = name.equals(minecraft) ? singleton : "getInstance";
                                 return new MethodVisitor(Opcodes.ASM9, delegate) {
                                     @Override public void visitInsn(int opcode) {
                                         if (opcode == Opcodes.RETURN) {
@@ -89,10 +93,13 @@ public final class PortableAgent {
     /**
      * The frame hook's singleton getter per client shape, or null when the method is not a frame entry.
      * Modern clients tick through render/runTick with a flag and expose getInstance; 1.7.10 ticks and renders
-     * through runTick with no arguments and exposes getMinecraft.
+     * through runTick with no arguments and exposes getMinecraft. An obfuscated modern client adds its own names for
+     * both at install (Names).
      */
+    private static final Set<String> frameMethods = new HashSet<String>(Arrays.asList("render", "runTick"));
+    private static String getInstance = "getInstance";
     static String hookGetter(String method, String desc) {
-        if ((method.equals("render") || method.equals("runTick")) && desc.equals("(Z)V")) return "getInstance";
+        if (frameMethods.contains(method) && desc.equals("(Z)V")) return getInstance;
         if (method.equals("runTick") && desc.equals("()V")) return "getMinecraft";
         return null;
     }
@@ -101,7 +108,7 @@ public final class PortableAgent {
             client = game; started = true;
             try {
                 pauseOptions = field(client, "options", "gameSettings");
-                pauseField = pauseOptions.getClass().getField("pauseOnLostFocus");
+                pauseField = publicField(pauseOptions.getClass(), "pauseOnLostFocus");
                 originalPauseOnLostFocus = pauseField.getBoolean(pauseOptions);
                 pauseField.setBoolean(pauseOptions, false);
             } catch (Exception error) { pauseControlError = cause(error); System.err.println("MMT_PAUSE_CONTROL_ERROR " + pauseControlError); }
@@ -234,7 +241,7 @@ public final class PortableAgent {
                     : Json.map("available", true, "shown", optionalField(debugHud, "showDebugHud"),
                             "hudHidden", optionalField(pauseOptions, "hudHidden"),
                             "f3Handled", optionalField(field(client, "keyboard"), "switchF3State"));
-            done.complete(Json.map("ok", true, "identity", identity, "screen", screen == null ? "" : screen.getClass().getName(), "inWorld", inWorld(),
+            done.complete(Json.map("ok", true, "identity", identity, "screen", screen == null ? "" : Names.named(screen.getClass()), "inWorld", inWorld(),
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
                     "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
                     "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume(),
@@ -294,7 +301,7 @@ public final class PortableAgent {
             Object overlay = optionalField(client, "overlay"), current = screen();
             Object gui = optionalField(client, "gui");
             if (overlay == null && gui != null) try { overlay = call(gui, "overlay"); } catch (Exception ignored) {}
-            String screenName = current == null ? "" : current.getClass().getSimpleName();
+            String screenName = current == null ? "" : Names.simple(current.getClass());
             // Loading screens and the title screen's initial fade are transitional frames. The title
             // fades its background over 2 s and then its buttons over 2 more (1.21.6), so wait 4.5 s.
             boolean transition = screenName.equals("MessageScreen") || screenName.equals("GenericMessageScreen")
@@ -325,6 +332,7 @@ public final class PortableAgent {
             Object target;
             try { target = call(client, "getFramebuffer", "getMainRenderTarget"); }
             catch (NoSuchMethodException changed) { target = call(field(client, "gameRenderer"), "mainRenderTarget"); }
+            followWindowSize(target);
             Class<?> screenshot = load("net.minecraft.client.util.ScreenshotRecorder", "net.minecraft.client.Screenshot");
             final Consumer<Object> save = new Consumer<Object>() { public void accept(Object image) {
                 try {
@@ -548,7 +556,7 @@ public final class PortableAgent {
     private static String worldPath(Object server) {
         try {
             Class<?> resource = load("net.minecraft.world.level.storage.LevelResource", "net.minecraft.util.WorldSavePath");
-            Object root = resource.getField("ROOT").get(null);
+            Object root = publicField(resource, "ROOT").get(null);
             Object path = invoke(server, new String[]{"getWorldPath", "getSavePath"}, root);
             return ((Path)path).toAbsolutePath().normalize().toString();
         } catch (Exception prePaths) {
@@ -585,9 +593,29 @@ public final class PortableAgent {
     private static Object optionalField(Object owner, String... names) {
         try { return field(owner, names); } catch (Exception ignored) { return null; }
     }
+    /**
+     * 26.1.x resizes the main render target only on a frame that saw the window's one-frame resize flag, and a hidden
+     * window can miss that frame: the window was 1280x720 and the target stayed 854x480. When they differ, the target
+     * takes the window's framebuffer size, as the game's own resize would. Versions without RenderTarget.resize(int, int)
+     * under that name (obfuscated runtimes) are left as they are.
+     */
+    private static void followWindowSize(Object target) {
+        try {
+            Object window = call(client, "getWindow");
+            int width = ((Number)call(window, "getWidth")).intValue(), height = ((Number)call(window, "getHeight")).intValue();
+            if (((Number)field(target, "width")).intValue() == width && ((Number)field(target, "height")).intValue() == height) return;
+            target.getClass().getMethod("resize", int.class, int.class).invoke(target, width, height);
+        } catch (Throwable unsupported) {}
+    }
     private static Class<?> load(String... names) throws ClassNotFoundException {
-        for (String name : names) try { return Class.forName(name, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}
+        for (String name : names) for (String n : new String[] {name, Names.cls(name.replace('.', '/')).replace('/', '.')})
+            try { return Class.forName(n, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}
         throw new ClassNotFoundException(Arrays.toString(names));
+    }
+    /** A public field by Mojang's name, through Names when the game runs other names. */
+    private static Field publicField(Class<?> type, String name) throws NoSuchFieldException {
+        for (String n : Names.candidates(type, name)) try { return type.getField(n); } catch (NoSuchFieldException next) { }
+        throw new NoSuchFieldException(type.getName() + "." + name);
     }
     private static Class<?> optionalClass(String name) {
         try { return load(name); } catch (ClassNotFoundException absent) { return null; } catch (LinkageError unusable) { return null; }
@@ -610,16 +638,17 @@ public final class PortableAgent {
         try { return Boolean.TRUE.equals(field(title, "fading")); } catch (Exception unknown) { return true; }
     }
     private static Object field(Object owner, String... names) throws Exception {
-        for (String name : names) for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass()) try {
-            Field field = type.getDeclaredField(name); field.setAccessible(true); return field.get(owner);
-        } catch (NoSuchFieldException ignored) {}
+        for (String name : names) for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass())
+            for (String n : Names.candidates(type, name)) try {
+                Field field = type.getDeclaredField(n); field.setAccessible(true); return field.get(owner);
+            } catch (NoSuchFieldException ignored) {}
         throw new NoSuchFieldException(owner.getClass().getName() + " " + Arrays.toString(names));
     }
     private static Object call(Object owner, String... names) throws Exception { return invoke(owner, names, new Object[0]); }
     private static Object invoke(Object owner, String[] names, Object... arguments) throws Exception {
         Class<?> type = owner instanceof Class ? (Class<?>)owner : owner.getClass();
-        for (String name : names) for (Method method : type.getMethods()) {
-            if (!method.getName().equals(name) || method.getParameterTypes().length != arguments.length) continue;
+        for (String name : names) for (String n : Names.candidates(type, name)) for (Method method : type.getMethods()) {
+            if (!method.getName().equals(n) || method.getParameterTypes().length != arguments.length) continue;
             try { return method.invoke(owner instanceof Class ? null : owner, arguments); }
             catch (IllegalArgumentException mismatch) { }
         }
@@ -658,4 +687,171 @@ public final class PortableAgent {
         watcher.start();
     }
     private static String cause(Throwable error) { while (error.getCause() != null) error = error.getCause(); return error.toString(); }
+
+    /**
+     * The game's names at run time when they are not Mojang's: a Fabric client before 26.1 runs intermediary. The agent and
+     * its snippets name the game in Mojang's names; -Dmmt.names is a table (written by pack-check from Mojang's and Fabric's
+     * own mappings) of each class and member in both. Reflection by a Mojang name looks the member up where a class in the
+     * object's hierarchy declares it; a compiled snippet is renamed the same way before it is loaded. With no table, names
+     * are used as they are.
+     */
+    static final class Names {
+        static final Map<String, String> runtime = new HashMap<String, String>(), mojang = new HashMap<String, String>(); // internal class names
+        static final Map<String, String> fields = new HashMap<String, String>(), methods = new HashMap<String, String>(); // mojangOwner.name, mojangOwner.name+desc -> runtime
+        static final Map<String, List<String>> methodNames = new HashMap<String, List<String>>(); // mojangOwner.name -> runtime names
+        static boolean active;
+
+        static void load() {
+            String file = System.getProperty("mmt.names");
+            if (file == null || file.isEmpty()) return;
+            try (BufferedReader in = Files.newBufferedReader(Paths.get(file), StandardCharsets.UTF_8)) {
+                for (String line; (line = in.readLine()) != null; ) {
+                    String[] p = line.split("\t");
+                    if (p[0].equals("c") && p.length == 3) { runtime.put(p[1], p[2]); mojang.put(p[2], p[1]); }
+                    else if (p[0].equals("f") && p.length == 4) fields.put(p[1] + "." + p[2], p[3]);
+                    else if (p[0].equals("m") && p.length == 5) {
+                        methods.put(p[1] + "." + p[2] + p[3], p[4]);
+                        List<String> all = methodNames.get(p[1] + "." + p[2]);
+                        if (all == null) methodNames.put(p[1] + "." + p[2], all = new ArrayList<String>());
+                        if (!all.contains(p[4])) all.add(p[4]);
+                    }
+                }
+                active = true;
+            } catch (IOException unreadable) { System.err.println("MMT_NAMES_ERROR " + unreadable); }
+            // Snippets live in a loader of their own and see only JDK types of ours: their reflection helpers ask through this.
+            System.getProperties().put("mmt.rename", new java.util.function.BiFunction<Class<?>, String, List<String>>() {
+                public List<String> apply(Class<?> type, String name) { return declared(type, name); }
+            });
+            System.getProperties().put("mmt.runtimeClass", new java.util.function.Function<String, String>() {
+                public String apply(String mojang) { return cls(mojang.replace('.', '/')).replace('/', '.'); }
+            });
+            System.getProperties().put("mmt.remap", new java.util.function.BiFunction<byte[], ClassLoader, byte[]>() {
+                public byte[] apply(byte[] code, ClassLoader game) { return remap(code, game); }
+            });
+        }
+
+        static String cls(String mojangInternal) { String r = runtime.get(mojangInternal); return r == null ? mojangInternal : r; }
+        static String mojangName(String runtimeInternal) { String m = mojang.get(runtimeInternal); return m == null ? runtimeInternal : m; }
+        static String named(Class<?> type) { return mojangName(type.getName().replace('.', '/')).replace('/', '.'); }
+        static String simple(Class<?> type) { String n = named(type); return n.substring(Math.max(n.lastIndexOf('.'), n.lastIndexOf('$')) + 1); }
+
+        /** The run-time names a member called name (Mojang's) has where exactly this class declares it. */
+        static List<String> declared(Class<?> type, String name) {
+            List<String> out = new ArrayList<String>();
+            if (!active) return out;
+            String owner = mojangName(type.getName().replace('.', '/'));
+            String field = fields.get(owner + "." + name);
+            if (field != null) out.add(field);
+            List<String> named = methodNames.get(owner + "." + name);
+            if (named != null) out.addAll(named);
+            return out;
+        }
+
+        /** name first, then its run-time names in every class of the hierarchy. */
+        static List<String> candidates(Class<?> type, String name) {
+            List<String> out = new ArrayList<String>(Collections.singletonList(name));
+            if (!active) return out;
+            for (Class<?> c : hierarchy(type)) for (String r : declared(c, name)) if (!out.contains(r)) out.add(r);
+            return out;
+        }
+
+        static List<Class<?>> hierarchy(Class<?> type) {
+            List<Class<?>> out = new ArrayList<Class<?>>();
+            Deque<Class<?>> todo = new ArrayDeque<Class<?>>(Collections.singletonList(type));
+            while (!todo.isEmpty()) {
+                Class<?> c = todo.poll();
+                if (out.contains(c)) continue;
+                out.add(c);
+                if (c.getSuperclass() != null) todo.add(c.getSuperclass());
+                todo.addAll(Arrays.asList(c.getInterfaces()));
+            }
+            return out;
+        }
+
+        static String desc(String d) {
+            StringBuilder out = new StringBuilder();
+            for (int i = 0; i < d.length(); i++) {
+                char ch = d.charAt(i);
+                out.append(ch);
+                if (ch == 'L') { int end = d.indexOf(';', i); out.append(cls(d.substring(i + 1, end))).append(';'); i = end; }
+            }
+            return out.toString();
+        }
+
+        static String type(String internal) { return internal == null ? null : internal.startsWith("[") ? desc(internal) : cls(internal); }
+
+        /** A member a snippet names through a class (Mojang names), in the run-time names of the class that declares it. */
+        static String member(ClassLoader game, String owner, String name, String desc, boolean method) {
+            if (!active || name.startsWith("<") || !runtime.containsKey(owner)) return name;
+            String direct = method ? methods.get(owner + "." + name + desc) : fields.get(owner + "." + name);
+            if (direct != null) return direct;
+            try {
+                for (Class<?> c : hierarchy(Class.forName(cls(owner).replace('/', '.'), false, game))) {
+                    String o = mojangName(c.getName().replace('.', '/'));
+                    String hit = method ? methods.get(o + "." + name + desc) : fields.get(o + "." + name);
+                    if (hit != null) return hit;
+                }
+            } catch (ClassNotFoundException | LinkageError absent) { }
+            return name;
+        }
+
+        /** A compiled snippet in the run-time names. */
+        static byte[] remap(byte[] code, final ClassLoader game) {
+            if (!active) return code;
+            ClassReader reader = new ClassReader(code);
+            ClassWriter writer = new ClassWriter(0);
+            reader.accept(new ClassVisitor(Opcodes.ASM9, writer) {
+                @Override public void visit(int version, int access, String name, String signature, String sup, String[] ifaces) {
+                    super.visit(version, access, name, null, type(sup), types(ifaces));
+                }
+                @Override public FieldVisitor visitField(int access, String name, String d, String signature, Object value) {
+                    return super.visitField(access, name, desc(d), null, value);
+                }
+                @Override public MethodVisitor visitMethod(int access, String name, String d, String signature, String[] exceptions) {
+                    return new MethodVisitor(Opcodes.ASM9, super.visitMethod(access, name, desc(d), null, types(exceptions))) {
+                        @Override public void visitTypeInsn(int op, String t) { super.visitTypeInsn(op, type(t)); }
+                        @Override public void visitFieldInsn(int op, String owner, String n, String fd) { super.visitFieldInsn(op, type(owner), member(game, owner, n, fd, false), desc(fd)); }
+                        @Override public void visitMethodInsn(int op, String owner, String n, String md, boolean itf) {
+                            super.visitMethodInsn(op, type(owner), owner.startsWith("[") ? n : member(game, owner, n, md, true), desc(md), itf);
+                        }
+                        @Override public void visitInvokeDynamicInsn(String n, String d, Handle bsm, Object... args) {
+                            Object[] mapped = new Object[args.length];
+                            for (int i = 0; i < args.length; i++) mapped[i] = value(args[i]);
+                            String sam = org.objectweb.asm.Type.getReturnType(d).getSort() == org.objectweb.asm.Type.OBJECT && args.length > 0 && args[0] instanceof org.objectweb.asm.Type
+                                ? member(game, org.objectweb.asm.Type.getReturnType(d).getInternalName(), n, ((org.objectweb.asm.Type) args[0]).getDescriptor(), true) : n;
+                            super.visitInvokeDynamicInsn(sam, desc(d), handle(bsm), mapped);
+                        }
+                        @Override public void visitLdcInsn(Object v) { super.visitLdcInsn(value(v)); }
+                        @Override public void visitMultiANewArrayInsn(String d, int dims) { super.visitMultiANewArrayInsn(desc(d), dims); }
+                        @Override public void visitTryCatchBlock(Label s, Label e, Label h, String t) { super.visitTryCatchBlock(s, e, h, type(t)); }
+                        @Override public void visitLocalVariable(String n, String d, String signature, Label s, Label e, int i) { super.visitLocalVariable(n, desc(d), null, s, e, i); }
+                        @Override public void visitFrame(int kind, int nLocal, Object[] local, int nStack, Object[] stack) { super.visitFrame(kind, nLocal, frame(local), nStack, frame(stack)); }
+                    };
+                }
+                Object value(Object v) {
+                    if (v instanceof org.objectweb.asm.Type) { org.objectweb.asm.Type t = (org.objectweb.asm.Type) v; return t.getSort() == org.objectweb.asm.Type.METHOD ? org.objectweb.asm.Type.getMethodType(desc(t.getDescriptor())) : org.objectweb.asm.Type.getType(desc(t.getDescriptor())); }
+                    return v instanceof Handle ? handle((Handle) v) : v;
+                }
+                Handle handle(Handle h) {
+                    boolean field = h.getTag() <= Opcodes.H_PUTSTATIC;
+                    return new Handle(h.getTag(), type(h.getOwner()), member(game, h.getOwner(), h.getName(), h.getDesc(), !field), desc(h.getDesc()), h.isInterface());
+                }
+            }, 0);
+            return writer.toByteArray();
+        }
+
+        static String[] types(String[] names) {
+            if (names == null) return null;
+            String[] out = new String[names.length];
+            for (int i = 0; i < names.length; i++) out[i] = type(names[i]);
+            return out;
+        }
+
+        static Object[] frame(Object[] items) {
+            if (items == null) return null;
+            Object[] out = items.clone();
+            for (int i = 0; i < out.length; i++) if (out[i] instanceof String) out[i] = type((String) out[i]);
+            return out;
+        }
+    }
 }

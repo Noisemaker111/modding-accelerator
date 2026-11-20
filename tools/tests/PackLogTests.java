@@ -135,6 +135,49 @@ public final class PackLogTests extends PackCheckFixtures {
             "a crash report's suspected mod and a module frame name mods: " + neoSuspects
         );
         expect(PackChecks.names(neoSuspects).equals("flywheel (create.jar!flywheel.jar), create (create.jar)"), "suspects read as a list of mods and jars");
+        // Found starting 1.21.1 jars on a 1.21.2 server: NeoForge names a mod that lacks its language provider only by its file.
+        neo.providers.put("veinminer", new ArrayList<>(List.of(new PackMods.Provider("veinminer-2.14.jar", "2.14", false, "META-INF/neoforge.mods.toml"))));
+        String noProvider = "[main/FATAL] [ne.ne.fm.ModLoader/CORE]: Error during pre-loading phase: Mod File C:\\instances\\a1\\mods\\veinminer-2.14.jar needs language provider klf:1 or above to load\nnet.neoforged.fml.ModLoadingException: Loading errors encountered:";
+        var fileSuspects = PackChecks.suspects(noProvider, List.of(), neo, PackLoaders.find(harness, "neoforge"));
+        expect(
+            fileSuspects.size() == 1 && fileSuspects.get(0).get("mod").equals("veinminer") && fileSuspects.get(0).get("jar").equals("veinminer-2.14.jar"),
+            "a mod the loader names only by its file is that file's mod: " + fileSuspects
+        );
+        // ...and a client-only mod only by the class it refused to load on a server.
+        neo.packages.put("dev.kirant.cwb", "cwb-5.0.jar");
+        neo.providers.put("cwb", new ArrayList<>(List.of(new PackMods.Provider("cwb-5.0.jar", "5.0", false, "META-INF/neoforge.mods.toml"))));
+        String wrongDist = "[main/FATAL] [ne.ne.fm.ModLoader/CORE]: Failed to initialize mod containers: ERROR: fml.modloadingissue.failedtoloadmodclass caused by java.lang.RuntimeException: Attempted to load class dev/kirant/cwb/CWB$NeoForge for invalid dist DEDICATED_SERVER";
+        var classSuspects = PackChecks.suspects(wrongDist, List.of(), neo, PackLoaders.find(harness, "neoforge"));
+        expect(
+            classSuspects.size() == 1 && classSuspects.get(0).get("jar").equals("cwb-5.0.jar"),
+            "a mod the loader names only by a class is the jar with that class's package: " + classSuspects
+        );
+        // ...and a jar the loader skips (a 1.20.4 mods.toml on 1.21), which puts its error screen up, only by its file.
+        neo.providers.put("bhmenu", new ArrayList<>(List.of(new PackMods.Provider("BHMenu-1.20.4.jar", "2.4", false, "META-INF/mods.toml"))));
+        String skipped = "[main/WARN] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Skipping jar. File mods\\BHMenu-1.20.4.jar is for Minecraft Forge or an older version of NeoForge, and cannot be loaded";
+        var skipSuspects = PackChecks.suspects(skipped, List.of(), neo, PackLoaders.find(harness, "neoforge"));
+        expect(
+            skipSuspects.size() == 1 && skipSuspects.get(0).get("jar").equals("BHMenu-1.20.4.jar"),
+            "a jar the loader skips is named by its file: " + skipSuspects
+        );
+        // ...and a mod whose loader service crashes only by the jar its frames ran from (CustomSkinLoader patching 1.21's SkinManager).
+        neo.providers.put("customskinloader", new ArrayList<>(List.of(new PackMods.Provider("csl-15.1.jar", "15.1", false, "META-INF/neoforge.mods.toml"))));
+        String service = "---- Minecraft Crash Report ----\nDescription: Initializing game\n\njava.lang.IllegalStateException: Transformation rule 'customskinloader:skin-manager-patch' did not modify any bytecode.\n"
+            + "\tat LAYER SERVICE/customskinloader.bootstrap@15.1/customskinloader.bootstrap.transformer.TransformationPlan.transform(TransformationPlan.java:160) ~[csl-15.1.jar%23217!/:15.1] {}\n"
+            + "\tat MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.4/cpw.mods.modlauncher.TransformerHolder.transform(TransformerHolder.java:38) ~[modlauncher-11.0.4.jar:?] {}\n\n";
+        var serviceSuspects = PackChecks.suspects("", List.of(service), neo, PackLoaders.find(harness, "neoforge"));
+        expect(
+            serviceSuspects.size() == 1 && serviceSuspects.get(0).get("jar").equals("csl-15.1.jar"),
+            "a crash in a mod's loader service is the jar its frame ran from, not the loader's own jar: " + serviceSuspects
+        );
+        // ...and a mod whose data the new game cannot read only by its data pack (TerraBlender's biome on 1.21.2).
+        neo.providers.put("terrablender", new ArrayList<>(List.of(new PackMods.Provider("TerraBlender.jar", "4.1", false, "META-INF/neoforge.mods.toml"))));
+        String badData = "[main/ERROR] [minecraft/RegistryDataLoader]: Registry loading errors:\n>> Errors in element terrablender:deferred_placeholder:\njava.lang.IllegalStateException: Failed to parse terrablender:worldgen/biome/deferred_placeholder.json from pack mod/terrablender\n[main/WARN] [minecraft/Main]: Failed to load datapacks, can't proceed with server load.";
+        var dataSuspects = PackChecks.suspects(badData, List.of(), neo, PackLoaders.find(harness, "neoforge"));
+        expect(
+            dataSuspects.size() == 1 && dataSuspects.get(0).get("jar").equals("TerraBlender.jar"),
+            "a mod whose data the game cannot read is the one its data pack names: " + dataSuspects
+        );
         // Found by an independent rerun of Optimized FPS (Forge 1.16.5): the probe never found the server, and pack-check blamed
         // ModernFix by quoting a successful start-up log. A server that logged Done blames nobody for what came before it.
         String startedLog = String.join(

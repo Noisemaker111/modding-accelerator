@@ -1,0 +1,1325 @@
+{
+ "date": "2026-11-20",
+ "total": {
+  "mods": 9423,
+  "link": 5854,
+  "data": {
+   "updates": 64,
+   "link": 5854,
+   "linkAndData": 5835
+  },
+  "loader": {
+   "uses": 5533,
+   "modsHeldOnlyByLoader": 150
+  }
+ },
+ "loaders": {
+  "fabric": {
+   "updates": 43,
+   "mods": 6324,
+   "link": 4108
+  },
+  "neoforge": {
+   "updates": 21,
+   "mods": 3099,
+   "link": 1746
+  }
+ },
+ "missing": [],
+ "updates": [
+  {
+   "loader": "fabric",
+   "from": "1.14.4",
+   "to": "1.15",
+   "modsRead": 147,
+   "modsThatLink": 80,
+   "modsThatLinkAndData": 80,
+   "brokenUses": 811,
+   "loaderUses": 6,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.15",
+   "to": "1.15.1",
+   "modsRead": 148,
+   "modsThatLink": 143,
+   "modsThatLinkAndData": 143,
+   "brokenUses": 33,
+   "loaderUses": 4,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.15.1",
+   "to": "1.15.2",
+   "modsRead": 148,
+   "modsThatLink": 141,
+   "modsThatLinkAndData": 141,
+   "brokenUses": 35,
+   "loaderUses": 4,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.15.2",
+   "to": "1.16",
+   "modsRead": 147,
+   "modsThatLink": 60,
+   "modsThatLinkAndData": 60,
+   "brokenUses": 1396,
+   "loaderUses": 4,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.16",
+   "to": "1.16.1",
+   "modsRead": 148,
+   "modsThatLink": 142,
+   "modsThatLinkAndData": 142,
+   "brokenUses": 37,
+   "loaderUses": 4,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.16.1",
+   "to": "1.16.2",
+   "modsRead": 148,
+   "modsThatLink": 121,
+   "modsThatLinkAndData": 121,
+   "brokenUses": 247,
+   "loaderUses": 4,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.16.2",
+   "to": "1.16.3",
+   "modsRead": 147,
+   "modsThatLink": 142,
+   "modsThatLinkAndData": 142,
+   "brokenUses": 30,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.16.3",
+   "to": "1.16.4",
+   "modsRead": 147,
+   "modsThatLink": 142,
+   "modsThatLinkAndData": 142,
+   "brokenUses": 30,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.16.4",
+   "to": "1.16.5",
+   "modsRead": 147,
+   "modsThatLink": 142,
+   "modsThatLinkAndData": 142,
+   "brokenUses": 30,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.16.5",
+   "to": "1.17",
+   "modsRead": 146,
+   "modsThatLink": 46,
+   "modsThatLinkAndData": 46,
+   "brokenUses": 1425,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.17",
+   "to": "1.17.1",
+   "modsRead": 146,
+   "modsThatLink": 140,
+   "modsThatLinkAndData": 140,
+   "brokenUses": 22,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.17.1",
+   "to": "1.18",
+   "modsRead": 147,
+   "modsThatLink": 105,
+   "modsThatLinkAndData": 105,
+   "brokenUses": 532,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.18",
+   "to": "1.18.1",
+   "modsRead": 147,
+   "modsThatLink": 136,
+   "modsThatLinkAndData": 136,
+   "brokenUses": 43,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.18.1",
+   "to": "1.18.2",
+   "modsRead": 147,
+   "modsThatLink": 109,
+   "modsThatLinkAndData": 109,
+   "brokenUses": 414,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.18.2",
+   "to": "1.19",
+   "modsRead": 147,
+   "modsThatLink": 49,
+   "modsThatLinkAndData": 47,
+   "brokenUses": 945,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.19",
+   "to": "1.19.1",
+   "modsRead": 147,
+   "modsThatLink": 131,
+   "modsThatLinkAndData": 131,
+   "brokenUses": 69,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.19.1",
+   "to": "1.19.2",
+   "modsRead": 146,
+   "modsThatLink": 141,
+   "modsThatLinkAndData": 141,
+   "brokenUses": 22,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.19.2",
+   "to": "1.19.3",
+   "modsRead": 147,
+   "modsThatLink": 37,
+   "modsThatLinkAndData": 37,
+   "brokenUses": 2489,
+   "loaderUses": 116,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.19.3",
+   "to": "1.19.4",
+   "modsRead": 147,
+   "modsThatLink": 58,
+   "modsThatLinkAndData": 58,
+   "brokenUses": 522,
+   "loaderUses": 26,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "fabric",
+   "from": "1.19.4",
+   "to": "1.20",
+   "modsRead": 147,
+   "modsThatLink": 41,
+   "modsThatLinkAndData": 41,
+   "brokenUses": 1759,
+   "loaderUses": 142,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "fabric",
+   "from": "1.20",
+   "to": "1.20.1",
+   "modsRead": 147,
+   "modsThatLink": 140,
+   "modsThatLinkAndData": 140,
+   "brokenUses": 30,
+   "loaderUses": 4,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.20.1",
+   "to": "1.20.2",
+   "modsRead": 147,
+   "modsThatLink": 48,
+   "modsThatLinkAndData": 48,
+   "brokenUses": 948,
+   "loaderUses": 75,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.20.2",
+   "to": "1.20.3",
+   "modsRead": 147,
+   "modsThatLink": 83,
+   "modsThatLinkAndData": 83,
+   "brokenUses": 266,
+   "loaderUses": 4,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.20.3",
+   "to": "1.20.4",
+   "modsRead": 148,
+   "modsThatLink": 141,
+   "modsThatLinkAndData": 141,
+   "brokenUses": 18,
+   "loaderUses": 4,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "fabric",
+   "from": "1.20.4",
+   "to": "1.20.5",
+   "modsRead": 147,
+   "modsThatLink": 30,
+   "modsThatLinkAndData": 29,
+   "brokenUses": 1716,
+   "loaderUses": 360,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "fabric",
+   "from": "1.20.5",
+   "to": "1.20.6",
+   "modsRead": 148,
+   "modsThatLink": 143,
+   "modsThatLinkAndData": 143,
+   "brokenUses": 6,
+   "loaderUses": 2,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.20.6",
+   "to": "1.21",
+   "modsRead": 147,
+   "modsThatLink": 52,
+   "modsThatLinkAndData": 51,
+   "brokenUses": 759,
+   "loaderUses": 33,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21",
+   "to": "1.21.1",
+   "modsRead": 147,
+   "modsThatLink": 139,
+   "modsThatLinkAndData": 139,
+   "brokenUses": 9,
+   "loaderUses": 2,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "modsRead": 147,
+   "modsThatLink": 38,
+   "modsThatLinkAndData": 37,
+   "brokenUses": 2283,
+   "loaderUses": 110,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.2",
+   "to": "1.21.3",
+   "modsRead": 147,
+   "modsThatLink": 137,
+   "modsThatLinkAndData": 137,
+   "brokenUses": 12,
+   "loaderUses": 1,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.3",
+   "to": "1.21.4",
+   "modsRead": 147,
+   "modsThatLink": 83,
+   "modsThatLinkAndData": 83,
+   "brokenUses": 518,
+   "loaderUses": 145,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.4",
+   "to": "1.21.5",
+   "modsRead": 147,
+   "modsThatLink": 33,
+   "modsThatLinkAndData": 33,
+   "brokenUses": 2318,
+   "loaderUses": 82,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.5",
+   "to": "1.21.6",
+   "modsRead": 147,
+   "modsThatLink": 38,
+   "modsThatLinkAndData": 38,
+   "brokenUses": 1564,
+   "loaderUses": 193,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.6",
+   "to": "1.21.7",
+   "modsRead": 147,
+   "modsThatLink": 140,
+   "modsThatLinkAndData": 140,
+   "brokenUses": 9,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.7",
+   "to": "1.21.8",
+   "modsRead": 147,
+   "modsThatLink": 142,
+   "modsThatLinkAndData": 142,
+   "brokenUses": 7,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.8",
+   "to": "1.21.9",
+   "modsRead": 147,
+   "modsThatLink": 35,
+   "modsThatLinkAndData": 35,
+   "brokenUses": 1829,
+   "loaderUses": 70,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.9",
+   "to": "1.21.10",
+   "modsRead": 147,
+   "modsThatLink": 140,
+   "modsThatLinkAndData": 140,
+   "brokenUses": 9,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.10",
+   "to": "1.21.11",
+   "modsRead": 147,
+   "modsThatLink": 38,
+   "modsThatLinkAndData": 38,
+   "brokenUses": 1163,
+   "loaderUses": 33,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "fabric",
+   "from": "1.21.11",
+   "to": "26.1",
+   "modsRead": 147,
+   "modsThatLink": 32,
+   "modsThatLinkAndData": 31,
+   "brokenUses": 2265,
+   "loaderUses": 977,
+   "modsHeldOnlyByLoader": 12
+  },
+  {
+   "loader": "fabric",
+   "from": "26.1",
+   "to": "26.1.1",
+   "modsRead": 147,
+   "modsThatLink": 144,
+   "modsThatLinkAndData": 144,
+   "brokenUses": 4,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "26.1.1",
+   "to": "26.1.2",
+   "modsRead": 147,
+   "modsThatLink": 144,
+   "modsThatLinkAndData": 144,
+   "brokenUses": 4,
+   "loaderUses": 0,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "26.1.2",
+   "to": "26.2",
+   "modsRead": 147,
+   "modsThatLink": 36,
+   "modsThatLinkAndData": 35,
+   "brokenUses": 1909,
+   "loaderUses": 35,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "fabric",
+   "from": "26.2",
+   "to": "26.3",
+   "modsRead": 147,
+   "modsThatLink": 46,
+   "modsThatLinkAndData": 43,
+   "brokenUses": 2162,
+   "loaderUses": 52,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.20.2",
+   "to": "1.20.3",
+   "modsRead": 149,
+   "modsThatLink": 89,
+   "modsThatLinkAndData": 89,
+   "brokenUses": 449,
+   "loaderUses": 136,
+   "modsHeldOnlyByLoader": 4
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.20.3",
+   "to": "1.20.4",
+   "modsRead": 149,
+   "modsThatLink": 129,
+   "modsThatLinkAndData": 129,
+   "brokenUses": 264,
+   "loaderUses": 253,
+   "modsHeldOnlyByLoader": 17
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.20.4",
+   "to": "1.20.5",
+   "modsRead": 148,
+   "modsThatLink": 22,
+   "modsThatLinkAndData": 20,
+   "brokenUses": 2737,
+   "loaderUses": 1178,
+   "modsHeldOnlyByLoader": 15
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.20.5",
+   "to": "1.20.6",
+   "modsRead": 148,
+   "modsThatLink": 130,
+   "modsThatLinkAndData": 130,
+   "brokenUses": 86,
+   "loaderUses": 81,
+   "modsHeldOnlyByLoader": 13
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.20.6",
+   "to": "1.21",
+   "modsRead": 147,
+   "modsThatLink": 58,
+   "modsThatLinkAndData": 57,
+   "brokenUses": 700,
+   "loaderUses": 116,
+   "modsHeldOnlyByLoader": 8
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21",
+   "to": "1.21.1",
+   "modsRead": 148,
+   "modsThatLink": 131,
+   "modsThatLinkAndData": 131,
+   "brokenUses": 24,
+   "loaderUses": 5,
+   "modsHeldOnlyByLoader": 4
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "modsRead": 147,
+   "modsThatLink": 41,
+   "modsThatLinkAndData": 40,
+   "brokenUses": 3354,
+   "loaderUses": 249,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.2",
+   "to": "1.21.3",
+   "modsRead": 147,
+   "modsThatLink": 134,
+   "modsThatLinkAndData": 134,
+   "brokenUses": 21,
+   "loaderUses": 2,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.3",
+   "to": "1.21.4",
+   "modsRead": 147,
+   "modsThatLink": 80,
+   "modsThatLinkAndData": 80,
+   "brokenUses": 606,
+   "loaderUses": 142,
+   "modsHeldOnlyByLoader": 4
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.4",
+   "to": "1.21.5",
+   "modsRead": 147,
+   "modsThatLink": 34,
+   "modsThatLinkAndData": 34,
+   "brokenUses": 2455,
+   "loaderUses": 144,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.5",
+   "to": "1.21.6",
+   "modsRead": 147,
+   "modsThatLink": 45,
+   "modsThatLinkAndData": 45,
+   "brokenUses": 1487,
+   "loaderUses": 89,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.6",
+   "to": "1.21.7",
+   "modsRead": 148,
+   "modsThatLink": 116,
+   "modsThatLinkAndData": 116,
+   "brokenUses": 51,
+   "loaderUses": 24,
+   "modsHeldOnlyByLoader": 19
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.7",
+   "to": "1.21.8",
+   "modsRead": 147,
+   "modsThatLink": 137,
+   "modsThatLinkAndData": 137,
+   "brokenUses": 25,
+   "loaderUses": 1,
+   "modsHeldOnlyByLoader": 1
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.8",
+   "to": "1.21.9",
+   "modsRead": 147,
+   "modsThatLink": 28,
+   "modsThatLinkAndData": 28,
+   "brokenUses": 1820,
+   "loaderUses": 182,
+   "modsHeldOnlyByLoader": 10
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.9",
+   "to": "1.21.10",
+   "modsRead": 148,
+   "modsThatLink": 134,
+   "modsThatLinkAndData": 134,
+   "brokenUses": 36,
+   "loaderUses": 12,
+   "modsHeldOnlyByLoader": 5
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.10",
+   "to": "1.21.11",
+   "modsRead": 148,
+   "modsThatLink": 44,
+   "modsThatLinkAndData": 44,
+   "brokenUses": 1220,
+   "loaderUses": 40,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "neoforge",
+   "from": "1.21.11",
+   "to": "26.1",
+   "modsRead": 147,
+   "modsThatLink": 47,
+   "modsThatLinkAndData": 46,
+   "brokenUses": 1317,
+   "loaderUses": 143,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "neoforge",
+   "from": "26.1",
+   "to": "26.1.1",
+   "modsRead": 148,
+   "modsThatLink": 135,
+   "modsThatLinkAndData": 135,
+   "brokenUses": 22,
+   "loaderUses": 3,
+   "modsHeldOnlyByLoader": 2
+  },
+  {
+   "loader": "neoforge",
+   "from": "26.1.1",
+   "to": "26.1.2",
+   "modsRead": 148,
+   "modsThatLink": 130,
+   "modsThatLinkAndData": 130,
+   "brokenUses": 38,
+   "loaderUses": 20,
+   "modsHeldOnlyByLoader": 8
+  },
+  {
+   "loader": "neoforge",
+   "from": "26.1.2",
+   "to": "26.2",
+   "modsRead": 147,
+   "modsThatLink": 37,
+   "modsThatLinkAndData": 36,
+   "brokenUses": 1772,
+   "loaderUses": 61,
+   "modsHeldOnlyByLoader": 0
+  },
+  {
+   "loader": "neoforge",
+   "from": "26.2",
+   "to": "26.3",
+   "modsRead": 147,
+   "modsThatLink": 45,
+   "modsThatLinkAndData": 42,
+   "brokenUses": 2142,
+   "loaderUses": 160,
+   "modsHeldOnlyByLoader": 1
+  }
+ ],
+ "top": [
+  {
+   "loader": "neoforge",
+   "update": "1.21.8 -> 1.21.9",
+   "member": "field: net.neoforged.fml.loading.FMLEnvironment.dist",
+   "mods": 64,
+   "game": "template",
+   "gameDetail": "m net.neoforged.fml.loading.FMLLoader.getCurrent()Lnet.neoforged.fml.loading.FMLLoader; ; m net.neoforged.fml.loading.FMLLoader.getDist()Lnet.neoforged.api.distmarker.Dist; at 2 of 2 rewritten uses (8 uses)",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.5 -> 1.21.6",
+   "member": "call: net.minecraft.client.gui.GuiGraphics.pose()Lcom/mojang/blaze3d/vertex/PoseStack;",
+   "mods": 59,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.4 -> 1.20",
+   "member": "call: net.minecraft.client.gui.screens.Screen.render(Lcom/mojang/blaze3d/vertex/PoseStack;IIF)V",
+   "mods": 56,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.5 -> 1.21.6",
+   "member": "call: net.minecraft.client.gui.GuiGraphics.pose()Lcom/mojang/blaze3d/vertex/PoseStack;",
+   "mods": 54,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.5 -> 1.21.6",
+   "member": "method reference: net.minecraft.client.renderer.RenderType.guiTextured(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/RenderType;",
+   "mods": 54,
+   "game": "template",
+   "gameDetail": "f net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED at 231 of 238 rewritten uses (258 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.2 -> 1.19.3",
+   "member": "call: com.mojang.blaze3d.vertex.PoseStack$Pose.pose()Lcom/mojang/math/Matrix4f;",
+   "mods": 53,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.2 -> 1.19.3",
+   "member": "class gone: com.mojang.math.Matrix4f",
+   "mods": 50,
+   "game": "split",
+   "gameDetail": "c org.joml.Matrix4f ; m org.joml.Matrix4f.<init>()V at 1 of 2 rewritten uses (20 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.2 -> 1.19.3",
+   "member": "class gone: com.mojang.math.Vector3f",
+   "mods": 50,
+   "game": "split",
+   "gameDetail": " at 2 of 12 rewritten uses (158 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.5 -> 1.21.6",
+   "member": "method reference: net.minecraft.client.renderer.RenderType.guiTextured(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/RenderType;",
+   "mods": 49,
+   "game": "template",
+   "gameDetail": "f net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED at 226 of 233 rewritten uses (252 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.16.5 -> 1.17",
+   "member": "call: com.mojang.blaze3d.vertex.BufferBuilder.begin(ILcom/mojang/blaze3d/vertex/VertexFormat;)V",
+   "mods": 48,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.4 -> 1.20",
+   "member": "call: net.minecraft.client.gui.GuiComponent.fill(Lcom/mojang/blaze3d/vertex/PoseStack;IIIII)V",
+   "mods": 43,
+   "game": "template",
+   "gameDetail": "m net.minecraft.client.gui.GuiGraphics.fill(Lnet.minecraft.client.renderer.RenderType;IIIII)V at 6 of 10 rewritten uses (102 uses)",
+   "portable": true,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.20.6 -> 1.21",
+   "member": "call: com.mojang.blaze3d.vertex.Tesselator.getBuilder()Lcom/mojang/blaze3d/vertex/BufferBuilder;",
+   "mods": 43,
+   "game": "template",
+   "gameDetail": " at 17 of 18 rewritten uses (20 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.4 -> 1.21.5",
+   "mods": 43,
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.disableBlend()V",
+   "game": "template",
+   "gameDetail": " at 3 of 3 rewritten uses (7 uses)",
+   "portable": true,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.2 -> 1.19.3",
+   "member": "call: com.mojang.blaze3d.vertex.VertexConsumer.vertex(Lcom/mojang/math/Matrix4f;FFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;",
+   "mods": 42,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "class gone: net.neoforged.neoforge.client.ConfigScreenHandler$ConfigScreenFactory",
+   "mods": 41,
+   "game": "redesigned",
+   "gameDetail": "1 uses, 0 in methods b kept, none line up",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.5 -> 1.21.6",
+   "member": "call: net.minecraft.client.gui.GuiGraphics.drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)I",
+   "mods": 41,
+   "game": "split",
+   "gameDetail": "m net.minecraft.client.gui.GuiGraphics.drawString(Lnet.minecraft.client.gui.Font;Lnet.minecraft.network.chat.Component;III)V ; f net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED at 2 of 4 rewritten uses (108 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "call: net.neoforged.neoforge.client.ConfigScreenHandler$ConfigScreenFactory.<init>(Ljava/util/function/BiFunction;)V",
+   "mods": 40,
+   "game": "unused",
+   "gameDetail": "the game never uses it",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.4 -> 1.21.5",
+   "mods": 40,
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.enableDepthTest()V",
+   "game": "redesigned",
+   "gameDetail": "3 uses, 1 in methods b kept, none line up",
+   "portable": true,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.4 -> 1.20",
+   "member": "call: net.minecraft.client.gui.components.AbstractWidget.render(Lcom/mojang/blaze3d/vertex/PoseStack;IIF)V",
+   "mods": 39,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.4 -> 1.20",
+   "member": "call: net.minecraft.client.gui.screens.Screen.renderBackground(Lcom/mojang/blaze3d/vertex/PoseStack;)V",
+   "mods": 39,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.11 -> 26.1",
+   "member": "call: net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playS2C()Lnet/fabricmc/fabric/api/networking/v1/PayloadTypeRegistry;",
+   "mods": 39,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.15.2 -> 1.16",
+   "mods": 38,
+   "member": "call: net.minecraft.client.gui.components.Button.<init>(IIIILjava/lang/String;Lnet/minecraft/client/gui/components/Button$OnPress;)V",
+   "game": "replaced",
+   "gameDetail": "net.minecraft.client.gui.components.Button.<init>(IIIILnet.minecraft.network.chat.Component;Lnet.minecraft.client.gui.components.Button$OnPress;)V at 117 of 119 aligned uses (142 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.16.5 -> 1.17",
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.popMatrix()V",
+   "mods": 38,
+   "game": "split",
+   "gameDetail": " at 18 of 36 rewritten uses (72 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.16.5 -> 1.17",
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.pushMatrix()V",
+   "mods": 38,
+   "game": "split",
+   "gameDetail": " at 16 of 27 rewritten uses (72 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.20.1 -> 1.20.2",
+   "member": "call: net.minecraft.client.gui.screens.Screen.renderBackground(Lnet/minecraft/client/gui/GuiGraphics;)V",
+   "mods": 38,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.4 -> 1.21.5",
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.disableBlend()V",
+   "mods": 38,
+   "game": "template",
+   "gameDetail": " at 2 of 2 rewritten uses (3 uses)",
+   "portable": true,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.6 -> 1.21",
+   "member": "call: com.mojang.blaze3d.vertex.Tesselator.getBuilder()Lcom/mojang/blaze3d/vertex/BufferBuilder;",
+   "mods": 38,
+   "game": "template",
+   "gameDetail": " at 20 of 22 rewritten uses (24 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.2 -> 1.19.3",
+   "member": "call: com.mojang.blaze3d.vertex.PoseStack.mulPose(Lcom/mojang/math/Quaternion;)V",
+   "mods": 37,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.8 -> 1.21.9",
+   "member": "call: net.minecraft.client.gui.components.events.ContainerEventHandler.mouseClicked(DDI)Z",
+   "mods": 37,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "abstract method not written: net.minecraft.network.protocol.common.custom.CustomPacketPayload.type()Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload$Type;",
+   "mods": 37
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "call: net.neoforged.neoforge.network.event.RegisterPayloadHandlerEvent.registrar(Ljava/lang/String;)Lnet/neoforged/neoforge/network/registration/IPayloadRegistrar;",
+   "mods": 37,
+   "game": "redesigned",
+   "gameDetail": "2 uses, 2 in methods b kept, none line up",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.3 -> 1.19.4",
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.enableTexture()V",
+   "mods": 36,
+   "game": "template",
+   "gameDetail": " at 21 of 26 rewritten uses (41 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.4 -> 1.20",
+   "member": "call: net.minecraft.client.gui.GuiComponent.drawCenteredString(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V",
+   "mods": 36,
+   "game": "split",
+   "gameDetail": "m net.minecraft.client.gui.GuiGraphics.drawCenteredString(Lnet.minecraft.client.gui.Font;Lnet.minecraft.network.chat.Component;III)V ; m net.minecraft.client.gui.GuiGraphics.pose()Lcom.mojang.blaze3d.vertex.PoseStack; at 1 of 1 rewritten uses (105 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "call: net.minecraft.world.item.ItemStack.getTag()Lnet/minecraft/nbt/CompoundTag;",
+   "mods": 36,
+   "game": "template",
+   "gameDetail": " at 7 of 10 rewritten uses (81 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "class gone: net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$PlayChannelHandler",
+   "mods": 36,
+   "game": "redesigned",
+   "gameDetail": "2 uses, 0 in methods b kept, none line up",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.8 -> 1.21.9",
+   "member": "call: net.minecraft.client.gui.screens.Screen.hasShiftDown()Z",
+   "mods": 36,
+   "game": "split",
+   "gameDetail": " at 2 of 7 rewritten uses (31 uses)",
+   "portable": true,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "call: net.neoforged.fml.IExtensionPoint$DisplayTest.<init>(Ljava/util/function/Supplier;Ljava/util/function/BiPredicate;)V",
+   "mods": 36,
+   "game": "redesigned",
+   "gameDetail": "4 uses, 4 in methods b kept, none line up",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "class gone: net.neoforged.fml.IExtensionPoint$DisplayTest",
+   "mods": 36,
+   "game": "split",
+   "gameDetail": " at 1 of 1 rewritten uses (8 uses)",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.15.2 -> 1.16",
+   "mods": 35,
+   "member": "call: net.minecraft.client.gui.screens.Screen.render(IIF)V",
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.16.5 -> 1.17",
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.translatef(FFF)V",
+   "mods": 35,
+   "game": "split",
+   "gameDetail": "m com.mojang.blaze3d.vertex.PoseStack.translate(DDD)V ; m com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix()V at 8 of 15 rewritten uses (47 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "call: net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(Lnet/minecraft/resources/ResourceLocation;Lnet/fabricmc/fabric/api/client/networking/v1/ClientPlayNetworking$PlayChannelHandler;)Z",
+   "mods": 35,
+   "game": "redesigned",
+   "gameDetail": "2 uses, 1 in methods b kept, none line up",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.8 -> 1.21.9",
+   "member": "call: net.minecraft.client.gui.screens.Screen.keyPressed(III)Z",
+   "mods": 35,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.4 -> 1.21.5",
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.enableDepthTest()V",
+   "mods": 34,
+   "game": "redesigned",
+   "gameDetail": "1 uses, 1 in methods b kept, none line up",
+   "portable": true,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.4 -> 1.21.5",
+   "member": "class gone: net.minecraft.client.renderer.ShaderProgram",
+   "mods": 34,
+   "game": "redesigned",
+   "gameDetail": "4 uses, 2 in methods b kept, none line up",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.8 -> 1.21.9",
+   "member": "call: com.mojang.blaze3d.platform.InputConstants.isKeyDown(JI)Z",
+   "mods": 34,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.10 -> 1.21.11",
+   "member": "abstract method not written: net.minecraft.client.gui.components.AbstractButton.renderContents(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
+   "mods": 34
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.11 -> 26.1",
+   "member": "call: net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playC2S()Lnet/fabricmc/fabric/api/networking/v1/PayloadTypeRegistry;",
+   "mods": 34,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.4 -> 1.21.5",
+   "mods": 34,
+   "member": "class gone: net.minecraft.client.renderer.ShaderProgram",
+   "game": "redesigned",
+   "gameDetail": "5 uses, 2 in methods b kept, none line up",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.8 -> 1.21.9",
+   "member": "call: net.minecraft.client.gui.screens.Screen.hasShiftDown()Z",
+   "mods": 34,
+   "game": "split",
+   "gameDetail": " at 2 of 7 rewritten uses (32 uses)",
+   "portable": true,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.16.5 -> 1.17",
+   "member": "abstract method not written: net.minecraft.client.gui.narration.NarrationSupplier.updateNarration(Lnet/minecraft/client/gui/narration/NarrationElementOutput;)V",
+   "mods": 33
+  },
+  {
+   "loader": "fabric",
+   "update": "1.18.2 -> 1.19",
+   "member": "call: net.minecraft.server.packs.resources.ResourceProvider.getResource(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/server/packs/resources/Resource;",
+   "mods": 33,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.19.2 -> 1.19.3",
+   "member": "field: net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK",
+   "mods": 33,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.5 -> 1.21.6",
+   "member": "call: net.minecraft.client.gui.GuiGraphics.drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)I",
+   "mods": 33,
+   "game": "split",
+   "gameDetail": "m net.minecraft.client.gui.GuiGraphics.drawString(Lnet.minecraft.client.gui.Font;Lnet.minecraft.network.chat.Component;III)V ; f net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED at 2 of 4 rewritten uses (107 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "call: net.minecraft.world.item.ItemStack.getTag()Lnet/minecraft/nbt/CompoundTag;",
+   "mods": 33,
+   "game": "template",
+   "gameDetail": " at 12 of 14 rewritten uses (98 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "call: net.neoforged.neoforge.network.PacketDistributor$PacketTarget.send([Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload;)V",
+   "mods": 33,
+   "game": "split",
+   "gameDetail": "k n:0 ; c net.minecraft.network.protocol.common.custom.CustomPacketPayload ; m net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(Lnet.minecraft.server.level.ServerPlayer;Lnet.minecraft.network.protocol.common.custom.CustomPacketPayload;[Lnet.minecraft.network.protocol.common.custom.CustomPacketPayload;)V at 1 of 1 rewritten uses (1 uses)",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "class gone: net.neoforged.neoforge.event.TickEvent$ClientTickEvent",
+   "mods": 33,
+   "game": "redesigned",
+   "gameDetail": "2 uses, 0 in methods b kept, none line up",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.4 -> 1.21.5",
+   "mods": 33,
+   "member": "call: com.mojang.blaze3d.vertex.PoseStack.mulPose(Lorg/joml/Quaternionf;)V",
+   "game": "split",
+   "gameDetail": "m com.mojang.blaze3d.vertex.PoseStack.mulPose(Lorg.joml.Quaternionfc;)V ; f net.minecraft.client.renderer.entity.state.BoatRenderState.isUnderWater at 1 of 1 rewritten uses (216 uses)",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.8 -> 1.21.9",
+   "member": "call: net.minecraft.client.gui.components.events.ContainerEventHandler.mouseClicked(DDI)Z",
+   "mods": 33,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "neoforge",
+   "update": "1.21.8 -> 1.21.9",
+   "member": "call: net.minecraft.client.gui.screens.Screen.keyPressed(III)Z",
+   "mods": 33,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.5 -> 1.21.6",
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.setShaderColor(FFFF)V",
+   "mods": 32,
+   "game": "template",
+   "gameDetail": " at 2 of 2 rewritten uses (15 uses)",
+   "portable": false,
+   "part": "game"
+  }
+ ]
+}

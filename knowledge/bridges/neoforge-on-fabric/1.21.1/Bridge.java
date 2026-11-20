@@ -46,6 +46,8 @@ public final class Bridge {
         DeferredRegister.registerPending();
         hook();
         Bus.INSTANCE.post(new RegisterPayloadHandlersEvent());
+        // Data maps: NeoForge's own types and the mod's (RegisterDataMapTypesEvent), loaded with the data packs.
+        ${package}.datamaps.DataMaps.start(() -> Bus.INSTANCE.post(new ${package}.datamaps.RegisterDataMapTypesEvent()));
         Bus.INSTANCE.post(new FMLCommonSetupEvent(container(modid)));
         lifecycle(modid);
     }
@@ -54,6 +56,9 @@ public final class Bridge {
         if (hooked) return;
         hooked = true;
         GameEvents.hook();
+        TradeEvents.hook();
+        CanItemPerformAbility.register();
+        ModifyDefaultComponentsEvent.hook();
         ServerLifecycleEvents.SERVER_STARTING.register(started -> server = started);
         ServerLifecycleEvents.SERVER_STOPPED.register(stopped -> server = null);
         ServerLifecycleEvents.SERVER_STARTING.register(server -> Bus.INSTANCE.post(new ServerStartingEvent(server)));
@@ -64,6 +69,10 @@ public final class Bridge {
         ServerTickEvents.END_SERVER_TICK.register(server -> Bus.INSTANCE.post(new ServerTickEvent.Post(server)));
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> Bus.INSTANCE.post(new RegisterCommandsEvent(dispatcher, selection, context)));
         ItemGroupEvents.MODIFY_ENTRIES_ALL.register((tab, entries) -> Bus.INSTANCE.post(new BuildCreativeModeTabContentsEvent(tab, entries)));
+        // NeoForge's BlockEntity.onLoad, when a block entity joins a loaded level (only with the bridge's BlockEntityHooksMixin).
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerBlockEntityEvents.BLOCK_ENTITY_LOAD.register((blockEntity, level) -> {
+            if (blockEntity instanceof ${package}.extensions.BlockEntityHooks hooks) hooks.onLoad();
+        });
     }
 
     // ---- player interaction, block and lifecycle hooks ----

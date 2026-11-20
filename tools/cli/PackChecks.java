@@ -487,7 +487,7 @@ final class PackChecks {
     }
 
     // ------------------------------------------------------------------ the log: which mod?
-    static final Pattern FRAME = Pattern.compile("^\\s*at (?:[\\w.$-]+//)?(?:[A-Z]+/([a-z0-9_.\\-]+)@[^/]+/)?([\\w$.]+)\\.[\\w$<>]+\\(");
+    static final Pattern FRAME = Pattern.compile("^\\s*at (?:[\\w.$-]+//)?(?:[A-Z]+(?: [A-Z]+)*/([a-z0-9_.\\-]+)@[^/]+/)?([\\w$.]+)\\.[\\w$<>]+\\(");
     static final Pattern MIXIN_CONFIG = Pattern.compile("([A-Za-z0-9_.\\-]+\\.mixins?\\.json|[A-Za-z0-9_.\\-]+\\.mixin\\.json|mixins\\.[A-Za-z0-9_.\\-]+\\.json)");
     static final Pattern HANDLER = Pattern.compile("\\$[a-z]{2,}[0-9a-f]{3}\\$([a-z0-9_]+)\\$");
     static final Pattern SUSPECTED = Pattern.compile("^\\s*([^\\n(]+) \\(([a-z0-9_.\\-]+)\\)");
@@ -534,7 +534,7 @@ final class PackChecks {
         }
         for (Pattern named : loader.modNamed()) {
             Matcher m = named.matcher(all);
-            while (m.find()) blame(found, scan, m.group(1), null, "the loader names it: " + line(all, m.start()));
+            while (m.find()) blameNamed(found, scan, m, "the loader names it: " + line(all, m.start()));
         }
         String missing = missingClientClass(failing, clientClass);
         if (missing != null) {
@@ -543,7 +543,7 @@ final class PackChecks {
             String reaches = "it reaches " + missing + ", a game class the server does not have (client-only): ";
             for (Pattern named : loader.modNamed()) {
                 Matcher m = named.matcher(failing);
-                while (m.find()) blame(reached, scan, m.group(1), null, reaches + line(failing, m.start()));
+                while (m.find()) blameNamed(reached, scan, m, reaches + line(failing, m.start()));
             }
             if (reached.isEmpty()) for (String frameLine : failing.lines().toList()) {
                 Matcher frame = FRAME.matcher(frameLine);
@@ -591,6 +591,7 @@ final class PackChecks {
             String module = frame.group(1), type = frame.group(2);
             if (type.startsWith("mmt.packprobe")) continue;
             String jar = module != null && scan.providers.containsKey(module) ? null : owner(scan, type);
+            if (jar == null && (module == null || !scan.providers.containsKey(module))) jar = frameJar(scan, line);
             if (module != null && scan.providers.containsKey(module)) {
                 blame(found, scan, module, null, "its code (" + type + ") is in the stack: " + line.strip());
                 inCause = false;
@@ -687,10 +688,60 @@ final class PackChecks {
         return text.replaceAll("[\u00a7\ufffd][0-9a-fk-orA-FK-OR]", "");
     }
 
+    static final Pattern FRAME_JAR = Pattern.compile("\\[([^\\[\\]/\\\\%!]+\\.jar)(?:%23\\d+)?(?:!/)?[^\\]]*\\]");
+
+    /**
+     * The pack jar a stack frame says it ran from (`~[name.jar%23217!/:15.1]`): code a mod loads as a loader service, out of
+     * a jar nested in it, is in neither its packages nor its mod id (CustomSkinLoader's transformer).
+     */
+    static String frameJar(PackMods.Scan scan, String line) {
+        Matcher m = FRAME_JAR.matcher(line);
+        while (m.find()) {
+            String file = m.group(1);
+            for (List<PackMods.Provider> ps : scan.providers.values()) {
+                for (PackMods.Provider p : ps) {
+                    if (p.jar().split("!")[0].equals(file)) return file;
+                }
+            }
+        }
+        return null;
+    }
+
     static String owner(PackMods.Scan scan, String type) {
         int dot = type.lastIndexOf('.');
         return dot < 0 ? null : scan.packages.get(type.substring(0, dot));
     }
+
+    /**
+     * The jar a loader line names: by its file (a group named file: "Mod File ...\mods\x.jar needs ...") or by one of its
+     * classes (a group named class: "Attempted to load class a/b/C for invalid dist"); null when the line names a mod id.
+     */
+    static String namedJar(PackMods.Scan scan, Matcher m) {
+        String pattern = m.pattern().pattern();
+        if (pattern.contains("(?<file>")) return m.group("file");
+        if (pattern.contains("(?<class>")) return owner(scan, m.group("class").replace('/', '.'));
+        return null;
+    }
+
+    /** The mod id a loader line names (group 1, or the first id of the jar it names), or null. */
+    static String namedId(PackMods.Scan scan, Matcher m) {
+        String pattern = m.pattern().pattern();
+        if (!pattern.contains("(?<file>") && !pattern.contains("(?<class>")) return m.group(1);
+        String jar = namedJar(scan, m);
+        List<String> ids = jar == null ? List.of() : scan.idsOf(jar);
+        return ids.isEmpty() ? null : ids.get(0);
+    }
+
+    static void blameNamed(Map<String, Map<String, Object>> found, PackMods.Scan scan, Matcher m, String why) {
+        String pattern = m.pattern().pattern();
+        if (!pattern.contains("(?<file>") && !pattern.contains("(?<class>")) {
+            blame(found, scan, m.group(1), null, why);
+            return;
+        }
+        String jar = namedJar(scan, m);
+        if (jar != null) blame(found, scan, null, jar, why);
+    }
+
 
     static void blame(Map<String, Map<String, Object>> found, PackMods.Scan scan, String id, String jar, String why) {
         if (id == null && jar != null) {
@@ -749,13 +800,15 @@ final class PackChecks {
             Set<String> named = new LinkedHashSet<>();
             for (Pattern pattern : loader.modNamed()) {
                 Matcher m = pattern.matcher(lines.get(i));
-                if (m.find()) named.add(m.group(1));
+                String id = m.find() ? namedId(scan, m) : null;
+                if (id != null) named.add(id);
             }
             // Quilt and Fabric name the mod a few lines into the block ("... provided by 'lilac'!").
             if (named.isEmpty()) for (Pattern pattern : loader.modNamed()) {
                 Matcher m = pattern.matcher(block);
-                if (m.find() && scan.providers.containsKey(m.group(1))) {
-                    named.add(m.group(1));
+                String id = m.find() ? namedId(scan, m) : null;
+                if (id != null && scan.providers.containsKey(id)) {
+                    named.add(id);
                     break;
                 }
             }

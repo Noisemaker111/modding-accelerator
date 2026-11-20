@@ -1,21 +1,21 @@
 # Roadmap
 
 > Generated from [`coverage/roadmap.json`](coverage/roadmap.json) and [`coverage/measures.json`](coverage/measures.json) by
-> `python bench/bench_page.py --roadmap`. Edit those two files, not this one. The same roadmap with its timeline, charts and
-> porting map: **<https://noisemaker111.github.io/modding-accelerator/>**
+> `python bench/bench_page.py --roadmap`. Edit those two files, not this one. Live charts and
+> porting map: **<https://noisemaker111.github.io/minecraft-modding-tools/>**
 
-**The goal:** a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
+**The goal:** Nobody should have to think about Minecraft versions or loaders: drop a mod in, as its source folder or as its .jar, from the command line or the desktop app, pick the version and the loader you want, and get it back the same way in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**26 of 43 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**37 of 61 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
 | Goal | Steps done | Now |
 |---|---|---|
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
-| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `███████░░░`&nbsp;16&nbsp;of&nbsp;23 | 🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>⚪ 16 · Name what moved in 26.3 |
+| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `███████░░░`&nbsp;25&nbsp;of&nbsp;36 | 🔵 47 · A fix names a game part and is applied in the class<br>⚪ 55 · The link check sees an injection's point inside its target |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
-| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;2&nbsp;of&nbsp;5 | Not started |
+| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;4&nbsp;of&nbsp;10 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first |
 
 ## Goal 1 — Test a mod in seconds
 
@@ -121,9 +121,10 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 
 One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.
 
-- **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Small jumps need no hand edits; big jumps stop with named errors.
-- **The number that says most:** Real mods with a port that works in the game is **8 mods**, target 6 mods by Dec 18, step 12
-- **Also:** Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm is **0 errors**, target 0 errors by Jan 15, 2027, step 17
+- **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Ported as jars and linked against the next release and its loader, 62% of the 150 most-downloaded mods of each release link, over 64 updates of Fabric and NeoForge (NeoForge from 1.20.2). 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.
+- **The number that says most:** Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge is **5,854 mods**
+- **Also:** Corpus ports that build with no hand edits is **16 updates**, target 60 updates by Dec 22, step 44
+- **Also:** Real mods with a port that works in the game is **8 mods**, target 6 mods by Dec 18, step 12
 
 ### Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -156,9 +157,9 @@ One command moves a mod's source from any version to any other, forward or back,
 
 | # | Step | Status | When |
 |---|---|---|---|
-| 14 | Yarn to the game's own names, whole tree | 🔵 doing | Oct 24 → Nov 27 |
-| 15 | The build switches with the version (26.x) | 🔵 doing | Oct 24 → Nov 20 |
-| 16 | Name what moved in 26.3 | ⚪ next | Nov 20 → Dec 4 |
+| 14 | Yarn to the game's own names, whole tree | ⚫ later | Oct 24 → Nov 27 |
+| 15 | The build switches with the version (26.x) | ⚫ later | Oct 24 → Nov 20 |
+| 16 | Name what moved in 26.3 | ⚫ later | Nov 20 → Dec 4 |
 | 17 | AppleSkin to 26.3, loaded in the client | 🟢 done | Nov 8 |
 
 ### Forge mods and Paper plugins
@@ -167,6 +168,24 @@ One command moves a mod's source from any version to any other, forward or back,
 |---|---|---|---|
 | 32 | Random Things as a Forge port case | ⚫ later | Jan 18, 2027 → Feb 5, 2027 |
 | 28 | Port a Paper plugin between versions | ⚫ later | Jan 4, 2027 → Jan 22, 2027 |
+
+### Port by changed game part
+
+| # | Step | Status | When |
+|---|---|---|---|
+| 44 | One porting scoreboard, read from jars, for every update and loader | 🟢 done | Nov 19 |
+| 52 | mmt port --jar ports Fabric mods too | 🟢 done | Nov 19 |
+| 57 | The link check reads the loader too, and proves Fabric in a client | 🟢 done | Nov 20 |
+| 53 | Read NeoForge 1.20.2 to 1.20.4 mods | 🟢 done | Nov 20 |
+| 47 | A fix names a game part and is applied in the class | 🔵 doing | Nov 24 → Dec 8 |
+| 47b | Ported jars keep mixins, overrides and access transformers working | 🟢 done | Nov 18 |
+| 51 | A ported jar is proven in a game client too | 🟢 done | Nov 19 |
+| 55 | The link check sees an injection's point inside its target | ⚪ next | Nov 20 → Nov 27 |
+| 56 | The porter learns members the game closed, moved or made generic | 🟢 done | Nov 19 |
+| 58 | The porter learns calls the game removed and classes it replaced | 🟢 done | Nov 20 |
+| 54 | The porter learns each replacement from how the game ported its own code | 🟢 done | Nov 19 |
+| 45 | Generate the target build from the loader's starter project | ⚫ later | Nov 24 → Dec 8 |
+| 46 | One migration per redesigned game part, ranked by mods freed | ⚫ later | Nov 24 → Dec 22 |
 
 <details><summary>What each step is, and how far it got</summary>
 
@@ -204,11 +223,11 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **13 · Publish what each jump still needs** (later). Publish the family list each jump still needs, so a stop is a shopping list.
 
-**14 · Yarn to the game's own names, whole tree** (doing). Convert a source tree from yarn to the game's own names (works for one version already; needs a full-tree pass).
+**14 · Yarn to the game's own names, whole tree** (later). Convert a source tree from yarn to the game's own names (works for one version already; needs a full-tree pass). *So far:* Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18).
 
-**15 · The build switches with the version (26.x)** (doing). Switch the build with the version: Loom 1.17, Gradle 9.5, Java 25, no mappings.
+**15 · The build switches with the version (26.x)** (later). Switch the build with the version: Loom 1.17, Gradle 9.5, Java 25, no mappings. *So far:* Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18).
 
-**16 · Name what moved in 26.3** (next). Diff the old official names against the 26.3 jar to name what moved.
+**16 · Name what moved in 26.3** (later). Diff the old official names against the 26.3 jar to name what moved. *So far:* Not worked on since 2026-11-08. The corpus measures it: 1 of its 27 ports to 26.x builds (cloud sweep, 2026-11-18).
 
 **17 · AppleSkin to 26.3, loaded in the client** (done). Port one mod to 26.3 to a build, then to a loaded client. AppleSkin NeoForge 1.21.6 → 26.3 reaches a packaged build with the mixin audit in 66s: build settings, NeoGradle, Java and 82 → 0 compile errors are handled by rules except the removed debug-text event, one hand-written file. Loading it in a real 26.3 client is the next rung. *So far:* AppleSkin NeoForge 1.21.6 → 26.3 ports with no hand-written file and passes its HUD behaviour check in the real 26.3 client: the estimate for a golden carrot (+12.000002) matches real regeneration (+12.000001), and the same check fails when the estimate is broken on purpose. The debug-text event became a rule; a stale Parchment setting that compiled the 26.3 game wrong is now moved or removed by the port.
 
@@ -216,9 +235,35 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **28 · Port a Paper plugin between versions** (later). Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far).
 
+**44 · One porting scoreboard, read from jars, for every update and loader** (done). python bench/exposure.py jars links what each of the 150 most-downloaded mods references (classes, mixins, access transformers) against the target release, as the JVM and Mixin will, and ranks what does not link by the mods it holds back. It replaces exposure.py run as the list that chooses porting work: run cleared 58 NeoForge mods and the link check 32, and every mod that failed on a real server was one run cleared and the link check did not. Fabric jars ship in intermediary names, so the link check reads them through the game's own mappings to Mojang's names, and the source porter's worklist (port-plan) is read the same way. *So far:* python bench/exposure.py all, or tools/cloud-run exposure in about 8 minutes, ports the 150 most-downloaded mods of each release (pinned in bench/exposure/mods/) to the next and links them, for 43 Fabric updates from 1.14.4 and 18 NeoForge updates from 1.20.5: 5,258 of 9,149 mod ports link (57.5%), 5,018 before #120. NeoForge 1.21.1 -> 1.21.2 counts 41 on the code before #120 and 43 after, as the one-update scoreboard did; Fabric 40. Fabric jars are read in Mojang's names through intermediary (tools/ModNames.java), with Fabric API's transitive access applied to the game; ported to their own release, 124 of 150 Fabric 1.21.1 mods link against 100 of 150 NeoForge ones, so the reading adds no misses of its own. On a real 1.21.2 server 23 of the 25 standalone NeoForge mods that link load; one is client-only and one, with no code, fails on its data. Each reference on the list says what the game's own code did about it. exposure.py run is retired. Not read yet: NeoForge 1.20.2 to 1.20.5 (step 53).
+
+**52 · mmt port --jar ports Fabric mods too** (done). The scoreboard reads Fabric jars in Mojang's names (step 44); the port must hand them back in the names Fabric runs: intermediary of the target release before 26.1, Mojang's from 26.1, with refmaps and access wideners written for it. Then exposure.py load starts ported Fabric mods on a real Fabric server, as it does for NeoForge. *So far:* mmt port --jar takes Fabric jars: read in Mojang's names (ModNames), ported, and handed back in the target release's intermediary with overrides, calls, mixin strings, accessors, the access widener, refmaps and nested jars written for it. On a real Fabric server with Fabric API, every standalone mod that links and runs on a server loads: 8 of 8 on 1.21.1 -> 1.21.2 (8 more are client-only), 10 of 10 on 1.20.6 -> 1.21 (11 client-only), mixin-heavy ones included (ferrite-core, packet-fixer). Scoreboard: 42 of 150 Fabric mods link on 1.21.2 (40 before). Client-only mods need a client start (step 51); 26.1 and later run Mojang's names and are handed back as ported.
+
+**57 · The link check reads the loader too, and proves Fabric in a client** (done). A mod links against its loader as well as the game: NeoForge's own classes with FML and its event bus, Fabric Loader and Fabric API. The scoreboard only read the game (and NeoForge's own classes), so a loader API change was a surprise at load time (Explorer's and Nature's Compass on 1.20.6 -> 1.21, ModLoadingContext.registerConfig). The snapshot gets every library NeoForge's own pom lists, and Fabric Loader and Fabric API with the interfaces Fabric API adds to game classes; loader breaks are ranked with game ones. The shared cache under ~/.mmt/exposure is keyed by the content of the tools that built it, so worktrees running at once cannot break each other (#126). exposure.py load starts ported Fabric mods in a real Fabric client too (its intermediary names translated for mmt's agent). *So far:* 2026-11-20: port.jar-links.every-update counts 64 updates, 21 of them NeoForge: 5,826 of 9,423 mod ports link (61.8%). On the 61 updates main measured it goes 5,775 -> 5,586. Linking against the loader (NeoForge with FML and its event bus, Fabric Loader and Fabric API) costs 28 net (NeoForge -28, Fabric 0 once mods' bundled copies of Fabric API modules, which never run, stop counting); the biggest are FML's FMLEnvironment.dist becoming a method (64 NeoForge mods on 1.21.8 -> 1.21.9), Fabric API's 26.1 renames (PayloadTypeRegistry, KeyBindingHelper), NeoForge 20.6 removing Event.Result, and Explorer's and Nature's Compass on ModLoadingContext.registerConfig. 165 more stop counting as linking because their game code is in a jar their own loader unpacks, which the port never reads (Essential, Crash Assistant, CustomSkinLoader, about 3 per update): they are reported as not read. Loader breaks are labelled and counted per update (loaderUses, modsHeldOnlyByLoader): 5,654 uses, 151 mod ports held by nothing else. The cache under ~/.mmt/exposure is keyed by tool content: two worktrees with different tools running Fabric 1.19.2 -> 1.19.3 at once both gave 38 of 150 and 2,546 broken uses, as the cloud did. Fabric load 1.21.1 -> 1.21.2 now starts a real Fabric client (Fabric's launcher profile; mmt's agent reads intermediary through Mojang's and Fabric's mappings): 13 standalone mods link; on the server 7 of 7 that a server runs load (6 are client-only), and in the client 12 of 13 load. Better Mount HUD links and fails in the client: its @ModifyVariable finds no target in 1.21.2's HUD code, an injection point the link check does not read yet (step 55). Essential, which linked before and failed in the client on a removed class, is now counted as not read.
+
+**53 · Read NeoForge 1.20.2 to 1.20.4 mods** (done). NeoForge mods before 1.20.5 name game members by SRG ids (m_N_, f_N_). Read them in Mojang's names through NeoForge's own NeoForm mappings, as Fabric's are read through intermediary, so the scoreboard covers NeoForge's first three updates too. *So far:* 2026-11-20 (with step 57): NeoForge's NeoForm build (named in its own jar's manifest) gives each SRG id an obfuscated member, which Mojang's mappings name, so ModNames reads NeoForge 1.20.2 to 1.20.4 mods (classes, access transformers, jarjar-nested jars) and NeoForge's own jar in Mojang names. 1.20.2 -> 1.20.3: 89 of 149 link, 1.20.3 -> 1.20.4: 129 of 149, 1.20.4 -> 1.20.5: 22 of 148, held back mostly by NeoForge 20.5's own rewrites (payload registration, TickEvent, ConfigScreenHandler). No SRG name is left in any reference.
+
+**47 · A fix names a game part and is applied in the class** (doing). A porting rule is text: a pattern on the compiler's error and a find-and-replace on the source (355 of 358 rules), so it cannot reach a .jar and cannot tell LocalPlayer.sendSystemMessage from ServerPlayer.sendSystemMessage. A rule names the game member it replaces and what replaces it (a call, a call chain, a field read through a method), and JarPort applies it where a class references that member; a source port applies the same rule at the places the compiler resolved. A rule's test links its before against the old release and its after against the new one, in seconds, with no mod. The jar scoreboard's top entries are the order: GuiGraphics.blit (52 mods), RenderSystem.setShader (43), InteractionResult's fields (28), Registry.getTag (29). *So far:* So far (2026-11-18): JarPort applies in the class what the game's own code shows (calls switched, added arguments such as GuiGraphics.blit's RenderType::guiTextured, chains, narrower fields) and every port rule's inClass: a Java expression for the old member, compiled against the new release like javac would, or a dropped class mapped to its replacement. 57 replacements on 33 rules. 41 of 150 link (30 before), broken uses 5,640 -> 4,147; on a real 1.21.2 server 30 of 35 load and all 19 that link load. The rest are held back by 1.21.2's rendering and recipe rewrites (render states, toasts, recipe book), which one-member replacements cannot express: every remaining mixin signature change would add about 4. Next: the source port applies inClass too.
+
+**47b · Ported jars keep mixins, overrides and access transformers working** (done). Part of step 47 that needs nothing learned from the game's code, for every update: a mixin @Inject whose target method only took other parameters is moved to the new signature when Mixin will accept the handler there and its injection points are still in the new method (a handler that takes the target's arguments is re-declared with the new ones and calls the original); a mod method overriding a game method whose parameters changed gets a method with the new signature that calls it; a member the new release closed is opened through the mod's own access transformer, which NeoForge's loader reads for every mod file; access transformer lines for members that are gone are commented out. Injectors that take the changed call's own arguments (@Redirect, @ModifyArg, @WrapOperation) and handlers that capture locals stay reported. *So far:* 43 of 150 link against 1.21.2 (41 before): cubes-without-borders and sodium-dynamic-lights. On a real 1.21.2 server 30 of 35 load; 21 link, 20 of them load and the 21st is client-only; none fails. On 1.21.4 to 1.21.5, 33 to 36 link. Broken references in the 150 mods 5,191 to 4,556; overrides the game no longer called 1,762 to 1,471. The estimate's other two mods are not safe to move: cherished-worlds captures the target's locals, drippy-loading-screen wraps calls whose parameters changed (@WrapOperation). The 48 references the scoreboard sorted as 'mixin now closed' are fields whose type changed, not access: a mixin already runs as its target. The remaining mixin signature changes are 1.21.2's rewritten LevelRenderer.renderLevel, whose injection points moved into other methods.
+
+**51 · A ported jar is proven in a game client too** (done). mmt pack-check proves a ported jar on a real server, and a server never runs client code: 15 of the 28 jars that loaded on 1.21.2 still reference rendering and screen code that does not link there. A client start with the ported jars (the loader's own client install, a world opened and a screen shown, hidden and muted) proves the rest, and makes the load proof cover client-only mods, which a server leaves out. *So far:* mmt pack-check --side client installs the loader's own client with its installer (NeoForge's --install-client), builds the launch from its version files as a launcher does, and starts the pack hidden and muted with mmt's agent: the title screen, a flat world the vanilla server makes, the inventory and every creative tab, which draws every item each mod adds. python bench/exposure.py load runs it after the server and reports both side by side. NeoForge 1.21.1 to 1.21.2: on the server 23 of 25 load; in the client 23 of 24, including cubes-without-borders, which the server left out as client-only. The step's wrongIf happened once: Puzzle loads on the server and links, and fails in the client, because its injection point (RenderSystem.blendFunc inside LoadingOverlay.render) is a call 1.21.2 no longer makes there; the member still exists, so the link check passes it (step 55). The jar scoreboard also checks mods' data now: 17 of 5,302 linked mod ports over all 61 updates name a built-in game id their new release dropped, Dungeons and Taverns' enchantment effect among them. Not covered: a mod's own screens and keys, Fabric's client.
+
+**55 · The link check sees an injection's point inside its target** (next). A mixin's @At names a call or field use inside its target method (INVOKE, FIELD). JarPort checks that the named member exists in the new release, not that the new target method still uses it, so an injection whose point moved out of the method links and fails at start (Puzzle on 1.21.2: RenderSystem.blendFunc is no longer called in LoadingOverlay.render). GameDiff has every method's references in both releases, so the check can read the new body; a point that moved to a method the target calls is where a retarget would come from.
+
+**56 · The porter learns members the game closed, moved or made generic** (done). Of the 60 references that hold back the most mods across every update, 25 are members the route map still follows but that no longer work: a constructor made private (new ResourceLocation(ns, path), 99 Fabric mods on 1.20.6 -> 1.21), a field moved to another class (Registry.BLOCK), a field made private behind a getter or setter (Player.inventory, AbstractWidget.y), a method replaced by a generic one. Such a member is learned like a removed one: from its exact public wrapper in the new release (the closed member called with the same arguments, through checks that return them), the accessor whose body only reads or writes it, or what the game's own uses wrote, with readings shown only on literal arguments refused. JarPort turns new X(...) into the factory and a field write into the setter. *So far:* 2026-11-19: port.jar-links.every-update 5,731 -> 5,775 of 9,149 on top of #124 (main measured again on the same runners; before #124 it was 5,302 -> 5,365), no update lower (+12 NeoForge and +9 Fabric on 1.20.6 -> 1.21, +7 on 1.19.2 -> 1.19.3, +6 on 1.19.3 -> 1.19.4, +6 on 1.16.5 -> 1.17). On a real 1.21.1 -> 1.21.2 server 24 of the 27 that link load and 1 is client-only; the other 2 fail on data files 1.21.2 cannot parse. On a real 1.21 server 38 of the 45 that link load, 5 of them through the constructor-to-factory rewrite (WorldEdit 124 times); Explorer's and Nature's Compass fail on ModLoadingContext.registerConfig, a change in NeoForge's loader (FML) whose classes the link check does not read. Next: read FML's classes in the snapshot; then overrides whose parameters changed type, with the new argument passed into the mod's old method.
+
+**58 · The porter learns calls the game removed and classes it replaced** (done). Most of the top blockers left after step 56 are two kinds of change the learner did not read. Calls the game simply removed: in its own code each use is gone and nothing replaces it (VertexConsumer.endVertex() in 1.21, RenderSystem.disableTexture() in 1.19.4). A void call whose uses vanish, or whose place holds only its receiver chain, is learned as dropped (a fluent one as its receiver), with the same voting as other readings; JarPort drops it as it drops a removal, still evaluating its receiver and arguments. Classes the game replaced: the class map is learned from the types the game's linked methods, fields and values switched to (1.19's TextComponent became MutableComponent), and the gone class's members are then read through it (new TextComponent(s) -> Component.literal(s), also as TextComponent::new). *So far:* 2026-11-20: port.jar-links.every-update 5,826 -> 5,854 of 9,423 on top of #127 (64 updates), no update lower (Fabric 1.18.2 -> 1.19 34 -> 49, 1.20.6 -> 1.21 49 -> 52, NeoForge 1.21.3 -> 1.21.4 77 -> 80, 1.20.6 -> 1.21 57 -> 58). Learned share 2,472 -> 2,634 of 49,503 (main measured the same way). Real 1.21 server: 31 of 34 linked standalone mods load, 3 client-only, none that link fails; client 32 of 34 (FerriteCore and Necronomicon, which link on main too: a mixin cast to ResourceLocation that 1.21 split from ModelResourceLocation, and a Forge-only mods.toml NeoForge skips). Real 1.21.2: links unchanged, server 21 of 24 (TerraBlender and Dungeons and Taverns fail on data files, as before), client 22 of 22. Next: Tesselator.getBuilder() + BufferBuilder.begin() merged into one call in 1.21 (43 Fabric mods) needs a two-statement rewrite; JOML in 1.19.3 needs the game's libraries read.
+
+**54 · The porter learns each replacement from how the game ported its own code** (done). GameDiff knew three shapes of change in the game's own code (a call switched, one added argument with its default, a chain). For every game method that used a changed or removed member and still exists in the next release, both bodies are rebuilt as value trees from their bytecode and lined up through the links; what the new code computes at the use, written over the old member's operands, is the replacement, in the same form as a rule's inClass, so JarPort applies it with no second path. The game's own uses vote, and a constant two operands share is settled across uses. *So far:* 2026-11-19: 1,413 -> 2,462 of 49,503 gone members get a replacement over all 43 updates (port.game-learned). On top of #120, 43 -> 45 of 150 NeoForge 1.21.1 mods link on 1.21.2 (Controlling and TerraBlender), broken references 4,556 -> 4,425. On a real 1.21.2 server 24 of the 26 that link load and 1 is client-only; TerraBlender fails on a biome data file 1.21.2 cannot parse (the same error as before it linked), which no link check sees. Left: redesigns, value-to-value changes an expression cannot say, and data files.
+
+**45 · Generate the target build from the loader's starter project** (later). The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version. *So far:* Tried on 2026-11-18 (PR #109, closed unmerged, branch generated-builds kept). 14 of the 16 building ports still build from a starter project, so it passed its own test, but over the whole corpus it freed none and lost 2: 14 of 125 build (cloud run 44382488417) against 16 of 126. 8 ports use Architectury, which rewrites the mod's code; 13 need a library with no release for the target version. Build scripts are not what holds the corpus back; steps 44 and 47 come first.
+
+**46 · One migration per redesigned game part, ranked by mods freed** (later). With steps 44 and 47 in, porting is one loop: python bench/exposure.py run ranks the changed game parts of an update by how many of the 150 most-downloaded mods use them; the top one gets a rule that names it, written from the game's own two versions; the same command shows the mods it freed. For 1.21.1 to 1.21.2 that is 637 changed parts, 313 of them used by one mod each: handled in the best order, 25 take the count from 58 to about 86 mods and 300 to about 109, so each part has to cost minutes, not a port run. A removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).
+
 </details>
 
-<details><summary>Every number for this goal (15)</summary>
+<details><summary>Every number for this goal (24)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -237,6 +282,15 @@ One command moves a mod's source from any version to any other, forward or back,
 | NeoForge 1.21.6 game setup (NeoForm), first mod on the machine, cold | — | 2.3 min (Nov 8) | — | Fact |
 | NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC, cold | — | 92.0 min (Nov 8) | — | Fact |
 | NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
+| Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2 | — | 58 mods (Nov 18) | 100 mods by Dec 22, step 46 | Baseline |
+| Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2 | 32 mods (Nov 18) | 45 mods (Nov 19) | 50 mods by Dec 8, step 47 | 72% of the way |
+| Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge | 5,018 mods (Nov 19) | 5,854 mods (Nov 20) | — | Fact |
+| Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | 28 mods (Nov 18) | 34 mods (Nov 19) | 33 mods by Dec 8, step 47 | Met |
+| Standalone mods the jar scoreboard says link whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | — | 23 mods (Nov 19) | — | Fact |
+| Ported mods that load in a real game client, NeoForge 1.21.1 to 1.21.2 | — | 23 mods (Nov 19) | — | Fact |
+| Game members with no counterpart in the next release that the game's own code gives a replacement, all 43 updates | 1,413 items (Nov 18) | 2,634 items (Nov 20) | 2,462 items by Nov 26, step 54 | Met |
+| Corpus ports that build with no hand edits | 10 updates (Nov 16) | 16 updates (Nov 18) | 60 updates by Dec 22, step 44 | 12% of the way |
+| Linked standalone Fabric mods whose ported jar loads on a real server, 1.21.1 to 1.21.2 | — | 8 mods (Nov 19) | 8 mods by Nov 26, step 52 | Met |
 
 </details>
 
@@ -286,8 +340,10 @@ A pack user points mmt at an installed pack or an export and gets its conflicts 
 
 The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims.
 
-- **Today:** mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. Two real Fabric mods run on NeoForge with no hand edits; Forge, Quilt and Paper are not converted yet.
-- **The number that says most:** Loader or platform changes that work in the game is **2 pairs**, target 1 pair by Jan 29, 2027, step 18
+- **Today:** mmt convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. 68 of the 150 most-downloaded NeoForge mods for 1.21.1 use nothing its NeoForge-on-Fabric bridge lacks. Of 28 real corpus mods it accepts, 15 compile and load in the game after converting, 10 with the same behaviour fingerprint as the original and 6 with nothing left out. Forge, Quilt and Paper are not converted yet.
+- **The number that says most:** Most-downloaded NeoForge mods for 1.21.1 that use nothing the NeoForge-on-Fabric bridge lacks is **68 mods**, target 100 mods by Dec 5, step 48
+- **Also:** Corpus mods that convert, compile and load in the game is **15 mods**, target 17 mods by Dec 5, step 48
+- **Also:** Loader or platform changes that work in the game is **2 pairs**, target 1 pair by Jan 29, 2027, step 18
 
 ### Loader pairs
 
@@ -295,6 +351,21 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 |---|---|---|---|
 | 40 | Loader rules from the loaders' own APIs | 🟢 done | Nov 14 |
 | 18 | Fabric → NeoForge on one mod | 🟢 done | Nov 14 |
+| 41 | NeoForge mods to Fabric through a bridge built from NeoForge's own files | 🟢 done | Nov 18 |
+| 42 | The blockers of the other 14 mods, by cause, produced from the loaders' files | ⚫ later | Nov 18 → Nov 25 |
+| 48 | What the most-downloaded mods need from the bridge, most-used first | ⚪ next | Nov 19 → Dec 5 |
+
+### One place for both
+
+| # | Step | Status | When |
+|---|---|---|---|
+| 50 | A mod's .jar works as well as its source | 🟢 done | Nov 18 |
+| 49 | Drop a mod in, pick a version and a loader, get it back | ⚫ later | Dec 8 → Jan 15, 2027 |
+
+### Loader pairs
+
+| # | Step | Status | When |
+|---|---|---|---|
 | 19 | Forge → NeoForge and Fabric → Quilt | ⚫ later | Feb 1, 2027 → Feb 26, 2027 |
 
 ### Mods and plugins
@@ -315,6 +386,16 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 **18 · Fabric → NeoForge on one mod** (done). Fabric → NeoForge on one small mod, measured end to end. *So far:* mmt convert moved Auto Omen (Fabric 26.3) to NeoForge with no hand edits, and its own in-game raid self test passed 23 of 23 checks there, the same as on Fabric. Pride Flags (Fabric 26.1.2, with Fabric data generation) moved too: on NeoForge its blocks, items, flammability, loot, recipes and rendered flags were checked in the game. The NeoForge Auto Omen converted back to Fabric passed the same self test.
 
+**41 · NeoForge mods to Fabric through a bridge built from NeoForge's own files** (done). Cover NeoForge's whole published API on Fabric instead of fixing mods one at a time: a coverage check against NeoForge's jars and patches (bench/bridge_coverage.py), the methods its patches add to game classes generated for 26.3, 26.1 and 1.21.1 (bench/bridge_generate.py), and NeoForge's own LGPL classes copied into the converted mod when they compile on Fabric, with failing members left out (bench/bridge_import.py). *So far:* 14 of 28 compile and load in the game (was 10 on 2026-11-16), 10 with the same behaviour fingerprint as the original; curios is new. 720 of NeoForge's classes compile on Fabric for 26.3, 714 for 26.1, 568 for 1.21.1.
+
+**42 · The blockers of the other 14 mods, by cause, produced from the loaders' files** (later). List what blocks each of the 14 mods that do not compile yet, group the blockers by cause across all 14, and produce each group's fixes in one go from the loaders' own files (no per-mod fixes). *So far:* Stopped at 15 of 28 (cloud run 44403521118; satin is new, from setting a Fabric mod's own test mod aside). The three target mods were not freed: two methods aimed at them failed (see notes) and the third was not built. What these 14 mods miss is now measured from their compiled classes (python bench/convert_coverage.py --blocked), and no package frees more than one of them: they are 14 unusual mods, not a list to steer by.
+
+**48 · What the most-downloaded mods need from the bridge, most-used first** (next). python bench/convert_coverage.py real reads the jars of the 150 most-downloaded NeoForge mods for 1.21.1 and lists every NeoForge class and member they use that the bridge lacks, in the order that clears the most mods soonest. 442 hold 82 mods back, and the list has a short head: the next 20 take the count from 68 to 94. Each one is added from NeoForge's own published files (.claude/skills/convert-a-mod), checked without a mod by python bench/bridge_check.py in about a minute and a half, and counted again by the same command. The list predicts the compiler on the corpus: all 15 mods it shows with nothing missing compiled after converting.
+
+**50 · A mod's .jar works as well as its source** (done). port and convert change a mod's source folder, which only its author has. A compiled mod is read today for two things only: to count what it uses of the game and of a loader (python bench/exposure.py, python bench/convert_coverage.py real) and to run it in a modpack on a real server (mmt pack-check). Source stays: an author gets source back. A .jar has to work too, in and out, for everyone who has only the .jar. This step comes before the others because it decides their shape: the work is either done on the compiled classes themselves, or on source recovered from the .jar and built again, and the first job is to try both on mods the scoreboards already clear and keep the one whose results load in the game. If the compiled classes are changed directly, steps 44 and 47 are rewritten: the worklist is the .jar scoreboard, which has no source to be blind to, and a fix is applied where a class names the game part. *So far:* The compiled classes are changed directly: mmt port --jar MOD.jar --to 1.21.2 (tools/JarPort.java) relinks every reference a mod's classes, mixins and access transformers make to the game against the new release, renames what the game's own change map names, moves the metadata, ports nested mods, and names what does not link instead of guessing. No source and no build: 35 jars take 8 seconds. On a real 1.21.2 server 28 of the 35 load (a new world, every block item placed, the world opened again); the finish line said 40. The 7 others are not a jar problem: 6 use game code 1.21.2 changed (ferritecore and glitchcore mixin targets, Jade, MRU, Nature's Compass, TerraBlender's biome data) and 1 is client-only. Every one of the 6 was named in advance by the new link check, and every mod it said links loaded. The scoreboard that chose them (exposure.py run) cannot see mixins, field types or access transformers: it clears 58 of the 150 top mods, the link check 32. Decompiling to source and building again was not tried: the jar path loads 28 with no build, and its 6 failures are game changes a rebuilt source would meet too. A server does not run client code, so 15 of the 28 loaded with references that only a game client reaches still unlinked (step 51).
+
+**49 · Drop a mod in, pick a version and a loader, get it back** (later). Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod goes in as its source folder or its .jar, the person picks the Minecraft version and the loader they want, and it comes back the same way for that version and loader, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on step 50 (a .jar in and out) and on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.
+
 **19 · Forge → NeoForge and Fabric → Quilt** (later). Forge → NeoForge and Fabric → Quilt, which are close pairs.
 
 **39 · Mod ↔ plugin on one server-side project** (later). Move one server-side project across the mod and plugin line: a Forge or Fabric mod with no client code to a Paper plugin (events, commands, scheduler and config mapped to the Bukkit API), and a plugin the other way. Client code, mixins into the game and new blocks or items cannot exist on a plugin server, so the port stops and names each one instead of dropping it.
@@ -323,11 +404,13 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 </details>
 
-<details><summary>Every number for this goal (2)</summary>
+<details><summary>Every number for this goal (4)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
 | Loader or platform changes that work in the game | 0 pairs (Nov 9) | 2 pairs (Nov 14) | 1 pair by Jan 29, 2027, step 18 | Met |
+| Most-downloaded NeoForge mods for 1.21.1 that use nothing the NeoForge-on-Fabric bridge lacks | — | 68 mods (Nov 18) | 100 mods by Dec 5, step 48 | Baseline |
+| Corpus mods that convert, compile and load in the game | 1 mod (Nov 14) | 15 mods (Nov 18) | 17 mods by Dec 5, step 48 | 88% of the way |
 | Loader-change rules, each with every class and member it names found in the loaders' published jars | — | 41 rules (Nov 14) | — | Fact |
 
 </details>
@@ -340,7 +423,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 26 steps (Nov 14) | 43 steps by Mar 26, 2027 | 55% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 37 steps (Nov 20) | 61 steps by Mar 26, 2027 | 57% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
@@ -348,7 +431,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 ## Decisions
 
-<details><summary>15 decisions, oldest first</summary>
+<details><summary>19 decisions, oldest first</summary>
 
 | Date | Question | Choice |
 |---|---|---|
@@ -367,5 +450,9 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 | 2026-11-08 | Run CI on a schedule? | No. Every input is pinned, so a scheduled run repeats the last answer: Stonecutter's nightly run failed one of its 100 jobs six nights in a row (Nov 2 to 7) with nobody looking. Slow checks run on demand when the code they test changes. The PR budget gate that failed a run over 300 s, queue time included, is gone too: a budget is not a check (Jon, 2026-11-08) |
 | 2026-11-09 | What are the goals, and in what order? | Four (Jon, 2026-11-09): 1 test a mod in seconds, 2 port any mod to any version automatically, 3 make modpacks work together, 4 change loader or platform. The roadmap is grouped by goal, not by phase: old Phases 5 and 7 are Goal 1, Phases 1 to 3 are Goal 2, Phase 6 is Goal 3 and Phase 4 is Goal 4. Step ids did not change; steps 28 and 32 moved to Goal 2 because they are version ports |
 | 2026-11-09 | Is moving between mods and plugins a goal? | Yes (Jon, 2026-11-09): Goal 4 covers every loader and platform, Paper included. Server-side code can be mapped between a loader's API and Bukkit's; client code and new blocks or items cannot run on a plugin server, and a port names them instead of dropping them (step 39) |
+| 2026-11-17 | How does the porter scale to any mod and any version? | Not by rules read from compiler error text (355 of 358 rules matched on it, 320 hand-written per version step and naming scheme; a day of them moved the corpus from 10 to 15 building ports of 125). Jon asked for a step-back on 2026-11-17; a blind second opinion and OpenRewrite's and Error Prone's own files agree: resolve the game member behind every site of the mod on its own version and apply every known change in one typed pass; generate the target build from the loader's own starter project instead of patching each build script; write each redesign once per changed game part, ranked by mods freed. PR #97 holds the numbers |
+| 2026-11-18 | What chooses the next piece of porting or converting work? | A list of what real mods use, and only after it has been checked against real builds (Jon asked on 2026-11-18 why progress was small and nothing was laid out). Three methods that day were each chosen from a list nobody had checked, and each missed: building ports from the loader's starter project freed 0 of 126 and lost 2 (PR #109); the port worklist cleared 21 ports of which 7 built, because it reads almost nothing in Fabric mods; three convert methods aimed at the 14 corpus mods that do not compile freed none of their three targets. The number to steer by is how many of the 150 most-downloaded mods have nothing left, read from their jars in a minute or two with no build (python bench/exposure.py run for porting, python bench/convert_coverage.py real for converting). The unit of work is one changed game part or one loader symbol, and the corpus sweep in the cloud is the proof at the end of a PR, never what chooses the work |
+| 2026-11-18 | Where is all of this going? | One place where someone drops a mod in, picks the version and the loader they want, and gets it back very quickly, so nobody has to worry about versions or loaders (Jon, 2026-11-18). It has to be designed for any mod anyone can make, so nothing is made by hand for one mod, because that does not scale: the porter learns a changed part of the game once and the converter a piece of a loader's API once, and every mod that uses it is covered. Porting and converting stay separate records and claims (2026-10-24), and step 49 joins them behind one front door |
+| 2026-11-18 | What does someone hand over: the mod's source, or its .jar? | Either (Jon, 2026-11-18): the mod's source folder, which comes back as source, or its .jar, which comes back as a .jar, through the command line and the desktop app. Until now port and convert took a source folder only, so only a mod's author could use them. Step 50 adds the .jar and comes first, because how it is done decides whether the source-based steps 44 and 47 stay as written |
 
 </details>

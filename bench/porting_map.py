@@ -202,44 +202,34 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 }
 """
 
-MAP_BODY = r"""<p class="lede">Pick the version your mod is on and the one you want. Long ports go through the popular versions, and each line's colour says what has really been tried. <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/tools/ChangeIndex.java">How it's measured</a></p>
-
-<div class="card">
+MAP_BODY = r"""<div class="card">
   <div class="pick">
     <div><label for="from">My mod is on</label><select id="from"></select></div>
     <button class="swap" id="swap" type="button" title="Swap" aria-label="Swap the two versions">⇄</button>
     <div><label for="to">I want it on</label><select id="to"></select></div>
   </div>
   <div class="loaderpick"><label for="loader">Loader</label><select id="loader"><option value="fabric">Fabric</option><option value="neoforge">NeoForge</option><option value="forge">Forge</option><option value="quilt">Quilt</option></select>
-  <span class="small">A port proves only its own loader, so the colours are for this loader alone.</span></div>
+  <span class="small">Pick any two versions to see the hub route, what changed, and the command.</span></div>
 </div>
 
 <div id="route"></div>
 <div id="detail"></div>
 
-<h3>Every release</h3>
+<details class="fold" id="all-releases"><summary><b>Every Minecraft release (1.14.4 → 26.3)</b><span>hubs, jumps, and tested routes</span></summary>
 <div class="legend">
-  <span><b class="hubmark">1.20.1</b> boxed: a popular version, good to port through</span>
-  <span><b class="pickmark">1.20.1</b> with a <b>from</b> or <b>to</b> tag: your two picks</span>
-  <span><span class="ln st-green"></span>a mod on the picked loader was moved across and works in the game</span>
-  <span><span class="ln st-yellow"></span>it builds, or we're working on it</span>
-  <span><span class="ln st-red"></span>not tried yet, or not possible yet</span>
-  <span><span style="color:var(--ink3)">grey versions</span>: before 1.14.4, our numbers are guesses</span>
+  <span><b class="hubmark">1.20.1</b> hub version</span>
+  <span><span class="ln st-green"></span>proven in game</span>
+  <span><span class="ln st-yellow"></span>builds or in progress</span>
+  <span><span class="ln st-red"></span>not tried yet</span>
 </div>
-<ul class="keys small">
-  <li>Lines between versions in a row: one update at a time.</li>
-  <li>Lines on the left: go straight from one boxed version to another. Hover a version to see where it can jump to.</li>
-  <li><b>Thick line</b> = on your route. Thin line = everything else.</li>
-  <li><b>A dot</b> = the route stops at that version. A line with no dots is the whole trip in one <code>port</code> command.</li>
-</ul>
 <div id="hopinfo" class="small"></div>
 <div id="map"></div>
+</details>
 
-<h3>Learned from real mods</h3>
-<p class="small">Stonecutter mods keep one source for many versions, with switches like <span class="mono">//? if &gt;=1.21.2</span>: each one is a person showing the code before and after an update. These are the switches mined from <span id="scmods"></span> open-source mods, placed on the update their version boundary falls on, and the rules learned where the same change repeats across mods. A rule runs only on its own update, and only when the compiler reports the old name.</p>
+<details class="fold" id="stonecutter-fold"><summary><b>Rules mined from open-source Stonecutter mods</b><span><span id="scmods"></span> mods</span></summary>
 {SC_CHART}<details class="v-tablefold"><summary>Every update as a table</summary><table class="tbl stack" id="sctable"><thead><tr><th class="l">Update</th><th>Switches</th><th>Mods</th><th class="l">Rules learned (forward)</th><th class="l">Backport rules</th></tr></thead><tbody></tbody></table></details>
-
-<p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span>, <span class="mono">coverage/ledger.json</span> and <span class="mono">ROADMAP.md</span> on <span id="gen"></span>. Before 1.14.4 there are no Mojang names: the hubs 1.7.10, 1.8.9, 1.10.2 and 1.12.2 are measured in MCP names through Forge SRG ids, and the other early families are grouped by version number, unmeasured.</p>
+<p class="small" style="margin-top:10px">Generated on <span id="gen"></span> from official game/loader jars and <span class="mono">coverage/changes/index.json</span>. Before 1.14.4 there are no Mojang names: the hubs 1.7.10, 1.8.9, 1.10.2 and 1.12.2 are measured in MCP names through Forge SRG ids, and the other early families are grouped by version number, unmeasured.</p>
+</details>
 """
 
 MAP_JS = r"""const IX = /*INDEX*/null;
@@ -346,7 +336,7 @@ const cmd = h => `${PLAT === "win" ? "mmt.cmd" : "./mmt"} port --root <your mod 
 function render() {
   $("#detail").innerHTML = "";
   const x = $("#from").value, y = $("#to").value;
-  if (!x || !y) { mark(x || null, y || null); $("#route").innerHTML = `<p class="summary">Pick ${x ? "where you want to go" : "both versions"} above, or tap two versions in the list below.</p>`; return; }
+  if (!x || !y) { mark(x || null, y || null); $("#route").innerHTML = `<p class="small" style="margin-top:10px">Pick ${x ? "where you want to go" : "two versions"} above, or open Every Minecraft release below.</p>`; return; }
   try { history.replaceState(null, "", "#from=" + encodeURIComponent(x) + "&to=" + encodeURIComponent(y) + "&loader=" + LOADER); } catch (e) {}
   mark(x, y);
   const out = $("#route");
@@ -426,7 +416,12 @@ function drawMap() {
     b.onmouseenter = () => { HOVER = FAM[b.dataset.v].hub; drawLinks(); };
     b.onmouseleave = () => { HOVER = null; drawLinks(); };
   });
-  if (!drawMap.listening) { drawMap.listening = true; window.addEventListener("resize", () => drawLinks()); }
+  if (!drawMap.listening) {
+    drawMap.listening = true;
+    window.addEventListener("resize", () => drawLinks());
+    const ar = $("#all-releases");
+    if (ar) ar.addEventListener("toggle", () => { if (ar.open) requestAnimationFrame(() => drawLinks()); });
+  }
 }
 function info(html) { $("#hopinfo").innerHTML = html; }
 let ROUTE = null, PICK = [], HOVER = null;

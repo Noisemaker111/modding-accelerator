@@ -109,8 +109,16 @@ public final class PortRepairTests {
             learned +
             " rules learned from Stonecutter switches name real switches in two or more mods, match their error, rewrite their example and run on their update"
         );
-        // Every other rule that carries a test is held to the same three facts.
+        // Every other rule that carries a test is held to the same three facts. Its error is read the way a port reads
+        // javac's log, written with Windows line ends, so a match that spans lines holds on every machine.
         int written = 0;
+        Path windowsLog = Files.createTempFile("rule-error", ".log");
+        String qualifier = Port.logText(Files.writeString(windowsLog,
+            "  symbol:   variable Builder\r\n  symbol:   variable EMPTY\r\n  symbol:   variable level\r\n"));
+        check(
+            qualifier.contains("symbol:   class Builder") && qualifier.contains("variable EMPTY") && qualifier.contains("variable level"),
+            "a class javac calls a variable (named as a qualifier) is read as a class; constants and variables stay"
+        );
         for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
             if ("stonecutter".equals(rule.get("source")) || !(rule.get("test") instanceof Map<?, ?>)) continue;
@@ -120,7 +128,7 @@ public final class PortRepairTests {
             if (
                 !rule.containsKey("silent") &&
                 !java.util.regex.Pattern.compile(rule.get("match").toString())
-                    .matcher(test.get("error").toString())
+                    .matcher(Port.logText(Files.writeString(windowsLog, test.get("error").toString().replace("\n", "\r\n"))))
                     .find()
             ) throw new AssertionError(id + ": match misses its test error");
             String after = "line".equals(rule.get("scope"))
@@ -655,6 +663,52 @@ public final class PortRepairTests {
         }
     }
 
+    /** A Minecraft range written out in neoforge.mods.toml follows the port when it does not take the target; others stay. */
+    static void literalRangeChecks(Path scratch) throws Exception {
+        Path mod = Files.createDirectories(scratch.resolve("literal-range/src/main/resources/META-INF"));
+        Files.writeString(mod.resolve("neoforge.mods.toml"), "modId=\"corpse\"\n[[dependencies.corpse]]\n    modId = \"neoforge\"\n    versionRange = \"[21.0,)\"\n"
+            + "[[dependencies.corpse]]\n    modId = \"minecraft\"\n    type = \"required\"\n    versionRange = \"[1.21,1.21.1]\"\n");
+        Target.Setup setup = new Target.Setup(null, Json.map("directory", scratch.resolve("literal-range").toString()), "1.21.2", List.of());
+        Target.literalGameRange(setup, "1.21.2");
+        String after = setup.text(mod.resolve("neoforge.mods.toml"));
+        check(after.contains("versionRange = \"[1.21.2]\"") && after.contains("versionRange = \"[21.0,)\""), "the game range follows, NeoForge's stays: " + after);
+        Target.Setup open = new Target.Setup(null, Json.map("directory", scratch.resolve("literal-range").toString()), "1.21.1", List.of());
+        Target.literalGameRange(open, "1.21.1");
+        check(open.edits().isEmpty(), "a range that takes the target is left as written");
+    }
+
+    static void carryChecks() {
+        // A removed game class is carried from the old game's source: a static nested one whole, braces matched; an inner
+        // (non-static) one needs its outer instance, so it is never carried.
+        String oldGame = "public class BlockEntityType<T> {\n    private final Set<Block> validBlocks;\n"
+            + "    public static final class Builder<T extends BlockEntity> {\n        final Set<Block> validBlocks;\n"
+            + "        public BlockEntityType<T> build(Type<?> t) { if (t == null) { return null; } return new BlockEntityType<>(); }\n    }\n"
+            + "    class Inner { }\n}\n";
+        String carried = Port.nestedDeclaration(oldGame, "Builder");
+        if (carried == null || !carried.startsWith("    public static final class Builder") || !carried.endsWith("    }") || carried.contains("Inner")) throw new IllegalStateException("static nested class carried whole: " + carried);
+        if (Port.nestedDeclaration(oldGame, "Inner") != null) throw new IllegalStateException("an inner class is not carried");
+        // An access transformer follows the map: a renamed method keeps its access under the new name and descriptor, a
+        // field under its new name, a moved class in a descriptor follows; an entry the map does not know stays as written.
+        List<String> at = new ArrayList<>(List.of(
+            "public net.minecraft.client.gui.GuiGraphics blitSprite(Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIII)V # Jade",
+            "public net.minecraft.client.renderer.LevelRenderer rainSoundTime",
+            "protected net.minecraft.world.entity.animal.Sheep getOffspringColor(Lnet/minecraft/world/entity/animal/Animal;Lold/Thing;)Lnet/minecraft/world/item/DyeColor;",
+            "public net.minecraft.world.level.biome.Biome TEMPERATURE_NOISE"
+        ));
+        Map<String, String[]> members = new HashMap<>();
+        members.put("net.minecraft.client.gui.GuiGraphics blitSprite(Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIII)V", new String[] { "net.minecraft.client.gui.GuiGraphics", "blitSprite", "(Ljava/util/function/Function;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIIII)V" });
+        members.put("net.minecraft.client.renderer.LevelRenderer rainSoundTime", new String[] { "net.minecraft.client.renderer.WeatherEffectRenderer", "rainSoundTime", "" });
+        int followed = Port.followMap(at, Map.of("old.Thing", "fresh.Thing"), members);
+        if (followed != 3
+            || !at.get(0).equals("public net.minecraft.client.gui.GuiGraphics blitSprite(Ljava/util/function/Function;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIIII)V # Jade")
+            || !at.get(1).equals("public net.minecraft.client.renderer.WeatherEffectRenderer rainSoundTime")
+            || !at.get(2).contains("(Lnet/minecraft/world/entity/animal/Animal;Lfresh/Thing;)")
+            || !at.get(3).equals("public net.minecraft.world.level.biome.Biome TEMPERATURE_NOISE")) throw new IllegalStateException("access transformer follows the map: " + at);
+        String top = Port.topLevel("package a;\n\nimport b.C;\n\n@Deprecated\npublic final class Gone {\n    int x;\n}\n", "Gone");
+        if (top == null || !top.startsWith("@Deprecated\npublic final class Gone") || !top.endsWith("}")) throw new IllegalStateException("a top-level class is carried from its annotations on: " + top);
+        count++;
+    }
+
     public static void main(String[] args) throws Exception {
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
@@ -667,6 +721,8 @@ public final class PortRepairTests {
         accessorWithoutMixinsChecks(home, scratch);
         mixinRepairChecks();
         parchmentChecks(home, scratch);
+        carryChecks();
+        literalRangeChecks(scratch);
         System.out.println(count + " port repair checks passed");
     }
 }

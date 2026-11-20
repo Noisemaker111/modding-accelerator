@@ -9,6 +9,14 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class VanillaGuiLayers {
 
+    /**
+     * NeoForge 21.1's Gui.leftHeight and rightHeight (how far up the HUD's left and right bars reach, for a layer to stack
+     * on): reset to NeoForge's 39 at the start of each HUD frame (RegisterGuiLayersEvent.hook). A mod's reads and writes
+     * of the Gui fields become these (mmt convert's rule). The game's own bars do not add to them on Fabric.
+     */
+    public static int leftHeight = 39;
+    public static int rightHeight = 39;
+
     public static final ResourceLocation CAMERA_OVERLAYS = ResourceLocation.withDefaultNamespace("camera_overlays");
     public static final ResourceLocation CROSSHAIR = ResourceLocation.withDefaultNamespace("crosshair");
     public static final ResourceLocation HOTBAR = ResourceLocation.withDefaultNamespace("hotbar");
