@@ -16,7 +16,7 @@ on the way, not a result. This file says which platform has reached what, and ho
 | Behaviour in a hidden client (`ui-check`, `world-check`) | Yes | Yes | Loads only | No | Not applicable |
 | Dedicated server plus client or test player (`mp-check`, `server-check`) | Partly | Partly | No | No | Yes: real Paper 1.8 and up, with a test player |
 | Port between versions (`port`) | Yes, 1.14.4 to 26.3 | Yes, 1.14.4 to 26.3 | No | No | No: `port` names the edits instead |
-| Port a compiled `.jar` (`port --jar`) | No | 1.20.5 and newer: 30 of 35 popular mods load on a real 1.21.2 server | No | No | No |
+| Port a compiled `.jar` (`port --jar`) | 1.14.4 and newer | 1.20.5 and newer | No | No | No |
 | Switch loader (`convert`) | To NeoForge | To Fabric (26.1+ and 1.21.1) | No | No | No |
 | Modpacks on their own server (`pack-check`) | Yes | Yes | Yes | Yes | Not applicable |
 | Performance (`perf`, `perf-optimize`) | Yes | Yes | Not yet proven | No | No |
@@ -39,8 +39,7 @@ Windows and partly on Linux, not on macOS.
 
 ## Who it is for
 
-- People who write mods or plugins from source. Porting and converting need the source; a compiled jar is only read
-  when a modpack is checked.
+- People who have a compiled mod `.jar` (Fabric 1.14.4+ or NeoForge 1.20.5+) to port to another Minecraft version, or mod/plugin authors working from source. Converting between loaders still needs source.
 - Modpack users and makers who need their installed mods to work together.
 - Fabric and NeoForge come first, then Forge (older modpacks), then Paper (servers). Quilt rides on Fabric.
 

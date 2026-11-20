@@ -275,26 +275,27 @@ final class Installation {
             Files.readAllBytes(harness.resolve(file))
         );
         contents.put("bootstrap-jre.ps1", Files.readAllBytes(harness.resolve("tools/bootstrap-jre.ps1")));
-        List<String> desktop = desktopApps(harness, contents);
+        List<String> desktop = desktopApps(harness, target, contents);
         String desktopText = desktop.isEmpty()
             ? ""
-            : "\nDesktop app (Minecraft Modding Tools), for working without a command line: open " +
+            : "Desktop app: open " +
             String.join(" or ", desktop) +
-            " in this folder.\n";
+            " to port .jar or source mods, switch loaders, fix modpacks, run checks, or profile Minecraft without a terminal.\n\n";
         contents.put(
             "GETTING_STARTED.txt",
-            ("Minecraft Modding Tools portable beta\n\n" +
-                "Windows needs no Java installed: if Java 17 or newer is missing, the launcher downloads a Java 21 runtime\n" +
-                "once into %LOCALAPPDATA%\\mmt\\jre after checking its published SHA-256. macOS and Linux need Java 17 or newer\n" +
-                "on PATH or JAVA_HOME; project builds may download other JDKs into the mmt cache.\n" +
-                "Extract the entire ZIP, then run ./mmt (macOS/Linux) or mmt.cmd (Windows) from this folder.\n" +
-                "Example: mmt.cmd doctor --root \"C:\\path to\\your mod\"\n" +
-                "Use port --from VERSION --to VERSION --fix to prepare a target; use compile, test, ui-check or world-check to verify.\n" +
-                "Run help for commands and support --json for current compatibility evidence. No Minecraft code or game assets are included.\n\n" +
-                "Support: Include the command, its receipt path under your mod's .runs/portable folder, and the failing log.\n" +
-                "Gameplay and behavior need an actual game check. Linux rendering and macOS execution remain unverified.\n" +
-                "See LICENSE and NOTICE for terms and attribution.\n" +
-                desktopText).getBytes(java.nio.charset.StandardCharsets.UTF_8)
+            ("Minecraft Modding Tools\n\n" +
+                desktopText +
+                "Command line: extract the entire ZIP, then run ./mmt (macOS/Linux) or mmt.cmd (Windows) from this folder.\n" +
+                "Windows needs no Java installed: if Java 17 or newer is missing, the launcher downloads a verified Java 21\n" +
+                "runtime once into %LOCALAPPDATA%\\mmt\\jre. macOS and Linux need Java 17 or newer on PATH or JAVA_HOME.\n\n" +
+                "Examples:\n" +
+                "  mmt.cmd port --jar my-mod-1.21.1.jar --to 1.21.2\n" +
+                "  mmt.cmd port --root \"C:\\path to\\your mod\" --from 1.21.5 --to 1.21.6 --fix\n" +
+                "  mmt.cmd pack-check --pack my-pack.mrpack --fix\n" +
+                "  mmt.cmd ui-check --root \"C:\\path to\\your mod\"\n" +
+                "  mmt.cmd help\n\n" +
+                "No Minecraft code or game assets are included. See LICENSE and NOTICE for terms and attribution.\n")
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8)
         );
         try (var output = new ZipOutputStream(Files.newOutputStream(zipTemporary))) {
             for (var item : contents.entrySet()) {
@@ -370,7 +371,7 @@ final class Installation {
      * The desktop app (app/, built with cargo build --release) goes into the ZIP once it is built: the Windows exe,
      * and an ELF binary as the Linux one. Without a build the package is the command line alone.
      */
-    static List<String> desktopApps(Path harness, Map<String, byte[]> contents) throws Exception {
+    static List<String> desktopApps(Path harness, Path jar, Map<String, byte[]> contents) throws Exception {
         List<String> added = new ArrayList<>();
         Path app = harness.resolve("app"), release = app.resolve("target/release");
         Path exe = release.resolve(DESKTOP_WINDOWS);
@@ -379,7 +380,9 @@ final class Installation {
             if (!Files.isRegularFile(binary) || newerSource(app, binary) == null) continue;
             Path cargo = onPath("cargo");
             if (cargo != null) {
-                Process build = new ProcessBuilder(cargo.toString(), "build", "--release").directory(app.toFile()).inheritIO().start();
+                ProcessBuilder pb = new ProcessBuilder(cargo.toString(), "build", "--release").directory(app.toFile()).inheritIO();
+                pb.environment().put("MMT_EMBED_JAR", jar.toAbsolutePath().toString());
+                Process build = pb.start();
                 if (build.waitFor() != 0) throw new IOException("cargo build --release failed in " + app + "; the desktop app was not packaged.");
             }
             Path newer = newerSource(app, binary);

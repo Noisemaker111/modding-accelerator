@@ -79,3 +79,21 @@ fn a_pack_draws_every_mod_and_marks_the_clashes() {
     assert!(rt.find("mod-sparkle-3.1.jar").is_some());
     assert!(rt.find("mod-lanterns-1.0.jar").is_some());
 }
+
+#[test]
+fn dropping_a_jar_opens_jar_porting() {
+    let mut app = init();
+    crate::dropped(&mut app, &[std::path::PathBuf::from(r"C:\mods\example-1.21.1.jar")]);
+    assert_eq!(app.screen, Screen::Port);
+    assert!(app.port.jar.is_some());
+    let rt = runtime(app);
+    assert!(rt.find("jar-sheet").is_some());
+    assert!(rt.find("jar-run").is_some());
+}
+
+#[test]
+fn ported_jar_shows_output_and_open_button() {
+    let rt = runtime(scene("port-jar"));
+    assert!(rt.find("jar-out").is_some());
+    assert!(rt.find("jar-open-out").is_some());
+}

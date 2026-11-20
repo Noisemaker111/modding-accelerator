@@ -2,12 +2,14 @@
 //! rings, the updates between them as dots), inked as `mmt port` previews and applies it. Preview
 //! runs without `--fix` (nothing is edited), Apply with `--fix`, Undo hands back its transaction.
 
-use rune::{Color, El, LineCap, LoopSpec, Path, Shape, TextEdit, canvas, col, el, oklch, row, text};
+use std::path::PathBuf;
+
+use rune::{Color, El, FileDialogOptions, LineCap, LoopSpec, Path, Shape, TextEdit, Tx, canvas, col, el, oklch, row, text};
 use serde_json::Value;
 
 use crate::cli::Outcome;
 use crate::theme::{self, Kind, graphite, ink, moss, ochre, paper, pencil, rule, rust};
-use crate::{App, Purpose};
+use crate::{App, Purpose, Screen};
 
 /// Versions people move between most; any other can be typed.
 const COMMON: [&str; 9] = ["1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.6", "1.21.11", "26.1", "26.2", "26.3"];
@@ -19,6 +21,11 @@ pub struct PortWizard {
     pub applied: Option<Outcome>,
     pub undo: Option<String>,
     pub undone: Option<Outcome>,
+    /// `port --jar`: porting a compiled .jar with no source code.
+    pub jar: Option<PathBuf>,
+    pub jar_from: TextEdit,
+    pub jar_to: TextEdit,
+    pub jar_result: Option<Outcome>,
     /// `convert`: the move to the other loader on the same Minecraft version, and its undo.
     pub converted: Option<Outcome>,
     pub convert_undone: Option<Outcome>,
@@ -26,8 +33,55 @@ pub struct PortWizard {
 
 impl Default for PortWizard {
     fn default() -> Self {
-        PortWizard { from: TextEdit::new(""), to: TextEdit::new(""), preview: None, applied: None, undo: None, undone: None, converted: None, convert_undone: None }
+        PortWizard {
+            from: TextEdit::new(""),
+            to: TextEdit::new(""),
+            preview: None,
+            applied: None,
+            undo: None,
+            undone: None,
+            jar: None,
+            jar_from: TextEdit::new(""),
+            jar_to: TextEdit::new(""),
+            jar_result: None,
+            converted: None,
+            convert_undone: None,
+        }
     }
+}
+
+pub fn chosen_jar(s: &mut App, path: PathBuf) {
+    let path = crate::cli::dunce(&std::fs::canonicalize(&path).unwrap_or(path));
+    s.port.jar = Some(path);
+    s.port.jar_result = None;
+}
+
+pub fn choose_jar(_: &mut App, tx: &mut Tx) {
+    let options = FileDialogOptions { title: "Choose a mod .jar to port".into(), ..Default::default() }
+        .filter("Mod JAR", &["jar"]);
+    tx.open_file(options, |s: &mut App, answer, _| match answer {
+        Ok(Some(path)) => {
+            chosen_jar(s, path);
+            s.screen = Screen::Port;
+        }
+        Ok(None) => {}
+        Err(e) => s.notice = Some(format!("The file picker didn't open: {e}")),
+    });
+}
+
+fn run_jar(s: &mut App) {
+    let Some(jar) = s.port.jar.clone() else { return };
+    let to = s.port.jar_to.text.trim().to_string();
+    if to.is_empty() {
+        return;
+    }
+    let mut args = vec!["port".to_string(), "--jar".into(), jar.display().to_string(), "--to".into(), to];
+    let from = s.port.jar_from.text.trim().to_string();
+    if !from.is_empty() {
+        args.extend(["--from".into(), from]);
+    }
+    s.port.jar_result = None;
+    s.start("Porting the .jar", Purpose::PortJar, args);
 }
 
 impl PortWizard {
@@ -391,11 +445,158 @@ fn changes(s: &App, o: &Outcome) -> Option<El> {
     Some(c)
 }
 
+fn jar_planner(s: &App) -> El {
+    let busy = s.busy();
+    let w = &s.port;
+    let field = |key: &str, edit: &TextEdit, hint: &str, access: fn(&mut App) -> &mut TextEdit, name: &str| {
+        col()
+            .w(116.0)
+            .gap(4.0)
+            .child(text(name.to_string()).font(theme::sans(14.0, 600.0)).color(graphite()))
+            .child(
+                rune::text_input(edit, theme::mono(16.0))
+                    .key(key.to_string())
+                    .single_line()
+                    .py(4.0)
+                    .color(ink())
+                    .placeholder(hint.to_string(), pencil())
+                    .label(name.to_string())
+                    .on_edit(access),
+            )
+            .child(el().w_full().h(1.0).fill(graphite()))
+    };
+    let mut common = row().gap(14.0).flex_wrap();
+    for v in COMMON {
+        common = common.child(theme::option(&format!("jar-to-{v}"), v, w.jar_to.text.trim() == v, move |s: &mut App| {
+            s.port.jar_to = TextEdit::new(v);
+        }));
+    }
+    let can_run = !busy && w.jar.is_some() && !w.jar_to.text.trim().is_empty();
+    let mut buttons = row()
+        .gap(10.0)
+        .flex_wrap()
+        .child(theme::button("jar-choose", if w.jar.is_some() { "Choose another .jar…" } else { "Choose a .jar…" }, if w.jar.is_some() { Kind::Plain } else { Kind::Primary }, !busy, choose_jar))
+        .child(theme::button("jar-run", "Port .jar", if w.jar.is_some() { Kind::Primary } else { Kind::Plain }, can_run, |s: &mut App, _| run_jar(s)));
+    if s.project.is_some() {
+        buttons = buttons.child(theme::button("jar-back", "Back to source folder", Kind::Plain, !busy, |s: &mut App, _| {
+            s.port.jar = None;
+            s.port.jar_result = None;
+        }));
+    }
+    theme::resting(
+        col()
+            .key("jar-planner")
+            .w(340.0)
+            .padding(24.0)
+            .gap(16.0)
+            .fill(paper())
+            .child(theme::heading("Port a .jar", 26.0))
+            .child(theme::body("Move a compiled Fabric (1.14.4+) or NeoForge (1.20.5+) mod .jar to another Minecraft version, with no source code.", 15.0, graphite()))
+            .child(
+                row()
+                    .gap(14.0)
+                    .items_end()
+                    .child(field("jar-from", &w.jar_from, "auto", |s| &mut s.port.jar_from, "From (optional)"))
+                    .child(text("to").font(theme::italic(16.0)).color(graphite()).pb(6.0))
+                    .child(field("jar-to", &w.jar_to, "1.21.4", |s| &mut s.port.jar_to, "To")),
+            )
+            .child(col().gap(6.0).child(text("Often moved to").font(theme::sans(14.0, 600.0)).color(graphite())).child(common))
+            .child(buttons),
+        1.0,
+    )
+    .rotate(0.006)
+}
+
+fn jar_view(s: &App) -> El {
+    let w = &s.port;
+    let mut left = col().grow(1.0).min_w(0.0).gap(24.0);
+    match &w.jar {
+        None => {
+            let mut sheet = theme::sheet()
+                .key("jar-empty")
+                .w_full()
+                .padding(28.0)
+                .gap(14.0)
+                .child(theme::heading("Port a mod", 28.0))
+                .child(theme::body("Drop a compiled .jar anywhere on this window, or choose one on the right. To port a source folder or switch loaders between Fabric and NeoForge, open the folder on the Bench.", 16.0, graphite()))
+                .child(
+                    row()
+                        .gap(10.0)
+                        .pt(4.0)
+                        .child(theme::button("jar-pick-main", "Choose a .jar…", Kind::Primary, !s.busy(), choose_jar))
+                        .child(theme::button("open-first", "Open a source folder", Kind::Plain, true, |s: &mut App, _| s.screen = Screen::Project)),
+                );
+            left = left.child(sheet);
+        }
+        Some(path) => {
+            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.display().to_string());
+            let mut sheet = theme::sheet()
+                .key("jar-sheet")
+                .w_full()
+                .padding(28.0)
+                .gap(14.0)
+                .child(theme::heading(name, 26.0))
+                .child(text(path.display().to_string()).key("jar-path").font(theme::mono(12.5)).color(graphite()).truncate().w_full());
+            if let Some(o) = &w.jar_result {
+                let r = o.result();
+                let out_path = r["out"].as_str().map(PathBuf::from);
+                let unlinked = r["unlinked"].as_array().cloned().unwrap_or_default();
+                let (word, c) = if o.ok() {
+                    ("Ported", moss())
+                } else if out_path.is_some() && !unlinked.is_empty() {
+                    ("Needs a hand", ochre())
+                } else {
+                    ("Failed", rust())
+                };
+                sheet = sheet.child(el().pin(None, Some(22.0), Some(26.0), None).child(theme::stamp(word, c, 20.0)));
+                if let (Some(from), Some(to)) = (r["from"].as_str(), r["to"].as_str()) {
+                    let moved: i64 = r["changed"]
+                        .as_object()
+                        .map(|m| m.values().filter_map(Value::as_i64).sum())
+                        .unwrap_or(0);
+                    let line = if unlinked.is_empty() {
+                        format!("Moved from Minecraft {from} to {to} ({moved} references updated). Every reference to the game links.")
+                    } else {
+                        format!("Moved from Minecraft {from} to {to} ({moved} references updated). {} references do not link in {to} and were left as they were:", unlinked.len())
+                    };
+                    sheet = sheet.child(theme::body(line, 16.0, ink()));
+                } else {
+                    sheet = sheet.child(theme::body(o.summary(), 15.0, ink()));
+                }
+                if !unlinked.is_empty() {
+                    let mut list = col().w_full().gap(4.0);
+                    for item in unlinked.iter().take(10) {
+                        let text_line = item.as_str().map(str::to_string).unwrap_or_else(|| item.to_string());
+                        list = list.child(text(text_line).font(theme::mono(12.0)).color(graphite()).truncate().w_full());
+                    }
+                    if unlinked.len() > 10 {
+                        list = list.child(theme::note(format!("and {} more in the output.", unlinked.len() - 10)));
+                    }
+                    sheet = sheet.child(list);
+                }
+                if let Some(out) = out_path {
+                    let folder = out.parent().map(std::path::Path::to_path_buf).unwrap_or_else(|| out.clone());
+                    sheet = sheet
+                        .child(el().w_full().h(1.0).fill(rule()))
+                        .child(text(out.display().to_string()).key("jar-out").font(theme::mono(12.5)).color(ink()).truncate().w_full())
+                        .child(row().gap(10.0).child(theme::button("jar-open-out", "Open output folder", Kind::Primary, true, move |s: &mut App, _| {
+                            s.notice = crate::cli::open_path(&folder).err();
+                        })));
+                }
+            } else {
+                sheet = sheet.child(theme::note("Pick the Minecraft version you want on the right, then press Port .jar. The ported .jar is written beside the original."));
+            }
+            left = left.child(sheet);
+        }
+    }
+    row().w_full().gap(32.0).items_start().child(left).child(jar_planner(s))
+}
+
 pub fn view(s: &App) -> El {
     let busy = s.busy();
     let w = &s.port;
-    if s.project.is_none() {
-        return col().gap(16.0).child(theme::heading("Change version", 30.0)).child(theme::note("Put your mod on the bench first.")).child(theme::button("open-first", "Go to the bench", Kind::Primary, true, |s: &mut App, _| s.screen = crate::Screen::Project));
+    if w.jar.is_some() || s.project.is_none() {
+        return jar_view(s);
     }
     let mut left = col().grow(1.0).min_w(0.0).gap(24.0).child(map(s));
     if let Some(p) = &w.preview {
@@ -412,7 +613,19 @@ pub fn view(s: &App) -> El {
             left = left.child(c);
         }
     }
-    let mut right = col().w(330.0).gap(24.0).child(planner(s)).child(loader_slip(s));
+    let jar_slip = theme::resting(
+        col()
+            .key("port-jar-slip")
+            .w_full()
+            .padding(20.0)
+            .gap(10.0)
+            .fill(paper())
+            .child(theme::heading("Or port a .jar", 20.0))
+            .child(theme::note("Have a compiled Fabric or NeoForge .jar instead of source?"))
+            .child(row().child(theme::button("port-pick-jar", "Choose a .jar…", Kind::Plain, !busy, choose_jar))),
+        0.8,
+    );
+    let mut right = col().w(330.0).gap(24.0).child(planner(s)).child(loader_slip(s)).child(jar_slip);
     if let Some(a) = &w.applied {
         let r = a.result();
         let mut facts = Vec::new();

@@ -18,6 +18,8 @@ use serde_json::Value;
 /// Lines of live output kept for the window.
 const KEEP_LINES: usize = 400;
 
+include!(concat!(env!("OUT_DIR"), "/embedded.rs"));
+
 /// Where the mmt launcher is, and how to start it.
 #[derive(Clone, Debug)]
 pub struct Launcher {
@@ -28,8 +30,10 @@ pub struct Launcher {
 }
 
 impl Launcher {
-    /// Looks in `MMT_HOME` (or the old `MODACCEL_HOME`), then beside this program, then in the folders
-    /// above it (so a development build in `app/target/release` finds the checkout it was built from).
+    /// Looks in `MMT_HOME` (or the old `MODACCEL_HOME`), then beside this program. A standalone
+    /// release build unpacks its embedded `mmt.jar` and launcher into the user's mmt cache so the
+    /// single downloaded executable works anywhere on its own. A development build walks up to the
+    /// source checkout it was built from.
     pub fn find() -> Result<Launcher, String> {
         let mut candidates = Vec::new();
         for variable in ["MMT_HOME", "MODACCEL_HOME"] {
@@ -38,17 +42,26 @@ impl Launcher {
             }
         }
         if let Ok(exe) = std::env::current_exe() {
-            let mut dir = exe.parent().map(Path::to_path_buf);
-            for _ in 0..5 {
-                let Some(d) = dir else { break };
-                candidates.push(d.clone());
-                dir = d.parent().map(Path::to_path_buf);
+            if BUNDLED.is_some() {
+                if let Some(dir) = exe.parent() {
+                    candidates.push(dir.to_path_buf());
+                }
+            } else {
+                let mut dir = exe.parent().map(Path::to_path_buf);
+                for _ in 0..5 {
+                    let Some(d) = dir else { break };
+                    candidates.push(d.clone());
+                    dir = d.parent().map(Path::to_path_buf);
+                }
             }
         }
         for home in &candidates {
             if let Some(launcher) = Launcher::at(home) {
                 return Ok(launcher);
             }
+        }
+        if let Some(bundled) = &BUNDLED {
+            return unpack_bundled(bundled);
         }
         Err(format!(
             "Couldn't find the mmt launcher ({}). Keep this program in the folder you extracted the download into, \
@@ -65,6 +78,112 @@ impl Launcher {
             program: dunce(&program),
         })
     }
+
+    /// Runs `args` synchronously to completion. Used by `--check-standalone` to verify a packaged binary.
+    pub fn run_sync(&self, args: &[&str], cwd: &Path) -> Outcome {
+        let mut command = launcher_command(self);
+        command
+            .args(args)
+            .current_dir(cwd)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        hide_and_group(&mut command);
+        match command.output() {
+            Ok(out) => {
+                let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
+                let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+                let json = last_json(&stdout);
+                Outcome {
+                    exit: out.status.code(),
+                    json,
+                    text: if stdout.trim().is_empty() { stderr } else { stdout },
+                    cancelled: false,
+                }
+            }
+            Err(e) => Outcome {
+                exit: None,
+                json: None,
+                text: format!("Couldn't start {}: {e}", self.program.display()),
+                cancelled: false,
+            },
+        }
+    }
+}
+
+fn cache_base() -> Result<PathBuf, String> {
+    #[cfg(windows)]
+    {
+        if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+            return Ok(PathBuf::from(local).join("mmt").join("app"));
+        }
+        if let Some(profile) = std::env::var_os("USERPROFILE") {
+            return Ok(PathBuf::from(profile).join(".mmt").join("app"));
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        if let Some(home) = std::env::var_os("HOME") {
+            return Ok(PathBuf::from(home).join(".mmt").join("app"));
+        }
+    }
+    Ok(std::env::temp_dir().join("mmt").join("app"))
+}
+
+fn unpack_bundled(bundled: &Bundled) -> Result<Launcher, String> {
+    let dir = cache_base()?.join(bundled.hash);
+    unpack_bundled_to(bundled, &dir)
+}
+
+fn unpack_bundled_to(bundled: &Bundled, dir: &Path) -> Result<Launcher, String> {
+    std::fs::create_dir_all(dir)
+        .map_err(|e| format!("Couldn't create {}: {e}", dir.display()))?;
+    write_if_needed(&dir.join("mmt.jar"), bundled.jar, false)?;
+    #[cfg(windows)]
+    {
+        write_if_needed(&dir.join("mmt.cmd"), bundled.launcher_win, false)?;
+        write_if_needed(&dir.join("bootstrap-jre.ps1"), bundled.bootstrap_ps1, false)?;
+    }
+    #[cfg(not(windows))]
+    {
+        write_if_needed(&dir.join("mmt"), bundled.launcher_unix, true)?;
+    }
+    Launcher::at(dir).ok_or_else(|| format!("Unpacked runtime in {} is incomplete.", dir.display()))
+}
+
+fn write_if_needed(path: &Path, bytes: &[u8], executable: bool) -> Result<(), String> {
+    if let Ok(existing) = std::fs::read(path) {
+        if existing == bytes {
+            ensure_executable(path, executable)?;
+            return Ok(());
+        }
+    }
+    let tmp = path.with_extension(format!("tmp-{}", std::process::id()));
+    std::fs::write(&tmp, bytes)
+        .map_err(|e| format!("Couldn't write {}: {e}", path.display()))?;
+    ensure_executable(&tmp, executable)?;
+    if let Err(e) = std::fs::rename(&tmp, path) {
+        let _ = std::fs::remove_file(&tmp);
+        if std::fs::read(path).ok().as_deref() != Some(bytes) {
+            return Err(format!("Couldn't put {} in place: {e}", path.display()));
+        }
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+fn ensure_executable(path: &Path, executable: bool) -> Result<(), String> {
+    if !executable {
+        return Ok(());
+    }
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))
+        .map_err(|e| format!("Couldn't mark {} executable: {e}", path.display()))
+}
+
+#[cfg(not(unix))]
+fn ensure_executable(_path: &Path, _executable: bool) -> Result<(), String> {
+    Ok(())
 }
 
 #[cfg(windows)]
@@ -511,5 +630,26 @@ mod tests {
     #[test]
     fn verbatim_paths_lose_their_prefix() {
         assert_eq!(dunce(Path::new(r"\\?\C:\mods\x")), PathBuf::from(r"C:\mods\x"));
+    }
+
+    #[test]
+    fn bundled_runtime_unpacks_and_repairs_modified_files() {
+        let dir = std::env::temp_dir().join(format!("mmt-bundled-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let bundled = Bundled {
+            hash: "test",
+            jar: b"jar-bytes",
+            launcher_win: b"@echo off\r\n",
+            bootstrap_ps1: b"# ps1\r\n",
+            launcher_unix: b"#!/bin/sh\n",
+        };
+        let launcher = unpack_bundled_to(&bundled, &dir).expect("unpack");
+        assert_eq!(std::fs::read(dir.join("mmt.jar")).unwrap(), b"jar-bytes");
+        assert!(launcher.program.is_file());
+        // Corrupt the jar; unpacking again must restore the bundled bytes.
+        std::fs::write(dir.join("mmt.jar"), b"corrupt").unwrap();
+        let _ = unpack_bundled_to(&bundled, &dir).expect("repair");
+        assert_eq!(std::fs::read(dir.join("mmt.jar")).unwrap(), b"jar-bytes");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
