@@ -22,7 +22,7 @@ final class JarPortRetypeTest {
         b.loaderVersion = "2.0.1";
         JarPortTest.snap(a, "g6/Pose", 0, null, "push()V");
         JarPortTest.snap(b, "g6/Pose", 0, null, "push()V");
-        JarPortTest.snap(b, "g6/Graphics", 0, null, "pose()" + POSE, "fill(I)V");
+        JarPortTest.snap(b, "g6/Graphics", 0, null, "pose()" + POSE, "fill(I)V", "tip2(Lg6/Font;I)V");
         JarPortTest.snap(b, "g6/Key", 0, null, "code()I", "scan()I");
         JarPortTest.snap(a, "g6/Gui", 0, null);
         JarPortTest.snap(a, "g7/Bundled", 0, null, "run()V");
@@ -32,6 +32,15 @@ final class JarPortRetypeTest {
         JarPortTest.snap(b, "g6/Screen", 0, null, "render(" + GFX + "I)V", "back(" + GFX + ")V", "key(" + KEY + ")Z", "tick()V", "old()V", "kept()V", "hover(" + GFX + ")V", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z", "scroll(IIII)Z");
         JarPortTest.snap(a, "g6/Title", 0, "g6/Screen", "render(" + POSE + "I)V", "key(III)Z", "chr(CI)Z", "drag(IIII)Z");
         JarPortTest.snap(b, "g6/Title", 0, "g6/Screen", "render(" + GFX + "I)V", "key(" + KEY + ")Z", "chr(" + KEY + ")Z", "drag(" + KEY + "II)Z");
+        // Screen.tip(pose, x) goes in 2.0; the game's own code writes graphics.tip2(this.font, x), font being protected.
+        for (GameDiff.Snap s : List.of(a, b)) {
+            JarPortTest.snap(s, "g6/Font", 0, null);
+            GameDiff.Cls screenClass = s.classes.get("g6/Screen");
+            screenClass.fields.put("font", new GameDiff.Fld(screenClass, "font", "Lg6/Font;", Opcodes.ACC_PROTECTED));
+        }
+        a.classes.get("g6/Screen").methods.put("tip(" + POSE + "I)V", new GameDiff.Meth(a.classes.get("g6/Screen"), "tip", "(" + POSE + "I)V", Opcodes.ACC_PUBLIC));
+        JarPortTest.snap(a, "g6/Row", 0, null, "render(" + POSE + "I)V");
+        JarPortTest.snap(b, "g6/Row", 0, null, "render(" + GFX + "I)V");
         JarPortTest.snap(a, "g6/Loc", 0, null);
         // g6.Part goes in 2.0 and the game's own Title2 extends Object instead, though the map follows Part's members to Graphics.
         JarPortTest.snap(a, "g6/Part", 0, null, "own()V");
@@ -49,7 +58,10 @@ final class JarPortRetypeTest {
                             {"owner": "g6.Screen", "from": "hover", "desc": "(Lg6/Pose;)V", "to": "hover", "newDesc": "(Lg6/Graphics;)V"},
                             {"owner": "g6.Screen", "from": "chr", "desc": "(CI)Z", "to": "chr", "newDesc": "(Lg6/Key;)Z"},
                             {"owner": "g6.Screen", "from": "drag", "desc": "(IIII)Z", "to": "drag", "newDesc": "(Lg6/Key;II)Z"},
-                            {"owner": "g6.Screen", "from": "scroll", "desc": "(III)Z", "to": "scroll", "newDesc": "(IIII)Z"}],
+                            {"owner": "g6.Screen", "from": "scroll", "desc": "(III)Z", "to": "scroll", "newDesc": "(IIII)Z"},
+                            {"owner": "g6.Row", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"}],
+             "retyped": [{"step": "1.0 -> 2.0", "owner": "g6.Screen", "from": "tip", "desc": "(Lg6/Pose;I)V", "at": 1, "as": "Lg6/Graphics;",
+                          "expr": "$1.tip2($0.font, $2)", "votes": 3, "of": 3}],
              "rewrites": [{"owner": "g6.Gui", "from": "fill", "desc": "(Lg6/Pose;I)V", "static": true, "toOwner": "g6.Graphics", "to": "fill",
                            "newDesc": "(I)V", "newStatic": false, "votes": 3, "of": 3}]}
             """);
@@ -125,6 +137,22 @@ final class JarPortRetypeTest {
         JarPortTest.expect("render(Lg6/Graphics;I)V HEAD".equals(varStrings.get("onX(I)I"))
             && varUnlinked.equals(List.of("mixin target changed signature: g6.Screen.render(Lg6/Pose;I)V")),
             "a @ModifyVariable that takes nothing of render's moves to render's new signature, one capturing the pose stays reported: " + varStrings + " " + varUnlinked);
+
+        // A row (no screen) calling screen.tip(pose, x): written as graphics.tip2(screen.font, x), the protected font opened
+        // through the access widener when the loader reads one, and reported where it does not.
+        List<Map<String, Object>> rowRuns = new ArrayList<>();
+        Map<String, byte[]> rowJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/MyRow.class", myRow(),
+            "fabric.mod.json", "{\"id\": \"m6\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "row.jar", rowRuns));
+        List<String> rowUnlinked = Json.array(rowRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        String widener = rowJar.entrySet().stream().filter(e -> e.getKey().endsWith(".accesswidener")).map(e -> new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8)).findFirst().orElse("");
+        String rowRender = String.join("\n", JarPortTest.members(rowJar.get("m6/MyRow.class")).values());
+        JarPortTest.expect(rowUnlinked.isEmpty() && widener.contains("accessible field g6/Screen font Lg6/Font;") && rowRender.contains("get g6/Screen.font Lg6/Font;") && rowRender.contains("call g6/Graphics.tip2(Lg6/Font;I)V"),
+            "a rewrite reading a closed field opens it through the access widener: " + rowUnlinked + " " + widener + " " + rowRender);
+        List<Map<String, Object>> closedRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/MyRow.class", myRow())), "closed.jar", closedRuns);
+        List<String> closedUnlinked = Json.array(closedRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(closedUnlinked.contains("call: g6.Screen.tip(Lg6/Pose;I)V"),
+            "where the loader reads no access widener the call stays reported: " + closedUnlinked);
 
         // A mixin casting its own this to an accessor of Loc relies on ModelLoc being a Loc, which 2.0 ends; Title is still a Screen.
         List<Map<String, Object>> castRuns = new ArrayList<>();
@@ -534,6 +562,24 @@ final class JarPortRetypeTest {
             m.visitVarInsn(Opcodes.ILOAD, 1);
             m.visitInsn(Opcodes.IRETURN);
         });
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.MyRow extends g6.Row: render(pose, x) calls screen.tip(pose, x) on its screen field. */
+    static byte[] myRow() {
+        ClassWriter w = writer("m6/MyRow", "g6/Row");
+        w.visitField(Opcodes.ACC_PUBLIC, "screen", "Lg6/Screen;", null, null).visitEnd();
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "render", "(" + POSE + "I)V", null, null);
+        m.visitCode();
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        m.visitFieldInsn(Opcodes.GETFIELD, "m6/MyRow", "screen", "Lg6/Screen;");
+        m.visitVarInsn(Opcodes.ALOAD, 1);
+        m.visitVarInsn(Opcodes.ILOAD, 2);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Screen", "tip", "(" + POSE + "I)V", false);
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }
