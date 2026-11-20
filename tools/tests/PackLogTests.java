@@ -152,6 +152,14 @@ public final class PackLogTests extends PackCheckFixtures {
             classSuspects.size() == 1 && classSuspects.get(0).get("jar").equals("cwb-5.0.jar"),
             "a mod the loader names only by a class is the jar with that class's package: " + classSuspects
         );
+        // ...and a jar the loader skips (a 1.20.4 mods.toml on 1.21), which puts its error screen up, only by its file.
+        neo.providers.put("bhmenu", new ArrayList<>(List.of(new PackMods.Provider("BHMenu-1.20.4.jar", "2.4", false, "META-INF/mods.toml"))));
+        String skipped = "[main/WARN] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Skipping jar. File mods\\BHMenu-1.20.4.jar is for Minecraft Forge or an older version of NeoForge, and cannot be loaded";
+        var skipSuspects = PackChecks.suspects(skipped, List.of(), neo, PackLoaders.find(harness, "neoforge"));
+        expect(
+            skipSuspects.size() == 1 && skipSuspects.get(0).get("jar").equals("BHMenu-1.20.4.jar"),
+            "a jar the loader skips is named by its file: " + skipSuspects
+        );
         // ...and a mod whose loader service crashes only by the jar its frames ran from (CustomSkinLoader patching 1.21's SkinManager).
         neo.providers.put("customskinloader", new ArrayList<>(List.of(new PackMods.Provider("csl-15.1.jar", "15.1", false, "META-INF/neoforge.mods.toml"))));
         String service = "---- Minecraft Crash Report ----\nDescription: Initializing game\n\njava.lang.IllegalStateException: Transformation rule 'customskinloader:skin-manager-patch' did not modify any bytecode.\n"
