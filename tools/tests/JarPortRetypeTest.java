@@ -53,6 +53,14 @@ final class JarPortRetypeTest {
         JarPortTest.expect(members.containsKey("method render(" + GFX + "I)V") && !members.containsKey("method render(" + POSE + "I)V")
             && members.containsKey("method key(" + KEY + ")Z"), "the old methods are replaced by the new signatures: " + members.keySet());
 
+        List<Map<String, Object>> called = new ArrayList<>();
+        Map<String, byte[]> keptJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/MyScreen.class", myScreen(), "m6/Caller.class", caller())), "kept.jar", called));
+        Map<String, String> kept = JarPortTest.members(keptJar.get("m6/MyScreen.class"));
+        List<String> keptUnlinked = Json.array(called.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(kept.containsKey("method render(" + POSE + "I)V") && kept.containsKey("method render(" + GFX + "I)V")
+            && keptUnlinked.stream().noneMatch(u -> u.contains("Caller") || u.contains("MyScreen.render")),
+            "a moved method that a call elsewhere cannot follow is also kept as it was, so that call still links: " + kept.keySet() + " " + keptUnlinked);
+
         List<Map<String, Object>> others = new ArrayList<>();
         Map<String, byte[]> other = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Other.class", other(), "m6/ScreenMixin.class", mixin())), "other.jar", others));
         List<String> stays = Json.array(others.get(0).get("unlinked")).stream().map(String::valueOf).toList();
@@ -213,6 +221,26 @@ final class JarPortRetypeTest {
         d.visitInsn(Opcodes.IRETURN);
         d.visitMaxs(0, 0);
         d.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.Caller.call() renders a MyScreen with a pose it made itself: no graphics are at hand there. */
+    static byte[] caller() {
+        ClassWriter w = writer("m6/Caller", "java/lang/Object");
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "call", "()V", null, null);
+        m.visitCode();
+        m.visitTypeInsn(Opcodes.NEW, "m6/MyScreen");
+        m.visitInsn(Opcodes.DUP);
+        m.visitMethodInsn(Opcodes.INVOKESPECIAL, "m6/MyScreen", "<init>", "()V", false);
+        m.visitTypeInsn(Opcodes.NEW, "g6/Pose");
+        m.visitInsn(Opcodes.DUP);
+        m.visitMethodInsn(Opcodes.INVOKESPECIAL, "g6/Pose", "<init>", "()V", false);
+        m.visitInsn(Opcodes.ICONST_1);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "m6/MyScreen", "render", "(" + POSE + "I)V", false);
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }

@@ -68,6 +68,7 @@ public final class JarPort {
         final Map<String, List<Bridge>> bridges = new HashMap<>(); // class -> methods added with a game method's new signature
         final Set<String> grants = new TreeSet<>(); // lines the port adds to the mod's access transformer (new names)
         boolean canWiden; // the loader reads this jar's access transformer
+        final Set<String> kept = new HashSet<>(); // name+desc of moved methods also kept as they were, for calls that cannot follow
 
         void change(String kind) {
             changed.merge(kind, 1, Integer::sum);
@@ -348,10 +349,29 @@ public final class JarPort {
         }
         // Classes first: what they need opened goes into the access transformer written after them.
         Map<String, byte[]> rewritten = new HashMap<>();
-        for (var e : entries.entrySet()) {
-            if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
-                rewritten.put(e.getKey(), rewrite(mod, e.getValue()));
+        // A mod method moved to a game method's new parameter types that some call cannot follow (no new arguments at
+        // hand there) is kept as well, as it was: that call still links, as it did before the port.
+        Set<String> wasUnlinked = new TreeSet<>(mod.unlinked), wasSilent = new TreeSet<>(mod.silent), wasGranted = new TreeSet<>(mod.grants);
+        Map<String, Integer> wasChanged = new TreeMap<>(mod.changed);
+        for (int pass = 0; pass < 4; pass++) {
+            int kept = mod.kept.size();
+            rewritten.clear();
+            for (var e : entries.entrySet()) {
+                if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
+                    rewritten.put(e.getKey(), rewriteOrReport(mod, e.getValue()));
+                }
             }
+            if (mod.kept.size() == kept) {
+                break;
+            }
+            mod.unlinked.clear();
+            mod.unlinked.addAll(wasUnlinked);
+            mod.silent.clear();
+            mod.silent.addAll(wasSilent);
+            mod.grants.clear();
+            mod.grants.addAll(wasGranted);
+            mod.changed.clear();
+            mod.changed.putAll(wasChanged);
         }
         List<String> atFiles = atFiles(entries);
         String widener = fmj == null ? null : widenerFile(fmj);
@@ -1673,6 +1693,28 @@ public final class JarPort {
 
     // ---- Rewriting one class.
 
+    /**
+     * rewrite, and when a body moved to a game method's new parameter types cannot be written (code the stack tracking
+     * cannot follow), the class again without moving it: that override is reported, so the mod is not said to link.
+     */
+    byte[] rewriteOrReport(Mod mod, byte[] bytes) {
+        try {
+            return rewrite(mod, bytes);
+        } catch (RuntimeException failed) {
+            List<Bridge> own = mod.bridges.get(new ClassReader(bytes).getClassName());
+            if (own == null || own.stream().noneMatch(br -> br.via() != null)) {
+                throw failed;
+            }
+            for (Bridge br : own) {
+                if (br.via() != null) {
+                    mod.unlinked.add("override not moved to the game's new parameter types: " + Exposure.dotted(new ClassReader(bytes).getClassName()) + "." + br.target() + br.targetDesc() + " (" + failed.getClass().getSimpleName() + ")");
+                }
+            }
+            own.removeIf(br -> br.via() != null);
+            return rewrite(mod, bytes);
+        }
+    }
+
     byte[] rewrite(Mod mod, byte[] bytes) {
         ClassReader reader = new ClassReader(bytes);
         ClassWriter writer = new ClassWriter(0) {
@@ -1774,7 +1816,8 @@ public final class JarPort {
                     newName = renamed[0];
                     newDesc = oldDesc(renamed[1]);
                 }
-                if (mod.bridges.getOrDefault(self[0], List.of()).stream().anyMatch(br -> br.via() != null && br.target().equals(name) && br.targetDesc().equals(desc))) {
+                if (!mod.kept.contains(name + desc)
+                    && mod.bridges.getOrDefault(self[0], List.of()).stream().anyMatch(br -> br.via() != null && br.target().equals(name) && br.targetDesc().equals(desc))) {
                     return null; // its body moves to the game method's new signature (visitEnd)
                 }
                 String key = self[0] + "." + name + desc;
@@ -3294,7 +3337,7 @@ public final class JarPort {
             if (body != null) {
                 // The mod's own method moved to the game's new parameter types: a call made where they are at hand follows it.
                 if (moved == null || !given(opcode, owner, desc, List.<String[]>of(new String[] { decl.owner(), body.name(), body.desc(), "mod" }))) {
-                    mod.unlinked.add("call: " + Exposure.dotted(decl.owner()) + "." + name + desc + " (moved to the game's new parameter types)");
+                    mod.kept.add(name + desc); // the old methods of that name stay for this call (see port)
                     super.visitMethodInsn(opcode, owner, name, desc, itf);
                 }
                 return;
