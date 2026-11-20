@@ -528,7 +528,9 @@ public final class PortableAgent {
             Object window = call(client, "getWindow");
             int width = ((Number)call(window, "getWidth")).intValue(), height = ((Number)call(window, "getHeight")).intValue();
             if (((Number)field(target, "width")).intValue() == width && ((Number)field(target, "height")).intValue() == height) return;
-            target.getClass().getMethod("resize", int.class, int.class).invoke(target, width, height);
+            // Newer releases take (width, height); older ones such as 1.20.1 add a clear-error flag.
+            try { invoke(target, new String[] {"resize"}, width, height); }
+            catch (NoSuchMethodException older) { invoke(target, new String[] {"resize"}, width, height, false); }
         } catch (Throwable unsupported) {}
     }
 

@@ -289,6 +289,36 @@ public final class PortTests {
             !layeredHash.equals(Fingerprints.build(model, project, init)),
             "custom source layouts cannot bypass the build identity"
         );
+        Path generated = root.resolve("src/generated/resources");
+        Map<String, Object> declared = Json.map(
+            "projects",
+            List.of(
+                Json.map(
+                    "directory",
+                    root.toString(),
+                    "buildFile",
+                    root.resolve("build.gradle.kts").toString(),
+                    "sourceSets",
+                    List.of(Json.map("name", "main", "sources", List.of(generated.toString()), "output", List.of())),
+                    "compile",
+                    List.of()
+                )
+            )
+        );
+        String beforeLaunch = Fingerprints.build(declared, project, init);
+        Map<String, String> eachBefore = Fingerprints.each(declared, project, init);
+        Files.createDirectories(generated);
+        check(
+            beforeLaunch.equals(Fingerprints.build(declared, project, init)) &&
+                Fingerprints.changed(eachBefore, Fingerprints.each(declared, project, init)).isEmpty(),
+            "an empty declared source folder the first launch creates does not make the running game look stale"
+        );
+        Files.writeString(generated.resolve("pack.mcmeta"), "{}");
+        check(
+            !beforeLaunch.equals(Fingerprints.build(declared, project, init)) &&
+                Fingerprints.changed(eachBefore, Fingerprints.each(declared, project, init)).size() == 1,
+            "a file written into that folder does make it look changed and is named"
+        );
         // A jar Gradle makes inside the project (NeoGradle's ng_dummy_ng repository) is rewritten by the first launch: its
         // bytes must not count, or a never-launched copy's first check is refused. A jar the author keeps in libs/ must count.
         Path made = root.resolve(".gradle/repositories/ng_dummy_ng/neoforge.jar"), kept = root.resolve(
