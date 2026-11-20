@@ -730,13 +730,15 @@ public final class PortPreflightTest {
                 { "owner": "net.minecraft.block.Block", "from": "getBlockState", "to": "getStateContainer", "desc": "()Lnet/minecraft/block/state/IBlockState;", "newDesc": "()Lnet/minecraft/block/state/BlockStateContainer;" },
                 { "owner": "net.minecraft.block.Block", "from": "getFoo", "to": "getFooA", "desc": "()V", "newDesc": "()V" },
                 { "owner": "net.minecraft.block.Block", "from": "getFoo", "to": "getFooB", "desc": "()V", "newDesc": "()V" },
-                { "owner": "net.minecraft.client.gui.FontRenderer", "from": "isKeyDown", "to": "isKeyDown", "desc": "(I)Z", "newDesc": "(II)Z" }
+                { "owner": "net.minecraft.client.gui.FontRenderer", "from": "isKeyDown", "to": "isKeyDown", "desc": "(I)Z", "newDesc": "(II)Z" },
+                { "owner": "net.minecraft.world.storage.WorldInfo", "from": "getWorldTime", "to": "worldTime", "desc": "()J", "newDesc": "()J" }
               ],
               "methodsRemoved": [
                 { "owner": "net.minecraft.block.Block", "from": "deadMethod", "desc": "()V", "newDesc": null }
               ],
               "fields": [
-                { "owner": "net.minecraft.block.Block", "from": "slipperiness", "to": "friction", "desc": "F", "newDesc": "F" }
+                { "owner": "net.minecraft.block.Block", "from": "slipperiness", "to": "friction", "desc": "F", "newDesc": "F" },
+                { "owner": "net.minecraft.world.EnumDifficulty", "from": "NORMAL", "to": "OVERWORLD", "desc": "I", "newDesc": "I" }
               ],
               "fieldsRemoved": [
                 { "owner": "net.minecraft.block.Block", "from": "deadField", "desc": "I", "newDesc": null }
@@ -779,6 +781,15 @@ public final class PortPreflightTest {
               boolean keys2(Object input) {
                 return input.isKeyDown(1, 2);
               }
+              long time(Block block) {
+                return block.getWorldTime();
+              }
+              Object normal() {
+                return Block.NORMAL;
+              }
+              Object chained(Block block) {
+                return block.next.slipperiness;
+              }
             }
             """;
         VersionMap.ApiFix.Lint lint = VersionMap.ApiFix.lintKnown(known, scratch.resolve("Demo.java"), source);
@@ -786,6 +797,11 @@ public final class PortPreflightTest {
         String[] auto = lint.hits.stream().filter(h -> h.auto()).map(h -> h.oldName()).sorted().toArray(String[]::new);
         require(java.util.Arrays.equals(auto, new String[] {"getBlockState", "slipperiness"}), "unanimous game-owned renames auto-apply: " + String.join(",", auto));
         require(lint.hits.stream().anyMatch(h -> h.detail().contains("getFoo") && h.detail().contains("[review]")), "ambiguous rename reported");
+        // A rename made on another class proves nothing about this receiver (1.21.2 renamed one class's getGameTime and Level kept its own).
+        require(lint.hits.stream().anyMatch(h -> h.detail().startsWith("block.getWorldTime") && h.detail().contains("[review]")), "a rename on another owner is reported, not applied");
+        require(lint.hits.stream().anyMatch(h -> h.detail().startsWith("Block.NORMAL") && h.detail().contains("[review]")), "a field renamed on another owner is reported, not applied");
+        require(lint.hits.stream().noneMatch(h -> h.auto() && h.detail().startsWith("block.next.")), "a chain's receiver type is not its root's");
+        require(lint.fixed.contains("block.getWorldTime()") && lint.fixed.contains("Block.NORMAL") && lint.fixed.contains("block.next.slipperiness"), "other owners' renames left as written");
         require(lint.hits.stream().anyMatch(h -> h.detail().contains("deadMethod") && h.detail().contains("[hand-fix]")), "removed method reported with its update");
         require(lint.hits.stream().anyMatch(h -> h.detail().contains("deadField") && h.detail().contains("[hand-fix]")), "removed field reported");
         require(lint.hits.stream().noneMatch(h -> h.detail().contains("unqualified call")), "plain unqualified calls stay silent: no game superclass, no static import");
