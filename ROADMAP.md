@@ -121,8 +121,9 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 
 One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.
 
-- **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Ported as jars and linked against the next release and its loader, 62% of the 150 most-downloaded mods of each release link, over 64 updates of Fabric and NeoForge (NeoForge from 1.20.2). 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.
-- **The number that says most:** Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge is **5,846 mods**
+- **Today:** Fabric and NeoForge mods as .jar or source, any version from 1.14.4 to 26.3, in about ten seconds a jar. What comes back working is the gap: of the 150 most-downloaded mods of the most-used release (Fabric 1.20.1, NeoForge 1.21.1), ported as jars to the newest game and linked against it, 11 of 294 link. One update at a time, 36% link across the 35 big updates and 93% across the 29 small ones (62% together). What does not link is named, never guessed. 16 of the 126 corpus ports build with no hand edits.
+- **The number that says most:** Mods of the most-used release whose ported jar links on the newest game, Fabric and NeoForge is **11 mods**
+- **Also:** Most-downloaded mods whose ported jar links, the big updates only, Fabric and NeoForge is **1,861 mods**
 - **Also:** Corpus ports that build with no hand edits is **16 updates**, target 60 updates by Dec 22, step 44
 - **Also:** Real mods with a port that works in the game is **9 mods**, target 6 mods by Dec 18, step 12
 
@@ -268,11 +269,11 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **45 · Generate the target build from the loader's starter project** (later). The target build comes from the loader's own starter project for that version (Fabric's template, NeoForge's MDK); the mod's code, resources and dependencies move into it, instead of patching its old build script. Proves it wrong: under 70% of the mods that build today still build from a generated build on their own version. *So far:* Tried on 2026-11-18 (PR #109, closed unmerged, branch generated-builds kept). 14 of the 16 building ports still build from a starter project, so it passed its own test, but over the whole corpus it freed none and lost 2: 14 of 125 build (cloud run 44382488417) against 16 of 126. 8 ports use Architectury, which rewrites the mod's code; 13 need a library with no release for the target version. Build scripts are not what holds the corpus back; steps 44 and 47 come first.
 
-**46 · One migration per redesigned game part, ranked by mods freed** (later). With steps 44 and 47 in, porting is one loop: python bench/exposure.py run ranks the changed game parts of an update by how many of the 150 most-downloaded mods use them; the top one gets a rule that names it, written from the game's own two versions; the same command shows the mods it freed. For 1.21.1 to 1.21.2 that is 637 changed parts, 313 of them used by one mod each: handled in the best order, 25 take the count from 58 to about 86 mods and 300 to about 109, so each part has to cost minutes, not a port run. A removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).
+**46 · One migration per redesigned game part, ranked by mods freed** (later). Porting is one loop: python bench/exposure.py jars lists the mods of an update nearest to done, each with the references it still needs and what the game's own code did about each; the first one's reference gets a rule that names the game part, written from the game's own two versions; the same command shows the mod freed. The order matters more than anything else measured: on NeoForge 1.21.1 to 1.21.2 a mod held back has 15 references at the median and 1,241 of the 2,060 are used by one mod each, so the 100 references the most mods share free 2 mods, while 15 mods are one reference from done and 26 are done after 40 fixes (2026-11-20). The count then climbs steeply: 649 fixes for 80 mods. A removed method whose old body still compiles is inlined from it (163 of 1,234 for 1.21.2).
 
 </details>
 
-<details><summary>Every number for this goal (24)</summary>
+<details><summary>Every number for this goal (26)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -293,7 +294,9 @@ One command moves a mod's source from any version to any other, forward or back,
 | NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
 | Most-downloaded NeoForge mods with nothing left to port by hand, 1.21.1 to 1.21.2 | — | 58 mods (Nov 18) | 100 mods by Dec 22, step 46 | Baseline |
 | Most-downloaded mods whose ported jar links, NeoForge 1.21.1 to 1.21.2 | 32 mods (Nov 18) | 45 mods (Nov 19) | 50 mods by Dec 8, step 47 | 72% of the way |
-| Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge | 5,018 mods (Nov 19) | 5,846 mods (Nov 20) | — | Fact |
+| Mods of the most-used release whose ported jar links on the newest game, Fabric and NeoForge | — | 11 mods (Nov 20) | — | Fact |
+| Most-downloaded mods whose ported jar links, the big updates only, Fabric and NeoForge | — | 1,861 mods (Nov 20) | — | Fact |
+| Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge | 5,018 mods (Nov 19) | 5,847 mods (Nov 20) | — | Fact |
 | Scoreboard-cleared standalone mods whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | 28 mods (Nov 18) | 34 mods (Nov 19) | 33 mods by Dec 8, step 47 | Met |
 | Standalone mods the jar scoreboard says link whose ported jar loads on a real server, NeoForge 1.21.1 to 1.21.2 | — | 23 mods (Nov 19) | — | Fact |
 | Ported mods that load in a real game client, NeoForge 1.21.1 to 1.21.2 | — | 23 mods (Nov 19) | — | Fact |
@@ -443,7 +446,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 ## Decisions
 
-<details><summary>20 decisions, oldest first</summary>
+<details><summary>21 decisions, oldest first</summary>
 
 | Date | Question | Choice |
 |---|---|---|
@@ -467,5 +470,6 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 | 2026-11-18 | Where is all of this going? | One place where someone drops a mod in, picks the version and the loader they want, and gets it back very quickly, so nobody has to worry about versions or loaders (Jon, 2026-11-18). It has to be designed for any mod anyone can make, so nothing is made by hand for one mod, because that does not scale: the porter learns a changed part of the game once and the converter a piece of a loader's API once, and every mod that uses it is covered. Porting and converting stay separate records and claims (2026-10-24), and step 49 joins them behind one front door |
 | 2026-11-18 | What does someone hand over: the mod's source, or its .jar? | Either (Jon, 2026-11-18): the mod's source folder, which comes back as source, or its .jar, which comes back as a .jar, through the command line and the desktop app. Until now port and convert took a source folder only, so only a mod's author could use them. Step 50 adds the .jar and comes first, because how it is done decides whether the source-based steps 44 and 47 stay as written |
 | 2026-11-20 | Does Forge → NeoForge get its own step, and which mod proves it? | Yes (Jon, 2026-11-20): Forge → NeoForge is the next loader pair after Fabric and NeoForge, proven on DragonMine Z, whose NeoForge port is redone by hand each release. DragonMine Z joins the convert and port corpora as a test input; the rules stay general (step 19) |
+| 2026-11-20 | Why is the porting timeline months, and what is steered by now? | Speed was never the gap: a .jar is ported in about ten seconds. The count was (Jon asked on 2026-11-20 why it would take months). The 62% headline was one update at a time, and half the updates change almost nothing; ported in one go to the newest game, 11 of 294 of the most-used releases' top mods link. And the to-do list was the reference the most mods share, which frees almost no mod: the 100 most shared freed 2. Steered by now: the jump to the newest game and the big updates (port.jar-links.newest, port.jar-links.big-updates), and the mods nearest to done as the order of work. Any mod, any version with nothing by hand is not a date on this roadmap: 53% of the broken references of a big update have no answer in the game's own code, and nobody ports arbitrary mods across one automatically. What is promised is a ported .jar in seconds with either every reference linked or the exact list of what is left |
 
 </details>
