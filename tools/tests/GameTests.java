@@ -44,6 +44,43 @@ public final class GameTests {
         check(failure.size() == 3 && failure.get(1).startsWith("java.lang.IllegalStateException") && failure.get(2).contains("DioramaClientTest.overlays"),
             "a game test run whose log says the suite failed is a failure, with its exception and the test's own frame: " + failure);
         check(Game.gameTestFailure(List.of("[Test thread/INFO] (diorama) Map warm-up done", "Stopping!")).isEmpty(), "a clean game test log is no failure");
+        Path bundled = Game.bundledAsm(home);
+        check(
+            bundled != null && Files.isRegularFile(bundled),
+            "the portable agent falls back to mmt's own ASM when the build names none: " + bundled
+        );
+        check(Game.bundledAsm(scratch) == null, "a harness without the perf lib offers no fallback ASM");
+        Path running = Path.of(
+            System.getProperty("java.home"),
+            "bin",
+            Runtimes.WINDOWS ? "java.exe" : "java"
+        );
+        check(Game.argfilesOk(running), "the running modern Java expands @ files, so its launches can be saved");
+        check(
+            !Game.argfilesOk(scratch.resolve("missing-java")),
+            "an executable that cannot even be probed is not a saved-launch runner"
+        );
+        Path java8 = Path.of("C:/Users/aditya/.gradle/jdks/azul_systems__inc_-8-amd64-windows.2/bin/java.exe");
+        if (Files.isRegularFile(java8)) check(
+            !Game.argfilesOk(java8),
+            "the Java 8 every 1.7.10 game records does not expand @ files, so its launches stay with Gradle"
+        );
+        Map<String, String> hookShapes = new LinkedHashMap<>();
+        hookShapes.put("render (Z)V", PortableAgent.hookGetter("render", "(Z)V"));
+        hookShapes.put("runTick (Z)V", PortableAgent.hookGetter("runTick", "(Z)V"));
+        hookShapes.put("runTick ()V", PortableAgent.hookGetter("runTick", "()V"));
+        hookShapes.put("runTick ()I", PortableAgent.hookGetter("runTick", "()I"));
+        hookShapes.put("tick ()V", PortableAgent.hookGetter("tick", "()V"));
+        Map<String, String> wanted = new LinkedHashMap<>();
+        wanted.put("render (Z)V", "getInstance");
+        wanted.put("runTick (Z)V", "getInstance");
+        wanted.put("runTick ()V", "getMinecraft");
+        wanted.put("runTick ()I", null);
+        wanted.put("tick ()V", null);
+        check(
+            hookShapes.equals(wanted),
+            "the frame hook reaches modern clients through getInstance and 1.7.10 through getMinecraft, nothing else: " + hookShapes
+        );
         List<String> saved = Game.savedCommand(launch, scratch.resolve("saved classpath.args"));
         Process child = new ProcessBuilder(saved).redirectErrorStream(true).start();
         String output = new String(child.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);

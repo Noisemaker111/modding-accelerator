@@ -197,6 +197,205 @@ public final class PortTests {
         );
     }
 
+    /** A build that pins its game as mcVersion reads as that Minecraft version, like the longer pin names. */
+    static void versionsChecks() {
+        Map<String, Object> mcVersion = Json.map(
+            "projects",
+            List.of(Json.map("pins", Json.map("mcVersion", "1.21.1"), "dependencies", List.of()))
+        );
+        check(
+            Port.versions(mcVersion).equals(Set.of("1.21.1")),
+            "a build that pins its game as mcVersion reads as that Minecraft version"
+        );
+        Map<String, Object> standard = Json.map(
+            "projects",
+            List.of(Json.map("pins", Json.map("minecraft_version", "1.21.1"), "dependencies", List.of()))
+        );
+        check(
+            Port.versions(standard).equals(Set.of("1.21.1")),
+            "a build that pins its game as minecraft_version still reads as that version"
+        );
+    }
+
+    /** A dry run whose target planning fails previews the source rewrite; a real run still throws. */
+    static void planningDegradeChecks(Path home, Path scratch) throws Exception {
+        Path root = scratch.resolve("unplannable");
+        Files.createDirectories(root.resolve("gradle/wrapper"));
+        Files.writeString(
+            root.resolve("gradle/wrapper/gradle-wrapper.properties"),
+            "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n"
+        );
+        Files.write(root.resolve("gradle/wrapper/gradle-wrapper.jar"), new byte[0]);
+        ProjectModel project = new ProjectModel(root);
+        Build build = new Build(project, home, "", new Mmt.Report(root, "degrade"));
+        Map<String, Object> unpinned = Json.map(
+            "projects",
+            List.of(Json.map("path", ":", "plugins", List.of("test.loomshim"), "pins", Json.map(), "dependencies", List.of()))
+        );
+        Target.Setup degraded = Port.planTargets(
+            build, unpinned, "1.7.10", List.of(), Set.of("1.21.1"), new Mmt.Options(new String[] {"--dry-run"})
+        );
+        check(
+            degraded == null,
+            "a dry run whose target planning fails continues with no build changes"
+        );
+        check(
+            build.report.stages.stream().anyMatch(s -> "target-dependencies-skipped".equals(Json.object(s).get("name"))),
+            "a dry run whose target planning fails records why in its stages"
+        );
+        boolean thrown = false;
+        try {
+            Port.planTargets(build, unpinned, "1.7.10", List.of(), Set.of("1.21.1"), new Mmt.Options(new String[] {}));
+        } catch (IOException expected) {
+            thrown = expected.getMessage().contains("pinned inside build logic");
+        }
+        check(thrown, "a real run whose target planning fails still throws instead of previewing");
+    }
+
+    /** Mixin triage sorts any mod's mixins against the pinned legacy Mixin, no game jar needed. */
+    static void triageChecks() {
+        String plain = """
+            import org.spongepowered.asm.mixin.Mixin;
+            import org.spongepowered.asm.mixin.Shadow;
+            import org.spongepowered.asm.mixin.injection.At;
+            import org.spongepowered.asm.mixin.injection.Inject;
+            @Mixin(net.minecraft.world.entity.LivingEntity.class)
+            public class LivingEntityMixin {
+              @Shadow int health;
+              @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
+              void onHurt() {}
+            }
+            """;
+        MixinTriage.Verdict portable = MixinTriage.triage("LivingEntityMixin", plain);
+        check(
+            portable.tier() == MixinTriage.Tier.PORTABLE &&
+            portable.targets().equals(List.of("net.minecraft.world.entity.LivingEntity")),
+            "a plain inject+shadow mixin is portable and names its target: " + portable
+        );
+        String modern = plain.replace("@Inject(method", "@ModifyExpressionValue(method");
+        MixinTriage.Verdict manual = MixinTriage.triage("ModernMixin", modern);
+        check(
+            manual.tier() == MixinTriage.Tier.MANUAL &&
+            manual.reasons().stream().anyMatch(reason -> reason.contains("ModifyExpressionValue")),
+            "a MixinExtras-era injector is manual with the injector named: " + manual
+        );
+        String custom = plain.replace("public class LivingEntityMixin {", "public class LivingEntityMixin extends InjectionPoint {");
+        MixinTriage.Verdict adapt = MixinTriage.triage("CustomMixin", custom);
+        check(
+            adapt.tier() == MixinTriage.Tier.ADAPT,
+            "a custom extension point is adapt, not portable: " + adapt
+        );
+        String config = """
+            { "package": "example.mixin", "minVersion": "0.15.2", "compatibilityLevel": "JAVA_21", "mixins": [] }
+            """;
+        MixinTriage.ConfigVerdict rewritten = MixinTriage.triageConfig(config);
+        check(
+            rewritten.tier() == MixinTriage.Tier.ADAPT &&
+            rewritten.rewrites().stream().anyMatch(rewrite -> rewrite.contains("0.7")) &&
+            rewritten.rewrites().stream().anyMatch(rewrite -> rewrite.contains("JAVA_8")),
+            "a modern config is adapt with both pins rewritten: " + rewritten
+        );
+        MixinTriage.ConfigVerdict clean = MixinTriage.triageConfig("{ \"package\": \"example.mixin\", \"mixins\": [] }");
+        check(
+            clean.tier() == MixinTriage.Tier.PORTABLE,
+            "a config with no version pins is portable: " + clean
+        );
+    }
+
+    /** Converted subscribers leave their mixin config: entries die, and the file when nothing remains. */
+    static void mixinConfigChecks() {
+        String config = "{\n\t\"required\": true,\n\t\"package\": \"de.smallinger.cinematiczoom.mixin\",\n\t\"client\": [\n\t\t\"GameRendererMixin\",\n\t\t\"MouseMixin\",\n\t\t\"InGameHudMixin\"\n\t]\n}";
+        String stripped = Port.stripConvertedMixins(
+            config,
+            "de.smallinger.cinematiczoom.mixin",
+            List.of("GameRendererMixin", "MouseMixin", "InGameHudMixin")
+        );
+        check(
+            !Port.mixinsRemain(stripped) && !stripped.contains("Mixin"),
+            "converting every listed mixin empties its config: " + stripped.replace('\n', ' ')
+        );
+        String partial = Port.stripConvertedMixins(config, "de.smallinger.cinematiczoom.mixin", List.of("MouseMixin"));
+        check(
+            Port.mixinsRemain(partial) &&
+            partial.contains("\"GameRendererMixin\"") &&
+            partial.contains("\"InGameHudMixin\"") &&
+            !partial.contains("MouseMixin") &&
+            !partial.contains(",]") &&
+            !partial.contains(",\n]"),
+            "a partial conversion keeps the remaining mixins in valid JSON"
+        );
+        check(
+            Port.stripConvertedMixins(config, "other.mixin", List.of("GameRendererMixin")).equals(config),
+            "a config for another package passes through untouched"
+        );
+        String single = "{ \"package\": \"example.mixin\", \"client\": [\"OnlyMixin\"] }";
+        String emptied = Port.stripConvertedMixins(single, "example.mixin", List.of("OnlyMixin"));
+        check(
+            !Port.mixinsRemain(emptied) && emptied.contains("\"client\": []"),
+            "a single-entry inline array empties cleanly: " + emptied
+        );
+    }
+
+    /**
+     * A 1.7.10 target names its mod through mcmod.info translated from the modern metadata; newer
+     * targets keep their TOML and get none, and the game check reads the built mcmod.info back.
+     */
+    static void legacyMetadataChecks(Path scratch) throws IOException {
+        Path root = scratch.resolve("legacy-meta");
+        Path templates = root.resolve("src/main/templates/META-INF");
+        Files.createDirectories(templates);
+        Files.writeString(
+            templates.resolve("neoforge.mods.toml"),
+            "license=\"MIT\"\n[[mods]]\nmodId=\"${mod_id}\"\nversion=\"${mod_version}\"\ndisplayName=\"${mod_name}\"\n"
+                + "description='''${mod_description}'''\nauthors=\"${mod_authors}\"\n[[mixins]]\nconfig=\"other.mixins.json\"\n"
+        );
+        Files.writeString(
+            root.resolve("gradle.properties"),
+            "mod_id=cinematiczoom\nmod_version=1.0.0\nmod_name=CinematicZoom\n"
+                + "mod_description=Smooth zoom.\nmod_authors=Mel1x (Ported by smallinger)\n"
+        );
+        Map<String, Object> info = Port.legacyModInfo(root, "1.7.10");
+        check(
+            info != null &&
+            info.get("modid").equals("cinematiczoom") &&
+            info.get("version").equals("1.0.0") &&
+            info.get("name").equals("CinematicZoom") &&
+            info.get("mcversion").equals("1.7.10") &&
+            info.get("authorList").equals(List.of("Mel1x (Ported by smallinger)")) &&
+            info.values().stream().noneMatch(v -> v.toString().contains("${")),
+            "the template becomes a resolved mcmod.info entry: " + info
+        );
+        check(
+            Port.legacyModInfo(root, "1.21.1") == null,
+            "a modern target gets no mcmod.info: its TOML stays the metadata"
+        );
+        Path fabricRoot = scratch.resolve("legacy-fabric");
+        Files.createDirectories(fabricRoot.resolve("src/main/resources"));
+        Files.writeString(
+            fabricRoot.resolve("src/main/resources/fabric.mod.json"),
+            "{\"id\":\"zoom\",\"version\":\"2.0\",\"name\":\"Zoom\",\"authors\":[\"One\",\"Two\"],\"contact\":{\"homepage\":\"https://example.invalid\"}}"
+        );
+        Map<String, Object> fabricInfo = Port.legacyModInfo(fabricRoot, "1.7.10");
+        check(
+            fabricInfo != null &&
+            fabricInfo.get("modid").equals("zoom") &&
+            fabricInfo.get("authorList").equals(List.of("One", "Two")) &&
+            fabricInfo.get("url").equals("https://example.invalid"),
+            "fabric metadata translates too: " + fabricInfo
+        );
+        Path out = scratch.resolve("legacy-built");
+        Files.createDirectories(out);
+        Files.writeString(out.resolve("mcmod.info"), Json.write(List.of(info)));
+        List<LoadedMods.Declared> declared = LoadedMods.declared(List.of(out));
+        check(
+            declared.size() == 1 &&
+            declared.get(0).kind().equals("forge") &&
+            declared.get(0).id().equals("cinematiczoom") &&
+            declared.get(0).version().equals("1.0.0"),
+            "the game check reads the built mcmod.info: " + declared
+        );
+    }
+
     /** A yarn source bridged to the game's names keeps the game's call-site rewrites, also keyed by its own yarn names. */
     static void bridgeRewrites() {
         Map<String, Object> names = Json.map(
@@ -391,6 +590,11 @@ public final class PortTests {
         Port port = new Port(build, model);
         Build portBuild = new Build(project, home, "", new Mmt.Report(root, "port"));
         routeChecks(home, new Port(portBuild, model), scratch);
+        versionsChecks();
+        planningDegradeChecks(home, scratch);
+        triageChecks();
+        mixinConfigChecks();
+        legacyMetadataChecks(scratch);
         for (var groups : List.of(
             List.of("net.minecraftforge"),
             List.of("net.fabricmc", "net.neoforged"),

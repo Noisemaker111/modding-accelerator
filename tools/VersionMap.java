@@ -2331,6 +2331,7 @@ public final class VersionMap {
         /** Methods moved to a class one holder keeps beside the old one (GameDiff's "siblings"): "fromField|toField" by
          * old owner (simple) and name. */
         final Map<String, Set<String>> siblings = new HashMap<>();
+        final Map<String, List<Map<String, String>>> historyByName = new HashMap<>(); // kind + name -> events, so lookups skip the full scan
 
         static Known load(Path mapFile) throws IOException {
             Known k = new Known();
@@ -2359,6 +2360,7 @@ public final class VersionMap {
                     event.put("to", field(t, "to"));
                     event.put("step", field(t, "step"));
                     k.history.add(event);
+                    k.historyByName.computeIfAbsent(event.get("kind") + "\0" + event.get("name"), x -> new ArrayList<>()).add(event);
                     continue;
                 }
                 if (section.equals("classesRemoved")) {
@@ -4910,6 +4912,21 @@ public final class VersionMap {
     /** Only reviewed AST recipes with a matching target mapping, before the first compile. */
     static final class Preflight {
 
+        /** A removed name used more than this many times across the repo prints once as a common word
+            instead of once per use: past the 90th percentile of repetition the uses are lookalikes,
+            not the removed member (measured p90 = 19 on Apotheosis 8.9.0). */
+        static final int COMMON_WORD_USES = 20;
+
+        /** One printed line per finding, except common words, which print once per repo (see run). */
+        static List<String> renderGrouped(String rel, List<ApiFix.LintHit> hits, Map<String, Integer> uses) {
+            List<String> lines = new ArrayList<>();
+            for (ApiFix.LintHit hit : hits) {
+                if (!hit.auto() && uses.getOrDefault(hit.detail(), 0) > COMMON_WORD_USES) continue;
+                lines.add(rel + ":" + hit.line() + ": " + hit.detail());
+            }
+            return lines;
+        }
+
         static int run(Path mapFile, Path repo, boolean dryRun) throws IOException {
             Known known = Known.load(mapFile);
             if ("yarn".equals(known.names)) {
@@ -4933,30 +4950,59 @@ public final class VersionMap {
             // it. Unanimous renames on provably game-owned receivers are rewritten; everything else
             // (ambiguous renames, removals, unknown receivers, mod-owned or self-declared names) is
             // reported for a human. Parse only: no build, no game.
-            int files = 0, auto = 0, review = 0;
+            record FileLint(Path file, String before, ApiFix.Lint lint) {}
+            List<Path> lintFiles = new ArrayList<>();
+            List<String> lintSources = new ArrayList<>();
             for (Path file : Fix.sourceFiles(repo)) {
-                String before = Files.readString(file, StandardCharsets.UTF_8);
+                lintFiles.add(file);
+                lintSources.add(Files.readString(file, StandardCharsets.UTF_8));
+            }
+            List<ApiFix> parsed = null;
+            try {
+                parsed = ApiFix.parseAll(lintFiles, lintSources);
+            } catch (RuntimeException batchFailure) {
+                parsed = null;
+            }
+            List<FileLint> lints = new ArrayList<>();
+            for (int i = 0; i < lintFiles.size(); i++) {
+                Path file = lintFiles.get(i);
+                String before = lintSources.get(i);
                 ApiFix.Lint lint;
                 try {
-                    lint = ApiFix.lintKnown(known, file, before);
+                    if (parsed == null) lint = ApiFix.lintKnown(known, file, before);
+                    else lint = ApiFix.lintParsed(known, parsed.get(i), before);
                 } catch (RuntimeException failure) {
                     System.out.println(repo.relativize(file) + ": skipped, could not parse (" + failure.getMessage() + ")");
                     continue;
                 }
-                for (ApiFix.LintHit hit : lint.hits) {
-                    System.out.println(repo.relativize(file) + ":" + hit.line() + ": " + hit.detail());
-                    if (hit.auto()) {
-                        auto++;
-                    } else {
-                        review++;
-                    }
-                }
-                if (!lint.fixed.equals(before)) {
+                lints.add(new FileLint(file, before, lint));
+            }
+            Map<String, Integer> uses = new HashMap<>();
+            for (FileLint fileLint : lints) for (ApiFix.LintHit hit : fileLint.lint.hits) if (!hit.auto()) {
+                uses.merge(hit.detail(), 1, Integer::sum);
+            }
+            Map<String, Set<String>> commonWords = new LinkedHashMap<>();
+            for (FileLint fileLint : lints) for (ApiFix.LintHit hit : fileLint.lint.hits) if (!hit.auto()) {
+                if (uses.getOrDefault(hit.detail(), 0) > COMMON_WORD_USES) commonWords.computeIfAbsent(hit.detail(), key -> new LinkedHashSet<>()).add(repo.relativize(fileLint.file).toString());
+            }
+            int files = 0, auto = 0, review = 0;
+            for (FileLint fileLint : lints) {
+                int fileAuto = 0;
+                for (ApiFix.LintHit hit : fileLint.lint.hits) if (hit.auto()) fileAuto++;
+                List<String> lines = renderGrouped(repo.relativize(fileLint.file).toString(), fileLint.lint.hits, uses);
+                for (String line : lines) System.out.println(line);
+                auto += fileAuto;
+                review += lines.size() - fileAuto;
+                if (!fileLint.lint.fixed.equals(fileLint.before)) {
                     files++;
                     if (!dryRun) {
-                        Files.writeString(file, lint.fixed, StandardCharsets.UTF_8);
+                        Files.writeString(fileLint.file, fileLint.lint.fixed, StandardCharsets.UTF_8);
                     }
                 }
+            }
+            for (var word : commonWords.entrySet()) {
+                System.out.println("common word: " + uses.get(word.getKey()) + " uses across " + word.getValue().size() + " files: " + word.getKey() + " [common-word]");
+                review++;
             }
             System.out.println(
                 "map-preflight: " + files + " file(s), " + auto + " auto-fix(es), " + review + " to review" + (dryRun ? " (dry run)" : "")
@@ -4995,6 +5041,17 @@ public final class VersionMap {
             );
             unit = task.parse().iterator().next();
             positions = Trees.instance(task).getSourcePositions();
+            collectPaths();
+        }
+
+        ApiFix(Path file, String source, CompilationUnitTree unit, SourcePositions positions) {
+            this.source = source;
+            this.unit = unit;
+            this.positions = positions;
+            collectPaths();
+        }
+
+        void collectPaths() {
             new TreePathScanner<Void, Void>() {
                 @Override
                 public Void scan(Tree tree, Void unused) {
@@ -5004,6 +5061,28 @@ public final class VersionMap {
                     return super.scan(tree, unused);
                 }
             }.scan(unit, null);
+        }
+
+        /** One compiler task for the whole repo: task setup and Trees cost once, not once per file. */
+        static List<ApiFix> parseAll(List<Path> files, List<String> sources) throws IOException {
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            List<JavaFileObject> inputs = new ArrayList<>();
+            for (int i = 0; i < files.size(); i++) {
+                Path file = files.get(i);
+                String source = sources.get(i);
+                inputs.add(new SimpleJavaFileObject(file.toUri(), JavaFileObject.Kind.SOURCE) {
+                    @Override
+                    public CharSequence getCharContent(boolean ignored) {
+                        return source;
+                    }
+                });
+            }
+            JavacTask task = (JavacTask) compiler.getTask(null, null, diagnostic -> {}, List.of("-proc:none"), null, inputs);
+            List<ApiFix> out = new ArrayList<>();
+            Iterator<? extends CompilationUnitTree> units = task.parse().iterator();
+            SourcePositions positions = Trees.instance(task).getSourcePositions();
+            for (int i = 0; i < files.size(); i++) out.add(new ApiFix(files.get(i), sources.get(i), units.next(), positions));
+            return out;
         }
 
         int start(Tree t) {
@@ -5446,9 +5525,18 @@ public final class VersionMap {
             String key = k.names + "\0" + k.fromVersion + "\0" + k.toVersion + "\0" + kind + "\0" + name + "\0" + String.join(",", new TreeSet<>(whats));
             return stepsForCache.computeIfAbsent(key, x -> {
                 List<String> steps = new ArrayList<>();
-                for (Map<String, String> e : k.history) {
-                    if (kind.equals(e.get("kind")) && name.equals(e.get("name")) && whats.contains(e.get("what"))) {
-                        steps.add(e.get("step"));
+                List<Map<String, String>> bucket = k.historyByName.get(kind + "\0" + name);
+                if (bucket != null) {
+                    for (Map<String, String> e : bucket) {
+                        if (whats.contains(e.get("what"))) {
+                            steps.add(e.get("step"));
+                        }
+                    }
+                } else if (k.historyByName.isEmpty()) {
+                    for (Map<String, String> e : k.history) {
+                        if (kind.equals(e.get("kind")) && name.equals(e.get("name")) && whats.contains(e.get("what"))) {
+                            steps.add(e.get("step"));
+                        }
                     }
                 }
                 return String.join(", ", new LinkedHashSet<>(steps));
@@ -5474,7 +5562,10 @@ public final class VersionMap {
          * are reported for a human.
          */
         static Lint lintKnown(Known k, Path file, String source) throws IOException {
-            ApiFix a = new ApiFix(file, source);
+            return lintParsed(k, new ApiFix(file, source), source);
+        }
+
+        static Lint lintParsed(Known k, ApiFix a, String source) throws IOException {
             Lint out = new Lint();
             out.fixed = source;
             List<String> lines = Arrays.asList(source.split("\\R", -1));

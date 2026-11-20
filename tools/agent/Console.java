@@ -79,6 +79,8 @@ final class Console {
         boolean minecraft = loads(game, runtimeClass("net.minecraft.client.Minecraft"));
         // Fabric builds on Yarn names call the same class MinecraftClient; mc must exist there too.
         boolean yarn = !minecraft && loads(game, "net.minecraft.client.MinecraftClient");
+        // MCP-named clients (1.7.10 through 1.12) call the accessor getMinecraft; getInstance is the modern name.
+        String accessor = minecraft && !method(game, "net.minecraft.client.Minecraft", "getInstance") ? "getMinecraft" : "getInstance";
         // An expression is returned as it is; statements return what they return, or null.
         List<String> forms = new ArrayList<String>();
         if (!text.endsWith(";") && !text.endsWith("}")) {
@@ -124,7 +126,7 @@ final class Console {
                 "    throw new NoSuchFieldException(type.getName() + \".\" + name);\n  }\n"
             );
             source.append("  public Object run(Map<String, Object> vars) throws Throwable {\n    this.vars = vars;\n");
-            if (minecraft) source.append("    final Minecraft mc = Minecraft.getInstance();\n");
+            if (minecraft) source.append("    final Minecraft mc = Minecraft." + accessor + "();\n");
             else if (yarn) source.append(
                 "    final net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();\n"
             );
@@ -236,6 +238,15 @@ final class Console {
     private static boolean loads(ClassLoader loader, String name) {
         try {
             Class.forName(name, false, loader);
+            return true;
+        } catch (Throwable missing) {
+            return false;
+        }
+    }
+
+    private static boolean method(ClassLoader loader, String type, String name) {
+        try {
+            Class.forName(type, false, loader).getMethod(name);
             return true;
         } catch (Throwable missing) {
             return false;

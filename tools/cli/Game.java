@@ -6,6 +6,7 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.jar.*;
+import java.util.regex.*;
 import java.util.zip.*;
 import javax.imageio.ImageIO;
 
@@ -343,7 +344,7 @@ final class Game {
             throw new IOException(failure.getMessage() + "\nGame log: " + session.get("log"), failure);
         }
         if (!Boolean.TRUE.equals(result.get("ok"))) throw new IOException(
-            "Game action failed: " + result.get("error") + "\nGame log: " + session.get("log")
+            "Game action '" + request.get("command") + "' failed: " + result.get("error") + "\nGame log: " + session.get("log")
         );
         return result;
     }
@@ -1173,7 +1174,8 @@ final class Game {
             fingerprint.equals(Json.read(recipe).get("fingerprint")) &&
             task.equals(Json.read(recipe).get("task")) &&
             jbr == Boolean.TRUE.equals(Json.read(recipe).get("jbr")) &&
-            replayable(Json.read(recipe));
+            replayable(Json.read(recipe)) &&
+            argfilesOk(java != null ? java : Path.of(Json.read(recipe).get("executable").toString()));
         // A game Gradle launches is the Gradle daemon's child, not this command's, and outlives it. So Gradle only
         // prepares and records the launch, and this command starts the game itself, unless this task's last recipe
         // could not be replayed (NeoGradle 7, ForgeGradle 6): then preparing first would only cost a second Gradle run.
@@ -1218,7 +1220,8 @@ final class Game {
                 (jbr ? "--jbr" : "--java") +
                 "."
             );
-            saved = replayable(Json.read(recipe));
+            saved = replayable(Json.read(recipe)) &&
+                argfilesOk(java != null ? java : Path.of(Json.read(recipe).get("executable").toString()));
         }
         if (saved) {
             var launch = Json.read(recipe);
@@ -1379,6 +1382,26 @@ final class Game {
     static final long GAME_START_SECONDS = 180, GAME_START_LIMIT_SECONDS = 20 * 60, GRADLE_PREPARE_SECONDS = 30 * 60;
 
     /**
+     * The saved launch shortens the recorded classpath into an @ argument file, which only Java 9 and later
+     * expand. Every 1.7.10 game records a Java 8 executable, so those launches stay with Gradle, which starts
+     * the game itself the way it does for loaders that withhold the classpath. An executable that cannot even
+     * be probed fails the launch either way, so it is not saved either.
+     */
+    static boolean argfilesOk(Path executable) {
+        try {
+            Process probe = new ProcessBuilder(executable.toString(), "-version").redirectErrorStream(true).start();
+            String output = new String(probe.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            if (!probe.waitFor(1, TimeUnit.MINUTES) || probe.exitValue() != 0) return false;
+            Matcher version = Pattern.compile("version \"(\\d+)(?:\\.(\\d+))?").matcher(output);
+            if (!version.find()) return false;
+            if (!version.group(1).equals("1")) return true;
+            return Integer.parseInt(version.group(2)) > 8;
+        } catch (Exception failed) {
+            return false;
+        }
+    }
+
+    /**
      * Waits for the client's first frame. The game fails to start when its log stops moving for 180 s, or after 20
      * minutes in all: a healthy hidden start on a busy PC took about 8 minutes (2026-11-08, a Fabric 1.21.6 mod beside
      * NeoForge decompiles) and failed a 180 s total budget, while a hung game stops writing. The clock starts when the game itself starts:
@@ -1475,6 +1498,18 @@ final class Game {
         );
     }
 
+    /** The ASM mmt ships for its own bytecode tools, when the mod's build names none (every 1.7.10 game). */
+    static Path bundledAsm(Path harness) throws IOException {
+        Path lib = harness.resolve("tools/perf/lib");
+        if (!Files.isDirectory(lib)) return null;
+        try (var jars = Files.list(lib)) {
+            for (Path jar : jars.toList()) {
+                if (jar.getFileName().toString().matches("asm-[0-9].*\\.jar")) return jar;
+            }
+        }
+        return null;
+    }
+
     Path agent() throws Exception {
         Set<String> jars = new LinkedHashSet<>();
         for (Object p : Json.array(model.get("projects"))) for (Object c : Json.array(
@@ -1485,6 +1520,7 @@ final class Game {
             asm = Path.of(path);
             break;
         }
+        if (asm == null) asm = bundledAsm(build.harness);
         if (asm == null) throw new IOException(
             "No ASM library in the actual build classpath; this client cannot use the portable agent yet."
         );

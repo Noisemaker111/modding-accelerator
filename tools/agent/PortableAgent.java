@@ -68,9 +68,8 @@ public final class PortableAgent {
         Names.load();
         System.getProperties().put("mmt.frame", new Consumer<Object>() { public void accept(Object game) { frame(game); } });
         final String minecraft = Names.cls("net/minecraft/client/Minecraft");
-        final Set<String> frameMethods = new HashSet<String>(Arrays.asList("render", "runTick"));
         for (String m : new String[] {"render", "runTick"}) { String r = Names.methods.get("net/minecraft/client/Minecraft." + m + "(Z)V"); if (r != null) frameMethods.add(r); }
-        final String getInstance = Names.member(null, "net/minecraft/client/Minecraft", "getInstance", "()Lnet/minecraft/client/Minecraft;", true);
+        getInstance = Names.member(null, "net/minecraft/client/Minecraft", "getInstance", "()Lnet/minecraft/client/Minecraft;", true);
         instrumentation.addTransformer(new ClassFileTransformer() {
             public byte[] transform(ClassLoader loader, String name, Class<?> type, ProtectionDomain domain, byte[] bytes) {
                 if (name == null || (!name.equals(minecraft) && !name.equals("net/minecraft/client/MinecraftClient"))) return null;
@@ -80,8 +79,10 @@ public final class PortableAgent {
                     reader.accept(new ClassVisitor(Opcodes.ASM9, writer) {
                         @Override public MethodVisitor visitMethod(int access, String method, String desc, String signature, String[] exceptions) {
                             MethodVisitor delegate = super.visitMethod(access, method, desc, signature, exceptions);
-                            if (frameMethods.contains(method) && desc.equals("(Z)V")) {
+                            String singleton = hookGetter(method, desc);
+                            if (singleton != null) {
                                 hooks[0]++;
+                                final String getter = name.equals(minecraft) ? singleton : "getInstance";
                                 return new MethodVisitor(Opcodes.ASM9, delegate) {
                                     @Override public void visitInsn(int opcode) {
                                         if (opcode == Opcodes.RETURN) {
@@ -92,7 +93,7 @@ public final class PortableAgent {
                                             // Not ALOAD 0: the shipped game's stack frames mark `this` dead before some
                                             // returns, and with no mixin recomputing them (a mod without Fabric API) the
                                             // verifier rejects the class. The singleton getter needs no local.
-                                            super.visitMethodInsn(Opcodes.INVOKESTATIC, name, name.equals(minecraft) ? getInstance : "getInstance", "()L" + name + ";", false);
+                                            super.visitMethodInsn(Opcodes.INVOKESTATIC, name, getter, "()L" + name + ";", false);
                                             super.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/function/Consumer", "accept", "(Ljava/lang/Object;)V", true);
                                         }
                                         super.visitInsn(opcode);
@@ -108,11 +109,24 @@ public final class PortableAgent {
             }
         });
     }
+    /**
+     * The frame hook's singleton getter per client shape, or null when the method is not a frame entry.
+     * Modern clients tick through render/runTick with a flag and expose getInstance; 1.7.10 ticks and renders
+     * through runTick with no arguments and exposes getMinecraft. An obfuscated modern client adds its own names for
+     * both at install (Names).
+     */
+    private static final Set<String> frameMethods = new HashSet<String>(Arrays.asList("render", "runTick"));
+    private static String getInstance = "getInstance";
+    static String hookGetter(String method, String desc) {
+        if (frameMethods.contains(method) && desc.equals("(Z)V")) return getInstance;
+        if (method.equals("runTick") && desc.equals("()V")) return "getMinecraft";
+        return null;
+    }
     public static void frame(Object game) {
         if (!started) {
             client = game; started = true;
             try {
-                pauseOptions = field(client, "options");
+                pauseOptions = field(client, "options", "gameSettings");
                 pauseField = publicField(pauseOptions.getClass(), "pauseOnLostFocus");
                 originalPauseOnLostFocus = pauseField.getBoolean(pauseOptions);
                 pauseField.setBoolean(pauseOptions, false);
@@ -236,8 +250,8 @@ public final class PortableAgent {
         if (pauseControlError != null && !command.equals("quit")) throw new IllegalStateException("Cannot keep owned game active without focus: " + pauseControlError);
         if (command.equals("status")) {
             Object screen = screen();
-            Object player = optionalField(client, "player");
-            Object singleplayer = null; try { singleplayer = call(client, "getSingleplayerServer", "getServer"); } catch (NoSuchMethodException ignored) {}
+            Object player = optionalField(client, "player", "thePlayer");
+            Object singleplayer = null; try { singleplayer = call(client, "getSingleplayerServer", "getServer", "getIntegratedServer"); } catch (NoSuchMethodException ignored) {}
             boolean hasLevel = worldLevel() != null;
             Object debugHud = null;
             try { debugHud = call(client, "getDebugHud"); } catch (NoSuchMethodException unsupported) {}
@@ -253,7 +267,11 @@ public final class PortableAgent {
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
-            invoke(call(client, "getWindow"), new String[]{"setWindowedSize", "setWindowed"}, width, height);
+            try {
+                invoke(call(client, "getWindow"), new String[]{"setWindowedSize", "setWindowed"}, width, height);
+            } catch (NoSuchMethodException legacy) {
+                resizeLegacy(width, height);
+            }
             done.complete(Json.map("ok", true, "requestedWidth", width, "requestedHeight", height));
         } else if (command.equals("open-world")) {
             String world = Json.text(request, "world", "lab");
@@ -281,7 +299,7 @@ public final class PortableAgent {
             invoke(connectType, new String[]{"startConnecting", "connect"}, title, client, parsed, data, false, null);
             done.complete(Json.map("ok", true, "requestedServer", address));
         } else if (command.equals("state")) {
-            Object player = optionalField(client, "player");
+            Object player = optionalField(client, "player", "thePlayer");
             if (player == null) { done.complete(Json.map("ok", true, "inWorld", false)); return; }
             Map<String, Object> state = Json.map("ok", true, "inWorld", true,
                     "x", ((Number)call(player, "getX")).doubleValue(),
@@ -326,6 +344,9 @@ public final class PortableAgent {
             Path allowed = Paths.get(System.getProperty("mmt.root"), "build/mmt/shots").toAbsolutePath().normalize();
             if (!file.startsWith(allowed)) throw new IllegalArgumentException("Captures must be inside " + allowed);
             final int width = number(request, "width"), height = number(request, "height");
+            Class<?> legacyShot = null;
+            try { legacyShot = load("net.minecraft.util.ScreenShotHelper"); } catch (ClassNotFoundException modern) { }
+            if (legacyShot != null) { captureLegacy(legacyShot, file, width, height, done); return; }
             Object target;
             try { target = call(client, "getFramebuffer", "getMainRenderTarget"); }
             catch (NoSuchMethodException changed) { target = call(field(client, "gameRenderer"), "mainRenderTarget"); }
@@ -467,6 +488,16 @@ public final class PortableAgent {
                 if (list == null) throw new IllegalStateException("The loader's mod list is not built yet");
                 for (Object info : (Collection<?>)listType.getMethod("getMods").invoke(list))
                     all.put(String.valueOf(publicCall(info, "getModId")), String.valueOf(publicCall(info, "getVersion")));
+            } else {
+                // 1.7.10 names its loader Loader and its list getModList, through ModContainer as well.
+                Class<?> legacyLoader = optionalClass("cpw.mods.fml.common.Loader");
+                if (legacyLoader != null) {
+                    loaderName = "forge";
+                    Object loader = legacyLoader.getMethod("instance").invoke(null);
+                    for (Object container : (Collection<?>)legacyLoader.getMethod("getModList").invoke(loader)) {
+                        all.put(String.valueOf(publicCall(container, "getModId")), String.valueOf(publicCall(container, "getVersion")));
+                    }
+                }
             }
             Object ids = request.get("ids");
             if (ids instanceof List) for (Object id : (List<?>)ids) {
@@ -477,8 +508,45 @@ public final class PortableAgent {
             done.complete(Json.map("ok", true, "loader", loaderName, "loaded", loaded, "versions", versions, "all", all));
         } else if (command.equals("quit")) {
             if (pauseField != null) pauseField.setBoolean(pauseOptions, originalPauseOnLostFocus);
-            done.complete(Json.map("ok", true, "stopping", true)); call(client, "scheduleStop", "stop");
+            done.complete(Json.map("ok", true, "stopping", true)); call(client, "scheduleStop", "stop", "shutdown");
         } else throw new IllegalArgumentException("Unsupported command " + command + "; supported: status, resize, capture, screen, click, assert, quit");
+    }
+    /**
+     * 1.7.10 screenshots: ScreenShotHelper saves the only file itself, so the newest shot moves to the
+     * requested path. Dimensions come back from the PNG because the helper reports only a chat message.
+     */
+    private static void captureLegacy(Class<?> helper, Path file, int width, int height, CompletableFuture<Map<String, Object>> done) {
+        try {
+            String directory = gameDirectory();
+            if (directory.isEmpty()) throw new IOException("1.7.10 screenshots need the game directory, which has no known field here");
+            invoke(helper, new String[]{"saveScreenshot"}, new java.io.File(directory), width, height, call(client, "getFramebuffer"));
+            Path shots = Paths.get(directory, "screenshots");
+            Path newest = null;
+            try (DirectoryStream<Path> saved = Files.newDirectoryStream(shots)) {
+                for (Path shot : saved) {
+                    if (!shot.getFileName().toString().endsWith(".png")) continue;
+                    if (newest == null || Files.getLastModifiedTime(shot).compareTo(Files.getLastModifiedTime(newest)) > 0) newest = shot;
+                }
+            }
+            if (newest == null) throw new IOException("ScreenShotHelper reported a save but no PNG appeared in " + shots);
+            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(newest.toFile());
+            if (image == null) throw new IOException("Could not read the saved screenshot " + newest);
+            if (image.getWidth() != width || image.getHeight() != height) throw new IOException("Framebuffer was "
+                + image.getWidth() + "x" + image.getHeight() + "; expected " + width + "x" + height);
+            Files.createDirectories(file.getParent());
+            Files.move(newest, file);
+            done.complete(Json.map("ok", true, "path", file.toString(), "width", width, "height", height, "source", "1.7.10 screenshots"));
+        } catch (Throwable error) {
+            done.complete(Json.map("ok", false, "error", cause(error)));
+        }
+    }
+    /**
+     * Pre-window-handle clients resize through LWJGL: the canvas follows the display mode.
+     */
+    private static void resizeLegacy(int width, int height) throws Exception {
+        Class<?> display = load("org.lwjgl.opengl.Display");
+        Class<?> mode = load("org.lwjgl.opengl.DisplayMode");
+        invoke(display, new String[]{"setDisplayMode"}, mode.getConstructor(int.class, int.class).newInstance(width, height));
     }
     private static Object button(Object element, String wanted) throws Exception {
         if (element == null) return null;
@@ -499,20 +567,25 @@ public final class PortableAgent {
     }
     private static Object worldLevel() {
         Object value = optionalField(client, "level");
-        return value != null ? value : optionalField(client, "world");
+        if (value != null) return value;
+        return optionalField(client, "world", "theWorld");
     }
-    private static boolean inWorld() { return optionalField(client, "player") != null && worldLevel() != null; }
-    private static String worldPath(Object server) throws Exception {
-        Class<?> resource = load("net.minecraft.world.level.storage.LevelResource", "net.minecraft.util.WorldSavePath");
-        Object root = publicField(resource, "ROOT").get(null);
-        Object path = invoke(server, new String[]{"getWorldPath", "getSavePath"}, root);
-        return ((Path)path).toAbsolutePath().normalize().toString();
+    private static boolean inWorld() { return optionalField(client, "player", "thePlayer") != null && worldLevel() != null; }
+    private static String worldPath(Object server) {
+        try {
+            Class<?> resource = load("net.minecraft.world.level.storage.LevelResource", "net.minecraft.util.WorldSavePath");
+            Object root = publicField(resource, "ROOT").get(null);
+            Object path = invoke(server, new String[]{"getWorldPath", "getSavePath"}, root);
+            return ((Path)path).toAbsolutePath().normalize().toString();
+        } catch (Exception prePaths) {
+            return "";
+        }
     }
     private static int number(Map<String, Object> request, String key) { return ((Number)request.get(key)).intValue(); }
     /** The live narrator setting (OFF when quiet), read back from the game's options. */
     private static String narrator() {
         try {
-            Object options = field(client, "options"); Object option = null;
+            Object options = field(client, "options", "gameSettings"); Object option = null;
             for (String name : new String[] {"narrator", "getNarrator"}) try { option = options.getClass().getMethod(name).invoke(options); break; } catch (NoSuchMethodException next) { }
             if (option == null) option = optionalField(options, "narrator");
             for (String name : new String[] {"get", "getValue"}) try { return String.valueOf(option.getClass().getMethod(name).invoke(option)); } catch (NoSuchMethodException next) { }
@@ -523,7 +596,7 @@ public final class PortableAgent {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static Object masterVolume() {
         try {
-            Object options = field(client, "options");
+            Object options = field(client, "options", "gameSettings");
             for (java.lang.reflect.Method method : options.getClass().getMethods())
                 if ((method.getName().equals("getSoundSourceVolume") || method.getName().equals("getSoundVolume") || method.getName().equals("getFinalSoundCategoryVolume"))
                         && method.getParameterCount() == 1 && method.getParameterTypes()[0].isEnum())
@@ -533,7 +606,10 @@ public final class PortableAgent {
     }
     /** Where the running game keeps saves: the recorded launch directory is not always it (Forge, NeoGradle, Architectury). */
     private static String gameDirectory() {
-        try { return ((java.io.File) field(client, "gameDirectory", "runDirectory")).getAbsolutePath(); } catch (Exception unknown) { return ""; }
+        try { return ((java.io.File) field(client, "gameDirectory", "runDirectory", "mcDataDir")).getAbsolutePath(); } catch (Exception unknown) { return ""; }
+    }
+    private static Object optionalField(Object owner, String... names) {
+        try { return field(owner, names); } catch (Exception ignored) { return null; }
     }
     /**
      * 26.1.x resizes the main render target only on a frame that saw the window's one-frame resize flag, and a hidden
@@ -549,8 +625,6 @@ public final class PortableAgent {
             target.getClass().getMethod("resize", int.class, int.class).invoke(target, width, height);
         } catch (Throwable unsupported) {}
     }
-
-    private static Object optionalField(Object owner, String name) { try { return field(owner, name); } catch (Exception ignored) { return null; } }
     private static Class<?> load(String... names) throws ClassNotFoundException {
         for (String name : names) for (String n : new String[] {name, Names.cls(name.replace('.', '/')).replace('/', '.')})
             try { return Class.forName(n, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}

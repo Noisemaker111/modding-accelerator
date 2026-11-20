@@ -620,7 +620,7 @@ final class Dependencies {
     static boolean gameVersioned(Target.Setup setup, String group, String name, String old, Path binary, String configuration)
         throws Exception {
         String from = null;
-        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version", "mcVersion")) if (
             setup.pins.get(key) != null
         ) from = setup.pins.get(key);
         if (from == null || from.equals(setup.to)) return false;

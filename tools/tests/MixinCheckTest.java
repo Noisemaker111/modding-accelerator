@@ -17,13 +17,14 @@ public final class MixinCheckTest {
         Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("mmt-mixincheck");
         try {
             verdicts();
+            noLoaderGate(scratch);
             handlerNames();
             argumentFiles(scratch);
             jvmRecords(scratch);
             neoForgeTarget(harness, scratch);
             System.out.println(
                 count +
-                " mixin-check checks passed: verdict sorting, missing configs, handler names, argfiles, JVM records, Java 8 build, NeoForge target edit"
+                " mixin-check checks passed: verdict sorting, missing configs, handler names, argfiles, JVM records, Java 8 build, NeoForge target edit, loader-less gate"
             );
         } finally {
             try (var paths = Files.walk(scratch)) {
@@ -81,6 +82,37 @@ public final class MixinCheckTest {
 
     static int number(Map<String, Object> result, String key) {
         return ((Number) Json.object(result.get("mixins")).get(key)).intValue();
+    }
+
+    /** A loader-less target with no declared configs has nothing to check; with configs it stays unchecked. */
+    static void noLoaderGate(Path scratch) throws Exception {
+        Map<String, Object> bare = Json.map(
+            "projects",
+            List.of(Json.map("dependencies", List.of(), "sourceSets", List.of()))
+        );
+        Map<String, Object> none = new MixinCheck(null, bare).run(new Mmt.Options(new String[0]));
+        require(
+            Boolean.TRUE.equals(none.get("ok")) && "no-mixins".equals(none.get("tier")),
+            "no loader and no declared configs is a pass with nothing to apply: " + none.get("details")
+        );
+        Path root = scratch.resolve("declared");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("fabric.mod.json"), "{ \"mixins\": [\"mod.mixins.json\"] }");
+        Map<String, Object> declared = Json.map(
+            "projects",
+            List.of(Json.map(
+                "dependencies",
+                List.of(),
+                "sourceSets",
+                List.of(Json.map("name", "main", "output", List.of(root.toString()), "sources", List.of()))
+            ))
+        );
+        Map<String, Object> stuck = new MixinCheck(null, declared).run(new Mmt.Options(new String[0]));
+        require(
+            Boolean.FALSE.equals(stuck.get("ok")) &&
+            String.valueOf(stuck.get("reason")).contains("no loader to apply mixins with"),
+            "declared configs with no loader stay unchecked instead of passing silently"
+        );
     }
 
     /** What the game would do with each kind of Mixin report. */

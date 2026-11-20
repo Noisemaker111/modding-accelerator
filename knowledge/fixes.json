@@ -6657,6 +6657,853 @@
       }
     },
     {
+      "id": "nf1710-log-logutils",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package com\\.mojang\\.logging does not exist",
+      "apply": {
+        "find": "(?m)^import com\\.mojang\\.logging\\.LogUtils;\\r?\\n",
+        "replace": "import org.apache.logging.log4j.LogManager;\n"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Mojang's LogUtils is a thin log4j wrapper; 1.7.10 uses log4j directly.",
+      "test": {
+        "error": "CinematicZoom.java:3: error: package com.mojang.logging does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n\nimport com.mojang.logging.LogUtils;\nimport net.neoforged.bus.api.IEventBus;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n\nimport org.apache.logging.log4j.LogManager;\nimport net.neoforged.bus.api.IEventBus;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:3"
+      }
+    },
+    {
+      "id": "nf1710-log-slf4j",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package org\\.slf4j does not exist",
+      "apply": {
+        "find": "(?m)^import org\\.slf4j\\.Logger;\\r?\\n",
+        "replace": "import org.apache.logging.log4j.Logger;\n"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "slf4j has no 1.7.10 role in mods; the log4j Logger has the same call surface.",
+      "test": {
+        "error": "CinematicZoom.java:8: error: package org.slf4j does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.fml.config.ModConfig;\nimport org.slf4j.Logger;\n\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.fml.config.ModConfig;\nimport org.apache.logging.log4j.Logger;\n\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:8"
+      }
+    },
+    {
+      "id": "nf1710-log-getlogger",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}LogUtils",
+      "apply": {
+        "find": "LogUtils\\.getLogger\\(\\)",
+        "replace": "LogManager.getLogger()"
+      },
+      "scope": "log",
+      "when": "LogUtils\\.getLogger",
+      "note": "Follows the LogUtils import swap once the import no longer reports.",
+      "test": {
+        "error": "CinematicZoom.java:18: error: cannot find symbolLogUtils\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n    public static final String MODID = \"cinematiczoom\";\n    public static final Logger LOGGER = LogUtils.getLogger();\n\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n    public static final String MODID = \"cinematiczoom\";\n    public static final Logger LOGGER = LogManager.getLogger();\n\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:18"
+      }
+    },
+    {
+      "id": "nf1710-fml-mod",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.fml\\.common does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.fml\\.common\\.Mod;\\r?\\n",
+        "replace": "import cpw.mods.fml.common.Mod;\n"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The @Mod annotation moved packages; the member shape is rewritten by nf1710-mod-annotation.",
+      "test": {
+        "error": "CinematicZoom.java:6: error: package net.neoforged.fml.common does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.fml.ModContainer;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.fml.config.ModConfig;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.fml.ModContainer;\nimport cpw.mods.fml.common.Mod;\nimport net.neoforged.fml.config.ModConfig;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:6"
+      }
+    },
+    {
+      "id": "nf1710-bus-subscribe",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.bus\\.api does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.bus\\.api\\.SubscribeEvent;\\r?\\n",
+        "replace": "import cpw.mods.fml.common.eventhandler.SubscribeEvent;\n"
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.bus\\.api\\.SubscribeEvent;",
+      "note": "SubscribeEvent kept its name across the bus move.",
+      "test": {
+        "error": "CinematicZoomClient.java:7: error: package net.neoforged.bus.api does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.ModContainer;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.api.distmarker.Dist;\nimport cpw.mods.fml.common.eventhandler.SubscribeEvent;\nimport net.neoforged.fml.ModContainer;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:7"
+      }
+    },
+    {
+      "id": "nf1710-bus-ieventbus-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.bus\\.api does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.bus\\.api\\.IEventBus;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.bus\\.api\\.IEventBus;",
+      "note": "Constructor-injected buses do not exist at 1.7.10; registration moves to preInit.",
+      "test": {
+        "error": "CinematicZoom.java:4: error: package net.neoforged.bus.api does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport com.mojang.logging.LogUtils;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.ModContainer;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport com.mojang.logging.LogUtils;\nimport net.neoforged.fml.ModContainer;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:4"
+      }
+    },
+    {
+      "id": "nf1710-fml-modcontainer-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.fml does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.fml\\.ModContainer;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.fml\\.ModContainer;",
+      "note": "ModContainer injection does not exist at 1.7.10.",
+      "test": {
+        "error": "CinematicZoom.java:5: error: package net.neoforged.fml does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.ModContainer;\nimport net.neoforged.fml.common.Mod;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:5"
+      }
+    },
+    {
+      "id": "nf1710-fml-modconfig-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.fml\\.config does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.fml\\.config\\.ModConfig;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.fml\\.config\\.ModConfig;",
+      "note": "ModConfig registration is replaced by a Configuration load in preInit.",
+      "test": {
+        "error": "CinematicZoom.java:7: error: package net.neoforged.fml.config does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.fml.config.ModConfig;\nimport org.slf4j.Logger;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.fml.common.Mod;\nimport org.slf4j.Logger;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:7"
+      }
+    },
+    {
+      "id": "nf1710-dist-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.api\\.distmarker does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.api\\.distmarker\\.Dist;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.api\\.distmarker\\.Dist;",
+      "note": "Dist markup dies with the deleted client-only annotation.",
+      "test": {
+        "error": "CinematicZoomClient.java:6: error: package net.neoforged.api.distmarker does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.minecraft.client.Minecraft;\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.minecraft.client.Minecraft;\nimport net.neoforged.bus.api.SubscribeEvent;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:6"
+      }
+    },
+    {
+      "id": "nf1710-client-annotation-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.api\\.distmarker does not exist",
+      "apply": {
+        "find": "(?m)^@Mod\\(value = \\w+\\.MODID, dist = Dist\\.CLIENT\\)\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "@Mod\\(value = ",
+      "note": "A client-only submodule annotation has no 1.7.10 form; the class stays a plain handler.",
+      "test": {
+        "error": "CinematicZoomClient.java:21: error: package net.neoforged.api.distmarker does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n */\n@Mod(value = CinematicZoom.MODID, dist = Dist.CLIENT)\npublic class CinematicZoomClient {\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n */\npublic class CinematicZoomClient {\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:21"
+      }
+    },
+    {
+      "id": "nf1710-bus-neoforge",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.common does not exist|package NeoForge does not exist",
+      "apply": {
+        "find": "NeoForge\\.EVENT_BUS",
+        "replace": "MinecraftForge.EVENT_BUS",
+        "ensureImports": [
+          "net.minecraftforge.common.MinecraftForge"
+        ]
+      },
+      "scope": "log",
+      "when": "NeoForge\\.EVENT_BUS",
+      "note": "The mod event bus kept its role; only the holder moved.",
+      "test": {
+        "error": "CinematicZoomClient.java:31: error: package net.neoforged.neoforge.common does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n        // Register tick event on forge event bus\n        NeoForge.EVENT_BUS.addListener(this::onClientTick);\n        \n",
+        "after": "package de.smallinger.cinematiczoom;\nimport net.minecraftforge.common.MinecraftForge;\n\n        // Register tick event on forge event bus\n        MinecraftForge.EVENT_BUS.addListener(this::onClientTick);\n        \n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:31"
+      }
+    },
+    {
+      "id": "nf1710-keybinding-import",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}KeyMapping",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.client\\.KeyMapping;\\r?\\n",
+        "replace": "import net.minecraft.client.settings.KeyBinding;\n"
+      },
+      "scope": "log",
+      "when": "KeyMapping",
+      "note": "KeyMapping is the 1.21 name; 1.7.10 binds through KeyBinding.",
+      "test": {
+        "error": "CinematicZoomClient.java:4: error: cannot find symbolKeyMapping\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.minecraft.client.KeyMapping;\nimport net.minecraft.client.Minecraft;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.minecraft.client.settings.KeyBinding;\nimport net.minecraft.client.Minecraft;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:4"
+      }
+    },
+    {
+      "id": "nf1710-keybinding-ctor",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}KeyMapping",
+      "apply": {
+        "find": "new KeyMapping\\(\\s*\\\"([^\\\"]+)\\\",\\s*InputConstants\\.Type\\.KEYSYM,\\s*([^,]+),\\s*([^)]+)\\)",
+        "replace": "new KeyBinding(\"$1\", $2, $3)"
+      },
+      "scope": "log",
+      "when": "new KeyMapping\\(",
+      "note": "KeyBinding takes description, key code and category directly; no InputConstants layer.",
+      "test": {
+        "error": "CinematicZoomClient.java:41: error: cannot find symbolKeyMapping\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n\n        ZOOM_KEYBIND = new KeyMapping(\n            \"key.cinematiczoom.zoom\",\n            InputConstants.Type.KEYSYM,\n            GLFW.GLFW_KEY_C,\n            category\n        );\n        \n",
+        "after": "package de.smallinger.cinematiczoom;\n\n\n        ZOOM_KEYBIND = new KeyBinding(\"key.cinematiczoom.zoom\", GLFW.GLFW_KEY_C, category\n        );\n        \n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:41"
+      }
+    },
+    {
+      "id": "nf1710-key-glfw-import-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package org\\.lwjgl\\.glfw does not exist",
+      "apply": {
+        "find": "(?m)^import org\\.lwjgl\\.glfw\\.GLFW;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import org\\.lwjgl\\.glfw\\.GLFW;",
+      "note": "GLFW constants become Keyboard constants once the import is gone.",
+      "test": {
+        "error": "CinematicZoomClient.java:14: error: package org.lwjgl.glfw does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.event.tick.PlayerTickEvent;\nimport org.lwjgl.glfw.GLFW;\n\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.event.tick.PlayerTickEvent;\n\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:14"
+      }
+    },
+    {
+      "id": "nf1710-key-glfw",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}variable GLFW",
+      "apply": {
+        "find": "GLFW\\.GLFW_KEY_([A-Z0-9_]+)",
+        "replace": "Keyboard.KEY_$1",
+        "ensureImports": [
+          "org.lwjgl.input.Keyboard"
+        ]
+      },
+      "scope": "log",
+      "when": "GLFW\\.GLFW_KEY_",
+      "note": "1.7.10 reads keys through LWJGL2 Keyboard.",
+      "test": {
+        "error": "CinematicZoomClient.java:44: error: cannot find symbolvariable GLFW\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n            InputConstants.Type.KEYSYM,\n            GLFW.GLFW_KEY_C,\n            category\n",
+        "after": "package de.smallinger.cinematiczoom;\nimport org.lwjgl.input.Keyboard;\n\n            InputConstants.Type.KEYSYM,\n            Keyboard.KEY_C,\n            category\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:44"
+      }
+    },
+    {
+      "id": "nf1710-key-inputconstants-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package com\\.mojang\\.blaze3d\\.platform does not exist",
+      "apply": {
+        "find": "(?m)^import com\\.mojang\\.blaze3d\\.platform\\.InputConstants;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import com\\.mojang\\.blaze3d\\.platform\\.InputConstants;",
+      "note": "InputConstants dies with the KeyMapping constructor that took it.",
+      "test": {
+        "error": "CinematicZoomClient.java:3: error: package com.mojang.blaze3d.platform does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.minecraft.client.KeyMapping;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n\nimport net.minecraft.client.KeyMapping;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:3"
+      }
+    },
+    {
+      "id": "nf1710-key-register",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.client\\.event does not exist",
+      "apply": {
+        "find": "(\\w+)\\.register\\((\\w+)\\);",
+        "replace": "ClientRegistry.registerKeyBinding($2);",
+        "ensureImports": [
+          "cpw.mods.fml.client.registry.ClientRegistry"
+        ]
+      },
+      "scope": "log",
+      "when": "RegisterKeyMappingsEvent",
+      "note": "Key registration moves from the register event to ClientRegistry.",
+      "test": {
+        "error": "CinematicZoomClient.java:48: error: package net.neoforged.neoforge.client.event does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\n        \n        event.register(ZOOM_KEYBIND);\n        \n",
+        "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.client.registry.ClientRegistry;\n\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\n        \n        ClientRegistry.registerKeyBinding(ZOOM_KEYBIND);\n        \n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:48"
+      }
+    },
+    {
+      "id": "nf1710-key-register-static",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.client\\.event does not exist",
+      "apply": {
+        "find": "(?s)private void \\w+\\(RegisterKeyMappingsEvent \\w+\\)\\s*\\{\\n",
+        "replace": "static {\n"
+      },
+      "scope": "log",
+      "when": "RegisterKeyMappingsEvent",
+      "note": "The register handler becomes a class-load block; registration now runs without an event.",
+      "test": {
+        "error": "CinematicZoomClient.java:37: error: package net.neoforged.neoforge.client.event does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n\n    private void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {\n        // Use a translation key as category (compatible with older NeoForge mappings)\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n\n    static {\n        // Use a translation key as category (compatible with older NeoForge mappings)\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:37"
+      }
+    },
+    {
+      "id": "nf1710-key-register-import-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.client\\.event does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.neoforge\\.client\\.event\\.RegisterKeyMappingsEvent;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.neoforge\\.client\\.event\\.RegisterKeyMappingsEvent;",
+      "note": "The register event has no 1.7.10 form once the handler is a static block.",
+      "test": {
+        "error": "CinematicZoomClient.java:10: error: package net.neoforged.neoforge.client.event does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:10"
+      }
+    },
+    {
+      "id": "nf1710-tick-event",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.event\\.tick does not exist|package PlayerTickEvent does not exist",
+      "apply": {
+        "find": "(?s)private void (\\w+)\\(PlayerTickEvent\\.Post (\\w+)\\)\\s*\\{\\s*\\n(?:.*\\n)*?\\s*if \\(\\2\\.getEntity\\(\\)\\.level\\(\\)\\.isClientSide\\(\\)\\)\\s*\\{\\n(.*?)\\n        \\}\\n    \\}",
+        "replace": "@SubscribeEvent\n    public void $1(ClientTickEvent event) {\n        if (event.phase == TickEvent.Phase.END) {\n$3\n        }\n    }",
+        "ensureImports": [
+          "cpw.mods.fml.common.gameevent.TickEvent",
+          "cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent"
+        ]
+      },
+      "scope": "log",
+      "when": "PlayerTickEvent\\.Post",
+      "note": "The client-side player tick is ClientTickEvent END at 1.7.10; the entity level check is the phase check.",
+      "test": {
+        "error": "CinematicZoomClient.java:53: error: package net.neoforged.neoforge.event.tick does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n\n    private void onClientTick(PlayerTickEvent.Post event) {\n        // Only process on client side\n        if (event.getEntity().level().isClientSide()) {\n            Minecraft client = Minecraft.getInstance();\n            if (client.player != null) {\n                ZoomManager.tick(client, ZOOM_KEYBIND);\n            }\n        }\n    }\n}\n",
+        "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;\nimport cpw.mods.fml.common.gameevent.TickEvent;\n\n\n    @SubscribeEvent\n    public void onClientTick(ClientTickEvent event) {\n        if (event.phase == TickEvent.Phase.END) {\n            Minecraft client = Minecraft.getInstance();\n            if (client.player != null) {\n                ZoomManager.tick(client, ZOOM_KEYBIND);\n            }\n        }\n    }\n}\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:53"
+      }
+    },
+    {
+      "id": "nf1710-tick-import-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.event\\.tick does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.neoforge\\.event\\.tick\\.PlayerTickEvent;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.neoforge\\.event\\.tick\\.PlayerTickEvent;",
+      "note": "The tick event import dies with the handler rewrite.",
+      "test": {
+        "error": "CinematicZoomClient.java:13: error: package net.neoforged.neoforge.event.tick does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.PlayerTickEvent;\nimport org.lwjgl.glfw.GLFW;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.common.NeoForge;\nimport org.lwjgl.glfw.GLFW;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:13"
+      }
+    },
+    {
+      "id": "nf1710-mod-annotation",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.fml\\.common does not exist",
+      "apply": {
+        "find": "@Mod\\((\\w+)\\.MODID\\)",
+        "replace": "@Mod(modid = $1.MODID)"
+      },
+      "scope": "log",
+      "when": "@Mod\\(\\w+\\.MODID\\)",
+      "note": "Name and version default from the id at 1.7.10; there is no client-only marker on the annotation.",
+      "test": {
+        "error": "CinematicZoom.java:15: error: package net.neoforged.fml.common does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n */\n@Mod(CinematicZoom.MODID)\npublic class CinematicZoom {\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n */\n@Mod(modid = CinematicZoom.MODID)\npublic class CinematicZoom {\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:15"
+      }
+    },
+    {
+      "id": "nf1710-mod-ctor-config",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.fml does not exist|cannot find symbol[\\s\\S]{0,200}ModContainer",
+      "apply": {
+        "find": "(?s)public (\\w+)\\(IEventBus \\w+, ModContainer \\w+\\) \\{(.*?)\\n    \\}",
+        "replace": "public $1() {\n    }\n\n    @Mod.EventHandler\n    public void preInit(FMLPreInitializationEvent event) {\n        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this);\n        cpw.mods.fml.common.FMLCommonHandler.instance().bus().register(this);$2\n    }",
+        "ensureImports": [
+          "cpw.mods.fml.common.Mod.EventHandler",
+          "cpw.mods.fml.common.event.FMLPreInitializationEvent"
+        ]
+      },
+      "scope": "log",
+      "when": "\\(IEventBus \\w+, ModContainer",
+      "note": "Constructor injection becomes a no-arg constructor plus preInit registering on both buses.",
+      "test": {
+        "error": "CinematicZoom.java:20: error: package net.neoforged.fml does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n\n    public CinematicZoom(IEventBus modEventBus, ModContainer modContainer) {\n        // Register client config (this is a client-side only mod)\n        modContainer.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);\n        \n        LOGGER.info(\"CinematicZoom initialized - Client-side zoom mod\");\n    }\n}\n",
+        "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.common.event.FMLPreInitializationEvent;\nimport cpw.mods.fml.common.Mod.EventHandler;\n\n\n    public CinematicZoom() {\n    }\n\n    @Mod.EventHandler\n    public void preInit(FMLPreInitializationEvent event) {\n        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this);\n        cpw.mods.fml.common.FMLCommonHandler.instance().bus().register(this);\n        // Register client config (this is a client-side only mod)\n        modContainer.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);\n        \n        LOGGER.info(\"CinematicZoom initialized - Client-side zoom mod\");\n    }\n}\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:20"
+      }
+    },
+    {
+      "id": "nf1710-mod-registerconfig",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.fml\\.config does not exist|symbol:\\s+variable ModConfig",
+      "apply": {
+        "find": "(?m)^\\s*\\w+\\.registerConfig\\(ModConfig\\.Type\\.\\w+, Config\\.SPEC\\);\\r?\\n",
+        "replace": "        Configuration config = new Configuration(event.getSuggestedConfigurationFile());\n        config.load();\n        Config.sync(config);\n",
+        "ensureImports": [
+          "net.minecraftforge.common.config.Configuration"
+        ]
+      },
+      "scope": "log",
+      "when": "Config\\.SPEC",
+      "note": "ModConfig registration becomes a Configuration load plus the generated sync.",
+      "test": {
+        "error": "CinematicZoom.java:22: error: package net.neoforged.fml.config does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n        // Register client config (this is a client-side only mod)\n        modContainer.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);\n        \n",
+        "after": "package de.smallinger.cinematiczoom;\nimport net.minecraftforge.common.config.Configuration;\n\n        // Register client config (this is a client-side only mod)\n        Configuration config = new Configuration(event.getSuggestedConfigurationFile());\n        config.load();\n        Config.sync(config);\n        \n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoom.java:22"
+      }
+    },
+    {
+      "id": "nf1710-client-ctor",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.fml does not exist",
+      "apply": {
+        "find": "(?s)public (\\w+)\\(ModContainer (\\w+)\\) \\{(.*?)\\n    \\}",
+        "replace": "public $1() {\n        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this);\n        cpw.mods.fml.common.FMLCommonHandler.instance().bus().register(this);\n    }"
+      },
+      "scope": "log",
+      "when": "\\(ModContainer \\w+\\)",
+      "note": "The client handler registers itself on both buses; listener wiring moves to annotations.",
+      "test": {
+        "error": "CinematicZoomClient.java:26: error: package net.neoforged.fml does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n\n    public CinematicZoomClient(ModContainer container) {\n        // Register key mapping event on mod event bus\n        container.getEventBus().addListener(this::onRegisterKeyMappings);\n        \n        // Register tick event on forge event bus\n        NeoForge.EVENT_BUS.addListener(this::onClientTick);\n        \n        // Register config screen factory\n        container.registerExtensionPoint(IConfigScreenFactory.class, new ConfigScreenFactory());\n    }\n\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n\n    public CinematicZoomClient() {\n        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this);\n        cpw.mods.fml.common.FMLCommonHandler.instance().bus().register(this);\n    }\n\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:26"
+      }
+    },
+    {
+      "id": "nf1710-client-extension-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.fml does not exist",
+      "apply": {
+        "find": "(?m)^\\s*\\w+\\.registerExtensionPoint\\(.*?\\);\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "registerExtensionPoint",
+      "note": "Extension points do not exist at 1.7.10; the config factory is wired by guiFactory instead.",
+      "test": {
+        "error": "CinematicZoomClient.java:34: error: package net.neoforged.fml does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n        // Register config screen factory\n        container.registerExtensionPoint(IConfigScreenFactory.class, new ConfigScreenFactory());\n    }\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n        // Register config screen factory\n    }\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:34"
+      }
+    },
+    {
+      "id": "nf1710-config-usage",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+method get\\(\\)|cannot be dereferenced",
+      "apply": {
+        "find": "Config\\.(\\w+)\\.get\\(\\)(\\.(?:float|double|int|boolean)Value\\(\\))?",
+        "replace": "Config.$1"
+      },
+      "scope": "log",
+      "when": "Config\\.\\w+\\.get\\(\\)",
+      "note": "Converted config fields are read directly; the ModConfigSpec getter chain is gone.",
+      "test": {
+        "error": "ZoomManager.java:36: error: cannot find symbol\n  symbol: method get()\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n        if (starting) {\n            holdZoomMul = clamp(Config.BASE_ZOOM_MULTIPLIER.get().floatValue(),\n                    Config.MIN_ZOOM_MULTIPLIER.get().floatValue(),\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n        if (starting) {\n            holdZoomMul = clamp(Config.BASE_ZOOM_MULTIPLIER,\n                    Config.MIN_ZOOM_MULTIPLIER,\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ZoomManager.java:36"
+      }
+    },
+    {
+      "id": "nf1710-gui-import-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.client\\.gui does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.neoforge\\.client\\.gui\\.(ConfigurationScreen|IConfigScreenFactory);\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.neoforge\\.client\\.gui\\.",
+      "note": "NeoForge config screens become IModGuiFactory plus GuiConfig.",
+      "test": {
+        "error": "CinematicZoomClient.java:11: error: package net.neoforged.neoforge.client.gui does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\nimport net.neoforged.neoforge.common.NeoForge;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\nimport net.neoforged.neoforge.common.NeoForge;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:11"
+      }
+    },
+    {
+      "id": "nf1710-gui-factory-method",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.client\\.gui does not exist",
+      "apply": {
+        "find": "(?s)    @Override\\n    public Screen createScreen\\(ModContainer \\w+, Screen \\w+\\) \\{\\n        return new ConfigurationScreen\\(\\w+, \\w+\\);\\n    \\}",
+        "replace": "    @Override\n    public void initialize(Minecraft minecraft) {\n    }\n\n    @Override\n    public Class<? extends GuiScreen> mainConfigGuiClass() {\n        return ModGuiConfig.class;\n    }\n\n    @Override\n    public java.util.Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {\n        return null;\n    }\n\n    @Override\n    public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element) {\n        return null;\n    }\n\n    public static class ModGuiConfig extends GuiConfig {\n        public ModGuiConfig(GuiScreen parent) {\n            super(parent, new java.util.ArrayList<IConfigElement>(), \"\", false, false, \"\", \"\");\n        }\n    }",
+        "ensureImports": [
+          "net.minecraft.client.Minecraft",
+          "net.minecraft.client.gui.GuiScreen",
+          "cpw.mods.fml.client.IModGuiFactory",
+          "cpw.mods.fml.client.config.GuiConfig",
+          "cpw.mods.fml.client.config.IConfigElement",
+          "cpw.mods.fml.client.IModGuiFactory.RuntimeOptionCategoryElement",
+          "cpw.mods.fml.client.IModGuiFactory.RuntimeOptionGuiHandler"
+        ]
+      },
+      "scope": "log",
+      "when": "createScreen\\(ModContainer",
+      "note": "The factory method becomes the four IModGuiFactory members; the inner GuiConfig opens an (initially empty) config list.",
+      "test": {
+        "error": "ConfigScreenFactory.java:14: error: package net.neoforged.neoforge.client.gui does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n    \n    @Override\n    public Screen createScreen(ModContainer container, Screen lastScreen) {\n        return new ConfigurationScreen(container, lastScreen);\n    }\n}\n",
+        "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.client.IModGuiFactory.RuntimeOptionGuiHandler;\nimport cpw.mods.fml.client.IModGuiFactory.RuntimeOptionCategoryElement;\nimport cpw.mods.fml.client.config.IConfigElement;\nimport cpw.mods.fml.client.config.GuiConfig;\nimport cpw.mods.fml.client.IModGuiFactory;\nimport net.minecraft.client.gui.GuiScreen;\nimport net.minecraft.client.Minecraft;\n\n    \n    @Override\n    public void initialize(Minecraft minecraft) {\n    }\n\n    @Override\n    public Class<? extends GuiScreen> mainConfigGuiClass() {\n        return ModGuiConfig.class;\n    }\n\n    @Override\n    public java.util.Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {\n        return null;\n    }\n\n    @Override\n    public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element) {\n        return null;\n    }\n\n    public static class ModGuiConfig extends GuiConfig {\n        public ModGuiConfig(GuiScreen parent) {\n            super(parent, new java.util.ArrayList<IConfigElement>(), \"\", false, false, \"\", \"\");\n        }\n    }\n}\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ConfigScreenFactory.java:14"
+      }
+    },
+    {
+      "id": "nf1710-screen-import",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.minecraft\\.client\\.gui\\.screens does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.client\\.gui\\.screens\\.Screen;\\r?\\n",
+        "replace": "import net.minecraft.client.gui.GuiScreen;\n"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The 1.21 screens package folds back into client.gui at 1.7.10.",
+      "test": {
+        "error": "ConfigScreenFactory.java:3: error: package net.minecraft.client.gui.screens does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n\nimport net.minecraft.client.gui.screens.Screen;\nimport net.neoforged.fml.ModContainer;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n\nimport net.minecraft.client.gui.GuiScreen;\nimport net.neoforged.fml.ModContainer;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ConfigScreenFactory.java:3"
+      }
+    },
+    {
+      "id": "nf1710-screen-symbol",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.minecraft\\.client\\.gui\\.screens does not exist",
+      "apply": {
+        "find": "\\bScreen\\b",
+        "replace": "GuiScreen"
+      },
+      "scope": "log",
+      "when": "import net\\.minecraft\\.client\\.gui\\.GuiScreen;",
+      "note": "Follows the screens import swap for the bare Screen references left behind.",
+      "test": {
+        "error": "Hud.java:3: error: package net.minecraft.client.gui.screens does not exist\n",
+        "before": "package mod;\n\nimport net.minecraft.client.gui.GuiScreen;\n\nclass Hud extends GuiScreen {\n\tvoid show(Screen parent) { }\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.client.gui.GuiScreen;\n\nclass Hud extends GuiScreen {\n\tvoid show(GuiScreen parent) { }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "nf1710-config-transform",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.common does not exist",
+      "apply": {
+        "transform": "neo-config"
+      },
+      "scope": "log",
+      "when": "ModConfigSpec",
+      "note": "ModConfigSpec cannot be renamed line by line: the holder becomes Configuration fields with a sync method.",
+      "test": {
+        "error": "Config.java:4: error: package net.neoforged.neoforge.common does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.common.ModConfigSpec;\n\n/**\n * CinematicZoom configuration using NeoForge's ModConfigSpec system.\n * Ported from Fabric's JSON-based config to NeoForge's TOML-based config.\n */\npublic class Config {\n    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();\n\n    // --- User Settings ---\n    \n    /** Height of black bars in percent of screen height (total 2 * value) */\n    public static final ModConfigSpec.DoubleValue BARS_PERCENT = BUILDER\n            .comment(\"Height of black bars in percent of screen height (total 2 * value)\")\n            .defineInRange(\"barsPercent\", 15.0, 0.0, 50.0);\n\n    /** Smoothing speed: time to reach ~90% to target, milliseconds. 0 = instant */\n    public static final ModConfigSpec.IntValue SMOOTH_MS = BUILDER\n            .comment(\"Smoothing speed: time to reach ~90% to target, milliseconds. 0 = instant\")\n            .defineInRange(\"smoothMs\", 240, 0, 2000);\n\n    /** Allow zoom control with mouse wheel while holding */\n    public static final ModConfigSpec.BooleanValue MOUSE_WHEEL_ENABLED = BUILDER\n            .comment(\"Allow zoom control with mouse wheel while holding zoom key\")\n            .define(\"mouseWheelEnabled\", true);\n\n    /** Hide HUD/crosshair during zoom */\n    public static final ModConfigSpec.BooleanValue HIDE_HUD_DURING_ZOOM = BUILDER\n            .comment(\"Hide HUD/crosshair during zoom\")\n            .define(\"hideHudDuringZoom\", true);\n\n    /** Enable cinematic camera (smooth camera) during zoom */\n    public static final ModConfigSpec.BooleanValue ENABLE_CINEMATIC_CAMERA = BUILDER\n            .comment(\"Enable cinematic camera (smooth camera) during zoom\")\n            .define(\"enableCinematicCamera\", true);\n\n    // --- Internal (not shown in config screen, but stored) ---\n    \n    /** Base FOV multiplier when starting zoom (less than 1 = zoom in) */\n    public static final ModConfigSpec.DoubleValue BASE_ZOOM_MULTIPLIER = BUILDER\n            .comment(\"Base FOV multiplier when starting zoom (less than 1 = zoom in)\")\n            .defineInRange(\"baseZoomMultiplier\", 0.33, 0.05, 1.0);\n\n    /** Minimum zoom multiplier when using mouse wheel */\n    public static final ModConfigSpec.DoubleValue MIN_ZOOM_MULTIPLIER = BUILDER\n            .comment(\"Minimum zoom multiplier when using mouse wheel\")\n            .defineInRange(\"minZoomMultiplier\", 0.10, 0.05, 1.0);\n\n    /** Maximum zoom multiplier when using mouse wheel */\n    public static final ModConfigSpec.DoubleValue MAX_ZOOM_MULTIPLIER = BUILDER\n            .comment(\"Maximum zoom multiplier when using mouse wheel\")\n            .defineInRange(\"maxZoomMultiplier\", 1.00, 0.05, 1.0);\n\n    /** Step for changing multiplier per mouse wheel tick */\n    public static final ModConfigSpec.DoubleValue WHEEL_STEP = BUILDER\n            .comment(\"Step for changing multiplier per mouse wheel tick\")\n            .defineInRange(\"wheelStep\", 0.05, 0.01, 0.25);\n\n    static final ModConfigSpec SPEC = BUILDER.build();\n}\n",
+        "after": "package de.smallinger.cinematiczoom;\nimport net.minecraftforge.common.config.Configuration;\n\n\n/**\n * CinematicZoom configuration using NeoForge's ModConfigSpec system.\n * Ported from Fabric's JSON-based config to NeoForge's TOML-based config.\n */\npublic class Config {\n\n    // --- User Settings ---\n    \n    /** Height of black bars in percent of screen height (total 2 * value) */\n    public static float BARS_PERCENT = 15.0f;\n\n    /** Smoothing speed: time to reach ~90% to target, milliseconds. 0 = instant */\n    public static int SMOOTH_MS = 240;\n\n    /** Allow zoom control with mouse wheel while holding */\n    public static boolean MOUSE_WHEEL_ENABLED = true;\n\n    /** Hide HUD/crosshair during zoom */\n    public static boolean HIDE_HUD_DURING_ZOOM = true;\n\n    /** Enable cinematic camera (smooth camera) during zoom */\n    public static boolean ENABLE_CINEMATIC_CAMERA = true;\n\n    // --- Internal (not shown in config screen, but stored) ---\n    \n    /** Base FOV multiplier when starting zoom (less than 1 = zoom in) */\n    public static float BASE_ZOOM_MULTIPLIER = 0.33f;\n\n    /** Minimum zoom multiplier when using mouse wheel */\n    public static float MIN_ZOOM_MULTIPLIER = 0.10f;\n\n    /** Maximum zoom multiplier when using mouse wheel */\n    public static float MAX_ZOOM_MULTIPLIER = 1.00f;\n\n    /** Step for changing multiplier per mouse wheel tick */\n    public static float WHEEL_STEP = 0.05f;\n\n    public static void sync(Configuration config) {\n        BARS_PERCENT = (float) config.get(Configuration.CATEGORY_GENERAL, \"barsPercent\", 15.0, \"Height of black bars in percent of screen height (total 2 * value)\", 0.0, 50.0).getDouble();\n        SMOOTH_MS = config.get(Configuration.CATEGORY_GENERAL, \"smoothMs\", 240, \"Smoothing speed: time to reach ~90% to target, milliseconds. 0 = instant\", 0, 2000).getInt();\n        MOUSE_WHEEL_ENABLED = config.get(Configuration.CATEGORY_GENERAL, \"mouseWheelEnabled\", true, \"Allow zoom control with mouse wheel while holding zoom key\").getBoolean();\n        HIDE_HUD_DURING_ZOOM = config.get(Configuration.CATEGORY_GENERAL, \"hideHudDuringZoom\", true, \"Hide HUD/crosshair during zoom\").getBoolean();\n        ENABLE_CINEMATIC_CAMERA = config.get(Configuration.CATEGORY_GENERAL, \"enableCinematicCamera\", true, \"Enable cinematic camera (smooth camera) during zoom\").getBoolean();\n        BASE_ZOOM_MULTIPLIER = (float) config.get(Configuration.CATEGORY_GENERAL, \"baseZoomMultiplier\", 0.33, \"Base FOV multiplier when starting zoom (less than 1 = zoom in)\", 0.05, 1.0).getDouble();\n        MIN_ZOOM_MULTIPLIER = (float) config.get(Configuration.CATEGORY_GENERAL, \"minZoomMultiplier\", 0.10, \"Minimum zoom multiplier when using mouse wheel\", 0.05, 1.0).getDouble();\n        MAX_ZOOM_MULTIPLIER = (float) config.get(Configuration.CATEGORY_GENERAL, \"maxZoomMultiplier\", 1.00, \"Maximum zoom multiplier when using mouse wheel\", 0.05, 1.0).getDouble();\n        WHEEL_STEP = (float) config.get(Configuration.CATEGORY_GENERAL, \"wheelStep\", 0.05, \"Step for changing multiplier per mouse wheel tick\", 0.01, 0.25).getDouble();\n        if (config.hasChanged()) config.save();\n    }\n}\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/Config.java"
+      }
+    },
+    {
+      "id": "nf1710-mixin-entry",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package org\\.spongepowered\\.asm\\.mixin(\\.| injection| injection\\.callback)? does not exist",
+      "apply": {
+        "transform": "neo-entry"
+      },
+      "scope": "log",
+      "when": "@Mixin\\(",
+      "note": "A convertible @Mixin becomes a Forge event subscriber wired in preInit; the bar overlay becomes ScaledResolution plus Gui.drawRect.",
+      "test": {
+        "error": "GameRendererMixin.java:7: error: package org.spongepowered.asm.mixin does not exist\n",
+        "before": "package de.smallinger.cinematiczoom.mixin;\n\nimport de.smallinger.cinematiczoom.ZoomManager;\nimport net.minecraft.client.Camera;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.renderer.GameRenderer;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\n/**\n * Mixin to modify the FOV based on zoom state.\n * Ported from Fabric to NeoForge.\n */\n@Mixin(GameRenderer.class)\npublic class GameRendererMixin {\n\n        @Inject(method = \"getFov\", at = @At(\"RETURN\"), cancellable = true)\n        private void cinematiczoom$applyZoom(Camera camera, float tickDelta, boolean changingFov,\n                                             CallbackInfoReturnable<Double> cir) {\n        ZoomManager.frameUpdate();\n\n        Minecraft client = Minecraft.getInstance();\n        if (client.screen != null) return;\n\n        double fov = cir.getReturnValue();\n        double mul = ZoomManager.getCurrentFovMul();\n        if (mul != 1.0) {\n            cir.setReturnValue(fov * mul);\n        }\n    }\n}\n",
+        "after": "package de.smallinger.cinematiczoom.mixin;\nimport net.minecraftforge.client.event.FOVUpdateEvent;\nimport cpw.mods.fml.common.eventhandler.SubscribeEvent;\n\nimport de.smallinger.cinematiczoom.ZoomManager;\nimport net.minecraft.client.Minecraft;\n\n/**\n * Mixin to modify the FOV based on zoom state.\n * Ported from Fabric to NeoForge.\n */\npublic class GameRendererMixin {\n\n    @SubscribeEvent\n    public void onFov(FOVUpdateEvent event) {\n        ZoomManager.frameUpdate();\n        Minecraft client = Minecraft.getMinecraft();\n        if (client.currentScreen != null) return;\n        double fov = event.fov;\n        double mul = ZoomManager.getCurrentFovMul();\n        if (mul != 1.0) event.newfov = (float) (fov * mul);\n    }\n}\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/mixin/GameRendererMixin.java"
+      }
+    },
+    {
+      "id": "nf1710-bus-neoforge-import-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.common does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.neoforged\\.neoforge\\.common\\.NeoForge;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.neoforged\\.neoforge\\.common\\.NeoForge;",
+      "note": "The bus holder import dies with the usage rewrite to MinecraftForge.",
+      "test": {
+        "error": "CinematicZoomClient.java:12: error: package net.neoforged.neoforge.common does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.PlayerTickEvent;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\nimport net.neoforged.neoforge.event.tick.PlayerTickEvent;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:12"
+      }
+    },
+    {
+      "id": "nf1710-keybinding-symbol",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}KeyMapping",
+      "apply": {
+        "find": "\\bKeyMapping\\b",
+        "replace": "KeyBinding"
+      },
+      "scope": "log",
+      "when": "import net\\.minecraft\\.client\\.settings\\.KeyBinding;",
+      "note": "Follows the KeyMapping import swap for the field and parameter types left behind.",
+      "test": {
+        "error": "CinematicZoomClient.java:24: error: cannot find symbolKeyMapping\n",
+        "before": "package de.smallinger.cinematiczoom;\n\nimport net.minecraft.client.settings.KeyBinding;\n    \n    public static KeyMapping ZOOM_KEYBIND;\n\n",
+        "after": "package de.smallinger.cinematiczoom;\n\nimport net.minecraft.client.settings.KeyBinding;\n    \n    public static KeyBinding ZOOM_KEYBIND;\n\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:24, as nf1710-keybinding-import left it"
+      }
+    },
+    {
+      "id": "nf1710-client-getinstance",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}getInstance",
+      "apply": {
+        "find": "Minecraft\\.getInstance\\(\\)",
+        "replace": "Minecraft.getMinecraft()"
+      },
+      "scope": "log",
+      "when": "Minecraft\\.getInstance\\(\\)",
+      "note": "The client accessor is getMinecraft at 1.7.10.",
+      "test": {
+        "error": "CinematicZoomClient.java:56: error: cannot find symbolgetInstance\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n        if (event.getEntity().level().isClientSide()) {\n            Minecraft client = Minecraft.getInstance();\n            if (client.player != null) {\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n        if (event.getEntity().level().isClientSide()) {\n            Minecraft client = Minecraft.getMinecraft();\n            if (client.player != null) {\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:56"
+      }
+    },
+    {
+      "id": "nf1710-client-player",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+variable player",
+      "apply": {
+        "find": "(client|mc|minecraft)\\.player\\b",
+        "replace": "$1.thePlayer"
+      },
+      "scope": "log",
+      "when": "(client|mc|minecraft)\\.player\\b",
+      "note": "The client player field is thePlayer; gated to the usual client variable names.",
+      "test": {
+        "error": "CinematicZoomClient.java:57: error: cannot find symbol\n  symbol: variable player\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n            Minecraft client = Minecraft.getInstance();\n            if (client.player != null) {\n                ZoomManager.tick(client, ZOOM_KEYBIND);\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n            Minecraft client = Minecraft.getInstance();\n            if (client.thePlayer != null) {\n                ZoomManager.tick(client, ZOOM_KEYBIND);\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/CinematicZoomClient.java:57"
+      }
+    },
+    {
+      "id": "nf1710-client-screen",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+variable screen",
+      "apply": {
+        "find": "(client|mc|minecraft)\\.screen\\b",
+        "replace": "$1.currentScreen"
+      },
+      "scope": "log",
+      "when": "(client|mc|minecraft)\\.screen\\b",
+      "note": "The open GUI field is currentScreen; gated to the usual client variable names.",
+      "test": {
+        "error": "GameRendererMixin.java:25: error: cannot find symbol\n  symbol: variable screen\n",
+        "before": "package de.smallinger.cinematiczoom.mixin;\n\n        Minecraft client = Minecraft.getInstance();\n        if (client.screen != null) return;\n\n",
+        "after": "package de.smallinger.cinematiczoom.mixin;\n\n        Minecraft client = Minecraft.getInstance();\n        if (client.currentScreen != null) return;\n\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/mixin/GameRendererMixin.java:25"
+      }
+    },
+    {
+      "id": "nf1710-client-options",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+variable options",
+      "apply": {
+        "find": "(client|mc|minecraft)\\.options\\b",
+        "replace": "$1.gameSettings"
+      },
+      "scope": "log",
+      "when": "(client|mc|minecraft)\\.options\\b",
+      "note": "Client settings live on gameSettings; gated to the usual client variable names.",
+      "test": {
+        "error": "ZoomManager.java:42: error: cannot find symbol\n  symbol: variable options\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n            if (Config.HIDE_HUD_DURING_ZOOM.get()) {\n                prevHudHidden = client.options.hideGui;\n                client.options.hideGui = true;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n            if (Config.HIDE_HUD_DURING_ZOOM.get()) {\n                prevHudHidden = client.gameSettings.hideGui;\n                client.gameSettings.hideGui = true;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ZoomManager.java:42"
+      }
+    },
+    {
+      "id": "nf1710-client-hidegui",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+variable hideGui",
+      "apply": {
+        "find": "gameSettings\\.hideGui\\b",
+        "replace": "gameSettings.hideGUI"
+      },
+      "scope": "log",
+      "when": "gameSettings\\.hideGui",
+      "note": "The HUD-hide flag is hideGUI in capitals once options becomes gameSettings.",
+      "test": {
+        "error": "ZoomManager.java:42: error: cannot find symbol\n  symbol: variable hideGui\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n            if (Config.HIDE_HUD_DURING_ZOOM.get()) {\n                prevHudHidden = client.gameSettings.hideGui;\n                client.gameSettings.hideGui = true;\n",
+        "after": "package de.smallinger.cinematiczoom;\n\n            if (Config.HIDE_HUD_DURING_ZOOM.get()) {\n                prevHudHidden = client.gameSettings.hideGUI;\n                client.gameSettings.hideGUI = true;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ZoomManager.java:42, as nf1710-client-options left it"
+      }
+    },
+    {
+      "id": "nf1710-gui-implements",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "package net\\.neoforged\\.neoforge\\.client\\.gui does not exist",
+      "apply": {
+        "find": "implements IConfigScreenFactory",
+        "replace": "implements IModGuiFactory",
+        "ensureImports": [
+          "cpw.mods.fml.client.IModGuiFactory"
+        ]
+      },
+      "scope": "log",
+      "when": "implements IConfigScreenFactory",
+      "note": "The factory class implements IModGuiFactory once its method is rewritten.",
+      "test": {
+        "error": "ConfigScreenFactory.java:12: error: package net.neoforged.neoforge.client.gui does not exist\n",
+        "before": "package de.smallinger.cinematiczoom;\n\n */\npublic class ConfigScreenFactory implements IConfigScreenFactory {\n    \n",
+        "after": "package de.smallinger.cinematiczoom;\nimport cpw.mods.fml.client.IModGuiFactory;\n\n */\npublic class ConfigScreenFactory implements IModGuiFactory {\n    \n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/ConfigScreenFactory.java:12"
+      }
+    },
+    {
+      "id": "nf1710-gui-graphics-import-drop",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "cannot find symbol[\\s\\S]{0,200}class GuiGraphics",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.client\\.gui\\.GuiGraphics;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "import net\\.minecraft\\.client\\.gui\\.GuiGraphics;",
+      "note": "GuiGraphics does not exist at 1.7.10; the import dies. Files that call its draw methods need their own recipe.",
+      "test": {
+        "error": "InGameHudMixin.java:4: error: cannot find symbolclass GuiGraphics\n",
+        "before": "package de.smallinger.cinematiczoom.mixin;\n\nimport net.minecraft.client.gui.Gui;\nimport net.minecraft.client.gui.GuiGraphics;\nimport net.minecraft.client.DeltaTracker;\n",
+        "after": "package de.smallinger.cinematiczoom.mixin;\n\nimport net.minecraft.client.gui.Gui;\nimport net.minecraft.client.DeltaTracker;\n",
+        "from": "CinematicZoom 1.21-neo at 9fd9d56, src/main/java/de/smallinger/cinematiczoom/mixin/InGameHudMixin.java:4"
+      }
+    },
+    {
+      "id": "nf1710-key-isdown",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.7.10",
+      "match": "symbol:\\s+method isDown\\(\\)",
+      "apply": {
+        "find": "\\.isDown\\(\\)",
+        "replace": ".getIsKeyPressed()"
+      },
+      "scope": "log",
+      "when": "KeyBinding",
+      "note": "Held-key polling is getIsKeyPressed at 1.7.10 (isPressed is edge-triggered). Same-file custom isDown calls would need their own recipe.",
+      "test": {
+        "error": "ClientProxy.java:296: error: cannot find symbol\n  symbol: method isDown()\n",
+        "before": "package snownee.jade.util;\n\n\tpublic static KeyMapping registerKeyBinding(String desc, int defaultKey) {\n\tpublic static boolean isShowDetailsPressed() {\n\t\treturn JadeClient.showDetails.isDown();\n\t}\n",
+        "after": "package snownee.jade.util;\n\n\tpublic static KeyMapping registerKeyBinding(String desc, int defaultKey) {\n\tpublic static boolean isShowDetailsPressed() {\n\t\treturn JadeClient.showDetails.getIsKeyPressed();\n\t}\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/util/ClientProxy.java:296"
+      }
+    },
+    {
       "id": "block-update-shape-1212",
       "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",

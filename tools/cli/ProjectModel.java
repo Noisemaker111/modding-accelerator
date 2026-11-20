@@ -215,7 +215,7 @@ public final class ProjectModel {
             String script = read(file);
             Properties pins = properties(root.resolve("gradle.properties"));
             pins.putAll(properties(dir.resolve("gradle.properties")));
-            String mc = first(pins, "minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version");
+            String mc = first(pins, "minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version", "mcVersion");
             Set<String> loaders = new TreeSet<>();
             if (
                 script.matches("(?s).*fabric-loom.*") || Files.exists(dir.resolve("src/main/resources/fabric.mod.json"))

@@ -20,6 +20,8 @@ final class Port {
     final Map<String, Object> before = new LinkedHashMap<>();
     final List<String> planned = new ArrayList<>();
     List<String> plannedRemovals = List.of();
+    /** Mixin configs the repair deleted after converting their last mixin: undo restores them from backup. */
+    final List<String> repairedAway = new ArrayList<>();
 
     void saveInProgress() throws IOException {
         Json.save(
@@ -1081,7 +1083,7 @@ final class Port {
         long targetStart = System.nanoTime();
         // A required library with no target release may be ported from its own source on the way (LibraryPort).
         if (options.has("fix") && !options.has("dry-run")) Dependencies.portFrom = from;
-        Target.Setup setup = actual.equals(Set.of(to)) ? null : Target.plan(build, model, to, selections);
+        Target.Setup setup = planTargets(build, model, to, selections, actual, options);
         List<Target.Edit> target = setup == null ? Target.manifestEditsForModel(model, to) : setup.edits();
         List<Path> excluded = setup == null ? List.of() : setup.excluded;
         List<Map<String, Object>> applied = setup == null ? List.of() : setup.applied;
@@ -1427,7 +1429,8 @@ final class Port {
         Map<String, Object> before = this.before;
         Set<Path> backupPaths = new TreeSet<>(sources(build.project));
         for (Target.Edit edit : target) {
-            Path file = edit.file().toRealPath();
+            boolean created = edit.before() == null && !Files.exists(edit.file());
+            Path file = created ? edit.file().toAbsolutePath().normalize() : edit.file().toRealPath();
             if (!file.startsWith(build.project.root)) throw new IOException(
                 "Target edit is outside the source project: " + file
             );
@@ -1442,6 +1445,10 @@ final class Port {
             Path original = pendingOriginals(build.project).resolve(relative.toString());
             Path source = Files.isRegularFile(original) ? original : file;
             if (source == original) takenOver.add(relative.toString().replace('\\', '/'));
+            if (!Files.isRegularFile(source)) {
+                before.put(relative.toString().replace(File.separatorChar, '/'), null);
+                continue;
+            }
             Files.createDirectories(backup.getParent());
             Files.copy(source, backup);
             before.put(relative.toString().replace('\\', '/'), Fingerprints.bytes(Files.readAllBytes(source)));
@@ -1449,9 +1456,12 @@ final class Port {
         planned.addAll(takenOver);
         deletePending(build.project);
         // The restore plan is on disk before the first edit: an interrupted port still knows what it may have changed.
-        for (Target.Edit edit : target) planned.add(
-            build.project.root.relativize(edit.file().toRealPath()).toString().replace('\\', '/')
-        );
+        for (Target.Edit edit : target) {
+            Path edited = edit.before() == null && !Files.exists(edit.file())
+                ? edit.file().toAbsolutePath().normalize()
+                : edit.file().toRealPath();
+            planned.add(build.project.root.relativize(edited).toString().replace(File.separatorChar, '/'));
+        }
         plannedRemovals = relative(build.project.root, excluded);
         saveInProgress();
         Path log;
@@ -1518,6 +1528,14 @@ final class Port {
                 String state = Fingerprints.files(sources(build.project));
                 if (!seen.add(state)) break;
                 roundsTried = round + 1;
+                // The desugar shifts line numbers, so it gets its own round and rebuild before the line-based
+                // rules read positions from the same log.
+                if (desugar(log)) {
+                    var desugared = build.gradle(repairTasks, "port-desugar-" + (round + 1));
+                    log = desugared.log();
+                    compiled = desugared.exit() == 0;
+                    continue;
+                }
                 applyRules(log);
                 importMissingClasses(log);
                 carryRemovedClasses(log, from);
@@ -1558,6 +1576,7 @@ final class Port {
                 mixins = compiled ? mixinCheck(model, options) : null;
             }
             var audit = compiled ? tools.audit(model) : null;
+            if (compiled) migrateLegacyMetadata(to);
             boolean passed = compiled && mixins != null && Boolean.TRUE.equals(mixins.get("ok"));
             boolean built = !explicitTask && compiled;
             if (passed && (!explicitTask ? roundsTried > 0 : true)) {
@@ -1740,6 +1759,7 @@ final class Port {
                 failure
             );
         } finally {
+            removed.addAll(repairedAway);
             finishTransaction(build.project, transaction, before, removed);
         }
     }
@@ -2235,6 +2255,23 @@ final class Port {
         }
     }
 
+    /** Target planning for a port. A dry run previews the source rewrite, which needs no target
+        build, so a planning failure degrades to no build changes instead of throwing. */
+    static Target.Setup planTargets(
+        Build build, Map<String, Object> model, String to, List<Dependencies.Selection> selections, Set<String> actual, Mmt.Options options
+    ) throws Exception {
+        if (actual.equals(Set.of(to))) return null;
+        if (!options.has("dry-run")) return Target.plan(build, model, to, selections);
+        try {
+            return Target.plan(build, model, to, selections);
+        } catch (Exception planning) {
+            build.report.stages.add(
+                Json.map("name", "target-dependencies-skipped", "reason", String.valueOf(planning.getMessage()))
+            );
+            return null;
+        }
+    }
+
     static Set<String> versions(Map<String, Object> model) {
         Set<String> actual = new TreeSet<>();
         for (Object p : Json.array(model.get("projects"))) {
@@ -2243,7 +2280,8 @@ final class Port {
                 "minecraft_version",
                 "minecraftVersion",
                 "exactMinecraftVersion",
-                "mc_version"
+                "mc_version",
+                "mcVersion"
             )) if (pins.containsKey(key)) actual.add(pins.get(key).toString());
             for (Object d : Json.array(Json.object(p).get("dependencies"))) {
                 var dep = Json.object(d);
@@ -3131,6 +3169,69 @@ final class Port {
     }
 
     /**
+     * Lowers modern Java the legacy target cannot compile (records, pattern matching, switch expressions,
+     * text blocks, sealed, var) using the evaluated compile classpath for the types var needs. Only runs
+     * when the log shows the legacy release rejecting modern syntax and the model targets a legacy release.
+     */
+    boolean desugar(Path log) throws Exception {
+        if (!Desugar.needsDesugar(logText(log))) return false;
+        if (!targetsLegacyRelease()) return false;
+        List<String> classpath = compileClasspath();
+        if (classpath.isEmpty()) return false;
+        Set<Path> files = new LinkedHashSet<>(ownedJava());
+        Matcher reported = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error:").matcher(logText(log));
+        while (reported.find()) {
+            Path file = Path.of(reported.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            file = file.normalize();
+            if (file.startsWith(build.project.root) && Files.isRegularFile(file) && file.toString().endsWith(".java")) files.add(file);
+        }
+        boolean changed = false;
+        for (Path file : files) {
+            String before = Files.readString(file);
+            String after = Desugar.desugarFile(file, classpath);
+            if (!after.equals(before)) {
+                Files.writeString(file, after);
+                changed = true;
+            }
+        }
+        if (changed) rulesApplied.putIfAbsent("desugar", List.of());
+        return changed;
+    }
+
+    /** True when an evaluated compile task targets Java 8 or older. */
+    boolean targetsLegacyRelease() {
+        for (Object project : Json.array(model.get("projects"))) {
+            for (Object task : Json.array(Json.object(project).get("compile"))) {
+                if (isLegacyRelease(Json.object(task).get("release"))) return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean isLegacyRelease(Object release) {
+        if (release == null) return false;
+        String text = release.toString().strip();
+        if (text.startsWith("1.")) text = text.substring(2);
+        try {
+            return Integer.parseInt(text) <= 8;
+        } catch (NumberFormatException notVersion) {
+            return false;
+        }
+    }
+
+    /** The union of every evaluated compile classpath: a superset, which is all attribution needs. */
+    List<String> compileClasspath() {
+        Set<String> entries = new LinkedHashSet<>();
+        for (Object project : Json.array(model.get("projects"))) {
+            for (Object task : Json.array(Json.object(project).get("compile"))) {
+                for (Object entry : Json.array(Json.object(task).get("classpath"))) entries.add(entry.toString());
+            }
+        }
+        return new ArrayList<>(entries);
+    }
+
+    /**
      * Annotation-only libraries an older game or loader brought along and a newer one does not (Trinkets 1.20.1 -> 1.21.1
      * lost javax.annotation): only nullness annotations, never read at run time, so compileOnly is safe.
      */
@@ -3297,10 +3398,12 @@ final class Port {
             if (route != null && covered.isEmpty()) continue;
             if (!targetHas(rule)) continue;
             Object transform = Json.object(rule.get("apply")).get("transform");
-            if ("accessor".equals(transform) || "payload-bytes".equals(transform)) {
-                if (
-                    "accessor".equals(transform) ? applyAccessor(rule, errors) : applyPayloadBytes(rule, errors)
-                ) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
+            if ("accessor".equals(transform) || "payload-bytes".equals(transform) || "neo-config".equals(transform) || "neo-entry".equals(transform)) {
+                boolean applied = "neo-entry".equals(transform) ? applyNeoEntry(rule, errors)
+                    : "neo-config".equals(transform) ? applyNeoConfig(rule, errors)
+                    : "payload-bytes".equals(transform) ? applyPayloadBytes(rule, errors)
+                    : applyAccessor(rule, errors);
+                if (applied) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
                 continue;
             }
             if ("food-consumable".equals(transform)) {
@@ -4044,6 +4147,580 @@ final class Port {
         return true;
     }
 
+    /**
+     * Forge before 1.13 reads the mod list from mcmod.info, not a TOML: a ported tree that keeps
+     * only the modern metadata loads but stays nameless. Translate the source metadata once the
+     * tree compiles, before the jar build; the game check reads the built mcmod.info back.
+     */
+    void migrateLegacyMetadata(String to) throws Exception {
+        Map<String, Object> info = legacyModInfo(build.project.root, to);
+        if (info == null) return;
+        Path file = build.project.root.resolve("src/main/resources/mcmod.info");
+        String text = Json.write(List.of(info));
+        if (Files.isRegularFile(file) && Files.readString(file).equals(text)) return;
+        track(file);
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, text);
+    }
+
+    /**
+     * The mcmod.info entry the target's Forge reads, or null when the target needs none (1.13+)
+     * or the source metadata names no mod.
+     */
+    static Map<String, Object> legacyModInfo(Path root, String to) throws IOException {
+        if (Versions.compare(to, "1.13") >= 0) return null;
+        Map<String, String> raw = null;
+        for (String name : List.of(
+            "src/main/templates/META-INF/neoforge.mods.toml",
+            "src/main/resources/META-INF/neoforge.mods.toml",
+            "src/main/resources/META-INF/mods.toml"
+        )) {
+            Path toml = root.resolve(name);
+            if (Files.isRegularFile(toml)) raw = tomlModTable(Files.readString(toml), gradleProperties(root));
+            if (raw != null) break;
+        }
+        if (raw == null) {
+            Path fabric = root.resolve("src/main/resources/fabric.mod.json");
+            if (Files.isRegularFile(fabric)) raw = fabricModTable(Files.readString(fabric));
+        }
+        if (raw == null || raw.getOrDefault("modid", "").isEmpty()) return null;
+        Map<String, Object> info = new LinkedHashMap<>();
+        info.put("modid", raw.get("modid"));
+        if (!raw.getOrDefault("name", "").isEmpty()) info.put("name", raw.get("name"));
+        if (!raw.getOrDefault("description", "").isEmpty()) info.put("description", raw.get("description"));
+        if (!raw.getOrDefault("version", "").isEmpty()) info.put("version", raw.get("version"));
+        info.put("mcversion", to);
+        if (!raw.getOrDefault("url", "").isEmpty()) info.put("url", raw.get("url"));
+        List<String> authors = new ArrayList<>();
+        for (String author : raw.getOrDefault("authors", "").split(",")) {
+            if (!author.strip().isEmpty()) authors.add(author.strip());
+        }
+        if (!authors.isEmpty()) info.put("authorList", authors);
+        if (!raw.getOrDefault("credits", "").isEmpty()) info.put("credits", raw.get("credits"));
+        if (!raw.getOrDefault("logoFile", "").isEmpty()) info.put("logoFile", raw.get("logoFile"));
+        return info;
+    }
+
+    /** key=value properties without profile handling: the mod_* values a metadata template needs. */
+    static Map<String, String> gradleProperties(Path root) throws IOException {
+        Map<String, String> props = new LinkedHashMap<>();
+        Path file = root.resolve("gradle.properties");
+        if (!Files.isRegularFile(file)) return props;
+        for (String line : Files.readString(file).split("\\R")) {
+            String strip = line.strip();
+            if (strip.isEmpty() || strip.startsWith("#") || !strip.contains("=")) continue;
+            props.put(strip.substring(0, strip.indexOf('=')).strip(), strip.substring(strip.indexOf('=') + 1).strip());
+        }
+        return props;
+    }
+
+    /**
+     * The first [[mods]] table of a source TOML under canonical keys (modid, version, name,
+     * description, authors, credits, url, logoFile), with ${placeholders} resolved, or null.
+     */
+    static Map<String, String> tomlModTable(String text, Map<String, String> props) {
+        Map<String, String> table = null;
+        boolean inMods = false;
+        List<String> lines = new ArrayList<>(List.of(text.split("\\R")));
+        for (int i = 0; i < lines.size(); i++) {
+            String strip = lines.get(i).strip();
+            if (strip.startsWith("[[")) {
+                inMods = strip.matches("\\[\\[\\s*mods\\s*\\]\\].*");
+                if (inMods && table == null) table = new LinkedHashMap<>();
+                continue;
+            }
+            if (!inMods || table == null || strip.startsWith("#") || !strip.contains("=")) continue;
+            String key = strip.substring(0, strip.indexOf('=')).strip();
+            String value = quotedValue(strip.substring(strip.indexOf('=') + 1).strip(), lines, i);
+            if (value == null) continue;
+            table.put(canonicalModKey(key), substitute(value, props));
+        }
+        return table;
+    }
+
+    /** modId/displayName/displayURL read as the mcmod.info keys they become. */
+    static String canonicalModKey(String key) {
+        if (key.equals("modId")) return "modid";
+        if (key.equals("displayName")) return "name";
+        if (key.equals("displayURL")) return "url";
+        return key;
+    }
+
+    /** The first quoted string of a TOML value, spanning lines for triple-quoted text, or null. */
+    static String quotedValue(String value, List<String> lines, int index) {
+        if (value.startsWith("'''")) {
+            StringBuilder multi = new StringBuilder(value.substring(3));
+            int i = index;
+            while (!multi.toString().endsWith("'''") && i + 1 < lines.size()) {
+                i++;
+                multi.append("\n").append(lines.get(i));
+            }
+            String joined = multi.toString();
+            if (!joined.endsWith("'''")) return null;
+            return joined.substring(0, joined.length() - 3);
+        }
+        if (value.startsWith("\"")) return quotedUntil(value.substring(1), '"');
+        if (value.startsWith("'")) return quotedUntil(value.substring(1), '\'');
+        return null;
+    }
+
+    /** Up to the next quote, honoring backslash escapes in double-quoted text. */
+    static String quotedUntil(String rest, char quote) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < rest.length(); i++) {
+            char c = rest.charAt(i);
+            if (quote == '"' && c == '\\' && i + 1 < rest.length()) {
+                i++;
+                out.append(rest.charAt(i));
+                continue;
+            }
+            if (c == quote) return out.toString();
+            out.append(c);
+        }
+        return null;
+    }
+
+    /** ${name} placeholders resolve from the project's properties; unknown ones stay visible. */
+    static String substitute(String value, Map<String, String> props) {
+        String resolved = value;
+        for (var entry : props.entrySet()) {
+            resolved = resolved.replace("${" + entry.getKey() + "}", entry.getValue());
+        }
+        return resolved;
+    }
+
+    /** A fabric.mod.json under the same canonical keys the TOML table uses. */
+    static Map<String, String> fabricModTable(String text) {
+        Map<String, Object> meta = Json.object(Json.parse(text));
+        Map<String, String> table = new LinkedHashMap<>();
+        table.put("modid", Json.text(meta, "id", ""));
+        table.put("version", Json.text(meta, "version", ""));
+        table.put("name", Json.text(meta, "name", ""));
+        table.put("description", Json.text(meta, "description", ""));
+        table.put("license", Json.text(meta, "license", ""));
+        List<String> authors = new ArrayList<>();
+        for (Object author : Json.array(meta.get("authors"))) {
+            if (author instanceof Map) authors.add(Json.text((Map<String, Object>) author, "name", ""));
+            if (author instanceof String) authors.add(author.toString());
+        }
+        table.put("authors", String.join(", ", authors));
+        Map<String, Object> contact = Json.object(meta.get("contact"));
+        table.put("url", Json.text(contact, "homepage", ""));
+        return table;
+    }
+
+    /** Runs a "neo-config" rule: a ModConfigSpec holder becomes plain Configuration-backed fields with a sync method. */
+    boolean applyNeoConfig(Map<String, Object> rule, String errors) throws Exception {
+        Pattern match = Pattern.compile(rule.get("match").toString());
+        boolean changed = false;
+        for (Path file : reportedLines(errors, match).keySet()) {
+            String original = Files.readString(file);
+            String text = keepingLineEndings(original, Port::neoConfigConvert);
+            if (!text.equals(original)) {
+                Files.writeString(file, deferImports(file, original, text));
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    /** The ModConfigSpec value kinds the converter keeps: double, int, bool, or define for the inferred kind. */
+    static String configKind(String type, String rest) {
+        if (type.equals("DoubleValue")) return "double";
+        if (type.equals("IntValue")) return "int";
+        if (type.equals("BooleanValue")) return "bool";
+        if (type.equals("ConfigValue") && rest.contains(".define(")) return defineKind(rest);
+        return "";
+    }
+
+    /** A define default's kind from its literal: boolean, integer, quoted string, or double. */
+    static String defineKind(String rest) {
+        Matcher def = Pattern.compile("\\.define\\(\"\\w+\", ([^)]+?)\\)").matcher(rest);
+        if (!def.find()) return "";
+        String literal = def.group(1).strip();
+        if (literal.equals("true") || literal.equals("false")) return "bool";
+        if (literal.matches("\\d+")) return "int";
+        if (literal.startsWith("\"") && literal.endsWith("\"")) return "string";
+        return "double";
+    }
+
+    /** The field assignment for one converted entry, with a float suffix where a float field needs one. */
+    static String configDefault(String kind, String def) {
+        if (kind.equals("double") && def.matches("\\d+\\.\\d+")) return def + "f";
+        return def;
+    }
+
+    /** The Configuration getter call that loads one entry, with its range only where defineInRange gave one. */
+    static String configLoad(String kind, String name, String key, String def, String range, String comment) {
+        String get = "config.get(Configuration.CATEGORY_GENERAL, \"" + key + "\", " + def + ", \"" + comment + "\"" + range + ")";
+        if (kind.equals("bool")) return name + " = " + get + ".getBoolean();";
+        if (kind.equals("int")) return name + " = " + get + ".getInt();";
+        if (kind.equals("string")) return name + " = " + get + ".getString();";
+        return name + " = (float) " + get + ".getDouble();";
+    }
+
+    /** One ModConfigSpec value line becomes a plain field, queuing its Configuration load; empty when unknown. */
+    static String configField(String type, String name, String rest, List<String> loads) {
+        String kind = configKind(type, rest);
+        if (kind.isEmpty()) return "";
+        Matcher range = Pattern.compile("\\.comment\\(\"((?:[^\"\\\\\\n]|\\\\.)*)\"\\)|\\.defineInRange\\(\"(\\w+)\", ([^,]+?), ([^,]+?), ([^)]+?)\\)|\\.define\\(\"(\\w+)\", ([^)]+?)\\)").matcher(rest);
+        String comment = "", key = "", def = "", min = "", max = "";
+        while (range.find()) {
+            if (range.group(1) != null) comment = range.group(1).replace("\\", "\\\\").replace("\"", "\\\"");
+            if (range.group(2) != null) {
+                key = range.group(2);
+                def = range.group(3).strip();
+                min = range.group(4).strip();
+                max = range.group(5).strip();
+            }
+            if (range.group(6) != null) {
+                key = range.group(6);
+                def = range.group(7).strip();
+            }
+        }
+        if (key.isEmpty()) return "";
+        boolean ranged = rest.contains(".defineInRange(");
+        if (ranged && min.isEmpty()) return "";
+        if (kind.equals("bool") && ranged) return "";
+        loads.add(configLoad(kind, name, key, def, ranged ? ", " + min + ", " + max : "", comment));
+        String field = kind.equals("double") ? "float" : kind.equals("int") ? "int" : kind.equals("bool") ? "boolean" : "String";
+        return "public static " + field + " " + name + " = " + configDefault(kind, def) + ";";
+    }
+
+    /** A ModConfigSpec holder with only understood entries becomes 1.7.10 Configuration fields plus sync; else unchanged. */
+    static String neoConfigConvert(String text) {
+        if (!text.contains("ModConfigSpec")) return text;
+        List<String> loads = new ArrayList<>();
+        StringBuffer fields = new StringBuffer();
+        Matcher decl = Pattern.compile("^(\\s*)public static final ModConfigSpec\\.(\\w+) (\\w+) = BUILDER(.*?\\)\\s*;)", Pattern.MULTILINE | Pattern.DOTALL).matcher(text);
+        while (decl.find()) {
+            String flat = decl.group(4).replaceAll("\\s+", " ");
+            String entry = configField(decl.group(2), decl.group(3), flat, loads);
+            if (entry.isEmpty()) return text;
+            decl.appendReplacement(fields, Matcher.quoteReplacement(decl.group(1) + entry));
+        }
+        decl.appendTail(fields);
+        String[] lines = fields.toString().split("\n", -1);
+        List<String> out = new ArrayList<>();
+        boolean spec = false;
+        for (String line : lines) {
+            if (line.matches("\\s*private static final ModConfigSpec\\.Builder BUILDER = .*")) continue;
+            if (line.contains("ModConfigSpec SPEC = BUILDER.build()")) {
+                String indent = line.substring(0, line.length() - line.stripLeading().length());
+                out.add(indent + "public static void sync(Configuration config) {");
+                for (String load : loads) out.add(indent + "    " + load);
+                out.add(indent + "    if (config.hasChanged()) config.save();");
+                out.add(indent + "}");
+                spec = true;
+                continue;
+            }
+            out.add(line);
+        }
+        if (!spec || loads.isEmpty()) return text;
+        String joined = String.join("\n", out);
+        joined = joined.replaceFirst("(?m)^import net\\.neoforged\\.neoforge\\.common\\.ModConfigSpec;\\n?", "");
+        return addImport(joined, "net.minecraftforge.common.config.Configuration");
+    }
+
+    /** The Forge event subscriber that replaces one convertible @Mixin method. */
+    static String subscriberMethod(String shape, String owner) {
+        if (shape.equals("fov")) {
+            return "    @SubscribeEvent\n" +
+                "    public void onFov(FOVUpdateEvent event) {\n" +
+                "        " + owner + ".frameUpdate();\n" +
+                "        Minecraft client = Minecraft.getMinecraft();\n" +
+                "        if (client.currentScreen != null) return;\n" +
+                "        double fov = event.fov;\n" +
+                "        double mul = " + owner + ".getCurrentFovMul();\n" +
+                "        if (mul != 1.0) event.newfov = (float) (fov * mul);\n" +
+                "    }\n";
+        }
+        if (shape.equals("overlay")) {
+            return "    @SubscribeEvent\n" +
+                "    public void onOverlay(RenderGameOverlayEvent.Post event) {\n" +
+                "        if (event.type != RenderGameOverlayEvent.ElementType.ALL) return;\n" +
+                "        " + owner + ".renderBars();\n" +
+                "    }\n";
+        }
+        return "    @SubscribeEvent\n" +
+            "    public void onMouse(MouseEvent event) {\n" +
+            "        if (event.dwheel == 0) return;\n" +
+            "        Minecraft mc = Minecraft.getMinecraft();\n" +
+            "        if (mc == null || mc.currentScreen != null) return;\n" +
+            "        if (" + owner + ".onWheel(event.dwheel)) event.setCanceled(true);\n" +
+            "    }\n";
+    }
+
+    /** The matching close for the bracket at open, skipping strings, chars and comments; -1 when unbalanced. */
+    static int matchForward(String text, int open) {
+        int depth = 0;
+        boolean line = false;
+        boolean block = false;
+        char quote = 0;
+        for (int i = open; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (line) {
+                if (c == '\n') line = false;
+                continue;
+            }
+            if (block) {
+                if (c == '*' && i + 1 < text.length() && text.charAt(i + 1) == '/') {
+                    block = false;
+                    i++;
+                }
+                continue;
+            }
+            if (quote != 0) {
+                if (c == '\\') i++;
+                else if (c == quote) quote = 0;
+                continue;
+            }
+            if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '/') {
+                line = true;
+                i++;
+                continue;
+            }
+            if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '*') {
+                block = true;
+                i++;
+                continue;
+            }
+            if (c == '"' || c == '\'') {
+                quote = c;
+                continue;
+            }
+            if (c == '(' || c == '{' || c == '[') depth++;
+            if (c == ')' || c == '}' || c == ']') {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
+    }
+
+    /** The [start, end) span of the single @Inject handler, or null when the shape is unfamiliar. */
+    static int[] injectSpan(String text) {
+        int at = text.indexOf("@Inject(");
+        if (at < 0 || at != text.lastIndexOf("@Inject(")) return null;
+        int line = text.lastIndexOf('\n', at) + 1;
+        int annotationEnd = matchForward(text, text.indexOf('(', at));
+        if (annotationEnd < 0) return null;
+        int start = text.indexOf("private void ", annotationEnd);
+        if (start < 0) return null;
+        int body = text.indexOf('{', start);
+        if (body < 0) return null;
+        int end = matchForward(text, body);
+        if (end < 0) return null;
+        int stop = end + 1 < text.length() && text.charAt(end + 1) == '\n' ? end + 2 : end + 1;
+        return new int[]{line, stop};
+    }
+
+    /** A convertible @Mixin file becomes a 1.7.10 Forge event subscriber; anything else returns unchanged. */
+    static String neoSubscriberConvert(String text) {
+        if (!text.contains("@Mixin(")) return text;
+        String shape = "";
+        if (text.contains("GameRenderer.class") && text.contains("getFov") && text.contains("CallbackInfoReturnable<Double>")) shape = "fov";
+        if (text.contains("Gui.class") && text.contains("GuiGraphics") && text.contains("renderBars(")) shape = "overlay";
+        if (text.contains("MouseHandler.class") && text.contains("onScroll") && text.contains("onWheel(")) shape = "scroll";
+        if (shape.isEmpty()) return text;
+        String call = shape.equals("fov") ? "frameUpdate" : shape.equals("overlay") ? "renderBars" : "onWheel";
+        Matcher manager = Pattern.compile("([\\w.]+)\\." + call + "\\(").matcher(text);
+        if (!manager.find()) return text;
+        int[] span = injectSpan(text);
+        if (span == null) return text;
+        String out = text.substring(0, span[0]) + subscriberMethod(shape, manager.group(1)) + text.substring(span[1]);
+        out = out.replaceFirst("(?m)^@Mixin\\(.*\\)\\n", "");
+        out = out.replaceAll("(?m)^\\s*@Shadow[^\\n]*\\n", "");
+        out = out.replaceAll("(?m)^import [\\w.]*spongepowered[\\w.]*;\\n?", "");
+        if (shape.equals("fov")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.renderer\\.GameRenderer;\\n?", "");
+        if (shape.equals("fov")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.Camera;\\n?", "");
+        if (shape.equals("overlay")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.gui\\.Gui;\\n?", "");
+        if (shape.equals("overlay")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.gui\\.GuiGraphics;\\n?", "");
+        if (shape.equals("overlay")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.DeltaTracker;\\n?", "");
+        if (shape.equals("scroll")) out = out.replaceAll("(?m)^import net\\.minecraft\\.client\\.MouseHandler;\\n?", "");
+        out = addImport(out, "cpw.mods.fml.common.eventhandler.SubscribeEvent");
+        if (shape.equals("fov")) out = addImport(out, "net.minecraftforge.client.event.FOVUpdateEvent");
+        if (shape.equals("overlay")) out = addImport(out, "net.minecraftforge.client.event.RenderGameOverlayEvent");
+        if (shape.equals("scroll")) out = addImport(out, "net.minecraftforge.client.event.MouseEvent");
+        if (shape.equals("scroll")) out = addImport(out, "net.minecraft.client.Minecraft");
+        return out;
+    }
+
+    /** The 1.7.10 form of a GuiGraphics bar overlay: ScaledResolution plus Gui.drawRect. */
+    static String barsModern(String text) {
+        Matcher m = Pattern.compile("(?s)public static void renderBars\\(GuiGraphics \\w+\\)\\s*\\{\\n(.*?)\\n    \\}").matcher(text);
+        if (!m.find()) return text;
+        if (!m.group(1).contains(".guiWidth()") || !m.group(1).contains(".fill(")) return text;
+        String modern = "    public static void renderBars() {\n" +
+            "        if (currentBarsPct <= 0.0001f) return;\n" +
+            "        Minecraft mc = Minecraft.getMinecraft();\n" +
+            "        ScaledResolution res = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);\n" +
+            "        int sw = res.getScaledWidth();\n" +
+            "        int sh = res.getScaledHeight();\n" +
+            "        int h = Math.round(sh * (currentBarsPct / 100f));\n" +
+            "        if (h <= 0) return;\n" +
+            "        Gui.drawRect(0, 0, sw, h, 0xFF000000);\n" +
+            "        Gui.drawRect(0, sh - h, sw, sh, 0xFF000000);\n" +
+            "    }\n";
+        String out = m.replaceFirst(Matcher.quoteReplacement(modern));
+        out = addImport(out, "net.minecraft.client.Minecraft");
+        out = addImport(out, "net.minecraft.client.gui.Gui");
+        out = addImport(out, "net.minecraft.client.gui.ScaledResolution");
+        return out;
+    }
+
+    /** The first project source whose text holds the needle, or null. */
+    Path findSource(String needle) throws Exception {
+        for (Path file : sources(build.project)) {
+            if (!file.toString().endsWith(".java") || !Files.isRegularFile(file)) continue;
+            if (Files.readString(file).contains(needle)) return file;
+        }
+        return null;
+    }
+
+    /** Runs a "neo-entry" rule: convertible @Mixin files become subscribers and the @Mod entry wires them. */
+    boolean applyNeoEntry(Map<String, Object> rule, String errors) throws Exception {
+        Pattern match = Pattern.compile(rule.get("match").toString());
+        boolean changed = false;
+        List<String> subscribers = new ArrayList<>();
+        String overlayOwner = "";
+        for (Path file : reportedLines(errors, match).keySet()) {
+            String original = Files.readString(file);
+            String text = keepingLineEndings(original, Port::neoSubscriberConvert);
+            if (text.equals(original)) continue;
+            Files.writeString(file, deferImports(file, original, text));
+            changed = true;
+            Matcher name = Pattern.compile("(?m)^package ([\\w.]+);[\\s\\S]*?public class (\\w+)").matcher(text);
+            if (name.find()) subscribers.add(name.group(1) + "." + name.group(2));
+            if (text.contains(".renderBars();")) {
+                Matcher owner = Pattern.compile("([\\w.]+)\\.renderBars\\(\\);").matcher(text);
+                if (owner.find()) overlayOwner = owner.group(1);
+            }
+        }
+        if (!overlayOwner.isEmpty()) {
+            Path manager = null;
+            String tail = overlayOwner.replace('.', '/') + ".java";
+            for (Path file : sources(build.project)) {
+                if (!file.toString().endsWith(".java") || !Files.isRegularFile(file)) continue;
+                if (file.toString().replace('\\', '/').endsWith("/" + tail)) {
+                    manager = file;
+                    break;
+                }
+            }
+            if (manager != null) {
+                String original = Files.readString(manager);
+                String text = keepingLineEndings(original, Port::barsModern);
+                if (!text.equals(original)) {
+                    Files.writeString(manager, deferImports(manager, original, text));
+                    changed = true;
+                }
+            }
+        }
+        Path mod = findSource("@Mod(");
+        if (mod != null && (!subscribers.isEmpty() || overlayOwner.isEmpty())) {
+            String original = Files.readString(mod);
+            String text = keepingLineEndings(original, source -> wireModEntry(source, mod, subscribers));
+            if (!text.equals(original)) {
+                Files.writeString(mod, deferImports(mod, original, text));
+                changed = true;
+            }
+        }
+        if (!subscribers.isEmpty() && forgetConvertedMixins(subscribers)) changed = true;
+        return changed;
+    }
+
+    /**
+     * A mixin class the port rewrote as an event subscriber is no longer a mixin: its entry dies in any
+     * mixin config for its package, and the config file itself when nothing it lists is a mixin anymore.
+     * Tracked, so undo restores the config.
+     */
+    boolean forgetConvertedMixins(List<String> subscribers) throws Exception {
+        Path resources = build.project.root.resolve("src/main/resources");
+        if (!Files.isDirectory(resources)) return false;
+        Map<String, List<String>> byPackage = new LinkedHashMap<>();
+        for (String subscriber : subscribers) {
+            int dot = subscriber.lastIndexOf('.');
+            if (dot < 0) continue;
+            String pack = subscriber.substring(0, dot);
+            if (!byPackage.containsKey(pack)) byPackage.put(pack, new ArrayList<>());
+            byPackage.get(pack).add(subscriber.substring(dot + 1));
+        }
+        boolean changed = false;
+        List<Path> configs = new ArrayList<>();
+        try (var files = Files.list(resources)) {
+            for (Path file : files.toList()) {
+                if (file.getFileName().toString().endsWith(".mixins.json")) configs.add(file);
+            }
+        }
+        for (Path config : configs) {
+            String original = Files.readString(config);
+            String text = original;
+            for (Map.Entry<String, List<String>> entry : byPackage.entrySet()) {
+                text = stripConvertedMixins(text, entry.getKey(), entry.getValue());
+            }
+            if (text.equals(original)) continue;
+            track(config);
+            if (mixinsRemain(text)) Files.writeString(config, text);
+            else {
+                Files.delete(config);
+                repairedAway.add(build.project.root.relativize(config).toString().replace('\\', '/'));
+            }
+            changed = true;
+        }
+        return changed;
+    }
+
+    /** Drops the converted classes from a mixin config of their package; other packages pass through. */
+    static String stripConvertedMixins(String text, String mixinPackage, List<String> simpleNames) {
+        Matcher pack = Pattern.compile("\"package\"\\s*:\\s*\"([\\w.]+)\"").matcher(text);
+        if (!pack.find() || !pack.group(1).equals(mixinPackage)) return text;
+        String out = text;
+        for (String name : simpleNames) {
+            String quoted = Pattern.quote(name);
+            out = Pattern.compile("(?m)^\\s*\"" + quoted + "\"\\s*,\\s*$").matcher(out).replaceAll("");
+            out = Pattern.compile("\"" + quoted + "\"\\s*,").matcher(out).replaceAll("");
+            out = Pattern.compile(",?\\s*\"" + quoted + "\"").matcher(out).replaceAll("");
+            out = out.replaceAll(",\\s*\\]", "]");
+        }
+        return out;
+    }
+
+    /** Whether a mixin config still lists any mixin class. */
+    static boolean mixinsRemain(String text) {
+        Matcher arrays = Pattern.compile("\"(client|server|mixins)\"\\s*:\\s*\\[([^\\]]*)\\]").matcher(text);
+        while (arrays.find()) {
+            if (arrays.group(2).contains("\"")) return true;
+        }
+        return false;
+    }
+
+    /** The @Mod entry gains subscriber registrations, its client handler, and a config factory it can see. */
+    String wireModEntry(String text, Path mod, List<String> subscribers) throws Exception {
+        Matcher cls = Pattern.compile("public class (\\w+)").matcher(text);
+        if (!cls.find()) return text;
+        String client = cls.group(1) + "Client";
+        String factory = "";
+        for (Path file : sources(build.project)) {
+            if (!file.toString().endsWith(".java") || !Files.isRegularFile(file) || file.equals(mod)) continue;
+            if (Files.readString(file).contains("implements IModGuiFactory")) {
+                Matcher name = Pattern.compile("(?m)^package ([\\w.]+);[\\s\\S]*?public class (\\w+)").matcher(Files.readString(file));
+                if (name.find()) factory = name.group(1) + "." + name.group(2);
+            }
+        }
+        Matcher pre = Pattern.compile("(public void preInit\\(FMLPreInitializationEvent \\w+\\)\\s*\\{\\n)").matcher(text);
+        if (!pre.find()) return text;
+        StringBuilder lines = new StringBuilder();
+        if (Files.isRegularFile(mod.getParent().resolve(client + ".java"))) lines.append("        new ").append(client).append("();\n");
+        for (String subscriber : subscribers) {
+            lines.append("        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new ").append(subscriber).append("());\n");
+        }
+        String out = pre.replaceFirst(Matcher.quoteReplacement(pre.group(1) + lines.toString()));
+        if (!factory.isEmpty() && !out.contains("guiFactory")) {
+            out = out.replaceFirst("@Mod\\(modid = ([^)]+?)\\)", "@Mod(modid = $1, guiFactory = \"" + factory + "\")");
+        }
+        return out;
+    }
+
     /** Each project file javac reported an error in whose block the pattern fits, with those lines and the symbol each error names. */
     Map<Path, Map<Integer, String>> reportedLines(String errors, Pattern match) {
         Map<Path, Map<Integer, String>> sites = new LinkedHashMap<>();
@@ -4089,11 +4766,34 @@ final class Port {
     }
 
     static String rewrite(Map<String, Object> rule, String original) {
+        return keepingLineEndings(original, text -> rewriteLf(rule, text));
+    }
+
+    interface SourceTransform<E extends Exception> {
+        String apply(String text) throws E;
+    }
+
+    /**
+     * Rules and source transforms are written against LF. A Windows checkout (core.autocrlf) has CRLF, where a find
+     * spanning lines with \n never matched and a line's trailing \r defeated .*: the 1.7.10 key, tick, GUI, config and
+     * mixin conversions skipped every Windows port. The transform runs on LF and the file keeps CRLF.
+     */
+    static <E extends Exception> String keepingLineEndings(String original, SourceTransform<E> transform) throws E {
+        if (!original.contains("\r\n")) return transform.apply(original);
+        String lf = original.replace("\r\n", "\n");
+        String text = transform.apply(lf);
+        return text.equals(lf) ? original : text.replace("\r\n", "\n").replace("\n", "\r\n");
+    }
+
+    static String rewriteLf(Map<String, Object> rule, String original) {
         var apply = Json.object(rule.get("apply"));
         String text = original;
         String when = Json.text(rule, "when", "");
         if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return original;
         if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
+        // A rule's test for a loader-swap transform converts one file: the entry-point wiring has no single-file form.
+        else if ("neo-config".equals(apply.get("transform"))) text = neoConfigConvert(text);
+        else if ("neo-entry".equals(apply.get("transform"))) text = neoSubscriberConvert(text);
         else if ("call-arguments".equals(apply.get("transform"))) text = callArguments(text, apply);
         else if ("entity-render-state".equals(apply.get("transform"))) text = entityRenderState(text);
         else if ("entity-model-render-state".equals(apply.get("transform"))) text = entityModelRenderState(text);
