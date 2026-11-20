@@ -6,7 +6,7 @@
 
 **The goal:** Nobody should have to think about Minecraft versions or loaders: drop a mod in, as its source folder or as its .jar, from the command line or the desktop app, pick the version and the loader you want, and get it back the same way in minutes, for any mod anyone makes. On the way there: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**39 of 62 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**39 of 63 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
@@ -15,7 +15,7 @@
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
 | **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `███████░░░`&nbsp;27&nbsp;of&nbsp;37 | 🔵 47 · A fix names a game part and is applied in the class |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
-| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;4&nbsp;of&nbsp;10 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first |
+| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;4&nbsp;of&nbsp;11 | ⚪ 48 · What the most-downloaded mods need from the bridge, most-used first<br>⚪ 19 · Forge → NeoForge, proven on DragonMine Z |
 
 ## Goal 1 — Test a mod in seconds
 
@@ -369,7 +369,8 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 | # | Step | Status | When |
 |---|---|---|---|
-| 19 | Forge → NeoForge and Fabric → Quilt | ⚫ later | Feb 1, 2027 → Feb 26, 2027 |
+| 19 | Forge → NeoForge, proven on DragonMine Z | ⚪ next | Nov 20 → Dec 18 |
+| 19b | Fabric → Quilt | ⚫ later | Feb 1, 2027 → Feb 26, 2027 |
 
 ### Mods and plugins
 
@@ -399,7 +400,9 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 **49 · Drop a mod in, pick a version and a loader, get it back** (later). Porting and converting are two commands today, each with its own from and to. The destination is one place, in the command line and in the desktop app: a mod goes in as its source folder or its .jar, the person picks the Minecraft version and the loader they want, and it comes back the same way for that version and loader, checked in the game, in minutes. It chains the port and the conversion in whichever order has a route. It waits on step 50 (a .jar in and out) and on steps 46 and 48, which decide how many mods come back with nothing left to do by hand.
 
-**19 · Forge → NeoForge and Fabric → Quilt** (later). Forge → NeoForge and Fabric → Quilt, which are close pairs.
+**19 · Forge → NeoForge, proven on DragonMine Z** (next). Forge 1.20.1 holds the largest set of mods that never moved to NeoForge, and their players are asked for it. DragonMine Z (Forge 1.20.1, about 960,000 downloads, GPL) shows the cost: a contributor re-ports every release to NeoForge 1.21.1 by hand (its pull requests 265, 269 and 303, the last 760 files). mmt convert takes the mod's Forge source to NeoForge with the rules read from the loaders' own files, as steps 40 and 41 did for Fabric and NeoForge (NeoForge forked from Forge at 1.20.1, so every rename since is in its own history), and the porter carries the result on to 1.21.1. What Forge mods use that the rules lack is listed from the most-downloaded Forge 1.20.1 jars, most-used first, as step 48 does for the bridge. DragonMine Z is the proof mod, in the convert corpus (Forge) and the port corpus (its hand-made NeoForge 1.21.1 port); nothing is made for it alone.
+
+**19b · Fabric → Quilt** (later). Fabric → Quilt, a close pair: Quilt loads most Fabric mods as they are.
 
 **39 · Mod ↔ plugin on one server-side project** (later). Move one server-side project across the mod and plugin line: a Forge or Fabric mod with no client code to a Paper plugin (events, commands, scheduler and config mapped to the Bukkit API), and a plugin the other way. Client code, mixins into the game and new blocks or items cannot exist on a plugin server, so the port stops and names each one instead of dropping it.
 
@@ -426,7 +429,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 39 steps (Nov 20) | 62 steps by Mar 26, 2027 | 60% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 39 steps (Nov 20) | 63 steps by Mar 26, 2027 | 59% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
@@ -434,7 +437,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 ## Decisions
 
-<details><summary>19 decisions, oldest first</summary>
+<details><summary>20 decisions, oldest first</summary>
 
 | Date | Question | Choice |
 |---|---|---|
@@ -457,5 +460,6 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 | 2026-11-18 | What chooses the next piece of porting or converting work? | A list of what real mods use, and only after it has been checked against real builds (Jon asked on 2026-11-18 why progress was small and nothing was laid out). Three methods that day were each chosen from a list nobody had checked, and each missed: building ports from the loader's starter project freed 0 of 126 and lost 2 (PR #109); the port worklist cleared 21 ports of which 7 built, because it reads almost nothing in Fabric mods; three convert methods aimed at the 14 corpus mods that do not compile freed none of their three targets. The number to steer by is how many of the 150 most-downloaded mods have nothing left, read from their jars in a minute or two with no build (python bench/exposure.py run for porting, python bench/convert_coverage.py real for converting). The unit of work is one changed game part or one loader symbol, and the corpus sweep in the cloud is the proof at the end of a PR, never what chooses the work |
 | 2026-11-18 | Where is all of this going? | One place where someone drops a mod in, picks the version and the loader they want, and gets it back very quickly, so nobody has to worry about versions or loaders (Jon, 2026-11-18). It has to be designed for any mod anyone can make, so nothing is made by hand for one mod, because that does not scale: the porter learns a changed part of the game once and the converter a piece of a loader's API once, and every mod that uses it is covered. Porting and converting stay separate records and claims (2026-10-24), and step 49 joins them behind one front door |
 | 2026-11-18 | What does someone hand over: the mod's source, or its .jar? | Either (Jon, 2026-11-18): the mod's source folder, which comes back as source, or its .jar, which comes back as a .jar, through the command line and the desktop app. Until now port and convert took a source folder only, so only a mod's author could use them. Step 50 adds the .jar and comes first, because how it is done decides whether the source-based steps 44 and 47 stay as written |
+| 2026-11-20 | Does Forge → NeoForge get its own step, and which mod proves it? | Yes (Jon, 2026-11-20): Forge → NeoForge is the next loader pair after Fabric and NeoForge, proven on DragonMine Z, whose NeoForge port is redone by hand each release. DragonMine Z joins the convert and port corpora as a test input; the rules stay general (step 19) |
 
 </details>
