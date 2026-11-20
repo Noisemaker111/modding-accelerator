@@ -2455,10 +2455,18 @@ public final class VersionMap {
 
         /** The one new name for an old member name, narrowed by the type javac says it looked in. */
         static String pick(Set<String[]> candidates, String location) {
+            return forType(candidates, locationType(location));
+        }
+
+        /**
+         * The one new name the receiver's own type (or a supertype --supers names) gave this member, else null. A
+         * rename on another class with the same member name says nothing about this receiver: 1.21.2 renamed one
+         * class's getGameTime to gameTime, and Level.getGameTime stayed.
+         */
+        static String forType(Set<String[]> candidates, String type) {
             if (candidates == null || candidates.isEmpty()) {
                 return null;
             }
-            String type = locationType(location);
             if (type == null) {
                 return null;
             }
@@ -5433,22 +5441,14 @@ public final class VersionMap {
             return false;
             }
 
-        /** The leftmost name of a receiver expression, or null when it is not a plain name. */
-        static String receiverRoot(ExpressionTree receiver) {
-            Tree r = receiver;
-            while (r instanceof MemberSelectTree m) {
-                r = m.getExpression();
-            }
-            return r instanceof IdentifierTree id ? id.getName().toString() : null;
-        }
-
         /** The simple type behind a call receiver, or null when the source cannot prove it. */
         static String receiverType(Scope scope, ExpressionTree receiver) {
             if (receiver instanceof NewClassTree n && n.getIdentifier() instanceof IdentifierTree id) {
                 String name = id.getName().toString();
                 return scope.imports.containsKey(name) ? simpleTypeName(scope.imports.get(name)) : name;
             }
-            String root = receiverRoot(receiver);
+            // Only the variable or type itself: in a.b.call() the receiver is b, whose type a does not tell.
+            String root = receiver instanceof IdentifierTree id ? id.getName().toString() : null;
             if (root == null || root.equals("this") || root.equals("super")) {
                 return null;
             }
@@ -5609,19 +5609,7 @@ public final class VersionMap {
                     String steps = stepsFor(k, "method", name, Set.of("renamed", "moved"));
                     String type = receiverType(scope, member.getExpression());
                     boolean game = type != null && gameImport(scope, type);
-                    Set<String[]> relevant = candidates;
-                    if (game) {
-                        List<String[]> owned = new ArrayList<>();
-                        for (String[] c : candidates) {
-                            if (c[0].equals(type)) {
-                                owned.add(c);
-                            }
-                        }
-                        if (!owned.isEmpty()) {
-                            relevant = new HashSet<>(owned);
-                        }
-                    }
-                    String to = game ? Known.unanimous(relevant) : null;
+                    String to = game ? Known.forType(candidates, type) : null;
                     boolean applied = false;
                     if (to != null) {
                         String next = replaceCall(out.fixed, line, name, to);
@@ -5662,19 +5650,7 @@ public final class VersionMap {
                     String steps = stepsFor(k, "field", name, Set.of("renamed", "moved"));
                     String type = receiverType(scope, member.getExpression());
                     boolean game = type != null && gameImport(scope, type);
-                    Set<String[]> relevant = candidates;
-                    if (game) {
-                        List<String[]> owned = new ArrayList<>();
-                        for (String[] c : candidates) {
-                            if (c[0].equals(type)) {
-                                owned.add(c);
-                            }
-                        }
-                        if (!owned.isEmpty()) {
-                            relevant = new HashSet<>(owned);
-                        }
-                    }
-                    String to = game ? Known.unanimous(relevant) : null;
+                    String to = game ? Known.forType(candidates, type) : null;
                     boolean applied = false;
                     if (to != null) {
                         String next = replaceField(out.fixed, line, name, to);
