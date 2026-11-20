@@ -102,10 +102,11 @@ public final class JarPortTest {
         JarPortRulesTest.foreignMixin(scratch);
         JarPortFixesTest.check(scratch);
         JarPortFabricTest.check(scratch);
+        JarPortRetypeTest.check(scratch);
         if (failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port: 60 checks passed");
+        System.out.println("jar-port: 72 checks passed");
     }
 
     /**
