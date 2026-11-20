@@ -96,4 +96,25 @@ fn ported_jar_shows_output_and_open_button() {
     let rt = runtime(scene("port-jar"));
     assert!(rt.find("jar-out").is_some());
     assert!(rt.find("jar-open-out").is_some());
+    assert!(rt.find("jar-silent").is_none());
+}
+
+#[test]
+fn ported_jar_with_silent_overrides_shows_warning() {
+    let mut app = scene("port-jar");
+    app.port.jar_result = Some(answer(
+        true,
+        json!({
+            "ok": true,
+            "jar": r"C:\mods\example-1.21.1.jar",
+            "out": r"C:\mods\example-1.21.2.jar",
+            "from": "1.21.1",
+            "to": "1.21.2",
+            "changed": {"methods": 2},
+            "unlinked": [],
+            "silent": ["com.example.ModScreen.renderBackground"]
+        }),
+    ));
+    let rt = runtime(app);
+    assert!(rt.find("jar-silent").is_some());
 }

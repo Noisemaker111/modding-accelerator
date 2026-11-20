@@ -512,7 +512,7 @@ fn jar_view(s: &App) -> El {
     let mut left = col().grow(1.0).min_w(0.0).gap(24.0);
     match &w.jar {
         None => {
-            let mut sheet = theme::sheet()
+            let sheet = theme::sheet()
                 .key("jar-empty")
                 .w_full()
                 .padding(28.0)
@@ -541,8 +541,11 @@ fn jar_view(s: &App) -> El {
                 let r = o.result();
                 let out_path = r["out"].as_str().map(PathBuf::from);
                 let unlinked = r["unlinked"].as_array().cloned().unwrap_or_default();
-                let (word, c) = if o.ok() {
+                let silent = r["silent"].as_array().cloned().unwrap_or_default();
+                let (word, c) = if o.ok() && silent.is_empty() {
                     ("Ported", moss())
+                } else if o.ok() && !silent.is_empty() {
+                    ("Check warnings", ochre())
                 } else if out_path.is_some() && !unlinked.is_empty() {
                     ("Needs a hand", ochre())
                 } else {
@@ -573,6 +576,26 @@ fn jar_view(s: &App) -> El {
                         list = list.child(theme::note(format!("and {} more in the output.", unlinked.len() - 10)));
                     }
                     sheet = sheet.child(list);
+                }
+                if !silent.is_empty() {
+                    let to_ver = r["to"].as_str().unwrap_or("the target version");
+                    let mut warn = col()
+                        .key("jar-silent")
+                        .w_full()
+                        .gap(4.0)
+                        .child(theme::body(
+                            format!("{} methods override game methods {to_ver} no longer has; they load and are never called:", silent.len()),
+                            15.0,
+                            ochre(),
+                        ));
+                    for item in silent.iter().take(8) {
+                        let text_line = item.as_str().map(str::to_string).unwrap_or_else(|| item.to_string());
+                        warn = warn.child(text(text_line).font(theme::mono(12.0)).color(graphite()).truncate().w_full());
+                    }
+                    if silent.len() > 8 {
+                        warn = warn.child(theme::note(format!("and {} more in the output.", silent.len() - 8)));
+                    }
+                    sheet = sheet.child(warn);
                 }
                 if let Some(out) = out_path {
                     let folder = out.parent().map(std::path::Path::to_path_buf).unwrap_or_else(|| out.clone());
