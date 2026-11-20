@@ -369,6 +369,11 @@ public final class ModNames {
         }
 
         String string(String s, boolean bare) {
+            if (REGEX.matcher(s.trim()).matches()) {
+                // A selector written as a pattern ("/^(connectToServer|method_10753)$/") is kept as written: no name in it
+                // can be told from text, and handed back it must still match the names the game runs.
+                return s;
+            }
             String resolved = refs.get(s);
             String out = rename(resolved != null ? resolved : s);
             if (bare && resolved != null) {
@@ -996,6 +1001,9 @@ public final class ModNames {
     }
 
     static final Set<String> MEMBER_KEYS = Set.of("method", "target", "value");
+    /** A Mixin selector written as a regular expression: "/pattern/", or "name=/pattern/ desc=/pattern/". */
+    static final Pattern REGEX = Pattern.compile("^(?:name=)?/.+/(?:\\s+desc=/.+/)?$");
+
     static final Pattern STRING = Pattern.compile("(?:L([^;]+);)?([\\w$<>]+)(?:(\\(.*)|:(.+))?");
 
     /** An access widener in Mojang names, under the "named" namespace. */

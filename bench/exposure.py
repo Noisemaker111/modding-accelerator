@@ -682,9 +682,12 @@ def fabric_meta(jar):
 
 
 def fabric_api(version):
-    """Fabric API's newest release for a game version, from Modrinth (kept in ~/.mmt/exposure/platform/), or None."""
+    """Fabric API's newest release for a game version (kept in ~/.mmt/exposure/platform/), or None: the jar players install,
+    from Fabric's own Modrinth project. Fabric's maven publishes fabric-api as metadata only, and its pom leaves out the
+    deprecated modules the released jar carries (1.19.1: fabric-networking-v0 and eight more), so a pack built from it would
+    start on another Fabric API than players have. A cached jar without its modules is not taken."""
     folder = HOME / "platform"
-    have = sorted(folder.glob(f"fabric-api-for-{version}--*.jar"))
+    have = [p for p in sorted(folder.glob(f"fabric-api-for-{version}--*.jar")) if len(nested_ids(p.read_bytes())) > 1]
     if have:
         return have[-1]
     versions = api("project/fabric-api/version", {"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([version])}) or []
@@ -699,8 +702,9 @@ def fabric_api(version):
     return publish(part, target)
 
 
-def standalone(jar):
-    """A mod whose metadata asks for no other mod and no other language loader (NeoForge, Forge or Fabric)."""
+def standalone(jar, platform=frozenset()):
+    """A mod whose metadata asks for no other mod and no other language loader (NeoForge, Forge or Fabric) beyond the
+    platform the pack runs on: for Fabric, Fabric API's modules (platform), which a pack starts with as it would for players."""
     import tomllib
     import zipfile
     meta = fabric_meta(jar)
@@ -708,7 +712,7 @@ def standalone(jar):
         own = {meta.get("id")} | set(meta.get("provides") or [])
         if any(e.get("adapter", "default") != "default" for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
             return False
-        return all(d in ("minecraft", "fabricloader", "java") or d in own for d in (meta.get("depends") or {}))
+        return all(d in ("minecraft", "fabricloader", "java") or d in own or d in platform for d in (meta.get("depends") or {}))
     with zipfile.ZipFile(jar) as z:
         names = [n for n in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml") if n in z.namelist()]
         if not names:
@@ -815,6 +819,21 @@ def client_starts(loader, to, server_pack, names, platform=()):
     return {"mods": len(names), "loaded": len(loaded), "verdicts": verdicts}
 
 
+def starts_alone(loader, to, pack, name, platform):
+    """Whether a dropped mod starts a real server of the release on its own, with the platform the pack has."""
+    alone = pack / "alone"
+    shutil.rmtree(alone, ignore_errors=True)
+    (alone / "mods").mkdir(parents=True)
+    shutil.copy(pack / "dropped" / name, alone / "mods" / name)
+    for jar in platform:
+        shutil.copy(pack / "mods" / jar, alone / "mods" / jar)
+    mmt = str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))
+    done = subprocess.run([mmt, "pack-check", "--pack", str(alone), "--minecraft", to, "--loader", loader, "--json"],
+                          capture_output=True, text=True, encoding="utf-8", errors="replace")
+    start = done.stdout.find("{")
+    return bool(start >= 0 and json.loads(done.stdout[start:]).get("ok"))
+
+
 def load(loader, frm, to, save):
     """The mods the jar scoreboard says link that need no other mod, ported as jars and started on a real server of the new release,
     then in a real client of it (client_starts), with both verdicts side by side.
@@ -826,7 +845,9 @@ def load(loader, frm, to, save):
         jars(loader, frm, to)
     linked = [m["mod"] for m in json.loads(report.read_text(encoding="utf-8"))["mods"] if "error" not in m and not m["unlinked"]]
     folder = HOME / "jars" / f"{loader}-{frm}"
-    chosen = [folder / name for name in linked if standalone(folder / name)]
+    # A Fabric mod that needs Fabric API needs nothing beyond the platform the pack starts with.
+    provided = set(platform_ids(loader, to))
+    chosen = [folder / name for name in linked if standalone(folder / name, provided)]
     pack = ROOT / ".runs" / "exposure" / f"load-{loader}-{frm}-{to}"
     if pack.exists():
         shutil.rmtree(pack)
@@ -891,12 +912,18 @@ def load(loader, frm, to, save):
                 print(f"  {name}: loads with the others on its own start")
             else:
                 (pack / "mods" / name).rename(pack / "dropped" / name)
+                if starts_alone(loader, to, pack, name, platform):
+                    # Two mods that patch the same game code can refuse each other on any release, ported or not; the
+                    # port is judged by the mod starting alone.
+                    verdicts[name] = "clash: loads alone, fails next to the other mods: " + verdicts[name][len("failed: "):]
+                    print(f"  {name}: loads alone, fails next to the others")
     client = client_starts(loader, to, pack, [n for n, v in verdicts.items() if v == "loaded" or v.startswith("client-only")], platform)
     loaded = [n for n, v in verdicts.items() if v == "loaded"]
     summary = {
         "loader": loader, "from": frm, "to": to, "mods": len(chosen), "loaded": len(loaded),
         "linkedAndLoaded": sum(1 for n in loaded if links.get(n)), "linked": sum(links.values()),
         "failedButLinked": sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n) and has_code(folder / n)),
+        "clashOnly": sorted(n for n, v in verdicts.items() if v.startswith("clash") and links.get(n)),
         # A mod with no game code links trivially; what fails it is its data, which the link check does not read.
         "failedDataOnly": sorted(n for n, v in verdicts.items() if v.startswith("failed") and links.get(n) and not has_code(folder / n)),
         "verdicts": verdicts,
@@ -911,7 +938,8 @@ def load(loader, frm, to, save):
           f"{summary['loadedOnServerFailedInClient'] or 'none'}")
     print(f"{summary['loaded']}/{summary['mods']} load on a real {to} server; {summary['linked']} link, "
           f"{summary['linkedAndLoaded']} of them load; failed although they link: {summary['failedButLinked'] or 'none'}"
-          + (f"; failed on their data, with no game code: {summary['failedDataOnly']}" if summary["failedDataOnly"] else ""))
+          + (f"; failed on their data, with no game code: {summary['failedDataOnly']}" if summary["failedDataOnly"] else "")
+          + (f"; load alone but fail next to the others: {summary['clashOnly']}" if summary["clashOnly"] else ""))
     if save:
         path = ROOT / "bench" / "exposure" / f"{save}.json"
         path.write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")

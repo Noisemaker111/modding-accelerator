@@ -244,10 +244,21 @@ final class Console {
         }
     }
 
+    /**
+     * Whether the game's class (Mojang's name) has a public no-argument method of that name, looked up under the names the
+     * game runs: a Fabric client before 26.1 runs intermediary, where Minecraft is class_310 and getInstance method_1551.
+     */
+    @SuppressWarnings("unchecked")
     private static boolean method(ClassLoader loader, String type, String name) {
         try {
-            Class.forName(type, false, loader).getMethod(name);
-            return true;
+            Class<?> c = Class.forName(runtimeClass(type), false, loader);
+            List<String> names = new ArrayList<String>(Arrays.asList(name));
+            Object rename = System.getProperties().get("mmt.rename");
+            if (rename != null) names.addAll(((java.util.function.BiFunction<Class<?>, String, List<String>>) rename).apply(c, name));
+            for (java.lang.reflect.Method m : c.getMethods()) {
+                if (names.contains(m.getName()) && m.getParameterTypes().length == 0) return true;
+            }
+            return false;
         } catch (Throwable missing) {
             return false;
         }

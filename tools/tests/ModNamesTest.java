@@ -52,6 +52,7 @@ public final class ModNamesTest {
         check("Lnet/minecraft/world/entity/Entity;tick()V".equals(strings.get("onUpdate")), "an injection's method string resolved through the refmap: " + strings.get("onUpdate"));
         check("tickCount".equals(strings.get("getAge")), "an accessor with no value gets the target's Mojang name, not the inferred developer name: " + strings.get("getAge"));
         check("HEAD".equals(strings.get("at")), "strings that name no member stay as written");
+        check("/^(update|method_10)$/".equals(strings.get("onPattern")), "a regex selector stays as written, so the hand-back still matches it: " + strings.get("onPattern"));
         check(strings.get("targets").equals("net.minecraft.world.entity.Entity"), "a @Mixin target written as text renamed in its own spelling");
 
         String widener = new String(out.get("m.accesswidener"), StandardCharsets.UTF_8);
@@ -121,6 +122,13 @@ public final class ModNamesTest {
         at.visitEnd();
         a.visitEnd();
         inject.visitEnd();
+        MethodVisitor byPattern = cw.visitMethod(Opcodes.ACC_PRIVATE, "onPattern", "()V", null, null);
+        AnnotationVisitor pattern = byPattern.visitAnnotation("Lorg/spongepowered/asm/mixin/injection/Inject;", false);
+        AnnotationVisitor selectors = pattern.visitArray("method");
+        selectors.visit(null, "/^(update|method_10)$/");
+        selectors.visitEnd();
+        pattern.visitEnd();
+        byPattern.visitEnd();
         MethodVisitor accessor = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "getAge", "()I", null, null);
         accessor.visitAnnotation("Lorg/spongepowered/asm/mixin/gen/Accessor;", false).visitEnd();
         accessor.visitEnd();
