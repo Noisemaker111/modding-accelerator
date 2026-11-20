@@ -36,6 +36,7 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
             ~/.mmt/jdks
+            ~/.mmt/test-libs
           key: ci-${{ runner.os }}-${{ hashFiles('fixtures/prism-lab/build.gradle', 'fixtures/prism-lab/settings.gradle', 'fixtures/prism-lab/gradle.properties', 'fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: ci-${{ runner.os }}-
       - name: Offline checks
@@ -52,6 +53,7 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
             ~/.mmt/jdks
+            ~/.mmt/test-libs
           key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Receipts on failure
         if: failure()
@@ -86,6 +88,7 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
             ~/.mmt/jdks
+            ~/.mmt/test-libs
           key: ci-${{ runner.os }}-${{ hashFiles('portable workspace/fixtures/prism-lab/build.gradle', 'portable workspace/fixtures/prism-lab/settings.gradle', 'portable workspace/fixtures/prism-lab/gradle.properties', 'portable workspace/fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: ci-${{ runner.os }}-
       - name: Offline checks
@@ -104,6 +107,7 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
             ~/.mmt/jdks
+            ~/.mmt/test-libs
           key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Receipts on failure
         if: failure()
