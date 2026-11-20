@@ -317,15 +317,18 @@ def jar_tools():
 
 
 # Each process that reads jars loads two releases of the game first and starts cold, so more piles stop paying:
-# 150 NeoForge mods took 144 s in one pile, 66 s in four and 75 s in nine.
+# on 24 processors 150 NeoForge mods took 144 s in one pile, 66 s in four and 75 s in nine.
 PILE = 36
+# A pile only pays with processors to spare for its start: on GitHub's 4-processor runners four piles took 104 s
+# where one had taken about 90.
+SPARE = 4
 # Processors this run may use; all runs every update side by side and gives each its share.
 CORES = os.cpu_count() or 1
 
 
 def piles(jars):
     """The jars dealt into piles that take about as long, one per processor: every next-biggest jar goes on the lightest pile."""
-    count = max(1, min(CORES, len(jars) // PILE))
+    count = max(1, min(CORES // SPARE, len(jars) // PILE))
     dealt = [[0, []] for _ in range(count)]
     for jar in sorted(jars, key=lambda j: (-j.stat().st_size, j.name)):
         pile = min(dealt, key=lambda d: d[0])
