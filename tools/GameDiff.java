@@ -3636,7 +3636,9 @@ public final class GameDiff {
                     continue;
                 }
                 boolean field = old.kind() == 'f';
-                boolean linked = field ? h.fAB.containsKey(h.a.field(old.owner(), old.name())) : h.mAB.containsKey(h.a.method(old.owner(), old.name(), old.desc()));
+                // A library member is not one of the game's gone members: it is listed as linked, so it is not counted as one.
+                boolean linked = !h.a.classes.containsKey(old.owner())
+                    || (field ? h.fAB.containsKey(h.a.field(old.owner(), old.name())) : h.mAB.containsKey(h.a.method(old.owner(), old.name(), old.desc())));
                 out.add(new Learned(old.owner().replace('/', '.'), old.name(), field ? "" : old.desc(), field, linked, best, top, of));
             }
             voteChains(log);
@@ -4464,6 +4466,7 @@ public final class GameDiff {
                 return f == null || (f.flags & ACC_STATIC) != 0 ? 0 : 1;
             }
             Meth m = h.a.method(old.owner(), old.name(), old.desc());
+            m = m != null ? m : h.a.libraryMethod(old.owner(), old.name(), old.desc());
             int n = MethodTypeDesc.ofDescriptor(old.desc()).parameterCount();
             return m == null || m.isStatic() || m.special() ? n : n + 1;
         }
@@ -4471,6 +4474,7 @@ public final class GameDiff {
         /** A reading seen once is kept only when it uses every operand and takes no constant: nothing in it is a guess. */
         boolean usesAll(String expr, Ref old, int operands) {
             Meth m = old.kind() == 'm' ? h.a.method(old.owner(), old.name(), old.desc()) : null;
+            m = m != null || old.kind() != 'm' ? m : h.a.libraryMethod(old.owner(), old.name(), old.desc());
             int first = old.kind() == 'f' || m != null && !m.isStatic() && !m.special() ? 0 : 1;
             for (int i = first; i < first + operands; i++) {
                 if (!Pattern.compile("\\$" + i + "(?!\\d)").matcher(expr).find()) {
@@ -5213,6 +5217,18 @@ public final class GameDiff {
                     // (1.19.3's Registry.BLOCK, now BuiltInRegistries.BLOCK).
                     out = y == null || ((y.flags ^ f.flags) & ACC_STATIC) != 0 || !h.descBA(y.desc).equals(f.desc) || closed(f.flags, y.flags)
                         || y.owner != h.cAB.get(f.owner);
+                }
+            }
+            if (!out && !h.a.classes.containsKey(r.owner()) && h.a.libraries.containsKey(r.owner())) {
+                // A library member the new release's copy of that library no longer has (1.21.9's authlib made GameProfile a
+                // record: getName() is name()), read from the game's own uses like a game member.
+                if (r.kind() == 'm') {
+                    Meth m = h.a.libraryMethod(r.owner(), r.name(), r.desc());
+                    out = m != null && (m.flags & (ACC_PUBLIC | 0x0004)) != 0 && !m.name.startsWith("<cl") && h.b.libraries.containsKey(r.owner())
+                        && h.b.libraryMethod(r.owner(), r.name(), r.desc()) == null;
+                } else {
+                    Fld f = h.a.libraryField(r.owner(), r.name());
+                    out = f != null && (f.flags & (ACC_PUBLIC | 0x0004)) != 0 && h.b.libraries.containsKey(r.owner()) && h.b.libraryField(r.owner(), r.name()) == null;
                 }
             }
             brokenRefs.put(r, out);
