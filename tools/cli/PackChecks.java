@@ -840,6 +840,17 @@ final class PackChecks {
         return String.join(", ", items.subList(0, Math.min(6, items.size()))) + (items.size() > 6 ? " and " + (items.size() - 6) + " more" : "");
     }
 
+    /**
+     * A test game runs on the user's own desktop, and a mod may start a program from it with its own window (a crash
+     * helper that pops up when the game is stopped). Every Java program started from the game inherits this environment,
+     * so none can open a window; the game's own window is GLFW's and does not use AWT.
+     */
+    static ProcessBuilder windowless(ProcessBuilder game) {
+        String own = game.environment().getOrDefault("JAVA_TOOL_OPTIONS", "");
+        game.environment().put("JAVA_TOOL_OPTIONS", (own + " -Djava.awt.headless=true").trim());
+        return game;
+    }
+
     /** Crash reports a start left in the instance, newest last. */
     static List<String> crashReports(Path instance, long since) {
         List<String> reports = new ArrayList<>();
