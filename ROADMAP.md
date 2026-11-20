@@ -124,7 +124,7 @@ One command moves a mod's source from any version to any other, forward or back,
 - **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Ported as jars and linked against the next release and its loader, 62% of the 150 most-downloaded mods of each release link, over 64 updates of Fabric and NeoForge (NeoForge from 1.20.2). 16 of the 126 corpus ports build with no hand edits; the rest stop with named errors.
 - **The number that says most:** Most-downloaded mods whose ported jar links, every update, Fabric and NeoForge is **5,838 mods**
 - **Also:** Corpus ports that build with no hand edits is **16 updates**, target 60 updates by Dec 22, step 44
-- **Also:** Real mods with a port that works in the game is **8 mods**, target 6 mods by Dec 18, step 12
+- **Also:** Real mods with a port that works in the game is **9 mods**, target 6 mods by Dec 18, step 12
 
 ### Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -272,7 +272,7 @@ One command moves a mod's source from any version to any other, forward or back,
 |---|---|---|---|---|
 | 1.21.x updates that work in the game, Fabric | 2 updates (Oct 24) | 7 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 25% of the way |
 | 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 11 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 42% of the way |
-| Real mods with a port that works in the game | 3 mods (Oct 24) | 8 mods (Nov 15) | 6 mods by Dec 18, step 12 | Met |
+| Real mods with a port that works in the game | 3 mods (Oct 24) | 9 mods (Nov 18) | 6 mods by Dec 18, step 12 | Met |
 | Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Nov 20, step 7 | Met |
 | Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
 | Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | 14 errors (Oct 25) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
