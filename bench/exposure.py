@@ -195,6 +195,33 @@ def updates(loader):
     return list(zip(every, every[1:]))
 
 
+def families():
+    """Each indexed release's family: releases between which the game changes almost nothing (coverage/changes/index.json)."""
+    data = json.loads(INDEX.read_text(encoding="utf-8"))
+    return {v: f for f in data["families"]["list"] for v in f["versions"]}
+
+
+def big(frm, to):
+    """An update into another family: the game broke at least 1 in 100 of its names. Half the updates are not, and nearly every mod links across those untouched."""
+    family = families()
+    return family[frm]["id"] != family[to]["id"]
+
+
+def jumps(loader):
+    """The ports people ask for, which cross several updates: from each family's hub (its release with the most mods)
+    to the next family's hub, and from the release with the most mods of all to the newest one. A mod has to get
+    through every update on the way, so these are far lower than any one update's count. One update apart, the pair
+    is already in updates. Every hub to the newest release was measured once (2026-11-20, run 44821929843): 33 more
+    jobs that each read every release on the way, 60% of the run's time, and all but the nearest few under 15 of 147."""
+    single = updates(loader)
+    read = [frm for frm, _ in single]
+    family = families()
+    hubs = sorted({f["hub"] for f in family.values() if f["hub"] in read}, key=vkey)
+    most = max(hubs, key=lambda hub: family[hub].get("mods", {}).get(hub, 0))
+    pairs = list(zip(hubs, hubs[1:])) + [(most, single[-1][1])]
+    return [p for p in dict.fromkeys(pairs) if p not in single]
+
+
 def java():
     jdk = Path(os.path.expanduser("~")) / ".mmt" / "jdks"
     for candidate in sorted(jdk.glob("temurin-25*"), reverse=True) + sorted(jdk.glob("temurin-2[5-9]*"), reverse=True):
@@ -538,11 +565,48 @@ def without_platform_copies(report, provided, jars):
                          if not any(names.get(part, set()) & provided for part in u.split(": ", 1)[0].split("!")[1:])]
     counts = {}
     for m in report["mods"]:
-        for member in {re.sub(r" \(in [^)]*\)$", "", u.split(": ", 1)[1]) for u in m.get("unlinked", [])}:
+        for member in left(m):
             counts[member] = counts.get(member, 0) + 1
     report["unlinkedByMods"] = [{"member": k, "mods": v} for k, v in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
     report["linked"] = sum(1 for m in report["mods"] if "error" not in m and not m["unlinked"])
     return report
+
+
+WHERE = re.compile(r" \(in [^)]*\)$")
+
+
+def left(row, data=None):
+    """What one mod still needs: each reference once (a mod and its nested jars name it once a class), and the game ids its data lost."""
+    return {WHERE.sub("", u.split(": ", 1)[1]) for u in row.get("unlinked", [])} | {WHERE.sub("", ref) for ref in (data or {}).get(row["mod"], [])}
+
+
+def nearest(rows, data, said):
+    """The to-do list: the mods in the order they finish when every turn completes the one with the fewest references
+    left, each with the references that turn adds and what the game's own code did about them. The references the
+    most mods share are the wrong order: a mod held back has 15 at the median, so on NeoForge 1.21.1 -> 1.21.2 the
+    100 most shared freed 2 mods, and the first 33 in this order freed 21."""
+    todo = {m["mod"]: left(m, data) for m in rows}
+    todo = {mod: refs for mod, refs in todo.items() if refs}
+    fixed, done, order = set(), 0, []
+    while todo:
+        # Fewest left first; among those, the ones the game's own code answers.
+        mod = min(todo, key=lambda k: (len(todo[k] - fixed), sum(1 for ref in todo[k] - fixed if said.get(ref, {}).get("game") not in ANSWERED), k))
+        new = sorted(todo[mod] - fixed)
+        fixed.update(new)
+        freed = sorted(k for k, refs in todo.items() if refs <= fixed)
+        for k in freed:
+            del todo[k]
+        done += len(freed)
+        order.append({"mod": mod, "alsoFrees": [k for k in freed if k != mod], "fixes": len(fixed), "modsDone": done,
+                      "members": [{"member": ref, **said.get(ref, {})} for ref in new]})
+    return order
+
+
+ANSWERED = {"replaced", "split", "linked", "template"}
+
+
+def shown(member):
+    return f"{member['member']}  ({member.get('part', 'game')}: {member.get('game', '?')})"
 
 
 def jars(loader, frm, to, save=None, out=None, quiet=False):
@@ -576,15 +640,23 @@ def jars(loader, frm, to, save=None, out=None, quiet=False):
         "unreadable": {**unread, **{m["mod"]: m["error"] for m in report["mods"] if "error" in m}},
         "top": [{**r, **said.get(r["member"], {})} for r in report["unlinkedByMods"][:40]],
     }
+    order = nearest(rows, data, said)
+    summary["nearest"] = [{**turn, "members": turn["members"][:25]} for turn in order[:40]]
+    summary["finishing"] = [[turn["fixes"], turn["modsDone"]] for turn in order]
     if not quiet:
         print(f"{summary['modsThatLink']}/{summary['modsRead']} {loader} mods link against {to} after the port "
               f"({summary['brokenUses']} broken uses; {summary['silentOnly']} keep an override the game no longer calls)"
               + ("" if data is None else f"; {summary['modsThatLinkAndData']} of them also name nothing in their data that {to} dropped")
               + f"; {summary['loaderUses']} broken uses are of the loader's API, and {summary['modsHeldOnlyByLoader']} mods break on nothing else")
-        for row in summary["dataTop"][:5]:
-            print(f"  {row['mods']:>4} mods  {row['member']}")
-        for row in summary["top"][:20]:
-            print(f"  {row['mods']:>4} mods  {row['member']}  ({row.get('part', 'game')}: {row.get('game', '?')})")
+        print("\nNearest to done, in the order to work (each mod with the references it still needs):")
+        for turn in summary["nearest"][:12]:
+            also = f", and frees {len(turn['alsoFrees'])} more" if turn["alsoFrees"] else ""
+            print(f"  {turn['mod']}: {len(turn['members'])} left{also}; {turn['modsDone']} mods done after {turn['fixes']} fixes")
+            for member in turn["members"][:6]:
+                print(f"      {shown(member)}")
+        print("\nShared by the most mods (a fix to how the porter learns reaches these in every update; alone they free few mods):")
+        for row in summary["top"][:10]:
+            print(f"  {row['mods']:>4} mods  {shown(row)}")
     for path in [p for p in (out, ROOT / "bench" / "exposure" / f"{save}.json" if save else None) if p]:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
@@ -594,8 +666,8 @@ def jars(loader, frm, to, save=None, out=None, quiet=False):
 
 
 def every_update(loaders, only, jobs, save):
-    """jars for every update of each loader, side by side; joined into one table."""
-    todo = [(lo, a, b) for lo in loaders for a, b in updates(lo) if not only or f"{lo}:{a}" in only]
+    """jars for every update and every jump of each loader, side by side; joined into one table."""
+    todo = [(lo, a, b) for lo in loaders for a, b in updates(lo) + jumps(lo) if not only or f"{lo}:{a}" in only]
     jar_tools()
     compile_tools()
     out = ROOT / ".runs" / "exposure" / "all"
@@ -613,25 +685,52 @@ def every_update(loaders, only, jobs, save):
     # Two updates next to each other share a release, and their first run downloads its files to the same cache: each
     # wave holds updates that share none, so no two runs write one file.
     for loader in loaders:
+        single = updates(loader)
         for parity in (0, 1):
-            wave = [t for t in todo if t[0] == loader and updates(loader).index((t[1], t[2])) % 2 == parity]
+            wave = [t for t in todo if t[0] == loader and t[1:] in single and single.index(t[1:]) % 2 == parity]
             with ThreadPoolExecutor(max(1, jobs)) as pool:
                 list(pool.map(one, wave))
+        # A jump reads every release on its way. The updates above fetched them, so jumps side by side write no file
+        # twice; one that crosses an update that did not run (--only) goes alone.
+        fetched = {v for t in todo if t[0] == loader and t[1:] in single for v in t[1:]}
+        far = [t for t in todo if t[0] == loader and t[1:] not in single]
+        warm = [t for t in far if set(chain(*t[1:])) <= fetched]
+        with ThreadPoolExecutor(max(1, jobs)) as pool:
+            list(pool.map(one, warm))
+        for t in far:
+            if t not in warm:
+                one(t)
     return join(out, save)
 
 
 def join(folder, save):
-    """One table from per-update summaries: each update's share of mods that link, the total, and what holds the most back."""
-    rows = []
+    """One table from per-update summaries: the mods that link across each update and each jump, the totals, and the mods nearest to done."""
+    found = []
     for f in sorted(Path(folder).rglob("*.json")):
         s = json.loads(f.read_text(encoding="utf-8"))
         if {"loader", "from", "to", "modsRead"} <= s.keys():
-            rows.append(s)
-    order = {(lo, *u): i for lo in FIRST for i, u in enumerate(updates(lo))}
-    rows.sort(key=lambda s: (s["loader"], order.get((s["loader"], s["from"], s["to"]), 999)))
+            found.append(s)
+    single = {(lo, *u): i for lo in FIRST for i, u in enumerate(updates(lo))}
+    wanted = {(lo, *u): i for lo in FIRST for i, u in enumerate(jumps(lo))}
+    pair = lambda s: (s["loader"], s["from"], s["to"])
+    rows = sorted((s for s in found if pair(s) in single), key=lambda s: (s["loader"], single[pair(s)]))
+    far = sorted((s for s in found if pair(s) in wanted), key=lambda s: (s["loader"], wanted[pair(s)]))
+
+    def count(some):
+        return {"updates": len(some), "mods": sum(s["modsRead"] for s in some), "link": sum(s["modsThatLink"] for s in some)}
+
     total = {"mods": sum(s["modsRead"] for s in rows), "link": sum(s["modsThatLink"] for s in rows)}
+    # One update at a time is two different jobs: the updates that start a new family of releases, and the rest,
+    # across which nearly every mod links untouched.
+    total["big"] = count([s for s in rows if big(s["from"], s["to"])])
+    total["small"] = count([s for s in rows if not big(s["from"], s["to"])])
+    # What people ask for: a port over several updates.
+    total["jumps"] = {"jumps": len(far), "mods": sum(s["modsRead"] for s in far), "link": sum(s["modsThatLink"] for s in far)}
+    # The jump asked for most: the most-used release's mods on the newest game.
+    newest = [s for s in far if s["to"] == updates(s["loader"])[-1][1]]
+    total["newest"] = {"jumps": len(newest), "mods": sum(s["modsRead"] for s in newest), "link": sum(s["modsThatLink"] for s in newest)}
     checked = [s for s in rows if s.get("modsThatLinkAndData") is not None]
-    # Over the updates whose registry reports ran: mods that link and also name nothing in their data the new release dropped.
+    # Over the updates whose registry reports ran: mods that link and also name nothing in their data that the new release dropped.
     total["data"] = {"updates": len(checked), "link": sum(s["modsThatLink"] for s in checked), "linkAndData": sum(s["modsThatLinkAndData"] for s in checked)}
     # Breaks in the loader's own API, which the link check reads like the game's.
     total["loader"] = {"uses": sum(s.get("loaderUses", 0) for s in rows), "modsHeldOnlyByLoader": sum(s.get("modsHeldOnlyByLoader", 0) for s in rows)}
@@ -643,25 +742,50 @@ def join(folder, save):
         t["link"] += s["modsThatLink"]
     top = sorted(({"loader": s["loader"], "update": f"{s['from']} -> {s['to']}", **r} for s in rows for r in s["top"]),
                  key=lambda r: -r["mods"])[:60]
-    missing = [f"{lo} {a} -> {b}" for lo in FIRST for a, b in updates(lo) if not any(s["loader"] == lo and s["from"] == a for s in rows)]
+    # The to-do list over every update: the mods with the fewest references left, those the game's own code answers first.
+    # Among equals, the update into the release with the most mods: that is where a finished port is wanted most.
+    family = families()
+    used = {v: f.get("mods", {}).get(v, 0) for v, f in family.items()}
+    turns = [{"loader": s["loader"], "update": f"{s['from']} -> {s['to']}", "mod": t["mod"], "members": t["members"], "wanted": used.get(s["to"], 0)}
+             for s in rows for t in s.get("nearest", [])]
+    turns.sort(key=lambda t: (len(t["members"]), sum(1 for m in t["members"] if m.get("game") not in ANSWERED), -t["wanted"]))
+    missing = [f"{lo} {a} -> {b}" for lo, a, b in list(single) + list(wanted) if not any(pair(s) == (lo, a, b) for s in found)]
+    keep = ("loader", "from", "to", "modsRead", "modsThatLink", "modsThatLinkAndData", "brokenUses", "loaderUses", "modsHeldOnlyByLoader")
     table = {
         "date": date.today().isoformat(), "total": total, "loaders": loaders, "missing": missing,
-        "updates": [{k: s.get(k) for k in ("loader", "from", "to", "modsRead", "modsThatLink", "modsThatLinkAndData", "brokenUses", "loaderUses", "modsHeldOnlyByLoader")} for s in rows],
+        "updates": [{**{k: s.get(k) for k in keep}, "big": big(s["from"], s["to"])} for s in rows],
+        "jumps": [{**{k: s.get(k) for k in keep}, "updatesCrossed": len(chain(s["from"], s["to"])) - 1} for s in far],
+        "nearest": turns[:60],
         "top": top,
     }
-    share = total["link"] / total["mods"] if total["mods"] else 0
+
+    def share(part, whole):
+        return f"{part} of {whole} ({part / whole:.1%})" if whole else "0 of 0"
+
     print(f"| Loader | Update | Mods that link | And their data |\n|---|---|---|---|")
     for s in rows:
         data = "-" if s.get("modsThatLinkAndData") is None else s["modsThatLinkAndData"]
-        print(f"| {s['loader']} | {s['from']} -> {s['to']} | {s['modsThatLink']}/{s['modsRead']} | {data} |")
-    print(f"\n{total['link']} of {total['mods']} mod ports link ({share:.1%}) across {len(rows)} updates"
+        print(f"| {s['loader']} | {s['from']} -> {s['to']}{' (big)' if big(s['from'], s['to']) else ''} | {s['modsThatLink']}/{s['modsRead']} | {data} |")
+    if far:
+        print(f"\n| Loader | Jump | Updates crossed | Mods that link |\n|---|---|---|---|")
+        for s in table["jumps"]:
+            print(f"| {s['loader']} | {s['from']} -> {s['to']} | {s['updatesCrossed']} | {s['modsThatLink']}/{s['modsRead']} |")
+    j, n = total["jumps"], total["newest"]
+    print(f"\n{share(n['link'], n['mods'])} of the most-used release's mods link on the newest game; {share(j['link'], j['mods'])} mod ports link across all {j['jumps']} jumps of several updates")
+    print(f"one update at a time: {share(total['big']['link'], total['big']['mods'])} across the {total['big']['updates']} big updates, "
+          f"{share(total['small']['link'], total['small']['mods'])} across the {total['small']['updates']} small ones; {share(total['link'], total['mods'])} together"
           + "".join(f"; {lo} {t['link']}/{t['mods']}" for lo, t in loaders.items()) + (f"; not run: {', '.join(missing)}" if missing else ""))
     d = total["data"]
-    print(f"over the {d['updates']} updates whose registry reports ran, {d['link'] - d['linkAndData']} of {d['link']} mods that link name a game id in their data the new release dropped")
+    print(f"over the {d['updates']} updates whose registry reports ran, {d['link'] - d['linkAndData']} of {d['link']} mods that link name a game id in their data that the new release dropped")
     print(f"{total['loader']['uses']} broken uses are of the loader's own API; {total['loader']['modsHeldOnlyByLoader']} mod ports break on nothing else")
-    print("\nWhat holds the most mods back, every update:")
-    for r in top[:15]:
-        print(f"  {r['mods']:>4} mods  {r['loader']} {r['update']}  {r['member']}  ({r.get('part', 'game')}: {r.get('game', '?')})")
+    print("\nNearest to done, every update, in the order to work:")
+    for t in table["nearest"][:15]:
+        print(f"  {t['loader']} {t['update']}  {t['mod']}: {len(t['members'])} left")
+        for member in t["members"][:4]:
+            print(f"      {shown(member)}")
+    print("\nShared by the most mods, every update:")
+    for r in top[:10]:
+        print(f"  {r['mods']:>4} mods  {r['loader']} {r['update']}  {shown(r)}")
     if save:
         path = ROOT / "bench" / "exposure" / "all.json"
         path.write_text(json.dumps(table, indent=1) + "\n", encoding="utf-8")
@@ -1005,7 +1129,7 @@ def main():
         j.add_argument("--save")
         if name == "jars":
             j.add_argument("--out", type=Path, help="write the summary to this file")
-    ls = sub.add_parser("updates", help="every LOADER:FROM:TO all runs, as JSON (the cloud run's matrix)")
+    ls = sub.add_parser("updates", help="every LOADER:FROM:TO all runs, updates and jumps, as JSON (the cloud run's matrix)")
     ls.add_argument("--loader", choices=sorted(FIRST))
     ls.add_argument("--only", help="LOADER:FROM,...")
     pn = sub.add_parser("pin")
@@ -1030,7 +1154,7 @@ def main():
         jars(a.loader, a.frm, a.to, a.save, a.out)
     elif a.command == "updates":
         only = {x.strip() for x in a.only.split(",")} if a.only else None
-        print(json.dumps([f"{lo}:{x}:{y}" for lo in ([a.loader] if a.loader else sorted(FIRST)) for x, y in updates(lo)
+        print(json.dumps([f"{lo}:{x}:{y}" for lo in ([a.loader] if a.loader else sorted(FIRST)) for x, y in updates(lo) + jumps(lo)
                           if not only or f"{lo}:{x}" in only]))
     elif a.command == "load":
         load(a.loader, a.frm, a.to, a.save)

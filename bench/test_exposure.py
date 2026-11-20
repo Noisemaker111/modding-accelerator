@@ -140,4 +140,60 @@ with tempfile.TemporaryDirectory() as tmp:
     check(E.standalone(capes, {"fabric-api", "fabric-api-base"}) and not E.standalone(capes) and not E.standalone(other, {"fabric-api"}),
           "a mod that needs only Fabric API is started with the platform; one that needs another mod is not")
 
+# The to-do list finishes mods. The reference the most mods share (g.Shared.one, 2 mods) finishes none of them.
+rows = [
+    {"mod": "a.jar", "unlinked": ["a.jar: call: g.Shared.one()V (in a.A)", "a.jar!in.jar: call: g.Shared.one()V (in a.B)", "a.jar: call: g.A.x()V", "a.jar: call: g.A.y()V"]},
+    {"mod": "b.jar", "unlinked": ["b.jar: call: g.Shared.one()V", "b.jar: call: g.B.x()V"]},
+    {"mod": "c.jar", "unlinked": ["c.jar: call: g.C.only()V (in c.C)"]},
+    {"mod": "d.jar", "unlinked": ["d.jar: call: g.C.only()V"]},
+    {"mod": "w.jar", "unlinked": ["w.jar: call: g.W.gone()V"]},
+    {"mod": "e.jar", "unlinked": []},
+]
+said = {"call: g.C.only()V": {"game": "replaced"}, "call: g.W.gone()V": {"game": "redesigned"}}
+order = E.nearest(rows, {"e.jar": ["data id gone: minecraft:thing x (in data/e.json)"]}, said)
+check([t["mod"] for t in order] == ["c.jar", "e.jar", "w.jar", "b.jar", "a.jar"],
+      f"mods come in the order they finish, the ones the game answers first among equals: {[t['mod'] for t in order]}")
+check(order[0]["alsoFrees"] == ["d.jar"] and [t["modsDone"] for t in order] == [2, 3, 4, 5, 6] and [t["fixes"] for t in order] == [1, 2, 3, 5, 7],
+      f"each turn counts the fixes so far and every mod they finish: {[(t['fixes'], t['modsDone']) for t in order]}")
+check([m["member"] for m in order[4]["members"]] == ["call: g.A.x()V", "call: g.A.y()V"] and order[0]["members"][0]["game"] == "replaced",
+      "a turn lists only what earlier turns left, each reference once with what the game did about it")
+longer = {"mod": "b.jar", "unlinked": [f"b.jar: call: g.B.m{i}()V" for i in range(5)]}
+check([t["mod"] for t in E.nearest([rows[0], longer], None, {})] == ["a.jar", "b.jar"], "a mod with more left than another comes after it")
+
+# Jumps: the ports people ask for, from each family's most-used release to the next family's and to the newest.
+with tempfile.TemporaryDirectory() as tmp:
+    E.INDEX = Path(tmp) / "index.json"
+    E.INDEX.write_text(json.dumps({
+        "allVersions": [{"id": v, "status": "indexed"} for v in ("1.0", "1.1", "2.0", "2.1", "3.0")],
+        "families": {"list": [{"id": "1", "versions": ["1.0", "1.1"], "hub": "1.0", "mods": {"1.0": 9, "1.1": 2}},
+                              {"id": "2", "versions": ["2.0", "2.1"], "hub": "2.1", "mods": {"2.0": 1, "2.1": 5}},
+                              {"id": "3", "versions": ["3.0"], "hub": "3.0", "mods": {"3.0": 4}}]}}), encoding="utf-8")
+    E.FIRST = {"fabric": "1.0", "neoforge": "2.0"}
+    check(E.jumps("fabric") == [("1.0", "2.1"), ("1.0", "3.0")],
+          f"each hub to the next hub, and the most-used release to the newest, without the pairs one update apart: {E.jumps('fabric')}")
+    check(E.jumps("neoforge") == [], "a loader read from a later release has only its own hubs, and a pair one update apart is no jump")
+    check(E.big("1.1", "2.0") and not E.big("1.0", "1.1"), "an update into another family is a big one")
+
+    def summary(loader, frm, to, link, turns=()):
+        return {"loader": loader, "from": frm, "to": to, "modsRead": 10, "modsThatLink": link, "modsThatLinkAndData": link, "top": [],
+                "nearest": [{"mod": mod, "members": [{"member": m, "game": "replaced"} for m in members]} for mod, members in turns]}
+
+    runs = Path(tmp) / "runs"
+    runs.mkdir()
+    for s in (summary("fabric", "1.0", "1.1", 10), summary("fabric", "1.1", "2.0", 4, [("far.jar", ["a", "b", "c"]), ("near.jar", ["a"])]),
+              summary("fabric", "1.0", "3.0", 1), summary("fabric", "1.1", "3.0", 7)):
+        (runs / f"{s['loader']}-{s['from']}-{s['to']}.json").write_text(json.dumps(s), encoding="utf-8")
+    sys.stdout = io.StringIO()
+    try:
+        table = E.join(runs, False)
+    finally:
+        sys.stdout = sys.__stdout__
+    total = table["total"]
+    check((total["link"], total["mods"]) == (14, 20), f"a jump is not counted among the single updates: {total['link']}/{total['mods']}")
+    check((total["big"]["link"], total["small"]["link"], total["jumps"]["link"], total["jumps"]["mods"], total["newest"]["link"]) == (4, 10, 1, 10, 1),
+          f"big updates, small ones, jumps and the jump to the newest release are counted apart: {total['big']} {total['small']} {total['jumps']} {total['newest']}")
+    check(len(table["jumps"]) == 1 and table["jumps"][0]["updatesCrossed"] == 4 and "fabric 1.0 -> 2.1" in table["missing"] and "fabric 2.0 -> 2.1" in table["missing"],
+          f"a jump says how many updates it crosses, one that did not run is named, and a pair that is no jump is left out: {table['jumps']} {table['missing']}")
+    check([t["mod"] for t in table["nearest"]] == ["near.jar", "far.jar"], "over every update the mods nearest to done come first")
+
 print(f"exposure: {checks} checks passed")
