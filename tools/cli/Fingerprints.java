@@ -10,6 +10,10 @@ final class Fingerprints {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
 
+    /**
+     * A missing path and an empty folder hash the same: a build that declares src/generated/resources makes the empty
+     * folder during its first launch, and counting that refused every later check against the running game.
+     */
     static String files(Collection<Path> inputs) throws Exception {
         var hash = MessageDigest.getInstance("SHA-256");
         for (Path path : new TreeSet<>(inputs)) {
@@ -18,7 +22,6 @@ final class Fingerprints {
                 for (Path file : walk.filter(Files::isRegularFile).sorted().toList()) add(hash, file);
             }
             else if (Files.isRegularFile(path)) add(hash, path);
-            else hash.update((byte) 0);
         }
         return HexFormat.of().formatHex(hash.digest());
     }
@@ -61,7 +64,7 @@ final class Fingerprints {
                     files(List.of(file))
                 );
             }
-            else out.put(path.toString(), Files.isRegularFile(path) ? files(List.of(path)) : "missing");
+            else if (Files.isRegularFile(path)) out.put(path.toString(), files(List.of(path)));
         }
         return out;
     }
@@ -73,9 +76,7 @@ final class Fingerprints {
         List<String> out = new ArrayList<>();
         for (String key : keys) if (!Objects.equals(before.get(key), after.get(key))) out.add(
             key +
-            (before.get(key) == null || "missing".equals(before.get(key))
-                    ? " (appeared)"
-                    : after.get(key) == null || "missing".equals(after.get(key)) ? " (vanished)" : " (changed)")
+            (before.get(key) == null ? " (appeared)" : after.get(key) == null ? " (vanished)" : " (changed)")
         );
         return out;
     }

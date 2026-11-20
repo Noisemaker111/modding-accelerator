@@ -2793,7 +2793,9 @@ final class Port {
     }
 
     static String classNamesInStrings(String text, Map<String, String> classes) {
-        Matcher literal = Pattern.compile("\"(?:[^\"\\\\\\n]|\\\\.)*\"").matcher(text);
+        // Unrolled and possessive: an alternation under * recursed once per character and overflowed the stack on a
+        // long string literal (DragonMine Z).
+        Matcher literal = Pattern.compile("\"[^\"\\\\\\n]*+(?:\\\\.[^\"\\\\\\n]*+)*+\"").matcher(text);
         StringBuilder out = new StringBuilder();
         while (literal.find()) {
             // A name starts the string, follows punctuation, or follows a descriptor's L ("(Lnet/minecraft/...;").
