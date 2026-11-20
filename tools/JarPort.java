@@ -131,6 +131,12 @@ public final class JarPort {
             String owner = Exposure.Route.internal(Json.text(w, "owner", "")), from = Json.text(w, "from", ""), desc = Json.text(w, "desc", "");
             String member = from.endsWith("=") ? from.substring(0, from.length() - 1) : from; // "name=": a write
             boolean named = desc.isEmpty() ? a.field(owner, member) != null : a.method(owner, from, desc) != null;
+            if (w.get("then") != null) {
+                if (majority(w) && named && covers(Json.text(w, "step", ""), "")) {
+                    chain(w, owner, from, desc);
+                }
+                continue;
+            }
             if (majority(w) && named && covers(Json.text(w, "step", ""), "") && Json.text(w, "expr", "").isEmpty()) {
                 // A call the game removed with nothing in its place: dropped as a removal is, its operands still evaluated.
                 removals.computeIfAbsent(owner + "." + from + desc, k -> new ArrayList<>()).add(w);
@@ -139,6 +145,57 @@ public final class JarPort {
                     Pattern.compile(Pattern.quote(from)), desc.isEmpty() ? null : desc.substring(0, desc.indexOf(')') + 1), Json.text(w, "expr", "")));
             }
         }
+    }
+
+    final List<PortChains.Spec> pairs = new ArrayList<>();
+
+    /**
+     * Two old members replaced together (GameDiff's chains): a stand-in static method of the first one's class, taking both
+     * members' operands, is added to the old release with the learned expression as its replacement; PortChains rewrites
+     * the mod's pair into a call of it before the class is read.
+     */
+    void chain(Map<String, Object> w, String owner, String from, String desc) {
+        var then = Json.object(w.get("then"));
+        String yOwner = Exposure.Route.internal(Json.text(then, "owner", "")), yName = Json.text(then, "from", ""), yDesc = Json.text(then, "desc", "");
+        GameDiff.Cls xc = a.classes.get(owner);
+        boolean field = desc.isEmpty();
+        GameDiff.Fld f = field ? a.field(owner, from) : null;
+        GameDiff.Meth m = field ? null : a.method(owner, from, desc);
+        GameDiff.Meth y = a.method(yOwner, yName, yDesc);
+        int at = then.get("at") instanceof Number n ? n.intValue() : 0;
+        if (xc == null || y == null) {
+            return;
+        }
+        boolean xStatic = field ? (f.flags & Opcodes.ACC_STATIC) != 0 : m.isStatic();
+        boolean first = "first".equals(Json.text(w, "result", ""));
+        StringBuilder params = new StringBuilder("(");
+        if (!xStatic) {
+            params.append('L').append(owner).append(';');
+        }
+        if (!field) {
+            params.append(desc, 1, desc.indexOf(')'));
+        }
+        List<Type> yOps = new ArrayList<>();
+        if (!y.isStatic()) {
+            yOps.add(Type.getObjectType(yOwner));
+        }
+        yOps.addAll(List.of(Type.getArgumentTypes(yDesc)));
+        if (at >= yOps.size()) {
+            return;
+        }
+        for (int i = 0; i < yOps.size(); i++) {
+            if (i != at) {
+                params.append(yOps.get(i).getDescriptor());
+            }
+        }
+        params.append(')');
+        String result = first ? (field ? f.desc : desc.substring(desc.indexOf(')') + 1)) : yDesc.substring(yDesc.indexOf(')') + 1);
+        String fake = from + "+" + yName + (at == 0 ? "" : "+" + at), fakeDesc = params + result;
+        xc.methods.put(fake + fakeDesc, new GameDiff.Meth(xc, fake, fakeDesc, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+        fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game chain " + Json.text(w, "step", ""), Pattern.compile(Pattern.quote(fake)),
+            params.toString(), Json.text(w, "expr", "")));
+        pairs.add(new PortChains.Spec(field ? 'f' : 'm', xStatic, owner, from, desc, yOwner, yName, yDesc, y.isStatic(), at, first, fake, fakeDesc,
+            (xc.flags & Opcodes.ACC_INTERFACE) != 0));
     }
 
     /** A replacement the game's own code shows in more than half of the places it changed. */
@@ -356,6 +413,10 @@ public final class JarPort {
         mod.canWiden = entries.containsKey("META-INF/neoforge.mods.toml") || fmj != null;
         for (var e : entries.entrySet()) {
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
+                e.setValue(PortChains.apply(e.getValue(), pairs, (o, k, n, d) -> {
+                    GameDiff.Cls c = Exposure.declaring(a, o, k, n, d);
+                    return c == null ? null : c.name;
+                }));
                 read(mod, e.getValue());
             }
         }

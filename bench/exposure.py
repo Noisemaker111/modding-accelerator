@@ -276,7 +276,7 @@ def route_map(frm, to, loader, classes):
 
 
 ASM = [ROOT / "tools" / "perf" / "lib" / "asm-9.9.jar", ROOT / "tools" / "perf" / "lib" / "asm-commons-9.9.jar"]
-JAR_SOURCES = ("JarPort.java", "FixExpr.java", "Exposure.java", "GameDiff.java", "VersionMap.java", "ModNames.java")
+JAR_SOURCES = ("JarPort.java", "FixExpr.java", "PortChains.java", "Exposure.java", "GameDiff.java", "VersionMap.java", "ModNames.java")
 
 
 def jar_tools():
