@@ -651,7 +651,8 @@
       "port.jar-links.newest",
       "port.jar-links.big-updates",
       "port.jar-links.every-update"
-     ]
+     ],
+     "result": "2026-11-21: finish line not reached. port.jar-links.newest 15 -> 15 and big-updates 1,896 -> 1,896; every update 5,883 -> 5,884. Newest-jump broken uses NeoForge 18,179 -> 17,764 and Fabric 16,188 -> 15,693 without a whole mod freed: the nearest NeoForge mods each still need one kind with no general answer from the game yet (CycleButton.builder needs an initial value the old call never gave, NBT getString/getList, 1.21.9's permission levels, ClickEvent/HoverEvent by action, mixins on save-data methods). 1.21.5 -> 1.21.6 +3 (drawString); offset in the big updates by three false links now refused: Spark on 1.21.1 -> 1.21.2 (NeoForge and Fabric, a static call to what became an instance method) and Yeetus Experimentus on NeoForge 1.20.4 -> 1.20.5. Real servers: NeoForge 26.3 7 of 8 linked standalone mods load (Dungeons and Taverns fails on its data), 1.21.6 26 of 30 (4 client-only); pack-check's NeoForge client fails with an empty pack on both releases."
     },
     {
      "id": "56",
