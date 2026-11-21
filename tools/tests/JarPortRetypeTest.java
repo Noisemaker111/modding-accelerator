@@ -44,6 +44,9 @@ final class JarPortRetypeTest {
         // A callback interface whose method took the pose and takes the graphics in 2.0 (as a Fabric API callback did).
         JarPortTest.snap(a, "g6/Hud", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "draw(" + POSE + "I)V");
         JarPortTest.snap(b, "g6/Hud", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "draw(" + GFX + "I)V");
+        // g6.Model's transforms() is abstract in both releases' jars (the loader supplies it); 2.0 adds an abstract extra().
+        JarPortTest.snap(a, "g6/Model", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "quads()V", "transforms()V");
+        JarPortTest.snap(b, "g6/Model", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "quads()V", "transforms()V", "extra()V");
         JarPortTest.snap(a, "g6/Loc", 0, null);
         // g6.Part goes in 2.0 and the game's own Title2 extends Object instead, though the map follows Part's members to Graphics.
         JarPortTest.snap(a, "g6/Part", 0, null, "own()V");
@@ -245,6 +248,13 @@ final class JarPortRetypeTest {
         List<String> stuck = Json.array(stuckRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(stuck.contains("lambda for a changed method: g6.Hud.draw(Lg6/Pose;I)V (in m6.Overlay)"),
             "a method reference to a public method, which cannot move, is reported instead of linking silently: " + stuck);
+
+        List<Map<String, Object>> modelRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/MyModel.class", JarPortTest.real("m6/MyModel", "java/lang/Object", 0, new String[] { "g6/Model" },
+            w -> JarPortTest.traced(w, "quads", "()V", "", m -> { })))), "model.jar", modelRuns);
+        List<String> modelUnlinked = Json.array(modelRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(modelUnlinked.equals(List.of("abstract method not written: g6.Model.extra()V (in m6.MyModel)")),
+            "an abstract method the class left unwritten against the old release too is not the port's break; one the new release added is: " + modelUnlinked);
 
         // A mod class on the removed Part extends what the game's own subclasses of it extend now, not Graphics.
         List<Map<String, Object>> partRuns = new ArrayList<>();

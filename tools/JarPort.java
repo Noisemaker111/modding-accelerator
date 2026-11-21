@@ -2087,14 +2087,53 @@ public final class JarPort {
                 written.add((m.flags & Opcodes.ACC_ABSTRACT) == 0 ? m.name + m.desc : "");
             }
         }
+        Set<String> before = unwrittenBefore(mod, rc);
         for (GameDiff.Cls k : supers) {
             for (GameDiff.Meth m : k.methods.values()) {
                 if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !written.contains(m.name + m.desc) && !OBJECT.contains(m.name + m.desc) && !generic(supers, m)
-                    && !alreadyAbstract(k, m)) {
+                    && !alreadyAbstract(k, m) && !before.contains(m.name + oldDesc(m.desc))) {
                     mod.unlinked.add("abstract method not written: " + Exposure.dotted(k.name) + "." + m.name + m.desc + " (in " + Exposure.dotted(rc.name) + ")");
                 }
             }
         }
+    }
+
+    /**
+     * The abstract methods (name + old descriptor) a mod class already left unwritten against the old release: its game
+     * supertypes there had them abstract and neither the mod nor they wrote one. The class loaded all the same, so the
+     * loader supplies them (NeoForge patches BakedModel.getTransforms() into a default the game's own jar does not have);
+     * the port did not take them away.
+     */
+    Set<String> unwrittenBefore(Mod mod, GameDiff.RawCls rc) {
+        Set<String> written = new HashSet<>(), abstracts = new HashSet<>(), seen = new HashSet<>();
+        Deque<String> todo = new ArrayDeque<>(List.of(rc.name));
+        while (!todo.isEmpty()) {
+            String c = todo.poll();
+            if (!seen.add(c)) {
+                continue;
+            }
+            GameDiff.RawCls own = mod.classes.get(c);
+            if (own != null) {
+                for (GameDiff.RawMeth m : own.methods.values()) {
+                    ((m.flags & Opcodes.ACC_ABSTRACT) == 0 ? written : abstracts).add(m.name + m.desc);
+                }
+                if (own.sup != null) {
+                    todo.add(own.sup);
+                }
+                todo.addAll(own.ifaces);
+                continue;
+            }
+            GameDiff.Cls k = a.classes.get(c);
+            if (k == null) {
+                continue;
+            }
+            for (GameDiff.Meth m : k.methods.values()) {
+                ((m.flags & Opcodes.ACC_ABSTRACT) == 0 ? written : abstracts).add(m.name + m.desc);
+            }
+            todo.addAll(GameDiff.supertypes(k));
+        }
+        abstracts.removeAll(written);
+        return abstracts;
     }
 
     static final Set<String> OBJECT = Set.of("equals(Ljava/lang/Object;)Z", "hashCode()I", "toString()Ljava/lang/String;");
