@@ -440,13 +440,13 @@ public final class JarPort {
     /**
      * A class a jar for several loaders carries for another one (a Forge class beside the Fabric ones), which the loader
      * ported for never loads, so it is no part of the mod there, before the port or after. It names the game as only
-     * that loader's build does: a Fabric jar is read in Mojang's names, so a class still naming members by SRG id
-     * (m_1234_) was built for Forge; any other jar is read in Mojang's names too, so a class still naming a game class by
-     * intermediary (class_1234) was built for Fabric.
+     * that loader's build does. Every jar is read in Mojang's names, and no NeoForge release read here names members by
+     * SRG id (NeoForm stopped giving them in 1.20.2), so a class still naming members by SRG id (m_1234_) was built for
+     * Forge; outside a Fabric jar, a class still naming a game class by intermediary (class_1234) was built for Fabric.
      */
     boolean otherLoader(byte[] bytes) {
         String pool = new String(bytes, StandardCharsets.ISO_8859_1);
-        return (loader.equals("fabric") ? SRG : INTERMEDIARY).matcher(pool).find();
+        return SRG.matcher(pool).find() || !loader.equals("fabric") && INTERMEDIARY.matcher(pool).find();
     }
 
     /**
@@ -500,6 +500,10 @@ public final class JarPort {
                 }));
                 read(mod, e.getValue());
             }
+        }
+        if (!mod.foreign.isEmpty() && mod.classes.isEmpty()) {
+            // Not a jar for this loader at all (a Forge build listed for NeoForge): it never loaded, before or after.
+            mod.unlinked.add("built for another loader: every class names the game as another loader's build does");
         }
         requires(mod, entries);
         plan(mod);
@@ -2105,7 +2109,7 @@ public final class JarPort {
      * the port did not take them away.
      */
     Set<String> unwrittenBefore(Mod mod, GameDiff.RawCls rc) {
-        Set<String> written = new HashSet<>(), abstracts = new HashSet<>(), seen = new HashSet<>();
+        Set<String> written = new HashSet<>(), abstracts = new HashSet<>(), seen = new HashSet<>(), unread = new HashSet<>();
         Deque<String> todo = new ArrayDeque<>(List.of(rc.name));
         while (!todo.isEmpty()) {
             String c = todo.poll();
@@ -2116,6 +2120,9 @@ public final class JarPort {
             if (own != null) {
                 for (GameDiff.RawMeth m : own.methods.values()) {
                     ((m.flags & Opcodes.ACC_ABSTRACT) == 0 ? written : abstracts).add(m.name + m.desc);
+                    if (UNMAPPED.matcher(m.name).matches()) {
+                        unread.add(m.desc);
+                    }
                 }
                 if (own.sup != null) {
                     todo.add(own.sup);
@@ -2133,8 +2140,13 @@ public final class JarPort {
             todo.addAll(GameDiff.supertypes(k));
         }
         abstracts.removeAll(written);
+        // A method the class writes under an id its names were never read through (m_6055_ for getName, in a jar built
+        // for another release's mappings) is that one, unread: the class did not load before either, so nothing is excused.
+        abstracts.removeIf(k -> unread.contains(k.substring(k.indexOf('('))));
         return abstracts;
     }
+
+    static final Pattern UNMAPPED = Pattern.compile("(?:m_\\d+_|method_\\d+|func_\\d+_[a-z]?)");
 
     static final Set<String> OBJECT = Set.of("equals(Ljava/lang/Object;)Z", "hashCode()I", "toString()Ljava/lang/String;");
 
