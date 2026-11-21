@@ -212,6 +212,18 @@ with tempfile.TemporaryDirectory() as tmp:
     check(len(table["jumps"]) == 1 and table["jumps"][0]["updatesCrossed"] == 4 and "fabric 1.0 -> 2.1" in table["missing"] and "fabric 2.0 -> 2.1" in table["missing"],
           f"a jump says how many updates it crosses, one that did not run is named, and a pair that is no jump is left out: {table['jumps']} {table['missing']}")
     check([t["mod"] for t in table["nearest"]] == ["near.jar", "far.jar"], "over every update the mods nearest to done come first")
+    check(table["typesNotRead"] == ["fabric 1.0 -> 1.1", "fabric 1.1 -> 2.0"] and table["types"] == [],
+          f"summaries with no types are named, so a ranking over fewer updates than the counts is not read as all of them: {table['typesNotRead']}")
+    typed = summary("fabric", "1.0", "1.1", 10)
+    typed["types"] = [{"type": "call, game: linked", "finishes": 2, "mods": 3, "references": 4, "examples": ["call: g.X.one()V"]}]
+    (runs / "fabric-1.0-1.1.json").write_text(json.dumps(typed), encoding="utf-8")
+    sys.stdout = io.StringIO()
+    try:
+        table = E.join(runs, False)
+    finally:
+        sys.stdout = sys.__stdout__
+    check(table["typesNotRead"] == ["fabric 1.1 -> 2.0"] and [(t["type"], t["finishes"], t["updates"]) for t in table["types"]] == [("call, game: linked", 2, 1)],
+          f"types are summed over the updates that list them: {table['types']} {table['typesNotRead']}")
 
 # Jars are read on every processor at once; the rows come back as one process would have given them.
 with tempfile.TemporaryDirectory() as tmp:

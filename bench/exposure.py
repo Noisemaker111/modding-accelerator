@@ -857,6 +857,8 @@ def join(folder, save):
     for k in kinds.values():
         k["examples"] = [text for _, text in sorted(k["examples"], key=lambda e: -e[0])[:4]]
     kinds = sorted(kinds.values(), key=lambda k: (-k["finishes"], -k["mods"], k["type"]))
+    # A summary an older run made has no types: the ranking then covers fewer updates than the counts, and says so.
+    untyped = [f"{s['loader']} {s['from']} -> {s['to']}" for s in rows if "types" not in s]
     missing = [f"{lo} {a} -> {b}" for lo, a, b in list(single) + list(wanted) if not any(pair(s) == (lo, a, b) for s in found)]
     keep = ("loader", "from", "to", "modsRead", "modsThatLink", "modsThatLinkAndData", "brokenUses", "loaderUses", "modsHeldOnlyByLoader")
     table = {
@@ -864,6 +866,7 @@ def join(folder, save):
         "updates": [{**{k: s.get(k) for k in keep}, "big": big(s["from"], s["to"])} for s in rows],
         "jumps": [{**{k: s.get(k) for k in keep}, "updatesCrossed": len(chain(s["from"], s["to"])) - 1} for s in far],
         "types": kinds,
+        "typesNotRead": untyped,
         "nearest": turns[:60],
         "top": top,
     }
@@ -887,7 +890,8 @@ def join(folder, save):
     d = total["data"]
     print(f"over the {d['updates']} updates whose registry reports ran, {d['link'] - d['linkAndData']} of {d['link']} mods that link name a game id in their data that the new release dropped")
     print(f"{total['loader']['uses']} broken uses are of the loader's own API; {total['loader']['modsHeldOnlyByLoader']} mod ports break on nothing else")
-    print("\nTypes of break, every update, by the mod ports each one alone holds back:")
+    print("\nTypes of break, " + (f"{len(rows) - len(untyped)} of {len(rows)} updates (the others' summaries are older and list none)" if untyped else "every update")
+          + ", by the mod ports each one alone holds back:")
     for k in kinds[:15]:
         print(f"  finishes {k['finishes']:>4}, in {k['mods']:>5} mod ports of {k['updates']:>2} updates, {k['references']:>5} references  {k['type']}")
         print(f"      e.g. {k['examples'][0]}")
