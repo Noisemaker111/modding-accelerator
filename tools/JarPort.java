@@ -4967,7 +4967,13 @@ public final class JarPort {
                 }
             }
             if (t == null) {
-                mod.unlinked.add("field: " + Exposure.dotted(decl.owner()) + "." + name);
+                // The JVM finds a field by name and type: a reference of another type than the old release's field did not
+                // link before the update either (code for another version behind a check, a type of a later release), so
+                // the update broke nothing there and it stays as written.
+                GameDiff.Cls old = Exposure.declaring(a, decl.owner(), 'f', name, null);
+                if (old != null && old.fields.get(name).desc.equals(desc)) {
+                    mod.unlinked.add("field: " + Exposure.dotted(decl.owner()) + "." + name);
+                }
                 super.visitFieldInsn(opcode, owner, name, desc);
                 return;
             }
