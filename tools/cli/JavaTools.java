@@ -8,16 +8,25 @@ final class JavaTools {
     final Build build;
     final Runtimes.Jdk jdk;
     final Path classes;
+    /** ASM, which GameDiff reads the loader's jars with (through Exposure and ModNames). */
+    final String asm;
 
     JavaTools(Build build) throws Exception {
         this.build = build;
         jdk = Runtimes.ensureAtLeast(build.harness, 25);
+        // GameDiff builds a route map with the loader's own classes and carries learned expressions (FixExpr), so it
+        // compiles with every file it reads; a missing one fails every port, convert and explain.
         List<Path> sources = List.of(
             build.harness.resolve("tools/VersionMap.java"),
             build.harness.resolve("tools/GameDiff.java"),
+            build.harness.resolve("tools/Exposure.java"),
+            build.harness.resolve("tools/ModNames.java"),
+            build.harness.resolve("tools/FixExpr.java"),
+            build.harness.resolve("tools/cli/Json.java"),
             build.harness.resolve("tools/MixinAudit.java"),
             build.harness.resolve("tools/GamePrep.java")
         );
+        asm = build.harness.resolve("tools/perf/lib/asm-9.9.jar") + File.pathSeparator + build.harness.resolve("tools/perf/lib/asm-commons-9.9.jar");
         classes = build.harness.resolve(".mmt/portable-tools/" + Fingerprints.files(sources));
         Path ready = classes.resolve("ready");
         if (!Files.exists(ready)) {
@@ -29,6 +38,8 @@ final class JavaTools {
                     "25",
                     "-encoding",
                     "UTF-8",
+                    "-cp",
+                    asm,
                     "-d",
                     classes.toString()
                 )
@@ -42,7 +53,7 @@ final class JavaTools {
     }
 
     Run.Result run(String tool, List<String> arguments, String stage) throws Exception {
-        List<String> command = new ArrayList<>(List.of(jdk.java().toString(), "-cp", classes.toString(), tool));
+        List<String> command = new ArrayList<>(List.of(jdk.java().toString(), "-cp", classes + File.pathSeparator + asm, tool));
         command.addAll(arguments);
         var result = Run.command(command, build.project.root, Map.of(), build.report.log(stage), 300);
         build.report.stage(stage, result, Map.of());
