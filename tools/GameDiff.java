@@ -4416,17 +4416,27 @@ public final class GameDiff {
                 taken.add(pick);
                 lastOperand = Math.max(lastOperand, operandIndex(pick));
             }
+            // A fixed value most uses of this shape agree on, where the old member had no operand (1.21.5's getInt(key) is
+            // getIntOr(key, 0) in most places): a use that passes another fixed value there chose its own default and
+            // abstains, as the game's own edit of that one place.
+            boolean[] settled = new boolean[choices];
+            for (int i = 0; i < choices; i++) {
+                int k = i;
+                long with = allowed.stream().filter(per -> per.get(k).contains(taken.get(k))).count();
+                settled[i] = !taken.get(i).contains("$") && with * 2 > allowed.size();
+            }
             int agree = 0;
             for (List<Set<String>> per : allowed) {
-                boolean all = true, own = true;
+                boolean all = true, own = true, chosen = true;
                 for (int i = 0; i < choices; i++) {
                     if (!per.get(i).contains(taken.get(i))) {
                         all = false;
                         own &= taken.get(i).contains("$") && per.get(i).stream().noneMatch(o -> o.contains("$"));
+                        chosen &= settled[i] && per.get(i).stream().noneMatch(o -> o.contains("$"));
                     }
                 }
                 agree += all ? 1 : 0;
-                tally[1] -= !all && own && ownEdits ? 1 : 0;
+                tally[1] -= !all && (own && ownEdits || chosen) ? 1 : 0;
             }
             tally[0] = agree;
             if (ownEdits) {

@@ -10,6 +10,8 @@ import org.objectweb.asm.*;
  *   where it uses the value the call stays and is reported (JarPort.Dropped).
  * - L.list() was static and is an instance method of L.current() in 3.0: the old call is not linked (the JVM would
  *   refuse it), and what the game's code writes instead takes its place.
+ * - Uses that pass their own fixed default where most pass one abstain from the vote (1.21.5's getInt(key) is
+ *   getIntOr(key, 0) in most places, getIntOr(key, 200) in one).
  * - A @ModifyVariable at STORE of its fourth boolean (ordinal 3, after three boolean parameters) in W.keep, whose new
  *   body stores none, and one whose method string names a signature the old jar lacks (a loader patch) on a method
  *   3.0 dropped, are both reported.
@@ -69,10 +71,20 @@ final class JarPortCarryTest {
         new JarPort(a, b, bare).port(JarPortTest.jar(mod()), "carry.jar", plain);
         List<String> left = Json.array(plain.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(left.contains("call: net.minecraft.c4.L.list()" + STR), "a static call to what is now an instance method is not linked: " + left);
+        // Four uses read getInt(key) as getIntOr(key, 0); two chose their own default there (200, 5).
+        char o = GameDiff.Learner.OPEN, or = GameDiff.Learner.OR, c = GameDiff.Learner.CLOSE;
+        List<Set<String>> uses = new ArrayList<>();
+        for (String k : List.of("0", "0", "0", "0", "200", "5")) {
+            uses.add(Set.of(o + "$0" + c + ".getIntOr(" + o + "$1" + or + "\"k\"" + c + ", " + o + k + c + ")"));
+        }
+        int[] tally = new int[2];
+        String best = GameDiff.Learner.vote(uses, tally);
+        JarPortTest.expect("$0.getIntOr($1, 0)".equals(best) && tally[0] == 4 && tally[1] == 4,
+            "a use that passes its own fixed default where most pass one abstains: " + best + " " + Arrays.toString(tally));
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port carry: 7 checks passed");
+        System.out.println("jar-port carry: 8 checks passed");
     }
 
     static String run(Map<String, byte[]> game, Map<String, byte[]> ported) {
