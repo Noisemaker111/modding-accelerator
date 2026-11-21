@@ -125,6 +125,13 @@ final class Console {
                 "      return f.get(java.lang.reflect.Modifier.isStatic(f.getModifiers()) ? null : target); } catch (NoSuchFieldException next) { }\n" +
                 "    throw new NoSuchFieldException(type.getName() + \".\" + name);\n  }\n"
             );
+            // The open screen moved from Minecraft to its Gui in 26.3; snippets name it through these, on any version.
+            source.append(
+                "  static Object screen(Object game) throws Exception {\n" +
+                "    try { return field(game, \"screen\"); } catch (NoSuchFieldException moved) { return call(field(game, \"gui\"), \"screen\"); }\n  }\n" +
+                "  static void show(Object game, Object screen) throws Exception {\n" +
+                "    try { call(game, \"setScreen\", screen); } catch (NoSuchMethodException moved) { call(field(game, \"gui\"), \"setScreen\", screen); }\n  }\n"
+            );
             source.append("  public Object run(Map<String, Object> vars) throws Throwable {\n    this.vars = vars;\n");
             if (minecraft) source.append("    final Minecraft mc = Minecraft." + accessor + "();\n");
             else if (yarn) source.append(
