@@ -81,6 +81,7 @@
         "\\(([a-z0-9_.\\-]+)\\) has failed to load correctly",
         "mod ([a-z0-9_.\\-]+) failed to",
         "Mod File \\S*?(?<file>[^\\\\/\\s]+\\.jar) needs ",
+        "File \\S*?(?<file>[^\\\\/\\s]+\\.jar) is not a valid mod file",
         "Skipping jar\\. File \\S*?(?<file>[^\\\\/\\s]+\\.jar) is for ",
         "Attempted to load class (?<class>[\\w/$.]+) for invalid dist",
         "Failed to parse \\S+ from pack mod/([a-z0-9_.\\-]+)"
