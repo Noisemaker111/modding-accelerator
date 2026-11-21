@@ -1,10 +1,11 @@
 ---
 name: port-a-mod
-description: Make mmt port carry any mod across Minecraft versions with no hand edits, by teaching the porter one changed part of the game at a time rather than fixing one mod's compiler errors. Use when Jon names a mod and a target version, says "next mod", "bigger mod", "next version", "keep going" on porting, or asks to push the porting map further.
+description: Make mmt port carry any mod across Minecraft versions with no hand edits, by teaching the porter how to handle a type of change in the game, so the mod in front of you and every other mod with that type is fixed, rather than fixing one mod's errors or one game member at a time. Use when Jon names a mod and a target version, says "next mod", "bigger mod", "next version", "keep going" on porting, or asks to push the porting map further.
 ---
 
-You never work on "this mod's errors". You teach the porter one changed part of the game, and every mod that uses
-that part is fixed with it. Read this whole file before the first command: it is short, and each part was measured.
+You never work on "this mod's errors". You teach the porter a type of change in the game (a method that took another
+parameter, a mixin target with a new signature, an abstract method added), and every mod with that type is fixed with
+it, in every update. One changed part of the game as a rule comes second, for what no type covers. Read this whole file before the first command: it is short, and each part was measured.
 
 ## Where porting stands (2026-11-20)
 
@@ -74,23 +75,26 @@ the first row above.
 2. **Step 52: `mmt port --jar` ports Fabric mods too.** The scoreboard reads them; the port must hand them back in
    the names Fabric runs.
 
-## The loop. One changed game part per turn
+## The loop. One type of break per turn
 
 1. `python bench/exposure.py jars --loader neoforge|fabric --from A --to B --save NAME`. It downloads the pinned mods
-   the first time and prints the mods nearest to done, each with the references it still needs and what the game's
-   own code did about each. To pick the update, read `nearest` in `bench/exposure/all.json`: the mods with the
-   fewest left over every update.
-2. Take the first mod on that list whose every reference the game answers (`game: replaced`, `split`, `linked`,
-   `template`), and its first reference. The detail names what the game's own code calls now. Skip a mod with a
-   `redesigned` or `unused` reference unless you can read both versions of the game class and say what replaces it;
-   if you can't, take the next mod. A wrong rule is worse than none. The rule still names a game part, never the
-   mod: the mod only chooses which part comes next, because a part that finishes no mod helps nobody yet.
-   Before writing a rule, see why the learner gave none: run GameDiff with `-Dgamediff.learnlog=PREFIX` and read the
-   member's line (game uses lined up, uses read, votes, readings). A fix to the learner frees every update; a rule one.
-3. Write one rule in `knowledge/fixes.json` with `members` naming that game part, then
+   the first time and prints two lists: the **types of break** (what a reference is, and what the game's own code did
+   about it: `call, game: linked` is a call whose method is still there with other parameters), each with the mods it
+   alone holds back; and the mods nearest to done with what each still needs. Over every update the same two lists
+   are `types` and `nearest` in `bench/exposure/all.json`.
+2. Take the type that finishes the most mods, and design the way the porter handles that type: in the learner
+   (tools/GameDiff.java) when the game's own code shows the answer, in tools/JarPort.java when the answer is in how the
+   mod's class is written. Use the nearest-to-done mods that have the type as your cases: the fix is right when it
+   finishes them and the other mods with that type, in this update and the others. Before designing, see why the
+   porter gave no answer for three of the type's references: run GameDiff with `-Dgamediff.learnlog=PREFIX` and read
+   each member's line (game uses lined up, uses read, votes, readings).
+   A rule in `knowledge/fixes.json` is for what no type covers: one game part with one answer that you can read in
+   both versions of the game class. It frees the mods that use that part and nothing else, so it comes second. Skip a
+   `redesigned` or `unused` reference unless you can say what replaces it. A wrong answer is worse than none.
+3. For a rule: write it in `knowledge/fixes.json` with `members` naming that game part, then
    `python bench/rule_test.py --only ID --write`. Copy the nearest rule that has `members`; never name a mod.
-4. Run step 1 again. The part must be gone from the list and the mods count must not drop. If neither moved, the rule
-   does not do what you think: fix it or delete it.
+4. Run step 1 again. The type's count of mods (or the part) must have fallen and the mods that link must not drop. If
+   neither moved, the change does not do what you think: fix it or take it out.
 5. `python bench/exposure.py load --loader neoforge --from A --to B` starts the ported standalone mods on a real server;
    no mod that links may fail. `python bench/port_board.py --changed` runs the pinned source ports your rule crosses. Commit.
 

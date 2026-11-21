@@ -166,6 +166,23 @@ check([m["member"] for m in order[4]["members"]] == ["call: g.A.x()V", "call: g.
 longer = {"mod": "b.jar", "unlinked": [f"b.jar: call: g.B.m{i}()V" for i in range(5)]}
 check([t["mod"] for t in E.nearest([rows[0], longer], None, {})] == ["a.jar", "b.jar"], "a mod with more left than another comes after it")
 
+# The same list by type of break: a way to handle a type finishes every mod only that type holds back.
+kinds = [
+    {"mod": "a.jar", "unlinked": ["a.jar: call: g.X.one()V (in a.A)", "a.jar: call: g.Y.two()V"]},
+    {"mod": "b.jar", "unlinked": ["b.jar: call: g.X.one()V", "b.jar: field: g.F.gone"]},
+    {"mod": "c.jar", "unlinked": ["c.jar: field: g.F.gone"]},
+    {"mod": "d.jar", "unlinked": ["d.jar: call: g.Z.three()V"]},
+    {"mod": "e.jar", "unlinked": []},
+]
+verdicts = {"call: g.X.one()V": {"game": "linked"}, "call: g.Y.two()V": {"game": "linked"}, "call: g.Z.three()V": {"game": "linked"}, "field: g.F.gone": {"game": "split"}}
+table = E.by_type(kinds, None, verdicts)
+check([(t["type"], t["finishes"], t["mods"], t["references"]) for t in table] == [("call, game: linked", 2, 3, 3), ("field, game: split", 1, 2, 1)],
+      f"a type counts the mods it alone holds back, the mods that have it and its references: {table}")
+check(table[0]["examples"][0] == "call: g.X.one()V", "a type's first example is its most-used reference")
+verdicts["call: g.Y.two()V"] = {"game": "redesigned"}
+check(next(t for t in E.by_type(kinds, None, verdicts) if t["type"] == "call, game: linked")["finishes"] == 1,
+      "a mod held by two types is finished by neither alone")
+
 # Jumps: the ports people ask for, from each family's most-used release to the next family's and to the newest.
 with tempfile.TemporaryDirectory() as tmp:
     E.INDEX = Path(tmp) / "index.json"
@@ -201,6 +218,18 @@ with tempfile.TemporaryDirectory() as tmp:
     check(len(table["jumps"]) == 1 and table["jumps"][0]["updatesCrossed"] == 4 and "fabric 1.0 -> 2.1" in table["missing"] and "fabric 2.0 -> 2.1" in table["missing"],
           f"a jump says how many updates it crosses, one that did not run is named, and a pair that is no jump is left out: {table['jumps']} {table['missing']}")
     check([t["mod"] for t in table["nearest"]] == ["near.jar", "far.jar"], "over every update the mods nearest to done come first")
+    check(table["typesNotRead"] == ["fabric 1.0 -> 1.1", "fabric 1.1 -> 2.0"] and table["types"] == [],
+          f"summaries with no types are named, so a ranking over fewer updates than the counts is not read as all of them: {table['typesNotRead']}")
+    typed = summary("fabric", "1.0", "1.1", 10)
+    typed["types"] = [{"type": "call, game: linked", "finishes": 2, "mods": 3, "references": 4, "examples": ["call: g.X.one()V"]}]
+    (runs / "fabric-1.0-1.1.json").write_text(json.dumps(typed), encoding="utf-8")
+    sys.stdout = io.StringIO()
+    try:
+        table = E.join(runs, False)
+    finally:
+        sys.stdout = sys.__stdout__
+    check(table["typesNotRead"] == ["fabric 1.1 -> 2.0"] and [(t["type"], t["finishes"], t["updates"]) for t in table["types"]] == [("call, game: linked", 2, 1)],
+          f"types are summed over the updates that list them: {table['types']} {table['typesNotRead']}")
 
 # Jars are read on every processor at once; the rows come back as one process would have given them.
 with tempfile.TemporaryDirectory() as tmp:

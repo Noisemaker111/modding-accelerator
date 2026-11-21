@@ -650,6 +650,31 @@ def nearest(rows, data, said):
 ANSWERED = {"replaced", "split", "linked", "template"}
 
 
+def kind_of(member, said):
+    """The type of break a reference is: what it is (a call, a mixin target whose signature changed, an abstract method
+    not written ...) and what the game's own code did about it. A way to handle a type frees every mod held by it, in
+    every update; a rule for one member frees the mods that use that member."""
+    return f"{member.split(': ', 1)[0]}, game: {said.get(member, {}).get('game') or 'not read'}"
+
+
+def by_type(rows, data, said):
+    """Each type of break with the mods that have one, the mods it alone holds back (handled, they are done), and
+    its most-used references as examples; the types that finish the most mods first."""
+    types = {}
+    for m in rows:
+        refs = left(m, data)
+        kinds = {kind_of(ref, said) for ref in refs}
+        for ref in refs:
+            t = types.setdefault(kind_of(ref, said), {"mods": set(), "finishes": 0, "uses": {}})
+            t["mods"].add(m["mod"])
+            t["uses"][ref] = t["uses"].get(ref, 0) + 1
+        if len(kinds) == 1:
+            types[next(iter(kinds))]["finishes"] += 1
+    return sorted(({"type": k, "finishes": t["finishes"], "mods": len(t["mods"]), "references": len(t["uses"]),
+                    "examples": [ref for ref, _ in sorted(t["uses"].items(), key=lambda kv: (-kv[1], kv[0]))[:3]]} for k, t in types.items()),
+                  key=lambda t: (-t["finishes"], -t["mods"], t["type"]))
+
+
 def shown(member):
     return f"{member['member']}  ({member.get('part', 'game')}: {member.get('game', '?')})"
 
@@ -704,6 +729,7 @@ def jars(loader, frm, to, save=None, out=None, quiet=False):
         "seconds": seconds,
     }
     order = nearest(rows, data, said)
+    summary["types"] = by_type(rows, data, said)
     summary["nearest"] = [{**turn, "members": turn["members"][:25]} for turn in order[:40]]
     summary["finishing"] = [[turn["fixes"], turn["modsDone"]] for turn in order]
     if not quiet:
@@ -712,7 +738,10 @@ def jars(loader, frm, to, save=None, out=None, quiet=False):
               + ("" if data is None else f"; {summary['modsThatLinkAndData']} of them also name nothing in their data that {to} dropped")
               + f"; {summary['loaderUses']} broken uses are of the loader's API, and {summary['modsHeldOnlyByLoader']} mods break on nothing else")
         print("seconds: " + ", ".join(f"{stage} {took:g}" for stage, took in seconds.items()))
-        print("\nNearest to done, in the order to work (each mod with the references it still needs):")
+        print("\nTypes of break, by the mods each one alone holds back (a way to handle the type finishes them, here and in every update):")
+        for t in summary["types"][:10]:
+            print(f"  finishes {t['finishes']:>3}, in {t['mods']:>3} mods, {t['references']:>4} references  {t['type']}   e.g. {t['examples'][0]}")
+        print("\nNearest to done (each mod with the references it still needs):")
         for turn in summary["nearest"][:12]:
             also = f", and frees {len(turn['alsoFrees'])} more" if turn["alsoFrees"] else ""
             print(f"  {turn['mod']}: {len(turn['members'])} left{also}; {turn['modsDone']} mods done after {turn['fixes']} fixes")
@@ -815,12 +844,29 @@ def join(folder, save):
     turns = [{"loader": s["loader"], "update": f"{s['from']} -> {s['to']}", "mod": t["mod"], "members": t["members"], "wanted": used.get(s["to"], 0)}
              for s in rows for t in s.get("nearest", [])]
     turns.sort(key=lambda t: (len(t["members"]), sum(1 for m in t["members"] if m.get("game") not in ANSWERED), -t["wanted"]))
+    # The to-do list by type of break, over every update: what a way to handle the type would finish.
+    kinds = {}
+    for s in rows:
+        for t in s.get("types", []):
+            k = kinds.setdefault(t["type"], {"type": t["type"], "finishes": 0, "mods": 0, "references": 0, "updates": 0, "examples": []})
+            k["finishes"] += t["finishes"]
+            k["mods"] += t["mods"]
+            k["references"] += t["references"]
+            k["updates"] += 1
+            k["examples"].append([t["finishes"], f"{s['loader']} {s['from']} -> {s['to']}: {t['examples'][0]}"])
+    for k in kinds.values():
+        k["examples"] = [text for _, text in sorted(k["examples"], key=lambda e: -e[0])[:4]]
+    kinds = sorted(kinds.values(), key=lambda k: (-k["finishes"], -k["mods"], k["type"]))
+    # A summary an older run made has no types: the ranking then covers fewer updates than the counts, and says so.
+    untyped = [f"{s['loader']} {s['from']} -> {s['to']}" for s in rows if "types" not in s]
     missing = [f"{lo} {a} -> {b}" for lo, a, b in list(single) + list(wanted) if not any(pair(s) == (lo, a, b) for s in found)]
     keep = ("loader", "from", "to", "modsRead", "modsThatLink", "modsThatLinkAndData", "brokenUses", "loaderUses", "modsHeldOnlyByLoader")
     table = {
         "date": date.today().isoformat(), "total": total, "loaders": loaders, "missing": missing,
         "updates": [{**{k: s.get(k) for k in keep}, "big": big(s["from"], s["to"])} for s in rows],
         "jumps": [{**{k: s.get(k) for k in keep}, "updatesCrossed": len(chain(s["from"], s["to"])) - 1} for s in far],
+        "types": kinds,
+        "typesNotRead": untyped,
         "nearest": turns[:60],
         "top": top,
     }
@@ -844,7 +890,12 @@ def join(folder, save):
     d = total["data"]
     print(f"over the {d['updates']} updates whose registry reports ran, {d['link'] - d['linkAndData']} of {d['link']} mods that link name a game id in their data that the new release dropped")
     print(f"{total['loader']['uses']} broken uses are of the loader's own API; {total['loader']['modsHeldOnlyByLoader']} mod ports break on nothing else")
-    print("\nNearest to done, every update, in the order to work:")
+    print("\nTypes of break, " + (f"{len(rows) - len(untyped)} of {len(rows)} updates (the others' summaries are older and list none)" if untyped else "every update")
+          + ", by the mod ports each one alone holds back:")
+    for k in kinds[:15]:
+        print(f"  finishes {k['finishes']:>4}, in {k['mods']:>5} mod ports of {k['updates']:>2} updates, {k['references']:>5} references  {k['type']}")
+        print(f"      e.g. {k['examples'][0]}")
+    print("\nNearest to done, every update:")
     for t in table["nearest"][:15]:
         print(f"  {t['loader']} {t['update']}  {t['mod']}: {len(t['members'])} left")
         for member in t["members"][:4]:
