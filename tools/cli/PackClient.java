@@ -51,14 +51,7 @@ final class PackClient {
             style.runInstaller(context, installer, filled, dir, version);
         }
         Map<String, Object> merged = merged(dir, minecraft);
-        for (Object o : Json.array(merged.get("libraries"))) {
-            var library = Json.object(o);
-            if (!allowed(library.get("rules"))) continue;
-            String[] artifact = artifact(library);
-            if (artifact == null) continue;
-            Path target = dir.resolve("libraries").resolve(artifact[0]);
-            if (!Files.isRegularFile(target)) PackCheck.download(artifact[1], target, artifact[2]);
-        }
+        libraries(dir, minecraft);
         // A launcher runs the game's jar under the name of the version it starts (a loader's ignore list names it so).
         var client = Json.object(Json.object(merged.getOrDefault("downloads", Map.of())).getOrDefault("client", Map.of()));
         Path jar = gameJar(dir, merged);
@@ -134,6 +127,59 @@ final class PackClient {
         return found;
     }
 
+    /**
+     * Every library the launch puts on the class path, downloaded where missing. Run on each start, not only at install:
+     * which library a launch keeps can change after an install is cached (LWJGL for this system rather than macOS's).
+     */
+    static void libraries(Path install, String minecraft) throws Exception {
+        for (Object o : Json.array(merged(install, minecraft).get("libraries"))) {
+            var library = Json.object(o);
+            if (!allowed(library.get("rules"))) continue;
+            String[] artifact = artifact(library);
+            if (artifact == null) continue;
+            Path target = install.resolve("libraries").resolve(artifact[0]);
+            if (!Files.isRegularFile(target)) PackCheck.download(artifact[1], target, artifact[2]);
+            String[] natives = nativeArtifact(library);
+            Path nativeJar = natives == null ? null : install.resolve("libraries").resolve(natives[0]);
+            if (nativeJar != null && !Files.isRegularFile(nativeJar)) PackCheck.download(natives[1], nativeJar, natives[2]);
+        }
+    }
+
+    /**
+     * {path, url, sha1} of the native code a library lists for this system the old way (before 1.19): a "natives" entry
+     * naming a classifier ("natives-windows", "${arch}" the JVM's bits) whose jar a launcher unpacks; null for none.
+     */
+    static String[] nativeArtifact(Map<String, Object> library) {
+        String classifier = Json.text(Json.object(library.getOrDefault("natives", Map.of())), OS, "");
+        if (classifier.isEmpty()) return null;
+        classifier = classifier.replace("${arch}", System.getProperty("os.arch").contains("64") ? "64" : "32");
+        var found = Json.object(Json.object(Json.object(library.getOrDefault("downloads", Map.of())).getOrDefault("classifiers", Map.of())).getOrDefault(classifier, Map.of()));
+        return found.isEmpty() ? null : new String[] { Json.text(found, "path", ""), Json.text(found, "url", ""), Json.text(found, "sha1", null) };
+    }
+
+    /** The old-style native jars of the launch unpacked into dir, as a launcher does, leaving out what "extract" excludes (META-INF). */
+    static void natives(Path install, String minecraft, Path dir) throws IOException {
+        for (Object o : Json.array(merged(install, minecraft).get("libraries"))) {
+            var library = Json.object(o);
+            String[] natives = nativeArtifact(library);
+            if (natives == null || !allowed(library.get("rules"))) continue;
+            List<String> exclude = new ArrayList<>();
+            for (Object e : Json.array(Json.object(library.getOrDefault("extract", Map.of())).getOrDefault("exclude", List.of()))) exclude.add(String.valueOf(e));
+            try (var zip = new ZipFile(install.resolve("libraries").resolve(natives[0]).toFile())) {
+                for (var entries = zip.entries(); entries.hasMoreElements(); ) {
+                    ZipEntry entry = entries.nextElement();
+                    if (entry.isDirectory() || exclude.stream().anyMatch(entry.getName()::startsWith)) continue;
+                    Path target = dir.resolve(entry.getName()).normalize();
+                    if (!target.startsWith(dir.normalize())) continue;
+                    Files.createDirectories(target.getParent());
+                    try (var in = zip.getInputStream(entry)) {
+                        Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+            }
+        }
+    }
+
     static Path gameJar(Path install, Map<String, Object> merged) {
         String id = Json.text(merged, "id", "");
         return install.resolve("versions").resolve(id).resolve(id + ".jar");
@@ -171,9 +217,14 @@ final class PackClient {
         // One version of a library: the loader's, as a launcher keeps it (two ASM builds on one module path stop the start).
         List<Object> libraries = new ArrayList<>();
         Set<String> seen = new HashSet<>();
+        // Only libraries for this system compete: old version files list LWJGL once for macOS and once for the rest, under
+        // one name, and keeping the first dropped LWJGL from every other system's launch (Fabric 1.18.2's client never drew).
         for (Object o : concat(Json.array(child.get("libraries")), Json.array(parent.get("libraries")))) {
+            if (!allowed(Json.object(o).get("rules"))) continue;
             String[] name = Json.text(Json.object(o), "name", "").split(":");
-            String key = name.length < 2 ? Json.text(Json.object(o), "name", "") : name[0] + ":" + name[1] + (name.length > 3 ? ":" + name[3] : "");
+            // An entry carrying native jars the old way shares its name with the class jar's entry; it is a library of its own.
+            String key = (name.length < 2 ? Json.text(Json.object(o), "name", "") : name[0] + ":" + name[1] + (name.length > 3 ? ":" + name[3] : ""))
+                + (Json.object(o).containsKey("natives") ? "#natives" : "");
             if (seen.add(key)) libraries.add(o);
         }
         out.put("libraries", libraries);
@@ -315,6 +366,8 @@ final class PackClient {
             game.add(0, mojang[1].toString());
         }
         options.add("-Dmmt.classpath=" + String.join(File.pathSeparator, game));
+        libraries(install, pack.minecraft());
+        natives(install, pack.minecraft(), Files.createDirectories(instance.resolve("natives")));
         List<String> command = command(install, assets(context.cache(), install, pack.minecraft()), pack.minecraft(), context.java().java(), instance, options);
         Path log = context.report().log("client");
         Files.createDirectories(log.getParent());
@@ -381,12 +434,23 @@ final class PackClient {
             snippet(session, "var game = net.minecraft.client.Minecraft.getInstance();\nshow(game, new net.minecraft.client.gui.screens.inventory.InventoryScreen(game.player));\nreturn true;");
             Game.request(session, Json.map("command", "ready", "requireScreen", true));
             reached.add("inventory");
-            Object tabs = snippet(session, String.join("\n",
-                "var game = net.minecraft.client.Minecraft.getInstance();",
-                "var screen = new net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen(game.player, game.player.connection.enabledFeatures(), true);",
-                "show(game, screen);",
-                "vars.put(\"tabs\", net.minecraft.world.item.CreativeModeTabs.allTabs());",
-                "return ((java.util.List<?>) vars.get(\"tabs\")).size();"));
+            Object tabs;
+            try {
+                tabs = snippet(session, String.join("\n",
+                    "var game = net.minecraft.client.Minecraft.getInstance();",
+                    "var screen = new net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen(game.player, game.player.connection.enabledFeatures(), true);",
+                    "show(game, screen);",
+                    "vars.put(\"tabs\", net.minecraft.world.item.CreativeModeTabs.allTabs());",
+                    "return ((java.util.List<?>) vars.get(\"tabs\")).size();"));
+            } catch (IOException before1193) {
+                if (!String.valueOf(before1193.getMessage()).contains("Snippet did not compile")) throw before1193;
+                // Before 1.19.3 the tabs were the array CreativeModeTab.TABS and the screen took only the player.
+                tabs = snippet(session, String.join("\n",
+                    "var game = net.minecraft.client.Minecraft.getInstance();",
+                    "show(game, new net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen(game.player));",
+                    "vars.put(\"tabs\", java.util.Arrays.asList(net.minecraft.world.item.CreativeModeTab.TABS));",
+                    "return ((java.util.List<?>) vars.get(\"tabs\")).size();"));
+            }
             Game.request(session, Json.map("command", "ready", "requireScreen", true));
             int count = Integer.parseInt(String.valueOf(tabs));
             for (int i = 0; i < count; i++) {

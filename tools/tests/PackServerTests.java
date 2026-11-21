@@ -52,6 +52,8 @@ public final class PackServerTests extends PackCheckFixtures {
             "assetIndex", Json.map("id", "18"),
             "libraries", List.of(
                 library("org.ow2.asm:asm:9.3", null),
+                library("org.lwjgl:lwjgl-glfw:3.2.1", List.of(Json.map("action", "allow", "os", Json.map("name", other)))),
+                library("org.lwjgl:lwjgl-glfw:3.2.2", List.of(Json.map("action", "allow"), Json.map("action", "disallow", "os", Json.map("name", other)))),
                 library("org.lwjgl:lwjgl:3.3.3", null),
                 library("org.lwjgl:lwjgl:3.3.3:natives-" + other, List.of(Json.map("action", "allow", "os", Json.map("name", other)))),
                 library("org.lwjgl:lwjgl:3.3.3:natives-" + PackClient.OS, List.of(Json.map("action", "allow", "os", Json.map("name", PackClient.OS))))
@@ -112,6 +114,8 @@ public final class PackServerTests extends PackCheckFixtures {
         List<String> gameJars = PackClient.gameJars(install);
         expect(gameJars.equals(List.of(patched.toString())), "the game's classes are found in the jar that holds them, not by its file name: " + gameJars);
         expect(classpath.contains("natives-" + PackClient.OS) && !classpath.contains("natives-" + other), "a library for another system is left out: " + classpath);
+        expect(classpath.contains("lwjgl-glfw-3.2.2.jar") && !classpath.contains("lwjgl-glfw-3.2.1.jar"),
+            "of one library listed for another system and for this one, this system's is on the class path (old version files list LWJGL so): " + classpath);
         expect(!command.contains("-XstartOnFirstThread") && !command.contains("--demo"), "an argument for another system or a launcher feature is left out: " + command);
         int main = command.indexOf("loader.Boot");
         expect(main > command.indexOf("-Xmx1G") && main > command.indexOf("-cp") && main < command.indexOf("--launchTarget"), "options, then the loader's main class, then the game's arguments: " + command);

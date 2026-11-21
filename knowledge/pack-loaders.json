@@ -42,7 +42,7 @@
       "metadata": [{ "file": "META-INF/mods.toml" }],
       "builtIn": ["forge", "javafml", "lowcodefml", "mixin"],
       "failed": ["Mod Loading has failed", "Failed to complete lifecycle event"],
-      "modNamed": ["Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)", "Mod ([a-z0-9_.\\-]+) requires ", "Attempted to load class (?<class>[\\w/$.]+) for invalid dist"],
+      "modNamed": ["Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)", "Mod ([a-z0-9_.\\-]+) requires ", "Attempted to load class (?<class>[\\w/$.]+) for invalid dist", "Receiver class (?<class>[\\w.$]+) does not define or inherit an implementation"],
       "clientOnly": ["for invalid dist DEDICATED_SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client."]
     },
     "neoforge": {
@@ -74,6 +74,7 @@
       "builtIn": ["neoforge", "forge", "javafml", "lowcodefml", "mixin"],
       "failed": ["Mod Loading has failed", "Failed to complete lifecycle event", "Loading errors encountered", "ModLoadingException"],
       "modNamed": [
+        "Receiver class (?<class>[\\w.$]+) does not define or inherit an implementation",
         "Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)",
         "Mod ([a-z0-9_.\\-]+) requires ",
         "Mod ([a-z0-9_.\\-]+) is incompatible with ",
@@ -102,6 +103,7 @@
       "builtIn": ["fabricloader", "fabric-loader"],
       "failed": ["Incompatible mods found!", "Mod resolution failed", "Could not execute entrypoint stage", "A critical error occurred", "Mixin transformation of", "Failed to start Minecraft"],
       "modNamed": [
+        "Receiver class (?<class>[\\w.$]+) does not define or inherit an implementation",
         "provided by '([a-z0-9_\\-]+)'",
         "Mixin apply for mod ([a-z0-9_\\-]+) failed",
         "Mod '[^']*' \\(([a-z0-9_\\-]+)\\)",
@@ -122,6 +124,7 @@
       "builtIn": ["quilt_loader", "fabricloader", "fabric-loader", "quilt_base"],
       "failed": ["Incompatible mods found!", "Mod resolution failed", "Could not execute entrypoint stage", "A critical error occurred", "Mixin transformation of", "Failed to start Minecraft", "Quilt Loader: crash"],
       "modNamed": [
+        "Receiver class (?<class>[\\w.$]+) does not define or inherit an implementation",
         "provided by '([a-z0-9_\\-]+)'",
         "Mixin apply for mod ([a-z0-9_\\-]+) failed",
         "Mod '[^']*' \\(([a-z0-9_\\-]+)\\)",
