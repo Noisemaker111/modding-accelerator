@@ -2,21 +2,21 @@
  "date": "2026-11-21",
  "total": {
   "mods": 9423,
-  "link": 6056,
+  "link": 6082,
   "big": {
    "updates": 35,
    "mods": 5149,
-   "link": 1936
+   "link": 1943
   },
   "small": {
    "updates": 29,
    "mods": 4274,
-   "link": 4120
+   "link": 4139
   },
   "jumps": {
    "jumps": 23,
    "mods": 3384,
-   "link": 1191
+   "link": 1199
   },
   "newest": {
    "jumps": 2,
@@ -25,24 +25,24 @@
   },
   "data": {
    "updates": 64,
-   "link": 6056,
-   "linkAndData": 6038
+   "link": 6082,
+   "linkAndData": 6064
   },
   "loader": {
-   "uses": 4815,
-   "modsHeldOnlyByLoader": 131
+   "uses": 4777,
+   "modsHeldOnlyByLoader": 109
   }
  },
  "loaders": {
   "fabric": {
    "updates": 43,
    "mods": 6324,
-   "link": 4229
+   "link": 4236
   },
   "neoforge": {
    "updates": 21,
    "mods": 3099,
-   "link": 1827
+   "link": 1846
   }
  },
  "missing": [],
@@ -52,9 +52,9 @@
    "from": "1.14.4",
    "to": "1.15",
    "modsRead": 147,
-   "modsThatLink": 84,
-   "modsThatLinkAndData": 84,
-   "brokenUses": 768,
+   "modsThatLink": 88,
+   "modsThatLinkAndData": 88,
+   "brokenUses": 672,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -90,7 +90,7 @@
    "modsRead": 147,
    "modsThatLink": 62,
    "modsThatLinkAndData": 62,
-   "brokenUses": 1253,
+   "brokenUses": 1251,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -210,7 +210,7 @@
    "modsRead": 147,
    "modsThatLink": 112,
    "modsThatLinkAndData": 112,
-   "brokenUses": 379,
+   "brokenUses": 378,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -342,7 +342,7 @@
    "modsRead": 147,
    "modsThatLink": 27,
    "modsThatLinkAndData": 26,
-   "brokenUses": 1755,
+   "brokenUses": 1753,
    "loaderUses": 409,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -390,7 +390,7 @@
    "modsRead": 147,
    "modsThatLink": 38,
    "modsThatLinkAndData": 37,
-   "brokenUses": 2233,
+   "brokenUses": 2229,
    "loaderUses": 97,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -426,7 +426,7 @@
    "modsRead": 147,
    "modsThatLink": 32,
    "modsThatLinkAndData": 32,
-   "brokenUses": 2201,
+   "brokenUses": 2140,
    "loaderUses": 76,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -474,7 +474,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1474,
+   "brokenUses": 1473,
    "loaderUses": 109,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -498,7 +498,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1124,
+   "brokenUses": 1122,
    "loaderUses": 27,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -508,11 +508,11 @@
    "from": "1.21.11",
    "to": "26.1",
    "modsRead": 147,
-   "modsThatLink": 36,
-   "modsThatLinkAndData": 35,
-   "brokenUses": 1865,
-   "loaderUses": 564,
-   "modsHeldOnlyByLoader": 9,
+   "modsThatLink": 39,
+   "modsThatLinkAndData": 38,
+   "brokenUses": 1839,
+   "loaderUses": 548,
+   "modsHeldOnlyByLoader": 6,
    "big": true
   },
   {
@@ -558,7 +558,7 @@
    "modsRead": 147,
    "modsThatLink": 46,
    "modsThatLinkAndData": 43,
-   "brokenUses": 2123,
+   "brokenUses": 2122,
    "loaderUses": 57,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -594,7 +594,7 @@
    "modsRead": 148,
    "modsThatLink": 19,
    "modsThatLinkAndData": 18,
-   "brokenUses": 2700,
+   "brokenUses": 2699,
    "loaderUses": 1214,
    "modsHeldOnlyByLoader": 13,
    "big": true
@@ -642,7 +642,7 @@
    "modsRead": 147,
    "modsThatLink": 42,
    "modsThatLinkAndData": 41,
-   "brokenUses": 3251,
+   "brokenUses": 3244,
    "loaderUses": 239,
    "modsHeldOnlyByLoader": 2,
    "big": true
@@ -666,8 +666,8 @@
    "modsRead": 147,
    "modsThatLink": 80,
    "modsThatLinkAndData": 80,
-   "brokenUses": 582,
-   "loaderUses": 139,
+   "brokenUses": 581,
+   "loaderUses": 138,
    "modsHeldOnlyByLoader": 4,
    "big": true
   },
@@ -678,7 +678,7 @@
    "modsRead": 147,
    "modsThatLink": 36,
    "modsThatLinkAndData": 36,
-   "brokenUses": 2317,
+   "brokenUses": 2249,
    "loaderUses": 142,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -700,11 +700,11 @@
    "from": "1.21.6",
    "to": "1.21.7",
    "modsRead": 148,
-   "modsThatLink": 122,
-   "modsThatLinkAndData": 122,
-   "brokenUses": 32,
-   "loaderUses": 23,
-   "modsHeldOnlyByLoader": 20,
+   "modsThatLink": 141,
+   "modsThatLinkAndData": 141,
+   "brokenUses": 11,
+   "loaderUses": 2,
+   "modsHeldOnlyByLoader": 1,
    "big": false
   },
   {
@@ -726,7 +726,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1351,
+   "brokenUses": 1350,
    "loaderUses": 95,
    "modsHeldOnlyByLoader": 3,
    "big": true
@@ -750,7 +750,7 @@
    "modsRead": 148,
    "modsThatLink": 50,
    "modsThatLinkAndData": 50,
-   "brokenUses": 1164,
+   "brokenUses": 1162,
    "loaderUses": 40,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -762,7 +762,7 @@
    "modsRead": 147,
    "modsThatLink": 48,
    "modsThatLinkAndData": 47,
-   "brokenUses": 1325,
+   "brokenUses": 1313,
    "loaderUses": 141,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -810,7 +810,7 @@
    "modsRead": 147,
    "modsThatLink": 46,
    "modsThatLinkAndData": 43,
-   "brokenUses": 2190,
+   "brokenUses": 2189,
    "loaderUses": 146,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -822,9 +822,9 @@
    "from": "1.14.4",
    "to": "1.15.2",
    "modsRead": 147,
-   "modsThatLink": 84,
-   "modsThatLinkAndData": 84,
-   "brokenUses": 771,
+   "modsThatLink": 89,
+   "modsThatLinkAndData": 89,
+   "brokenUses": 675,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 3
@@ -836,7 +836,7 @@
    "modsRead": 147,
    "modsThatLink": 62,
    "modsThatLinkAndData": 62,
-   "brokenUses": 1241,
+   "brokenUses": 1239,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 2
@@ -920,7 +920,7 @@
    "modsRead": 147,
    "modsThatLink": 27,
    "modsThatLinkAndData": 26,
-   "brokenUses": 1761,
+   "brokenUses": 1759,
    "loaderUses": 415,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -944,7 +944,7 @@
    "modsRead": 147,
    "modsThatLink": 38,
    "modsThatLinkAndData": 37,
-   "brokenUses": 2217,
+   "brokenUses": 2213,
    "loaderUses": 83,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -968,7 +968,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1474,
+   "brokenUses": 1473,
    "loaderUses": 109,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -978,11 +978,11 @@
    "from": "1.21.11",
    "to": "26.1.2",
    "modsRead": 147,
-   "modsThatLink": 36,
-   "modsThatLinkAndData": 35,
-   "brokenUses": 1864,
-   "loaderUses": 564,
-   "modsHeldOnlyByLoader": 9,
+   "modsThatLink": 39,
+   "modsThatLinkAndData": 38,
+   "brokenUses": 1838,
+   "loaderUses": 548,
+   "modsHeldOnlyByLoader": 6,
    "updatesCrossed": 3
   },
   {
@@ -992,8 +992,8 @@
    "modsRead": 147,
    "modsThatLink": 5,
    "modsThatLinkAndData": 3,
-   "brokenUses": 15737,
-   "loaderUses": 1620,
+   "brokenUses": 15678,
+   "loaderUses": 1599,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 22
   },
@@ -1016,7 +1016,7 @@
    "modsRead": 148,
    "modsThatLink": 17,
    "modsThatLinkAndData": 16,
-   "brokenUses": 2810,
+   "brokenUses": 2808,
    "loaderUses": 1324,
    "modsHeldOnlyByLoader": 15,
    "updatesCrossed": 2
@@ -1040,7 +1040,7 @@
    "modsRead": 147,
    "modsThatLink": 43,
    "modsThatLinkAndData": 42,
-   "brokenUses": 3256,
+   "brokenUses": 3249,
    "loaderUses": 244,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -1052,8 +1052,8 @@
    "modsRead": 147,
    "modsThatLink": 48,
    "modsThatLinkAndData": 48,
-   "brokenUses": 1279,
-   "loaderUses": 115,
+   "brokenUses": 1255,
+   "loaderUses": 91,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 3
   },
@@ -1064,7 +1064,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1373,
+   "brokenUses": 1372,
    "loaderUses": 116,
    "modsHeldOnlyByLoader": 3,
    "updatesCrossed": 2
@@ -1076,7 +1076,7 @@
    "modsRead": 147,
    "modsThatLink": 47,
    "modsThatLinkAndData": 46,
-   "brokenUses": 1344,
+   "brokenUses": 1332,
    "loaderUses": 160,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 3
@@ -1088,8 +1088,8 @@
    "modsRead": 147,
    "modsThatLink": 12,
    "modsThatLinkAndData": 11,
-   "brokenUses": 17639,
-   "loaderUses": 2174,
+   "brokenUses": 17481,
+   "loaderUses": 2142,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 15
   }
@@ -1097,9 +1097,9 @@
  "types": [
   {
    "type": "call, game: linked",
-   "finishes": 182,
+   "finishes": 184,
    "mods": 1943,
-   "references": 2844,
+   "references": 2838,
    "updates": 42,
    "examples": [
     "fabric 1.16.5 -> 1.17: call: com.mojang.blaze3d.vertex.BufferBuilder.begin(ILcom/mojang/blaze3d/vertex/VertexFormat;)V",
@@ -1110,20 +1110,20 @@
   },
   {
    "type": "call, game: split",
-   "finishes": 72,
-   "mods": 1514,
-   "references": 1014,
+   "finishes": 70,
+   "mods": 1502,
+   "references": 1002,
    "updates": 39,
    "examples": [
     "neoforge 1.21.3 -> 1.21.4: call: net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent.registerReloadListener(Lnet/minecraft/server/packs/resources/PreparableReloadListener;)V",
     "neoforge 26.2 -> 26.3: call: net.minecraft.util.Util$OS.openUri(Ljava/lang/String;)V",
-    "fabric 1.14.4 -> 1.15: call: com.mojang.blaze3d.vertex.BufferBuilder.uv(DD)Lcom/mojang/blaze3d/vertex/BufferBuilder;",
-    "fabric 1.19.3 -> 1.19.4: call: net.minecraft.client.resources.language.LanguageInfo.getCode()Ljava/lang/String;"
+    "fabric 1.19.3 -> 1.19.4: call: net.minecraft.client.resources.language.LanguageInfo.getCode()Ljava/lang/String;",
+    "fabric 1.21.3 -> 1.21.4: call: net.minecraft.client.gui.components.AbstractSelectionList.setRenderHeader(ZI)V"
    ]
   },
   {
    "type": "field, game: linked",
-   "finishes": 54,
+   "finishes": 55,
    "mods": 591,
    "references": 1029,
    "updates": 53,
@@ -1148,23 +1148,10 @@
    ]
   },
   {
-   "type": "call, game: unused",
-   "finishes": 46,
-   "mods": 957,
-   "references": 1072,
-   "updates": 41,
-   "examples": [
-    "neoforge 1.21.6 -> 1.21.7: call: net.neoforged.neoforge.network.PacketDistributor.sendToServer(Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload;[Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload;)V",
-    "fabric 1.21.11 -> 26.1: call: net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(Lnet/minecraft/client/KeyMapping;)Lnet/minecraft/client/KeyMapping;",
-    "neoforge 1.20.6 -> 1.21: call: net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext.get()Lnet/neoforged/fml/javafmlmod/FMLJavaModLoadingContext;",
-    "fabric 1.21.10 -> 1.21.11: call: net.minecraft.commands.CommandSourceStack.hasPermission(I)Z"
-   ]
-  },
-  {
    "type": "call, game: redesigned",
-   "finishes": 44,
-   "mods": 1480,
-   "references": 2423,
+   "finishes": 45,
+   "mods": 1472,
+   "references": 2398,
    "updates": 40,
    "examples": [
     "fabric 26.2 -> 26.3: call: net.minecraft.client.renderer.feature.FeatureRenderDispatcher.renderAllFeatures(Lnet/minecraft/client/renderer/SubmitNodeStorage;)V",
@@ -1189,27 +1176,40 @@
   {
    "type": "call, game: replaced",
    "finishes": 32,
-   "mods": 1020,
-   "references": 713,
+   "mods": 1012,
+   "references": 712,
    "updates": 38,
    "examples": [
     "fabric 1.21.4 -> 1.21.5: call: net.minecraft.network.chat.ClickEvent.<init>(Lnet/minecraft/network/chat/ClickEvent$Action;Ljava/lang/String;)V",
-    "fabric 1.14.4 -> 1.15: call: com.mojang.blaze3d.platform.GlStateManager.translated(DDD)V",
     "fabric 1.19.3 -> 1.19.4: call: net.minecraft.client.renderer.entity.ItemRenderer.renderGuiItem(Lnet/minecraft/world/item/ItemStack;II)V",
-    "fabric 1.20.6 -> 1.21: call: net.minecraft.world.item.DyeColor.getTextureDiffuseColors()[F"
+    "fabric 1.20.6 -> 1.21: call: net.minecraft.world.item.DyeColor.getTextureDiffuseColors()[F",
+    "fabric 1.21.1 -> 1.21.2: call: net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener.<init>(Lcom/google/gson/Gson;Ljava/lang/String;)V"
    ]
   },
   {
    "type": "call, game: template",
    "finishes": 31,
-   "mods": 1112,
-   "references": 417,
+   "mods": 1099,
+   "references": 414,
    "updates": 35,
    "examples": [
     "neoforge 1.21.10 -> 1.21.11: call: net.minecraft.commands.CommandSourceStack.hasPermission(I)Z",
     "fabric 1.17.1 -> 1.18: call: net.minecraft.world.level.TickList.scheduleTick(Lnet/minecraft/core/BlockPos;Ljava/lang/Object;I)V",
     "fabric 1.19.3 -> 1.19.4: call: net.minecraft.client.gui.GuiComponent.setBlitOffset(I)V",
     "fabric 1.19.4 -> 1.20: call: net.minecraft.client.gui.GuiComponent.fill(Lcom/mojang/blaze3d/vertex/PoseStack;IIIII)V"
+   ]
+  },
+  {
+   "type": "call, game: unused",
+   "finishes": 24,
+   "mods": 923,
+   "references": 1060,
+   "updates": 40,
+   "examples": [
+    "neoforge 1.20.6 -> 1.21: call: net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext.get()Lnet/neoforged/fml/javafmlmod/FMLJavaModLoadingContext;",
+    "fabric 1.21.10 -> 1.21.11: call: net.minecraft.commands.CommandSourceStack.hasPermission(I)Z",
+    "fabric 1.21.11 -> 26.1: call: net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(Lnet/minecraft/client/KeyMapping;)Lnet/minecraft/client/KeyMapping;",
+    "neoforge 1.21.1 -> 1.21.2: call: net.minecraft.client.multiplayer.ClientLevel.getRecipeManager()Lnet/minecraft/world/item/crafting/RecipeManager;"
    ]
   },
   {
@@ -1227,15 +1227,15 @@
   },
   {
    "type": "mixin target gone, game: redesigned",
-   "finishes": 19,
+   "finishes": 20,
    "mods": 552,
    "references": 1015,
    "updates": 37,
    "examples": [
     "fabric 26.1.2 -> 26.2: mixin target gone: net.minecraft.client.renderer.LevelRenderer.renderLevel(Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/renderer/state/level/CameraRenderState;Lorg/joml/Matrix4fc;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;ZLnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;)V",
     "neoforge 26.1.2 -> 26.2: mixin target gone: net.minecraft.client.renderer.LevelRenderer.renderLevel(Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/renderer/state/level/CameraRenderState;Lorg/joml/Matrix4fc;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;ZLnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;)V",
-    "fabric 1.20.4 -> 1.20.5: mixin target gone: net.minecraft.client.gui.Gui.renderHotbar(FLnet/minecraft/client/gui/GuiGraphics;)V",
-    "fabric 1.14.4 -> 1.15: mixin target gone: net.minecraft.client.Minecraft.init()V"
+    "fabric 1.14.4 -> 1.15: mixin target gone: net.minecraft.client.Minecraft.init()V",
+    "fabric 1.20.4 -> 1.20.5: mixin target gone: net.minecraft.client.gui.Gui.renderHotbar(FLnet/minecraft/client/gui/GuiGraphics;)V"
    ]
   },
   {
@@ -1928,7 +1928,7 @@
    "type": "call, game: not read",
    "finishes": 0,
    "mods": 26,
-   "references": 17,
+   "references": 16,
    "updates": 10,
    "examples": [
     "fabric 1.15.2 -> 1.16: call: net.minecraft.network.chat.Component.withStyle+withStyle+late(Lnet/minecraft/network/chat/Component;Lnet/minecraft/ChatFormatting;Lnet/minecraft/ChatFormatting;)Lnet/minecraft/network/chat/Component;",
@@ -3177,16 +3177,6 @@
    "part": "loader"
   },
   {
-   "loader": "neoforge",
-   "update": "1.21.4 -> 1.21.5",
-   "member": "call: com.mojang.blaze3d.systems.RenderSystem.enableDepthTest()V",
-   "mods": 40,
-   "game": "redesigned",
-   "gameDetail": "3 uses, 1 in methods b kept, none line up",
-   "portable": true,
-   "part": "game"
-  },
-  {
    "loader": "fabric",
    "update": "1.15.2 -> 1.16",
    "member": "call: net.minecraft.client.gui.components.Button.<init>(IIIILjava/lang/String;Lnet/minecraft/client/gui/components/Button$OnPress;)V",
@@ -3299,16 +3289,6 @@
    "mods": 34,
    "game": "template",
    "gameDetail": "m net.minecraft.client.gui.GuiGraphics.fill(Lnet.minecraft.client.renderer.RenderType;IIIII)V at 6 of 10 rewritten uses (102 uses)",
-   "portable": true,
-   "part": "game"
-  },
-  {
-   "loader": "fabric",
-   "update": "1.21.4 -> 1.21.5",
-   "member": "call: com.mojang.blaze3d.systems.RenderSystem.enableDepthTest()V",
-   "mods": 34,
-   "game": "redesigned",
-   "gameDetail": "1 uses, 1 in methods b kept, none line up",
    "portable": true,
    "part": "game"
   },
@@ -3689,6 +3669,26 @@
    "gameDetail": "the game never uses it",
    "portable": false,
    "part": "loader"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.20.4 -> 1.20.5",
+   "member": "call: net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/network/FriendlyByteBuf;)V",
+   "mods": 27,
+   "game": "redesigned",
+   "gameDetail": "1 uses, 1 in methods b kept, none line up",
+   "portable": false,
+   "part": "loader"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.4 -> 1.21.5",
+   "member": "call: com.mojang.blaze3d.systems.RenderSystem.setShader(Lnet/minecraft/client/renderer/ShaderProgram;)Lnet/minecraft/client/renderer/CompiledShaderProgram;",
+   "mods": 27,
+   "game": "redesigned",
+   "gameDetail": "4 uses, 2 in methods b kept, none line up",
+   "portable": false,
+   "part": "game"
   }
  ]
 }

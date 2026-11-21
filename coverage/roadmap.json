@@ -863,6 +863,25 @@
       "port.jar-links.big-updates"
      ],
      "result": "2026-11-21 (on #150): newest 16 -> 17 (NeoForge jump 11 -> 12); every update 6,051 -> 6,056, big updates 1,931 -> 1,936 (1.21.10 -> 1.21.11 Fabric 37 -> 40, NeoForge 48 -> 50), none lower. Mods with these calls unlinked: NeoForge 1.21.10 -> 1.21.11 8 -> 3, the NeoForge jump 13 -> 6. Real games: NeoForge 1.21.11 server 26 of 29 linked mods load, both newly linked (Mouse Tweaks, ShulkerBoxTooltip) among them; pack-check's client does not run 1.21.11 yet. On 26.3 the newly linked Mouse Tweaks loads on the server and fails in the client before its builder code runs: it reads Minecraft.getInstance() while being constructed, and 26.3 makes the Minecraft instance later. call, game: template does not fall to this (one call into a chain is the other direction)."
+    },
+    {
+     "id": "72",
+     "title": "Calls to a method no game code used: the type, handled",
+     "part": "Port by type of break",
+     "status": "done",
+     "done": "2026-11-21",
+     "text": "The type `call, game: unused` is a game or loader method the new release dropped with no caller in the game or loader to line up. Where the game's and loader's own files still say where it went, the call is retargeted with the same arguments and result: a static method that exactly one class of the same project (its first two package names) gained under the same name and signature (NeoForge 1.21.7 moved PacketDistributor.sendToServer to ClientPacketDistributor; Fabric API 26.1 moved its key-binding and item-group helpers), or the one method the old method's whole body forwarded to, on the same receiver (ServerPlayer.displayClientMessage). Two candidates are no answer; the rest is reported.",
+     "start": "2026-11-21",
+     "target": "2026-11-22",
+     "finish": "the type's finishes and mods counts fall across every update, port.jar-links.newest and big-updates no lower, and a real server and client where it frees the most",
+     "wrongIf": "a mod this frees fails in a real game",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates",
+      "port.jar-links.newest"
+     ],
+     "result": "Type finishes 46 -> 24 and appears in 957 -> 923 mod ports. Every update 6,056 -> 6,082 of 9,423, big updates 1,936 -> 1,943, newest 17 -> 17, no update lower; NeoForge 1.21.6 -> 1.21.7 122 -> 141. Real NeoForge 1.21.7: Traveler's Backpack (18 calls moved), Carry On, Nature's Compass and Gravestone, ported with mmt port --jar, pass on a server (world, 1,025 block items placed, reopened) and in the client (title, world, inventory, 15 creative tabs).",
+     "next": "FMLJavaModLoadingContext.get() (NeoForge 1.21) and renamed-and-moved helpers (Fabric API's KeyBindingHelper.registerKeyBinding -> KeyMappingHelper.registerKeyMapping) have no same-named or forwarding answer in the files; the full 1.21.7 load stops on a server start that names no mod."
     }
    ]
   },
