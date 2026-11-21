@@ -2694,8 +2694,9 @@ public final class JarPort {
 
     /**
      * A mixin selector naming one of the game's lambdas (lambda$charTyped$7), which javac numbers anew in each release
-     * and the snapshot leaves out: read from the game's own classes. The same lambda (its code reads alike) under the
-     * same name is kept; under another number, followed; gone, reported. Null when the game's code cannot be read.
+     * and the snapshot leaves out: read from the game's own classes. A name and descriptor the new class still has are
+     * kept, as Mixin finds them; one it lacks follows the one new lambda whose code reads alike, or is reported gone.
+     * Null when the game's code cannot be read.
      */
     Found lambdaTarget(List<String> owners, boolean named, String name, String mdesc, String text) {
         GameCode oldCode = code(a), newCode = code(b);
@@ -2714,8 +2715,8 @@ public final class JarPort {
                     continue;
                 }
                 String d = k.substring(name.length());
-                if (e.getValue().equals(now.get(k))) {
-                    return new Found(text, null, null, 'm', cls(o), name, d, null);
+                if (now.containsKey(k)) {
+                    return new Found(text, null, null, 'm', cls(o), name, d, null); // Mixin finds it by name and descriptor
                 }
                 List<String> same = now.entrySet().stream().filter(n -> n.getKey().startsWith("lambda$") && n.getKey().endsWith(d)
                     && n.getKey().indexOf('(') == n.getKey().length() - d.length() && n.getValue().equals(e.getValue())).map(Map.Entry::getKey).toList();
@@ -3637,7 +3638,9 @@ public final class JarPort {
             String[][] out = found == NONE ? new String[was.length][] : found.clone();
             boolean any = found != NONE;
             for (int i = 0; i < was.length; i++) {
-                if (paired[i] >= 0 || out[i] != null || was[i].getSort() < Type.ARRAY) {
+                // A primitive too: 1.21's float tick delta is deltaTracker.getGameTimeDeltaPartialTick(false) wherever the game
+                // reads it from the DeltaTracker that took its place.
+                if (paired[i] >= 0 || out[i] != null || was[i].getSort() == Type.VOID) {
                     continue;
                 }
                 String wanted = desc(was[i].getDescriptor());
