@@ -772,7 +772,8 @@
       "port.jar-links.every-update",
       "port.jar-links.big-updates",
       "port.jar-links.newest"
-     ]
+     ],
+     "result": "2026-11-21: call, game: linked over every update finishes 186 -> 177 and is in 1,984 -> 1,960 mods (2,965 -> 2,877 references). Every update 5,884 -> 5,893 of 9,423, none lower; big updates 1,896 -> 1,904; newest jump 15 -> 15; jumps 1,167 -> 1,173. NeoForge 1.21.1 -> 1.21.2 40 -> 42 (the Biome family takes the old sea level, 63): on a real 1.21.2 server 22 of 25 linked mods load (main 21 of 24), in the client 23 of 23; Coroutil, newly linked, loads in both. Not handled: parameters whose value the old body never had (CycleButton.builder's initial value, 1.21.9's permission levels), redesigned types (TicksToSave -> PackedTicks, String -> ResourceKey), and methods an override may change."
     }
    ]
   },
