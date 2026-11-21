@@ -318,8 +318,6 @@ public final class JarPort {
 
     public static void main(String[] args) throws Exception {
         String from = null, to = null, map = null, out = null, loader = null, report = null, book = null;
-        Set<String> platformIds = Set.of();
-        Map<String, String> aliases = new HashMap<>();
         boolean runtime = false;
         List<Path> jars = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
@@ -332,12 +330,6 @@ public final class JarPort {
                 case "--loader" -> loader = args[++i];
                 case "--report" -> report = args[++i];
                 case "--fixes" -> book = args[++i];
-                case "--platform" -> platformIds = Set.copyOf(Arrays.asList(args[++i].split(",")));
-                case "--platform-aliases" -> {
-                    for (String pair : args[++i].split(",")) {
-                        aliases.put(pair.substring(0, pair.indexOf('=')), pair.substring(pair.indexOf('=') + 1));
-                    }
-                }
                 case "--cache" -> VersionMap.cache = Path.of(args[++i]).toAbsolutePath();
                 default -> jars.add(Path.of(args[i]));
             }
@@ -351,8 +343,9 @@ public final class JarPort {
             port.loader = loader;
         }
         port.runtimeNames = runtime;
-        port.platformIds = platformIds;
-        port.platformAliases = aliases;
+        if ("fabric".equals(loader)) {
+            port.platform(Exposure.fabricApi(from), Exposure.fabricApi(to));
+        }
         if (book != null) {
             port.fixes(Path.of(book));
         }
@@ -484,6 +477,52 @@ public final class JarPort {
 
     Set<String> platformIds = Set.of(); // mod ids the platform the port is for provides (Fabric API's modules), --platform
     Map<String, String> platformAliases = Map.of(); // an old platform's other name for a module -> the module's id, --platform-aliases
+
+    /**
+     * What the old and new releases' platforms (Fabric API) answer to: every id of the new one's modules, and the names the
+     * old one answered to only as another ("provides") that the new one dropped, each to the module that gave it.
+     */
+    void platform(Path was, Path now) throws IOException {
+        if (now == null) {
+            return;
+        }
+        Map<String, String> has = provided(Files.readAllBytes(now)), had = was == null ? Map.of() : provided(Files.readAllBytes(was));
+        platformIds = Set.copyOf(has.keySet());
+        Map<String, String> aliases = new HashMap<>();
+        had.forEach((alias, owner) -> {
+            if (!alias.equals(owner) && !has.containsKey(alias) && has.containsKey(owner)) {
+                aliases.put(alias, owner);
+            }
+        });
+        platformAliases = aliases;
+    }
+
+    /** Every id a jar and the jars nested in it answer to (its own and what it provides), each with the module that answers. */
+    static Map<String, String> provided(byte[] jar) throws IOException {
+        Map<String, String> out = new HashMap<>();
+        try (ZipInputStream z = new ZipInputStream(new ByteArrayInputStream(jar))) {
+            for (ZipEntry e; (e = z.getNextEntry()) != null; ) {
+                String n = e.getName();
+                if (n.equals("fabric.mod.json")) {
+                    Map<String, Object> meta;
+                    try {
+                        meta = Json.object(Json.parse(new String(z.readAllBytes(), StandardCharsets.UTF_8)));
+                    } catch (RuntimeException unreadable) {
+                        continue;
+                    }
+                    if (meta.get("id") instanceof String id) {
+                        out.putIfAbsent(id, id);
+                        for (Object alias : meta.get("provides") instanceof List<?> l ? l : List.of()) {
+                            out.putIfAbsent(String.valueOf(alias), id);
+                        }
+                    }
+                } else if (n.startsWith("META-INF/jars/") && n.endsWith(".jar")) {
+                    provided(z.readAllBytes()).forEach(out::putIfAbsent);
+                }
+            }
+        }
+        return out;
+    }
 
     /** The mod id of a nested jar when the platform provides it, else null. */
     String platformModule(byte[] jar) {
@@ -4599,6 +4638,16 @@ public final class JarPort {
             });
         }
 
+        /** A value still on the stack where a jump leaves goes to its target too, whose frame names its old type. */
+        void carried() {
+            for (Object v : stack == null ? List.of() : stack) {
+                Read r = marks.get(v);
+                if (r != null) {
+                    r.bad = true;
+                }
+            }
+        }
+
         static Map<Object, String[]> said(Object v, String... use) {
             Map<Object, String[]> out = new IdentityHashMap<>();
             if (v != null) {
@@ -4664,6 +4713,7 @@ public final class JarPort {
         public void visitJumpInsn(int opcode, Label label) {
             Map<Object, String[]> said = opcode == Opcodes.IFNULL || opcode == Opcodes.IFNONNULL ? said(at(0), "N") : Map.of();
             step(said, () -> super.visitJumpInsn(opcode, label));
+            carried();
         }
 
         @Override
@@ -4694,11 +4744,13 @@ public final class JarPort {
         @Override
         public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
             step(Map.of(), () -> super.visitTableSwitchInsn(min, max, dflt, labels));
+            carried();
         }
 
         @Override
         public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
             step(Map.of(), () -> super.visitLookupSwitchInsn(dflt, keys, labels));
+            carried();
         }
 
         @Override
@@ -5389,8 +5441,7 @@ public final class JarPort {
                 mod.change("field read as its new type");
                 return true;
             }
-            GameDiff.Cls holder = b.classes.get(type.getInternalName());
-            boolean itf = holder != null && (holder.flags & Opcodes.ACC_INTERFACE) != 0;
+            boolean itf = isInterface(mod, type.getInternalName());
             String held = inverse.getOrDefault(type.getInternalName(), type.getInternalName());
             super.visitMethodInsn(itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, held, steps[0].substring(0, steps[0].indexOf('(')),
                 oldDesc(steps[0].substring(steps[0].indexOf('('))), itf);
@@ -5489,8 +5540,17 @@ public final class JarPort {
             if (m == null || m.isStatic() || (m.flags & Opcodes.ACC_PUBLIC) == 0 || !Type.getReturnType(moved[2]).equals(Type.getReturnType(desc(desc)))) {
                 return null;
             }
-            GameDiff.Cls self = b.classes.get(type);
-            boolean itf = self != null && (self.flags & Opcodes.ACC_INTERFACE) != 0;
+            // The arguments on the stack are the old call's: each must still fit (the receiver alone changes here).
+            Type[] before = Type.getArgumentTypes(desc(desc)), after = Type.getArgumentTypes(moved[2]);
+            if (before.length != after.length) {
+                return null;
+            }
+            for (int k = 0; k < before.length; k++) {
+                if (!usable(before[k], after[k])) {
+                    return null;
+                }
+            }
+            boolean itf = isInterface(mod, type);
             return new String[] { String.valueOf(itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL), inverse.getOrDefault(type, type), moved[1], oldDesc(moved[2]) };
         }
 

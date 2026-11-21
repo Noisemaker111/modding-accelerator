@@ -395,13 +395,6 @@ def jar_port(loader, frm, to, jars, out_dir, report, runtime=False):
     out_dir.mkdir(parents=True, exist_ok=True)
     args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
             "--loader", loader] + (["--runtime-names"] if runtime else [])
-    # Fabric Loader runs the newest copy of each mod id, so a Fabric API module a mod nests is the platform's there.
-    platform = sorted(i for i in platform_ids(loader, to) if i)
-    if platform:
-        args += ["--platform", ",".join(platform)]
-    aliases = platform_aliases(loader, frm, to)
-    if aliases:
-        args += ["--platform-aliases", ",".join(f"{k}={v}" for k, v in sorted(aliases.items()))]
     rows = side_by_side(args, jars, report)
     counts = {}
     for m in rows:
@@ -526,36 +519,6 @@ def platform_ids(loader, to):
         return set()
     api = fabric_api(to)
     return set(nested_ids(api.read_bytes())) if api else set()
-
-
-def platform_aliases(loader, frm, to):
-    """Ids the old release's platform answered to only as another name ("provides") and the new one does not, each with the
-    id of the module that gave it, which the new platform still has (Fabric API stopped providing "fabric" in 26.3): a mod
-    asking for the old name asks for that module."""
-    if loader != "fabric":
-        return {}
-    old, new = fabric_api(frm), fabric_api(to)
-    if not old or not new:
-        return {}
-    had, has = provided(old.read_bytes()), provided(new.read_bytes())
-    return {alias: owner for alias, owner in had.items() if alias != owner and alias not in has and owner in has}
-
-
-def provided(data):
-    """Every id a jar and the jars nested in it answer to (its own and what it provides), each with the id of the module that answers."""
-    import io
-    import zipfile
-    out = {}
-    with zipfile.ZipFile(io.BytesIO(data)) as z:
-        for entry in z.namelist():
-            if entry == "fabric.mod.json":
-                meta = json.loads(z.read(entry).decode("utf-8", "replace"), strict=False)
-                for i in [meta.get("id")] + list(meta.get("provides") or []):
-                    out.setdefault(i, meta.get("id"))
-            elif entry.startswith("META-INF/jars/") and entry.endswith(".jar"):
-                for i, owner in provided(z.read(entry)).items():
-                    out.setdefault(i, owner)
-    return out
 
 
 def nested_ids(data):

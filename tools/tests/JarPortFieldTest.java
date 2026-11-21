@@ -30,13 +30,20 @@ final class JarPortFieldTest {
         field(JarPortTest.snap(a, "f9/Sounds", 0, null), "CLICK", SOUND, Opcodes.ACC_STATIC);
         field(JarPortTest.snap(b, "f9/Sounds", 0, null), "CLICK", HOLDER, Opcodes.ACC_STATIC);
         JarPortTest.snap(b, "f9/Holder", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "value()Ljava/lang/Object;");
+        field(a.classes.get("f9/Sounds"), "LAZY", SOUND, Opcodes.ACC_STATIC);
+        field(b.classes.get("f9/Sounds"), "LAZY", "Ljava/util/function/Supplier;", Opcodes.ACC_STATIC);
+        field(a.classes.get("f9/Level"), "reg", "Lf9/OldReg;", 0);
+        field(b.classes.get("f9/Level"), "reg", "Lf9/Reg;", 0);
+        JarPortTest.snap(a, "f9/OldReg", 0, null, "pick(" + RANDOM + ")I");
+        JarPortTest.snap(b, "f9/Reg", 0, null, "pick(" + RAND + ")I");
         Path map = scratch.resolve("route-field.json");
         Files.writeString(map, """
-            {"signatures": [{"owner": "f9.Block", "from": "tick", "desc": "(Ljava/util/Random;)V", "to": "tick", "newDesc": "(Lf9/Rand;)V"}]}
+            {"signatures": [{"owner": "f9.Block", "from": "tick", "desc": "(Ljava/util/Random;)V", "to": "tick", "newDesc": "(Lf9/Rand;)V"},
+                            {"owner": "f9.OldReg", "from": "pick", "desc": "(Ljava/util/Random;)I", "to": "pick", "newDesc": "(Lf9/Rand;)I"}]}
             """);
         JarPort port = new JarPort(a, b, map);
         // The new game's own code: twice a holder's value cast to the sound it holds, passed to play.
-        Map<String, byte[]> newCode = Map.of("f9/Ui", ui());
+        Map<String, byte[]> newCode = Map.of("f9/Ui", ui(), "f9/Lazy", lazyUi());
         port.newCode = new JarPort.GameCode(newCode::get, null, newCode);
         port.oldCode = new JarPort.GameCode(Map.<String, byte[]>of()::get, null, Map.of());
 
@@ -50,6 +57,24 @@ final class JarPortFieldTest {
         List<String> badUnlinked = Json.array(badRuns.get(0).get("unlinked")).stream().map(String::valueOf).sorted().toList();
         JarPortTest.expect(badUnlinked.equals(List.of("field: f9.Level.random")),
             "a read compared with == stays reported; one of a type the old release never gave it never linked and is left as written: " + badUnlinked);
+        for (String[] alone : List.of(new String[] { "n9/Safe", "a read a null check carries to its branch (a Kotlin safe call)" },
+            new String[] { "n9/Picks", "a call on a read whose new type's method takes other arguments (pick(Random) -> pick(Rand))" })) {
+            List<Map<String, Object>> aloneRuns = new ArrayList<>();
+            port.port(JarPortTest.jar(Map.of(alone[0] + ".class", alone[0].equals("n9/Safe") ? safe() : picks())), "alone.jar", aloneRuns);
+            List<String> aloneUnlinked = Json.array(aloneRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+            JarPortTest.expect(aloneUnlinked.contains(alone[0].equals("n9/Safe") ? "field: f9.Level.random" : "field: f9.Level.reg"), alone[1] + " stays reported: " + aloneUnlinked);
+        }
+
+        // What the platforms answer to: the old one gave "oldname" for its module "api", which the new one no longer provides.
+        JarPort names = new JarPort(a, b, map);
+        Path was = scratch.resolve("api-old.jar"), now = scratch.resolve("api-new.jar");
+        Files.write(was, JarPortTest.jar(Map.of("fabric.mod.json", "{\"id\": \"api\", \"provides\": [\"oldname\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            "META-INF/jars/part.jar", JarPortTest.jar(Map.of("fabric.mod.json", "{\"id\": \"api-part\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8))))));
+        Files.write(now, JarPortTest.jar(Map.of("fabric.mod.json", "{\"id\": \"api\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            "META-INF/jars/part.jar", JarPortTest.jar(Map.of("fabric.mod.json", "{\"id\": \"api-part\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8))))));
+        names.platform(was, now);
+        JarPortTest.expect(names.platformIds.equals(Set.of("api", "api-part")) && names.platformAliases.equals(Map.of("oldname", "api")),
+            "the platform's modules and the old names it dropped are read from its two jars: " + names.platformIds + " " + names.platformAliases);
         List<Map<String, Object>> keyRuns = new ArrayList<>();
         port.port(JarPortTest.jar(Map.of("n9/Keyed.class", keyed())), "keyed.jar", keyRuns);
         List<String> keyUnlinked = Json.array(keyRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
@@ -75,11 +100,12 @@ final class JarPortFieldTest {
             Object roll = mod.getMethod("roll", level).invoke(null, l);
             mod.getMethod("tick", level, block).invoke(null, l, block.getConstructor().newInstance());
             mod.getMethod("click").invoke(null);
+            mod.getMethod("lazy").invoke(null);
             trace = roll + ";" + loader.loadClass("g2.Log").getField("out").get(null);
         } catch (ReflectiveOperationException | LinkageError failed) {
             trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
         }
-        JarPortTest.expect(trace.equals("42;next;tick;value;play;"), "the ported reads run against the new release: " + trace);
+        JarPortTest.expect(trace.equals("42;next;tick;value;play;get;play;"), "the ported reads run against the new release: " + trace);
     }
 
     static void field(GameDiff.Cls c, String name, String desc, int flags) {
@@ -104,7 +130,66 @@ final class JarPortFieldTest {
         return w.toByteArray();
     }
 
-    /** n9.Mod: roll(level) = level.random.nextInt(5); tick(level, block): block.tick(level.random); click(): play(Sounds.CLICK). */
+    /** f9.Lazy.a(supplier) and b(supplier): play((Sound) supplier.get()). */
+    static byte[] lazyUi() {
+        ClassWriter w = JarPortRetypeTest.writer("f9/Lazy", "java/lang/Object");
+        for (String name : List.of("a", "b")) {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, "(Ljava/util/function/Supplier;)V", null, null);
+            m.visitCode();
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+            m.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/function/Supplier", "get", "()Ljava/lang/Object;", true);
+            m.visitTypeInsn(Opcodes.CHECKCAST, "f9/Sound");
+            m.visitMethodInsn(Opcodes.INVOKESTATIC, "f9/Player", "play", "(" + SOUND + ")V", false);
+            m.visitInsn(Opcodes.RETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** n9.Safe: safe(level) = level.random?.nextInt(5) ?: 0, as Kotlin writes it (the read duplicated, the copy to a null check). */
+    static byte[] safe() {
+        ClassWriter w = JarPortRetypeTest.writer("n9/Safe", "java/lang/Object");
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "safe", "(Lf9/Level;)I", null, null);
+        m.visitCode();
+        Label none = new Label();
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        m.visitFieldInsn(Opcodes.GETFIELD, "f9/Level", "random", RANDOM);
+        m.visitInsn(Opcodes.DUP);
+        m.visitJumpInsn(Opcodes.IFNULL, none);
+        m.visitInsn(Opcodes.ICONST_5);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Random", "nextInt", "(I)I", false);
+        m.visitInsn(Opcodes.IRETURN);
+        m.visitLabel(none);
+        m.visitInsn(Opcodes.POP);
+        m.visitInsn(Opcodes.ICONST_0);
+        m.visitInsn(Opcodes.IRETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** n9.Picks: pick(level) = level.reg.pick(new Random()). */
+    static byte[] picks() {
+        ClassWriter w = JarPortRetypeTest.writer("n9/Picks", "java/lang/Object");
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "pick", "(Lf9/Level;)I", null, null);
+        m.visitCode();
+        m.visitVarInsn(Opcodes.ALOAD, 0);
+        m.visitFieldInsn(Opcodes.GETFIELD, "f9/Level", "reg", "Lf9/OldReg;");
+        m.visitTypeInsn(Opcodes.NEW, "java/util/Random");
+        m.visitInsn(Opcodes.DUP);
+        m.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/Random", "<init>", "()V", false);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "f9/OldReg", "pick", "(" + RANDOM + ")I", false);
+        m.visitInsn(Opcodes.IRETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** n9.Mod: roll(level) = level.random.nextInt(5); tick(level, block): block.tick(level.random); click(): play(Sounds.CLICK); lazy(): play(Sounds.LAZY). */
     static byte[] mod() {
         ClassWriter w = JarPortRetypeTest.writer("n9/Mod", "java/lang/Object");
         MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "roll", "(Lf9/Level;)I", null, null);
@@ -128,6 +213,13 @@ final class JarPortFieldTest {
         m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "click", "()V", null, null);
         m.visitCode();
         m.visitFieldInsn(Opcodes.GETSTATIC, "f9/Sounds", "CLICK", SOUND);
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, "f9/Player", "play", "(" + SOUND + ")V", false);
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(1, 0);
+        m.visitEnd();
+        m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "lazy", "()V", null, null);
+        m.visitCode();
+        m.visitFieldInsn(Opcodes.GETSTATIC, "f9/Sounds", "LAZY", SOUND);
         m.visitMethodInsn(Opcodes.INVOKESTATIC, "f9/Player", "play", "(" + SOUND + ")V", false);
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(1, 0);
@@ -219,14 +311,30 @@ final class JarPortFieldTest {
             m.visitMaxs(0, 0);
             m.visitEnd();
         }));
+        out.put("f9/Later", JarPortTest.real("f9/Later", "java/lang/Object", 0, new String[] { "java/util/function/Supplier" }, w -> {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "get", "()Ljava/lang/Object;", null, null);
+            m.visitCode();
+            JarPortTest.append(m, "get;");
+            m.visitTypeInsn(Opcodes.NEW, "f9/Sound");
+            m.visitInsn(Opcodes.DUP);
+            m.visitMethodInsn(Opcodes.INVOKESPECIAL, "f9/Sound", "<init>", "()V", false);
+            m.visitInsn(Opcodes.ARETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }));
         out.put("f9/Sounds", JarPortTest.real("f9/Sounds", "java/lang/Object", 0, new String[0], w -> {
             w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "CLICK", HOLDER, null, null).visitEnd();
+            w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "LAZY", "Ljava/util/function/Supplier;", null, null).visitEnd();
             MethodVisitor m = w.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
             m.visitCode();
             m.visitTypeInsn(Opcodes.NEW, "f9/Ref");
             m.visitInsn(Opcodes.DUP);
             m.visitMethodInsn(Opcodes.INVOKESPECIAL, "f9/Ref", "<init>", "()V", false);
             m.visitFieldInsn(Opcodes.PUTSTATIC, "f9/Sounds", "CLICK", HOLDER);
+            m.visitTypeInsn(Opcodes.NEW, "f9/Later");
+            m.visitInsn(Opcodes.DUP);
+            m.visitMethodInsn(Opcodes.INVOKESPECIAL, "f9/Later", "<init>", "()V", false);
+            m.visitFieldInsn(Opcodes.PUTSTATIC, "f9/Sounds", "LAZY", "Ljava/util/function/Supplier;");
             m.visitInsn(Opcodes.RETURN);
             m.visitMaxs(0, 0);
             m.visitEnd();
