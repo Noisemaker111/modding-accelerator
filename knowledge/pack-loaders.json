@@ -57,7 +57,6 @@
     "{dir}"
    ],
    "clientClasses": [
-    {"dir": "libraries/net/minecraft/client", "match": ".*-srg\\.jar", "about": "the game in its run-time names"},
     {"dir": "libraries/net/neoforged/neoforge", "match": ".*-universal\\.jar", "about": "NeoForge's own classes"}
    ],
       "byMinecraft": {

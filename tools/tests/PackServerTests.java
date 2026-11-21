@@ -98,6 +98,19 @@ public final class PackServerTests extends PackCheckFixtures {
         }
         Path asm = PackClient.asm(install, "1.21.2");
         expect(asm.getFileName().toString().equals("asm-9.10.1.jar"), "the agent is built on the ASM the launch runs, not another one on disk: " + asm);
+        // NeoForge 1.21.11 ships the game as minecraft-client-patched-<v>.jar, not client-<v>-srg.jar: the snippets' class path
+        // is the jar that holds the game's Minecraft class, whatever it is called.
+        Path patched = install.resolve("libraries/net/neoforged/minecraft-client-patched/21.11.48/minecraft-client-patched-21.11.48.jar");
+        Path srgNamed = install.resolve("libraries/net/minecraft/client/1.21.11/client-1.21.11-srg.jar");
+        for (Path j : List.of(patched, srgNamed)) {
+            Files.createDirectories(j.getParent());
+            try (var out = new java.util.zip.ZipOutputStream(Files.newOutputStream(j))) {
+                out.putNextEntry(new java.util.zip.ZipEntry(j == patched ? "net/minecraft/client/Minecraft.class" : "META-INF/MANIFEST.MF"));
+                out.closeEntry();
+            }
+        }
+        List<String> gameJars = PackClient.gameJars(install);
+        expect(gameJars.equals(List.of(patched.toString())), "the game's classes are found in the jar that holds them, not by its file name: " + gameJars);
         expect(classpath.contains("natives-" + PackClient.OS) && !classpath.contains("natives-" + other), "a library for another system is left out: " + classpath);
         expect(!command.contains("-XstartOnFirstThread") && !command.contains("--demo"), "an argument for another system or a launcher feature is left out: " + command);
         int main = command.indexOf("loader.Boot");
@@ -535,8 +548,8 @@ public final class PackServerTests extends PackCheckFixtures {
         }
         expect(refused, "a version older than every game layer is named, not compiled");
         expect(
-            PackLoaders.neoforgeLine("1.21.1").equals("21.1") && PackLoaders.neoforgeLine("1.21").equals("21.0") && PackLoaders.neoforgeLine("26.1").equals("26.1"),
-            "NeoForge's version line follows the game version"
+            PackLoaders.neoforgeLine("1.21.1").equals("21.1") && PackLoaders.neoforgeLine("1.21").equals("21.0") && PackLoaders.neoforgeLine("26.1").equals("26.1.0") && PackLoaders.neoforgeLine("26.1.2").equals("26.1.2"),
+            "NeoForge's version line follows the game version (26.1 is 26.1.0, so 26.1.2's builds are not taken for it)"
         );
         var style = (PackLoaders.Style) neo;
         expect(
