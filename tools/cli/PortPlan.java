@@ -255,8 +255,11 @@ final class PortPlan {
             "changedGameCode", new ArrayList<>(targets.values()), "places", places2);
     }
 
-    /** mmt port-plan: the places in the mod that touch game code, and, with --map, what the target did to each. */
-    static Map<String, Object> run(Build build, Map<String, Object> model, Mmt.Options options) throws Exception {
+    /**
+     * The mod's own compile on its own release (Gradle, with the init script's mmt.recordCompile), read back as the sources
+     * and classpath javac was given. mmt port-plan and mmt port both resolve the mod's game uses against it.
+     */
+    static Compiled ownCompile(Build build, Map<String, Object> model, boolean refresh) throws Exception {
         // The mod's own compile runs once on its version, recording the sources and classpath javac is given (the init
         // script's mmt.recordCompile): what the build model names can differ (NeoGradle's placeholder game jar), and the
         // compile proves the original builds. Keep Gradle authoritative but skip the refork when nothing that determines
@@ -266,7 +269,7 @@ final class PortPlan {
         Path stamp = build.project.state().resolve("port-plan-stamp.json");
         String key = Fingerprints.build(model, build.project, build.init);
         boolean reuse = false;
-        if (Files.isDirectory(records) && Files.exists(stamp) && !options.has("refresh")) {
+        if (Files.isDirectory(records) && Files.exists(stamp) && !refresh) {
             var cached = Json.read(stamp);
             reuse = key.equals(cached.get("inputs")) && Fingerprints.files(List.of(records)).equals(cached.get("outputs"));
         }
@@ -292,6 +295,17 @@ final class PortPlan {
                 + " entries); its build log: " + (compiled == null ? "reused compile-records" : compiled.log())
         );
         if (!reuse) Json.save(stamp, Json.map("inputs", key, "outputs", Fingerprints.files(List.of(records))));
+        return new Compiled(sources, classpath, reuse);
+    }
+
+    /** The sources and classpath javac is given by the mod's own compile on its own release, and whether the records were reused. */
+    record Compiled(List<Path> sources, List<Path> classpath, boolean reused) {}
+
+    /** mmt port-plan: the places in the mod that touch game code, and, with --map, what the target did to each. */
+    static Map<String, Object> run(Build build, Map<String, Object> model, Mmt.Options options) throws Exception {
+        Compiled own = ownCompile(build, model, options.has("refresh"));
+        List<Path> sources = own.sources(), classpath = own.classpath();
+        boolean reuse = own.reused();
         List<Place> places = record(sources, classpath);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("compileRecords", reuse ? "cached" : "recorded");

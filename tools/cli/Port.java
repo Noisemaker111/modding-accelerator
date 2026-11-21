@@ -23,6 +23,35 @@ final class Port {
     /** Mixin configs the repair deleted after converting their last mixin: undo restores them from backup. */
     final List<String> repairedAway = new ArrayList<>();
 
+    /**
+     * What JarPort writes into a class, written into the source first, while the mod still builds on its own release: javac
+     * resolves every game use against the mod's own compile (PortPlan.ownCompile), and each use of a member the route map
+     * says the update broke gets the same answer a jar port gets (the map's learned replacements, the rules' inClass),
+     * from the same files (tools/SourceAnswers.java). The sources are already backed up, so undo covers it. A mod whose
+     * own compile cannot be recorded goes on as before, with the typed fixer and rules alone.
+     */
+    void sourceAnswers(JavaTools tools, Map<String, Object> model, Path map, String from, String to, Mmt.Options options) throws Exception {
+        PortPlan.Compiled own;
+        try {
+            own = PortPlan.ownCompile(build, model, false);
+        } catch (IOException unrecorded) {
+            build.report.stages.add(Json.map("name", "source-answers", "skipped", "the mod's own compile recorded nothing: " + String.valueOf(unrecorded.getMessage()).lines().findFirst().orElse("")));
+            return;
+        }
+        Path dir = build.project.state().resolve("source-answers");
+        Files.createDirectories(dir);
+        Path sourcesFile = dir.resolve("sources.txt"), classpathFile = dir.resolve("classpath.txt"), report = dir.resolve("report.json");
+        Files.write(sourcesFile, own.sources().stream().map(Path::toString).toList());
+        Files.write(classpathFile, own.classpath().stream().map(Path::toString).toList());
+        Files.deleteIfExists(report);
+        var run = tools.run("SourceAnswers", List.of("--map", map.toString(), "--fixes", build.harness.resolve("knowledge/fixes.json").toString(),
+            "--from", from, "--to", to, "--loader", MixinCheck.loader(model), "--sources", sourcesFile.toString(), "--classpath", classpathFile.toString(),
+            "--report", report.toString()), "port-source-answers");
+        if (run.exit() != 0 || !Files.isRegularFile(report)) throw new IOException("Source answers stopped: " + Run.tail(run.log()));
+        var written = Json.read(report);
+        build.report.stages.add(Json.map("name", "source-answers", "replaced", written.get("replaced"), "files", written.get("files"), "bySource", written.get("bySource")));
+    }
+
     void saveInProgress() throws IOException {
         Json.save(
             transaction.resolve("transaction.json"),
@@ -1470,6 +1499,7 @@ final class Port {
         List<String> removed = new ArrayList<>();
         if (rounds < 1 || rounds > 20) throw new IllegalArgumentException("--rounds must be 1–20");
         try {
+            if (!target.isEmpty() && namespace.equals("mojmap")) sourceAnswers(tools, model, map, from, to, options);
             if (!target.isEmpty()) {
                 Target.apply(target);
                 build.refreshJdk();

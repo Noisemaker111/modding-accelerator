@@ -22,6 +22,7 @@ final class JavaTools {
             build.harness.resolve("tools/Exposure.java"),
             build.harness.resolve("tools/ModNames.java"),
             build.harness.resolve("tools/FixExpr.java"),
+            build.harness.resolve("tools/SourceAnswers.java"),
             build.harness.resolve("tools/JarPort.java"),
             build.harness.resolve("tools/PortChains.java"),
             build.harness.resolve("tools/cli/Json.java"),

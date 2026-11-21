@@ -6199,6 +6199,39 @@ public final class JarPort {
 
     final Map<String, FixExpr.Node> parsed = new HashMap<>(); // a rule's expression, filled, once parsed
 
+    /**
+     * Whether a port answer (a learned replacement or a rule's inClass, FixExpr) compiles against the new release for a use
+     * whose operands have opDesc's types (old names; the receiver first when receiver), as Sites.fix lowers it into a class:
+     * a source port (SourceAnswers) writes an answer only when a jar port of the same use would.
+     */
+    boolean answerLinks(String expr, String opDesc, boolean receiver) {
+        Type[] ops = Type.getArgumentTypes(opDesc);
+        Type ret = Type.getReturnType(opDesc);
+        Mod mod = new Mod();
+        Type[] params = new Type[ops.length];
+        for (int i = 0; i < ops.length; i++) {
+            params[i] = Type.getType(desc(ops[i].getDescriptor()));
+            if (!present(mod, params[i])) {
+                return false;
+            }
+        }
+        Type newRet = Type.getType(desc(ret.getDescriptor()));
+        try {
+            Lowering low = new Lowering(mod, List.of(), params, receiver, 0);
+            Type got = low.lower(parsed(expr), new Code());
+            return ret.getSort() == Type.VOID || got.getSort() != Type.VOID && present(mod, newRet) && low.fits(got, newRet);
+        } catch (RuntimeException refused) {
+            return false;
+        }
+    }
+
+    /** Whether the new release still has owner.name (old names) as the old release declared it: then a use links and needs no answer. */
+    boolean kept(String owner, boolean field, String name, String desc) {
+        String now = cls(owner);
+        GameDiff.Cls c = Exposure.declaring(b, now, field ? 'f' : 'm', name, field ? null : desc(desc));
+        return c != null && (field ? c.fields.get(name) != null && c.fields.get(name).desc.equals(desc(desc)) : c.methods.containsKey(name + desc(desc)));
+    }
+
     FixExpr.Node parsed(String expr) {
         FixExpr.Node n = parsed.get(expr);
         if (n == null) {

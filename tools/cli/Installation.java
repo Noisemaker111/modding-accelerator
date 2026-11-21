@@ -60,6 +60,7 @@ final class Installation {
         "tools/JarPort.java",
         "tools/ModNames.java",
         "tools/FixExpr.java",
+        "tools/SourceAnswers.java",
         "tools/PortChains.java",
         "tools/Exposure.java",
         "tools/MixinAudit.java",
