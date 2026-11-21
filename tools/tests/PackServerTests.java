@@ -21,12 +21,14 @@ public final class PackServerTests extends PackCheckFixtures {
             fingerprintVerdict(scratch);
             clientLaunch(scratch);
             agentSignals(harness, scratch);
+            assets(scratch);
             System.out.println(
                 count +
                 " pack server checks passed: which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones, a --focus set)," +
                 " a library jar's bundled mods, four loader adapters, --fingerprint's verdict (a failed recording fails; a reload change is a note)," +
                 " the client launch built from a loader's version file over the game's (one version of a library, this system's rules, the agent built on the launch's ASM)," +
-                " the client agent's ready and failed signals whatever the game does to its output, a fatal loading line ends the wait"
+                " the client agent's ready and failed signals whatever the game does to its output, a fatal loading line ends the wait," +
+                " snippets open screens wherever the game keeps them, the game's assets fetched into one shared store and checked"
             );
         } finally {
             System.setProperty("user.home", home);
@@ -68,7 +70,7 @@ public final class PackServerTests extends PackCheckFixtures {
             "arguments", Json.map("jvm", List.of("-DlibraryDirectory=${library_directory}"), "game", List.of("--launchTarget", "client"))
         ));
         Files.write(install.resolve("versions/loader-1/loader-1.jar"), new byte[0]);
-        List<String> command = PackClient.command(install, "1.21.2", Path.of("java"), instance, List.of("-Xmx1G"));
+        List<String> command = PackClient.command(install, install.resolve("assets"), "1.21.2", Path.of("java"), instance, List.of("-Xmx1G"));
         String classpath = command.get(command.indexOf("-cp") + 1);
         String[] maven = PackClient.artifact(Json.map("name", "net.fabricmc:fabric-loader:0.16.7", "url", "https://maven.fabricmc.net/"));
         expect(maven[1].equals("https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.16.7/fabric-loader-0.16.7.jar")
@@ -111,8 +113,30 @@ public final class PackServerTests extends PackCheckFixtures {
             public final Options options = new Options();
             public static Minecraft getInstance() { return INSTANCE; }
             public void runTick(boolean render) { }
+            private net.minecraft.client.gui.screens.Screen screen;
+            public void setScreen(net.minecraft.client.gui.screens.Screen next) { screen = next; }
         }
         """;
+    /** The same game with the open screen on its Gui, as 26.3 has it. */
+    static final String MOVED_SCREEN = """
+        package net.minecraft.client;
+        public class Minecraft {
+            static final Minecraft INSTANCE = new Minecraft();
+            public final Options options = new Options();
+            public final net.minecraft.client.gui.Gui gui = new net.minecraft.client.gui.Gui();
+            public static Minecraft getInstance() { return INSTANCE; }
+            public void runTick(boolean render) { }
+        }
+        """;
+    static final String GUI = """
+        package net.minecraft.client.gui;
+        public class Gui {
+            private net.minecraft.client.gui.screens.Screen screen;
+            public net.minecraft.client.gui.screens.Screen screen() { return screen; }
+            public void setScreen(net.minecraft.client.gui.screens.Screen next) { screen = next; }
+        }
+        """;
+    static final String SCREEN = "package net.minecraft.client.gui.screens; public class Screen { }";
     static final String OPTIONS = "package net.minecraft.client; public class Options { public boolean pauseOnLostFocus = true; }";
     /** A game whose frame method the agent does not know: the agent cannot hook it. */
     static final String UNHOOKABLE = """
@@ -125,7 +149,7 @@ public final class PackServerTests extends PackCheckFixtures {
         """;
     /**
      * Takes over the game's output the way Crash Assistant does (System.out and System.err replaced, and the streams under
-     * the old ones pointed at a sink), then runs frames until the agent has answered in its state folder.
+     * the old ones pointed at a sink), then runs frames until the agent says it failed or the test writes "stop".
      */
     static final String RUN = """
         import java.io.*;
@@ -145,7 +169,7 @@ public final class PackServerTests extends PackCheckFixtures {
                 System.setErr(new PrintStream(sink));
                 Path state = Path.of(a[0]);
                 net.minecraft.client.Minecraft game = net.minecraft.client.Minecraft.getInstance();
-                for (int frame = 0; frame < 3000 && !Files.exists(state.resolve("agent.json")) && !Files.exists(state.resolve("agent-failed.txt")); frame++) {
+                for (int frame = 0; frame < 3000 && !Files.exists(state.resolve("stop")) && !Files.exists(state.resolve("agent-failed.txt")); frame++) {
                     for (java.lang.reflect.Method tick : game.getClass().getMethods()) if (tick.getName().equals("runTick")) tick.invoke(game, true);
                     Thread.sleep(10);
                 }
@@ -156,19 +180,23 @@ public final class PackServerTests extends PackCheckFixtures {
     /**
      * pack-check's client waits on mmt's real agent in a game that takes over its output: the agent's agent.json, and its
      * MMT_READY on the process's own standard output, still arrive; a game the agent cannot hook ends the wait at once with
-     * the agent's reason; a line where the loader says loading failed ends it too.
+     * the agent's reason; a line where the loader says loading failed ends it too. pack-check's snippets open and read
+     * screens through show() and screen(), on a game that keeps its screen itself and on one that keeps it on its Gui (26.3).
      */
     static void agentSignals(Path harness, Path scratch) throws Exception {
         Path dir = scratch.resolve("agent-signals");
         Path agent = Game.agentJar(harness, harness.resolve("tools/perf/lib/asm-9.9.jar"), dir.resolve("agents"), dir, new Mmt.Report(dir, "pack-check"));
         var compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
         Map<String, Map<String, String>> games = Map.of(
-            "hookable", Map.of("net/minecraft/client/Minecraft.java", GAME, "net/minecraft/client/Options.java", OPTIONS, "Run.java", RUN),
+            "hookable", Map.of("net/minecraft/client/Minecraft.java", GAME, "net/minecraft/client/Options.java", OPTIONS,
+                "net/minecraft/client/gui/screens/Screen.java", SCREEN, "Run.java", RUN),
+            "moved-screen", Map.of("net/minecraft/client/Minecraft.java", MOVED_SCREEN, "net/minecraft/client/Options.java", OPTIONS,
+                "net/minecraft/client/gui/Gui.java", GUI, "net/minecraft/client/gui/screens/Screen.java", SCREEN, "Run.java", RUN),
             "unhookable", Map.of("net/minecraft/client/Minecraft.java", UNHOOKABLE, "Run.java", RUN)
         );
         String vm = Path.of(System.getProperty("java.home"), "bin", "java").toString();
         Map<String, String> output = new HashMap<>();
-        Map<String, Object> outcome = new HashMap<>();
+        Map<String, Object> outcome = new HashMap<>(), shown = new HashMap<>();
         for (var game : games.entrySet()) {
             Path classes = dir.resolve(game.getKey()), state = Files.createDirectories(dir.resolve(game.getKey() + "-state"));
             List<String> arguments = new ArrayList<>(List.of("-nowarn", "-d", classes.toString()));
@@ -184,19 +212,28 @@ public final class PackServerTests extends PackCheckFixtures {
                 Process run = new ProcessBuilder(vm, "--add-opens", "java.base/java.io=ALL-UNNAMED", "-javaagent:" + agent,
                     "-Dmmt.token=" + token, "-Dmmt.state=" + state, "-Dmmt.fingerprint=test", "-cp", classes.toString(), "Run", state.toString())
                     .redirectErrorStream(true).start();
-                output.put(game.getKey(), new String(run.getInputStream().readAllBytes(), StandardCharsets.UTF_8));
-                run.waitFor();
                 try {
-                    outcome.put(game.getKey(), wait.ready.get(30, java.util.concurrent.TimeUnit.SECONDS));
+                    Map<String, Object> session = wait.ready.get(30, java.util.concurrent.TimeUnit.SECONDS);
+                    outcome.put(game.getKey(), session);
+                    shown.put(game.getKey(), Game.request(session, Json.map("command", "eval",
+                        "code", "var s = new net.minecraft.client.gui.screens.Screen();\nshow(mc, s);\nreturn screen(mc) == s;")));
                 } catch (java.util.concurrent.ExecutionException failed) {
                     outcome.put(game.getKey(), failed.getCause());
                 } catch (java.util.concurrent.TimeoutException none) {
                     outcome.put(game.getKey(), "no answer");
+                } catch (IOException refused) {
+                    shown.put(game.getKey(), refused.getMessage());
                 }
+                Files.writeString(state.resolve("stop"), "");
+                output.put(game.getKey(), new String(run.getInputStream().readAllBytes(), StandardCharsets.UTF_8));
+                run.waitFor();
             }
         }
         expect(outcome.get("hookable") instanceof Map<?, ?> ready && "test".equals(ready.get("fingerprint")),
             "the agent's agent.json ends the wait in a game that took over its output: " + outcome.get("hookable") + "\n" + output.get("hookable"));
+        for (String shape : List.of("hookable", "moved-screen"))
+            expect(shown.get(shape) instanceof Map<?, ?> answer && "true".equals(answer.get("value")),
+                "a snippet opens a screen with show() and reads it back with screen() (" + shape + "): " + shown.get(shape));
         expect(output.get("hookable").contains("MMT_READY "), "MMT_READY reaches the process's standard output past a replaced System.out: " + output.get("hookable"));
         expect(outcome.get("unhookable") instanceof PackClient.AgentFailed failed && failed.getMessage().contains("no render hook"),
             "a game the agent cannot hook ends the wait with the agent's reason: " + outcome.get("unhookable") + "\n" + output.get("unhookable"));
@@ -207,6 +244,62 @@ public final class PackServerTests extends PackCheckFixtures {
         expect(PackClient.loadingFailure("[11:51:11] [Render thread/WARN] [minecraft/Pack]: Missing metadata in pack programmer_art", failedWords) == null
                 && PackClient.loadingFailure("[main/FATAL] [cpw.mods.modlauncher.RuntimeDistCleaner/DISTXFORM]: Attempted to load class net/minecraft/client/A for invalid dist DEDICATED_SERVER", failedWords) == null,
             "a warning, or Forge's FATAL for a class a mixin only probed for, does not end it");
+    }
+
+    // ------------------------------------------------------------------ the game's assets
+    /**
+     * A client gets every object its asset index lists, as a launcher fetches them: 1.21.9 and later stop loading
+     * (fonts, textures, the default packs) without them, and the world then disconnects. Objects a store already holds
+     * are not fetched again; one that does not match its hash fails the start.
+     */
+    static void assets(Path scratch) throws Exception {
+        byte[] font = "font".getBytes(StandardCharsets.UTF_8), icon = "icon".getBytes(StandardCharsets.UTF_8);
+        String fontHash = PackCheck.hash("SHA-1", font), iconHash = PackCheck.hash("SHA-1", icon);
+        String index = Json.write(Json.map("objects", Json.map(
+            "minecraft/font/unifont.zip", Json.map("hash", fontHash, "size", font.length),
+            "icons/icon_16x16.png", Json.map("hash", iconHash, "size", icon.length))));
+        Map<String, byte[]> served = new HashMap<>(Map.of("/index.json", index.getBytes(StandardCharsets.UTF_8),
+            "/objects/" + fontHash.substring(0, 2) + "/" + fontHash, font, "/objects/" + iconHash.substring(0, 2) + "/" + iconHash, icon));
+        List<String> asked = Collections.synchronizedList(new ArrayList<>());
+        var server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", exchange -> {
+            asked.add(exchange.getRequestURI().getPath());
+            byte[] body = served.get(exchange.getRequestURI().getPath());
+            exchange.sendResponseHeaders(body == null ? 404 : 200, body == null ? -1 : body.length);
+            if (body != null) exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        try {
+            String base = "http://127.0.0.1:" + server.getAddress().getPort();
+            Path install = scratch.resolve("assets-install"), cache = scratch.resolve("assets-cache");
+            Json.save(install.resolve("versions/1.21.9/1.21.9.json"), Json.map("id", "1.21.9", "libraries", List.of(),
+                "arguments", Json.map("jvm", List.of(), "game", List.of("--assetsDir", "${assets_root}")), "assetIndex", Json.map("id", "27", "url", base + "/index.json", "sha1", PackCheck.hash("SHA-1", index.getBytes(StandardCharsets.UTF_8)))));
+            Json.save(install.resolve("versions/loader/loader.json"), Json.map("id", "loader", "inheritsFrom", "1.21.9", "libraries", List.of(), "arguments", Json.map("jvm", List.of(), "game", List.of())));
+            // The store already holds the icon from another version: only the font is fetched.
+            Path held = cache.resolve("assets/objects/" + iconHash.substring(0, 2) + "/" + iconHash);
+            Files.createDirectories(held.getParent());
+            Files.write(held, icon);
+            Path root = PackClient.assets(cache, install, "1.21.9", base + "/objects/");
+            Path fetched = root.resolve("objects/" + fontHash.substring(0, 2) + "/" + fontHash);
+            expect(Files.isRegularFile(fetched) && Arrays.equals(Files.readAllBytes(fetched), font) && Files.isRegularFile(root.resolve("indexes/27.json")),
+                "every object the index lists is in the store beside the index: " + asked);
+            expect(asked.stream().noneMatch(a -> a.endsWith(iconHash)), "an object the store already holds is not fetched again: " + asked);
+            List<String> command = PackClient.command(install, root, "1.21.9", Path.of("java"), scratch.resolve("assets-instance"), List.of());
+            expect(command.get(command.indexOf("--assetsDir") + 1).equals(root.toString()), "the launch reads assets from the shared store: " + command);
+            Files.delete(fetched);
+            served.put("/objects/" + fontHash.substring(0, 2) + "/" + fontHash, "tampered".getBytes(StandardCharsets.UTF_8));
+            String refused;
+            try {
+                PackClient.assets(cache, install, "1.21.9", base + "/objects/");
+                refused = null;
+            } catch (IOException wrong) {
+                refused = wrong.getMessage();
+            }
+            expect(refused != null && refused.contains("SHA-1") && !Files.exists(fetched), "an object that does not match its hash fails the start and is not kept: " + refused);
+        } finally {
+            server.stop(0);
+        }
     }
 
     static Map<String, Object> library(String name, List<?> rules) {

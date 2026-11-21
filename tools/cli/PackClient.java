@@ -63,10 +63,54 @@ final class PackClient {
         var client = Json.object(Json.object(merged.getOrDefault("downloads", Map.of())).getOrDefault("client", Map.of()));
         Path jar = gameJar(dir, merged);
         if (!client.isEmpty() && !Files.isRegularFile(jar)) PackCheck.download(Json.text(client, "url", ""), jar, Json.text(client, "sha1", null));
-        var index = Json.object(merged.get("assetIndex"));
-        PackCheck.download(Json.text(index, "url", ""), dir.resolve("assets/indexes/" + Json.text(index, "id", "") + ".json"), Json.text(index, "sha1", null));
         Files.writeString(dir.resolve("mmt-installed"), minecraft + "-" + version + "\n");
         return dir;
+    }
+
+    static final String OBJECTS = "https://resources.download.minecraft.net/";
+
+    /**
+     * The game's assets as a launcher keeps them: the version's asset index and every object it lists (fonts, textures,
+     * the default resource packs, sounds, languages), in one store under cache that every version shares, each object
+     * named by its SHA-1 and checked against it. Objects already present are kept. Returns the store (assets_root).
+     */
+    static Path assets(Path cache, Path install, String minecraft) throws Exception {
+        return assets(cache, install, minecraft, OBJECTS);
+    }
+
+    static Path assets(Path cache, Path install, String minecraft, String objects) throws Exception {
+        Path root = cache.resolve("assets");
+        var index = Json.object(merged(install, minecraft).get("assetIndex"));
+        Path file = root.resolve("indexes").resolve(Json.text(index, "id", "") + ".json");
+        String sha1 = Json.text(index, "sha1", null);
+        if (!Files.isRegularFile(file) || sha1 != null && !PackCheck.hash("SHA-1", Files.readAllBytes(file)).equalsIgnoreCase(sha1)) PackCheck.download(Json.text(index, "url", ""), file, sha1);
+        List<String[]> missing = new ArrayList<>();
+        for (Object o : Json.object(Json.read(file).get("objects")).values()) {
+            var object = Json.object(o);
+            String hash = Json.text(object, "hash", "");
+            Path target = root.resolve("objects").resolve(hash.substring(0, 2)).resolve(hash);
+            long size = ((Number) object.getOrDefault("size", -1)).longValue();
+            if (!Files.isRegularFile(target) || Files.size(target) != size) missing.add(new String[] { hash, target.toString() });
+        }
+        if (missing.isEmpty()) return root;
+        ExecutorService pool = Executors.newFixedThreadPool(16);
+        try {
+            List<Future<?>> downloads = new ArrayList<>();
+            for (String[] m : missing) downloads.add(pool.submit(() -> {
+                PackCheck.download(objects + m[0].substring(0, 2) + "/" + m[0], Path.of(m[1]), m[0]);
+                return null;
+            }));
+            for (Future<?> download : downloads) {
+                try {
+                    download.get();
+                } catch (ExecutionException failed) {
+                    throw new IOException("Could not download the game's assets for " + minecraft + ": " + failed.getCause().getMessage(), failed.getCause());
+                }
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        return root;
     }
 
     static Path gameJar(Path install, Map<String, Object> merged) {
@@ -145,7 +189,7 @@ final class PackClient {
     }
 
     /** The launch, from the merged version file, as a launcher writes it: the JVM's options, the main class and the game's arguments. */
-    static List<String> command(Path install, String minecraft, Path java, Path instance, List<String> options) throws IOException {
+    static List<String> command(Path install, Path assets, String minecraft, Path java, Path instance, List<String> options) throws IOException {
         var version = merged(install, minecraft);
         String libraries = install.resolve("libraries").toString();
         List<String> classpath = new ArrayList<>();
@@ -168,7 +212,7 @@ final class PackClient {
         values.put("launcher_name", "mmt");
         values.put("launcher_version", "1");
         values.put("game_directory", instance.toString());
-        values.put("assets_root", install.resolve("assets").toString());
+        values.put("assets_root", assets.toString());
         values.put("assets_index_name", Json.text(Json.object(version.get("assetIndex")), "id", ""));
         values.put("auth_player_name", "Dev");
         values.put("auth_uuid", "00000000-0000-0000-0000-000000000000");
@@ -250,7 +294,7 @@ final class PackClient {
             game.add(0, mojang[1].toString());
         }
         options.add("-Dmmt.classpath=" + String.join(File.pathSeparator, game));
-        List<String> command = command(install, pack.minecraft(), context.java().java(), instance, options);
+        List<String> command = command(install, assets(context.cache(), install, pack.minecraft()), pack.minecraft(), context.java().java(), instance, options);
         Path log = context.report().log("client");
         Files.createDirectories(log.getParent());
         Files.writeString(instance.resolve("mmt-launch.txt"), String.join("\n", command) + "\n");
@@ -262,6 +306,7 @@ final class PackClient {
         List<String> failed = owner.loader.failed();
         // Programs a mod starts from the game, seen while it runs: one started as the game dies has no parent left to find it by.
         Set<ProcessHandle> started = ConcurrentHashMap.newKeySet();
+        java.util.concurrent.atomic.AtomicReference<String> firstFailure = new java.util.concurrent.atomic.AtomicReference<>();
         Thread reader = new Thread(() -> {
             try (var in = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
                  var out = Files.newBufferedWriter(log, StandardCharsets.UTF_8)) {
@@ -272,8 +317,9 @@ final class PackClient {
                     out.newLine();
                     out.flush();
                     // The loader's error screen follows its fatal loading error; once it is said, nothing more will start.
-                    String loading = ready.isDone() ? null : loadingFailure(line, failed);
-                    if (loading != null) ready.completeExceptionally(new LoadingFailed(loading));
+                    // The agent answers during the loading screen, so a failure said after it answered still decides the start.
+                    String loading = loadingFailure(line, failed);
+                    if (loading != null && firstFailure.compareAndSet(null, loading)) ready.completeExceptionally(new LoadingFailed(loading));
                 }
             } catch (Exception unreadable) {
                 ready.completeExceptionally(unreadable);
@@ -306,17 +352,18 @@ final class PackClient {
             session.put("processStart", ProcessHandle.of(((Number) session.get("pid")).longValue()).flatMap(p -> p.info().startInstant()).map(Object::toString).orElse(""));
             String screen = Json.text(Game.request(session, Json.map("command", "ready")), "screen", "");
             if (screen.contains("Error") && !screen.equals("TitleScreen")) throw new IOException("the loader showed its error screen (" + screen + ") instead of the title screen");
+            if (firstFailure.get() != null) throw new LoadingFailed(firstFailure.get());
             reached.add("title");
             Game.request(session, Json.map("command", "open-world", "world", "lab"));
             Game.request(session, Json.map("command", "ready", "expectWorld", true));
             reached.add("world");
-            snippet(session, "var game = net.minecraft.client.Minecraft.getInstance();\ngame.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(game.player));\nreturn true;");
+            snippet(session, "var game = net.minecraft.client.Minecraft.getInstance();\nshow(game, new net.minecraft.client.gui.screens.inventory.InventoryScreen(game.player));\nreturn true;");
             Game.request(session, Json.map("command", "ready", "requireScreen", true));
             reached.add("inventory");
             Object tabs = snippet(session, String.join("\n",
                 "var game = net.minecraft.client.Minecraft.getInstance();",
                 "var screen = new net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen(game.player, game.player.connection.enabledFeatures(), true);",
-                "game.setScreen(screen);",
+                "show(game, screen);",
                 "vars.put(\"tabs\", net.minecraft.world.item.CreativeModeTabs.allTabs());",
                 "return ((java.util.List<?>) vars.get(\"tabs\")).size();"));
             Game.request(session, Json.map("command", "ready", "requireScreen", true));
@@ -327,7 +374,7 @@ final class PackClient {
                     "var game = net.minecraft.client.Minecraft.getInstance();",
                     "var tab = ((java.util.List<?>) vars.get(\"tabs\")).get(" + i + ");",
                     // call() finds the private method by Mojang's name in the names the game runs.
-                    "call(game.screen, \"selectTab\", tab);",
+                    "call(screen(game), \"selectTab\", tab);",
                     "return true;"));
                 Game.request(session, Json.map("command", "ready", "requireScreen", true));
             }
