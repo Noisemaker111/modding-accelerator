@@ -254,12 +254,15 @@ public final class ModNames {
 
         @Override
         public String mapMethodName(String owner, String name, String descriptor) {
-            return members.getOrDefault(name, name);
+            return names.shared.getOrDefault(name + descriptor, members.getOrDefault(name, name));
         }
 
         @Override
         public String mapInvokeDynamicMethodName(String name, String descriptor, Handle bootstrap, Object... arguments) {
-            return members.getOrDefault(name, name); // a lambda implementing a game interface names its method_N
+            // A lambda implementing a game interface names its method_N; the descriptor here is the factory's, so the
+            // interface method's own (the first bootstrap argument) tells a shared id apart.
+            String own = arguments.length > 0 && arguments[0] instanceof Type t ? name + t.getDescriptor() : null;
+            return own != null && names.shared.containsKey(own) ? names.shared.get(own) : members.getOrDefault(name, name);
         }
 
         @Override

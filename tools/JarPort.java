@@ -73,6 +73,7 @@ public final class JarPort {
         final Map<String, Object[]> twins = new LinkedHashMap<>(); // class.name+desc -> {parameter, new type, steps} (Sites.twin)
         final Map<String, Integer> requires = new HashMap<>(); // mixin class -> its config's injectors.defaultRequire
         final Map<String, String[]> supers = new HashMap<>(); // class -> {removed superclass (old name), what it extends now (new name)}
+        final Set<String> foreign = new HashSet<>(); // entries of classes built for another loader (otherLoader), left as they are
 
         void change(String kind) {
             changed.merge(kind, 1, Integer::sum);
@@ -433,6 +434,70 @@ public final class JarPort {
         return -1;
     }
 
+    static final Pattern SRG = Pattern.compile("\\b[mf]_\\d+_\\b");
+    static final Pattern INTERMEDIARY = Pattern.compile("net/minecraft/class_\\d+");
+
+    /**
+     * A class a jar for several loaders carries for another one (a Forge class beside the Fabric ones), which the loader
+     * ported for never loads, so it is no part of the mod there, before the port or after. It names the game as only
+     * that loader's build does. A Fabric jar is read in Mojang's names through intermediary, so a class of it still
+     * naming members by SRG id (m_1234_) was built for Forge; any other jar is read in Mojang's names too, so a class
+     * still naming a game class by intermediary (class_1234) was built for Fabric. (An SRG id left in a NeoForge jar of
+     * the SRG releases is a gap in NeoForm's names, not another loader.)
+     */
+    boolean otherLoader(byte[] bytes) {
+        // Read from what the JVM links (types, calls, fields, declared names), not from strings: a mixin for every
+        // loader lists each loader's names in its annotations and runs on all of them.
+        Pattern other = loader.equals("fabric") ? SRG : INTERMEDIARY;
+        boolean[] found = new boolean[1];
+        java.util.function.Consumer<String> seen = text -> found[0] |= text != null && other.matcher(text).find();
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                seen.accept(superName);
+                for (String i : interfaces == null ? new String[0] : interfaces) {
+                    seen.accept(i);
+                }
+            }
+
+            @Override
+            public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                seen.accept(name);
+                seen.accept(desc);
+                return null;
+            }
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                seen.accept(name);
+                seen.accept(desc);
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitMethodInsn(int opcode, String owner, String n, String d, boolean itf) {
+                        seen.accept(owner);
+                        seen.accept(n);
+                        seen.accept(d);
+                    }
+
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String n, String d) {
+                        seen.accept(owner);
+                        seen.accept(n);
+                        seen.accept(d);
+                    }
+
+                    @Override
+                    public void visitTypeInsn(int opcode, String type) {
+                        seen.accept(type);
+                    }
+                };
+            }
+        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        return found[0];
+    }
+
+    static final Pattern MOJANG_NAMED = Pattern.compile("net/minecraft/(?!class_\\d)[a-z]");
+
     /**
      * grants: what every access transformer in the outermost jar and its nested jars opens (null: read it here). The loader
      * applies an access transformer to the game for every mod, so a nested helper may rely on its parent's.
@@ -471,13 +536,33 @@ public final class JarPort {
         // Fabric's reads the access widener fabric.mod.json names, for every mod file too.
         byte[] fmj = entries.get("fabric.mod.json");
         mod.canWiden = entries.containsKey("META-INF/neoforge.mods.toml") || fmj != null;
+        boolean nativeGame = false; // a class naming the game as this loader's build does
         for (var e : entries.entrySet()) {
+            if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/") && otherLoader(e.getValue())) {
+                mod.foreign.add(e.getKey());
+                mod.change("classes built for another loader left as they are");
+                continue;
+            }
+            if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/") && !nativeGame) {
+                nativeGame = MOJANG_NAMED.matcher(new String(e.getValue(), StandardCharsets.ISO_8859_1)).find();
+            }
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
                 e.setValue(PortChains.apply(e.getValue(), pairs, (o, k, n, d) -> {
                     GameDiff.Cls c = Exposure.declaring(a, o, k, n, d);
                     return c == null ? null : c.name;
                 }));
                 read(mod, e.getValue());
+            }
+        }
+        if (!mod.foreign.isEmpty() && !nativeGame) {
+            // Not a jar for this loader at all (a Forge build listed for NeoForge): no class of it names the game as this
+            // loader's build does, so the ones naming nothing of the game are that build's too. It never loaded here.
+            if (name.contains("!")) {
+                // A jar nested for the other loader of a jar for several (Fabric API's modules beside the NeoForge classes)
+                // is never loaded by this one.
+                mod.silent.add("nested jar for another loader, not loaded here: " + name);
+            } else {
+                mod.unlinked.add("built for another loader: every class names the game as another loader's build does");
             }
         }
         requires(mod, entries);
@@ -499,7 +584,7 @@ public final class JarPort {
             int kept = mod.kept.size(), unmoved = mod.unmoved.size();
             rewritten.clear();
             for (var e : entries.entrySet()) {
-                if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
+                if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/") && !mod.foreign.contains(e.getKey())) {
                     rewritten.put(e.getKey(), rewriteOrReport(mod, e.getValue()));
                 }
             }
@@ -1463,6 +1548,7 @@ public final class JarPort {
 
     void plan(Mod mod) {
         for (GameDiff.RawCls rc : mod.classes.values()) {
+            lambdas(mod, rc);
             List<String> targets = mod.mixinTargets.getOrDefault(rc.name, List.of());
             if (!targets.isEmpty()) {
                 for (String t : targets) {
@@ -1695,6 +1781,104 @@ public final class JarPort {
         }
         // The game no longer calls it: the class still loads, the hook is silent.
         mod.silent.add("override no longer called: " + Exposure.dotted(decl.owner()) + "." + m.name + m.desc + " (in " + Exposure.dotted(rc.name) + ")");
+    }
+
+    /**
+     * Lambdas and method references of a class that implement a game or loader interface method whose parameters changed
+     * type (a Fabric API callback: HudRenderCallback.onHudRender(PoseStack, float) -> (GuiGraphics, float)). The body, a
+     * method of the class nothing else can call or override, moves to the new types as an override's does, each old
+     * parameter worked out from a new one as the game's own code does (graphics.pose()), and the lambda is made for the
+     * new method (Sites.capturing writes it). One that cannot move is reported: the interface's method would go unwritten.
+     */
+    void lambdas(Mod mod, GameDiff.RawCls rc) {
+        byte[] bytes = mod.bytes.get(rc.name);
+        if (bytes == null || (new ClassReader(bytes).readShort(6) & 0xFFFF) < Opcodes.V1_8) {
+            return;
+        }
+        List<Object[]> made = new ArrayList<>(); // {interface, method, sam descriptor, impl handle, captured descriptor}
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitInvokeDynamicInsn(String n, String d, Handle bsm, Object... args) {
+                        if (bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory") && args.length >= 3 && args[0] instanceof Type sam
+                            && args[1] instanceof Handle impl && args[2] instanceof Type made2) {
+                            made.add(new Object[] { Type.getReturnType(d).getInternalName(), n, sam.getDescriptor(), impl, d, made2.getDescriptor() });
+                        }
+                    }
+                };
+            }
+        }, ClassReader.SKIP_DEBUG);
+        for (Object[] l : made) {
+            String iface = (String) l[0], name = (String) l[1], sam = (String) l[2], captured = (String) l[4];
+            Handle impl = (Handle) l[3];
+            if (!a.classes.containsKey(iface) || a.method(iface, name, sam) == null || Exposure.declaring(b, cls(iface), 'm', name, desc(sam)) != null) {
+                continue;
+            }
+            String[] moved = route.method(iface, name, sam);
+            GameDiff.Cls holder = Exposure.declaring(b, cls(iface), 'm', moved[1], moved[2]);
+            String where = Exposure.dotted(iface) + "." + name + sam + " (in " + Exposure.dotted(rc.name) + ")";
+            Bridge body = holder == null || !moved[1].equals(name) || !sam.equals(l[5]) ? null : lambdaBody(mod, rc, impl, captured, iface, name, sam, moved);
+            if (body == null) {
+                mod.unlinked.add("lambda for a changed method: " + where);
+                continue;
+            }
+            mod.bridges.computeIfAbsent(impl.getOwner(), k -> new ArrayList<>()).add(body);
+            mod.change("lambda moved to its interface method's new parameter types");
+        }
+    }
+
+    /**
+     * The moved body of a lambda for iface.name(sam), now moved[2], or null when its method cannot move: the lambda's own
+     * private method, or a static method of any of the mod's classes (Hud::render), which no class can override.
+     */
+    Bridge lambdaBody(Mod mod, GameDiff.RawCls rc, Handle impl, String captured, String iface, String name, String sam, String[] moved) {
+        GameDiff.RawCls holder = mod.classes.get(impl.getOwner());
+        GameDiff.RawMeth m = holder == null ? null : holder.methods.get(impl.getName() + impl.getDesc());
+        if (m == null || (m.flags & Opcodes.ACC_STATIC) == 0 && ((m.flags & Opcodes.ACC_PRIVATE) == 0 || holder != rc) || (m.flags & Opcodes.ACC_ABSTRACT) != 0
+            || mod.bytes.get(holder.name) == null || (new ClassReader(mod.bytes.get(holder.name)).readShort(6) & 0xFFFF) < Opcodes.V1_6
+            || mod.bridges.getOrDefault(holder.name, List.of()).stream().anyMatch(br -> br.target().equals(m.name) && br.targetDesc().equals(m.desc))) {
+            return null;
+        }
+        Type[] caps = Type.getArgumentTypes(captured), was = Type.getArgumentTypes(desc(sam)), now = Type.getArgumentTypes(moved[2]);
+        int skip = (m.flags & Opcodes.ACC_STATIC) != 0 ? 0 : 1; // an instance body captures its this first
+        Type[] own = Type.getArgumentTypes(m.desc);
+        if (own.length != caps.length - skip + was.length || !Type.getReturnType(desc(sam)).equals(Type.getReturnType(moved[2]))) {
+            return null;
+        }
+        int[] paired = pair(now, was);
+        String[][] via = retype.conversions(iface, name, sam, moved, paired);
+        boolean[] unread = unread(mod, holder.name, m.name, m.desc, (m.flags & Opcodes.ACC_STATIC) != 0, own.length);
+        int k = caps.length - skip;
+        Type[] params = new Type[k + now.length];
+        int[] from = new int[own.length];
+        String[][] steps = new String[own.length][];
+        for (int i = 0; i < k; i++) {
+            params[i] = Type.getType(desc(own[i].getDescriptor()));
+            from[i] = i;
+        }
+        for (int i = 0; i < now.length; i++) {
+            params[k + i] = now[i];
+        }
+        for (int i = 0; i < was.length; i++) {
+            if (paired[i] >= 0) {
+                from[k + i] = k + paired[i];
+            } else if (via != null && via[i] != null) {
+                from[k + i] = k + Integer.parseInt(via[i][0]);
+                steps[k + i] = Arrays.copyOfRange(via[i], 1, via[i].length);
+            } else if (unread != null && unread[k + i]) {
+                from[k + i] = -1; // the body never reads it ((mc, parent) -> new Screen(parent)): a default goes there
+            } else {
+                return null;
+            }
+        }
+        String newDesc = Type.getMethodDescriptor(Type.getType(desc(Type.getReturnType(m.desc).getDescriptor())), params);
+        if (Arrays.stream(steps).allMatch(Objects::isNull)) {
+            // Nothing to work out: an added method with the new parameters calls the body with the ones it had.
+            return new Bridge(m.name, newDesc, m.name, m.desc, from, m.flags | Opcodes.ACC_SYNTHETIC, null);
+        }
+        return new Bridge(m.name, newDesc, m.name, m.desc, from, m.flags, steps);
     }
 
     /**
@@ -1971,15 +2155,62 @@ public final class JarPort {
                 written.add((m.flags & Opcodes.ACC_ABSTRACT) == 0 ? m.name + m.desc : "");
             }
         }
+        Set<String> before = unwrittenBefore(mod, rc);
         for (GameDiff.Cls k : supers) {
             for (GameDiff.Meth m : k.methods.values()) {
                 if ((m.flags & Opcodes.ACC_ABSTRACT) != 0 && !written.contains(m.name + m.desc) && !OBJECT.contains(m.name + m.desc) && !generic(supers, m)
-                    && !alreadyAbstract(k, m)) {
+                    && !alreadyAbstract(k, m) && !before.contains(m.name + oldDesc(m.desc))) {
                     mod.unlinked.add("abstract method not written: " + Exposure.dotted(k.name) + "." + m.name + m.desc + " (in " + Exposure.dotted(rc.name) + ")");
                 }
             }
         }
     }
+
+    /**
+     * The abstract methods (name + old descriptor) a mod class already left unwritten against the old release: its game
+     * supertypes there had them abstract and neither the mod nor they wrote one. The class loaded all the same, so the
+     * loader supplies them (NeoForge patches BakedModel.getTransforms() into a default the game's own jar does not have);
+     * the port did not take them away.
+     */
+    Set<String> unwrittenBefore(Mod mod, GameDiff.RawCls rc) {
+        Set<String> written = new HashSet<>(), abstracts = new HashSet<>(), seen = new HashSet<>(), unread = new HashSet<>();
+        Deque<String> todo = new ArrayDeque<>(List.of(rc.name));
+        while (!todo.isEmpty()) {
+            String c = todo.poll();
+            if (!seen.add(c)) {
+                continue;
+            }
+            GameDiff.RawCls own = mod.classes.get(c);
+            if (own != null) {
+                for (GameDiff.RawMeth m : own.methods.values()) {
+                    ((m.flags & Opcodes.ACC_ABSTRACT) == 0 ? written : abstracts).add(m.name + m.desc);
+                    if (UNMAPPED.matcher(m.name).matches()) {
+                        unread.add(m.desc);
+                    }
+                }
+                if (own.sup != null) {
+                    todo.add(own.sup);
+                }
+                todo.addAll(own.ifaces);
+                continue;
+            }
+            GameDiff.Cls k = a.classes.get(c);
+            if (k == null) {
+                continue;
+            }
+            for (GameDiff.Meth m : k.methods.values()) {
+                ((m.flags & Opcodes.ACC_ABSTRACT) == 0 ? written : abstracts).add(m.name + m.desc);
+            }
+            todo.addAll(GameDiff.supertypes(k));
+        }
+        abstracts.removeAll(written);
+        // A method the class writes under an id its names were never read through (m_6055_ for getName, in a jar built
+        // for another release's mappings) is that one, unread: the class did not load before either, so nothing is excused.
+        abstracts.removeIf(k -> unread.contains(k.substring(k.indexOf('('))));
+        return abstracts;
+    }
+
+    static final Pattern UNMAPPED = Pattern.compile("(?:m_\\d+_|method_\\d+|func_\\d+_[a-z]?)");
 
     static final Set<String> OBJECT = Set.of("equals(Ljava/lang/Object;)Z", "hashCode()I", "toString()Ljava/lang/String;");
 
@@ -3929,15 +4160,18 @@ public final class JarPort {
     void bridgeCode(MethodVisitor mv, String owner, boolean itf, Bridge br) {
         Type[] now = Type.getArgumentTypes(oldDesc(br.desc()));
         Type[] was = Type.getArgumentTypes(br.targetDesc());
+        boolean isStatic = (br.access() & Opcodes.ACC_STATIC) != 0; // a static lambda body's (JarPort.lambdaBody)
         int[] slots = new int[now.length];
-        int next = 1;
+        int next = isStatic ? 0 : 1;
         for (int i = 0; i < now.length; i++) {
             slots[i] = next;
             next += now[i].getSize();
         }
         mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        int stack = 1;
+        if (!isStatic) {
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+        }
+        int stack = isStatic ? 0 : 1;
         for (int j = 0; j < was.length; j++) {
             int f = br.from()[j];
             if (f < 0) {
@@ -3947,7 +4181,7 @@ public final class JarPort {
             }
             stack += was[j].getSize();
         }
-        mv.visitMethodInsn(itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, owner, br.target(), br.targetDesc(), itf);
+        mv.visitMethodInsn(isStatic ? Opcodes.INVOKESTATIC : itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, owner, br.target(), br.targetDesc(), itf);
         Type ret = Type.getReturnType(br.targetDesc());
         mv.visitInsn(ret.getOpcode(Opcodes.IRETURN));
         mv.visitMaxs(Math.max(stack, ret.getSize()), next);
@@ -5030,11 +5264,11 @@ public final class JarPort {
         @Override
         public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... args) {
             types(mod, desc, where);
-            if (moved != null && capturing(name, desc, bsm, args)) {
+            if (callback(name, desc, bsm, args) || moved != null && capturing(name, desc, bsm, args)) {
                 return;
             }
             for (Object o : args) {
-                if (o instanceof Handle h && h.getOwner().equals(mod.self) && mod.bridges.getOrDefault(mod.self, List.of()).stream()
+                if (o instanceof Handle h && mod.bridges.getOrDefault(h.getOwner(), List.of()).stream()
                     .anyMatch(br -> br.via() != null && br.target().equals(h.getName()) && br.targetDesc().equals(h.getDesc()))) {
                     mod.kept.add(h.getName() + h.getDesc()); // a lambda body that moved stays too for this lambda, made where it cannot follow
                 }
@@ -5058,6 +5292,33 @@ public final class JarPort {
          * its body, a method of the class, moves with that parameter as the new type as a helper does (Mod.twins), and once it
          * has, the lambda captures the new parameter and is made from the moved body.
          */
+        /** A lambda for an interface method whose parameters changed type, made for its moved body (JarPort.lambdas). */
+        boolean callback(String name, String desc, Handle bsm, Object[] args) {
+            if (!bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory") || args.length < 3 || !(args[0] instanceof Type sam)
+                || !(args[1] instanceof Handle impl) || !mod.classes.containsKey(impl.getOwner())) {
+                return false;
+            }
+            String iface = Type.getReturnType(desc).getInternalName();
+            if (!a.classes.containsKey(iface) || a.method(iface, name, sam.getDescriptor()) == null
+                || Exposure.declaring(b, cls(iface), 'm', name, desc(sam.getDescriptor())) != null) {
+                return false;
+            }
+            Bridge body = mod.bridges.getOrDefault(impl.getOwner(), List.of()).stream()
+                .filter(br -> br.target().equals(impl.getName()) && br.targetDesc().equals(impl.getDesc()) && !br.desc().equals(desc(impl.getDesc())))
+                .findFirst().orElse(null);
+            String[] now = route.method(iface, name, sam.getDescriptor());
+            if (body == null || !now[1].equals(name)) {
+                return false;
+            }
+            Object[] made = args.clone();
+            made[0] = Type.getMethodType(oldDesc(now[2]));
+            made[1] = new Handle(impl.getTag(), impl.getOwner(), body.name(), oldDesc(body.desc()), impl.isInterface());
+            made[2] = made[0];
+            super.visitInvokeDynamicInsn(name, desc, bsm, made);
+            mod.change("lambda made for its interface method's new signature");
+            return true;
+        }
+
         boolean capturing(String name, String desc, Handle bsm, Object[] args) {
             if (!bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory") || args.length < 3 || !(args[1] instanceof Handle impl)
                 || !impl.getOwner().equals(mod.self) || impl.getTag() != Opcodes.H_INVOKESTATIC && impl.getTag() != Opcodes.H_INVOKESPECIAL

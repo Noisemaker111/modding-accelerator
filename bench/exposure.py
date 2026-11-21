@@ -1076,6 +1076,53 @@ def starts_alone(loader, to, pack, name, platform):
     return bool(start >= 0 and json.loads(done.stdout[start:]).get("ok"))
 
 
+def display_name(jar):
+    """The name a mod shows players (fabric.mod.json "name", or the first [[mods]] displayName), or None."""
+    import tomllib
+    import zipfile
+    meta = fabric_meta(jar)
+    if meta is not None:
+        return meta.get("name")
+    with zipfile.ZipFile(jar) as z:
+        for entry in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml"):
+            if entry in z.namelist():
+                try:
+                    mods = tomllib.loads(z.read(entry).decode("utf-8", "replace")).get("mods", [])
+                except tomllib.TOMLDecodeError:
+                    return None
+                return mods[0].get("displayName") if mods else None
+    return None
+
+
+def named_in_errors(receipt, mods, present):
+    """The jars a failed start's errors name by the name a mod shows players ("Architectury API is a required dependency
+    of Roughly Enough Items 14.0.680 but it is not installed!"), when the start's own findings name none: from the lines
+    after the loader's "Found N error(s)" in the server log beside the receipt."""
+    if not receipt:
+        return {}
+    errors, packs = [], []
+    for log in sorted(Path(receipt).parent.glob("*server*.log")):
+        lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+        at = next((i for i, line in enumerate(lines) if re.search(r"Found \d+ error\(s\)", line)), None)
+        if at is not None:
+            errors += [line for line in lines[at + 1:at + 20] if line.startswith("- ")]
+        # A data file the release refuses names the data pack it came from, which a mod's own pack is named for.
+        packs += [m.group(0) for line in lines for m in [re.search(r"Failed to parse \S+ from pack (\S+)", line)] if m]
+    blamed = {}
+    for line in packs:
+        pack_id = line.rsplit(" ", 1)[1]
+        for name in present:
+            if pack_id in mod_ids(mods / name):
+                blamed[name] = "its data fails on this release: " + line[:300]
+    for line in errors:
+        # The mod whose start the error is about: the one the line says needs something ("... of NAME VERSION ...").
+        for name in present:
+            shown = display_name(mods / name)
+            if shown and re.search(r"\bof " + re.escape(shown) + r"\b", line):
+                blamed[name] = "the loader names it: " + line[2:300]
+    return blamed
+
+
 def load(loader, frm, to, save):
     """The mods the jar scoreboard says link that need no other mod, ported as jars and started on a real server of the new release,
     then in a real client of it (client_starts), with both verdicts side by side.
@@ -1090,8 +1137,12 @@ def load(loader, frm, to, save):
     # A Fabric mod that needs Fabric API needs nothing beyond the platform the pack starts with; one that needs other
     # mods starts with them when they link too.
     provided, adapters, chosen = set(platform_ids(loader, to)), set(), []
+    platform_own = set(provided)
     while True:
-        more = [folder / name for name in linked if folder / name not in chosen and standalone(folder / name, provided, adapters)]
+        # A linked mod that is the platform itself (Fabric API among the top mods) is not started twice: the loader
+        # refuses two jars with one mod id, and the platform's copy for the new release is the one players run.
+        more = [folder / name for name in linked if folder / name not in chosen and not mod_ids(folder / name) & platform_own
+                and standalone(folder / name, provided, adapters)]
         if not more:
             break
         for jar in more:
@@ -1137,6 +1188,8 @@ def load(loader, frm, to, save):
                 top = s.get("jar", "").split("!")[0] or next((n for n in present if s.get("mod") in mod_ids(pack / "mods" / n)), "")
                 if top in present:
                     blamed.setdefault(top, "; ".join(s.get("why", []))[:400])
+        if not blamed:
+            blamed = named_in_errors(result.get("receipt"), pack / "mods", present)
         if not blamed:
             print(res.get("details", done.stdout[-2000:]))
             raise SystemExit(f"a start failed and named no mod; receipt {result.get('receipt')}")

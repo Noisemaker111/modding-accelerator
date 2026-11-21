@@ -41,6 +41,15 @@ final class JarPortRetypeTest {
         a.classes.get("g6/Screen").methods.put("tip(" + POSE + "I)V", new GameDiff.Meth(a.classes.get("g6/Screen"), "tip", "(" + POSE + "I)V", Opcodes.ACC_PUBLIC));
         JarPortTest.snap(a, "g6/Row", 0, null, "render(" + POSE + "I)V");
         JarPortTest.snap(b, "g6/Row", 0, null, "render(" + GFX + "I)V");
+        // A callback interface whose method took the pose and takes the graphics in 2.0 (as a Fabric API callback did).
+        JarPortTest.snap(a, "g6/Hud", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "draw(" + POSE + "I)V");
+        JarPortTest.snap(b, "g6/Hud", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "draw(" + GFX + "I)V");
+        // g6.Model's transforms() is abstract in both releases' jars (the loader supplies it); 2.0 adds an abstract extra().
+        JarPortTest.snap(a, "g6/Model", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "quads()V", "transforms()V");
+        JarPortTest.snap(b, "g6/Model", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "quads()V", "transforms()V", "extra()V");
+        // A factory interface whose method's argument became another type altogether (a pose, now a key).
+        JarPortTest.snap(a, "g6/Maker", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "make(" + POSE + ")V");
+        JarPortTest.snap(b, "g6/Maker", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "make(" + KEY + ")V");
         JarPortTest.snap(a, "g6/Loc", 0, null);
         // g6.Part goes in 2.0 and the game's own Title2 extends Object instead, though the map follows Part's members to Graphics.
         JarPortTest.snap(a, "g6/Part", 0, null, "own()V");
@@ -59,7 +68,9 @@ final class JarPortRetypeTest {
                             {"owner": "g6.Screen", "from": "chr", "desc": "(CI)Z", "to": "chr", "newDesc": "(Lg6/Key;)Z"},
                             {"owner": "g6.Screen", "from": "drag", "desc": "(IIII)Z", "to": "drag", "newDesc": "(Lg6/Key;II)Z"},
                             {"owner": "g6.Screen", "from": "scroll", "desc": "(III)Z", "to": "scroll", "newDesc": "(IIII)Z"},
-                            {"owner": "g6.Row", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"}],
+                            {"owner": "g6.Row", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"},
+                            {"owner": "g6.Hud", "from": "draw", "desc": "(Lg6/Pose;I)V", "to": "draw", "newDesc": "(Lg6/Graphics;I)V"},
+                            {"owner": "g6.Maker", "from": "make", "desc": "(Lg6/Pose;)V", "to": "make", "newDesc": "(Lg6/Key;)V"}],
              "retyped": [{"step": "1.0 -> 2.0", "owner": "g6.Screen", "from": "tip", "desc": "(Lg6/Pose;I)V", "at": 1, "as": "Lg6/Graphics;",
                           "expr": "$1.tip2($0.font, $2)", "votes": 3, "of": 3}],
              "rewrites": [{"owner": "g6.Gui", "from": "fill", "desc": "(Lg6/Pose;I)V", "static": true, "toOwner": "g6.Graphics", "to": "fill",
@@ -216,6 +227,79 @@ final class JarPortRetypeTest {
         }
         JarPortTest.expect(lambdaTrace.startsWith("fill7;L;"),
             "a lambda made in a moved render that captures the pose moves with it, and its Gui.fill(pose, x) gets the graphics: " + lambdaTrace);
+
+        // A lambda for the callback: its body moves to the graphics and the lambda is made for the new draw.
+        List<Map<String, Object>> hudRuns = new ArrayList<>();
+        Map<String, byte[]> hudJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Overlay.class", overlay())), "hud.jar", hudRuns));
+        List<String> hudUnlinked = Json.array(hudRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        classes.put("m6/Overlay", hudJar.get("m6/Overlay.class"));
+        classes.put("g6/Hud", hudInterface());
+        String hudTrace;
+        try {
+            StringBuilder log = (StringBuilder) loader.loadClass("g2.Log").getField("out").get(null);
+            int before = log.length();
+            Object hud = loader.loadClass("m6.Overlay").getMethod("make").invoke(null);
+            Class<?> gfx = loader.loadClass("g6.Graphics");
+            loader.loadClass("g6.Hud").getMethod("draw", gfx, int.class).invoke(hud, gfx.getConstructor().newInstance(), 7);
+            hudTrace = log.substring(before);
+        } catch (ReflectiveOperationException | LinkageError failed) {
+            hudTrace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
+        }
+        JarPortTest.expect(hudUnlinked.isEmpty() && hudTrace.equals("push;H;"),
+            "a lambda for a callback whose method now takes the graphics moves with it and runs with graphics.pose(): " + hudUnlinked + " " + hudTrace);
+        List<Map<String, Object>> makerRuns = new ArrayList<>();
+        Map<String, byte[]> makerJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Factory.class", factory())), "maker.jar", makerRuns));
+        List<String> makerUnlinked = Json.array(makerRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        classes.put("m6/Factory", makerJar.get("m6/Factory.class"));
+        classes.put("g6/Maker", makerInterface());
+        String makerTrace;
+        try {
+            StringBuilder log = (StringBuilder) loader.loadClass("g2.Log").getField("out").get(null);
+            int before = log.length();
+            Object maker = loader.loadClass("m6.Factory").getMethod("make").invoke(null);
+            Class<?> key = loader.loadClass("g6.Key");
+            loader.loadClass("g6.Maker").getMethod("make", key).invoke(maker, key.getConstructor(int.class).newInstance(65));
+            makerTrace = log.substring(before);
+        } catch (ReflectiveOperationException | LinkageError failed) {
+            makerTrace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
+        }
+        JarPortTest.expect(makerUnlinked.isEmpty() && makerTrace.equals("M;"),
+            "a lambda for a method whose argument became another type, which its body never reads, is made for the new method: " + makerUnlinked + " " + makerTrace);
+
+        List<Map<String, Object>> stuckRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/Overlay.class", overlayReference())), "stuck.jar", stuckRuns);
+        List<String> stuck = Json.array(stuckRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(stuck.contains("lambda for a changed method: g6.Hud.draw(Lg6/Pose;I)V (in m6.Overlay)"),
+            "a method reference to a public method, which cannot move, is reported instead of linking silently: " + stuck);
+
+        List<Map<String, Object>> modelRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/MyModel.class", JarPortTest.real("m6/MyModel", "java/lang/Object", 0, new String[] { "g6/Model" },
+            w -> JarPortTest.traced(w, "quads", "()V", "", m -> { })))), "model.jar", modelRuns);
+        List<String> modelUnlinked = Json.array(modelRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(modelUnlinked.equals(List.of("abstract method not written: g6.Model.extra()V (in m6.MyModel)")),
+            "an abstract method the class left unwritten against the old release too is not the port's break; one the new release added is: " + modelUnlinked);
+        List<Map<String, Object>> unreadRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/OddModel.class", JarPortTest.real("m6/OddModel", "java/lang/Object", 0, new String[] { "g6/Model" },
+            w -> {
+                JarPortTest.traced(w, "quads", "()V", "", m -> { });
+                JarPortTest.traced(w, "method_4711", "()V", "", m -> { });
+            }))), "odd.jar", unreadRuns);
+        List<String> unread = Json.array(unreadRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(unread.contains("abstract method not written: g6.Model.transforms()V (in m6.OddModel)"),
+            "but one the class writes under an id its names were not read through (method_4711) did not load before either, and stays reported: " + unread);
+        List<Map<String, Object>> forgeRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/FabricModel.class", JarPortTest.real("m6/FabricModel", "java/lang/Object", 0, new String[] { "g6/Model" },
+            w -> JarPortTest.traced(w, "spin", "(Lnet/minecraft/class_1234;)V", "", m -> { })))), "forge.jar", forgeRuns);
+        List<String> forgeUnlinked = Json.array(forgeRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(forgeUnlinked.equals(List.of("built for another loader: every class names the game as another loader's build does")),
+            "a jar whose every class names the game by intermediary is a Fabric build, which never loaded on NeoForge, and does not link: " + forgeUnlinked);
+        List<Map<String, Object>> nestedRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("META-INF/jars/fabric-part.jar", JarPortTest.jar(Map.of("m6/FabricModel.class", JarPortTest.real("m6/FabricModel", "java/lang/Object", 0,
+            new String[] { "g6/Model" }, w -> JarPortTest.traced(w, "spin", "(Lnet/minecraft/class_1234;)V", "", m -> { })))),
+            "META-INF/neoforge.mods.toml", "modLoader=\"javafml\"\n[[mods]]\nmodId=\"m6\"\n".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            "META-INF/jarjar/metadata.json", "{\"jars\": [{\"path\": \"META-INF/jars/fabric-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "both.jar", nestedRuns);
+        List<String> nestedUnlinked = nestedRuns.stream().flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
+        JarPortTest.expect(nestedUnlinked.isEmpty(), "a jar nested for the other loader is never loaded here, so it holds nothing back: " + nestedUnlinked);
 
         // A mod class on the removed Part extends what the game's own subclasses of it extend now, not Graphics.
         List<Map<String, Object>> partRuns = new ArrayList<>();
@@ -580,6 +664,82 @@ final class JarPortRetypeTest {
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** g6.Maker in 2.0: make(key). */
+    static byte[] makerInterface() {
+        ClassWriter w = new ClassWriter(0);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "g6/Maker", null, "java/lang/Object", null);
+        w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "make", "(" + KEY + ")V", null, null).visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.Factory, for 1.0: make() gives the lambda pose -> log M, which never reads the pose. */
+    static byte[] factory() {
+        ClassWriter w = writer("m6/Factory", "java/lang/Object");
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "make", "()Lg6/Maker;", null, null);
+        m.visitCode();
+        m.visitInvokeDynamicInsn("make", "()Lg6/Maker;", FACTORY, Type.getType("(" + POSE + ")V"),
+            new Handle(Opcodes.H_INVOKESTATIC, "m6/Factory", "lambda$make$0", "(" + POSE + ")V", false), Type.getType("(" + POSE + ")V"));
+        m.visitInsn(Opcodes.ARETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        MethodVisitor l = w.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, "lambda$make$0", "(" + POSE + ")V", null, null);
+        l.visitCode();
+        JarPortTest.append(l, "M;");
+        l.visitInsn(Opcodes.RETURN);
+        l.visitMaxs(0, 0);
+        l.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** g6.Hud in 2.0: draw(graphics, x). */
+    static byte[] hudInterface() {
+        ClassWriter w = new ClassWriter(0);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "g6/Hud", null, "java/lang/Object", null);
+        w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "draw", "(" + GFX + "I)V", null, null).visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    static final Handle FACTORY = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false);
+
+    /** m6.Overlay, for 1.0: make() gives the lambda (pose, x) -> { pose.push(); log H }. */
+    static byte[] overlay() {
+        return overlay("lambda$make$0", Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC);
+    }
+
+    /** The same made from overlay::paint, a public instance method another class may override. */
+    static byte[] overlayReference() {
+        return overlay("paint", Opcodes.ACC_PUBLIC);
+    }
+
+    static byte[] overlay(String body, int access) {
+        ClassWriter w = writer("m6/Overlay", "java/lang/Object");
+        boolean bound = (access & Opcodes.ACC_STATIC) == 0;
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "make", bound ? "(Lm6/Overlay;)Lg6/Hud;" : "()Lg6/Hud;", null, null);
+        m.visitCode();
+        if (bound) {
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+        }
+        m.visitInvokeDynamicInsn("draw", bound ? "(Lm6/Overlay;)Lg6/Hud;" : "()Lg6/Hud;", FACTORY, Type.getType("(" + POSE + "I)V"),
+            new Handle(bound ? Opcodes.H_INVOKEVIRTUAL : Opcodes.H_INVOKESTATIC, "m6/Overlay", body, "(" + POSE + "I)V", false), Type.getType("(" + POSE + "I)V"));
+        m.visitInsn(Opcodes.ARETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        MethodVisitor l = w.visitMethod(access, body, "(" + POSE + "I)V", null, null);
+        l.visitCode();
+        l.visitVarInsn(Opcodes.ALOAD, (access & Opcodes.ACC_STATIC) == 0 ? 1 : 0);
+        l.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
+        JarPortTest.append(l, "H;");
+        l.visitInsn(Opcodes.RETURN);
+        l.visitMaxs(0, 0);
+        l.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }
