@@ -7,8 +7,10 @@ import org.objectweb.asm.*;
  * two-release game built here. 1.0: Src.allowed(int level) is level <= 2. 2.0: Src has no allowed; Src.perms() gives a
  * Set whose allowed(Perm) answers it, a Perm is made only by HasLevel(Level), and a Level from an int only by Level.byId.
  * So Src.allowed(n) is $0.perms().allowed(new HasLevel(Level.byId($1))), and a mod calling it runs on the new game as
- * before. Shelf.find(String) became find(Key), and Key's only maker takes an Object (Key.wrap): a factory from another
- * object may mean something else of the same type, so nothing is learned for it. Pair.allowed(int) went too, and a Pair
+ * before. Shelf.find(String) became find(Key), and Key's only maker takes a CharSequence (Key.wrap): a factory from another
+ * object may mean something else of the same type, so nothing is learned for it. Shelf.put(String) became put(Box), and
+ * a Box is made by Box(Object), which holds anything it is given: nothing is learned for that either. Src.tag(String)
+ * became tag(Object), as an erased type variable reads: it wants some one type, not any, so it is not taken as the answer. Pair.allowed(int) went too, and a Pair
  * hands out two Sets: either could be the answer, so nothing is learned for it either.
  *
  * Pos(Vec) went in 2.0 and the game's own uses of it, all on a Pos or a Mut (a Pos), became p, p, p.immutable() and new
@@ -38,6 +40,8 @@ final class GameTypesTest {
         JarPortTest.expect(("$0.perms().allowed(new " + y + "HasLevel(" + y + "Level.byId($1)))").equals(learned.get(y + "Src.allowed(I)Z")),
             "a removed method is asked of the one object the class hands out that answers it, its argument made by the new types' only makers: " + learned);
         JarPortTest.expect(!learned.containsKey(y + "Shelf.find(" + STR + ")" + OBJ), "a maker that reads another object is not used: " + learned.get(y + "Shelf.find(" + STR + ")" + OBJ));
+        JarPortTest.expect(!learned.containsKey(y + "Shelf.put(" + STR + ")V"), "a maker that holds any object is not used: " + learned.get(y + "Shelf.put(" + STR + ")V"));
+        JarPortTest.expect(!learned.containsKey(y + "Src.tag(" + STR + ")V"), "a method taking any object is not the answer: " + learned.get(y + "Src.tag(" + STR + ")V"));
         JarPortTest.expect(!learned.containsKey(y + "Pair.allowed(I)Z"), "two objects that could answer and nothing is learned: " + learned.get(y + "Pair.allowed(I)Z"));
         JarPortTest.expect(("new " + y + "Pos($1.getX(), $1.getY())").equals(learned.get(y + "Pos.<init>(L" + U + "Vec;)V")),
             "of the game's rewrites of a narrower value, the one that compiles for the declared type: " + learned.get(y + "Pos.<init>(L" + U + "Vec;)V"));
@@ -110,13 +114,13 @@ final class GameTypesTest {
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("game-types: 5 checks passed");
+        System.out.println("game-types: 7 checks passed");
     }
 
     /**
      * 1.0: Src.allowed(I)Z (level <= 2); Shelf.find(String). 2.0: Perm (an interface), Level (id(), byId(int)), HasLevel
      * implements Perm (HasLevel(Level), level()), Set.allowed(Perm) (a HasLevel's level id <= 2), Src.perms(), Key with only
-     * Key.wrap(Object), Shelf.find(Key). Pair.allowed(I)Z in 1.0; Pair.left() and Pair.right(), both Sets, in 2.0. Both releases have Src.name(), which gives a String, as a decoy accessor.
+     * Key.wrap(CharSequence), Shelf.find(Key); Shelf.put(String) becomes put(Box), Box(Object). Pair.allowed(I)Z in 1.0; Pair.left() and Pair.right(), both Sets, in 2.0. Both releases have Src.name(), which gives a String, as a decoy accessor.
      */
     static Map<String, byte[]> game(boolean two) {
         Map<String, byte[]> out = new LinkedHashMap<>();
@@ -128,6 +132,11 @@ final class GameTypesTest {
             n.visitInsn(Opcodes.ARETURN);
             n.visitMaxs(0, 0);
             n.visitEnd();
+            MethodVisitor tag = w.visitMethod(Opcodes.ACC_PUBLIC, "tag", "(" + (two ? OBJ : STR) + ")V", null, null);
+            tag.visitCode();
+            tag.visitInsn(Opcodes.RETURN);
+            tag.visitMaxs(0, 0);
+            tag.visitEnd();
             if (!two) {
                 MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "allowed", "(I)Z", null, null);
                 m.visitCode();
@@ -180,6 +189,11 @@ final class GameTypesTest {
             f.visitInsn(Opcodes.ARETURN);
             f.visitMaxs(0, 0);
             f.visitEnd();
+            MethodVisitor put = w.visitMethod(Opcodes.ACC_PUBLIC, "put", "(" + (two ? "L" + U + "Box;" : STR) + ")V", null, null);
+            put.visitCode();
+            put.visitInsn(Opcodes.RETURN);
+            put.visitMaxs(0, 0);
+            put.visitEnd();
         }));
         if (two) {
             out.put(U + "Perm", cls("Perm", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, null, w -> {}));
@@ -245,7 +259,7 @@ final class GameTypesTest {
                 c.visitInsn(Opcodes.RETURN);
                 c.visitMaxs(0, 0);
                 c.visitEnd();
-                MethodVisitor wr = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "wrap", "(" + OBJ + ")L" + U + "Key;", null, null);
+                MethodVisitor wr = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "wrap", "(Ljava/lang/CharSequence;)L" + U + "Key;", null, null);
                 wr.visitCode();
                 wr.visitTypeInsn(Opcodes.NEW, U + "Key");
                 wr.visitInsn(Opcodes.DUP);
@@ -253,6 +267,15 @@ final class GameTypesTest {
                 wr.visitInsn(Opcodes.ARETURN);
                 wr.visitMaxs(0, 0);
                 wr.visitEnd();
+            }));
+            out.put(U + "Box", cls("Box", 0, null, null, w -> {
+                MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(" + OBJ + ")V", null, null);
+                c.visitCode();
+                c.visitVarInsn(Opcodes.ALOAD, 0);
+                c.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                c.visitInsn(Opcodes.RETURN);
+                c.visitMaxs(0, 0);
+                c.visitEnd();
             }));
         }
         return out;
