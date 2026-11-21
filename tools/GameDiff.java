@@ -3726,6 +3726,9 @@ public final class GameDiff {
                 out.add(new Learned(old.owner().replace('/', '.'), old.name(), field ? "" : old.desc(), field, linked, best, top, of));
             }
             voteChains(log);
+            // Y of a late chain is not dropped on its own: its value went into X's new call, so alone it says nothing.
+            out.removeIf(l -> chains.stream().anyMatch(c -> c.at() == -2 && c.y().owner().replace('/', '.').equals(l.owner()) && c.y().name().equals(l.name())
+                && c.y().desc().equals(l.desc())));
             out.addAll(sameMeaning(out, log));
             out.addAll(throughAccessor(out));
             out.addAll(throughClassMap(out));
@@ -5063,7 +5066,7 @@ public final class GameDiff {
                     + ", \"desc\": " + VersionMap.Diff.q(x.kind() == 'f' ? "" : x.desc()) + ", \"field\": " + (x.kind() == 'f') + ", \"linked\": false"
                     + ", \"expr\": " + VersionMap.Diff.q(expr) + ", \"votes\": " + votes + ", \"of\": " + of
                     + ", \"then\": { \"owner\": " + VersionMap.Diff.q(y.owner().replace('/', '.')) + ", \"from\": " + VersionMap.Diff.q(y.name())
-                    + ", \"desc\": " + VersionMap.Diff.q(y.desc()) + ", \"at\": " + at + " }, \"result\": " + VersionMap.Diff.q(at < 0 ? "sibling" : first ? "first" : "last") + " }";
+                    + ", \"desc\": " + VersionMap.Diff.q(y.desc()) + ", \"at\": " + at + " }, \"result\": " + VersionMap.Diff.q(at == -2 ? "late" : at < 0 ? "sibling" : first ? "first" : "last") + " }";
             }
         }
 
@@ -5192,6 +5195,7 @@ public final class GameDiff {
         }
 
         void chain(Node use, Node m) {
+            late(use, m);
             // "sibling": a call on the receiver an earlier changed call was made on, read with that call's value among its
             // operands (1.21's tesselator.end() after tesselator.getBuilder() is BufferUploader.drawWithShader(builder.buildOrThrow())).
             if (use.op == 'v' && hole(use) && use.kids.length > 0) {
@@ -5213,6 +5217,44 @@ public final class GameDiff {
                 chainRead(use, y, 0, m, use.type);
             }
         }
+
+        /**
+         * "late": a value the new release takes where the object is made, which old code set later on the same object.
+         * 1.21.11's CycleButton.builder(f) then withInitialValue(v), after other calls that give the builder back
+         * (withValues(...)), is CycleButton.builder(f, v), and withInitialValue is gone. Y, a changed call on a value
+         * made by X (a changed call) through calls that return their receiver; b's node in Y's place is the same calls
+         * on X's new call, which is read over both calls' operands.
+         */
+        void late(Node y, Node m) {
+            if (y.op != 'v' || !hole(y) || y.kids.length < 2 || y.type.equals("V") || !y.type.equals(y.kids[0].type)) {
+                return;
+            }
+            Node x = y.kids[0], now = m;
+            while (x.op == 'v' && !hole(x) && x.kids.length > 0 && x.type.equals(x.kids[0].type)) {
+                if (now.op != 'v' || now.ref == null || !now.ref.name().equals(x.ref.name()) || now.kids.length != x.kids.length) {
+                    return;
+                }
+                x = x.kids[0];
+                now = now.kids[0];
+            }
+            if (!chainable(x) || x.op != 's' && x.op != 'v' || now.op != x.op || now.ref == null || x.at < 0 || y.at < x.at) {
+                return;
+            }
+            Node[] ops = new Node[x.kids.length + y.kids.length - 1];
+            System.arraycopy(x.kids, 0, ops, 0, x.kids.length);
+            System.arraycopy(y.kids, 1, ops, x.kids.length, y.kids.length - 1);
+            String made = x.type;
+            Node site = lateUse.computeIfAbsent(y, k -> new Node('s', null, null, made, ops));
+            String key = x.ref.owner() + "." + x.ref.name() + x.ref.desc() + " " + y.ref.owner() + "." + y.ref.name() + y.ref.desc() + " -2 late";
+            chainRefs.putIfAbsent(key, new Object[] { x.ref, y.ref, -2, x.kids.length });
+            Set<String> readings = chainSites.computeIfAbsent(key, k -> new IdentityHashMap<>()).computeIfAbsent(site, k -> new LinkedHashSet<>());
+            String r = express(now, site.kids, 1, x.type, 0);
+            if (r != null) {
+                readings.add(r);
+            }
+        }
+
+        final Map<Node, Node> lateUse = new IdentityHashMap<>(); // Y -> one use standing for X and Y of a late chain
 
         void chainRead(Node x, Node y, int at, Node m, String type) {
             if (!fits(m.type, type)) {
@@ -5254,7 +5296,8 @@ public final class GameDiff {
                 int[] tally = new int[2];
                 String best = vote(e.getValue().values(), tally, true);
                 Object[] r = chainRefs.get(e.getKey());
-                boolean first = e.getKey().endsWith(" first") || e.getKey().endsWith(" sibling");
+                // A late chain keeps Y's value too: it is what moved into X's new call.
+                boolean first = e.getKey().endsWith(" first") || e.getKey().endsWith(" sibling") || e.getKey().endsWith(" late");
                 int n = e.getValue().keySet().iterator().next().kids.length;
                 boolean all = best != null;
                 for (int i = first ? (int) r[3] + 1 : n + 1; all && i <= n; i++) {
@@ -5268,7 +5311,7 @@ public final class GameDiff {
                     log.append('\n');
                 }
                 if (agreed) {
-                    chains.add(new Chained((Ref) r[0], (Ref) r[1], (int) r[2], first, best, tally[0], tally[1]));
+                    chains.add(new Chained((Ref) r[0], (Ref) r[1], (int) r[2], (int) r[2] != -2 && first, best, tally[0], tally[1]));
                 }
             }
             chains.sort(Comparator.comparing((Chained c) -> c.x().owner() + c.x().name() + c.y().name() + c.at()));
@@ -5525,6 +5568,13 @@ public final class GameDiff {
                 budget = 2_000;
                 if (match(ops[i], m, null) || linesUpThrough(ops[i], m) || lined.getOrDefault(ops[i], Set.of()).contains(m)) {
                     same.add("$" + (i + first));
+                } else if (boxed(ops[i]) && primitive(m.type) != null) {
+                    // An operand the old code boxed (withInitialValue(Boolean.valueOf(x))) where b passes the primitive itself
+                    // (booleanBuilder(a, b, x)): the operand unboxed.
+                    budget = 2_000;
+                    if (match(ops[i].kids[0], m, null)) {
+                        same.add("((" + dotted(ops[i].ref.owner()) + ") $" + (i + first) + ")." + primitive(m.type) + "Value()");
+                    }
                 }
             }
             if (m.op == 'k') {
@@ -5648,6 +5698,12 @@ public final class GameDiff {
         /** A cast written as a receiver needs its own parentheses: ((T) x).m(). */
         static String receiver(String t) {
             return t.startsWith("(") ? "(" + t + ")" : t;
+        }
+
+        /** A primitive boxed by its wrapper's valueOf (Boolean.valueOf(x)). */
+        static boolean boxed(Node n) {
+            return n.op == 's' && n.kids.length == 1 && n.ref != null && n.ref.name().equals("valueOf") && n.ref.owner().startsWith("java/lang/")
+                && n.kids[0].type.length() == 1;
         }
 
         static String primitive(String desc) {

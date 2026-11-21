@@ -169,6 +169,24 @@ public final class JarPort {
 
     final List<PortChains.Spec> pairs = new ArrayList<>();
 
+    /** Whether owner (the mod's, the old release's or the JDK's) is an interface, for a call PortChains writes again; null if unknown. */
+    Boolean interfaceIn(Map<String, byte[]> entries, String owner) {
+        byte[] own = entries.get(owner + ".class");
+        if (own != null) {
+            return (new ClassReader(own).getAccess() & Opcodes.ACC_INTERFACE) != 0;
+        }
+        GameDiff.Cls c = a.classes.get(owner);
+        c = c != null ? c : a.libraries.get(owner);
+        if (c != null) {
+            return (c.flags & Opcodes.ACC_INTERFACE) != 0;
+        }
+        try {
+            return Class.forName(owner.replace('/', '.'), false, null).isInterface();
+        } catch (ClassNotFoundException | LinkageError unknown) {
+            return null;
+        }
+    }
+
     /** A member of a library class that both releases declare with the same type and access. */
     boolean unchangedLibrary(char kind, String owner, String name, String desc) {
         GameDiff.Cls old = a.classes.get(owner), now = b.classes.get(owner);
@@ -210,6 +228,24 @@ public final class JarPort {
         boolean xStatic = field ? (f.flags & Opcodes.ACC_STATIC) != 0 : m.isStatic();
         boolean first = "first".equals(Json.text(w, "result", ""));
         StringBuilder params = new StringBuilder("(");
+        if (at == -2) {
+            // A late chain: X's operands, then Y's arguments (the value the new release takes where the object is made); the
+            // stand-in gives what X gave, and Y, on the object later, only drops its argument (PortChains).
+            if (field || y.isStatic() || m == null) {
+                return;
+            }
+            if (!xStatic) {
+                params.append('L').append(owner).append(';');
+            }
+            params.append(desc, 1, desc.indexOf(')')).append(yDesc, 1, yDesc.indexOf(')')).append(')');
+            String fake = from + "+" + yName + "+late", fakeDesc = params + desc.substring(desc.indexOf(')') + 1);
+            xc.methods.put(fake + fakeDesc, new GameDiff.Meth(xc, fake, fakeDesc, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+            fixes.computeIfAbsent(owner, k -> new ArrayList<>()).add(new Fix("game chain " + Json.text(w, "step", ""), Pattern.compile(Pattern.quote(fake)),
+                params.toString(), Json.text(w, "expr", "")));
+            pairs.add(new PortChains.Spec('m', xStatic, owner, from, desc, yOwner, yName, yDesc, false, -2, false, fake, fakeDesc,
+                (xc.flags & Opcodes.ACC_INTERFACE) != 0));
+            return;
+        }
         if (at < 0) {
             // A sibling: Y on X's receiver, with X's value (kept in a local) passed after Y's receiver.
             if (field || y.isStatic() || xStatic) {
@@ -562,6 +598,7 @@ public final class JarPort {
         byte[] fmj = entries.get("fabric.mod.json");
         mod.canWiden = entries.containsKey("META-INF/neoforge.mods.toml") || fmj != null;
         boolean nativeGame = false; // a class naming the game as this loader's build does
+        Map<String, byte[]> jarEntries = entries;
         for (var e : entries.entrySet()) {
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/") && otherLoader(e.getValue())) {
                 mod.foreign.add(e.getKey());
@@ -575,7 +612,7 @@ public final class JarPort {
                 e.setValue(PortChains.apply(e.getValue(), pairs, (o, k, n, d) -> {
                     GameDiff.Cls c = Exposure.declaring(a, o, k, n, d);
                     return c == null ? null : c.name;
-                }));
+                }, owner -> interfaceIn(jarEntries, owner)));
                 read(mod, e.getValue());
             }
         }

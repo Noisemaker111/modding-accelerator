@@ -845,6 +845,24 @@
       "port.jar-links.newest"
      ],
      "result": "Type finishes 55 -> 51 and appears in 872 -> 853 mod ports (1,292 -> 1,250 references). Every update 6,045 -> 6,051, big updates 1,925 -> 1,931, newest 16. Four updates lower by lambda targets the new release no longer has and the mods require (Language Reload, FastQuit, Mouse Tweaks, VMP). Real Fabric 1.21 client: the newly linked Dynamic FPS passes; a Fabric 1.21 server loads 24 of 25 server-side mods (Terralith's data refused); ported ImmediatelyFast and ReplayMod reach the 1.20.4 title screen where they had crashed on their lambda mixins."
+    },
+    {
+     "id": "70",
+     "title": "A value the new release takes where an object is made moves there from the setter old code called later",
+     "part": "Port by changed game part",
+     "status": "done",
+     "done": "2026-11-21",
+     "text": "GameDiff learns, from how the game's own code builds the same object, that a changed call X (a factory) followed through calls that give the object back by a changed setter Y became X with Y's value (1.21.11: CycleButton.builder(f) ... withInitialValue(v) is builder(f, v); booleanBuilder(a, b) ... withInitialValue(Boolean.valueOf(x)) is booleanBuilder(a, b, x)). JarPort finds the pair by data flow in each method (PortChains, late): Y's receiver is X's value through calls that give it back, each used only by the next, in one straight run of code; Y's value is written again where X is when it can be read there (constants, fields, parameters never stored to, locals stored once before X, getters over those), and Y only drops its value. Y alone is no longer learned as dropped.",
+     "start": "2026-11-21",
+     "target": "2026-11-21",
+     "finish": "port.jar-links.newest up from 16, every update and big updates no lower, load on 26.3 server and client for newly linked standalone mods",
+     "wrongIf": "a mod whose setter value moved behaves differently in game from its old version",
+     "measures": [
+      "port.jar-links.newest",
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates"
+     ],
+     "result": "2026-11-21 (on #150): newest 16 -> 17 (NeoForge jump 11 -> 12); every update 6,051 -> 6,056, big updates 1,931 -> 1,936 (1.21.10 -> 1.21.11 Fabric 37 -> 40, NeoForge 48 -> 50), none lower. Mods with these calls unlinked: NeoForge 1.21.10 -> 1.21.11 8 -> 3, the NeoForge jump 13 -> 6. Real games: NeoForge 1.21.11 server 26 of 29 linked mods load, both newly linked (Mouse Tweaks, ShulkerBoxTooltip) among them; pack-check's client does not run 1.21.11 yet. On 26.3 the newly linked Mouse Tweaks loads on the server and fails in the client before its builder code runs: it reads Minecraft.getInstance() while being constructed, and 26.3 makes the Minecraft instance later. call, game: template does not fall to this (one call into a chain is the other direction)."
     }
    ]
   },
