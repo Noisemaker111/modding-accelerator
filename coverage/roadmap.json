@@ -809,6 +809,24 @@
       "port.jar-links.newest"
      ],
      "result": "2026-11-21: call, game: split over every update finishes 80 -> 73 and is in 1,555 -> 1,518 mods. Every update 5,972 -> 5,979 of 9,423, none lower; big updates 1,910 -> 1,917; newest 15 -> 15; jumps 1,170 -> 1,177. 1.21.8 -> 1.21.9: Fabric 35 -> 39, NeoForge 35 -> 38 (Screen.hasShiftDown/hasControlDown are Minecraft.getInstance()'s, GameProfile.getId() is id()). Real 1.21.9: NeoForge server 19 of 22 linked standalone mods load, client 19 of 22 (Better Third Person and Make Bubbles Pop fail on their mixins, linked before this); Fabric server 15 of 25 (Krypton fails on a mixin, linked before this; 9 client-only), client 23 of 24. Newly linked and proven: Enchantment Descriptions with Prickle (NeoForge) and Spark (Fabric), each on a real server and client. call, game: linked does not fall to this (its mods stay 1,960; finishes 180 -> 187 as mods freed here wait only on it). new ResourceLocation(String) is parse(s) from the uses that pass data (30 of 31)."
+    },
+    {
+     "id": "68",
+     "title": "The newest-game jump: statics a class made instance methods, and jar-in-jar mods",
+     "part": "Port by changed game part",
+     "status": "done",
+     "done": "2026-11-21",
+     "text": "Read from the newest jump's own types of break. Its mods each need several types; what alone holds back the most there: data id gone 3 (already counted as linked: data files), call, game: linked 2, call, game: template 1, field, game: linked 1, mixin target changed signature 1 (agent 2). Taken: call, game: linked. Statics a class made instance methods go through the accessor the game's own code uses for the class's other such methods (NeoForge 1.21.9: FMLLoader.getCurrent()). mmt port --jar ports a NeoForge jar-in-jar container by its nested mods.",
+     "start": "2026-11-21",
+     "target": "2026-11-21",
+     "finish": "port.jar-links.newest up from 15, every update and big updates no lower, load on 26.3 server and client for every newly linked standalone mod",
+     "wrongIf": "a mod that links through an accessor reading fails in a real game",
+     "measures": [
+      "port.jar-links.newest",
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates"
+     ],
+     "result": "2026-11-21: newest 15 -> 16 (NeoForge 1.21.1 -> 26.3 10 -> 11, Kotlin for Forge); every update 6,044 -> 6,045 and big updates 1,924 -> 1,925, none lower. Kotlin for Forge ported with mmt port --jar loads on a real NeoForge 26.3 server and client (FML lists Kotlin For Forge 5.13.0). Next on the jump: Mouse Tweaks, held only by CycleButton.builder(f) whose starting value 26.3 takes as an argument (builder(f, v)) where the old builder took it later (withInitialValue(v)); 23 mods on the jump call it."
     }
    ]
   },

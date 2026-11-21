@@ -823,6 +823,37 @@ public final class PortTests {
             Boolean.TRUE.equals(Port.verifyModMetadata(metadataRoot, neoModel, "1.21.4").get("ok")),
             "packaged metadata that accepts the target version passes the loader check"
         );
+        jarInJar(scratch);
         System.out.println(count + " port checks passed");
+    }
+
+    /** mmt port --jar on a NeoForge jar-in-jar container: its first nested mod's metadata stands for it; a plain jar has none. */
+    static void jarInJar(Path scratch) throws Exception {
+        var nested = new ByteArrayOutputStream();
+        try (var zip = new java.util.zip.ZipOutputStream(nested)) {
+            zip.putNextEntry(new java.util.zip.ZipEntry("META-INF/neoforge.mods.toml"));
+            zip.write("modLoader=\"javafml\"\n[[mods]]\nmodId=\"inner\"\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
+        Path container = scratch.resolve("container.jar"), plain = scratch.resolve("plain.jar");
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(container))) {
+            zip.putNextEntry(new java.util.zip.ZipEntry("META-INF/MANIFEST.MF"));
+            zip.write("Manifest-Version: 1.0\nFMLModType: LIBRARY\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            zip.closeEntry();
+            zip.putNextEntry(new java.util.zip.ZipEntry("META-INF/jarjar/metadata.json"));
+            zip.write("{\"jars\": []}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            zip.closeEntry();
+            zip.putNextEntry(new java.util.zip.ZipEntry("META-INF/jarjar/inner.jar"));
+            zip.write(nested.toByteArray());
+            zip.closeEntry();
+        }
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(plain))) {
+            zip.putNextEntry(new java.util.zip.ZipEntry("a/A.class"));
+            zip.write(new byte[] { 1 });
+            zip.closeEntry();
+        }
+        String toml = PortJar.metadata(container);
+        check(toml != null && toml.contains("modId=\"inner\""), "a jar-in-jar container is ported by its nested mods' metadata (Kotlin for Forge's layout)");
+        check(PortJar.metadata(plain) == null, "a jar with no metadata of its own and no nested mods is still refused");
     }
 }

@@ -35,23 +35,24 @@ final class GameSplitTest {
         check(learned, t + "Key.shift()Z", t + "Mc.get().shift()", "uses that make the same call on a value only their method has count for the reading the other uses show");
         check(learned, t + "Key.ctrl()Z", t + "Mc.get().ctrl()", "the reading those uses back wins over one place that lined up with something else");
         check(learned, t + "Pal.find(Ljava/lang/Object;)I", null, "uses that pass a value only their method has as an argument count against");
+        check(learned, t + "Ldr.bind()Ljava/lang/String;", t + "Ldr.current().bind()", "a static the class made an instance method, which the game never calls, goes through the accessor its code uses for the class's others");
         check(learned, t + "Id.of(Ljava/lang/String;)Ljava/lang/String;", t + "Id.parse($1)", "where the game wrote one call for a literal and another for a call's result, the reading for the call's result is the general one");
 
         Path map = scratch.resolve("route-split.json");
         Files.writeString(map, "{\"learned\": [" + String.join(",\n", lines) + "]}");
         String trace = run(a, b, map, newGame);
-        JarPortTest.expect(trace.equals("truefalseX"), "the mod's calls run on the new game: " + trace);
+        JarPortTest.expect(trace.equals("truefalseXb"), "the mod's calls run on the new game: " + trace);
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("game-split: 5 checks passed");
+        System.out.println("game-split: 6 checks passed");
     }
 
     static void check(Map<String, String> learned, String key, String want, String what) {
         JarPortTest.expect(Objects.equals(want, learned.get(key)), what + ": " + learned.get(key));
     }
 
-    /** m6.Run.go(): "" + Key.shift() + Key.ctrl() + Id.of("x"). */
+    /** m6.Run.go(): "" + Key.shift() + Key.ctrl() + Id.of("x") + Ldr.bind(). */
     static String run(GameDiff.Snap a, GameDiff.Snap b, Path map, Map<String, byte[]> newGame) throws Exception {
         ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m6/Run", null, "java/lang/Object", null);
@@ -66,6 +67,8 @@ final class GameSplitTest {
         }
         m.visitLdcInsn("x");
         m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Id", "of", "(Ljava/lang/String;)Ljava/lang/String;", false);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ldr", "bind", "()Ljava/lang/String;", false);
         m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
         m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
         m.visitInsn(Opcodes.ARETURN);
@@ -125,6 +128,28 @@ final class GameSplitTest {
             }
             out.put(U + "Cfg", cls("Cfg", w -> w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "FLAG", "Z", null, null).visitEnd()));
         }
+        // Ldr: dist(), prod() and bind() static in 1.0; instance methods of Ldr.current() in 2.0. Ui.boot asks dist and prod.
+        out.put(U + "Ldr", cls("Ldr", w -> {
+            constructor(w);
+            constant(w, "dist", "()Z", !two, 1);
+            constant(w, "prod", "()Z", !two, 0);
+            MethodVisitor bd = w.visitMethod(Opcodes.ACC_PUBLIC | (two ? 0 : Opcodes.ACC_STATIC), "bind", "()Ljava/lang/String;", null, null);
+            bd.visitCode();
+            bd.visitLdcInsn("b");
+            bd.visitInsn(Opcodes.ARETURN);
+            bd.visitMaxs(0, 0);
+            bd.visitEnd();
+            if (two) {
+                MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "current", "()L" + U + "Ldr;", null, null);
+                c.visitCode();
+                c.visitTypeInsn(Opcodes.NEW, U + "Ldr");
+                c.visitInsn(Opcodes.DUP);
+                c.visitMethodInsn(Opcodes.INVOKESPECIAL, U + "Ldr", "<init>", "()V", false);
+                c.visitInsn(Opcodes.ARETURN);
+                c.visitMaxs(0, 0);
+                c.visitEnd();
+            }
+        }));
         // Id: of(s) in 1.0; parse(s) (upper case, a one-line wrapper of bySplit(s, ':')) and path(s) (lower case) in 2.0.
         out.put(U + "Id", cls("Id", w -> {
             if (two) {
@@ -199,6 +224,25 @@ final class GameSplitTest {
             for (String name : List.of("onKey", "onClick", "onScroll")) {
                 handler(w, name, two, true, false);
             }
+            MethodVisitor boot = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "boot", "()V", null, null);
+            boot.visitCode();
+            for (String q : List.of("dist", "prod")) {
+                if (two) {
+                    boot.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ldr", "current", "()L" + U + "Ldr;", false);
+                    boot.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Ldr", q, "()Z", false);
+                } else {
+                    boot.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ldr", q, "()Z", false);
+                }
+                if (q.equals("dist")) {
+                    boot.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ui", "log", "(Z)V", false);
+                } else {
+                    boot.visitIntInsn(Opcodes.BIPUSH, 9);
+                    boot.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ui", "note", "(ZI)V", false);
+                }
+            }
+            boot.visitInsn(Opcodes.RETURN);
+            boot.visitMaxs(0, 0);
+            boot.visitEnd();
             handler(w, "tick", two, false, true);
             handler(w, "idle", two, false, false);
         }));

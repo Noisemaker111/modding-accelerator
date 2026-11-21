@@ -3727,6 +3727,7 @@ public final class GameDiff {
             }
             voteChains(log);
             out.addAll(sameMeaning(out, log));
+            out.addAll(throughAccessor(out));
             out.addAll(throughClassMap(out));
             out.addAll(renamedFamily(out));
             // A chain both of whose members are learned alone is already ported member by member.
@@ -3800,6 +3801,65 @@ public final class GameDiff {
          * one unless the old member gave nothing. 1.19.3: Vector3f.set(FFF)V is org.joml.Vector3f.set(FFF), which returns
          * the vector; Quaternion.mul(Quaternion) is Quaternionf.mul(Quaternionfc).
          */
+        /**
+         * Static methods a class made instance ones, reached through the accessor the game's own code uses for the class's
+         * other such methods. NeoForge 1.21.9 made FMLLoader's statics instance methods of FMLLoader.getCurrent(), and its
+         * own code calls getCurrent().getDist(), getCurrent().isProduction(), ... where it called FMLLoader.getDist(): a
+         * changed static it never calls (getBindings()) is FMLLoader.getCurrent().getBindings() too. At least two methods
+         * show the same accessor (a public static method of the class, no arguments, giving the class) and none another.
+         */
+        List<Learned> throughAccessor(List<Learned> found) {
+            Map<String, Set<String>> accessors = new HashMap<>(); // owner (a, internal) -> accessors its learned lines use
+            Map<String, Integer> shown = new HashMap<>();
+            Set<String> have = new HashSet<>();
+            for (Learned l : found) {
+                String owner = l.owner().replace('.', '/');
+                have.add(owner + "." + l.name() + l.desc());
+                Meth x = l.field() ? null : h.a.method(owner, l.name(), l.desc());
+                Meth y = x == null ? null : h.mAB.get(x);
+                if (x == null || y == null || !x.isStatic() || y.isStatic()) {
+                    continue;
+                }
+                StringBuilder args = new StringBuilder();
+                for (int i = 1; i <= MethodTypeDesc.ofDescriptor(x.desc).parameterCount(); i++) {
+                    args.append(i == 1 ? "" : ", ").append("$").append(i);
+                }
+                String prefix = dotted(y.owner.name) + ".";
+                String tail = "()." + y.name + "(" + args + ")";
+                if (l.expr().startsWith(prefix) && l.expr().endsWith(tail)) {
+                    String accessor = l.expr().substring(prefix.length(), l.expr().length() - tail.length());
+                    Meth acc = accessor.matches("[\\w$]+") ? h.b.method(y.owner.name, accessor, "()L" + y.owner.name + ";") : null;
+                    if (acc != null && acc.isStatic() && (acc.flags & ACC_PUBLIC) != 0) {
+                        accessors.computeIfAbsent(x.owner.name, k -> new HashSet<>()).add(accessor);
+                        shown.merge(x.owner.name, 1, Integer::sum);
+                        continue;
+                    }
+                }
+                // Another static path (FMLEnvironment.isProduction()) says nothing about the accessor.
+            }
+            List<Learned> out = new ArrayList<>();
+            for (var e : accessors.entrySet()) {
+                if (e.getValue().size() != 1 || shown.getOrDefault(e.getKey(), 0) < 2) {
+                    continue;
+                }
+                String accessor = e.getValue().iterator().next();
+                Cls c = h.a.classes.get(e.getKey());
+                for (Meth x : c == null ? List.<Meth>of() : c.methods.values()) {
+                    Meth y = h.mAB.get(x);
+                    if (!x.isStatic() || x.special() || y == null || y.isStatic() || (y.flags & ACC_PUBLIC) == 0 || !h.descBA(y.desc).equals(x.desc)
+                        || have.contains(x.sig())) {
+                        continue;
+                    }
+                    StringBuilder args = new StringBuilder();
+                    for (int i = 1; i <= MethodTypeDesc.ofDescriptor(x.desc).parameterCount(); i++) {
+                        args.append(i == 1 ? "" : ", ").append("$").append(i);
+                    }
+                    out.add(new Learned(dotted(x.owner.name), x.name, x.desc, false, true, dotted(y.owner.name) + "." + accessor + "()." + y.name + "(" + args + ")", 1, 1));
+                }
+            }
+            return out;
+        }
+
         List<Learned> throughClassMap(List<Learned> found) {
             Set<String> have = new HashSet<>();
             for (Learned l : found) {
