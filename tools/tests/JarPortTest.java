@@ -99,6 +99,7 @@ public final class JarPortTest {
         runs(scratch);
         relocatedCalls(scratch);
         mixinFields(scratch);
+        oldFieldTypes(scratch);
         JarPortRulesTest.check(scratch);
         JarPortRulesTest.buses(scratch);
         JarPortRulesTest.foreignMixin(scratch);
@@ -454,6 +455,43 @@ public final class JarPortTest {
         expect(body.contains("call g/mod/client/ClientDist.send(I)V"), "a static method one class of the same project gained is called there: " + body);
         expect(body.contains("call g/Player.message(I)V") && !body.contains("g/Player.say"), "an alias is replaced by the method its whole body forwarded to: " + body);
         expect(unlinked.equals(List.of("call: g.mod.net.Dist.both(I)V")), "two classes that gained it are no answer, and it is reported: " + unlinked);
+    }
+
+    /**
+     * A field read of another type than the old release's field did not link before the update either (code for another
+     * version behind a check: Fabric 1.16 mods reading BlockTags as 1.18's TagKey), so it is no break of the update; one of
+     * the old type whose field the new release retyped is.
+     */
+    static void oldFieldTypes(Path scratch) throws Exception {
+        GameDiff.Snap[] snaps = new GameDiff.Snap[2];
+        for (int i = 0; i < 2; i++) {
+            GameDiff.Snap s = new GameDiff.Snap(i == 0 ? "1.0" : "2.0");
+            GameDiff.Cls tags = new GameDiff.Cls("g/Tags", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
+            tags.fields.put("POTS", new GameDiff.Fld(tags, "POTS", "Lg/Tag;", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+            tags.fields.put("SIZE", new GameDiff.Fld(tags, "SIZE", i == 0 ? "I" : "J", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+            s.classes.put(tags.name, tags);
+            s.classes.put("g/Tag", new GameDiff.Cls("g/Tag", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false));
+            snaps[i] = s;
+        }
+        Path map = scratch.resolve("old-types-route.json");
+        Files.writeString(map, "{\"classes\": [], \"methods\": [], \"fields\": [], \"rewrites\": []}");
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m/Reader", null, "java/lang/Object", null);
+        MethodVisitor read = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "read", "()V", null, null);
+        read.visitCode();
+        read.visitFieldInsn(Opcodes.GETSTATIC, "g/Tags", "POTS", "Lg/TagKey;");
+        read.visitInsn(Opcodes.POP);
+        read.visitFieldInsn(Opcodes.GETSTATIC, "g/Tags", "SIZE", "I");
+        read.visitInsn(Opcodes.POP);
+        read.visitInsn(Opcodes.RETURN);
+        read.visitMaxs(1, 0);
+        read.visitEnd();
+        w.visitEnd();
+        List<Map<String, Object>> results = new ArrayList<>();
+        new JarPort(snaps[0], snaps[1], map).port(jar(Map.of("m/Reader.class", w.toByteArray())), "old-types.jar", results);
+        List<String> unlinked = Json.array(results.get(results.size() - 1).get("unlinked")).stream().map(String::valueOf).toList();
+        expect(unlinked.equals(List.of("field: g.Tags.SIZE")),
+            "a field read that did not match the old release's field is not the update's break; one the update retyped is: " + unlinked);
     }
 
     static GameDiff.Snap game(String version, String method, String field, String cls) {

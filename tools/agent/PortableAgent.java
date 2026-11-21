@@ -277,11 +277,15 @@ public final class PortableAgent {
             String world = Json.text(request, "world", "lab");
             if (world.isEmpty() || world.equals(".") || world.equals("..") || world.indexOf('/') >= 0 || world.indexOf('\\') >= 0 || world.indexOf('\0') >= 0)
                 throw new IllegalArgumentException("World must be one existing save name");
-            Object flows = call(client, "createWorldOpenFlows", "createIntegratedServerLoader");
+            Object flows;
+            try { flows = call(client, "createWorldOpenFlows", "createIntegratedServerLoader"); }
+            catch (NoSuchMethodException before119) { flows = null; }
             // Before openWorld: it holds this thread until the built-in server has started, and by then it has ticked.
             if (Boolean.TRUE.equals(request.get("freeze"))) freezeAtLoad();
             try {
-                invoke(flows, new String[]{"openWorld", "start"}, world, (Runnable)() -> {});
+                // Before 1.19 the game opened a save itself: Minecraft.loadLevel(name) (Yarn: startIntegratedServer).
+                if (flows == null) invoke(client, new String[]{"loadLevel", "startIntegratedServer"}, world);
+                else invoke(flows, new String[]{"openWorld", "start"}, world, (Runnable)() -> {});
             } catch (NoSuchMethodException older) {
                 // Before 1.20.3 a world opens from the screen it is chosen on: loadLevel(screen, name).
                 invoke(flows, new String[]{"loadLevel", "start"}, screen(), world);

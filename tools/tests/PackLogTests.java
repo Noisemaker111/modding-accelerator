@@ -173,6 +173,12 @@ public final class PackLogTests extends PackCheckFixtures {
         String incompatible = "[00:06:21] [Render thread/FATAL] [ne.ne.fm.ModLoader/CORE]: Error during pre-loading phase: Mod shouldersurfing is incompatible with betterthirdperson any";
         var declared = PackChecks.suspects(incompatible, List.of(), neo, PackLoaders.find(harness, "neoforge"));
         expect(declared.size() == 1 && "shouldersurfing".equals(declared.get(0).get("mod")), "of two incompatible mods the one that declares it is named: " + declared);
+        // ...and a mod class the JVM says lacks a method it must implement, by that class (a Fabric crash report suspects no mod).
+        neo.packages.put("nx.pingwheel.fabric", "Ping-Wheel-1.0.jar");
+        neo.providers.put("pingwheel", new ArrayList<>(List.of(new PackMods.Provider("Ping-Wheel-1.0.jar", "1.0", false, "fabric.mod.json"))));
+        String unimplemented = "java.lang.AbstractMethodError: Receiver class nx.pingwheel.fabric.FabricClient$1 does not define or inherit an implementation of the resolved method 'abstract java.util.concurrent.CompletableFuture method_25931()'";
+        var receiver = PackChecks.suspects(unimplemented, List.of(), neo, PackLoaders.find(harness, "neoforge"));
+        expect(receiver.size() == 1 && "Ping-Wheel-1.0.jar".equals(receiver.get(0).get("jar")), "a class lacking a method it must implement names its jar: " + receiver);
         // ...and a client-only mod only by the class it refused to load on a server.
         neo.packages.put("dev.kirant.cwb", "cwb-5.0.jar");
         neo.providers.put("cwb", new ArrayList<>(List.of(new PackMods.Provider("cwb-5.0.jar", "5.0", false, "META-INF/neoforge.mods.toml"))));
