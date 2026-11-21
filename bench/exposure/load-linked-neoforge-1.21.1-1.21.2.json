@@ -2,13 +2,14 @@
  "loader": "neoforge",
  "from": "1.21.1",
  "to": "1.21.2",
- "mods": 24,
- "loaded": 21,
- "linkedAndLoaded": 21,
- "linked": 24,
+ "mods": 25,
+ "loaded": 22,
+ "linkedAndLoaded": 22,
+ "linked": 25,
  "failedButLinked": [
   "terrablender--TerraBlender-neoforge-1.21.1-4.1.0.8.jar"
  ],
+ "clashOnly": [],
  "failedDataOnly": [
   "dungeons-and-taverns--dungeons-and-taverns-v4.4.4.jar"
  ],
@@ -18,7 +19,9 @@
   "terrablender--TerraBlender-neoforge-1.21.1-4.1.0.8.jar": "failed: the loader names it: java.lang.IllegalStateException: Failed to parse terrablender:worldgen/biome/deferred_placeholder.json from pack mod/terrablender",
   "better-advancements--BetterAdvancements-NeoForge-1.21.1-0.4.3.21.jar": "loaded",
   "chatanimation--chatanimation-neoforge-1.3.5+mc1.21.jar": "loaded",
+  "chunky--Chunky-NeoForge-1.4.23.jar": "loaded",
   "clumps--Clumps-neoforge-1.21.1-19.0.0.1.jar": "loaded",
+  "coroutil--coroutil-neoforge-1.21.0-1.3.8.jar": "loaded",
   "cristel-lib--cristellib-neoforge-1.21.1-3.1.7.jar": "loaded",
   "e4mc--e4mc-neoforge-6.2.3.jar": "loaded",
   "euphoria-patches--EuphoriaPatcher-1.10.5-r5.9.3-neoforge.jar": "loaded",
@@ -34,17 +37,18 @@
   "rhino--rhino-2101.2.8-build.91.jar": "loaded",
   "searchables--Searchables-neoforge-1.21.1-1.0.2.jar": "loaded",
   "sodium-dynamic-lights--sodiumdynamiclights-neoforge-1.0.10-1.21.1.jar": "loaded",
-  "spark--spark-1.10.124-neoforge.jar": "loaded",
   "supermartijn642s-config-lib--supermartijn642configlib-1.1.8-neoforge-mc1.21.jar": "loaded",
   "yeetus-experimentus--yeetusexperimentus-neoforge-87.0.0.jar": "loaded"
  },
  "client": {
-  "mods": 22,
-  "loaded": 22,
+  "mods": 23,
+  "loaded": 23,
   "verdicts": {
    "better-advancements--BetterAdvancements-NeoForge-1.21.1-0.4.3.21.jar": "loaded",
    "chatanimation--chatanimation-neoforge-1.3.5+mc1.21.jar": "loaded",
+   "chunky--Chunky-NeoForge-1.4.23.jar": "loaded",
    "clumps--Clumps-neoforge-1.21.1-19.0.0.1.jar": "loaded",
+   "coroutil--coroutil-neoforge-1.21.0-1.3.8.jar": "loaded",
    "cristel-lib--cristellib-neoforge-1.21.1-3.1.7.jar": "loaded",
    "cubes-without-borders--cwb-5.0.0+1.21.0.neoforge.jar": "loaded",
    "e4mc--e4mc-neoforge-6.2.3.jar": "loaded",
@@ -61,7 +65,6 @@
    "rhino--rhino-2101.2.8-build.91.jar": "loaded",
    "searchables--Searchables-neoforge-1.21.1-1.0.2.jar": "loaded",
    "sodium-dynamic-lights--sodiumdynamiclights-neoforge-1.0.10-1.21.1.jar": "loaded",
-   "spark--spark-1.10.124-neoforge.jar": "loaded",
    "supermartijn642s-config-lib--supermartijn642configlib-1.1.8-neoforge-mc1.21.jar": "loaded",
    "yeetus-experimentus--yeetusexperimentus-neoforge-87.0.0.jar": "loaded"
   }

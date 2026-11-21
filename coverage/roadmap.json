@@ -757,6 +757,23 @@
      "measures": [
       "port.real-mods-clear"
      ]
+    },
+    {
+     "id": "65",
+     "title": "Kept methods with other parameters are called as their old selves behaved",
+     "part": "Port by changed game part",
+     "status": "doing",
+     "text": "The biggest type of break, call, game: linked (a game method still there with other parameters), is handled as a type: each parameter of the new method is read from where the old and new bodies line up. Where the new body uses a parameter, the old body's value there is what to pass: an old operand, a fixed value, a fixed value solved through a sum (1.21.2's sea level: seaLevel + 17 where the old body had 80), a value of the receiver (this.level(), narrowed to ServerLevel), or the value a callee that changed the same way needs. A value of another type is made with the new type's constructor or its one static factory; a parameter the new body never reads takes its type's zero, only for methods nothing overrides.",
+     "start": "2026-11-21",
+     "target": "2026-11-24",
+     "finish": "the type's finishes and mods counts down across every update (tools/cloud-run exposure, types in all.json), port.jar-links.newest and big-updates no lower, and load on a real server for the updates it frees most",
+     "wrongIf": "a mod that links through a learned argument behaves differently in game from its old version",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates",
+      "port.jar-links.newest"
+     ],
+     "result": "2026-11-21: call, game: linked over every update finishes 186 -> 177 and is in 1,984 -> 1,960 mods (2,965 -> 2,877 references). Every update 5,884 -> 5,893 of 9,423, none lower; big updates 1,896 -> 1,904; newest jump 15 -> 15; jumps 1,167 -> 1,173. NeoForge 1.21.1 -> 1.21.2 40 -> 42 (the Biome family takes the old sea level, 63): on a real 1.21.2 server 22 of 25 linked mods load (main 21 of 24), in the client 23 of 23; Coroutil, newly linked, loads in both. Not handled: parameters whose value the old body never had (CycleButton.builder's initial value, 1.21.9's permission levels), redesigned types (TicksToSave -> PackedTicks, String -> ResourceKey), and methods an override may change."
     }
    ]
   },
