@@ -1789,6 +1789,7 @@ public final class JarPort {
         }
         int[] paired = pair(now, was);
         String[][] via = retype.conversions(iface, name, sam, moved, paired);
+        boolean[] unread = unread(mod, holder.name, m.name, m.desc, (m.flags & Opcodes.ACC_STATIC) != 0, own.length);
         int k = caps.length - skip;
         Type[] params = new Type[k + now.length];
         int[] from = new int[own.length];
@@ -1806,14 +1807,17 @@ public final class JarPort {
             } else if (via != null && via[i] != null) {
                 from[k + i] = k + Integer.parseInt(via[i][0]);
                 steps[k + i] = Arrays.copyOfRange(via[i], 1, via[i].length);
+            } else if (unread != null && unread[k + i]) {
+                from[k + i] = -1; // the body never reads it ((mc, parent) -> new Screen(parent)): a default goes there
             } else {
                 return null;
             }
         }
-        if (Arrays.stream(steps).allMatch(Objects::isNull)) {
-            return null; // nothing to work out: a reordering, which an adapter would say; not met yet
-        }
         String newDesc = Type.getMethodDescriptor(Type.getType(desc(Type.getReturnType(m.desc).getDescriptor())), params);
+        if (Arrays.stream(steps).allMatch(Objects::isNull)) {
+            // Nothing to work out: an added method with the new parameters calls the body with the ones it had.
+            return new Bridge(m.name, newDesc, m.name, m.desc, from, m.flags | Opcodes.ACC_SYNTHETIC, null);
+        }
         return new Bridge(m.name, newDesc, m.name, m.desc, from, m.flags, steps);
     }
 
@@ -4096,15 +4100,18 @@ public final class JarPort {
     void bridgeCode(MethodVisitor mv, String owner, boolean itf, Bridge br) {
         Type[] now = Type.getArgumentTypes(oldDesc(br.desc()));
         Type[] was = Type.getArgumentTypes(br.targetDesc());
+        boolean isStatic = (br.access() & Opcodes.ACC_STATIC) != 0; // a static lambda body's (JarPort.lambdaBody)
         int[] slots = new int[now.length];
-        int next = 1;
+        int next = isStatic ? 0 : 1;
         for (int i = 0; i < now.length; i++) {
             slots[i] = next;
             next += now[i].getSize();
         }
         mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        int stack = 1;
+        if (!isStatic) {
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+        }
+        int stack = isStatic ? 0 : 1;
         for (int j = 0; j < was.length; j++) {
             int f = br.from()[j];
             if (f < 0) {
@@ -4114,7 +4121,7 @@ public final class JarPort {
             }
             stack += was[j].getSize();
         }
-        mv.visitMethodInsn(itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, owner, br.target(), br.targetDesc(), itf);
+        mv.visitMethodInsn(isStatic ? Opcodes.INVOKESTATIC : itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, owner, br.target(), br.targetDesc(), itf);
         Type ret = Type.getReturnType(br.targetDesc());
         mv.visitInsn(ret.getOpcode(Opcodes.IRETURN));
         mv.visitMaxs(Math.max(stack, ret.getSize()), next);
@@ -5237,7 +5244,8 @@ public final class JarPort {
                 return false;
             }
             Bridge body = mod.bridges.getOrDefault(impl.getOwner(), List.of()).stream()
-                .filter(br -> br.via() != null && br.target().equals(impl.getName()) && br.targetDesc().equals(impl.getDesc())).findFirst().orElse(null);
+                .filter(br -> br.target().equals(impl.getName()) && br.targetDesc().equals(impl.getDesc()) && !br.desc().equals(desc(impl.getDesc())))
+                .findFirst().orElse(null);
             String[] now = route.method(iface, name, sam.getDescriptor());
             if (body == null || !now[1].equals(name)) {
                 return false;
