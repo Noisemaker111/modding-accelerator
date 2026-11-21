@@ -165,6 +165,27 @@ final class JarPortRetypeTest {
         JarPortTest.expect(closedUnlinked.contains("call: g6.Screen.tip(Lg6/Pose;I)V"),
             "where the loader reads no access widener the call stays reported: " + closedUnlinked);
 
+        // An @Inject into render taking its CallbackInfo and a @Local of the int render still takes follows render; one taking a
+        // @Local of the pose, which render no longer takes, stays reported.
+        List<Map<String, Object>> sugarRuns = new ArrayList<>();
+        Map<String, byte[]> sugarJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/BySugar.class", bySugar(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"BySugar\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "sugar.jar", sugarRuns));
+        List<String> sugarUnlinked = Json.array(sugarRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        Map<String, String> sugarStrings = JarPortFixesTest.strings(sugarJar.get("m6/BySugar.class"));
+        JarPortTest.expect("render(Lg6/Graphics;I)V HEAD".equals(sugarStrings.get("onInt(" + CI + "I)V"))
+            && sugarUnlinked.equals(List.of("mixin target changed signature: g6.Screen.render(Lg6/Pose;I)V")),
+            "a handler with a @Local of an argument still there follows the new signature; one of an argument gone stays reported: " + sugarStrings + " " + sugarUnlinked);
+
+        // An @Inject into Title.render at its Gui.fill(pose, 3), which 2.0 writes graphics.fill(3): it takes only a place, so it
+        // follows render to its new signature and the call to its replacement.
+        List<Map<String, Object>> callRuns = new ArrayList<>();
+        Map<String, byte[]> callJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/ByCall.class", byCall(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ByCall\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "call.jar", callRuns));
+        List<String> callUnlinked = Json.array(callRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        String callText = new String(callJar.get("m6/ByCall.class"), java.nio.charset.StandardCharsets.ISO_8859_1);
+        JarPortTest.expect(callUnlinked.isEmpty() && callText.contains("Lg6/Graphics;fill(I)V") && callText.contains("render(Lg6/Graphics;I)V"),
+            "an @Inject at a call the game replaced follows the replacement in the target's new signature: " + callUnlinked);
+
         // A mixin casting its own this to an accessor of Loc relies on ModelLoc being a Loc, which 2.0 ends; Title is still a Screen.
         List<Map<String, Object>> castRuns = new ArrayList<>();
         port.port(JarPortTest.jar(Map.of("m6/LocAccess.class", locAccess(), "m6/ModelLocMixin.class", selfCast("m6/ModelLocMixin", "g6/ModelLoc", "m6/LocAccess"),
@@ -744,6 +765,49 @@ final class JarPortRetypeTest {
         return w.toByteArray();
     }
 
+    /** m6.ByCall: an @Inject into Title.render at its call of Gui.fill(pose, int), taking only its CallbackInfo. */
+    static byte[] byCall() {
+        ClassWriter w = writer("m6/ByCall", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Title"));
+        value.visitEnd();
+        target.visitEnd();
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onFill", "(" + CI + ")V", "render(" + POSE + "I)V", "INVOKE", "Lg6/Gui;fill(" + POSE + "I)V", null);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.BySugar: @Inject handlers into Screen.render at HEAD: onInt(ci, @Local int) and onPose(ci, @Local pose). */
+    static byte[] bySugar() {
+        ClassWriter w = writer("m6/BySugar", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Screen"));
+        value.visitEnd();
+        target.visitEnd();
+        for (String[] h : new String[][] { { "onInt", "I" }, { "onPose", POSE } }) {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PRIVATE, h[0], "(" + CI + h[1] + ")V", null, null);
+            AnnotationVisitor av = m.visitAnnotation(JarPortFixesTest.INJECT, false);
+            AnnotationVisitor methods = av.visitArray("method");
+            methods.visit(null, "render(" + POSE + "I)V");
+            methods.visitEnd();
+            AnnotationVisitor ats = av.visitArray("at");
+            AnnotationVisitor point = ats.visitAnnotation(null, "Lorg/spongepowered/asm/mixin/injection/At;");
+            point.visit("value", "HEAD");
+            point.visitEnd();
+            ats.visitEnd();
+            av.visitEnd();
+            m.visitParameterAnnotation(1, "Lcom/llamalad7/mixinextras/sugar/Local;", false).visitEnd();
+            m.visitCode();
+            m.visitInsn(Opcodes.RETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
     /** m6.Panel extends g6.Part, which 2.0 removes: use() calls own(), which it inherited. */
     static byte[] panel() {
         ClassWriter w = writer("m6/Panel", "g6/Part");
@@ -801,6 +865,14 @@ final class JarPortRetypeTest {
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Graphics", "pose", "()" + POSE, false);
         }
         m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
+        // Gui.fill(pose, 3), which 2.0 writes graphics.fill(3).
+        m.visitVarInsn(Opcodes.ALOAD, 1);
+        m.visitInsn(Opcodes.ICONST_3);
+        if (old) {
+            m.visitMethodInsn(Opcodes.INVOKESTATIC, "g6/Gui", "fill", "(" + POSE + "I)V", false);
+        } else {
+            m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Graphics", "fill", "(I)V", false);
+        }
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();
