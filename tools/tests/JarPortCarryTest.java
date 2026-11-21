@@ -12,6 +12,7 @@ import org.objectweb.asm.*;
  *   refuse it), and what the game's code writes instead takes its place.
  * - Uses that pass their own fixed default where most pass one abstain from the vote (1.21.5's getInt(key) is
  *   getIntOr(key, 0) in most places, getIntOr(key, 200) in one).
+ * - Ops.allow(String) takes an Id in 3.0, which Id(String) makes: the argument goes through that constructor.
  * - A @ModifyVariable at STORE of its fourth boolean (ordinal 3, after three boolean parameters) in W.keep, whose new
  *   body stores none, and one whose method string names a signature the old jar lacks (a loader patch) on a method
  *   3.0 dropped, are both reported.
@@ -44,7 +45,8 @@ final class JarPortCarryTest {
         switched.carry(carry);
         JarPortTest.expect(switched.json().contains("\"to\": \"rotate\""), "a call the game switched to at 2.0 is followed to its 3.0 name: " + switched.json());
 
-        String signature = "{\"owner\": \"net.minecraft.c4.G\", \"from\": \"draw\", \"desc\": \"(" + STR + ")I\", \"to\": \"draw\", \"newDesc\": \"(" + STR + ")V\"}";
+        String signature = "{\"owner\": \"net.minecraft.c4.G\", \"from\": \"draw\", \"desc\": \"(" + STR + ")I\", \"to\": \"draw\", \"newDesc\": \"(" + STR + ")V\"}, "
+            + "{\"owner\": \"net.minecraft.c4.Ops\", \"from\": \"allow\", \"desc\": \"(" + STR + ")Z\", \"to\": \"allow\", \"newDesc\": \"(L" + P + "Id;)Z\"}";
         String current = "{ \"step\": \"2.0 -> 3.0\", \"owner\": \"net.minecraft.c4.L\", \"from\": \"list\", \"desc\": \"()" + STR + "\", \"field\": false, \"linked\": true, "
             + "\"expr\": \"net.minecraft.c4.L.current().list()\", \"votes\": 1, \"of\": 1 }";
         Path map = scratch.resolve("route-carry.json");
@@ -56,8 +58,8 @@ final class JarPortCarryTest {
         Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(mod()), "carry.jar", results));
         List<String> unlinked = Json.array(results.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         String trace = run(three, ported);
-        JarPortTest.expect(trace.equals("turn:xalist"),
-            "the carried replacement, the void call where the value was dropped and the instance call the game writes now run on the JVM: " + trace + " " + unlinked);
+        JarPortTest.expect(trace.equals("turn:xalisttrue"),
+            "the carried replacement, the void call where the value was dropped, the instance call the game writes now and an argument made with the new type's constructor run on the JVM: " + trace + " " + unlinked);
         JarPortTest.expect(unlinked.contains("call: net.minecraft.c4.G.draw(" + STR + ")I") && unlinked.stream().filter(u -> u.contains("G.draw")).count() == 1,
             "a call whose value the mod uses stays reported, once: " + unlinked);
         JarPortTest.expect(unlinked.contains("mixin injection point gone: STORE #3 of a boolean local in net.minecraft.c4.W.keep(ZZZ)V (in m4.WMixin)"),
@@ -126,6 +128,9 @@ final class JarPortCarryTest {
         go.visitFieldInsn(Opcodes.GETSTATIC, P + "Log", "out", LOG);
         go.visitMethodInsn(Opcodes.INVOKESTATIC, P + "L", "list", "()" + STR, false);
         go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + STR + ")" + LOG, false);
+        go.visitLdcInsn("me");
+        go.visitMethodInsn(Opcodes.INVOKESTATIC, P + "Ops", "allow", "(" + STR + ")Z", false);
+        go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Z)" + LOG, false);
         go.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()" + STR, false);
         go.visitInsn(Opcodes.ARETURN);
         go.visitMaxs(0, 0);
@@ -244,6 +249,27 @@ final class JarPortCarryTest {
                 c.visitEnd();
             }
         }));
+        out.put(P + "Ops", cls("Ops", w -> {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "allow", "(" + (release < 3 ? STR : "L" + P + "Id;") + ")Z", null, null);
+            m.visitCode();
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+            m.visitInsn(Opcodes.POP);
+            m.visitInsn(Opcodes.ICONST_1);
+            m.visitInsn(Opcodes.IRETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }));
+        if (release == 3) {
+            out.put(P + "Id", cls("Id", w -> {
+                MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(" + STR + ")V", null, null);
+                c.visitCode();
+                c.visitVarInsn(Opcodes.ALOAD, 0);
+                c.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                c.visitInsn(Opcodes.RETURN);
+                c.visitMaxs(0, 0);
+                c.visitEnd();
+            }));
+        }
         out.put(P + "W", cls("W", w -> {
             constructor(w);
             MethodVisitor k = w.visitMethod(Opcodes.ACC_PUBLIC, "keep", "(ZZZ)V", null, null);

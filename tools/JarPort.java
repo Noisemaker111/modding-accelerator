@@ -4400,6 +4400,9 @@ public final class JarPort {
                     }
                 }
                 String unlinked = "call: " + Exposure.dotted(decl.owner()) + "." + name + desc + (WHERE ? " @ " + where + (Sites.this.moved != null ? " (moved)" : "") : "");
+                if (converted(opcode, owner, decl.owner(), name, desc)) {
+                    return;
+                }
                 if (!voided(opcode, owner, decl.owner(), key, name, desc, unlinked)) {
                     mod.unlinked.add(unlinked);
                 }
@@ -4441,6 +4444,64 @@ public final class JarPort {
                 return true;
             }
             return false;
+        }
+
+        /**
+         * A call whose method now takes a parameter of a type the new release makes from the old one with a constructor
+         * (1.21.9's PlayerList.isOp(GameProfile) takes a NameAndId, and NameAndId(GameProfile) is public): each such
+         * argument is passed through that constructor, the rest as they were (they must still fit), and the result must
+         * serve where the old one did.
+         */
+        boolean converted(int opcode, String owner, String declOwner, String name, String desc) {
+            if (moved != null || opcode == Opcodes.INVOKESPECIAL) {
+                return false;
+            }
+            boolean isStatic = opcode == Opcodes.INVOKESTATIC;
+            String[] t = route.method(declOwner, name, desc);
+            Type[] before = Type.getArgumentTypes(desc(desc)), after = Type.getArgumentTypes(t[2]);
+            Type was = Type.getReturnType(desc(desc)), now = Type.getReturnType(t[2]);
+            if (before.length != after.length || !(was.equals(now) || was.getSort() != Type.VOID && usable(now, was)) || !isStatic && !isA(cls(owner), t[0])) {
+                return false;
+            }
+            String[] make = new String[before.length];
+            boolean any = false;
+            for (int i = 0; i < before.length; i++) {
+                if (usable(before[i], after[i])) {
+                    continue;
+                }
+                GameDiff.Cls into = after[i].getSort() == Type.OBJECT ? b.classes.get(after[i].getInternalName()) : null;
+                String ctor = "(" + before[i].getDescriptor() + ")V";
+                GameDiff.Meth c = into == null || (into.flags & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE)) != 0 ? null : into.methods.get("<init>" + ctor);
+                if (c == null || (c.flags & Opcodes.ACC_PUBLIC) == 0) {
+                    return false;
+                }
+                make[i] = into.name;
+                any = true;
+            }
+            GameDiff.Cls holder = Exposure.declaring(b, t[0], 'm', t[1], t[2]);
+            GameDiff.Meth m = holder == null ? null : holder.methods.get(t[1] + t[2]);
+            if (!any || m == null || m.isStatic() != isStatic || !linksNew(mod, callers, t[0], 'm', t[1], t[2])) {
+                return false;
+            }
+            Type[] old = Type.getArgumentTypes(desc);
+            int[] slots = spill(old, 0);
+            for (int i = 0; i < old.length; i++) {
+                if (make[i] != null) {
+                    String made = inverse.getOrDefault(make[i], make[i]);
+                    super.visitTypeInsn(Opcodes.NEW, made);
+                    super.visitInsn(Opcodes.DUP);
+                    super.visitVarInsn(old[i].getOpcode(Opcodes.ILOAD), slots[i]);
+                    super.visitMethodInsn(Opcodes.INVOKESPECIAL, made, "<init>", "(" + old[i].getDescriptor() + ")V", false);
+                } else {
+                    super.visitVarInsn(old[i].getOpcode(Opcodes.ILOAD), slots[i]);
+                }
+            }
+            extraStack = Math.max(extraStack, 3);
+            GameDiff.Cls named = b.classes.getOrDefault(t[0], holder);
+            boolean itf = (named.flags & Opcodes.ACC_INTERFACE) != 0;
+            super.visitMethodInsn(isStatic ? Opcodes.INVOKESTATIC : itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, inverse.getOrDefault(t[0], t[0]), t[1], oldDesc(t[2]), itf);
+            mod.change("argument made into the type the game takes now, with its constructor");
+            return true;
         }
 
         /**
