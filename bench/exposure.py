@@ -936,7 +936,8 @@ def fabric_api(version):
     if have:
         return have[-1]
     versions = api("project/fabric-api/version", {"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([version])}) or []
-    files = [f for v in versions for f in v.get("files", []) if f.get("primary")]
+    # A release with one file need not mark it primary (Fabric API for 1.18 does not).
+    files = [f for v in versions for f in v.get("files", []) if f.get("primary") or len(v.get("files", [])) == 1]
     if not files:
         return None
     folder.mkdir(parents=True, exist_ok=True)
