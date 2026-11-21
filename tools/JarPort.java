@@ -2692,6 +2692,43 @@ public final class JarPort {
      */
     record Found(String text, String report, String change, char kind, String owner, String name, String desc, String changed) {}
 
+    /**
+     * A mixin selector naming one of the game's lambdas (lambda$charTyped$7), which javac numbers anew in each release
+     * and the snapshot leaves out: read from the game's own classes. The same lambda (its code reads alike) under the
+     * same name is kept; under another number, followed; gone, reported. Null when the game's code cannot be read.
+     */
+    Found lambdaTarget(List<String> owners, boolean named, String name, String mdesc, String text) {
+        GameCode oldCode = code(a), newCode = code(b);
+        if (oldCode == null || newCode == null) {
+            return null;
+        }
+        for (String o : owners) {
+            Map<String, String> before = a.classes.containsKey(o) ? oldCode.bodies(o, this::cls) : null;
+            Map<String, String> now = before == null ? null : newCode.bodies(cls(o), x -> x);
+            if (now == null) {
+                continue;
+            }
+            for (var e : before.entrySet()) {
+                String k = e.getKey();
+                if (!k.startsWith(name + "(") || mdesc != null && !k.equals(name + desc(mdesc))) {
+                    continue;
+                }
+                String d = k.substring(name.length());
+                if (e.getValue().equals(now.get(k))) {
+                    return new Found(text, null, null, 'm', cls(o), name, d, null);
+                }
+                List<String> same = now.entrySet().stream().filter(n -> n.getKey().startsWith("lambda$") && n.getKey().endsWith(d)
+                    && n.getKey().indexOf('(') == n.getKey().length() - d.length() && n.getValue().equals(e.getValue())).map(Map.Entry::getKey).toList();
+                if (same.size() == 1) {
+                    String moved = same.get(0).substring(0, same.get(0).length() - d.length());
+                    return new Found((named ? "L" + cls(o) + ";" : "") + moved + (mdesc == null ? "" : d), null, "mixin target renamed", 'm', cls(o), moved, d, null);
+                }
+                return new Found(text, "mixin target gone: " + Exposure.dotted(o) + "." + name + d, null, (char) 0, null, null, null, null);
+            }
+        }
+        return null;
+    }
+
     static Found keep(String text) {
         return new Found(text, null, null, (char) 0, null, null, null, null);
     }
@@ -2705,6 +2742,12 @@ public final class JarPort {
             return keep(text);
         }
         String owner = m.group(1), name = m.group(2), mdesc = m.group(3), fdesc = m.group(4);
+        if (key.equals("method") && name.startsWith("lambda$")) {
+            Found lambda = lambdaTarget(owner != null ? List.of(owner) : targets, owner != null, name, mdesc, text);
+            if (lambda != null) {
+                return lambda;
+            }
+        }
         if (name.equals("<init>") || name.equals("<clinit>")) {
             return mdesc == null ? keep(text) : new Found((owner == null ? "" : "L" + cls(owner) + ";") + name + desc(mdesc), null, null, 'm', owner == null ? null : cls(owner), name, desc(mdesc), null);
         }
@@ -3383,6 +3426,96 @@ public final class JarPort {
 
         GameDiff.RawCls raw(String jarName) {
             return parsed.computeIfAbsent(jarName, n -> Optional.ofNullable(bytes.apply(n)).map(GameDiff::parse)).orElse(null);
+        }
+
+        /**
+         * Every method of a class (Mojang names), synthetic ones too (a lambda's lambda$name$N), as name+desc -> its code as
+         * text: each instruction and what it names, class names passed through rename (an older release's into the newer
+         * one's), so two releases' copies of one lambda read alike. Null when the class is not in the jar.
+         */
+        Map<String, String> bodies(String owner, java.util.function.UnaryOperator<String> rename) {
+            String jarOwner = toJar.getOrDefault(owner, owner);
+            byte[] file = bytes.apply(jarOwner);
+            if (file == null) {
+                return null;
+            }
+            java.util.function.UnaryOperator<String> type = t -> rename.apply(names.cls(t));
+            java.util.function.UnaryOperator<String> desc = d -> mapDesc(names.desc(d), null, rename);
+            Map<String, String> out = new LinkedHashMap<>();
+            new ClassReader(file).accept(new ClassVisitor(Opcodes.ASM9) {
+                @Override
+                public MethodVisitor visitMethod(int access, String n, String d, String signature, String[] exceptions) {
+                    String key = names.method(jarOwner, n, d) + desc.apply(d);
+                    StringBuilder sb = new StringBuilder();
+                    return new MethodVisitor(Opcodes.ASM9) {
+                        @Override
+                        public void visitInsn(int op) {
+                            sb.append(op).append(';');
+                        }
+
+                        @Override
+                        public void visitIntInsn(int op, int v) {
+                            sb.append(op).append(':').append(v).append(';');
+                        }
+
+                        @Override
+                        public void visitVarInsn(int op, int v) {
+                            sb.append(op).append(':').append(v).append(';');
+                        }
+
+                        @Override
+                        public void visitTypeInsn(int op, String t) {
+                            sb.append(op).append(':').append(type.apply(t)).append(';');
+                        }
+
+                        @Override
+                        public void visitFieldInsn(int op, String o, String f, String fd) {
+                            sb.append(op).append(':').append(type.apply(o)).append('.').append(names.field(o, f)).append(desc.apply(fd)).append(';');
+                        }
+
+                        @Override
+                        public void visitMethodInsn(int op, String o, String m, String md, boolean itf) {
+                            sb.append(op).append(':').append(type.apply(o)).append('.').append(names.method(o, m, md)).append(desc.apply(md)).append(';');
+                        }
+
+                        @Override
+                        public void visitLdcInsn(Object v) {
+                            sb.append("ldc:").append(v instanceof Type t ? desc.apply(t.getDescriptor()) : v).append(';');
+                        }
+
+                        @Override
+                        public void visitJumpInsn(int op, Label l) {
+                            sb.append(op).append(';');
+                        }
+
+                        @Override
+                        public void visitIincInsn(int v, int inc) {
+                            sb.append("iinc:").append(v).append(':').append(inc).append(';');
+                        }
+
+                        @Override
+                        public void visitInvokeDynamicInsn(String n2, String d2, Handle bsm, Object... args) {
+                            sb.append("indy:").append(n2).append(desc.apply(d2)).append(';');
+                        }
+
+                        @Override
+                        public void visitEnd() {
+                            out.put(key, sb.toString());
+                        }
+                    };
+                }
+            }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            return out;
+        }
+
+        /** A descriptor with each class name passed through rename. */
+        static String mapDesc(String d, Object unused, java.util.function.UnaryOperator<String> rename) {
+            Matcher m = Pattern.compile("L([^;<]+)([;<])").matcher(d);
+            StringBuilder sb = new StringBuilder();
+            while (m.find()) {
+                m.appendReplacement(sb, Matcher.quoteReplacement("L" + rename.apply(m.group(1)) + m.group(2)));
+            }
+            return m.appendTail(sb).toString();
         }
 
         /** The class (jar names) that declares a member a reference names, or the owner when none of its classes does. */
