@@ -557,7 +557,13 @@ public final class JarPort {
         if (!mod.foreign.isEmpty() && !nativeGame) {
             // Not a jar for this loader at all (a Forge build listed for NeoForge): no class of it names the game as this
             // loader's build does, so the ones naming nothing of the game are that build's too. It never loaded here.
-            mod.unlinked.add("built for another loader: every class names the game as another loader's build does");
+            if (name.contains("!")) {
+                // A jar nested for the other loader of a jar for several (Fabric API's modules beside the NeoForge classes)
+                // is never loaded by this one.
+                mod.silent.add("nested jar for another loader, not loaded here: " + name);
+            } else {
+                mod.unlinked.add("built for another loader: every class names the game as another loader's build does");
+            }
         }
         requires(mod, entries);
         plan(mod);

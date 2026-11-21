@@ -293,6 +293,13 @@ final class JarPortRetypeTest {
         List<String> forgeUnlinked = Json.array(forgeRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(forgeUnlinked.equals(List.of("built for another loader: every class names the game as another loader's build does")),
             "a jar whose every class names the game by intermediary is a Fabric build, which never loaded on NeoForge, and does not link: " + forgeUnlinked);
+        List<Map<String, Object>> nestedRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("META-INF/jars/fabric-part.jar", JarPortTest.jar(Map.of("m6/FabricModel.class", JarPortTest.real("m6/FabricModel", "java/lang/Object", 0,
+            new String[] { "g6/Model" }, w -> JarPortTest.traced(w, "spin", "(Lnet/minecraft/class_1234;)V", "", m -> { })))),
+            "META-INF/neoforge.mods.toml", "modLoader=\"javafml\"\n[[mods]]\nmodId=\"m6\"\n".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            "META-INF/jarjar/metadata.json", "{\"jars\": [{\"path\": \"META-INF/jars/fabric-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "both.jar", nestedRuns);
+        List<String> nestedUnlinked = nestedRuns.stream().flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
+        JarPortTest.expect(nestedUnlinked.isEmpty(), "a jar nested for the other loader is never loaded here, so it holds nothing back: " + nestedUnlinked);
 
         // A mod class on the removed Part extends what the game's own subclasses of it extend now, not Graphics.
         List<Map<String, Object>> partRuns = new ArrayList<>();

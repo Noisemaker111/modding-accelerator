@@ -1100,13 +1100,20 @@ def named_in_errors(receipt, mods, present):
     after the loader's "Found N error(s)" in the server log beside the receipt."""
     if not receipt:
         return {}
-    errors = []
+    errors, packs = [], []
     for log in sorted(Path(receipt).parent.glob("*server*.log")):
         lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
         at = next((i for i, line in enumerate(lines) if re.search(r"Found \d+ error\(s\)", line)), None)
         if at is not None:
             errors += [line for line in lines[at + 1:at + 20] if line.startswith("- ")]
+        # A data file the release refuses names the data pack it came from, which a mod's own pack is named for.
+        packs += [m.group(0) for line in lines for m in [re.search(r"Failed to parse \S+ from pack (\S+)", line)] if m]
     blamed = {}
+    for line in packs:
+        pack_id = line.rsplit(" ", 1)[1]
+        for name in present:
+            if pack_id in mod_ids(mods / name):
+                blamed[name] = "its data fails on this release: " + line[:300]
     for line in errors:
         # The mod whose start the error is about: the one the line says needs something ("... of NAME VERSION ...").
         for name in present:
