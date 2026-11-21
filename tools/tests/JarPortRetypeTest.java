@@ -16,6 +16,7 @@ final class JarPortRetypeTest {
 
     static final String POSE = "Lg6/Pose;", GFX = "Lg6/Graphics;", KEY = "Lg6/Key;";
     static final String CI = "Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;";
+    static final String CIR = "Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;";
 
     static void check(Path scratch) throws Exception {
         GameDiff.Snap a = new GameDiff.Snap("1.0"), b = new GameDiff.Snap("2.0");
@@ -51,6 +52,8 @@ final class JarPortRetypeTest {
         JarPortTest.snap(a, "g6/Maker", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "make(" + POSE + ")V");
         JarPortTest.snap(b, "g6/Maker", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "make(" + KEY + ")V");
         JarPortTest.snap(a, "g6/Loc", 0, null);
+        JarPortTest.snap(a, "g6/Lam", 0, null);
+        JarPortTest.snap(b, "g6/Lam", 0, null);
         // g6.Part goes in 2.0 and the game's own Title2 extends Object instead, though the map follows Part's members to Graphics.
         JarPortTest.snap(a, "g6/Part", 0, null, "own()V");
         JarPortTest.snap(a, "g6/Title2", 0, "g6/Part");
@@ -77,8 +80,8 @@ final class JarPortRetypeTest {
                            "newDesc": "(I)V", "newStatic": false, "votes": 3, "of": 3}]}
             """);
         JarPort port = new JarPort(a, b, map);
-        port.oldCode = new JarPort.GameCode(Map.of("g6/Title", title(true), "g6/Screen", screen(true))::get, null);
-        port.newCode = new JarPort.GameCode(Map.of("g6/Title", title(false), "g6/Screen", screen(false))::get, null);
+        port.oldCode = new JarPort.GameCode(Map.of("g6/Title", title(true), "g6/Screen", screen(true), "g6/Lam", lam(true))::get, null);
+        port.newCode = new JarPort.GameCode(Map.of("g6/Title", title(false), "g6/Screen", screen(false), "g6/Lam", lam(false))::get, null);
 
         List<Map<String, Object>> results = new ArrayList<>();
         Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/MyScreen.class", myScreen(), "m6/MyChild.class", myChild(), "m6/Extra.class", extra(), "m6/Lambda.class", lambda())), "retype.jar", results));
@@ -164,6 +167,47 @@ final class JarPortRetypeTest {
         List<String> closedUnlinked = Json.array(closedRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(closedUnlinked.contains("call: g6.Screen.tip(Lg6/Pose;I)V"),
             "where the loader reads no access widener the call stays reported: " + closedUnlinked);
+
+        // An @Inject into render taking its CallbackInfo and a @Local of the int render still takes follows render; one taking a
+        // @Local of the pose, which render no longer takes, stays reported.
+        List<Map<String, Object>> sugarRuns = new ArrayList<>();
+        Map<String, byte[]> sugarJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/BySugar.class", bySugar(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"BySugar\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "sugar.jar", sugarRuns));
+        List<String> sugarUnlinked = Json.array(sugarRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        Map<String, String> sugarStrings = JarPortFixesTest.strings(sugarJar.get("m6/BySugar.class"));
+        JarPortTest.expect("render(Lg6/Graphics;I)V HEAD".equals(sugarStrings.get("onInt(" + CI + "I)V"))
+            && sugarUnlinked.equals(List.of("mixin target changed signature: g6.Screen.render(Lg6/Pose;I)V")),
+            "a handler with a @Local of an argument still there follows the new signature; one of an argument gone stays reported: " + sugarStrings + " " + sugarUnlinked);
+
+        // The same @Local int into Title.render, whose 2.0 body stores an int of its own: the capture could be either.
+        List<Map<String, Object>> localRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/ByLocal.class", byLocal(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ByLocal\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "local.jar", localRuns);
+        List<String> localUnlinked = Json.array(localRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(localUnlinked.equals(List.of("mixin target changed signature: g6.Title.render(Lg6/Pose;I)V")),
+            "a @Local of a type the new method also stores a local of stays reported: " + localUnlinked);
+
+        // Mixins into two game lambdas, string-building callbacks alike but for their text: 2.0 has only the wipe one, renumbered.
+        // Neither mixin requires its place, so the save one is told as finding none, not a break.
+        List<Map<String, Object>> lamRuns = new ArrayList<>();
+        Map<String, byte[]> lamJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/LamMixin.class", lamMixin(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"LamMixin\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "lam.jar", lamRuns));
+        List<String> lamUnlinked = Json.array(lamRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        Map<String, String> lamStrings = JarPortFixesTest.strings(lamJar.get("m6/LamMixin.class"));
+        String lamSilent = String.valueOf(lamRuns.get(0).get("silent"));
+        JarPortTest.expect(lamUnlinked.isEmpty() && lamSilent.contains("g6.Lam.lambda$save$0")
+            && String.valueOf(lamStrings.get("onWipe(" + CIR + ")V")).startsWith("lambda$wipe$5"),
+            "a mixin into a renumbered game lambda follows it, and one whose lambda only looks like another's is reported (as nothing Mixin requires here): " + lamUnlinked + " " + lamSilent + " " + lamStrings);
+
+        // An @Inject into Title.render at its Gui.fill(pose, 3), which 2.0 writes graphics.fill(3): it takes only a place, so it
+        // follows render to its new signature and the call to its replacement.
+        List<Map<String, Object>> callRuns = new ArrayList<>();
+        Map<String, byte[]> callJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/ByCall.class", byCall(),
+            "m6.mixins.json", "{\"package\": \"m6\", \"mixins\": [\"ByCall\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "call.jar", callRuns));
+        List<String> callUnlinked = Json.array(callRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        String callText = new String(callJar.get("m6/ByCall.class"), java.nio.charset.StandardCharsets.ISO_8859_1);
+        JarPortTest.expect(callUnlinked.isEmpty() && callText.contains("Lg6/Graphics;fill(I)V") && callText.contains("render(Lg6/Graphics;I)V"),
+            "an @Inject at a call the game replaced follows the replacement in the target's new signature: " + callUnlinked);
 
         // A mixin casting its own this to an accessor of Loc relies on ModelLoc being a Loc, which 2.0 ends; Title is still a Screen.
         List<Map<String, Object>> castRuns = new ArrayList<>();
@@ -300,6 +344,16 @@ final class JarPortRetypeTest {
             "META-INF/jarjar/metadata.json", "{\"jars\": [{\"path\": \"META-INF/jars/fabric-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "both.jar", nestedRuns);
         List<String> nestedUnlinked = nestedRuns.stream().flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
         JarPortTest.expect(nestedUnlinked.isEmpty(), "a jar nested for the other loader is never loaded here, so it holds nothing back: " + nestedUnlinked);
+        // A nested jar the platform provides (a Fabric API module beside the mod): the platform's newer copy runs instead.
+        port.platformIds = Set.of("platform-part");
+        List<Map<String, Object>> platformRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("META-INF/jars/platform-part.jar", JarPortTest.jar(Map.of("p6/UsesGone.class", JarPortTest.real("p6/UsesGone", "java/lang/Object", 0, new String[] { "g6/Model" }, w -> JarPortTest.traced(w, "quads", "()V", "", m -> { })),
+            "fabric.mod.json", "{\"id\": \"platform-part\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8))),
+            "fabric.mod.json", "{\"id\": \"m6\", \"jars\": [{\"file\": \"META-INF/jars/platform-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "nests.jar", platformRuns);
+        port.platformIds = Set.of();
+        List<String> platformUnlinked = platformRuns.stream().flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
+        JarPortTest.expect(platformUnlinked.isEmpty() && platformRuns.stream().anyMatch(r -> String.valueOf(r.get("silent")).contains("nested platform module")),
+            "a nested jar the platform provides runs as the platform's own, so it holds nothing back: " + platformUnlinked + " " + platformRuns);
 
         // A mod class on the removed Part extends what the game's own subclasses of it extend now, not Graphics.
         List<Map<String, Object>> partRuns = new ArrayList<>();
@@ -744,6 +798,111 @@ final class JarPortRetypeTest {
         return w.toByteArray();
     }
 
+    /** m6.ByCall: an @Inject into Title.render at its call of Gui.fill(pose, int), taking only its CallbackInfo. */
+    static byte[] byCall() {
+        ClassWriter w = writer("m6/ByCall", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Title"));
+        value.visitEnd();
+        target.visitEnd();
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onFill", "(" + CI + ")V", "render(" + POSE + "I)V", "INVOKE", "Lg6/Gui;fill(" + POSE + "I)V", null);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.BySugar: @Inject handlers into Screen.render at HEAD: onInt(ci, @Local int) and onPose(ci, @Local pose). */
+    static byte[] bySugar() {
+        ClassWriter w = writer("m6/BySugar", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Screen"));
+        value.visitEnd();
+        target.visitEnd();
+        for (String[] h : new String[][] { { "onInt", "I" }, { "onPose", POSE } }) {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PRIVATE, h[0], "(" + CI + h[1] + ")V", null, null);
+            AnnotationVisitor av = m.visitAnnotation(JarPortFixesTest.INJECT, false);
+            AnnotationVisitor methods = av.visitArray("method");
+            methods.visit(null, "render(" + POSE + "I)V");
+            methods.visitEnd();
+            AnnotationVisitor ats = av.visitArray("at");
+            AnnotationVisitor point = ats.visitAnnotation(null, "Lorg/spongepowered/asm/mixin/injection/At;");
+            point.visit("value", "HEAD");
+            point.visitEnd();
+            ats.visitEnd();
+            av.visitEnd();
+            m.visitParameterAnnotation(1, "Lcom/llamalad7/mixinextras/sugar/Local;", false).visitEnd();
+            m.visitCode();
+            m.visitInsn(Opcodes.RETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** m6.ByLocal: an @Inject into Title.render at HEAD: onInt(ci, @Local int). */
+    static byte[] byLocal() {
+        ClassWriter w = writer("m6/ByLocal", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Title"));
+        value.visitEnd();
+        target.visitEnd();
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onInt", "(" + CI + "I)V", "render(" + POSE + "I)V", "HEAD", null, null);
+        byte[] plain = w.toByteArray();
+        // handler() writes no parameter annotation; add the @Local to the int.
+        ClassWriter out = new ClassWriter(0);
+        new ClassReader(plain).accept(new org.objectweb.asm.ClassVisitor(Opcodes.ASM9, out) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                MethodVisitor m = super.visitMethod(access, name, desc, signature, exceptions);
+                if (name.equals("onInt")) {
+                    m.visitParameterAnnotation(1, "Lcom/llamalad7/mixinextras/sugar/Local;", false).visitEnd();
+                }
+                return m;
+            }
+        }, 0);
+        return out.toByteArray();
+    }
+
+    /** m6.LamMixin: @Inject at HEAD of the game Lam's lambda$save$0 (onSave) and lambda$wipe$1 (onWipe). */
+    static byte[] lamMixin() {
+        ClassWriter w = writer("m6/LamMixin", "java/lang/Object");
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g6/Lam"));
+        value.visitEnd();
+        target.visitEnd();
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onSave", "(" + CIR + ")V", "lambda$save$0", "HEAD", null, null);
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onWipe", "(" + CIR + ")V", "lambda$wipe$1", "HEAD", null, null);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /**
+     * g6.Lam: lambdas building "Saving " + s (lambda$save$0) and "Deleting " + s (lambda$wipe$1); 2.0 has only the second,
+     * as lambda$wipe$5. Both compile to the same invokedynamic but for its recipe.
+     */
+    static byte[] lam(boolean old) {
+        ClassWriter w = writer("g6/Lam", "java/lang/Object");
+        Handle concat = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/StringConcatFactory", "makeConcatWithConstants",
+            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;", false);
+        String[][] lambdas = old ? new String[][] { { "lambda$save$0", "Saving \u0001" }, { "lambda$wipe$1", "Deleting \u0001" } }
+            : new String[][] { { "lambda$wipe$5", "Deleting \u0001" } };
+        for (String[] l : lambdas) {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, l[0], "(Ljava/lang/String;)Ljava/lang/String;", null, null);
+            m.visitCode();
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+            m.visitInvokeDynamicInsn("makeConcatWithConstants", "(Ljava/lang/String;)Ljava/lang/String;", concat, l[1]);
+            m.visitInsn(Opcodes.ARETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        }
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
     /** m6.Panel extends g6.Part, which 2.0 removes: use() calls own(), which it inherited. */
     static byte[] panel() {
         ClassWriter w = writer("m6/Panel", "g6/Part");
@@ -801,6 +960,19 @@ final class JarPortRetypeTest {
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Graphics", "pose", "()" + POSE, false);
         }
         m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
+        if (!old) {
+            // An int local of its own, which a @Local int could also mean.
+            m.visitInsn(Opcodes.ICONST_0);
+            m.visitVarInsn(Opcodes.ISTORE, 3);
+        }
+        // Gui.fill(pose, 3), which 2.0 writes graphics.fill(3).
+        m.visitVarInsn(Opcodes.ALOAD, 1);
+        m.visitInsn(Opcodes.ICONST_3);
+        if (old) {
+            m.visitMethodInsn(Opcodes.INVOKESTATIC, "g6/Gui", "fill", "(" + POSE + "I)V", false);
+        } else {
+            m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Graphics", "fill", "(I)V", false);
+        }
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();

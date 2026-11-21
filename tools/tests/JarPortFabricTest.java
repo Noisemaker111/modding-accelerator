@@ -55,6 +55,8 @@ final class JarPortFabricTest {
         files.put("m5/EntityAccessor.class", accessor());
         files.put("m5/Visitor.class", JarPortTest.empty("m5/Visitor", Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "java/lang/Object", "g5/Ticker"));
         files.put("m5/Lambdas.class", lambdas());
+        // A mixin into one of the game's lambdas, which the snapshot leaves out: handed back by the release's own names.
+        files.put("m5/LambdaMixin.class", lambdaMixin());
         // A class the jar carries for Forge, naming the game's members by SRG id: Fabric never loads it.
         byte[] forgeSide = forgeSide();
         files.put("m5/forge/ForgeTicker.class", forgeSide);
@@ -68,12 +70,15 @@ final class JarPortFabricTest {
         port.runtimeNames = true;
         port.out = new ModNames.Back(
             Map.of("g5/Entity", "net/minecraft/class_1297", "g5/Level", "net/minecraft/class_1937", "g5/Ticker", "net/minecraft/class_9999"),
-            Map.of("g5/Entity.tick()V", "method_5773", "g5/Entity.getLevel()Lg5/Level;", "method_37908", "g5/Ticker.tick()V", "method_9999"),
+            Map.of("g5/Entity.tick()V", "method_5773", "g5/Entity.getLevel()Lg5/Level;", "method_37908", "g5/Ticker.tick()V", "method_9999",
+                "g5/Entity.lambda$tick$0()V", "method_9001"),
             Map.of("g5/Entity.level", "field_6002"), b);
         Map<String, byte[]> ported = JarPortTest.entries(port.port(JarPortTest.jar(files), "m5.jar", results));
         // A nested jar's result comes before its parent's.
         List<String> unlinked = results.stream().filter(r -> "m5.jar".equals(r.get("jar"))).flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
 
+        JarPortTest.expect("method_9001 HEAD".equals(JarPortFixesTest.strings(ported.get("m5/LambdaMixin.class")).get("onLambda(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V")),
+            "a mixin into a game lambda is handed back by the lambda's intermediary name: " + JarPortFixesTest.strings(ported.get("m5/LambdaMixin.class")));
         JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("ForgeTicker")) && JarPortFixesTest.strings(ported.get("m5/forge/ForgeTicker.class")).containsKey("m_8119_()V"),
             "a class built for another loader (SRG names in a Fabric jar) is left as it is and not linked: " + unlinked);
         JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("g5.Base.<init>")) && !new String(ported.get("m5.accesswidener"), StandardCharsets.UTF_8).contains("<init>"),
@@ -339,6 +344,20 @@ final class JarPortFabricTest {
     }
 
     /** m5.Lambdas.make() returns a lambda for the mod's Visitor, which extends the game's Ticker. */
+    /** m5.LambdaMixin: an @Inject at HEAD of the game Entity's lambda$tick$0. */
+    static byte[] lambdaMixin() {
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, "m5/LambdaMixin", null, "java/lang/Object", null);
+        AnnotationVisitor target = w.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g5/Entity"));
+        value.visitEnd();
+        target.visitEnd();
+        JarPortFixesTest.handler(w, JarPortFixesTest.INJECT, "onLambda", "(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V", "lambda$tick$0", "HEAD", null, null);
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
     /** m5.forge.ForgeTicker, as Forge's build writes it: it implements the game's Ticker, its tick() named by SRG id. */
     static byte[] forgeSide() {
         ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);

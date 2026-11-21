@@ -395,6 +395,10 @@ def jar_port(loader, frm, to, jars, out_dir, report, runtime=False):
     out_dir.mkdir(parents=True, exist_ok=True)
     args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
             "--loader", loader] + (["--runtime-names"] if runtime else [])
+    # Fabric Loader runs the newest copy of each mod id, so a Fabric API module a mod nests is the platform's there.
+    platform = sorted(i for i in platform_ids(loader, to) if i)
+    if platform:
+        args += ["--platform", ",".join(platform)]
     rows = side_by_side(args, jars, report)
     counts = {}
     for m in rows:
@@ -932,7 +936,8 @@ def fabric_api(version):
     if have:
         return have[-1]
     versions = api("project/fabric-api/version", {"loaders": json.dumps(["fabric"]), "game_versions": json.dumps([version])}) or []
-    files = [f for v in versions for f in v.get("files", []) if f.get("primary")]
+    # A release with one file need not mark it primary (Fabric API for 1.18 does not).
+    files = [f for v in versions for f in v.get("files", []) if f.get("primary") or len(v.get("files", [])) == 1]
     if not files:
         return None
     folder.mkdir(parents=True, exist_ok=True)
@@ -954,7 +959,8 @@ def standalone(jar, platform=frozenset(), adapters=frozenset()):
         own = {meta.get("id")} | set(meta.get("provides") or [])
         if any(e.get("adapter", "default") not in adapters | {"default"} for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
             return False
-        return all(d in ("minecraft", "fabricloader", "java") or d in own or d in platform for d in (meta.get("depends") or {}))
+        # Fabric Loader provides MixinExtras itself (since 0.15), as it does the game, itself and Java.
+        return all(d in ("minecraft", "fabricloader", "java", "mixinextras") or d in own or d in platform for d in (meta.get("depends") or {}))
     with zipfile.ZipFile(jar) as z:
         names = [n for n in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml") if n in z.namelist()]
         if not names:

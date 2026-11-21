@@ -442,6 +442,20 @@ public final class ModNames {
             }
         }
 
+        Map<String, List<String>> byName; // Mojang owner.name -> descriptors the release's names give it
+
+        /** The descriptors the release's own names give a method of owner by that name (Mojang names). */
+        List<String> declared(String owner, String name) {
+            if (byName == null) {
+                byName = new HashMap<>();
+                for (String key : methods.keySet()) {
+                    int paren = key.indexOf('(');
+                    byName.computeIfAbsent(key.substring(0, paren), x -> new ArrayList<>()).add(key.substring(paren));
+                }
+            }
+            return byName.getOrDefault(owner + "." + name, List.of());
+        }
+
         Back(Map<String, String> classes, Map<String, String> methods, Map<String, String> fields, GameDiff.Snap game) {
             this.classes.putAll(classes);
             this.methods.putAll(methods);
@@ -947,6 +961,9 @@ public final class ModNames {
                     }
                     if (mdesc != null) {
                         String hit = game('m', o, name, mdesc);
+                        if (hit == null) {
+                            hit = methods.get(o + "." + name + mdesc); // a synthetic method the snapshot leaves out (a lambda)
+                        }
                         if (hit != null) {
                             return List.of(prefix + hit + desc(mdesc));
                         }
@@ -955,6 +972,16 @@ public final class ModNames {
                     // A bare name: every overload the target declares by that name.
                     GameDiff.Cls k = game.classes.get(o);
                     List<String> descs = k == null ? List.of() : k.methods.values().stream().filter(x -> x.name.equals(name)).map(x -> x.desc).toList();
+                    if (descs.isEmpty()) {
+                        // A synthetic method the snapshot leaves out (lambda$charTyped$7) is in the release's own names.
+                        List<String> synthetic = declared(o, name);
+                        if (!synthetic.isEmpty()) {
+                            Set<String> hits = new LinkedHashSet<>();
+                            synthetic.forEach(d -> hits.add(methods.get(o + "." + name + d)));
+                            return hits.size() == 1 ? List.of(prefix + hits.iterator().next())
+                                : synthetic.stream().map(d -> prefix + methods.get(o + "." + name + d) + desc(d)).toList();
+                        }
+                    }
                     Set<String> names = new LinkedHashSet<>();
                     for (String d : descs) {
                         String hit = game('m', o, name, d);
