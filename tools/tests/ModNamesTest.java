@@ -23,8 +23,11 @@ public final class ModNamesTest {
         Exposure.Intermediary names = new Exposure.Intermediary(
             Map.of("net/minecraft/class_1", "net/minecraft/world/entity/Entity", "net/minecraft/class_2", "net/minecraft/world/level/Level",
                 "net/minecraft/class_3", "net/minecraft/resources/Key", "net/minecraft/class_1$class_4", "net/minecraft/world/entity/Entity$RemovalReason"),
-            Map.of("method_10", "tick", "method_11", "baseTick", "field_20", "tickCount", "comp_5", "id", "method_12", "get")
+            Map.of("method_10", "tick", "method_11", "baseTick", "field_20", "tickCount", "comp_5", "id", "method_12", "get", "method_13", "count")
         );
+        // Intermediary gave method_13 to two unrelated methods: place(Level) on one class, count() on another.
+        names.shared.put("method_13(Lnet/minecraft/class_2;)V", "place");
+        names.shared.put("method_13()I", "count");
         Map<String, byte[]> files = new LinkedHashMap<>();
         files.put("mod/Thing.class", thing());
         files.put("mod/ThingMixin.class", mixin());
@@ -43,6 +46,7 @@ public final class ModNamesTest {
         check(thing.contains("super net/minecraft/world/entity/Entity"), "classes in Mojang names, the superclass too");
         check(thing.contains("call net/minecraft/world/entity/Entity.baseTick") && thing.contains("field net/minecraft/world/entity/Entity.tickCount"), "calls and fields renamed");
         check(thing.contains("declares tick"), "an override takes the overridden method's name");
+        check(thing.contains("declares place") && !thing.contains("declares count"), "an id intermediary gave to two methods is named by its descriptor: " + thing);
         check(thing.contains("lambda get()Lnet/minecraft/world/level/Level;"), "a lambda implementing a game interface names its method");
         check(thing.contains("field net/minecraft/resources/Key.id"), "a record component renamed");
         check(thing.contains("field net/minecraft/world/entity/Entity$RemovalReason.KILLED"), "a nested game class renamed");
@@ -77,6 +81,11 @@ public final class ModNamesTest {
     static byte[] thing() {
         ClassWriter cw = new ClassWriter(0);
         cw.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "mod/Thing", null, "net/minecraft/class_1", null);
+        MethodVisitor place = cw.visitMethod(Opcodes.ACC_PUBLIC, "method_13", "(Lnet/minecraft/class_2;)V", null, null);
+        place.visitCode();
+        place.visitInsn(Opcodes.RETURN);
+        place.visitMaxs(0, 2);
+        place.visitEnd();
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "method_10", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);

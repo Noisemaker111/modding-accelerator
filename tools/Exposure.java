@@ -494,9 +494,13 @@ public final class Exposure {
         static final Pattern CLASS = Pattern.compile("net([/.])minecraft\\1class_\\d+(?:\\$class_\\d+)*");
         // Fabric's intermediary members, and NeoForm's SRG ids (m_N_, f_N_) NeoForge ran on before 1.20.5.
         static final Pattern MEMBER = Pattern.compile("\\b(?:(?:method|field|comp)_\\d+|[mf]_\\d+_)\\b");
+        static final Pattern DESC = Pattern.compile("\\([^)]*\\)\\[*(?:[ZBCSIJFDV]|L[^;]+;)");
 
         final Map<String, String> classes = new HashMap<>(); // slash form
         final Map<String, String> members = new HashMap<>();
+        // method_N + intermediary descriptor -> name, for an id intermediary gave to unrelated methods of different classes
+        // (method_14452 is PlacementModifier.getPositions and RepeatingPlacement.count in 1.20.1).
+        final Map<String, String> shared = new HashMap<>();
 
         Intermediary(Map<String, String> classes, Map<String, String> members) {
             this.classes.putAll(classes);
@@ -506,6 +510,20 @@ public final class Exposure {
         Intermediary(String version) throws Exception {
             VersionMap.Table t = VersionMap.Table.load(version, "mojmap");
             classes.putAll(t.classes);
+            Map<String, Set<String>> names = new HashMap<>();
+            for (var e : t.methods.entrySet()) {
+                String rest = e.getKey().substring(e.getKey().indexOf('.') + 1);
+                if (rest.startsWith("method_")) {
+                    names.computeIfAbsent(rest, k -> new HashSet<>()).add(e.getValue().name());
+                }
+            }
+            for (var e : t.methods.entrySet()) {
+                String rest = e.getKey().substring(e.getKey().indexOf('.') + 1);
+                if (names.getOrDefault(rest, Set.of()).size() > 1) {
+                    shared.put(rest + e.getValue().interDesc(), e.getValue().name());
+                    shared.put(rest + e.getValue().desc(), e.getValue().name()); // as a text written in Mojang's class names reads
+                }
+            }
             for (Map<String, VersionMap.Member> kind : List.of(t.methods, t.fields)) {
                 for (var e : kind.entrySet()) {
                     // Keyed owner.method_N, owner.field_N, or owner + name + intermediary descriptor for every other name.
@@ -595,7 +613,9 @@ public final class Exposure {
             Matcher m = MEMBER.matcher(classed);
             sb = new StringBuilder();
             while (m.find()) {
-                m.appendReplacement(sb, Matcher.quoteReplacement(members.getOrDefault(m.group(), m.group())));
+                Matcher desc = DESC.matcher(classed).region(m.end(), classed.length());
+                String exact = desc.lookingAt() ? shared.get(m.group() + desc.group()) : null;
+                m.appendReplacement(sb, Matcher.quoteReplacement(exact != null ? exact : members.getOrDefault(m.group(), m.group())));
             }
             return m.appendTail(sb).toString();
         }
