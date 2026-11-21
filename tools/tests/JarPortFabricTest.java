@@ -55,6 +55,9 @@ final class JarPortFabricTest {
         files.put("m5/EntityAccessor.class", accessor());
         files.put("m5/Visitor.class", JarPortTest.empty("m5/Visitor", Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "java/lang/Object", "g5/Ticker"));
         files.put("m5/Lambdas.class", lambdas());
+        // A class the jar carries for Forge, naming the game's members by SRG id: Fabric never loads it.
+        byte[] forgeSide = forgeSide();
+        files.put("m5/forge/ForgeTicker.class", forgeSide);
         // A helper mod nested only through fabric.mod.json's "jars": it is ported too, its metadata included.
         files.put("META-INF/jars/inner.jar", JarPortTest.jar(Map.of(
             "fabric.mod.json", "{\"schemaVersion\": 1, \"id\": \"inner\", \"version\": \"1\", \"depends\": {\"minecraft\": \"1.0\"}}".getBytes(StandardCharsets.UTF_8),
@@ -71,6 +74,8 @@ final class JarPortFabricTest {
         // A nested jar's result comes before its parent's.
         List<String> unlinked = results.stream().filter(r -> "m5.jar".equals(r.get("jar"))).flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
 
+        JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("ForgeTicker")) && JarPortFixesTest.strings(ported.get("m5/forge/ForgeTicker.class")).containsKey("m_8119_()V"),
+            "a class built for another loader (SRG names in a Fabric jar) is left as it is and not linked: " + unlinked);
         JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("g5.Base.<init>")) && !new String(ported.get("m5.accesswidener"), StandardCharsets.UTF_8).contains("<init>"),
             "a constructor the mod's access widener makes extendable (protected) links from its subclass, with no line added: " + unlinked);
         JarPortTest.expect(unlinked.stream().noneMatch(u -> u.contains("Recipe.matches")),
@@ -334,6 +339,19 @@ final class JarPortFabricTest {
     }
 
     /** m5.Lambdas.make() returns a lambda for the mod's Visitor, which extends the game's Ticker. */
+    /** m5.forge.ForgeTicker, as Forge's build writes it: it implements the game's Ticker, its tick() named by SRG id. */
+    static byte[] forgeSide() {
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, "m5/forge/ForgeTicker", null, "java/lang/Object", new String[] { "g5/Ticker" });
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "m_8119_", "()V", null, null);
+        m.visitCode();
+        m.visitInsn(Opcodes.RETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
     static byte[] lambdas() {
         return JarPortTest.real("m5/Lambdas", "java/lang/Object", 0, new String[0], w -> {
             Handle factory = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",

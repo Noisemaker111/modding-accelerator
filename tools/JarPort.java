@@ -73,6 +73,7 @@ public final class JarPort {
         final Map<String, Object[]> twins = new LinkedHashMap<>(); // class.name+desc -> {parameter, new type, steps} (Sites.twin)
         final Map<String, Integer> requires = new HashMap<>(); // mixin class -> its config's injectors.defaultRequire
         final Map<String, String[]> supers = new HashMap<>(); // class -> {removed superclass (old name), what it extends now (new name)}
+        final Set<String> foreign = new HashSet<>(); // entries of classes built for another loader (otherLoader), left as they are
 
         void change(String kind) {
             changed.merge(kind, 1, Integer::sum);
@@ -433,6 +434,21 @@ public final class JarPort {
         return -1;
     }
 
+    static final Pattern SRG = Pattern.compile("\\b[mf]_\\d+_\\b");
+    static final Pattern INTERMEDIARY = Pattern.compile("net/minecraft/class_\\d+");
+
+    /**
+     * A class a jar for several loaders carries for another one (a Forge class beside the Fabric ones), which the loader
+     * ported for never loads, so it is no part of the mod there, before the port or after. It names the game as only
+     * that loader's build does: a Fabric jar is read in Mojang's names, so a class still naming members by SRG id
+     * (m_1234_) was built for Forge; any other jar is read in Mojang's names too, so a class still naming a game class by
+     * intermediary (class_1234) was built for Fabric.
+     */
+    boolean otherLoader(byte[] bytes) {
+        String pool = new String(bytes, StandardCharsets.ISO_8859_1);
+        return (loader.equals("fabric") ? SRG : INTERMEDIARY).matcher(pool).find();
+    }
+
     /**
      * grants: what every access transformer in the outermost jar and its nested jars opens (null: read it here). The loader
      * applies an access transformer to the game for every mod, so a nested helper may rely on its parent's.
@@ -472,6 +488,11 @@ public final class JarPort {
         byte[] fmj = entries.get("fabric.mod.json");
         mod.canWiden = entries.containsKey("META-INF/neoforge.mods.toml") || fmj != null;
         for (var e : entries.entrySet()) {
+            if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/") && otherLoader(e.getValue())) {
+                mod.foreign.add(e.getKey());
+                mod.change("classes built for another loader left as they are");
+                continue;
+            }
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
                 e.setValue(PortChains.apply(e.getValue(), pairs, (o, k, n, d) -> {
                     GameDiff.Cls c = Exposure.declaring(a, o, k, n, d);
@@ -499,7 +520,7 @@ public final class JarPort {
             int kept = mod.kept.size(), unmoved = mod.unmoved.size();
             rewritten.clear();
             for (var e : entries.entrySet()) {
-                if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
+                if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/") && !mod.foreign.contains(e.getKey())) {
                     rewritten.put(e.getKey(), rewriteOrReport(mod, e.getValue()));
                 }
             }
