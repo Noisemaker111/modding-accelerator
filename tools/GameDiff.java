@@ -3710,6 +3710,54 @@ public final class GameDiff {
                         agreed = true;
                     }
                 }
+                if (!agreed && best != null) {
+                    // The game passed narrower values than the member declares (26.2's new BlockPos(v) had a BlockPos at
+                    // nearly every use and is written v or v.immutable() there; one use with a MutableBlockPos is new
+                    // BlockPos(v.getX(), v.getY(), v.getZ())). A mod's argument is only known to be the declared type, so
+                    // where a use's operand was narrower, only its readings that still compile for the declared types
+                    // count, and a use with none says nothing about a declared-type value. That holds only once the game
+                    // shows it: some narrower use's every reading fails to compile for the declared types. Without that
+                    // (find(o) with a String o, rewritten find(o, this)), an unread use still counts against. Only for a
+                    // member of one argument: with more, nearly every use passes something narrower for one of them, and
+                    // what is left to vote is too few places to tell an argument from a value they happened to share.
+                    String[] declared = declared(old);
+                    String[] asked = declared != null && declared.length == 2 ? declared : null;
+                    Map<Node, Set<String>> wide = new IdentityHashMap<>();
+                    boolean[] specialized = { false };
+                    if (asked != null) {
+                        uses.forEach((u, r) -> {
+                            int first = u.op == 'v' || u.op == 'f' ? 0 : 1;
+                            boolean exact = true;
+                            // The receiver is nearly always narrower (a call on this): only the arguments are asked.
+                            for (int i = 1 - first; i < u.kids.length && i + first < asked.length; i++) {
+                                exact &= asked[i + first] == null || asked[i + first].equals(u.kids[i].type);
+                            }
+                            if (exact) {
+                                wide.put(u, r);
+                                return;
+                            }
+                            Set<String> keep = new LinkedHashSet<>();
+                            for (String one : r) {
+                                if (compiles(one, asked, old)) {
+                                    keep.add(one);
+                                }
+                            }
+                            specialized[0] |= keep.isEmpty() && !r.isEmpty();
+                            if (!keep.isEmpty()) {
+                                wide.put(u, keep);
+                            }
+                        });
+                    }
+                    int[] general = new int[2];
+                    String g = specialized[0] && !wide.isEmpty() ? vote(wide.values(), general) : null;
+                    if (g != null && (general[0] >= 2 && general[0] * 10 >= general[1] * 8 || general[0] == 1 && general[1] == 1) && usesAll(g, old, operands(old))
+                        && beyondLiterals(g, wide)) {
+                        best = g;
+                        top = general[0];
+                        of = general[1];
+                        agreed = true;
+                    }
+                }
                 if (log != null) {
                     log.append(e.getKey()).append('\t').append(e.getValue().size()).append('\t').append(of).append('\t').append(top).append('\t')
                         .append(agreed).append('\t').append(best == null ? "" : best).append('\t');
@@ -3742,6 +3790,8 @@ public final class GameDiff {
                 && alone.contains(c.y().owner() + "." + c.y().name() + c.y().desc()));
             out.addAll(accessors(out));
             out.addAll(overrides(out));
+            // Last, for what nothing of the game's own code answered.
+            out.addAll(byTypes(out));
             out.sort(Comparator.comparing(Learned::owner).thenComparing(Learned::name).thenComparing(Learned::desc));
             if (log != null) {
                 try {
@@ -3860,6 +3910,163 @@ public final class GameDiff {
                     out.add(new Learned(dotted(x.owner.name), x.name, x.desc, false, true, dotted(y.owner.name) + "." + accessor + "()." + y.name + "(" + args + ")", 1, 1));
                 }
             }
+            return out;
+        }
+
+        /**
+         * A method of one argument the game took away from a class, with nothing of its own code to read, and the same
+         * question asked of something the class now hands out: one public accessor of the new class gives an object with a
+         * method of the same name and result, whose argument is made from the old one through the new release's own
+         * public constructors and factories, each the only one of its kind. 1.21.11's CommandSourceStack.hasPermission(int)
+         * is $0.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId($1))): permissions() is
+         * the one accessor whose result answers hasPermission, a Permission is made from a PermissionLevel only by
+         * HasCommandLevel's constructor, and a PermissionLevel from an int only by PermissionLevel.byId. A factory step only
+         * reads a primitive or a String. Any second way at any step and nothing is learned.
+         */
+        List<Learned> byTypes(List<Learned> found) {
+            Set<String> have = new HashSet<>();
+            for (Learned l : found) {
+                have.add(l.owner().replace('.', '/') + "." + l.name() + l.desc());
+            }
+            List<Learned> out = new ArrayList<>();
+            for (Cls c : h.a.classes.values()) {
+                Cls now = h.cAB.get(c);
+                if (now == null) {
+                    continue;
+                }
+                for (Meth x : c.methods.values()) {
+                    List<ClassDesc> ps = MethodTypeDesc.ofDescriptor(x.desc).parameterList();
+                    if (x.isStatic() || x.special() || ps.size() != 1 || (x.flags & (ACC_PUBLIC | 0x0004)) == 0 || have.contains(x.sig())
+                        || h.mAB.containsKey(x) && h.descBA(h.mAB.get(x).desc).equals(x.desc)) {
+                        continue;
+                    }
+                    String result = Carry.descAB(h, MethodTypeDesc.ofDescriptor(x.desc).returnType().descriptorString());
+                    String param = Carry.descAB(h, ps.get(0).descriptorString());
+                    // The class's own method of that name first, so a getter giving the class back (withSuppressedOutput())
+                    // is never asked what the class itself answers.
+                    List<String> ways = ask("$0", now.name, x.name, result, param);
+                    for (Meth g : ways.isEmpty() ? instanceMethods(now.name) : List.<Meth>of()) {
+                        String gives = MethodTypeDesc.ofDescriptor(g.desc).returnType().descriptorString();
+                        if (MethodTypeDesc.ofDescriptor(g.desc).parameterCount() != 0 || !gives.startsWith("L") || gives.equals("Ljava/lang/Object;")
+                            || (g.flags & ACC_PUBLIC) == 0 || (g.flags & ACC_SYNTHETIC) != 0 || g.name.equals(x.name)) {
+                            continue;
+                        }
+                        ways.addAll(ask("$0." + g.name + "()", gives.substring(1, gives.length() - 1), x.name, result, param));
+                    }
+                    if (ways.size() == 1) {
+                        out.add(new Learned(dotted(c.name), x.name, x.desc, false, h.mAB.containsKey(x), ways.get(0), 1, 1));
+                    }
+                }
+            }
+            return out;
+        }
+
+        /** recv's methods named name (on class cls) giving result, each with its argument made from $1 (type param). */
+        List<String> ask(String recv, String cls, String name, String result, String param) {
+            List<String> ways = new ArrayList<>();
+            for (Meth q : instanceMethods(cls)) {
+                List<ClassDesc> qs = MethodTypeDesc.ofDescriptor(q.desc).parameterList();
+                if (!q.name.equals(name) || qs.size() != 1 || (q.flags & ACC_PUBLIC) == 0 || (q.flags & ACC_SYNTHETIC) != 0
+                    || !MethodTypeDesc.ofDescriptor(q.desc).returnType().descriptorString().equals(result) || qs.get(0).descriptorString().equals(param)
+                    || qs.get(0).descriptorString().equals("Ljava/lang/Object;")) {
+                    continue;
+                }
+                for (String made : makes(param, qs.get(0).descriptorString(), "$1", 2)) {
+                    ways.add(recv + "." + q.name + "(" + made + ")");
+                }
+            }
+            return ways;
+        }
+
+        final Map<String, List<Meth>> instanceMethods = new HashMap<>();
+        final Map<String, List<Cls>> makers = new HashMap<>();
+
+        /** Every public instance method a value of class cls has in b (its own, its superclasses' and interfaces'), one per name and descriptor. */
+        List<Meth> instanceMethods(String cls) {
+            return instanceMethods.computeIfAbsent(cls, this::instanceMethodsOf);
+        }
+
+        List<Meth> instanceMethodsOf(String cls) {
+            List<Meth> out = new ArrayList<>();
+            Set<String> seen = new HashSet<>();
+            Deque<String> todo = new ArrayDeque<>(List.of(cls));
+            Set<String> visited = new HashSet<>();
+            while (!todo.isEmpty()) {
+                Cls k = h.b.classes.get(todo.poll());
+                if (k == null || !visited.add(k.name)) {
+                    continue;
+                }
+                for (Meth m : k.methods.values()) {
+                    if (!m.isStatic() && !m.special() && seen.add(m.name + m.desc)) {
+                        out.add(m);
+                    }
+                }
+                if (k.sup != null) {
+                    todo.add(k.sup);
+                }
+                todo.addAll(k.ifaces);
+            }
+            return out;
+        }
+
+        /**
+         * The expressions that make a value of type want from expr, a value of type have (b's descriptors): expr itself when
+         * it already is one, else want's (or a class implementing want's) one public constructor or static factory taking a
+         * value made the same way, at most depth steps deep. Each way found is listed; the caller wants exactly one.
+         */
+        List<String> makes(String have, String want, String expr, int depth) {
+            if (have.equals(want) || have.startsWith("L") && want.startsWith("L") && Exposure.assignable(h.b, SameCall.dot(have), SameCall.dot(want))) {
+                return List.of(expr);
+            }
+            if (depth == 0 || !want.startsWith("L")) {
+                return List.of();
+            }
+            String target = want.substring(1, want.length() - 1);
+            List<String> out = new ArrayList<>();
+            for (Cls k : makers(target)) {
+                boolean concrete = (k.flags & (ACC_INTERFACE | 0x0400)) == 0;
+                for (Meth m : k.methods.values()) {
+                    List<ClassDesc> ps = MethodTypeDesc.ofDescriptor(m.desc).parameterList();
+                    if (ps.size() != 1 || (m.flags & ACC_PUBLIC) == 0 || (m.flags & ACC_SYNTHETIC) != 0 || m.name.startsWith("lambda$")) {
+                        continue;
+                    }
+                    String from = ps.get(0).descriptorString();
+                    boolean ctor = m.name.equals("<init>") && concrete;
+                    // A factory only reads a plain value into the type (PermissionLevel.byId(int), PackFormat.of(int)): one from
+                    // another object can mean something else of the same erased type (ResourceKey.createRegistryKey(id) is a
+                    // registry's key, not a recipe's).
+                    boolean factory = m.isStatic() && MethodTypeDesc.ofDescriptor(m.desc).returnType().descriptorString().equals("L" + k.name + ";")
+                        && !m.name.equals("valueOf") && (from.length() == 1 || from.equals("Ljava/lang/String;"));
+                    // A maker taking any object (Holder.Direct(T)) holds whatever it is given, so it says nothing of what it is made from.
+                    if (!ctor && !factory || from.equals(want) || from.equals("Ljava/lang/Object;")) {
+                        continue;
+                    }
+                    for (String inner : makes(have, from, expr, depth - 1)) {
+                        out.add(ctor ? "new " + dotted(k.name) + "(" + inner + ")" : dotted(k.name) + "." + m.name + "(" + inner + ")");
+                    }
+                }
+            }
+            return out;
+        }
+
+        /** target and the classes of b that extend or implement it directly: the ones that can make a target. */
+        List<Cls> makers(String target) {
+            if (makers.isEmpty()) {
+                for (Cls k : h.b.classes.values()) {
+                    if (k.sup != null) {
+                        makers.computeIfAbsent(k.sup, z -> new ArrayList<>()).add(k);
+                    }
+                    for (String i : k.ifaces) {
+                        makers.computeIfAbsent(i, z -> new ArrayList<>()).add(k);
+                    }
+                }
+            }
+            List<Cls> out = new ArrayList<>();
+            Cls t = h.b.classes.get(target);
+            if (t != null) {
+                out.add(t);
+            }
+            out.addAll(makers.getOrDefault(target, List.of()));
             return out;
         }
 
@@ -4615,6 +4822,142 @@ public final class GameDiff {
         static int operandIndex(String option) {
             Matcher m = Pattern.compile("\\$(\\d+)").matcher(option);
             return m.find() ? Integer.parseInt(m.group(1)) : -1;
+        }
+
+        /** The old member's operand types by $N in a's names ($0 its receiver, null where there is none); null if unknown. */
+        String[] declared(Ref old) {
+            if (old.kind() != 'm') {
+                return null;
+            }
+            Meth m = h.a.method(old.owner(), old.name(), old.desc());
+            if (m == null) {
+                return null;
+            }
+            List<String> out = new ArrayList<>();
+            out.add(m.isStatic() || m.special() ? null : "L" + old.owner() + ";");
+            for (ClassDesc p : MethodTypeDesc.ofDescriptor(old.desc()).parameterList()) {
+                out.add(p.descriptorString());
+            }
+            return out.toArray(String[]::new);
+        }
+
+        /** reading (with its choices, any way of taking them) compiles in b over operands of the declared types and gives what old gave. */
+        boolean compiles(String reading, String[] declared, Ref old) {
+            String[] types = new String[declared.length];
+            for (int i = 0; i < types.length; i++) {
+                types[i] = declared[i] == null ? null : Carry.descAB(h, declared[i]);
+            }
+            String gave = old.name().equals("<init>") ? "L" + old.owner() + ";" : MethodTypeDesc.ofDescriptor(old.desc()).returnType().descriptorString();
+            String want = Carry.descAB(h, gave);
+            for (String one : ways(reading, 16)) {
+                try {
+                    String got = typeIn(FixExpr.parse(one), types);
+                    if (got != null && (want.equals("V") || fitsIn(got, want))) {
+                        return true;
+                    }
+                } catch (IllegalArgumentException unreadable) {
+                    // not an expression: it does not compile
+                }
+            }
+            return false;
+        }
+
+        /** Every way of taking reading's choices, at most limit of them. */
+        static List<String> ways(String reading, int limit) {
+            Matcher c = CHOICE.matcher(reading);
+            if (!c.find()) {
+                return List.of(reading);
+            }
+            List<String> out = new ArrayList<>();
+            List<String> rests = ways(reading.substring(c.end()), limit);
+            for (String option : c.group(1).split(String.valueOf(OR))) {
+                for (String rest : rests) {
+                    if (out.size() == limit) {
+                        return out;
+                    }
+                    out.add(reading.substring(0, c.start()) + option + rest);
+                }
+            }
+            return out;
+        }
+
+        /** n's type in b over operands of these types (b's descriptors), or null where it does not compile or is not known. */
+        String typeIn(FixExpr.Node n, String[] types) {
+            if (n instanceof FixExpr.Arg a) {
+                return a.index() < types.length ? types[a.index()] : null;
+            }
+            if (n instanceof FixExpr.Lit l) {
+                return l.type() == null ? "null" : l.type();
+            }
+            if (n instanceof FixExpr.Cast c) {
+                return FixExpr.PRIMITIVES.contains(c.type()) ? Map.of("boolean", "Z", "byte", "B", "char", "C", "short", "S", "int", "I", "long", "J", "float", "F", "double", "D").get(c.type()) : null;
+            }
+            if (n instanceof FixExpr.New made) {
+                String k = made.type().replace('.', '/');
+                Cls cls = h.b.classes.get(k);
+                List<Meth> ctors = cls == null ? List.of() : cls.methods.values().stream().filter(m -> m.name.equals("<init>")).toList();
+                return called(ctors, made.args(), types) == null ? null : "L" + k + ";";
+            }
+            if (n instanceof FixExpr.Invoke call) {
+                if (call.target() instanceof FixExpr.Path p && h.b.classes.containsKey(p.dotted().replace('.', '/'))) {
+                    Cls cls = h.b.classes.get(p.dotted().replace('.', '/'));
+                    return called(cls.methods.values().stream().filter(m -> m.isStatic() && m.name.equals(call.name())).toList(), call.args(), types);
+                }
+                String recv = typeIn(call.target(), types);
+                if (recv == null || !recv.startsWith("L")) {
+                    return null;
+                }
+                return called(instanceMethods(recv.substring(1, recv.length() - 1)).stream().filter(m -> m.name.equals(call.name())).toList(), call.args(), types);
+            }
+            return null;
+        }
+
+        /** The result type of the one call among found these arguments fit (several with one result type count as one). */
+        String called(List<Meth> found, List<FixExpr.Node> args, String[] types) {
+            List<String> got = new ArrayList<>();
+            for (FixExpr.Node a : args) {
+                String t = typeIn(a, types);
+                if (t == null) {
+                    return null;
+                }
+                got.add(t);
+            }
+            Set<String> results = new HashSet<>();
+            for (Meth m : found) {
+                List<ClassDesc> ps = MethodTypeDesc.ofDescriptor(m.desc).parameterList();
+                if ((m.flags & ACC_PUBLIC) == 0 || ps.size() != got.size()) {
+                    continue;
+                }
+                boolean fit = true;
+                for (int i = 0; i < ps.size() && fit; i++) {
+                    fit = fitsIn(got.get(i), ps.get(i).descriptorString());
+                }
+                if (fit) {
+                    results.add(MethodTypeDesc.ofDescriptor(m.desc).returnType().descriptorString());
+                }
+            }
+            return results.size() == 1 ? results.iterator().next() : null;
+        }
+
+        /**
+         * A value of type got (b's descriptors) can be passed where want is taken. A parameter taking any object is most
+         * often an erased type variable (Cat's setVariant(Object) from VariantHolder wants a Holder) and takes only an Object.
+         */
+        boolean fitsIn(String got, String want) {
+            if (got.equals(want)) {
+                return true;
+            }
+            if (want.equals("Ljava/lang/Object;")) {
+                return got.equals("null");
+            }
+            if (got.equals("null")) {
+                return want.startsWith("L") || want.startsWith("[");
+            }
+            if (got.length() == 1 && want.length() == 1) {
+                String order = "BSIJFD";
+                return order.indexOf(got) >= 0 && order.indexOf(got) <= order.indexOf(want);
+            }
+            return got.startsWith("L") && want.startsWith("L") && Exposure.assignable(h.b, SameCall.dot(got), SameCall.dot(want));
         }
 
         /** The old member's operands: its receiver (unless static) and its arguments. */
