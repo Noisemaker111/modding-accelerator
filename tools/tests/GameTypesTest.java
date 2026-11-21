@@ -10,7 +10,8 @@ import org.objectweb.asm.*;
  * before. Shelf.find(String) became find(Key), and Key's only maker takes a CharSequence (Key.wrap): a factory from another
  * object may mean something else of the same type, so nothing is learned for it. Shelf.put(String) became put(Box), and
  * a Box is made by Box(Object), which holds anything it is given: nothing is learned for that either. Src.tag(String)
- * became tag(Object), as an erased type variable reads: it wants some one type, not any, so it is not taken as the answer. Pair.allowed(int) went too, and a Pair
+ * became tag(Object), as an erased type variable reads: it wants some one type, not any, so it is not taken as the answer.
+ * Src.paint(int) became paint(Kind), and Kind has two factories, plain() and glow(int): glow's int is not paint's. Pair.allowed(int) went too, and a Pair
  * hands out two Sets: either could be the answer, so nothing is learned for it either.
  *
  * Pos(Vec) went in 2.0 and the game's own uses of it, all on a Pos or a Mut (a Pos), became p, p, p.immutable() and new
@@ -42,6 +43,7 @@ final class GameTypesTest {
         JarPortTest.expect(!learned.containsKey(y + "Shelf.find(" + STR + ")" + OBJ), "a maker that reads another object is not used: " + learned.get(y + "Shelf.find(" + STR + ")" + OBJ));
         JarPortTest.expect(!learned.containsKey(y + "Shelf.put(" + STR + ")V"), "a maker that holds any object is not used: " + learned.get(y + "Shelf.put(" + STR + ")V"));
         JarPortTest.expect(!learned.containsKey(y + "Src.tag(" + STR + ")V"), "a method taking any object is not the answer: " + learned.get(y + "Src.tag(" + STR + ")V"));
+        JarPortTest.expect(!learned.containsKey(y + "Src.paint(I)V"), "one of a class's several factories is not the plain value's meaning: " + learned.get(y + "Src.paint(I)V"));
         JarPortTest.expect(!learned.containsKey(y + "Pair.allowed(I)Z"), "two objects that could answer and nothing is learned: " + learned.get(y + "Pair.allowed(I)Z"));
         JarPortTest.expect(("new " + y + "Pos($1.getX(), $1.getY())").equals(learned.get(y + "Pos.<init>(L" + U + "Vec;)V")),
             "of the game's rewrites of a narrower value, the one that compiles for the declared type: " + learned.get(y + "Pos.<init>(L" + U + "Vec;)V"));
@@ -114,7 +116,7 @@ final class GameTypesTest {
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("game-types: 7 checks passed");
+        System.out.println("game-types: 8 checks passed");
     }
 
     /**
@@ -132,6 +134,11 @@ final class GameTypesTest {
             n.visitInsn(Opcodes.ARETURN);
             n.visitMaxs(0, 0);
             n.visitEnd();
+            MethodVisitor paint = w.visitMethod(Opcodes.ACC_PUBLIC, "paint", two ? "(L" + U + "Kind;)V" : "(I)V", null, null);
+            paint.visitCode();
+            paint.visitInsn(Opcodes.RETURN);
+            paint.visitMaxs(0, 0);
+            paint.visitEnd();
             MethodVisitor tag = w.visitMethod(Opcodes.ACC_PUBLIC, "tag", "(" + (two ? OBJ : STR) + ")V", null, null);
             tag.visitCode();
             tag.visitInsn(Opcodes.RETURN);
@@ -267,6 +274,19 @@ final class GameTypesTest {
                 wr.visitInsn(Opcodes.ARETURN);
                 wr.visitMaxs(0, 0);
                 wr.visitEnd();
+            }));
+            out.put(U + "Kind", cls("Kind", 0, null, null, w -> {
+                constructor(w, "java/lang/Object");
+                for (String f : new String[] { "()", "(I)" }) {
+                    MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, f.equals("()") ? "plain" : "glow", f + "L" + U + "Kind;", null, null);
+                    m.visitCode();
+                    m.visitTypeInsn(Opcodes.NEW, U + "Kind");
+                    m.visitInsn(Opcodes.DUP);
+                    m.visitMethodInsn(Opcodes.INVOKESPECIAL, U + "Kind", "<init>", "()V", false);
+                    m.visitInsn(Opcodes.ARETURN);
+                    m.visitMaxs(0, 0);
+                    m.visitEnd();
+                }
             }));
             out.put(U + "Box", cls("Box", 0, null, null, w -> {
                 MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(" + OBJ + ")V", null, null);

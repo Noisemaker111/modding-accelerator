@@ -4032,11 +4032,12 @@ public final class GameDiff {
                     }
                     String from = ps.get(0).descriptorString();
                     boolean ctor = m.name.equals("<init>") && concrete;
-                    // A factory only reads a plain value into the type (PermissionLevel.byId(int), PackFormat.of(int)): one from
-                    // another object can mean something else of the same erased type (ResourceKey.createRegistryKey(id) is a
-                    // registry's key, not a recipe's).
+                    // A factory only reads a plain value into the type (PermissionLevel.byId(int)): one from another object can
+                    // mean something else of the same erased type (ResourceKey.createRegistryKey(id) is a registry's key, not
+                    // a recipe's). And it is the class's only factory: a class with several (RenderType.solid(), endPortal(int))
+                    // names what each makes, and one taking an int is not the int's meaning.
                     boolean factory = m.isStatic() && MethodTypeDesc.ofDescriptor(m.desc).returnType().descriptorString().equals("L" + k.name + ";")
-                        && !m.name.equals("valueOf") && (from.length() == 1 || from.equals("Ljava/lang/String;"));
+                        && !m.name.equals("valueOf") && (from.length() == 1 || from.equals("Ljava/lang/String;")) && factories(k) == 1;
                     // A maker taking any object (Holder.Direct(T)) holds whatever it is given, so it says nothing of what it is made from.
                     if (!ctor && !factory || from.equals(want) || from.equals("Ljava/lang/Object;")) {
                         continue;
@@ -4047,6 +4048,12 @@ public final class GameDiff {
                 }
             }
             return out;
+        }
+
+        /** How many public static methods of k give a k, valueOf and values apart. */
+        static long factories(Cls k) {
+            return k.methods.values().stream().filter(m -> m.isStatic() && (m.flags & ACC_PUBLIC) != 0 && (m.flags & ACC_SYNTHETIC) == 0
+                && !m.name.equals("valueOf") && MethodTypeDesc.ofDescriptor(m.desc).returnType().descriptorString().equals("L" + k.name + ";")).count();
         }
 
         /** target and the classes of b that extend or implement it directly: the ones that can make a target. */
