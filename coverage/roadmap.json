@@ -792,6 +792,23 @@
       "port.jar-links.newest"
      ],
      "result": "Type finishes 102 -> 12 and appears in 316 -> 100 mod ports (875 -> 268 references). Every update 5,893 -> 5,972 of 9,423, big updates 1,904 -> 1,910, newest 15 -> 15. Five updates lower by named false links (Fabric builds listed for NeoForge, codec and HUD lambdas that would fail when called). Real NeoForge 1.21: every newly linked standalone mod loads on the server and in the client (33/36, 35/36; InventoryHUD+ as before)."
+    },
+    {
+     "id": "67",
+     "title": "Calls the game rewrote differently in different places get the reading that fits any caller",
+     "part": "Port by changed game part",
+     "status": "doing",
+     "text": "The type call, game: split (the game's own code replaced a call with different things in different places) is handled by what lines up at each use. A use that makes the same call with the same arguments on a value only its own method has (event.hasShiftDown() in a handler that now takes an event) says what is called and counts for the reading the other uses show (Minecraft.getInstance().hasShiftDown()). Where the uses split by what they pass (withDefaultNamespace for a literal path, parse for a value read from data), the uses whose arguments are call or field results vote alone: a mod's argument is a value no one can see in advance.",
+     "start": "2026-11-21",
+     "target": "2026-11-23",
+     "finish": "the type's finishes and mods counts down across every update, newest and big updates no lower, load on a real server and client for the updates it frees most",
+     "wrongIf": "a mod that links through one of these readings behaves differently in game from its old version",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates",
+      "port.jar-links.newest"
+     ],
+     "result": "2026-11-21: call, game: split over every update finishes 80 -> 73 and is in 1,555 -> 1,518 mods. Every update 5,972 -> 5,979 of 9,423, none lower; big updates 1,910 -> 1,917; newest 15 -> 15; jumps 1,170 -> 1,177. 1.21.8 -> 1.21.9: Fabric 35 -> 39, NeoForge 35 -> 38 (Screen.hasShiftDown/hasControlDown are Minecraft.getInstance()'s, GameProfile.getId() is id()). Real 1.21.9: NeoForge server 19 of 22 linked standalone mods load, client 19 of 22 (Better Third Person and Make Bubbles Pop fail on their mixins, linked before this); Fabric server 15 of 25 (Krypton fails on a mixin, linked before this; 9 client-only), client 23 of 24. Newly linked and proven: Enchantment Descriptions with Prickle (NeoForge) and Spark (Fabric), each on a real server and client. call, game: linked does not fall to this (its mods stay 1,960; finishes 180 -> 187 as mods freed here wait only on it). new ResourceLocation(String) is parse(s) from the uses that pass data (30 of 31)."
     }
    ]
   },
