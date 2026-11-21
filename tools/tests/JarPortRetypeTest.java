@@ -346,13 +346,17 @@ final class JarPortRetypeTest {
         JarPortTest.expect(nestedUnlinked.isEmpty(), "a jar nested for the other loader is never loaded here, so it holds nothing back: " + nestedUnlinked);
         // A nested jar the platform provides (a Fabric API module beside the mod): the platform's newer copy runs instead.
         port.platformIds = Set.of("platform-part");
+        port.platformAliases = Map.of("plat", "plat-api");
         List<Map<String, Object>> platformRuns = new ArrayList<>();
         byte[] nests = port.port(JarPortTest.jar(Map.of("META-INF/jars/platform-part.jar", JarPortTest.jar(Map.of("p6/UsesGone.class", JarPortTest.real("p6/UsesGone", "java/lang/Object", 0, new String[] { "g6/Model" }, w -> JarPortTest.traced(w, "quads", "()V", "", m -> { })),
             "fabric.mod.json", "{\"id\": \"platform-part\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8))),
-            "fabric.mod.json", "{\"id\": \"m6\", \"depends\": {\"platform-part\": \"=1.0.0\"}, \"jars\": [{\"file\": \"META-INF/jars/platform-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "nests.jar", platformRuns);
-        Object asked = Json.object(Json.object(Json.parse(new String(JarPortTest.entries(nests).get("fabric.mod.json"), java.nio.charset.StandardCharsets.UTF_8))).get("depends")).get("platform-part");
-        JarPortTest.expect("*".equals(asked), "the version of a nested platform module the mod asks for is left to the new release's platform: " + asked);
+            "fabric.mod.json", "{\"id\": \"m6\", \"depends\": {\"platform-part\": \"=1.0.0\", \"plat\": \">=1\"}, \"jars\": [{\"file\": \"META-INF/jars/platform-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "nests.jar", platformRuns);
+        Map<String, Object> asks = Json.object(Json.object(Json.parse(new String(JarPortTest.entries(nests).get("fabric.mod.json"), java.nio.charset.StandardCharsets.UTF_8))).get("depends"));
+        JarPortTest.expect("*".equals(asks.get("platform-part")), "the version of a nested platform module the mod asks for is left to the new release's platform: " + asks);
+        JarPortTest.expect("*".equals(asks.get("plat-api")) && !asks.containsKey("plat"),
+            "a name the old platform answered to and the new one does not is asked of the module that gave it: " + asks);
         port.platformIds = Set.of();
+        port.platformAliases = Map.of();
         List<String> platformUnlinked = platformRuns.stream().flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
         JarPortTest.expect(platformUnlinked.isEmpty() && platformRuns.stream().anyMatch(r -> String.valueOf(r.get("silent")).contains("nested platform module")),
             "a nested jar the platform provides runs as the platform's own, so it holds nothing back: " + platformUnlinked + " " + platformRuns);

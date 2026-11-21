@@ -319,6 +319,7 @@ public final class JarPort {
     public static void main(String[] args) throws Exception {
         String from = null, to = null, map = null, out = null, loader = null, report = null, book = null;
         Set<String> platformIds = Set.of();
+        Map<String, String> aliases = new HashMap<>();
         boolean runtime = false;
         List<Path> jars = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
@@ -332,6 +333,11 @@ public final class JarPort {
                 case "--report" -> report = args[++i];
                 case "--fixes" -> book = args[++i];
                 case "--platform" -> platformIds = Set.copyOf(Arrays.asList(args[++i].split(",")));
+                case "--platform-aliases" -> {
+                    for (String pair : args[++i].split(",")) {
+                        aliases.put(pair.substring(0, pair.indexOf('=')), pair.substring(pair.indexOf('=') + 1));
+                    }
+                }
                 case "--cache" -> VersionMap.cache = Path.of(args[++i]).toAbsolutePath();
                 default -> jars.add(Path.of(args[i]));
             }
@@ -346,6 +352,7 @@ public final class JarPort {
         }
         port.runtimeNames = runtime;
         port.platformIds = platformIds;
+        port.platformAliases = aliases;
         if (book != null) {
             port.fixes(Path.of(book));
         }
@@ -476,6 +483,7 @@ public final class JarPort {
     }
 
     Set<String> platformIds = Set.of(); // mod ids the platform the port is for provides (Fabric API's modules), --platform
+    Map<String, String> platformAliases = Map.of(); // an old platform's other name for a module -> the module's id, --platform-aliases
 
     /** The mod id of a nested jar when the platform provides it, else null. */
     String platformModule(byte[] jar) {
@@ -7236,10 +7244,17 @@ public final class JarPort {
             Json.object(depends).put("minecraft", to);
         }
         // A version of a nested platform module the mod asks for is the old release's; the new release's platform has its own.
+        // A name the old platform answered to and the new one does not is asked of the module that gave it.
         if (meta.get("depends") instanceof Map<?, ?> depends) {
+            Map<String, Object> asks = Json.object(depends);
             for (String id : platformNested) {
-                if (depends.containsKey(id)) {
-                    Json.object(depends).put(id, "*");
+                if (asks.containsKey(id)) {
+                    asks.put(id, "*");
+                }
+            }
+            for (var alias : platformAliases.entrySet()) {
+                if (asks.remove(alias.getKey()) != null) {
+                    asks.put(alias.getValue(), "*");
                 }
             }
         }
