@@ -97,6 +97,7 @@ public final class JarPortTest {
         expect(use.contains("call g/Block.bar()V"), "and its classes are rewritten: " + use);
         expect(use.contains("call g/Vault.secret()V"), "with the access its parent's access transformer gives the game: " + use);
         runs(scratch);
+        mixinFields(scratch);
         JarPortRulesTest.check(scratch);
         JarPortRulesTest.buses(scratch);
         JarPortRulesTest.foreignMixin(scratch);
@@ -340,6 +341,61 @@ public final class JarPortTest {
      * GoneIface only in the old one, sig() taking an int in the new one, closed() made private, protected prot() in both,
      * the interface Shape with a new abstract area(), and the class Old or New.
      */
+    /**
+     * Only a @Shadow field the update broke is reported: one whose type matched the old release's field and does not match
+     * the new one's. A mixin's own field named like a target field is the mixin's (Distant Horizons' DhLogger LOGGER), and a
+     * shadow of another type than the old field shadows what a loader patches (NeoForge's ParticleEngine.providers is a
+     * Map, vanilla's an Int2ObjectMap): the update changed neither, and before this they were most of the type.
+     */
+    static void mixinFields(Path scratch) throws Exception {
+        GameDiff.Snap[] snaps = new GameDiff.Snap[2];
+        for (int i = 0; i < 2; i++) {
+            GameDiff.Snap s = new GameDiff.Snap(i == 0 ? "1.0" : "2.0");
+            GameDiff.Cls engine = new GameDiff.Cls("g/Engine", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
+            engine.fields.put("LOGGER", new GameDiff.Fld(engine, "LOGGER", "Lg/Logger;", Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC));
+            engine.fields.put("providers", new GameDiff.Fld(engine, "providers", "Lg/IntMap;", Opcodes.ACC_PRIVATE));
+            engine.fields.put("capacity", new GameDiff.Fld(engine, "capacity", i == 0 ? "I" : "J", Opcodes.ACC_PRIVATE));
+            s.classes.put(engine.name, engine);
+            for (String c : List.of("g/Logger", "g/IntMap")) {
+                s.classes.put(c, new GameDiff.Cls(c, Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false));
+            }
+            snaps[i] = s;
+        }
+        Path map = scratch.resolve("fields-route.json");
+        Files.writeString(map, "{\"classes\": [], \"methods\": [], \"fields\": [], \"rewrites\": []}");
+        ClassWriter mx = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        mx.visit(Opcodes.V21, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "m/EngineMixin", null, "java/lang/Object", null);
+        AnnotationVisitor target = mx.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+        AnnotationVisitor value = target.visitArray("value");
+        value.visit(null, Type.getObjectType("g/Engine"));
+        value.visitEnd();
+        target.visitEnd();
+        mx.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "LOGGER", "Lm/MyLogger;", null, null).visitEnd();
+        for (String[] f : List.of(new String[] { "providers", "Ljava/util/Map;" }, new String[] { "capacity", "I" })) {
+            FieldVisitor shadow = mx.visitField(Opcodes.ACC_PRIVATE, f[0], f[1], null, null);
+            shadow.visitAnnotation("Lorg/spongepowered/asm/mixin/Shadow;", false).visitEnd();
+            shadow.visitEnd();
+        }
+        MethodVisitor grow = mx.visitMethod(Opcodes.ACC_PRIVATE, "grow", "()I", null, null);
+        grow.visitCode();
+        grow.visitVarInsn(Opcodes.ALOAD, 0);
+        grow.visitFieldInsn(Opcodes.GETFIELD, "m/EngineMixin", "capacity", "I");
+        grow.visitInsn(Opcodes.IRETURN);
+        grow.visitMaxs(1, 1);
+        grow.visitEnd();
+        mx.visitEnd();
+        List<Map<String, Object>> results = new ArrayList<>();
+        byte[] out = new JarPort(snaps[0], snaps[1], map).port(jar(Map.of("m/EngineMixin.class", mx.toByteArray())), "fields.jar", results);
+        List<String> unlinked = Json.array(results.get(results.size() - 1).get("unlinked")).stream().map(String::valueOf).toList();
+        expect(unlinked.equals(List.of("field: g.Engine.capacity")),
+            "only a @Shadow field whose type matched the old release and not the new one breaks, not the mixin's own field or a loader-patched shadow;"
+                + " its use is ported as a use of the target's field, which names it: " + unlinked);
+        Map<String, String> ported = members(entries(out).get("m/EngineMixin.class"));
+        expect(!ported.containsKey("field capacity") && ported.containsKey("field providers") && ported.containsKey("field LOGGER")
+                && ported.get("method grow()I").contains("get g/Engine.capacity"),
+            "the broken shadow is no longer declared (Mixin refuses one its target lacks) and its read is the target's field: " + ported);
+    }
+
     static GameDiff.Snap game(String version, String method, String field, String cls) {
         boolean old = version.equals("1.0");
         GameDiff.Snap s = new GameDiff.Snap(version);

@@ -46,6 +46,8 @@ public final class JarPort {
         final Map<String, String[]> renamedDecl = new HashMap<>(); // class.name+desc (or class.field) -> {name, desc}
         final Map<String, List<String>> mixinTargets = new HashMap<>(); // mixin class -> target classes (old names)
         final Map<String, String[]> accessors = new HashMap<>(); // class.method+desc -> {Accessor|Invoker, value or null}
+        final Set<String> shadowFields = new HashSet<>(); // mixin class.field annotated @Shadow; its other fields are its own
+        final Map<String, String> shadowTargets = new HashMap<>(); // mixin class.field -> the target (old name) whose field the update broke
         final Map<String, String> accessorTargets = new HashMap<>(); // class.method+desc -> the target's new name to write
         final Set<String> widened = new HashSet<>(); // "owner.name" or "owner.name+desc" the mod's access transformer opens
         final Set<String> unlinked = new TreeSet<>();
@@ -836,6 +838,19 @@ public final class JarPort {
                 };
             }
 
+            @Override
+            public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                return new FieldVisitor(Opcodes.ASM9) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String annotation, boolean visible) {
+                        if (annotation.equals(SHADOW)) {
+                            mod.shadowFields.add(rc.name + "." + name);
+                        }
+                        return null;
+                    }
+                };
+            }
+
             // @Accessor("field") / @Invoker("method"), or with no value the name Mixin infers from the method's own name.
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
@@ -886,6 +901,7 @@ public final class JarPort {
 
     static final String SUBSCRIBER = "Lnet/neoforged/fml/common/EventBusSubscriber;";
     static final String LISTENER = "Lnet/neoforged/bus/api/SubscribeEvent;";
+    static final String SHADOW = "Lorg/spongepowered/asm/mixin/Shadow;";
     static final String INJECT = "Lorg/spongepowered/asm/mixin/injection/Inject;";
     static final String AT = "Lorg/spongepowered/asm/mixin/injection/At;";
     static final Set<String> CALLBACKS = Set.of(
@@ -1558,7 +1574,10 @@ public final class JarPort {
                 }
                 selfCasts(mod, rc.name, targets);
                 for (var f : rc.fields.entrySet()) {
-                    shadowField(mod, rc.name, targets, f.getKey(), f.getValue()[0]);
+                    // A mixin's own field (often @Unique, or named like the target's) is added to the target, not looked up in it.
+                    if (mod.shadowFields.contains(rc.name + "." + f.getKey())) {
+                        shadowField(mod, rc.name, targets, f.getKey(), f.getValue()[0]);
+                    }
                 }
                 for (GameDiff.RawMeth m : rc.methods.values()) {
                     String key = rc.name + "." + m.name + m.desc;
@@ -2446,6 +2465,9 @@ public final class JarPort {
 
             @Override
             public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                if (mod.shadowTargets.containsKey(self[0] + "." + name)) {
+                    return null;
+                }
                 types(mod, desc, Exposure.dotted(self[0]) + "." + name);
                 String[] shadow = mod.renamedDecl.get(self[0] + "." + name);
                 String newName = shadow == null ? name : shadow[0];
@@ -2539,6 +2561,11 @@ public final class JarPort {
             if (decl == null) {
                 continue;
             }
+            // A shadow of another type than the old release's field shadows something the snapshot doesn't hold (a field the
+            // loader patches, as NeoForge retypes ParticleEngine.providers): the update did nothing to it.
+            if (!decl.fields.get(name).desc.equals(desc)) {
+                return name;
+            }
             String[] moved = route.field(decl.name, name);
             String newDesc = desc(desc);
             GameDiff.Cls now = Exposure.declaring(b, cls(t), 'f', moved[1], null);
@@ -2549,7 +2576,11 @@ public final class JarPort {
                 }
                 return moved[1];
             }
-            mod.unlinked.add("mixin field gone: " + Exposure.dotted(t) + "." + name + " (in " + Exposure.dotted(mixin) + ")");
+            // The shadow is the target's field under the mixin's name: each use is ported as a use of that field (what the
+            // game's own code now reads instead, or a report naming the field), and the declaration goes, since Mixin
+            // refuses a shadow its target no longer has.
+            mod.shadowTargets.put(mixin + "." + name, t);
+            mod.change("mixin shadow of a field the update broke ported as the target's field");
             return name;
         }
         return name;
@@ -4431,6 +4462,7 @@ public final class JarPort {
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
             fresh = false;
             types(mod, desc, where);
+            owner = mod.shadowTargets.getOrDefault(owner + "." + name, owner);
             String[] own = mod.renamedDecl.get(owner + "." + name);
             if (own != null) {
                 super.visitFieldInsn(opcode, owner, own[0], desc);

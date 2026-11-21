@@ -77,10 +77,12 @@
       "modNamed": [
         "Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)",
         "Mod ([a-z0-9_.\\-]+) requires ",
+        "Mod ([a-z0-9_.\\-]+) is incompatible with ",
         "Mod ([a-z0-9_.\\-]+) failed to load correctly",
         "\\(([a-z0-9_.\\-]+)\\) has failed to load correctly",
         "mod ([a-z0-9_.\\-]+) failed to",
         "Mod File \\S*?(?<file>[^\\\\/\\s]+\\.jar) needs ",
+        "File \\S*?(?<file>[^\\\\/\\s]+\\.jar) is not a valid mod file",
         "Skipping jar\\. File \\S*?(?<file>[^\\\\/\\s]+\\.jar) is for ",
         "Attempted to load class (?<class>[\\w/$.]+) for invalid dist",
         "Failed to parse \\S+ from pack mod/([a-z0-9_.\\-]+)"
