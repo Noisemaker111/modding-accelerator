@@ -8,8 +8,9 @@ import org.objectweb.asm.*;
  * Mc.get().shift(). A mod's call has no Ev, but those two uses say what is called, so they count for Mc.get().shift().
  * Key.ctrl() is the same, except one place lined up with an unrelated constant: the reading the handlers back wins.
  * Pal.find(o) is refused: the handlers call find(o, this) with a value only they have as an argument, not only as the
- * receiver, so they disagree with the one place that passes Pal.none(). The learned lines are applied by JarPort to a
- * mod that then runs on this JVM.
+ * receiver, so they disagree with the one place that passes Pal.none(). Id.of(s) became Id.path(s) where the game passed
+ * a literal and Id.parse(s) where it passed a call's result: a mod's argument is a value no one can see in advance, so
+ * it is Id.parse. The learned lines are applied by JarPort to a mod that then runs on this JVM.
  *
  *   java -cp asm.jar:CLASSES GameSplitTest SCRATCH   (in the jar-port check of bench/run_tests.py)
  */
@@ -34,22 +35,23 @@ final class GameSplitTest {
         check(learned, t + "Key.shift()Z", t + "Mc.get().shift()", "uses that make the same call on a value only their method has count for the reading the other uses show");
         check(learned, t + "Key.ctrl()Z", t + "Mc.get().ctrl()", "the reading those uses back wins over one place that lined up with something else");
         check(learned, t + "Pal.find(Ljava/lang/Object;)I", null, "uses that pass a value only their method has as an argument count against");
+        check(learned, t + "Id.of(Ljava/lang/String;)Ljava/lang/String;", t + "Id.parse($1)", "where the game wrote one call for a literal and another for a call's result, the reading for the call's result is the general one");
 
         Path map = scratch.resolve("route-split.json");
         Files.writeString(map, "{\"learned\": [" + String.join(",\n", lines) + "]}");
         String trace = run(a, b, map, newGame);
-        JarPortTest.expect(trace.equals("truefalse"), "the mod's calls run on the new game: " + trace);
+        JarPortTest.expect(trace.equals("truefalseX"), "the mod's calls run on the new game: " + trace);
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("game-split: 4 checks passed");
+        System.out.println("game-split: 5 checks passed");
     }
 
     static void check(Map<String, String> learned, String key, String want, String what) {
         JarPortTest.expect(Objects.equals(want, learned.get(key)), what + ": " + learned.get(key));
     }
 
-    /** m6.Run.go(): "" + Key.shift() + Key.ctrl(). */
+    /** m6.Run.go(): "" + Key.shift() + Key.ctrl() + Id.of("x"). */
     static String run(GameDiff.Snap a, GameDiff.Snap b, Path map, Map<String, byte[]> newGame) throws Exception {
         ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m6/Run", null, "java/lang/Object", null);
@@ -62,6 +64,9 @@ final class GameSplitTest {
             m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Key", key, "()Z", false);
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Z)Ljava/lang/StringBuilder;", false);
         }
+        m.visitLdcInsn("x");
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Id", "of", "(Ljava/lang/String;)Ljava/lang/String;", false);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
         m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
         m.visitInsn(Opcodes.ARETURN);
         m.visitMaxs(0, 0);
@@ -120,6 +125,38 @@ final class GameSplitTest {
             }
             out.put(U + "Cfg", cls("Cfg", w -> w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "FLAG", "Z", null, null).visitEnd()));
         }
+        // Id: of(s) in 1.0; parse(s) (upper case, a one-line wrapper of bySplit(s, ':')) and path(s) (lower case) in 2.0.
+        out.put(U + "Id", cls("Id", w -> {
+            if (two) {
+                MethodVisitor p = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "parse", "(Ljava/lang/String;)Ljava/lang/String;", null, null);
+                p.visitCode();
+                p.visitVarInsn(Opcodes.ALOAD, 0);
+                p.visitIntInsn(Opcodes.BIPUSH, ':');
+                p.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Id", "bySplit", "(Ljava/lang/String;C)Ljava/lang/String;", false);
+                p.visitInsn(Opcodes.ARETURN);
+                p.visitMaxs(0, 0);
+                p.visitEnd();
+                MethodVisitor sp = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "bySplit", "(Ljava/lang/String;C)Ljava/lang/String;", null, null);
+                sp.visitCode();
+                sp.visitVarInsn(Opcodes.ALOAD, 0);
+                sp.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "toUpperCase", "()Ljava/lang/String;", false);
+                sp.visitInsn(Opcodes.ARETURN);
+                sp.visitMaxs(0, 0);
+                sp.visitEnd();
+            }
+            for (String[] f : two ? new String[][] { { "path", "toLowerCase" } } : new String[][] { { "of", "trim" } }) {
+                MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, f[0], "(Ljava/lang/String;)Ljava/lang/String;", null, null);
+                m.visitCode();
+                m.visitVarInsn(Opcodes.ALOAD, 0);
+                m.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Objects", "requireNonNull", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
+                m.visitInsn(Opcodes.POP);
+                m.visitVarInsn(Opcodes.ALOAD, 0);
+                m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", f[1], "()Ljava/lang/String;", false);
+                m.visitInsn(Opcodes.ARETURN);
+                m.visitMaxs(0, 0);
+                m.visitEnd();
+            }
+        }));
         out.put(U + "Pal", cls("Pal", w -> {
             constructor(w);
             MethodVisitor f = w.visitMethod(Opcodes.ACC_PUBLIC, "find", two ? "(Ljava/lang/Object;Ljava/lang/Object;)I" : "(Ljava/lang/Object;)I", null, null);
@@ -141,6 +178,17 @@ final class GameSplitTest {
         out.put(U + "Ui", cls("Ui", w -> {
             w.visitField(Opcodes.ACC_PUBLIC, "pal", "L" + U + "Pal;", null, null).visitEnd();
             constructor(w);
+            MethodVisitor nm = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "name", "()Ljava/lang/String;", null, null);
+            nm.visitCode();
+            nm.visitLdcInsn("n");
+            nm.visitInsn(Opcodes.ARETURN);
+            nm.visitMaxs(0, 0);
+            nm.visitEnd();
+            MethodVisitor keep = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "keep", "(Ljava/lang/String;)V", null, null);
+            keep.visitCode();
+            keep.visitInsn(Opcodes.RETURN);
+            keep.visitMaxs(0, 1);
+            keep.visitEnd();
             for (String sink : List.of("log", "note")) {
                 MethodVisitor log = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, sink, sink.equals("log") ? "(Z)V" : "(ZI)V", null, null);
                 log.visitCode();
@@ -200,6 +248,14 @@ final class GameSplitTest {
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Pal", "find", "(Ljava/lang/Object;)I", false);
         }
         m.visitInsn(Opcodes.POP);
+        // keep(Id.of(...)): the handlers pass a call's result (parse in 2.0), the others a literal (path in 2.0).
+        if (event) {
+            m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ui", "name", "()Ljava/lang/String;", false);
+        } else {
+            m.visitLdcInsn("lit");
+        }
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Id", two ? (event ? "parse" : "path") : "of", "(Ljava/lang/String;)Ljava/lang/String;", false);
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Ui", "keep", "(Ljava/lang/String;)V", false);
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();

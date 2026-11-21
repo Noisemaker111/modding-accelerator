@@ -3677,6 +3677,39 @@ public final class GameDiff {
                 int top = tally[0], of = tally[1];
                 boolean agreed = top >= 2 && top * 10 >= of * 8 || top == 1 && of == 1 && usesAll(best, old, operands(old));
                 agreed = agreed && beyondLiterals(best, uses);
+                if (!agreed && best != null) {
+                    // The game wrote different things by what it passed (1.21's new ResourceLocation(s): withDefaultNamespace
+                    // where s was a path it could see, parse where s came from data). A mod's argument is a value no one
+                    // can see in advance, so the reading for those is the general one: the uses whose every argument is
+                    // a call's or a field's result vote alone, and must agree as any vote must and keep every operand.
+                    Map<Node, Set<String>> opaque = new IdentityHashMap<>();
+                    uses.forEach((u, r) -> {
+                        if (opaque(u)) {
+                            // Only readings that pass a value from the operands everywhere they choose one: a fixed value
+                            // there (bySeparator(s, ':')) is how one place was written, not what any value needs.
+                            Set<String> keep = new LinkedHashSet<>();
+                            for (String one : r) {
+                                Matcher c = CHOICE.matcher(one);
+                                boolean fixed = false;
+                                while (c.find()) {
+                                    fixed |= !c.group(1).contains("$");
+                                }
+                                if (!fixed) {
+                                    keep.add(one);
+                                }
+                            }
+                            opaque.put(u, keep);
+                        }
+                    });
+                    int[] general = new int[2];
+                    String g = opaque.size() >= 2 && opaque.size() < uses.size() ? vote(opaque.values(), general) : null;
+                    if (g != null && general[0] >= 2 && general[0] * 10 >= general[1] * 8 && usesAll(g, old, operands(old))) {
+                        best = g;
+                        top = general[0];
+                        of = general[1];
+                        agreed = true;
+                    }
+                }
                 if (log != null) {
                     log.append(e.getKey()).append('\t').append(e.getValue().size()).append('\t').append(of).append('\t').append(top).append('\t')
                         .append(agreed).append('\t').append(best == null ? "" : best).append('\t');
@@ -5006,6 +5039,21 @@ public final class GameDiff {
          * (UniformGenerator.between(0.0F, 1.0F), new ByteBufferBuilder(1536)). Where a reading leaves an operand out and has
          * one, b may have written that operand's own replacement there; a fixed flag in its place (false) is the member's.
          */
+        /** A use whose every argument (its receiver apart) is a call's or a field's result: a value its writer could not see. */
+        static boolean opaque(Node use) {
+            int from = use.op == 'v' || use.op == 'f' ? 1 : 0;
+            if (use.kids.length <= from) {
+                return false;
+            }
+            for (int i = from; i < use.kids.length; i++) {
+                Node k = use.kids[i].op == 't' && use.kids[i].kids.length > 0 ? use.kids[i].kids[0] : use.kids[i];
+                if (k.op != 'v' && k.op != 's' && k.op != 'f' && k.op != 'g') {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /** A value read from the method's own parameters or locals, nothing else: what a mod's call site does not have. */
         static boolean local(Node n) {
             if (n.op == 'p' || n.op == 'l') {
