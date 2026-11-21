@@ -281,6 +281,25 @@ public final class PackLogTests extends PackCheckFixtures {
         String modCalls = cab.replace("cpw.mods.modlauncher.SecureJarHandler.createCodeSource", "hunternif.mc.impl.atlas.Foo.bar");
         var modSuspects = PackChecks.suspects(modCalls, List.of(), cabScan, forge);
         expect(modSuspects.size() == 1 && modSuspects.get(0).get("mod").equals("antiqueatlas"), "a mod calling a JDK member this Java lacks is that mod: " + modSuspects);
+        // One mod's mixin that failed to apply is that mod's: the list each frame ends with names every mixin applied to that
+        // frame's class (half the pack on Minecraft.<init>), not the one that failed. NeoForge 1.21.3 client, First-person Model.
+        String applied = String.join("\n",
+            "[01:05:14] [Render thread/FATAL] [mixin/]: Mixin apply for mod firstperson failed firstperson.mixins.json:RenderDispatcherMixin from mod firstperson -> net.minecraft.client.renderer.entity.EntityRenderDispatcher: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException Critical injection failure: @Redirect annotation on shadowOffsetX could not find any targets",
+            "org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure: @Redirect annotation on shadowOffsetX could not find any targets [INJECT_PREPARE Applicator Phase -> firstperson.mixins.json:RenderDispatcherMixin from mod firstperson -> Prepare Injections -> redirect$zbb000$firstperson$shadowOffsetX(...)]",
+            "\tat MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.selectors.TargetSelectors.validate(TargetSelectors.java:346) ~[sponge-mixin-0.15.2+mixin.0.8.7.jar:0.15.2+mixin.0.8.7] {}",
+            "\tat TRANSFORMER/minecraft@1.21.3/net.minecraft.client.Minecraft.<init>(Minecraft.java:537) ~[client-1.21.3-srg.jar%23278!/:?] {re:mixin,pl:accesstransformer:B,pl:mixin:APP:sodium-common.mixins.json:core.MinecraftMixin from mod sodium,pl:mixin:APP:architectury.mixins.json:MixinMinecraft from mod architectury,pl:mixin:APP:yacl.mixins.json:MinecraftMixin from mod yacl,pl:mixin:A}",
+            "\tat TRANSFORMER/minecraft@1.21.3/net.minecraft.client.main.Main.main(Main.java:224) ~[client-1.21.3-srg.jar%23278!/:?] {re:mixin,pl:mixin:APP:ksyxis.mixins.json:MainMixin from mod ksyxis,pl:mixin:A}");
+        PackMods.Scan aScan = new PackMods.Scan();
+        for (String id : List.of("firstperson", "sodium", "architectury", "yacl", "ksyxis")) {
+            aScan.providers.put(id, new ArrayList<>(List.of(new PackMods.Provider(id + ".jar", "1", false, "META-INF/neoforge.mods.toml"))));
+        }
+        for (String[] c : new String[][] { { "firstperson.mixins.json", "firstperson.jar" }, { "sodium-common.mixins.json", "sodium.jar" },
+                { "architectury.mixins.json", "architectury.jar" }, { "yacl.mixins.json", "yacl.jar" }, { "ksyxis.mixins.json", "ksyxis.jar" } }) {
+            aScan.mixins.put(c[0], c[1]);
+        }
+        var appliedSuspects = PackChecks.suspects(applied, List.of(), aScan, PackLoaders.find(harness, "neoforge"));
+        expect(appliedSuspects.stream().map(x -> x.get("mod")).toList().equals(List.of("firstperson")),
+            "a mixin that failed to apply blames its mod, not every mod whose mixins a frame on the stack carries: " + appliedSuspects);
         // A mixin config named only in an ordinary line blames nobody; named in the failure, it does.
         String calm = "[main/WARN]: Method overwrite conflict for getLanguage in worldedit.mixins.json:Mixin from mod worldedit. Skipping method.\n" +
             "[main/FATAL]: Failed to start the minecraft server\njava.lang.IllegalStateException: boom\n\tat a.b.C.d(C.java:1)";

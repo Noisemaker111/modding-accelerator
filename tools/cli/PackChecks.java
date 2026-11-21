@@ -490,6 +490,16 @@ final class PackChecks {
     static final Pattern FRAME = Pattern.compile("^\\s*at (?:[\\w.$-]+//)?(?:[A-Z]+(?: [A-Z]+)*/([a-z0-9_.\\-]+)@[^/]+/)?([\\w$.]+)\\.[\\w$<>]+\\(");
     static final Pattern MIXIN_CONFIG = Pattern.compile("([A-Za-z0-9_.\\-]+\\.mixins?\\.json|[A-Za-z0-9_.\\-]+\\.mixin\\.json|mixins\\.[A-Za-z0-9_.\\-]+\\.json)");
     static final Pattern HANDLER = Pattern.compile("\\$[a-z]{2,}[0-9a-f]{3}\\$([a-z0-9_]+)\\$");
+    static final Pattern TRANSFORMERS = Pattern.compile("(?m)^(\\s*at .*?)\\s*\\{[^{}]*\\}\\s*$");
+
+    /**
+     * The failure without the list each stack frame ends with ("{re:mixin,pl:mixin:APP:sodium.mixins.json:... from mod
+     * sodium,...}"): it names every mixin applied to that frame's class, which on a frame like Minecraft.<init> is half the
+     * pack, not the one that failed. One mod's failed mixin on 1.21.3 blamed eight mods through it.
+     */
+    static String withoutTransformers(String failing) {
+        return TRANSFORMERS.matcher(failing).replaceAll("$1");
+    }
     static final Pattern SUSPECTED = Pattern.compile("^\\s*([^\\n(]+) \\(([a-z0-9_.\\-]+)\\)");
 
     /**
@@ -564,12 +574,13 @@ final class PackChecks {
                 }
             }
         }
-        Matcher config = MIXIN_CONFIG.matcher(failing);
+        String evidence = withoutTransformers(failing);
+        Matcher config = MIXIN_CONFIG.matcher(evidence);
         while (config.find()) {
             String jar = scan.mixins.get(config.group(1));
             if (jar != null) blame(found, scan, null, jar, "its mixin config " + config.group(1) + " is in the failure");
         }
-        Matcher handler = HANDLER.matcher(failing);
+        Matcher handler = HANDLER.matcher(evidence);
         while (handler.find()) if (scan.providers.containsKey(handler.group(1))) blame(
             found,
             scan,
