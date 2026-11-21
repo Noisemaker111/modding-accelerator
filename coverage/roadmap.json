@@ -882,6 +882,25 @@
      ],
      "result": "Type finishes 46 -> 24 and appears in 957 -> 923 mod ports. Every update 6,056 -> 6,082 of 9,423, big updates 1,936 -> 1,943, newest 17 -> 17, no update lower; NeoForge 1.21.6 -> 1.21.7 122 -> 141. Real NeoForge 1.21.7: Traveler's Backpack (18 calls moved), Carry On, Nature's Compass and Gravestone, ported with mmt port --jar, pass on a server (world, 1,025 block items placed, reopened) and in the client (title, world, inventory, 15 creative tabs).",
      "next": "FMLJavaModLoadingContext.get() (NeoForge 1.21) and renamed-and-moved helpers (Fabric API's KeyBindingHelper.registerKeyBinding -> KeyMappingHelper.registerKeyMapping) have no same-named or forwarding answer in the files; the full 1.21.7 load stops on a server start that names no mod."
+    },
+    {
+     "id": "73",
+     "title": "Mixin @Shadow fields: the type, handled",
+     "part": "Port by type of break",
+     "status": "done",
+     "done": "2026-11-21",
+     "text": "The type `mixin field gone, game: linked` mostly held breaks no update made: every field of a mixin was checked as a @Shadow, so a mixin's own field named like a target field (Distant Horizons' LOGGER, Sodium's cloudRenderer) was reported, and so was a shadow of a field the loader patches (NeoForge's ParticleEngine.providers is a Map, vanilla's an Int2ObjectMap), whose type never matched the vanilla snapshot in either release. Now only a @Shadow whose type matched the old release's field and not the new one's is a break. Such a shadow is the target's field under the mixin's name: each use is ported as a use of that field (the learner's answer for it, or a field report with the learner's evidence) and the declaration is dropped, since Mixin refuses a shadow its target lacks. 'game: linked' on the old type meant no evidence at all.",
+     "start": "2026-11-21",
+     "target": "2026-11-22",
+     "finish": "the type's finishes and mods counts fall across every update, port.jar-links.newest and big-updates no lower, and load on a real server and client where it frees the most",
+     "wrongIf": "a mod this frees fails in a real game",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates",
+      "port.jar-links.newest"
+     ],
+     "result": "PR #151, tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44879101068. Type finishes 68 -> 0 and appears in 328 -> 0 mod ports: the real breaks (fields the game removed or retyped, mostly redesigns: Explosion, WeightedBakedModel, MapRenderer) now count under field, game: ..., with the learner's evidence, which answers about 2% of them so far. Every update 5,979 -> 6,044 of 9,423, big updates 1,917 -> 1,924, newest 15 -> 15, no update lower (main's numbers before #149's successors). Real NeoForge 1.21.3 (bench/exposure/load-linked-neoforge-1.21.2-1.21.3.json): 69 of 81 standalone ports load on the server; Sodium, Fusion and Architectury, freed here, load on the server and in the client. pack-check now names a jar the loader refuses as not a mod file and the mod that declares another incompatible.",
+     "next": "The learner answers few removed private fields; pack-check's blame of every mixin a failing stack carries was fixed in PR #153."
     }
    ]
   },
