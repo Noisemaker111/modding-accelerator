@@ -168,6 +168,11 @@ public final class PackLogTests extends PackCheckFixtures {
             notModSuspects.size() == 1 && "structory-towers-1.0.17.jar".equals(notModSuspects.get(0).get("jar")),
             "a jar the loader refuses as not a mod file is named by its file: " + notModSuspects
         );
+        // ...and of two mods one declares incompatible, the one that declares it.
+        neo.providers.put("shouldersurfing", new ArrayList<>(List.of(new PackMods.Provider("ShoulderSurfing-4.6.jar", "4.6", false, "META-INF/neoforge.mods.toml"))));
+        String incompatible = "[00:06:21] [Render thread/FATAL] [ne.ne.fm.ModLoader/CORE]: Error during pre-loading phase: Mod shouldersurfing is incompatible with betterthirdperson any";
+        var declared = PackChecks.suspects(incompatible, List.of(), neo, PackLoaders.find(harness, "neoforge"));
+        expect(declared.size() == 1 && "shouldersurfing".equals(declared.get(0).get("mod")), "of two incompatible mods the one that declares it is named: " + declared);
         // ...and a client-only mod only by the class it refused to load on a server.
         neo.packages.put("dev.kirant.cwb", "cwb-5.0.jar");
         neo.providers.put("cwb", new ArrayList<>(List.of(new PackMods.Provider("cwb-5.0.jar", "5.0", false, "META-INF/neoforge.mods.toml"))));

@@ -77,6 +77,7 @@
       "modNamed": [
         "Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)",
         "Mod ([a-z0-9_.\\-]+) requires ",
+        "Mod ([a-z0-9_.\\-]+) is incompatible with ",
         "Mod ([a-z0-9_.\\-]+) failed to load correctly",
         "\\(([a-z0-9_.\\-]+)\\) has failed to load correctly",
         "mod ([a-z0-9_.\\-]+) failed to",
