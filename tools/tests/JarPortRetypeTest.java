@@ -41,6 +41,9 @@ final class JarPortRetypeTest {
         a.classes.get("g6/Screen").methods.put("tip(" + POSE + "I)V", new GameDiff.Meth(a.classes.get("g6/Screen"), "tip", "(" + POSE + "I)V", Opcodes.ACC_PUBLIC));
         JarPortTest.snap(a, "g6/Row", 0, null, "render(" + POSE + "I)V");
         JarPortTest.snap(b, "g6/Row", 0, null, "render(" + GFX + "I)V");
+        // A callback interface whose method took the pose and takes the graphics in 2.0 (as a Fabric API callback did).
+        JarPortTest.snap(a, "g6/Hud", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "draw(" + POSE + "I)V");
+        JarPortTest.snap(b, "g6/Hud", Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, null, "draw(" + GFX + "I)V");
         JarPortTest.snap(a, "g6/Loc", 0, null);
         // g6.Part goes in 2.0 and the game's own Title2 extends Object instead, though the map follows Part's members to Graphics.
         JarPortTest.snap(a, "g6/Part", 0, null, "own()V");
@@ -59,7 +62,8 @@ final class JarPortRetypeTest {
                             {"owner": "g6.Screen", "from": "chr", "desc": "(CI)Z", "to": "chr", "newDesc": "(Lg6/Key;)Z"},
                             {"owner": "g6.Screen", "from": "drag", "desc": "(IIII)Z", "to": "drag", "newDesc": "(Lg6/Key;II)Z"},
                             {"owner": "g6.Screen", "from": "scroll", "desc": "(III)Z", "to": "scroll", "newDesc": "(IIII)Z"},
-                            {"owner": "g6.Row", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"}],
+                            {"owner": "g6.Row", "from": "render", "desc": "(Lg6/Pose;I)V", "to": "render", "newDesc": "(Lg6/Graphics;I)V"},
+                            {"owner": "g6.Hud", "from": "draw", "desc": "(Lg6/Pose;I)V", "to": "draw", "newDesc": "(Lg6/Graphics;I)V"}],
              "retyped": [{"step": "1.0 -> 2.0", "owner": "g6.Screen", "from": "tip", "desc": "(Lg6/Pose;I)V", "at": 1, "as": "Lg6/Graphics;",
                           "expr": "$1.tip2($0.font, $2)", "votes": 3, "of": 3}],
              "rewrites": [{"owner": "g6.Gui", "from": "fill", "desc": "(Lg6/Pose;I)V", "static": true, "toOwner": "g6.Graphics", "to": "fill",
@@ -216,6 +220,31 @@ final class JarPortRetypeTest {
         }
         JarPortTest.expect(lambdaTrace.startsWith("fill7;L;"),
             "a lambda made in a moved render that captures the pose moves with it, and its Gui.fill(pose, x) gets the graphics: " + lambdaTrace);
+
+        // A lambda for the callback: its body moves to the graphics and the lambda is made for the new draw.
+        List<Map<String, Object>> hudRuns = new ArrayList<>();
+        Map<String, byte[]> hudJar = JarPortTest.entries(port.port(JarPortTest.jar(Map.of("m6/Overlay.class", overlay())), "hud.jar", hudRuns));
+        List<String> hudUnlinked = Json.array(hudRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        classes.put("m6/Overlay", hudJar.get("m6/Overlay.class"));
+        classes.put("g6/Hud", hudInterface());
+        String hudTrace;
+        try {
+            StringBuilder log = (StringBuilder) loader.loadClass("g2.Log").getField("out").get(null);
+            int before = log.length();
+            Object hud = loader.loadClass("m6.Overlay").getMethod("make").invoke(null);
+            Class<?> gfx = loader.loadClass("g6.Graphics");
+            loader.loadClass("g6.Hud").getMethod("draw", gfx, int.class).invoke(hud, gfx.getConstructor().newInstance(), 7);
+            hudTrace = log.substring(before);
+        } catch (ReflectiveOperationException | LinkageError failed) {
+            hudTrace = "failed: " + (failed.getCause() == null ? failed : failed.getCause());
+        }
+        JarPortTest.expect(hudUnlinked.isEmpty() && hudTrace.equals("push;H;"),
+            "a lambda for a callback whose method now takes the graphics moves with it and runs with graphics.pose(): " + hudUnlinked + " " + hudTrace);
+        List<Map<String, Object>> stuckRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("m6/Overlay.class", overlayReference())), "stuck.jar", stuckRuns);
+        List<String> stuck = Json.array(stuckRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
+        JarPortTest.expect(stuck.contains("lambda for a changed method: g6.Hud.draw(Lg6/Pose;I)V (in m6.Overlay)"),
+            "a method reference to a public method, which cannot move, is reported instead of linking silently: " + stuck);
 
         // A mod class on the removed Part extends what the game's own subclasses of it extend now, not Graphics.
         List<Map<String, Object>> partRuns = new ArrayList<>();
@@ -580,6 +609,53 @@ final class JarPortRetypeTest {
         m.visitInsn(Opcodes.RETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    /** g6.Hud in 2.0: draw(graphics, x). */
+    static byte[] hudInterface() {
+        ClassWriter w = new ClassWriter(0);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, "g6/Hud", null, "java/lang/Object", null);
+        w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, "draw", "(" + GFX + "I)V", null, null).visitEnd();
+        w.visitEnd();
+        return w.toByteArray();
+    }
+
+    static final Handle FACTORY = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false);
+
+    /** m6.Overlay, for 1.0: make() gives the lambda (pose, x) -> { pose.push(); log H }. */
+    static byte[] overlay() {
+        return overlay("lambda$make$0", Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC);
+    }
+
+    /** The same made from overlay::paint, a public instance method another class may override. */
+    static byte[] overlayReference() {
+        return overlay("paint", Opcodes.ACC_PUBLIC);
+    }
+
+    static byte[] overlay(String body, int access) {
+        ClassWriter w = writer("m6/Overlay", "java/lang/Object");
+        boolean bound = (access & Opcodes.ACC_STATIC) == 0;
+        MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "make", bound ? "(Lm6/Overlay;)Lg6/Hud;" : "()Lg6/Hud;", null, null);
+        m.visitCode();
+        if (bound) {
+            m.visitVarInsn(Opcodes.ALOAD, 0);
+        }
+        m.visitInvokeDynamicInsn("draw", bound ? "(Lm6/Overlay;)Lg6/Hud;" : "()Lg6/Hud;", FACTORY, Type.getType("(" + POSE + "I)V"),
+            new Handle(bound ? Opcodes.H_INVOKEVIRTUAL : Opcodes.H_INVOKESTATIC, "m6/Overlay", body, "(" + POSE + "I)V", false), Type.getType("(" + POSE + "I)V"));
+        m.visitInsn(Opcodes.ARETURN);
+        m.visitMaxs(0, 0);
+        m.visitEnd();
+        MethodVisitor l = w.visitMethod(access, body, "(" + POSE + "I)V", null, null);
+        l.visitCode();
+        l.visitVarInsn(Opcodes.ALOAD, (access & Opcodes.ACC_STATIC) == 0 ? 1 : 0);
+        l.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g6/Pose", "push", "()V", false);
+        JarPortTest.append(l, "H;");
+        l.visitInsn(Opcodes.RETURN);
+        l.visitMaxs(0, 0);
+        l.visitEnd();
         w.visitEnd();
         return w.toByteArray();
     }

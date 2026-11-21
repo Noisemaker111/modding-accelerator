@@ -1463,6 +1463,7 @@ public final class JarPort {
 
     void plan(Mod mod) {
         for (GameDiff.RawCls rc : mod.classes.values()) {
+            lambdas(mod, rc);
             List<String> targets = mod.mixinTargets.getOrDefault(rc.name, List.of());
             if (!targets.isEmpty()) {
                 for (String t : targets) {
@@ -1695,6 +1696,95 @@ public final class JarPort {
         }
         // The game no longer calls it: the class still loads, the hook is silent.
         mod.silent.add("override no longer called: " + Exposure.dotted(decl.owner()) + "." + m.name + m.desc + " (in " + Exposure.dotted(rc.name) + ")");
+    }
+
+    /**
+     * Lambdas and method references of a class that implement a game or loader interface method whose parameters changed
+     * type (a Fabric API callback: HudRenderCallback.onHudRender(PoseStack, float) -> (GuiGraphics, float)). The body, a
+     * method of the class nothing else can call or override, moves to the new types as an override's does, each old
+     * parameter worked out from a new one as the game's own code does (graphics.pose()), and the lambda is made for the
+     * new method (Sites.capturing writes it). One that cannot move is reported: the interface's method would go unwritten.
+     */
+    void lambdas(Mod mod, GameDiff.RawCls rc) {
+        byte[] bytes = mod.bytes.get(rc.name);
+        if (bytes == null || (new ClassReader(bytes).readShort(6) & 0xFFFF) < Opcodes.V1_8) {
+            return;
+        }
+        List<Object[]> made = new ArrayList<>(); // {interface, method, sam descriptor, impl handle, captured descriptor}
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitInvokeDynamicInsn(String n, String d, Handle bsm, Object... args) {
+                        if (bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory") && args.length >= 3 && args[0] instanceof Type sam
+                            && args[1] instanceof Handle impl && args[2] instanceof Type made2) {
+                            made.add(new Object[] { Type.getReturnType(d).getInternalName(), n, sam.getDescriptor(), impl, d, made2.getDescriptor() });
+                        }
+                    }
+                };
+            }
+        }, ClassReader.SKIP_DEBUG);
+        for (Object[] l : made) {
+            String iface = (String) l[0], name = (String) l[1], sam = (String) l[2], captured = (String) l[4];
+            Handle impl = (Handle) l[3];
+            if (!a.classes.containsKey(iface) || a.method(iface, name, sam) == null || Exposure.declaring(b, cls(iface), 'm', name, desc(sam)) != null) {
+                continue;
+            }
+            String[] moved = route.method(iface, name, sam);
+            GameDiff.Cls holder = Exposure.declaring(b, cls(iface), 'm', moved[1], moved[2]);
+            String where = Exposure.dotted(iface) + "." + name + sam + " (in " + Exposure.dotted(rc.name) + ")";
+            Bridge body = holder == null || !moved[1].equals(name) || !sam.equals(l[5]) ? null : lambdaBody(mod, rc, impl, captured, iface, name, sam, moved);
+            if (body == null) {
+                mod.unlinked.add("lambda for a changed method: " + where);
+                continue;
+            }
+            mod.bridges.computeIfAbsent(rc.name, k -> new ArrayList<>()).add(body);
+            mod.change("lambda moved to its interface method's new parameter types");
+        }
+    }
+
+    /** The moved body of a lambda for iface.name(sam), now moved[2], or null when its method cannot move. */
+    Bridge lambdaBody(Mod mod, GameDiff.RawCls rc, Handle impl, String captured, String iface, String name, String sam, String[] moved) {
+        GameDiff.RawMeth m = impl.getOwner().equals(rc.name) ? rc.methods.get(impl.getName() + impl.getDesc()) : null;
+        if (m == null || (m.flags & (Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC)) == 0 || (m.flags & Opcodes.ACC_ABSTRACT) != 0
+            || mod.bridges.getOrDefault(rc.name, List.of()).stream().anyMatch(br -> br.target().equals(m.name) && br.targetDesc().equals(m.desc))) {
+            return null;
+        }
+        Type[] caps = Type.getArgumentTypes(captured), was = Type.getArgumentTypes(desc(sam)), now = Type.getArgumentTypes(moved[2]);
+        int skip = (m.flags & Opcodes.ACC_STATIC) != 0 ? 0 : 1; // an instance body captures its this first
+        Type[] own = Type.getArgumentTypes(m.desc);
+        if (own.length != caps.length - skip + was.length || !Type.getReturnType(desc(sam)).equals(Type.getReturnType(moved[2]))) {
+            return null;
+        }
+        int[] paired = pair(now, was);
+        String[][] via = retype.conversions(iface, name, sam, moved, paired);
+        int k = caps.length - skip;
+        Type[] params = new Type[k + now.length];
+        int[] from = new int[own.length];
+        String[][] steps = new String[own.length][];
+        for (int i = 0; i < k; i++) {
+            params[i] = Type.getType(desc(own[i].getDescriptor()));
+            from[i] = i;
+        }
+        for (int i = 0; i < now.length; i++) {
+            params[k + i] = now[i];
+        }
+        for (int i = 0; i < was.length; i++) {
+            if (paired[i] >= 0) {
+                from[k + i] = k + paired[i];
+            } else if (via != null && via[i] != null) {
+                from[k + i] = k + Integer.parseInt(via[i][0]);
+                steps[k + i] = Arrays.copyOfRange(via[i], 1, via[i].length);
+            } else {
+                return null;
+            }
+        }
+        if (Arrays.stream(steps).allMatch(Objects::isNull)) {
+            return null; // nothing to work out: a reordering, which an adapter would say; not met yet
+        }
+        String newDesc = Type.getMethodDescriptor(Type.getType(desc(Type.getReturnType(m.desc).getDescriptor())), params);
+        return new Bridge(m.name, newDesc, m.name, m.desc, from, m.flags, steps);
     }
 
     /**
@@ -5030,7 +5120,7 @@ public final class JarPort {
         @Override
         public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... args) {
             types(mod, desc, where);
-            if (moved != null && capturing(name, desc, bsm, args)) {
+            if (callback(name, desc, bsm, args) || moved != null && capturing(name, desc, bsm, args)) {
                 return;
             }
             for (Object o : args) {
@@ -5058,6 +5148,32 @@ public final class JarPort {
          * its body, a method of the class, moves with that parameter as the new type as a helper does (Mod.twins), and once it
          * has, the lambda captures the new parameter and is made from the moved body.
          */
+        /** A lambda for an interface method whose parameters changed type, made for its moved body (JarPort.lambdas). */
+        boolean callback(String name, String desc, Handle bsm, Object[] args) {
+            if (!bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory") || args.length < 3 || !(args[0] instanceof Type sam)
+                || !(args[1] instanceof Handle impl) || !impl.getOwner().equals(mod.self)) {
+                return false;
+            }
+            String iface = Type.getReturnType(desc).getInternalName();
+            if (!a.classes.containsKey(iface) || a.method(iface, name, sam.getDescriptor()) == null
+                || Exposure.declaring(b, cls(iface), 'm', name, desc(sam.getDescriptor())) != null) {
+                return false;
+            }
+            Bridge body = mod.bridges.getOrDefault(mod.self, List.of()).stream()
+                .filter(br -> br.via() != null && br.target().equals(impl.getName()) && br.targetDesc().equals(impl.getDesc())).findFirst().orElse(null);
+            String[] now = route.method(iface, name, sam.getDescriptor());
+            if (body == null || !now[1].equals(name)) {
+                return false;
+            }
+            Object[] made = args.clone();
+            made[0] = Type.getMethodType(oldDesc(now[2]));
+            made[1] = new Handle(impl.getTag(), impl.getOwner(), body.name(), oldDesc(body.desc()), impl.isInterface());
+            made[2] = made[0];
+            super.visitInvokeDynamicInsn(name, desc, bsm, made);
+            mod.change("lambda made for its interface method's new signature");
+            return true;
+        }
+
         boolean capturing(String name, String desc, Handle bsm, Object[] args) {
             if (!bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory") || args.length < 3 || !(args[1] instanceof Handle impl)
                 || !impl.getOwner().equals(mod.self) || impl.getTag() != Opcodes.H_INVOKESTATIC && impl.getTag() != Opcodes.H_INVOKESPECIAL
