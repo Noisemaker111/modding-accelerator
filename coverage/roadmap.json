@@ -827,6 +827,24 @@
       "port.jar-links.big-updates"
      ],
      "result": "2026-11-21: newest 15 -> 16 (NeoForge 1.21.1 -> 26.3 10 -> 11, Kotlin for Forge); every update 6,044 -> 6,045 and big updates 1,924 -> 1,925, none lower. Kotlin for Forge ported with mmt port --jar loads on a real NeoForge 26.3 server and client (FML lists Kotlin For Forge 5.13.0). Next on the jump: Mouse Tweaks, held only by CycleButton.builder(f) whose starting value 26.3 takes as an argument (builder(f, v)) where the old builder took it later (withInitialValue(v)); 23 mods on the jump call it."
+    },
+    {
+     "id": "69",
+     "title": "Mixins into game methods that changed signature: the type, handled",
+     "part": "Port by type of break",
+     "status": "done",
+     "done": "2026-11-21",
+     "text": "The type `mixin target changed signature, game: linked`, read by why each handler did not follow (-Djarport.why): @Injects whose @At names a call the game replaced follow the replacement; handlers with MixinExtras sugar after the CallbackInfo follow when each @Local still finds its parameter unambiguously; conversions read calls with constant arguments and primitives borrow the game's conversion for their type (1.21's tick delta from the DeltaTracker); mixins into the game's lambdas are handed back by intermediary name and read from the game's classes (kept, followed when renumbered, reported when gone and required); nested platform modules are the platform's own and not linked.",
+     "start": "2026-11-21",
+     "target": "2026-11-22",
+     "finish": "the type's finishes and mods counts fall, newest and big-updates up, load on a real server and client where it frees the most",
+     "wrongIf": "a mod this frees fails in a real game",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates",
+      "port.jar-links.newest"
+     ],
+     "result": "Type finishes 55 -> 51 and appears in 872 -> 853 mod ports (1,292 -> 1,250 references). Every update 6,045 -> 6,051, big updates 1,925 -> 1,931, newest 16. Four updates lower by lambda targets the new release no longer has and the mods require (Language Reload, FastQuit, Mouse Tweaks, VMP). Real Fabric 1.21 client: the newly linked Dynamic FPS passes; a Fabric 1.21 server loads 24 of 25 server-side mods (Terralith's data refused); ported ImmediatelyFast and ReplayMod reach the 1.20.4 title screen where they had crashed on their lambda mixins."
     }
    ]
   },
