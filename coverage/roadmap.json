@@ -774,6 +774,24 @@
       "port.jar-links.newest"
      ],
      "result": "2026-11-21: call, game: linked over every update finishes 186 -> 177 and is in 1,984 -> 1,960 mods (2,965 -> 2,877 references). Every update 5,884 -> 5,893 of 9,423, none lower; big updates 1,896 -> 1,904; newest jump 15 -> 15; jumps 1,167 -> 1,173. NeoForge 1.21.1 -> 1.21.2 40 -> 42 (the Biome family takes the old sea level, 63): on a real 1.21.2 server 22 of 25 linked mods load (main 21 of 24), in the client 23 of 23; Coroutil, newly linked, loads in both. Not handled: parameters whose value the old body never had (CycleButton.builder's initial value, 1.21.9's permission levels), redesigned types (TicksToSave -> PackedTicks, String -> ResourceKey), and methods an override may change."
+    },
+    {
+     "id": "66",
+     "title": "Abstract methods a mod class does not write: the type, handled",
+     "part": "Port by type of break",
+     "status": "done",
+     "done": "2026-11-21",
+     "text": "The type `abstract method not written, game: linked` mostly held breaks the porter made up or that were always there: an intermediary id given to two methods renamed overrides wrongly; classes a jar carries for another loader were linked; methods the loader patches into defaults (the old class left them unwritten too) were counted; lambdas for a callback whose method changed linked silently. Each is handled generally, and callback lambdas move to the new signature as overrides do (a converted argument, or a default where the body never reads it).",
+     "start": "2026-11-21",
+     "target": "2026-11-22",
+     "finish": "the type's finishes and mods counts fall across every update, port.jar-links.newest and big-updates up, and load on a real server and client where it frees the most",
+     "wrongIf": "a mod this frees fails in a real game",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates",
+      "port.jar-links.newest"
+     ],
+     "result": "Type finishes 102 -> 12 and appears in 316 -> 100 mod ports (875 -> 268 references). Every update 5,893 -> 5,972 of 9,423, big updates 1,904 -> 1,910, newest 15 -> 15. Five updates lower by named false links (Fabric builds listed for NeoForge, codec and HUD lambdas that would fail when called). Real NeoForge 1.21: every newly linked standalone mod loads on the server and in the client (33/36, 35/36; InventoryHUD+ as before)."
     }
    ]
   },
