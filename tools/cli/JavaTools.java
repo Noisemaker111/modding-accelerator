@@ -14,14 +14,16 @@ final class JavaTools {
     JavaTools(Build build) throws Exception {
         this.build = build;
         jdk = Runtimes.ensureAtLeast(build.harness, 25);
-        // GameDiff builds a route map with the loader's own classes and carries learned expressions (FixExpr), so it
-        // compiles with every file it reads; a missing one fails every port, convert and explain.
+        // GameDiff builds a route map with the loader's own classes and carries learned expressions (FixExpr), and ModNames names JarPort's
+        // remapping, so it compiles with every file it reads; a missing one fails every port, convert and explain.
         List<Path> sources = List.of(
             build.harness.resolve("tools/VersionMap.java"),
             build.harness.resolve("tools/GameDiff.java"),
             build.harness.resolve("tools/Exposure.java"),
             build.harness.resolve("tools/ModNames.java"),
             build.harness.resolve("tools/FixExpr.java"),
+            build.harness.resolve("tools/JarPort.java"),
+            build.harness.resolve("tools/PortChains.java"),
             build.harness.resolve("tools/cli/Json.java"),
             build.harness.resolve("tools/MixinAudit.java"),
             build.harness.resolve("tools/GamePrep.java")
