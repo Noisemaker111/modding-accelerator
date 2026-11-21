@@ -160,6 +160,23 @@ check([m["member"] for m in order[4]["members"]] == ["call: g.A.x()V", "call: g.
 longer = {"mod": "b.jar", "unlinked": [f"b.jar: call: g.B.m{i}()V" for i in range(5)]}
 check([t["mod"] for t in E.nearest([rows[0], longer], None, {})] == ["a.jar", "b.jar"], "a mod with more left than another comes after it")
 
+# The same list by type of break: a way to handle a type finishes every mod only that type holds back.
+kinds = [
+    {"mod": "a.jar", "unlinked": ["a.jar: call: g.X.one()V (in a.A)", "a.jar: call: g.Y.two()V"]},
+    {"mod": "b.jar", "unlinked": ["b.jar: call: g.X.one()V", "b.jar: field: g.F.gone"]},
+    {"mod": "c.jar", "unlinked": ["c.jar: field: g.F.gone"]},
+    {"mod": "d.jar", "unlinked": ["d.jar: call: g.Z.three()V"]},
+    {"mod": "e.jar", "unlinked": []},
+]
+verdicts = {"call: g.X.one()V": {"game": "linked"}, "call: g.Y.two()V": {"game": "linked"}, "call: g.Z.three()V": {"game": "linked"}, "field: g.F.gone": {"game": "split"}}
+table = E.by_type(kinds, None, verdicts)
+check([(t["type"], t["finishes"], t["mods"], t["references"]) for t in table] == [("call, game: linked", 2, 3, 3), ("field, game: split", 1, 2, 1)],
+      f"a type counts the mods it alone holds back, the mods that have it and its references: {table}")
+check(table[0]["examples"][0] == "call: g.X.one()V", "a type's first example is its most-used reference")
+verdicts["call: g.Y.two()V"] = {"game": "redesigned"}
+check(next(t for t in E.by_type(kinds, None, verdicts) if t["type"] == "call, game: linked")["finishes"] == 1,
+      "a mod held by two types is finished by neither alone")
+
 # Jumps: the ports people ask for, from each family's most-used release to the next family's and to the newest.
 with tempfile.TemporaryDirectory() as tmp:
     E.INDEX = Path(tmp) / "index.json"
