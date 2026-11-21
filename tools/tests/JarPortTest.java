@@ -106,6 +106,7 @@ public final class JarPortTest {
         JarPortFixesTest.check(scratch);
         JarPortFabricTest.check(scratch);
         JarPortRetypeTest.check(scratch);
+        JarPortFieldTest.check(scratch);
         if (failures > 0) {
             System.exit(1);
         }

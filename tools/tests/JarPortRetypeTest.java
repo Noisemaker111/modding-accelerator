@@ -347,9 +347,11 @@ final class JarPortRetypeTest {
         // A nested jar the platform provides (a Fabric API module beside the mod): the platform's newer copy runs instead.
         port.platformIds = Set.of("platform-part");
         List<Map<String, Object>> platformRuns = new ArrayList<>();
-        port.port(JarPortTest.jar(Map.of("META-INF/jars/platform-part.jar", JarPortTest.jar(Map.of("p6/UsesGone.class", JarPortTest.real("p6/UsesGone", "java/lang/Object", 0, new String[] { "g6/Model" }, w -> JarPortTest.traced(w, "quads", "()V", "", m -> { })),
+        byte[] nests = port.port(JarPortTest.jar(Map.of("META-INF/jars/platform-part.jar", JarPortTest.jar(Map.of("p6/UsesGone.class", JarPortTest.real("p6/UsesGone", "java/lang/Object", 0, new String[] { "g6/Model" }, w -> JarPortTest.traced(w, "quads", "()V", "", m -> { })),
             "fabric.mod.json", "{\"id\": \"platform-part\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8))),
-            "fabric.mod.json", "{\"id\": \"m6\", \"jars\": [{\"file\": \"META-INF/jars/platform-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "nests.jar", platformRuns);
+            "fabric.mod.json", "{\"id\": \"m6\", \"depends\": {\"platform-part\": \"=1.0.0\"}, \"jars\": [{\"file\": \"META-INF/jars/platform-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "nests.jar", platformRuns);
+        Object asked = Json.object(Json.object(Json.parse(new String(JarPortTest.entries(nests).get("fabric.mod.json"), java.nio.charset.StandardCharsets.UTF_8))).get("depends")).get("platform-part");
+        JarPortTest.expect("*".equals(asked), "the version of a nested platform module the mod asks for is left to the new release's platform: " + asked);
         port.platformIds = Set.of();
         List<String> platformUnlinked = platformRuns.stream().flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
         JarPortTest.expect(platformUnlinked.isEmpty() && platformRuns.stream().anyMatch(r -> String.valueOf(r.get("silent")).contains("nested platform module")),
