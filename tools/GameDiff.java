@@ -5568,6 +5568,13 @@ public final class GameDiff {
                 budget = 2_000;
                 if (match(ops[i], m, null) || linesUpThrough(ops[i], m) || lined.getOrDefault(ops[i], Set.of()).contains(m)) {
                     same.add("$" + (i + first));
+                } else if (boxed(ops[i]) && primitive(m.type) != null) {
+                    // An operand the old code boxed (withInitialValue(Boolean.valueOf(x))) where b passes the primitive itself
+                    // (booleanBuilder(a, b, x)): the operand unboxed.
+                    budget = 2_000;
+                    if (match(ops[i].kids[0], m, null)) {
+                        same.add("((" + dotted(ops[i].ref.owner()) + ") $" + (i + first) + ")." + primitive(m.type) + "Value()");
+                    }
                 }
             }
             if (m.op == 'k') {
@@ -5691,6 +5698,12 @@ public final class GameDiff {
         /** A cast written as a receiver needs its own parentheses: ((T) x).m(). */
         static String receiver(String t) {
             return t.startsWith("(") ? "(" + t + ")" : t;
+        }
+
+        /** A primitive boxed by its wrapper's valueOf (Boolean.valueOf(x)). */
+        static boolean boxed(Node n) {
+            return n.op == 's' && n.kids.length == 1 && n.ref != null && n.ref.name().equals("valueOf") && n.ref.owner().startsWith("java/lang/")
+                && n.kids[0].type.length() == 1;
         }
 
         static String primitive(String desc) {

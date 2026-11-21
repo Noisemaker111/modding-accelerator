@@ -8,7 +8,8 @@ import org.objectweb.asm.*;
  * "label:initial", or the first value when none was set. 2.0: Btn.builder(label, v) takes it, and B.initial is gone. The
  * game's own screens build buttons both ways, so GameDiff learns builder(label) ... initial(v) as builder(label, v), and
  * JarPort moves a mod's setter argument into the factory call (PortChains, "late") where it can be read there: a parameter,
- * a static field, a getter's result. Where the builder is used before the setter, the call stays and is reported.
+ * a static field, a getter's result. Where the builder is used before the setter, or the value is an object made right
+ * there (making it earlier would make another one), the call stays and is reported.
  *
  *   java -cp asm.jar:CLASSES GameLateTest SCRATCH   (in the jar-port check of bench/run_tests.py)
  */
@@ -30,14 +31,16 @@ final class GameLateTest {
             learned.put(l.owner() + "." + l.name() + l.desc(), l.expr());
             lines.add(l.json("1.0 -> 2.0"));
         }
-        String late = null;
+        Map<String, String> late = new TreeMap<>();
         for (GameDiff.Learner.Chained c : learner.chains) {
             lines.add(c.json("1.0 -> 2.0"));
             if (c.at() == -2) {
-                late = c.expr();
+                late.put(c.x().name(), c.expr());
             }
         }
-        JarPortTest.expect("net.minecraft.l7.Btn.builder($1, $2)".equals(late), "the game's own builders show the later setter's value moving into the factory: " + late);
+        JarPortTest.expect("net.minecraft.l7.Btn.builder($1, $2)".equals(late.get("builder")), "the game's own builders show the later setter's value moving into the factory: " + late);
+        JarPortTest.expect("net.minecraft.l7.Btn.toggle($1, ((java.lang.Boolean) $2).booleanValue())".equals(late.get("toggle")),
+            "a value the old code boxed for the setter is passed unboxed where the factory takes the primitive: " + late);
         JarPortTest.expect(!learned.containsKey("net.minecraft.l7.B.initial(" + OBJ + ")" + B), "the setter alone is not dropped: " + learned);
 
         Path map = scratch.resolve("route-late.json");
@@ -60,8 +63,9 @@ final class GameLateTest {
         String trace;
         try {
             Class<?> run = loader.loadClass("m7.Run");
-            trace = run.getMethod("plain", String.class).invoke(null, "mine") + "|" + run.getField("CHOICE").get(null) + "|" + run.getMethod("called").invoke(null);
-            for (String kept : List.of("early")) {
+            trace = run.getMethod("plain", String.class).invoke(null, "mine") + "|" + run.getField("CHOICE").get(null) + "|" + run.getMethod("called").invoke(null)
+                + "|" + run.getMethod("flag", boolean.class).invoke(null, true);
+            for (String kept : List.of("early", "made")) {
                 try {
                     trace += "|" + kept + " ran: " + run.getMethod(kept).invoke(null);
                 } catch (java.lang.reflect.InvocationTargetException left) {
@@ -71,25 +75,26 @@ final class GameLateTest {
         } catch (ReflectiveOperationException | LinkageError failed) {
             trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause()) + " " + unlinked;
         }
-        JarPortTest.expect(trace.equals("label:mine|label:b|label:c"), "a setter's argument moved into the factory runs on the new game as the old code behaved, and the refused ones keep the old call: " + trace);
+        JarPortTest.expect(trace.equals("label:mine|label:b|label:c|label:true"), "a setter's argument moved into the factory runs on the new game as the old code behaved, and the refused ones keep the old call: " + trace);
         JarPortTest.expect(unlinked.contains("call: net.minecraft.l7.Btn.builder(" + STR + ")" + B) && unlinked.contains("call: net.minecraft.l7.B.initial(" + OBJ + ")" + B),
-            "where the builder is used before the setter, the call stays and is reported: " + unlinked);
+            "where the builder is used before the setter, or the value is an object made there, the call stays and is reported: " + unlinked);
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("game-late: 4 checks passed");
+        System.out.println("game-late: 5 checks passed");
     }
 
     /**
      * m7.Run: plain(v) is Btn.builder(LABEL).values(VALS).initial(v).make(); CHOICE (a static field) is the same with the
-     * static field PICK as the value; called() passes pick() (a call's result) and early() hands the builder to keep() first.
+     * static field PICK as the value; called() passes pick() (a call's result), early() hands the builder to keep() first,
+     * and made() passes new String("n").
      */
     static Map<String, byte[]> mod() {
         ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m7/Run", null, "java/lang/Object", null);
         w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "PICK", OBJ, null, null).visitEnd();
         w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "CHOICE", STR, null, null).visitEnd();
-        for (String[] m : new String[][] { { "plain", "(" + STR + ")" + STR }, { "called", "()" + STR }, { "early", "()" + STR } }) {
+        for (String[] m : new String[][] { { "plain", "(" + STR + ")" + STR }, { "called", "()" + STR }, { "early", "()" + STR }, { "made", "()" + STR } }) {
             MethodVisitor v = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m[0], m[1], null, null);
             v.visitCode();
             v.visitFieldInsn(Opcodes.GETSTATIC, U + "Ui", "LABEL", STR);
@@ -103,6 +108,12 @@ final class GameLateTest {
             switch (m[0]) {
                 case "plain" -> v.visitVarInsn(Opcodes.ALOAD, 0);
                 case "called" -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "m7/Run", "pick", "()" + OBJ, false);
+                case "made" -> {
+                    v.visitTypeInsn(Opcodes.NEW, "java/lang/String");
+                    v.visitInsn(Opcodes.DUP);
+                    v.visitLdcInsn("n");
+                    v.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/String", "<init>", "(" + STR + ")V", false);
+                }
                 default -> v.visitFieldInsn(Opcodes.GETSTATIC, "m7/Run", "PICK", OBJ);
             }
             v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "B", "initial", "(" + OBJ + ")" + B, false);
@@ -111,6 +122,17 @@ final class GameLateTest {
             v.visitMaxs(0, 0);
             v.visitEnd();
         }
+        MethodVisitor flag = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "flag", "(Z)" + STR, null, null);
+        flag.visitCode();
+        flag.visitFieldInsn(Opcodes.GETSTATIC, U + "Ui", "LABEL", STR);
+        flag.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Btn", "toggle", "(" + STR + ")" + B, false);
+        flag.visitVarInsn(Opcodes.ILOAD, 0);
+        flag.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+        flag.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "B", "initial", "(" + OBJ + ")" + B, false);
+        flag.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "B", "make", "()" + STR, false);
+        flag.visitInsn(Opcodes.ARETURN);
+        flag.visitMaxs(0, 0);
+        flag.visitEnd();
         MethodVisitor keep = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "keep", "(" + B + ")V", null, null);
         keep.visitCode();
         keep.visitInsn(Opcodes.RETURN);
@@ -212,6 +234,20 @@ final class GameLateTest {
             m.visitInsn(Opcodes.ARETURN);
             m.visitMaxs(0, 0);
             m.visitEnd();
+            // toggle(label): a B for booleans; toggle(label, z) in 2.0 takes its starting value.
+            MethodVisitor t = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "toggle", "(" + STR + (two ? "Z" : "") + ")" + B, null, null);
+            t.visitCode();
+            t.visitTypeInsn(Opcodes.NEW, U + "B");
+            t.visitInsn(Opcodes.DUP);
+            t.visitVarInsn(Opcodes.ALOAD, 0);
+            if (two) {
+                t.visitVarInsn(Opcodes.ILOAD, 1);
+                t.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+            }
+            t.visitMethodInsn(Opcodes.INVOKESPECIAL, U + "B", "<init>", "(" + STR + (two ? OBJ : "") + ")V", false);
+            t.visitInsn(Opcodes.ARETURN);
+            t.visitMaxs(0, 0);
+            t.visitEnd();
         }));
         out.put(U + "Ui", cls("Ui", w -> {
             w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "LABEL", STR, null, null).visitEnd();
@@ -233,6 +269,27 @@ final class GameLateTest {
             ci.visitInsn(Opcodes.RETURN);
             ci.visitMaxs(0, 0);
             ci.visitEnd();
+            w.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "ON", "Z", null, null).visitEnd();
+            for (String name : List.of("three", "four")) {
+                MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, "()" + STR, null, null);
+                m.visitCode();
+                m.visitFieldInsn(Opcodes.GETSTATIC, U + "Ui", "LABEL", STR);
+                if (two) {
+                    m.visitFieldInsn(Opcodes.GETSTATIC, U + "Ui", "ON", "Z");
+                }
+                m.visitMethodInsn(Opcodes.INVOKESTATIC, U + "Btn", "toggle", "(" + STR + (two ? "Z" : "") + ")" + B, false);
+                m.visitFieldInsn(Opcodes.GETSTATIC, U + "Ui", "VALS", "[" + OBJ);
+                m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "B", "values", "([" + OBJ + ")" + B, false);
+                if (!two) {
+                    m.visitFieldInsn(Opcodes.GETSTATIC, U + "Ui", "ON", "Z");
+                    m.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+                    m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "B", "initial", "(" + OBJ + ")" + B, false);
+                }
+                m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "B", "make", "()" + STR, false);
+                m.visitInsn(Opcodes.ARETURN);
+                m.visitMaxs(0, 0);
+                m.visitEnd();
+            }
             for (String name : List.of("one", "two")) {
                 MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, "()" + STR, null, null);
                 m.visitCode();
