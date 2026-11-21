@@ -6327,6 +6327,49 @@ public final class GameDiff {
         final List<String> argDefaults = new ArrayList<>();
         /** Replacements written as expressions over the old member's operands (Learner), applied like a rule's inClass. */
         final List<Carried> learned = new ArrayList<>();
+        /** The chain's first release: each member's {owner, name, desc} by id, and each class's id by name. */
+        final Map<String, String[]> firstMembers = new HashMap<>();
+        final Map<String, String> firstClasses = new HashMap<>();
+
+        /**
+         * The member l replaces as the chain's first release names it, where that release had it under another name or
+         * owner with the same operands (each class in the descriptor the same class, by id); null otherwise.
+         */
+        String[] first(Hop h, Learner.Learned l) {
+            String owner = l.owner().replace('.', '/');
+            String name = l.name().endsWith("=") ? l.name().substring(0, l.name().length() - 1) : l.name();
+            String id, desc;
+            if (l.field()) {
+                Fld f = h.a.field(owner, name);
+                id = f == null ? null : f.id;
+                desc = f == null ? null : f.desc;
+            } else {
+                Meth m = h.a.method(owner, name, l.desc());
+                id = m == null ? null : m.id;
+                desc = l.desc();
+            }
+            String[] was = id == null ? null : firstMembers.get(id);
+            if (was == null || was[0].equals(owner) && was[1].equals(name) && was[2].equals(desc)) {
+                return null;
+            }
+            Pattern part = Pattern.compile("\\[*(?:L([^;]+);|[ZBCSIJFDV])");
+            Matcher x = part.matcher(was[2]), y = part.matcher(desc);
+            while (x.find()) {
+                if (!y.find() || (x.group(1) == null) != (y.group(1) == null)) {
+                    return null;
+                }
+                if (x.group(1) == null ? !x.group().equals(y.group()) : !sameClass(h, x.group(1), y.group(1))) {
+                    return null;
+                }
+            }
+            return y.find() ? null : was;
+        }
+
+        boolean sameClass(Hop h, String inFirst, String now) {
+            Cls c = h.a.classes.get(now);
+            String id = firstClasses.get(inFirst);
+            return c == null || id == null ? inFirst.equals(now) : id.equals(c.id);
+        }
 
         /** A line of the route map's "learned" list, its expression carried to the newest release as the chain goes on (Carry). */
         static final class Carried {
@@ -6336,6 +6379,7 @@ public final class GameDiff {
             final String fixed;
             String expr;
             String[] types; // its operands' types ($0 the receiver) in the newest release's names; null once it stops
+            String[] first; // {owner, name, desc} of the member in the chain's first release, where that names it otherwise
 
             Carried(String step, Learner.Learned learned, String fixed, String[] types) {
                 this.step = step;
@@ -6365,7 +6409,15 @@ public final class GameDiff {
                     return fixed;
                 }
                 Learner.Learned l = learned;
-                String line = new Learner.Learned(l.owner(), l.name(), l.desc(), l.field(), l.linked(), expr, l.votes(), l.of()).json(step);
+                // Filed under the name a mod of the chain's first release calls (1.21.9 learned packVersion(type) ->
+                // $0.packVersion($1).major(); a 1.21.1 mod calls it getPackVersion, renamed at 1.21.5).
+                String owner = first == null ? l.owner() : first[0].replace('/', '.');
+                String name = first == null ? l.name() : first[1] + (l.name().endsWith("=") ? "=" : "");
+                String desc = first == null || l.field() ? l.desc() : first[2];
+                String line = new Learner.Learned(owner, name, desc, l.field(), l.linked(), expr, l.votes(), l.of()).json(step);
+                if (first != null) {
+                    line = line.substring(0, line.length() - 2) + ", \"learnedFor\": " + VersionMap.Diff.q(l.owner() + "." + l.name() + l.desc()) + " }";
+                }
                 // What the step itself learned, where later updates renamed what it names.
                 return expr.equals(l.expr()) ? line : line.substring(0, line.length() - 2) + ", \"learnedAs\": " + VersionMap.Diff.q(l.expr()) + " }";
             }
@@ -6503,6 +6555,13 @@ public final class GameDiff {
             if (prev == null) {
                 for (Cls c : s.classes.values()) {
                     fresh(c);
+                    firstClasses.put(c.name, c.id);
+                    for (Meth m : c.methods.values()) {
+                        firstMembers.put(m.id, new String[] { c.name, m.name, m.desc });
+                    }
+                    for (Fld f : c.fields.values()) {
+                        firstMembers.put(f.id, new String[] { c.name, f.name, f.desc });
+                    }
                 }
             } else {
                 long t0 = System.nanoTime();
@@ -6590,7 +6649,9 @@ public final class GameDiff {
                     rewrites.add(new Switched(step, r));
                 }
                 for (Learner.Learned l : fresh) {
-                    learned.add(new Carried(step, l, null, Carry.operands(h, l)));
+                    Carried c = new Carried(step, l, null, Carry.operands(h, l));
+                    c.first = first(h, l);
+                    learned.add(c);
                 }
                 for (Learner.Chained c : learner.chains) {
                     learned.add(new Carried(step, null, c.json(step), null));

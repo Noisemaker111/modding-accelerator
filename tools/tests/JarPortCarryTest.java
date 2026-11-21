@@ -73,6 +73,16 @@ final class JarPortCarryTest {
         new JarPort(a, b, bare).port(JarPortTest.jar(mod()), "carry.jar", plain);
         List<String> left = Json.array(plain.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(left.contains("call: net.minecraft.c4.L.list()" + STR), "a static call to what is now an instance method is not linked: " + left);
+        // The chain's first release called turn mul: what 2.0 -> 3.0 learned for turn is filed under mul.
+        GameDiff.Driver driver = new GameDiff.Driver(List.of("1.0", "2.0", "3.0"), null, null);
+        GameDiff.Snap r1 = GameDiff.read("1.0", List.copyOf(one.values()), null, List.of()), r2 = GameDiff.read("2.0", List.copyOf(two.values()), null, List.of());
+        driver.next(r1, null, null);
+        driver.next(r2, null, null);
+        GameDiff.Hop later = new GameDiff.Hop(r2, GameDiff.read("3.0", List.copyOf(three.values()), null, List.of()));
+        later.run();
+        String[] first = driver.first(later, new GameDiff.Learner.Learned("net.minecraft.c4.Pose", "turn", "(" + STR + ")V", false, true, "$0.rotate($1)", 2, 2));
+        JarPortTest.expect(first != null && first[1].equals("mul") && first[2].equals("(" + STR + ")V"),
+            "a fix learned for a member the first release named otherwise is filed under that name: " + (first == null ? null : Arrays.toString(first)));
         // Four uses read getInt(key) as getIntOr(key, 0); two chose their own default there (200, 5).
         char o = GameDiff.Learner.OPEN, or = GameDiff.Learner.OR, c = GameDiff.Learner.CLOSE;
         List<Set<String>> uses = new ArrayList<>();
@@ -86,7 +96,7 @@ final class JarPortCarryTest {
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("jar-port carry: 8 checks passed");
+        System.out.println("jar-port carry: 9 checks passed");
     }
 
     static String run(Map<String, byte[]> game, Map<String, byte[]> ported) {
