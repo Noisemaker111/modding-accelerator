@@ -11,6 +11,10 @@ import org.objectweb.asm.*;
  * object may mean something else of the same type, so nothing is learned for it. Pair.allowed(int) went too, and a Pair
  * hands out two Sets: either could be the answer, so nothing is learned for it either.
  *
+ * Pos(Vec) went in 2.0 and the game's own uses of it, all on a Pos or a Mut (a Pos), became p, p, p.immutable() and new
+ * Pos(m.getX(), m.getY()). A mod's argument is only known to be a Vec, and of those only the last compiles for a Vec, so
+ * that is what Pos(Vec) is; the mod's new Pos(new Vec(3, 4)) gives a Pos at 3, 4.
+ *
  *   java -cp asm.jar:CLASSES GameTypesTest SCRATCH   (in the jar-port check of bench/run_tests.py)
  */
 final class GameTypesTest {
@@ -35,6 +39,8 @@ final class GameTypesTest {
             "a removed method is asked of the one object the class hands out that answers it, its argument made by the new types' only makers: " + learned);
         JarPortTest.expect(!learned.containsKey(y + "Shelf.find(" + STR + ")" + OBJ), "a maker that reads another object is not used: " + learned.get(y + "Shelf.find(" + STR + ")" + OBJ));
         JarPortTest.expect(!learned.containsKey(y + "Pair.allowed(I)Z"), "two objects that could answer and nothing is learned: " + learned.get(y + "Pair.allowed(I)Z"));
+        JarPortTest.expect(("new " + y + "Pos($1.getX(), $1.getY())").equals(learned.get(y + "Pos.<init>(L" + U + "Vec;)V")),
+            "of the game's rewrites of a narrower value, the one that compiles for the declared type: " + learned.get(y + "Pos.<init>(L" + U + "Vec;)V"));
 
         Path map = scratch.resolve("route-types.json");
         Files.writeString(map, "{\"learned\": [" + String.join(",\n", lines) + "]}");
@@ -51,10 +57,33 @@ final class GameTypesTest {
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Src", "allowed", "(I)Z", false);
             m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Z)Ljava/lang/StringBuilder;", false);
         }
+        m.visitMethodInsn(Opcodes.INVOKESTATIC, "m8/Run", "spot", "()I", false);
+        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;", false);
         m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()" + STR, false);
         m.visitInsn(Opcodes.ARETURN);
         m.visitMaxs(0, 0);
         m.visitEnd();
+        MethodVisitor spot = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "spot", "()I", null, null);
+        spot.visitCode();
+        spot.visitTypeInsn(Opcodes.NEW, U + "Pos");
+        spot.visitInsn(Opcodes.DUP);
+        spot.visitTypeInsn(Opcodes.NEW, U + "Vec");
+        spot.visitInsn(Opcodes.DUP);
+        spot.visitInsn(Opcodes.ICONST_3);
+        spot.visitInsn(Opcodes.ICONST_4);
+        spot.visitMethodInsn(Opcodes.INVOKESPECIAL, U + "Vec", "<init>", "(II)V", false);
+        spot.visitMethodInsn(Opcodes.INVOKESPECIAL, U + "Pos", "<init>", "(L" + U + "Vec;)V", false);
+        spot.visitVarInsn(Opcodes.ASTORE, 0);
+        spot.visitVarInsn(Opcodes.ALOAD, 0);
+        spot.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Pos", "getX", "()I", false);
+        spot.visitIntInsn(Opcodes.BIPUSH, 10);
+        spot.visitInsn(Opcodes.IMUL);
+        spot.visitVarInsn(Opcodes.ALOAD, 0);
+        spot.visitMethodInsn(Opcodes.INVOKEVIRTUAL, U + "Pos", "getY", "()I", false);
+        spot.visitInsn(Opcodes.IADD);
+        spot.visitInsn(Opcodes.IRETURN);
+        spot.visitMaxs(0, 0);
+        spot.visitEnd();
         w.visitEnd();
         List<Map<String, Object>> results = new ArrayList<>();
         Map<String, byte[]> ported = JarPortTest.entries(new JarPort(a, b, map).port(JarPortTest.jar(Map.of("m8/Run.class", w.toByteArray())), "types.jar", results));
@@ -73,15 +102,15 @@ final class GameTypesTest {
         String trace;
         try {
             Object src = loader.loadClass("net.minecraft.y8.Src").getConstructor().newInstance();
-            trace = String.valueOf(loader.loadClass("m8.Run").getMethods()[0].invoke(null, src));
+            trace = String.valueOf(loader.loadClass("m8.Run").getMethod("go", loader.loadClass("net.minecraft.y8.Src")).invoke(null, src));
         } catch (ReflectiveOperationException | LinkageError failed) {
             trace = "failed: " + (failed.getCause() == null ? failed : failed.getCause()) + " " + Json.array(results.get(0).get("unlinked"));
         }
-        JarPortTest.expect(trace.equals("truefalse"), "the mod's level checks run on the new game as before: " + trace);
+        JarPortTest.expect(trace.equals("truefalse34"), "the mod's level checks and its Pos run on the new game as before: " + trace);
         if (JarPortTest.failures > 0) {
             System.exit(1);
         }
-        System.out.println("game-types: 4 checks passed");
+        System.out.println("game-types: 5 checks passed");
     }
 
     /**
@@ -124,6 +153,7 @@ final class GameTypesTest {
                 p.visitEnd();
             }
         }));
+        positions(out, two);
         out.put(U + "Pair", cls("Pair", 0, null, null, w -> {
             constructor(w, "java/lang/Object");
             for (String side : two ? new String[] { "left", "right" } : new String[] { "allowed" }) {
@@ -226,6 +256,107 @@ final class GameTypesTest {
             }));
         }
         return out;
+    }
+
+    /**
+     * Vec (getX(), getY()); Pos, a Vec, with Pos(int, int) and immutable(), and in 1.0 Pos(Vec); Mut, a Pos. User's a(Pos),
+     * b(Pos), c(Pos) and d(Mut) each make a Pos from their argument: new Pos(v) in 1.0; v, v, v.immutable() and new
+     * Pos(v.getX(), v.getY()) in 2.0.
+     */
+    static void positions(Map<String, byte[]> out, boolean two) {
+        String vec = U + "Vec", pos = U + "Pos", mut = U + "Mut";
+        out.put(vec, cls("Vec", 0, null, null, w -> {
+            w.visitField(Opcodes.ACC_PUBLIC, "x", "I", null, null).visitEnd();
+            w.visitField(Opcodes.ACC_PUBLIC, "y", "I", null, null).visitEnd();
+            MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(II)V", null, null);
+            c.visitCode();
+            c.visitVarInsn(Opcodes.ALOAD, 0);
+            c.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+            for (int i = 0; i < 2; i++) {
+                c.visitVarInsn(Opcodes.ALOAD, 0);
+                c.visitVarInsn(Opcodes.ILOAD, i + 1);
+                c.visitFieldInsn(Opcodes.PUTFIELD, vec, i == 0 ? "x" : "y", "I");
+            }
+            c.visitInsn(Opcodes.RETURN);
+            c.visitMaxs(0, 0);
+            c.visitEnd();
+            for (String f : new String[] { "x", "y" }) {
+                MethodVisitor g = w.visitMethod(Opcodes.ACC_PUBLIC, f.equals("x") ? "getX" : "getY", "()I", null, null);
+                g.visitCode();
+                g.visitVarInsn(Opcodes.ALOAD, 0);
+                g.visitFieldInsn(Opcodes.GETFIELD, vec, f, "I");
+                g.visitInsn(Opcodes.IRETURN);
+                g.visitMaxs(0, 0);
+                g.visitEnd();
+            }
+        }));
+        out.put(pos, cls("Pos", 0, vec, null, w -> {
+            MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(II)V", null, null);
+            c.visitCode();
+            c.visitVarInsn(Opcodes.ALOAD, 0);
+            c.visitVarInsn(Opcodes.ILOAD, 1);
+            c.visitVarInsn(Opcodes.ILOAD, 2);
+            c.visitMethodInsn(Opcodes.INVOKESPECIAL, vec, "<init>", "(II)V", false);
+            c.visitInsn(Opcodes.RETURN);
+            c.visitMaxs(0, 0);
+            c.visitEnd();
+            if (!two) {
+                MethodVisitor v = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(L" + vec + ";)V", null, null);
+                v.visitCode();
+                v.visitVarInsn(Opcodes.ALOAD, 0);
+                v.visitVarInsn(Opcodes.ALOAD, 1);
+                v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, vec, "getX", "()I", false);
+                v.visitVarInsn(Opcodes.ALOAD, 1);
+                v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, vec, "getY", "()I", false);
+                v.visitMethodInsn(Opcodes.INVOKESPECIAL, vec, "<init>", "(II)V", false);
+                v.visitInsn(Opcodes.RETURN);
+                v.visitMaxs(0, 0);
+                v.visitEnd();
+            }
+            MethodVisitor i = w.visitMethod(Opcodes.ACC_PUBLIC, "immutable", "()L" + pos + ";", null, null);
+            i.visitCode();
+            i.visitVarInsn(Opcodes.ALOAD, 0);
+            i.visitInsn(Opcodes.ARETURN);
+            i.visitMaxs(0, 0);
+            i.visitEnd();
+        }));
+        out.put(mut, cls("Mut", 0, pos, null, w -> {
+            MethodVisitor c = w.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(II)V", null, null);
+            c.visitCode();
+            c.visitVarInsn(Opcodes.ALOAD, 0);
+            c.visitVarInsn(Opcodes.ILOAD, 1);
+            c.visitVarInsn(Opcodes.ILOAD, 2);
+            c.visitMethodInsn(Opcodes.INVOKESPECIAL, pos, "<init>", "(II)V", false);
+            c.visitInsn(Opcodes.RETURN);
+            c.visitMaxs(0, 0);
+            c.visitEnd();
+        }));
+        out.put(U + "User", cls("User", 0, null, null, w -> {
+            for (String name : new String[] { "a", "b", "c", "d" }) {
+                String arg = name.equals("d") ? mut : pos;
+                MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, "(L" + arg + ";)L" + pos + ";", null, null);
+                m.visitCode();
+                if (!two || name.equals("d")) {
+                    m.visitTypeInsn(Opcodes.NEW, pos);
+                    m.visitInsn(Opcodes.DUP);
+                    m.visitVarInsn(Opcodes.ALOAD, 0);
+                    if (two) {
+                        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, vec, "getX", "()I", false);
+                        m.visitVarInsn(Opcodes.ALOAD, 0);
+                        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, vec, "getY", "()I", false);
+                    }
+                    m.visitMethodInsn(Opcodes.INVOKESPECIAL, pos, "<init>", two ? "(II)V" : "(L" + vec + ";)V", false);
+                } else {
+                    m.visitVarInsn(Opcodes.ALOAD, 0);
+                    if (name.equals("c")) {
+                        m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, pos, "immutable", "()L" + pos + ";", false);
+                    }
+                }
+                m.visitInsn(Opcodes.ARETURN);
+                m.visitMaxs(0, 0);
+                m.visitEnd();
+            }
+        }));
     }
 
     static void constructor(ClassWriter w, String sup) {
