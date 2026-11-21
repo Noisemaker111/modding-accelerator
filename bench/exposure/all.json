@@ -1,12 +1,12 @@
 {
- "date": "2026-11-20",
+ "date": "2026-11-21",
  "total": {
   "mods": 9423,
-  "link": 5882,
+  "link": 5883,
   "big": {
    "updates": 35,
    "mods": 5149,
-   "link": 1895
+   "link": 1896
   },
   "small": {
    "updates": 29,
@@ -16,7 +16,7 @@
   "jumps": {
    "jumps": 23,
    "mods": 3384,
-   "link": 1166
+   "link": 1167
   },
   "newest": {
    "jumps": 2,
@@ -25,8 +25,8 @@
   },
   "data": {
    "updates": 64,
-   "link": 5882,
-   "linkAndData": 5863
+   "link": 5883,
+   "linkAndData": 5864
   },
   "loader": {
    "uses": 4493,
@@ -37,7 +37,7 @@
   "fabric": {
    "updates": 43,
    "mods": 6324,
-   "link": 4122
+   "link": 4123
   },
   "neoforge": {
    "updates": 21,
@@ -280,9 +280,9 @@
    "from": "1.19.4",
    "to": "1.20",
    "modsRead": 147,
-   "modsThatLink": 46,
-   "modsThatLinkAndData": 46,
-   "brokenUses": 1228,
+   "modsThatLink": 47,
+   "modsThatLinkAndData": 47,
+   "brokenUses": 1226,
    "loaderUses": 69,
    "modsHeldOnlyByLoader": 2,
    "big": true
@@ -894,9 +894,9 @@
    "from": "1.19.4",
    "to": "1.20.1",
    "modsRead": 147,
-   "modsThatLink": 48,
-   "modsThatLinkAndData": 48,
-   "brokenUses": 1210,
+   "modsThatLink": 49,
+   "modsThatLinkAndData": 49,
+   "brokenUses": 1208,
    "loaderUses": 63,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -992,7 +992,7 @@
    "modsRead": 147,
    "modsThatLink": 5,
    "modsThatLinkAndData": 3,
-   "brokenUses": 16083,
+   "brokenUses": 16090,
    "loaderUses": 1323,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 22
@@ -1088,7 +1088,7 @@
    "modsRead": 147,
    "modsThatLink": 10,
    "modsThatLinkAndData": 9,
-   "brokenUses": 18161,
+   "brokenUses": 18152,
    "loaderUses": 2182,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 15

@@ -635,7 +635,7 @@
       "port.jar-links.big-updates",
       "port.jar-links.newest"
      ],
-     "result": "Every update 5,865 -> 5,882 of 9,423 (15 updates up, none lower), big updates 1,878 -> 1,895 of 5,149, newest 11 -> 15 of 294 (NeoForge 1.21.1 -> 26.3 6 -> 10). Mostly other injectors aimed at retyped HUD and screen methods (Zoomify) and tooltip rewrites reading Screen.font (Controlling)."
+     "result": "Every update 5,865 -> 5,883 of 9,423 (15 updates up, none lower), big updates 1,878 -> 1,896 of 5,149, newest 11 -> 15 of 294 (NeoForge 1.21.1 -> 26.3 6 -> 10). Mostly other injectors aimed at retyped HUD and screen methods (Zoomify) and tooltip rewrites reading Screen.font (Controlling, which loads in a real 1.20 client). Real Fabric 1.20: 21 load on the server, 34 of 34 in the client; Krypton loads alone and clashes with e4mc as on 1.19.4."
     },
     {
      "id": "56",
