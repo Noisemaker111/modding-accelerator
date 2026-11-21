@@ -440,14 +440,63 @@ public final class JarPort {
     /**
      * A class a jar for several loaders carries for another one (a Forge class beside the Fabric ones), which the loader
      * ported for never loads, so it is no part of the mod there, before the port or after. It names the game as only
-     * that loader's build does. Every jar is read in Mojang's names, and no NeoForge release read here names members by
-     * SRG id (NeoForm stopped giving them in 1.20.2), so a class still naming members by SRG id (m_1234_) was built for
-     * Forge; outside a Fabric jar, a class still naming a game class by intermediary (class_1234) was built for Fabric.
+     * that loader's build does. A Fabric jar is read in Mojang's names through intermediary, so a class of it still
+     * naming members by SRG id (m_1234_) was built for Forge; any other jar is read in Mojang's names too, so a class
+     * still naming a game class by intermediary (class_1234) was built for Fabric. (An SRG id left in a NeoForge jar of
+     * the SRG releases is a gap in NeoForm's names, not another loader.)
      */
     boolean otherLoader(byte[] bytes) {
-        String pool = new String(bytes, StandardCharsets.ISO_8859_1);
-        return SRG.matcher(pool).find() || !loader.equals("fabric") && INTERMEDIARY.matcher(pool).find();
+        // Read from what the JVM links (types, calls, fields, declared names), not from strings: a mixin for every
+        // loader lists each loader's names in its annotations and runs on all of them.
+        Pattern other = loader.equals("fabric") ? SRG : INTERMEDIARY;
+        boolean[] found = new boolean[1];
+        java.util.function.Consumer<String> seen = text -> found[0] |= text != null && other.matcher(text).find();
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                seen.accept(superName);
+                for (String i : interfaces == null ? new String[0] : interfaces) {
+                    seen.accept(i);
+                }
+            }
+
+            @Override
+            public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                seen.accept(name);
+                seen.accept(desc);
+                return null;
+            }
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                seen.accept(name);
+                seen.accept(desc);
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitMethodInsn(int opcode, String owner, String n, String d, boolean itf) {
+                        seen.accept(owner);
+                        seen.accept(n);
+                        seen.accept(d);
+                    }
+
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String n, String d) {
+                        seen.accept(owner);
+                        seen.accept(n);
+                        seen.accept(d);
+                    }
+
+                    @Override
+                    public void visitTypeInsn(int opcode, String type) {
+                        seen.accept(type);
+                    }
+                };
+            }
+        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        return found[0];
     }
+
+    static final Pattern MOJANG_NAMED = Pattern.compile("net/minecraft/(?!class_\\d)[a-z]");
 
     /**
      * grants: what every access transformer in the outermost jar and its nested jars opens (null: read it here). The loader
@@ -487,11 +536,15 @@ public final class JarPort {
         // Fabric's reads the access widener fabric.mod.json names, for every mod file too.
         byte[] fmj = entries.get("fabric.mod.json");
         mod.canWiden = entries.containsKey("META-INF/neoforge.mods.toml") || fmj != null;
+        boolean nativeGame = false; // a class naming the game as this loader's build does
         for (var e : entries.entrySet()) {
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/") && otherLoader(e.getValue())) {
                 mod.foreign.add(e.getKey());
                 mod.change("classes built for another loader left as they are");
                 continue;
+            }
+            if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/") && !nativeGame) {
+                nativeGame = MOJANG_NAMED.matcher(new String(e.getValue(), StandardCharsets.ISO_8859_1)).find();
             }
             if (e.getKey().endsWith(".class") && !e.getKey().startsWith("META-INF/versions/")) {
                 e.setValue(PortChains.apply(e.getValue(), pairs, (o, k, n, d) -> {
@@ -501,8 +554,9 @@ public final class JarPort {
                 read(mod, e.getValue());
             }
         }
-        if (!mod.foreign.isEmpty() && mod.classes.isEmpty()) {
-            // Not a jar for this loader at all (a Forge build listed for NeoForge): it never loaded, before or after.
+        if (!mod.foreign.isEmpty() && !nativeGame) {
+            // Not a jar for this loader at all (a Forge build listed for NeoForge): no class of it names the game as this
+            // loader's build does, so the ones naming nothing of the game are that build's too. It never loaded here.
             mod.unlinked.add("built for another loader: every class names the game as another loader's build does");
         }
         requires(mod, entries);

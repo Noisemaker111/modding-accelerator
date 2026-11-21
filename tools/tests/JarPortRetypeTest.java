@@ -288,11 +288,11 @@ final class JarPortRetypeTest {
         JarPortTest.expect(unread.contains("abstract method not written: g6.Model.transforms()V (in m6.OddModel)"),
             "but one the class writes under an id its names were not read through (method_4711) did not load before either, and stays reported: " + unread);
         List<Map<String, Object>> forgeRuns = new ArrayList<>();
-        port.port(JarPortTest.jar(Map.of("m6/ForgeModel.class", JarPortTest.real("m6/ForgeModel", "java/lang/Object", 0, new String[] { "g6/Model" },
-            w -> JarPortTest.traced(w, "m_7442_", "()V", "", m -> { })))), "forge.jar", forgeRuns);
+        port.port(JarPortTest.jar(Map.of("m6/FabricModel.class", JarPortTest.real("m6/FabricModel", "java/lang/Object", 0, new String[] { "g6/Model" },
+            w -> JarPortTest.traced(w, "spin", "(Lnet/minecraft/class_1234;)V", "", m -> { })))), "forge.jar", forgeRuns);
         List<String> forgeUnlinked = Json.array(forgeRuns.get(0).get("unlinked")).stream().map(String::valueOf).toList();
         JarPortTest.expect(forgeUnlinked.equals(List.of("built for another loader: every class names the game as another loader's build does")),
-            "a jar whose every class names members by SRG id is a Forge build, which never loaded here, and does not link: " + forgeUnlinked);
+            "a jar whose every class names the game by intermediary is a Fabric build, which never loaded on NeoForge, and does not link: " + forgeUnlinked);
 
         // A mod class on the removed Part extends what the game's own subclasses of it extend now, not Graphics.
         List<Map<String, Object>> partRuns = new ArrayList<>();
