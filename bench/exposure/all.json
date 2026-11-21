@@ -2,34 +2,34 @@
  "date": "2026-11-21",
  "total": {
   "mods": 9423,
-  "link": 6082,
+  "link": 6124,
   "big": {
    "updates": 35,
    "mods": 5149,
-   "link": 1943
+   "link": 1958
   },
   "small": {
    "updates": 29,
    "mods": 4274,
-   "link": 4139
+   "link": 4166
   },
   "jumps": {
    "jumps": 23,
    "mods": 3384,
-   "link": 1199
+   "link": 1208
   },
   "newest": {
    "jumps": 2,
    "mods": 294,
-   "link": 17
+   "link": 18
   },
   "data": {
    "updates": 64,
-   "link": 6082,
-   "linkAndData": 6064
+   "link": 6124,
+   "linkAndData": 6106
   },
   "loader": {
-   "uses": 4777,
+   "uses": 4776,
    "modsHeldOnlyByLoader": 109
   }
  },
@@ -37,12 +37,12 @@
   "fabric": {
    "updates": 43,
    "mods": 6324,
-   "link": 4236
+   "link": 4271
   },
   "neoforge": {
    "updates": 21,
    "mods": 3099,
-   "link": 1846
+   "link": 1853
   }
  },
  "missing": [],
@@ -52,9 +52,9 @@
    "from": "1.14.4",
    "to": "1.15",
    "modsRead": 147,
-   "modsThatLink": 88,
-   "modsThatLinkAndData": 88,
-   "brokenUses": 672,
+   "modsThatLink": 91,
+   "modsThatLinkAndData": 91,
+   "brokenUses": 654,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -64,9 +64,9 @@
    "from": "1.15",
    "to": "1.15.1",
    "modsRead": 148,
-   "modsThatLink": 145,
-   "modsThatLinkAndData": 145,
-   "brokenUses": 19,
+   "modsThatLink": 147,
+   "modsThatLinkAndData": 147,
+   "brokenUses": 5,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -76,9 +76,9 @@
    "from": "1.15.1",
    "to": "1.15.2",
    "modsRead": 148,
-   "modsThatLink": 144,
-   "modsThatLinkAndData": 144,
-   "brokenUses": 20,
+   "modsThatLink": 146,
+   "modsThatLinkAndData": 146,
+   "brokenUses": 6,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -90,7 +90,7 @@
    "modsRead": 147,
    "modsThatLink": 62,
    "modsThatLinkAndData": 62,
-   "brokenUses": 1251,
+   "brokenUses": 1226,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -100,9 +100,9 @@
    "from": "1.16",
    "to": "1.16.1",
    "modsRead": 148,
-   "modsThatLink": 145,
-   "modsThatLinkAndData": 145,
-   "brokenUses": 21,
+   "modsThatLink": 146,
+   "modsThatLinkAndData": 146,
+   "brokenUses": 2,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -112,9 +112,9 @@
    "from": "1.16.1",
    "to": "1.16.2",
    "modsRead": 148,
-   "modsThatLink": 123,
-   "modsThatLinkAndData": 123,
-   "brokenUses": 229,
+   "modsThatLink": 124,
+   "modsThatLinkAndData": 124,
+   "brokenUses": 207,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -124,9 +124,9 @@
    "from": "1.16.2",
    "to": "1.16.3",
    "modsRead": 147,
-   "modsThatLink": 144,
-   "modsThatLinkAndData": 144,
-   "brokenUses": 20,
+   "modsThatLink": 146,
+   "modsThatLinkAndData": 146,
+   "brokenUses": 1,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -136,9 +136,9 @@
    "from": "1.16.3",
    "to": "1.16.4",
    "modsRead": 147,
-   "modsThatLink": 144,
-   "modsThatLinkAndData": 144,
-   "brokenUses": 20,
+   "modsThatLink": 146,
+   "modsThatLinkAndData": 146,
+   "brokenUses": 1,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -148,9 +148,9 @@
    "from": "1.16.4",
    "to": "1.16.5",
    "modsRead": 147,
-   "modsThatLink": 144,
-   "modsThatLinkAndData": 144,
-   "brokenUses": 20,
+   "modsThatLink": 146,
+   "modsThatLinkAndData": 146,
+   "brokenUses": 1,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -162,7 +162,7 @@
    "modsRead": 146,
    "modsThatLink": 46,
    "modsThatLinkAndData": 46,
-   "brokenUses": 1220,
+   "brokenUses": 1218,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -172,9 +172,9 @@
    "from": "1.17",
    "to": "1.17.1",
    "modsRead": 146,
-   "modsThatLink": 142,
-   "modsThatLinkAndData": 142,
-   "brokenUses": 6,
+   "modsThatLink": 143,
+   "modsThatLinkAndData": 143,
+   "brokenUses": 5,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -184,9 +184,9 @@
    "from": "1.17.1",
    "to": "1.18",
    "modsRead": 147,
-   "modsThatLink": 106,
-   "modsThatLinkAndData": 106,
-   "brokenUses": 443,
+   "modsThatLink": 107,
+   "modsThatLinkAndData": 107,
+   "brokenUses": 442,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -196,9 +196,9 @@
    "from": "1.18",
    "to": "1.18.1",
    "modsRead": 147,
-   "modsThatLink": 139,
-   "modsThatLinkAndData": 139,
-   "brokenUses": 23,
+   "modsThatLink": 147,
+   "modsThatLinkAndData": 147,
+   "brokenUses": 0,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -208,9 +208,9 @@
    "from": "1.18.1",
    "to": "1.18.2",
    "modsRead": 147,
-   "modsThatLink": 112,
-   "modsThatLinkAndData": 112,
-   "brokenUses": 378,
+   "modsThatLink": 117,
+   "modsThatLinkAndData": 117,
+   "brokenUses": 331,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -220,9 +220,9 @@
    "from": "1.18.2",
    "to": "1.19",
    "modsRead": 147,
-   "modsThatLink": 49,
-   "modsThatLinkAndData": 47,
-   "brokenUses": 832,
+   "modsThatLink": 50,
+   "modsThatLinkAndData": 48,
+   "brokenUses": 872,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -258,7 +258,7 @@
    "modsRead": 147,
    "modsThatLink": 39,
    "modsThatLinkAndData": 39,
-   "brokenUses": 1415,
+   "brokenUses": 1380,
    "loaderUses": 86,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -306,7 +306,7 @@
    "modsRead": 147,
    "modsThatLink": 49,
    "modsThatLinkAndData": 49,
-   "brokenUses": 859,
+   "brokenUses": 854,
    "loaderUses": 32,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -318,7 +318,7 @@
    "modsRead": 147,
    "modsThatLink": 82,
    "modsThatLinkAndData": 82,
-   "brokenUses": 246,
+   "brokenUses": 243,
    "loaderUses": 4,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -340,9 +340,9 @@
    "from": "1.20.4",
    "to": "1.20.5",
    "modsRead": 147,
-   "modsThatLink": 27,
-   "modsThatLinkAndData": 26,
-   "brokenUses": 1753,
+   "modsThatLink": 28,
+   "modsThatLinkAndData": 27,
+   "brokenUses": 1638,
    "loaderUses": 409,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -366,7 +366,7 @@
    "modsRead": 147,
    "modsThatLink": 57,
    "modsThatLinkAndData": 56,
-   "brokenUses": 697,
+   "brokenUses": 693,
    "loaderUses": 21,
    "modsHeldOnlyByLoader": 2,
    "big": true
@@ -390,7 +390,7 @@
    "modsRead": 147,
    "modsThatLink": 38,
    "modsThatLinkAndData": 37,
-   "brokenUses": 2229,
+   "brokenUses": 2212,
    "loaderUses": 97,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -400,9 +400,9 @@
    "from": "1.21.2",
    "to": "1.21.3",
    "modsRead": 147,
-   "modsThatLink": 145,
-   "modsThatLinkAndData": 145,
-   "brokenUses": 2,
+   "modsThatLink": 147,
+   "modsThatLinkAndData": 147,
+   "brokenUses": 0,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -426,8 +426,8 @@
    "modsRead": 147,
    "modsThatLink": 32,
    "modsThatLinkAndData": 32,
-   "brokenUses": 2140,
-   "loaderUses": 76,
+   "brokenUses": 2130,
+   "loaderUses": 75,
    "modsHeldOnlyByLoader": 0,
    "big": true
   },
@@ -474,7 +474,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1473,
+   "brokenUses": 1472,
    "loaderUses": 109,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -510,7 +510,7 @@
    "modsRead": 147,
    "modsThatLink": 39,
    "modsThatLinkAndData": 38,
-   "brokenUses": 1839,
+   "brokenUses": 1835,
    "loaderUses": 548,
    "modsHeldOnlyByLoader": 6,
    "big": true
@@ -544,9 +544,9 @@
    "from": "26.1.2",
    "to": "26.2",
    "modsRead": 147,
-   "modsThatLink": 38,
-   "modsThatLinkAndData": 37,
-   "brokenUses": 1869,
+   "modsThatLink": 39,
+   "modsThatLinkAndData": 38,
+   "brokenUses": 1856,
    "loaderUses": 26,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -558,7 +558,7 @@
    "modsRead": 147,
    "modsThatLink": 46,
    "modsThatLinkAndData": 43,
-   "brokenUses": 2122,
+   "brokenUses": 2103,
    "loaderUses": 57,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -570,7 +570,7 @@
    "modsRead": 149,
    "modsThatLink": 90,
    "modsThatLinkAndData": 90,
-   "brokenUses": 426,
+   "brokenUses": 424,
    "loaderUses": 119,
    "modsHeldOnlyByLoader": 4,
    "big": true
@@ -592,9 +592,9 @@
    "from": "1.20.4",
    "to": "1.20.5",
    "modsRead": 148,
-   "modsThatLink": 19,
-   "modsThatLinkAndData": 18,
-   "brokenUses": 2699,
+   "modsThatLink": 20,
+   "modsThatLinkAndData": 19,
+   "brokenUses": 2528,
    "loaderUses": 1214,
    "modsHeldOnlyByLoader": 13,
    "big": true
@@ -618,7 +618,7 @@
    "modsRead": 147,
    "modsThatLink": 60,
    "modsThatLinkAndData": 59,
-   "brokenUses": 653,
+   "brokenUses": 652,
    "loaderUses": 115,
    "modsHeldOnlyByLoader": 8,
    "big": true
@@ -642,7 +642,7 @@
    "modsRead": 147,
    "modsThatLink": 42,
    "modsThatLinkAndData": 41,
-   "brokenUses": 3244,
+   "brokenUses": 3217,
    "loaderUses": 239,
    "modsHeldOnlyByLoader": 2,
    "big": true
@@ -652,9 +652,9 @@
    "from": "1.21.2",
    "to": "1.21.3",
    "modsRead": 147,
-   "modsThatLink": 143,
-   "modsThatLinkAndData": 143,
-   "brokenUses": 9,
+   "modsThatLink": 145,
+   "modsThatLinkAndData": 145,
+   "brokenUses": 4,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -666,7 +666,7 @@
    "modsRead": 147,
    "modsThatLink": 80,
    "modsThatLinkAndData": 80,
-   "brokenUses": 581,
+   "brokenUses": 574,
    "loaderUses": 138,
    "modsHeldOnlyByLoader": 4,
    "big": true
@@ -678,7 +678,7 @@
    "modsRead": 147,
    "modsThatLink": 36,
    "modsThatLinkAndData": 36,
-   "brokenUses": 2249,
+   "brokenUses": 2231,
    "loaderUses": 142,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -690,7 +690,7 @@
    "modsRead": 147,
    "modsThatLink": 48,
    "modsThatLinkAndData": 48,
-   "brokenUses": 1250,
+   "brokenUses": 1236,
    "loaderUses": 89,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -700,9 +700,9 @@
    "from": "1.21.6",
    "to": "1.21.7",
    "modsRead": 148,
-   "modsThatLink": 141,
-   "modsThatLinkAndData": 141,
-   "brokenUses": 11,
+   "modsThatLink": 142,
+   "modsThatLinkAndData": 142,
+   "brokenUses": 7,
    "loaderUses": 2,
    "modsHeldOnlyByLoader": 1,
    "big": false
@@ -712,9 +712,9 @@
    "from": "1.21.7",
    "to": "1.21.8",
    "modsRead": 147,
-   "modsThatLink": 144,
-   "modsThatLinkAndData": 144,
-   "brokenUses": 6,
+   "modsThatLink": 145,
+   "modsThatLinkAndData": 145,
+   "brokenUses": 2,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "big": false
@@ -726,7 +726,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1350,
+   "brokenUses": 1346,
    "loaderUses": 95,
    "modsHeldOnlyByLoader": 3,
    "big": true
@@ -736,9 +736,9 @@
    "from": "1.21.9",
    "to": "1.21.10",
    "modsRead": 148,
-   "modsThatLink": 139,
-   "modsThatLinkAndData": 139,
-   "brokenUses": 18,
+   "modsThatLink": 140,
+   "modsThatLinkAndData": 140,
+   "brokenUses": 14,
    "loaderUses": 11,
    "modsHeldOnlyByLoader": 5,
    "big": false
@@ -750,7 +750,7 @@
    "modsRead": 148,
    "modsThatLink": 50,
    "modsThatLinkAndData": 50,
-   "brokenUses": 1162,
+   "brokenUses": 1158,
    "loaderUses": 40,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -762,7 +762,7 @@
    "modsRead": 147,
    "modsThatLink": 48,
    "modsThatLinkAndData": 47,
-   "brokenUses": 1313,
+   "brokenUses": 1307,
    "loaderUses": 141,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -796,9 +796,9 @@
    "from": "26.1.2",
    "to": "26.2",
    "modsRead": 147,
-   "modsThatLink": 38,
-   "modsThatLinkAndData": 37,
-   "brokenUses": 1736,
+   "modsThatLink": 39,
+   "modsThatLinkAndData": 38,
+   "brokenUses": 1721,
    "loaderUses": 61,
    "modsHeldOnlyByLoader": 0,
    "big": true
@@ -810,7 +810,7 @@
    "modsRead": 147,
    "modsThatLink": 46,
    "modsThatLinkAndData": 43,
-   "brokenUses": 2189,
+   "brokenUses": 2169,
    "loaderUses": 146,
    "modsHeldOnlyByLoader": 1,
    "big": true
@@ -822,9 +822,9 @@
    "from": "1.14.4",
    "to": "1.15.2",
    "modsRead": 147,
-   "modsThatLink": 89,
-   "modsThatLinkAndData": 89,
-   "brokenUses": 675,
+   "modsThatLink": 92,
+   "modsThatLinkAndData": 92,
+   "brokenUses": 657,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 3
@@ -836,7 +836,7 @@
    "modsRead": 147,
    "modsThatLink": 62,
    "modsThatLinkAndData": 62,
-   "brokenUses": 1239,
+   "brokenUses": 1214,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 2
@@ -846,9 +846,9 @@
    "from": "1.16.1",
    "to": "1.16.5",
    "modsRead": 148,
-   "modsThatLink": 123,
-   "modsThatLinkAndData": 123,
-   "brokenUses": 230,
+   "modsThatLink": 124,
+   "modsThatLinkAndData": 124,
+   "brokenUses": 208,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 4
@@ -860,7 +860,7 @@
    "modsRead": 146,
    "modsThatLink": 45,
    "modsThatLinkAndData": 45,
-   "brokenUses": 1219,
+   "brokenUses": 1217,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 2
@@ -870,9 +870,9 @@
    "from": "1.17.1",
    "to": "1.18.1",
    "modsRead": 147,
-   "modsThatLink": 106,
-   "modsThatLinkAndData": 106,
-   "brokenUses": 444,
+   "modsThatLink": 107,
+   "modsThatLinkAndData": 107,
+   "brokenUses": 443,
    "loaderUses": 0,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 2
@@ -882,9 +882,9 @@
    "from": "1.18.2",
    "to": "1.19.2",
    "modsRead": 147,
-   "modsThatLink": 46,
-   "modsThatLinkAndData": 44,
-   "brokenUses": 863,
+   "modsThatLink": 47,
+   "modsThatLinkAndData": 45,
+   "brokenUses": 836,
    "loaderUses": 1,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 3
@@ -908,7 +908,7 @@
    "modsRead": 147,
    "modsThatLink": 82,
    "modsThatLinkAndData": 82,
-   "brokenUses": 248,
+   "brokenUses": 245,
    "loaderUses": 6,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -918,9 +918,9 @@
    "from": "1.20.4",
    "to": "1.20.6",
    "modsRead": 147,
-   "modsThatLink": 27,
-   "modsThatLinkAndData": 26,
-   "brokenUses": 1759,
+   "modsThatLink": 28,
+   "modsThatLinkAndData": 27,
+   "brokenUses": 1644,
    "loaderUses": 415,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -932,7 +932,7 @@
    "modsRead": 147,
    "modsThatLink": 57,
    "modsThatLinkAndData": 56,
-   "brokenUses": 697,
+   "brokenUses": 693,
    "loaderUses": 21,
    "modsHeldOnlyByLoader": 2,
    "updatesCrossed": 2
@@ -944,7 +944,7 @@
    "modsRead": 147,
    "modsThatLink": 38,
    "modsThatLinkAndData": 37,
-   "brokenUses": 2213,
+   "brokenUses": 2196,
    "loaderUses": 83,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -968,7 +968,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1473,
+   "brokenUses": 1472,
    "loaderUses": 109,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -980,7 +980,7 @@
    "modsRead": 147,
    "modsThatLink": 39,
    "modsThatLinkAndData": 38,
-   "brokenUses": 1838,
+   "brokenUses": 1834,
    "loaderUses": 548,
    "modsHeldOnlyByLoader": 6,
    "updatesCrossed": 3
@@ -990,9 +990,9 @@
    "from": "1.20.1",
    "to": "26.3",
    "modsRead": 147,
-   "modsThatLink": 5,
-   "modsThatLinkAndData": 3,
-   "brokenUses": 15678,
+   "modsThatLink": 6,
+   "modsThatLinkAndData": 4,
+   "brokenUses": 15475,
    "loaderUses": 1599,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 22
@@ -1004,7 +1004,7 @@
    "modsRead": 149,
    "modsThatLink": 82,
    "modsThatLinkAndData": 82,
-   "brokenUses": 961,
+   "brokenUses": 959,
    "loaderUses": 654,
    "modsHeldOnlyByLoader": 12,
    "updatesCrossed": 2
@@ -1014,9 +1014,9 @@
    "from": "1.20.4",
    "to": "1.20.6",
    "modsRead": 148,
-   "modsThatLink": 17,
-   "modsThatLinkAndData": 16,
-   "brokenUses": 2808,
+   "modsThatLink": 18,
+   "modsThatLinkAndData": 17,
+   "brokenUses": 2637,
    "loaderUses": 1324,
    "modsHeldOnlyByLoader": 15,
    "updatesCrossed": 2
@@ -1028,7 +1028,7 @@
    "modsRead": 147,
    "modsThatLink": 60,
    "modsThatLinkAndData": 59,
-   "brokenUses": 653,
+   "brokenUses": 652,
    "loaderUses": 115,
    "modsHeldOnlyByLoader": 8,
    "updatesCrossed": 2
@@ -1040,7 +1040,7 @@
    "modsRead": 147,
    "modsThatLink": 43,
    "modsThatLinkAndData": 42,
-   "brokenUses": 3249,
+   "brokenUses": 3222,
    "loaderUses": 244,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 2
@@ -1052,7 +1052,7 @@
    "modsRead": 147,
    "modsThatLink": 48,
    "modsThatLinkAndData": 48,
-   "brokenUses": 1255,
+   "brokenUses": 1241,
    "loaderUses": 91,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 3
@@ -1064,7 +1064,7 @@
    "modsRead": 147,
    "modsThatLink": 40,
    "modsThatLinkAndData": 40,
-   "brokenUses": 1372,
+   "brokenUses": 1368,
    "loaderUses": 116,
    "modsHeldOnlyByLoader": 3,
    "updatesCrossed": 2
@@ -1076,7 +1076,7 @@
    "modsRead": 147,
    "modsThatLink": 47,
    "modsThatLinkAndData": 46,
-   "brokenUses": 1332,
+   "brokenUses": 1326,
    "loaderUses": 160,
    "modsHeldOnlyByLoader": 1,
    "updatesCrossed": 3
@@ -1088,7 +1088,7 @@
    "modsRead": 147,
    "modsThatLink": 12,
    "modsThatLinkAndData": 11,
-   "brokenUses": 17481,
+   "brokenUses": 17442,
    "loaderUses": 2142,
    "modsHeldOnlyByLoader": 0,
    "updatesCrossed": 15
@@ -1097,9 +1097,9 @@
  "types": [
   {
    "type": "call, game: linked",
-   "finishes": 184,
-   "mods": 1943,
-   "references": 2838,
+   "finishes": 185,
+   "mods": 1939,
+   "references": 2830,
    "updates": 42,
    "examples": [
     "fabric 1.16.5 -> 1.17: call: com.mojang.blaze3d.vertex.BufferBuilder.begin(ILcom/mojang/blaze3d/vertex/VertexFormat;)V",
@@ -1111,7 +1111,7 @@
   {
    "type": "call, game: split",
    "finishes": 70,
-   "mods": 1502,
+   "mods": 1503,
    "references": 1002,
    "updates": 39,
    "examples": [
@@ -1122,23 +1122,10 @@
    ]
   },
   {
-   "type": "field, game: linked",
-   "finishes": 55,
-   "mods": 591,
-   "references": 1029,
-   "updates": 53,
-   "examples": [
-    "fabric 1.18 -> 1.18.1: field: net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE",
-    "fabric 1.18.1 -> 1.18.2: field: net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE",
-    "fabric 1.14.4 -> 1.15: field: net.minecraft.client.model.geom.ModelPart.cubes",
-    "fabric 1.15 -> 1.15.1: field: net.minecraft.client.Option.SHOW_SUBTITLES"
-   ]
-  },
-  {
    "type": "mixin target changed signature, game: linked",
    "finishes": 51,
    "mods": 853,
-   "references": 1250,
+   "references": 1256,
    "updates": 40,
    "examples": [
     "fabric 1.19.4 -> 1.20: mixin target changed signature: net.minecraft.client.gui.Gui.render(Lcom/mojang/blaze3d/vertex/PoseStack;F)V",
@@ -1151,7 +1138,7 @@
    "type": "call, game: redesigned",
    "finishes": 45,
    "mods": 1472,
-   "references": 2398,
+   "references": 2401,
    "updates": 40,
    "examples": [
     "fabric 26.2 -> 26.3: call: net.minecraft.client.renderer.feature.FeatureRenderDispatcher.renderAllFeatures(Lnet/minecraft/client/renderer/SubmitNodeStorage;)V",
@@ -1162,34 +1149,21 @@
   },
   {
    "type": "abstract method not written, game: not read",
-   "finishes": 33,
+   "finishes": 38,
    "mods": 750,
    "references": 544,
    "updates": 35,
    "examples": [
-    "fabric 1.21.10 -> 1.21.11: abstract method not written: net.minecraft.client.gui.components.AbstractButton.renderContents(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
     "fabric 1.16.5 -> 1.17: abstract method not written: net.minecraft.client.gui.narration.NarrationSupplier.updateNarration(Lnet/minecraft/client/gui/narration/NarrationElementOutput;)V",
-    "fabric 1.19.3 -> 1.19.4: abstract method not written: net.minecraft.client.gui.components.events.GuiEventListener.setFocused(Z)V",
-    "fabric 1.21.8 -> 1.21.9: abstract method not written: net.minecraft.client.gui.components.AbstractSelectionList$Entry.renderContent(Lnet/minecraft/client/gui/GuiGraphics;IIZF)V"
-   ]
-  },
-  {
-   "type": "call, game: replaced",
-   "finishes": 32,
-   "mods": 1012,
-   "references": 712,
-   "updates": 38,
-   "examples": [
-    "fabric 1.21.4 -> 1.21.5: call: net.minecraft.network.chat.ClickEvent.<init>(Lnet/minecraft/network/chat/ClickEvent$Action;Ljava/lang/String;)V",
-    "fabric 1.19.3 -> 1.19.4: call: net.minecraft.client.renderer.entity.ItemRenderer.renderGuiItem(Lnet/minecraft/world/item/ItemStack;II)V",
-    "fabric 1.20.6 -> 1.21: call: net.minecraft.world.item.DyeColor.getTextureDiffuseColors()[F",
-    "fabric 1.21.1 -> 1.21.2: call: net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener.<init>(Lcom/google/gson/Gson;Ljava/lang/String;)V"
+    "fabric 1.21.10 -> 1.21.11: abstract method not written: net.minecraft.client.gui.components.AbstractButton.renderContents(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
+    "fabric 1.16.1 -> 1.16.2: abstract method not written: net.minecraft.core.Registry.elementsLifecycle()Lcom/mojang/serialization/Lifecycle;",
+    "fabric 1.19.2 -> 1.19.3: abstract method not written: net.minecraft.client.gui.components.AbstractWidget.updateWidgetNarration(Lnet/minecraft/client/gui/narration/NarrationElementOutput;)V"
    ]
   },
   {
    "type": "call, game: template",
-   "finishes": 31,
-   "mods": 1099,
+   "finishes": 32,
+   "mods": 1100,
    "references": 414,
    "updates": 35,
    "examples": [
@@ -1200,10 +1174,23 @@
    ]
   },
   {
+   "type": "call, game: replaced",
+   "finishes": 32,
+   "mods": 1012,
+   "references": 709,
+   "updates": 38,
+   "examples": [
+    "fabric 1.21.4 -> 1.21.5: call: net.minecraft.network.chat.ClickEvent.<init>(Lnet/minecraft/network/chat/ClickEvent$Action;Ljava/lang/String;)V",
+    "fabric 1.19.3 -> 1.19.4: call: net.minecraft.client.renderer.entity.ItemRenderer.renderGuiItem(Lnet/minecraft/world/item/ItemStack;II)V",
+    "fabric 1.20.6 -> 1.21: call: net.minecraft.world.item.DyeColor.getTextureDiffuseColors()[F",
+    "fabric 1.21.1 -> 1.21.2: call: net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener.<init>(Lcom/google/gson/Gson;Ljava/lang/String;)V"
+   ]
+  },
+  {
    "type": "call, game: unused",
    "finishes": 24,
-   "mods": 923,
-   "references": 1060,
+   "mods": 924,
+   "references": 1061,
    "updates": 40,
    "examples": [
     "neoforge 1.20.6 -> 1.21: call: net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext.get()Lnet/neoforged/fml/javafmlmod/FMLJavaModLoadingContext;",
@@ -1216,7 +1203,7 @@
    "type": "mixin injection point gone, game: not read",
    "finishes": 21,
    "mods": 323,
-   "references": 529,
+   "references": 530,
    "updates": 34,
    "examples": [
     "fabric 1.20.4 -> 1.20.5: mixin injection point gone: net.minecraft.client.Minecraft.isLocalServerZ in net.minecraft.client.Minecraft.disconnect(Lnet/minecraft/client/gui/screens/Screen;)V",
@@ -1229,7 +1216,7 @@
    "type": "mixin target gone, game: redesigned",
    "finishes": 20,
    "mods": 552,
-   "references": 1015,
+   "references": 1016,
    "updates": 37,
    "examples": [
     "fabric 26.1.2 -> 26.2: mixin target gone: net.minecraft.client.renderer.LevelRenderer.renderLevel(Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/renderer/state/level/CameraRenderState;Lorg/joml/Matrix4fc;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;ZLnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;)V",
@@ -1252,6 +1239,32 @@
    ]
   },
   {
+   "type": "abstract method not written, game: linked",
+   "finishes": 17,
+   "mods": 99,
+   "references": 240,
+   "updates": 30,
+   "examples": [
+    "neoforge 1.20.2 -> 1.20.3: abstract method not written: net.minecraft.client.gui.components.AbstractWidget.updateWidgetNarration(Lnet/minecraft/client/gui/narration/NarrationElementOutput;)V",
+    "fabric 1.16 -> 1.16.1: abstract method not written: net.minecraft.core.Registry.persistent(Lnet/minecraft/resources/ResourceKey;)Z",
+    "fabric 1.14.4 -> 1.15: abstract method not written: net.minecraft.client.gui.components.events.ContainerEventHandler.children()Ljava/util/List;",
+    "fabric 1.15 -> 1.15.1: abstract method not written: net.minecraft.client.gui.components.events.ContainerEventHandler.children()Ljava/util/List;"
+   ]
+  },
+  {
+   "type": "field, game: linked",
+   "finishes": 13,
+   "mods": 392,
+   "references": 567,
+   "updates": 41,
+   "examples": [
+    "fabric 1.19 -> 1.19.1: field: net.minecraft.Util.timeSource",
+    "fabric 1.19.3 -> 1.19.4: field: net.minecraft.world.inventory.SmithingMenu.selectedRecipe",
+    "fabric 1.20.4 -> 1.20.5: field: net.minecraft.world.item.ArmorMaterials.CHAIN",
+    "fabric 1.21.4 -> 1.21.5: field: net.minecraft.world.entity.Entity.fallDistance"
+   ]
+  },
+  {
    "type": "mixin accessor target gone, game: linked",
    "finishes": 12,
    "mods": 119,
@@ -1265,23 +1278,10 @@
    ]
   },
   {
-   "type": "abstract method not written, game: linked",
-   "finishes": 12,
-   "mods": 99,
-   "references": 240,
-   "updates": 30,
-   "examples": [
-    "neoforge 1.20.2 -> 1.20.3: abstract method not written: net.minecraft.client.gui.components.AbstractWidget.updateWidgetNarration(Lnet/minecraft/client/gui/narration/NarrationElementOutput;)V",
-    "fabric 1.14.4 -> 1.15: abstract method not written: net.minecraft.client.gui.components.events.ContainerEventHandler.children()Ljava/util/List;",
-    "fabric 1.15 -> 1.15.1: abstract method not written: net.minecraft.client.gui.components.events.ContainerEventHandler.children()Ljava/util/List;",
-    "fabric 1.15.1 -> 1.15.2: abstract method not written: net.minecraft.client.gui.components.events.ContainerEventHandler.children()Ljava/util/List;"
-   ]
-  },
-  {
    "type": "field, game: redesigned",
    "finishes": 9,
-   "mods": 866,
-   "references": 2223,
+   "mods": 867,
+   "references": 2224,
    "updates": 39,
    "examples": [
     "fabric 26.1.2 -> 26.2: field: com.mojang.blaze3d.vertex.VertexFormatElement$Type.FLOAT",
@@ -1294,7 +1294,7 @@
    "type": "field, game: split",
    "finishes": 9,
    "mods": 671,
-   "references": 654,
+   "references": 657,
    "updates": 36,
    "examples": [
     "fabric 1.20.1 -> 1.20.2: field: net.minecraft.client.Options.renderDebug",
@@ -1332,7 +1332,7 @@
   {
    "type": "class gone, game: unused",
    "finishes": 7,
-   "mods": 434,
+   "mods": 435,
    "references": 243,
    "updates": 36,
    "examples": [
@@ -1340,6 +1340,19 @@
     "neoforge 1.21.3 -> 1.21.4: class gone: net.minecraft.client.renderer.item.ClampedItemPropertyFunction",
     "neoforge 1.21.9 -> 1.21.10: class gone: net.neoforged.neoforge.client.event.ContainerScreenEvent$Render$Background",
     "fabric 1.20.2 -> 1.20.3: class gone: net.minecraft.data.recipes.FinishedRecipe"
+   ]
+  },
+  {
+   "type": "field, game: template",
+   "finishes": 7,
+   "mods": 347,
+   "references": 222,
+   "updates": 34,
+   "examples": [
+    "neoforge 26.1.2 -> 26.2: field: net.minecraft.client.Options.hideGui",
+    "fabric 1.18.2 -> 1.19: field: net.minecraft.client.Options.renderClouds",
+    "fabric 1.21.1 -> 1.21.2: field: net.minecraft.client.model.HumanoidModel.leftArmPose",
+    "neoforge 1.21.1 -> 1.21.2: field: net.minecraft.core.registries.Registries.ARMOR_MATERIAL"
    ]
   },
   {
@@ -1355,23 +1368,10 @@
    ]
   },
   {
-   "type": "field, game: template",
-   "finishes": 6,
-   "mods": 346,
-   "references": 219,
-   "updates": 34,
-   "examples": [
-    "neoforge 26.1.2 -> 26.2: field: net.minecraft.client.Options.hideGui",
-    "fabric 1.21.1 -> 1.21.2: field: net.minecraft.client.model.HumanoidModel.leftArmPose",
-    "neoforge 1.21.1 -> 1.21.2: field: net.minecraft.core.registries.Registries.ARMOR_MATERIAL",
-    "neoforge 1.21.4 -> 1.21.5: field: net.minecraft.client.renderer.RenderStateShard.TRANSLUCENT_TRANSPARENCY"
-   ]
-  },
-  {
    "type": "mixin target gone, game: not read",
    "finishes": 6,
-   "mods": 162,
-   "references": 228,
+   "mods": 163,
+   "references": 232,
    "updates": 33,
    "examples": [
     "fabric 1.17.1 -> 1.18: mixin target gone: net.minecraft.server.level.ChunkMap.lambda$prepareAccessibleChunk$36(Ljava/util/List;)Lnet/minecraft/world/level/chunk/LevelChunk;",
@@ -1423,7 +1423,7 @@
    "type": "mixin target gone, game: unused",
    "finishes": 4,
    "mods": 265,
-   "references": 296,
+   "references": 297,
    "updates": 36,
    "examples": [
     "fabric 1.21.1 -> 1.21.2: mixin target gone: net.minecraft.client.renderer.GameRenderer.reloadShaders(Lnet/minecraft/server/packs/resources/ResourceProvider;)V",
@@ -1435,8 +1435,8 @@
   {
    "type": "mixin target gone, game: split",
    "finishes": 4,
-   "mods": 217,
-   "references": 228,
+   "mods": 218,
+   "references": 229,
    "updates": 30,
    "examples": [
     "fabric 1.20.1 -> 1.20.2: mixin target gone: net.minecraft.client.Options.renderDebug",
@@ -1501,7 +1501,7 @@
    "type": "class gone, game: split",
    "finishes": 2,
    "mods": 230,
-   "references": 82,
+   "references": 83,
    "updates": 27,
    "examples": [
     "fabric 1.14.4 -> 1.15: class gone: net.minecraft.client.model.geom.Cube",
@@ -1513,8 +1513,8 @@
   {
    "type": "mixin method gone, game: linked",
    "finishes": 2,
-   "mods": 199,
-   "references": 324,
+   "mods": 200,
+   "references": 325,
    "updates": 35,
    "examples": [
     "fabric 1.19.4 -> 1.20: mixin method gone: net.minecraft.client.gui.components.DebugScreenOverlay.drawChart(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/util/FrameTimer;IIZ)V",
@@ -1526,7 +1526,7 @@
   {
    "type": "class gone, game: replaced",
    "finishes": 2,
-   "mods": 191,
+   "mods": 192,
    "references": 67,
    "updates": 28,
    "examples": [
@@ -1552,7 +1552,7 @@
   {
    "type": "mixin accessor target gone, game: split",
    "finishes": 2,
-   "mods": 96,
+   "mods": 97,
    "references": 96,
    "updates": 33,
    "examples": [
@@ -1602,7 +1602,7 @@
   {
    "type": "field, game: replaced",
    "finishes": 1,
-   "mods": 359,
+   "mods": 360,
    "references": 301,
    "updates": 37,
    "examples": [
@@ -1615,14 +1615,14 @@
   {
    "type": "mixin invoker target gone, game: redesigned",
    "finishes": 1,
-   "mods": 58,
-   "references": 74,
-   "updates": 23,
+   "mods": 59,
+   "references": 75,
+   "updates": 24,
    "examples": [
     "fabric 1.20.2 -> 1.20.3: mixin invoker target gone: net.minecraft.client.gui.components.AbstractWidget.updateTooltip()V",
     "fabric 1.15.2 -> 1.16: mixin invoker target gone: net.minecraft.client.renderer.entity.layers.AbstractArmorLayer.usesInnerModel(Lnet/minecraft/world/entity/EquipmentSlot;)Z",
-    "fabric 1.19.2 -> 1.19.3: mixin invoker target gone: net.minecraft.client.renderer.texture.TextureAtlas.getResourceLocation(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/resources/ResourceLocation;",
-    "fabric 1.19.3 -> 1.19.4: mixin invoker target gone: net.minecraft.client.gui.components.AbstractContainerWidget.getContainedChildren()Ljava/util/List;"
+    "fabric 1.18.2 -> 1.19: mixin invoker target gone: net.minecraft.world.entity.ai.village.poi.PoiType.registerBlockStates(Lnet/minecraft/world/entity/ai/village/poi/PoiType;)Lnet/minecraft/world/entity/ai/village/poi/PoiType;",
+    "fabric 1.19.2 -> 1.19.3: mixin invoker target gone: net.minecraft.client.renderer.texture.TextureAtlas.getResourceLocation(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/resources/ResourceLocation;"
    ]
   },
   {
@@ -1641,14 +1641,14 @@
   {
    "type": "mixin target class gone, game: split",
    "finishes": 1,
-   "mods": 27,
-   "references": 23,
-   "updates": 14,
+   "mods": 28,
+   "references": 24,
+   "updates": 15,
    "examples": [
     "fabric 1.20.1 -> 1.20.2: mixin target class gone: net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket",
     "fabric 1.14.4 -> 1.15: mixin target class gone: net.minecraft.client.renderer.MobSkinTextureProcessor",
-    "fabric 1.21.1 -> 1.21.2: mixin target class gone: net.minecraft.tags.TagManager",
-    "fabric 1.21.4 -> 1.21.5: mixin target class gone: net.minecraft.client.renderer.block.ModelBlockRenderer$AmbientOcclusionFace"
+    "fabric 1.18.2 -> 1.19: mixin target class gone: net.minecraft.server.packs.resources.SimpleResource",
+    "fabric 1.21.1 -> 1.21.2: mixin target class gone: net.minecraft.tags.TagManager"
    ]
   },
   {
@@ -1810,8 +1810,8 @@
   {
    "type": "method reference, game: linked",
    "finishes": 0,
-   "mods": 56,
-   "references": 76,
+   "mods": 57,
+   "references": 77,
    "updates": 22,
    "examples": [
     "fabric 1.15.2 -> 1.16: method reference: net.minecraft.server.level.ServerPlayer.sendMessage(Lnet/minecraft/network/chat/Component;)V",
@@ -1886,6 +1886,19 @@
    ]
   },
   {
+   "type": "mixin method gone, game: template",
+   "finishes": 0,
+   "mods": 34,
+   "references": 34,
+   "updates": 18,
+   "examples": [
+    "fabric 1.16.5 -> 1.17: mixin method gone: net.minecraft.world.level.BaseSpawner.getLevel()Lnet/minecraft/world/level/Level;",
+    "fabric 1.18.1 -> 1.18.2: mixin method gone: net.minecraft.world.level.levelgen.feature.StructureFeature.getFeatureName()Ljava/lang/String;",
+    "fabric 1.18.2 -> 1.19: mixin method gone: net.minecraft.client.multiplayer.MultiPlayerGameMode.sendBlockAction(Lnet/minecraft/network/protocol/game/ServerboundPlayerActionPacket$Action;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;)V",
+    "fabric 1.19.2 -> 1.19.3: mixin method gone: net.minecraft.world.item.CreativeModeTab.getId()I"
+   ]
+  },
+  {
    "type": "method reference, game: replaced",
    "finishes": 0,
    "mods": 33,
@@ -1896,19 +1909,6 @@
     "fabric 1.20.2 -> 1.20.3: method reference: net.minecraft.world.entity.ai.attributes.AttributeModifier.getName()Ljava/lang/String;",
     "fabric 1.20.4 -> 1.20.5: method reference: net.minecraft.network.syncher.EntityDataSerializer.write(Lnet/minecraft/network/FriendlyByteBuf;Ljava/lang/Object;)V",
     "fabric 1.20.6 -> 1.21: method reference: net.minecraft.client.renderer.GameRenderer.getPositionColorTexShader()Lnet/minecraft/client/renderer/ShaderInstance;"
-   ]
-  },
-  {
-   "type": "mixin method gone, game: template",
-   "finishes": 0,
-   "mods": 33,
-   "references": 33,
-   "updates": 17,
-   "examples": [
-    "fabric 1.16.5 -> 1.17: mixin method gone: net.minecraft.world.level.BaseSpawner.getLevel()Lnet/minecraft/world/level/Level;",
-    "fabric 1.18.1 -> 1.18.2: mixin method gone: net.minecraft.world.level.levelgen.feature.StructureFeature.getFeatureName()Ljava/lang/String;",
-    "fabric 1.19.2 -> 1.19.3: mixin method gone: net.minecraft.world.item.CreativeModeTab.getId()I",
-    "fabric 1.20.6 -> 1.21: mixin method gone: net.minecraft.client.Minecraft.getDeltaFrameTime()F"
    ]
   },
   {
@@ -1928,7 +1928,7 @@
    "type": "call, game: not read",
    "finishes": 0,
    "mods": 26,
-   "references": 16,
+   "references": 17,
    "updates": 10,
    "examples": [
     "fabric 1.15.2 -> 1.16: call: net.minecraft.network.chat.Component.withStyle+withStyle+late(Lnet/minecraft/network/chat/Component;Lnet/minecraft/ChatFormatting;Lnet/minecraft/ChatFormatting;)Lnet/minecraft/network/chat/Component;",
@@ -1966,14 +1966,14 @@
   {
    "type": "mixin invoker target gone, game: split",
    "finishes": 0,
-   "mods": 10,
-   "references": 11,
-   "updates": 8,
+   "mods": 11,
+   "references": 12,
+   "updates": 9,
    "examples": [
     "fabric 1.16.5 -> 1.17: mixin invoker target gone: net.minecraft.client.gui.screens.Screen.addButton(Lnet/minecraft/client/gui/components/AbstractWidget;)Lnet/minecraft/client/gui/components/AbstractWidget;",
+    "fabric 1.18.2 -> 1.19: mixin invoker target gone: net.minecraft.server.packs.resources.FallbackResourceManager.getWrappedResource(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/server/packs/PackResources;)Ljava/io/InputStream;",
     "fabric 1.19.2 -> 1.19.3: mixin invoker target gone: net.minecraft.world.level.chunk.ChunkGenerator.getPlacementsForStructure(Lnet/minecraft/core/Holder;Lnet/minecraft/world/level/levelgen/RandomState;)Ljava/util/List;",
-    "fabric 1.21.5 -> 1.21.6: mixin invoker target gone: net.minecraft.client.multiplayer.ClientPacketListener.parseCommand(Ljava/lang/String;)Lcom/mojang/brigadier/ParseResults;",
-    "fabric 1.21.11 -> 26.1: mixin invoker target gone: net.minecraft.client.renderer.GameRenderer.getFov(Lnet/minecraft/client/Camera;FZ)F"
+    "fabric 1.21.5 -> 1.21.6: mixin invoker target gone: net.minecraft.client.multiplayer.ClientPacketListener.parseCommand(Ljava/lang/String;)Lcom/mojang/brigadier/ParseResults;"
    ]
   },
   {
@@ -3336,8 +3336,8 @@
   },
   {
    "loader": "fabric",
-   "update": "1.19.2 -> 1.19.3",
-   "member": "field: net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK",
+   "update": "1.18.2 -> 1.19",
+   "member": "call: net.minecraft.server.packs.resources.ResourceProvider.getResource(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/server/packs/resources/Resource;",
    "mods": 33,
    "game": "linked",
    "gameDetail": "the map follows it; the new signature differs",
@@ -3363,16 +3363,6 @@
    "gameDetail": "2 uses, 0 in methods b kept, none line up",
    "portable": false,
    "part": "loader"
-  },
-  {
-   "loader": "fabric",
-   "update": "1.18.2 -> 1.19",
-   "member": "call: net.minecraft.server.packs.resources.ResourceProvider.getResource(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/server/packs/resources/Resource;",
-   "mods": 32,
-   "game": "linked",
-   "gameDetail": "the map follows it; the new signature differs",
-   "portable": false,
-   "part": "game"
   },
   {
    "loader": "fabric",
@@ -3687,6 +3677,16 @@
    "mods": 27,
    "game": "redesigned",
    "gameDetail": "4 uses, 2 in methods b kept, none line up",
+   "portable": false,
+   "part": "game"
+  },
+  {
+   "loader": "fabric",
+   "update": "1.21.4 -> 1.21.5",
+   "member": "call: net.minecraft.nbt.CompoundTag.getCompound(Ljava/lang/String;)Lnet/minecraft/nbt/CompoundTag;",
+   "mods": 27,
+   "game": "linked",
+   "gameDetail": "the map follows it; the new signature differs",
    "portable": false,
    "part": "game"
   }
