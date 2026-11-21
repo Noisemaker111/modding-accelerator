@@ -369,7 +369,9 @@ final class PackLoaders {
     static String neoforgeLine(String minecraft) {
         String[] parts = minecraft.split("\\.");
         if (parts.length >= 2 && parts[0].equals("1")) return parts[1] + "." + (parts.length > 2 ? parts[2] : "0");
-        return minecraft;
+        // From 26.1 NeoForge's version starts with the whole game version, its patch written out: 26.1 is 26.1.0.x, so a
+        // prefix of "26.1." would also take 26.1.2's builds.
+        return parts.length == 2 ? minecraft + ".0" : minecraft;
     }
 
     // ------------------------------------------------------------------ the Java build a loader needs

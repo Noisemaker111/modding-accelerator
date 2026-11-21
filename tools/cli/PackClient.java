@@ -113,6 +113,27 @@ final class PackClient {
         return root;
     }
 
+    /**
+     * The jars under the install's libraries that hold the game's client classes in the names it runs (net/minecraft/client/
+     * Minecraft.class), whatever the loader calls them: NeoForge's "client-<v>-srg.jar" until 1.21.10, its
+     * "minecraft-client-patched-<v>.jar" from 1.21.11.
+     */
+    static List<String> gameJars(Path install) throws IOException {
+        List<String> found = new ArrayList<>();
+        Path libraries = install.resolve("libraries");
+        if (!Files.isDirectory(libraries)) return found;
+        try (var walk = Files.walk(libraries)) {
+            for (Path jar : walk.filter(p -> p.toString().endsWith(".jar")).toList()) {
+                try (var zip = new ZipFile(jar.toFile())) {
+                    if (zip.getEntry("net/minecraft/client/Minecraft.class") != null) found.add(jar.toString());
+                } catch (IOException unreadable) {
+                    // not a jar the game needs
+                }
+            }
+        }
+        return found;
+    }
+
     static Path gameJar(Path install, Map<String, Object> merged) {
         String id = Json.text(merged, "id", "");
         return install.resolve("versions").resolve(id).resolve(id + ".jar");
@@ -275,8 +296,8 @@ final class PackClient {
             "-Dmmt.fingerprint=pack-check-client", "-Dmmt.c1=true",
             "-Dmmt.background=" + preferences.get("background"), "-Dmmt.quiet=" + preferences.get("quiet")
         ));
-        // The game's classes for the agent's snippets: the loader's named game jar and its own jars (they sit on no class path).
-        List<String> game = new ArrayList<>();
+        // The game's classes for the agent's snippets: the loader's game jar and its own jars (they sit on no class path).
+        List<String> game = new ArrayList<>(gameJars(install));
         for (Object o : Json.array(((PackLoaders.Style) owner.loader).spec.getOrDefault("clientClasses", List.of()))) {
             var where = Json.object(o);
             Path dir = install.resolve(Json.text(where, "dir", ""));
