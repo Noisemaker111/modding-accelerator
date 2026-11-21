@@ -3581,6 +3581,7 @@ public final class GameDiff {
         final Map<Ref, Boolean> brokenRefs = new HashMap<>();
         final Map<Node, Boolean> holed = new IdentityHashMap<>();
         final Map<String, Map<Node, Set<String>>> sites = new HashMap<>(); // member key -> use in a -> its readings in b
+        final Map<Node, String> aside = new IdentityHashMap<>(); // an unread use -> the call or field b makes there on a value of its own method
         final Map<String, Ref> keys = new HashMap<>();
         int budget;
 
@@ -3626,10 +3627,56 @@ public final class GameDiff {
             for (var e : sites.entrySet()) {
                 Ref old = keys.get(e.getKey());
                 int[] tally = new int[2];
-                String best = vote(e.getValue().values(), tally);
+                Map<Node, Set<String>> uses = e.getValue();
+                String best = vote(uses.values(), tally);
+                String bestNow = best;
+                java.util.function.Predicate<Node> same = u -> bestNow != null && aside.containsKey(u) && bestNow.endsWith("." + aside.get(u));
+                if (best != null && uses.keySet().stream().anyMatch(u -> same.test(u) && e.getValue().get(u).isEmpty())) {
+                    // A use b wrote as the same call on a value only its own method has (1.21.9's keyPressed(KeyEvent) asks
+                    // event.hasShiftDown() where Screen.hasShiftDown() was; other places ask Minecraft.getInstance()): a
+                    // mod's call has no such value, but the use says what is called: it counts for the reading.
+                    Map<Node, Set<String>> kept = new IdentityHashMap<>(e.getValue());
+                    kept.keySet().removeIf(u -> same.test(u) && kept.get(u).isEmpty());
+                    String narrowed = vote(kept.values(), tally);
+                    if (best.equals(narrowed)) {
+                        // Those uses agree on what is called and differ only in on what: each is a vote for the reading.
+                        int also = uses.size() - kept.size();
+                        tally[0] += also;
+                        tally[1] += also;
+                        uses = kept;
+                    } else {
+                        best = vote(uses.values(), tally);
+                    }
+                } else if (uses.keySet().stream().anyMatch(u -> aside.containsKey(u) && e.getValue().get(u).isEmpty())) {
+                    // The plain vote picked a reading no such use backs (one place lined up with something else): the
+                    // reading the most of them back, as written in the places that could be read, if it has no choices.
+                    String pick = null;
+                    long most = 0;
+                    boolean tie = false;
+                    for (String r : uses.values().stream().flatMap(Set::stream).filter(r -> r.indexOf(OPEN) < 0).distinct().toList()) {
+                        long backs = uses.keySet().stream().filter(u -> aside.containsKey(u) && e.getValue().get(u).isEmpty() && r.endsWith("." + aside.get(u))).count();
+                        if (backs > most) {
+                            pick = r;
+                            most = backs;
+                            tie = false;
+                        } else if (backs == most && backs > 0) {
+                            tie = true;
+                        }
+                    }
+                    if (pick != null && !tie) {
+                        String r = pick;
+                        long read = uses.values().stream().filter(v -> v.contains(r)).count();
+                        best = pick;
+                        tally[0] = (int) (read + most);
+                        tally[1] = uses.size();
+                        Map<Node, Set<String>> kept = new IdentityHashMap<>(uses);
+                        kept.keySet().removeIf(u -> aside.containsKey(u) && kept.get(u).isEmpty() && r.endsWith("." + aside.get(u)));
+                        uses = kept;
+                    }
+                }
                 int top = tally[0], of = tally[1];
                 boolean agreed = top >= 2 && top * 10 >= of * 8 || top == 1 && of == 1 && usesAll(best, old, operands(old));
-                agreed = agreed && beyondLiterals(best, e.getValue());
+                agreed = agreed && beyondLiterals(best, uses);
                 if (log != null) {
                     log.append(e.getKey()).append('\t').append(e.getValue().size()).append('\t').append(of).append('\t').append(top).append('\t')
                         .append(agreed).append('\t').append(best == null ? "" : best).append('\t');
@@ -4319,7 +4366,8 @@ public final class GameDiff {
                     computed.add(u.getValue());
                 }
             }
-            if (computed.size() >= 2) {
+            // A member with no operands passes no literal: there is nothing to recount.
+            if (computed.size() >= 2 && any.kids.length > 0) {
                 int[] tally = new int[2];
                 String again = vote(computed, tally, ownEdits);
                 if (!best.equals(again) || tally[0] * 10 < tally[1] * 8) {
@@ -4881,6 +4929,13 @@ public final class GameDiff {
                 }
             }
             String reading = body == null ? null : cast.isEmpty() ? body : cast + receiver(body);
+            if (reading == null && (m.op == 'v' || m.op == 'f') && m.ref != null && m.kids.length > 0 && local(m.kids[0])) {
+                // Only the receiver is the method's own: the same call with the same arguments, read over the operands.
+                String args = m.op == 'v' ? arguments(m, 1, use.kids, first, 0) : "";
+                if (args != null) {
+                    aside.put(use, m.op == 'v' ? m.ref.name() + "(" + args + ")" : m.ref.name());
+                }
+            }
             if (reading == null && readings.isEmpty() && (unsure || merged(m) || Arrays.stream(use.kids).anyMatch(this::merged))) {
                 // Unreadable only because a value depends on the path taken (a loop's variable): that says nothing
                 // either way, so the use abstains instead of counting against.
@@ -4951,6 +5006,17 @@ public final class GameDiff {
          * (UniformGenerator.between(0.0F, 1.0F), new ByteBufferBuilder(1536)). Where a reading leaves an operand out and has
          * one, b may have written that operand's own replacement there; a fixed flag in its place (false) is the member's.
          */
+        /** A value read from the method's own parameters or locals, nothing else: what a mod's call site does not have. */
+        static boolean local(Node n) {
+            if (n.op == 'p' || n.op == 'l') {
+                return true;
+            }
+            if ((n.op == 'v' || n.op == 'f' || n.op == 't') && n.kids.length > 0) {
+                return local(n.kids[0]);
+            }
+            return false;
+        }
+
         static final Pattern MADE = Pattern.compile("(?:new\\s+[\\w.]+|(?<![\\w$])[A-Za-z_]\\w*\\.\\w+)\\([^()$]*\\)");
 
         /** A reading that leaves out an operand depending on the path taken, or holding a changed member b showed nothing for: abstain. */
