@@ -127,8 +127,34 @@ final class PortJar {
         );
     }
 
+    /**
+     * The jar's neoforge.mods.toml, or for a NeoForge jar-in-jar container with none of its own (Kotlin for Forge ships
+     * its language loader and mods as META-INF/jarjar/*.jar under one FMLModType: LIBRARY jar) the first nested jar's:
+     * JarPort ports the nested mods, so the container is a mod to port like any other.
+     */
     static String metadata(Path jar) throws IOException {
-        return entry(jar, "META-INF/neoforge.mods.toml");
+        String own = entry(jar, "META-INF/neoforge.mods.toml");
+        if (own != null) {
+            return own;
+        }
+        try (ZipFile zip = new ZipFile(jar.toFile())) {
+            if (zip.getEntry("META-INF/jarjar/metadata.json") == null) {
+                return null;
+            }
+            for (ZipEntry e : Collections.list(zip.entries())) {
+                if (!e.getName().startsWith("META-INF/jarjar/") || !e.getName().endsWith(".jar")) {
+                    continue;
+                }
+                try (ZipInputStream nested = new ZipInputStream(zip.getInputStream(e))) {
+                    for (ZipEntry n; (n = nested.getNextEntry()) != null;) {
+                        if (n.getName().equals("META-INF/neoforge.mods.toml")) {
+                            return new String(nested.readAllBytes(), StandardCharsets.UTF_8);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     static String entry(Path jar, String name) throws IOException {
