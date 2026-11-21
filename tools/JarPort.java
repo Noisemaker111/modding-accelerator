@@ -47,6 +47,7 @@ public final class JarPort {
         final Map<String, List<String>> mixinTargets = new HashMap<>(); // mixin class -> target classes (old names)
         final Map<String, String[]> accessors = new HashMap<>(); // class.method+desc -> {Accessor|Invoker, value or null}
         final Set<String> shadowFields = new HashSet<>(); // mixin class.field annotated @Shadow; its other fields are its own
+        final Map<String, String> shadowTargets = new HashMap<>(); // mixin class.field -> the target (old name) whose field the update broke
         final Map<String, String> accessorTargets = new HashMap<>(); // class.method+desc -> the target's new name to write
         final Set<String> widened = new HashSet<>(); // "owner.name" or "owner.name+desc" the mod's access transformer opens
         final Set<String> unlinked = new TreeSet<>();
@@ -2464,6 +2465,9 @@ public final class JarPort {
 
             @Override
             public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                if (mod.shadowTargets.containsKey(self[0] + "." + name)) {
+                    return null;
+                }
                 types(mod, desc, Exposure.dotted(self[0]) + "." + name);
                 String[] shadow = mod.renamedDecl.get(self[0] + "." + name);
                 String newName = shadow == null ? name : shadow[0];
@@ -2572,7 +2576,11 @@ public final class JarPort {
                 }
                 return moved[1];
             }
-            mod.unlinked.add("mixin field gone: " + Exposure.dotted(t) + "." + name + " (in " + Exposure.dotted(mixin) + ")");
+            // The shadow is the target's field under the mixin's name: each use is ported as a use of that field (what the
+            // game's own code now reads instead, or a report naming the field), and the declaration goes, since Mixin
+            // refuses a shadow its target no longer has.
+            mod.shadowTargets.put(mixin + "." + name, t);
+            mod.change("mixin shadow of a field the update broke ported as the target's field");
             return name;
         }
         return name;
@@ -4454,6 +4462,7 @@ public final class JarPort {
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
             fresh = false;
             types(mod, desc, where);
+            owner = mod.shadowTargets.getOrDefault(owner + "." + name, owner);
             String[] own = mod.renamedDecl.get(owner + "." + name);
             if (own != null) {
                 super.visitFieldInsn(opcode, owner, own[0], desc);

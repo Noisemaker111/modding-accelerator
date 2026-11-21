@@ -376,12 +376,24 @@ public final class JarPortTest {
             shadow.visitAnnotation("Lorg/spongepowered/asm/mixin/Shadow;", false).visitEnd();
             shadow.visitEnd();
         }
+        MethodVisitor grow = mx.visitMethod(Opcodes.ACC_PRIVATE, "grow", "()I", null, null);
+        grow.visitCode();
+        grow.visitVarInsn(Opcodes.ALOAD, 0);
+        grow.visitFieldInsn(Opcodes.GETFIELD, "m/EngineMixin", "capacity", "I");
+        grow.visitInsn(Opcodes.IRETURN);
+        grow.visitMaxs(1, 1);
+        grow.visitEnd();
         mx.visitEnd();
         List<Map<String, Object>> results = new ArrayList<>();
-        new JarPort(snaps[0], snaps[1], map).port(jar(Map.of("m/EngineMixin.class", mx.toByteArray())), "fields.jar", results);
+        byte[] out = new JarPort(snaps[0], snaps[1], map).port(jar(Map.of("m/EngineMixin.class", mx.toByteArray())), "fields.jar", results);
         List<String> unlinked = Json.array(results.get(results.size() - 1).get("unlinked")).stream().map(String::valueOf).toList();
-        expect(unlinked.equals(List.of("mixin field gone: g.Engine.capacity (in m.EngineMixin)")),
-            "only a @Shadow field whose type matched the old release and not the new one is reported, not the mixin's own field or a loader-patched shadow: " + unlinked);
+        expect(unlinked.equals(List.of("field: g.Engine.capacity")),
+            "only a @Shadow field whose type matched the old release and not the new one breaks, not the mixin's own field or a loader-patched shadow;"
+                + " its use is ported as a use of the target's field, which names it: " + unlinked);
+        Map<String, String> ported = members(entries(out).get("m/EngineMixin.class"));
+        expect(!ported.containsKey("field capacity") && ported.containsKey("field providers") && ported.containsKey("field LOGGER")
+                && ported.get("method grow()I").contains("get g/Engine.capacity"),
+            "the broken shadow is no longer declared (Mixin refuses one its target lacks) and its read is the target's field: " + ported);
     }
 
     static GameDiff.Snap game(String version, String method, String field, String cls) {
