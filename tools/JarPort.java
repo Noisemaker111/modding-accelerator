@@ -282,6 +282,7 @@ public final class JarPort {
 
     public static void main(String[] args) throws Exception {
         String from = null, to = null, map = null, out = null, loader = null, report = null, book = null;
+        Set<String> platformIds = Set.of();
         boolean runtime = false;
         List<Path> jars = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
@@ -294,6 +295,7 @@ public final class JarPort {
                 case "--loader" -> loader = args[++i];
                 case "--report" -> report = args[++i];
                 case "--fixes" -> book = args[++i];
+                case "--platform" -> platformIds = Set.copyOf(Arrays.asList(args[++i].split(",")));
                 case "--cache" -> VersionMap.cache = Path.of(args[++i]).toAbsolutePath();
                 default -> jars.add(Path.of(args[i]));
             }
@@ -307,6 +309,7 @@ public final class JarPort {
             port.loader = loader;
         }
         port.runtimeNames = runtime;
+        port.platformIds = platformIds;
         if (book != null) {
             port.fixes(Path.of(book));
         }
@@ -434,6 +437,26 @@ public final class JarPort {
             return i;
         }
         return -1;
+    }
+
+    Set<String> platformIds = Set.of(); // mod ids the platform the port is for provides (Fabric API's modules), --platform
+
+    /** The mod id of a nested jar when the platform provides it, else null. */
+    String platformModule(byte[] jar) {
+        if (platformIds.isEmpty()) {
+            return null;
+        }
+        try (ZipInputStream z = new ZipInputStream(new ByteArrayInputStream(jar))) {
+            for (ZipEntry e; (e = z.getNextEntry()) != null; ) {
+                if (e.getName().equals("fabric.mod.json")) {
+                    Object id = Json.object(Json.parse(new String(z.readAllBytes(), StandardCharsets.UTF_8))).get("id");
+                    return id instanceof String s && platformIds.contains(s) ? s : null;
+                }
+            }
+        } catch (IOException | RuntimeException unreadable) {
+            return null;
+        }
+        return null;
     }
 
     static final Pattern SRG = Pattern.compile("\\b[mf]_\\d+_\\b");
@@ -647,7 +670,14 @@ public final class JarPort {
                     }
                     data = text.getBytes(StandardCharsets.UTF_8);
                 } else if (nested.contains(n) || n.startsWith("META-INF/jarjar/") && n.endsWith(".jar")) {
-                    data = port(data, name + "!" + n.substring(n.lastIndexOf('/') + 1), results, grants);
+                    String nestedId = platformModule(data);
+                    if (nestedId != null) {
+                        // The platform's own module (a Fabric API module a mod nests): the loader runs the platform's newer
+                        // copy of that mod id instead, so this one is no part of the mod there.
+                        mod.silent.add("nested platform module, the platform's own runs instead: " + nestedId + " (" + n + ")");
+                    } else {
+                        data = port(data, name + "!" + n.substring(n.lastIndexOf('/') + 1), results, grants);
+                    }
                 } else if (rewritten.containsKey(n)) {
                     data = rewritten.get(n);
                 } else if (atFiles.contains(n)) {
@@ -2675,6 +2705,16 @@ public final class JarPort {
             return moved;
         }
         Found f = find(targets, key, text);
+        if (f.report() != null && f.report().contains(".lambda$") && handler != null && mod.injectors.containsKey(handler)) {
+            // A lambda the new release no longer has stops the game only where the injector requires its place.
+            Injector inj = mod.injectors.get(handler);
+            String mixin = handler.substring(0, handler.indexOf('.'));
+            int require = inj.require()[0] >= 0 ? inj.require()[0] : mod.requires.getOrDefault(mixin, 0);
+            if (require == 0) {
+                mod.silent.add(f.report().replace("mixin target gone", "mixin injection finds no place"));
+                return f.text();
+            }
+        }
         if (f.report() != null) {
             mod.unlinked.add(f.report());
         }

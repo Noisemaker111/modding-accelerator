@@ -321,6 +321,16 @@ final class JarPortRetypeTest {
             "META-INF/jarjar/metadata.json", "{\"jars\": [{\"path\": \"META-INF/jars/fabric-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "both.jar", nestedRuns);
         List<String> nestedUnlinked = nestedRuns.stream().flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
         JarPortTest.expect(nestedUnlinked.isEmpty(), "a jar nested for the other loader is never loaded here, so it holds nothing back: " + nestedUnlinked);
+        // A nested jar the platform provides (a Fabric API module beside the mod): the platform's newer copy runs instead.
+        port.platformIds = Set.of("platform-part");
+        List<Map<String, Object>> platformRuns = new ArrayList<>();
+        port.port(JarPortTest.jar(Map.of("META-INF/jars/platform-part.jar", JarPortTest.jar(Map.of("p6/UsesGone.class", JarPortTest.real("p6/UsesGone", "java/lang/Object", 0, new String[] { "g6/Model" }, w -> JarPortTest.traced(w, "quads", "()V", "", m -> { })),
+            "fabric.mod.json", "{\"id\": \"platform-part\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8))),
+            "fabric.mod.json", "{\"id\": \"m6\", \"jars\": [{\"file\": \"META-INF/jars/platform-part.jar\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8))), "nests.jar", platformRuns);
+        port.platformIds = Set.of();
+        List<String> platformUnlinked = platformRuns.stream().flatMap(r -> Json.array(r.get("unlinked")).stream()).map(String::valueOf).toList();
+        JarPortTest.expect(platformUnlinked.isEmpty() && platformRuns.stream().anyMatch(r -> String.valueOf(r.get("silent")).contains("nested platform module")),
+            "a nested jar the platform provides runs as the platform's own, so it holds nothing back: " + platformUnlinked + " " + platformRuns);
 
         // A mod class on the removed Part extends what the game's own subclasses of it extend now, not Graphics.
         List<Map<String, Object>> partRuns = new ArrayList<>();
