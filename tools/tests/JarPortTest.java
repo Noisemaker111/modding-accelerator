@@ -97,6 +97,7 @@ public final class JarPortTest {
         expect(use.contains("call g/Block.bar()V"), "and its classes are rewritten: " + use);
         expect(use.contains("call g/Vault.secret()V"), "with the access its parent's access transformer gives the game: " + use);
         runs(scratch);
+        relocatedCalls(scratch);
         mixinFields(scratch);
         JarPortRulesTest.check(scratch);
         JarPortRulesTest.buses(scratch);
@@ -394,6 +395,65 @@ public final class JarPortTest {
         expect(!ported.containsKey("field capacity") && ported.containsKey("field providers") && ported.containsKey("field LOGGER")
                 && ported.get("method grow()I").contains("get g/Engine.capacity"),
             "the broken shadow is no longer declared (Mixin refuses one its target lacks) and its read is the target's field: " + ported);
+    }
+
+    /**
+     * A call to a method the new release dropped, with no caller in the game to line up, goes where the game's own files
+     * say: a static method that one class of the same project gained under its name and signature (NeoForge 1.21.7's
+     * PacketDistributor.sendToServer -> ClientPacketDistributor), or the one method the old one's whole body forwarded to.
+     * Two candidates are no answer.
+     */
+    static void relocatedCalls(Path scratch) throws Exception {
+        GameDiff.Snap[] snaps = new GameDiff.Snap[2];
+        for (int i = 0; i < 2; i++) {
+            GameDiff.Snap s = new GameDiff.Snap(i == 0 ? "1.0" : "2.0");
+            GameDiff.Cls dist = new GameDiff.Cls("g/mod/net/Dist", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
+            GameDiff.Cls player = new GameDiff.Cls("g/Player", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
+            player.methods.put("message(I)V", new GameDiff.Meth(player, "message", "(I)V", Opcodes.ACC_PUBLIC));
+            if (i == 0) {
+                dist.methods.put("send(I)V", new GameDiff.Meth(dist, "send", "(I)V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+                dist.methods.put("both(I)V", new GameDiff.Meth(dist, "both", "(I)V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+                GameDiff.Meth say = new GameDiff.Meth(player, "say", "(I)V", Opcodes.ACC_PUBLIC);
+                say.hasCode = true;
+                say.refs = new GameDiff.Ref[] { new GameDiff.Ref('m', "g/Player", "message", "(I)V") };
+                player.methods.put("say(I)V", say);
+            } else {
+                GameDiff.Cls client = new GameDiff.Cls("g/mod/client/ClientDist", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
+                client.methods.put("send(I)V", new GameDiff.Meth(client, "send", "(I)V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+                client.methods.put("both(I)V", new GameDiff.Meth(client, "both", "(I)V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+                GameDiff.Cls server = new GameDiff.Cls("g/mod/server/ServerDist", Opcodes.ACC_PUBLIC, "java/lang/Object", List.of(), false);
+                server.methods.put("both(I)V", new GameDiff.Meth(server, "both", "(I)V", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC));
+                s.classes.put(client.name, client);
+                s.classes.put(server.name, server);
+            }
+            s.classes.put(dist.name, dist);
+            s.classes.put(player.name, player);
+            snaps[i] = s;
+        }
+        Path map = scratch.resolve("relocated-route.json");
+        Files.writeString(map, "{\"classes\": [], \"methods\": [], \"fields\": [], \"rewrites\": []}");
+        ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        w.visit(Opcodes.V21, Opcodes.ACC_PUBLIC, "m/Sender", null, "java/lang/Object", null);
+        MethodVisitor run = w.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "run", "(Lg/Player;)V", null, null);
+        run.visitCode();
+        run.visitInsn(Opcodes.ICONST_1);
+        run.visitMethodInsn(Opcodes.INVOKESTATIC, "g/mod/net/Dist", "send", "(I)V", false);
+        run.visitInsn(Opcodes.ICONST_2);
+        run.visitMethodInsn(Opcodes.INVOKESTATIC, "g/mod/net/Dist", "both", "(I)V", false);
+        run.visitVarInsn(Opcodes.ALOAD, 0);
+        run.visitInsn(Opcodes.ICONST_3);
+        run.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "g/Player", "say", "(I)V", false);
+        run.visitInsn(Opcodes.RETURN);
+        run.visitMaxs(2, 1);
+        run.visitEnd();
+        w.visitEnd();
+        List<Map<String, Object>> results = new ArrayList<>();
+        byte[] out = new JarPort(snaps[0], snaps[1], map).port(jar(Map.of("m/Sender.class", w.toByteArray())), "relocated.jar", results);
+        String body = members(entries(out).get("m/Sender.class")).get("method run(Lg/Player;)V");
+        List<String> unlinked = Json.array(results.get(results.size() - 1).get("unlinked")).stream().map(String::valueOf).toList();
+        expect(body.contains("call g/mod/client/ClientDist.send(I)V"), "a static method one class of the same project gained is called there: " + body);
+        expect(body.contains("call g/Player.message(I)V") && !body.contains("g/Player.say"), "an alias is replaced by the method its whole body forwarded to: " + body);
+        expect(unlinked.equals(List.of("call: g.mod.net.Dist.both(I)V")), "two classes that gained it are no answer, and it is reported: " + unlinked);
     }
 
     static GameDiff.Snap game(String version, String method, String field, String cls) {
