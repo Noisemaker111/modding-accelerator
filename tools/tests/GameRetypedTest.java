@@ -19,8 +19,9 @@ final class GameRetypedTest {
     public static void main(String[] args) throws Exception {
         Path scratch = Files.createDirectories(Path.of(args[0]));
         Map<String, byte[]> oldGame = game(false), newGame = game(true);
-        GameDiff.Snap a = GameDiff.read("1.0", List.copyOf(oldGame.values()), null, List.of());
-        GameDiff.Snap b = GameDiff.read("2.0", List.copyOf(newGame.values()), null, List.of());
+        // The loader's own screen rewrote its two draws another way (with a shadow): the game's code still decides.
+        GameDiff.Snap a = GameDiff.read("1.0", List.copyOf(oldGame.values()), null, List.of(loaderHud(false)));
+        GameDiff.Snap b = GameDiff.read("2.0", List.copyOf(newGame.values()), null, List.of(loaderHud(true)));
         GameDiff.Hop hop = new GameDiff.Hop(a, b);
         hop.run();
         List<String> lines = new ArrayList<>();
@@ -317,6 +318,33 @@ final class GameRetypedTest {
             access.visitEnd();
         }));
         return out;
+    }
+
+    /** The loader's Hud screen in one release: its render draws twice, in 2.0 as graphics.drawString(font, text, x, 2, color, true). */
+    static byte[] loaderHud(boolean two) {
+        return JarPortTest.real("net/fabricmc/r/Hud", R + "Screen", 0, new String[0], w -> {
+            MethodVisitor m = w.visitMethod(Opcodes.ACC_PUBLIC, "render", "(" + (two ? GFX : POSE) + "I)V", null, null);
+            m.visitCode();
+            for (String text : List.of("hud1", "hud2")) {
+                if (two) {
+                    m.visitVarInsn(Opcodes.ALOAD, 1);
+                    m.visitVarInsn(Opcodes.ALOAD, 0);
+                    m.visitFieldInsn(Opcodes.GETFIELD, R + "Screen", "font", FONT);
+                    m.visitLdcInsn(text);
+                    m.visitVarInsn(Opcodes.ILOAD, 2);
+                    m.visitLdcInsn(2);
+                    m.visitLdcInsn(3);
+                    m.visitInsn(Opcodes.ICONST_1);
+                    m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, R + "Graphics", "drawString", "(" + FONT + STR + "IIIZ)I", false);
+                    m.visitInsn(Opcodes.POP);
+                } else {
+                    draw(m, 0, 1, text, 2, 2.0F, 3, false);
+                }
+            }
+            m.visitInsn(Opcodes.RETURN);
+            m.visitMaxs(0, 0);
+            m.visitEnd();
+        });
     }
 
     static void append(MethodVisitor m, String text) {

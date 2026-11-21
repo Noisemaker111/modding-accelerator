@@ -5529,7 +5529,9 @@ public final class GameDiff {
         final Hop h;
         final Learner l;
         final Map<String, Map<Node, Set<String>>> sites = new LinkedHashMap<>(); // owner.name+desc#at#as -> use -> readings
+        final Map<String, Map<Node, Set<String>>> loaderSites = new LinkedHashMap<>(); // the same, read from the loader's code
         final Map<String, Ref> refs = new HashMap<>();
+        boolean fromLoader; // the method pair being read is the loader's
 
         Retyped(Hop h, Learner l) {
             this.h = h;
@@ -5544,13 +5546,31 @@ public final class GameDiff {
                 }
                 Map<Integer, Object[]> retyped = retyped(x, y);
                 if (!retyped.isEmpty()) {
+                    fromLoader = x.owner.loader;
                     pair(l.decode(h.a, x.owner.name, x.name + x.desc, false), l.decode(h.b, y.owner.name, y.name + y.desc, false), retyped);
                 }
             }
+            // The game's own code says what a call becomes; the loader's code (Fabric API reading Minecraft's font where the
+            // game reads the screen's) is heard only for a call the game never makes there.
+            loaderSites.forEach((key, uses) -> {
+                if (sites.getOrDefault(key, Map.of()).isEmpty()) {
+                    sites.put(key, uses);
+                }
+            });
             List<Reading> out = new ArrayList<>();
+            StringBuilder log = Learner.LEARN_LOG.isEmpty() ? null : new StringBuilder();
+            for (String key : misses.keySet()) {
+                sites.putIfAbsent(key, new IdentityHashMap<>());
+            }
             for (var e : sites.entrySet()) {
                 int[] tally = new int[2];
                 String best = Learner.vote(e.getValue().values(), tally);
+                if (log != null) {
+                    log.append(e.getKey()).append('\t').append(tally[1]).append('\t').append(tally[0]).append('\t').append(best == null ? "" : best).append('\t');
+                    e.getValue().values().stream().flatMap(Set::stream).distinct().limit(4).forEach(r -> log.append(r).append(" ;; "));
+                    misses.getOrDefault(e.getKey(), List.of()).stream().limit(3).forEach(m -> log.append("MISS ").append(m).append(" ;; "));
+                    log.append('\n');
+                }
                 // Kept with 80% of the uses agreeing, as Learner keeps one; or when every use that reads as anything agrees
                 // and two thirds read: a use the game rewrote past any reading (centred another way, its float math
                 // folded) is not another answer.
@@ -5562,6 +5582,13 @@ public final class GameDiff {
                 String[] key = e.getKey().split("#");
                 Ref r = refs.get(key[0]);
                 out.add(new Reading(r.owner().replace('/', '.'), r.name(), r.desc(), Integer.parseInt(key[1]), key[2], best, tally[0], tally[1]));
+            }
+            if (log != null) {
+                try {
+                    Files.writeString(Path.of(Learner.LEARN_LOG + "-retyped-" + h.a.version + "-" + h.b.version + ".tsv"), log, StandardCharsets.UTF_8);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
             }
             return out;
         }
@@ -5653,13 +5680,14 @@ public final class GameDiff {
                 Node over = tokens(m, use.kids, tokens, k, (Integer) to[0]);
                 String key = use.ref.owner() + "." + use.ref.name() + use.ref.desc() + "#" + (k + first) + "#" + to[1];
                 refs.putIfAbsent(use.ref.owner() + "." + use.ref.name() + use.ref.desc(), use.ref);
-                Set<String> readings = sites.computeIfAbsent(key, x -> new IdentityHashMap<>()).computeIfAbsent(use, x -> new LinkedHashSet<>());
+                Map<String, Map<Node, Set<String>>> heard = fromLoader ? loaderSites : sites;
+                Set<String> readings = heard.computeIfAbsent(key, x -> new IdentityHashMap<>()).computeIfAbsent(use, x -> new LinkedHashSet<>());
                 String reading = use.type.equals("V") || l.fits(m.type, use.type) ? l.express(over, tokens, first, use.type, 0) : null;
                 if (reading != null) {
                     readings.add(reading);
                 } else if (readings.isEmpty() && (l.merged(m) || Arrays.stream(use.kids).anyMatch(l::merged))) {
                     // Unreadable only because a value depends on the path taken (a loop's variable): it abstains, as in Learner.
-                    sites.get(key).remove(use);
+                    heard.get(key).remove(use);
                 } else {
                     misses.computeIfAbsent(key, x -> new ArrayList<>()).add(show(over, 0) + "  <-  " + show(use, 0));
                 }
