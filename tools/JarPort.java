@@ -1739,16 +1739,21 @@ public final class JarPort {
                 mod.unlinked.add("lambda for a changed method: " + where);
                 continue;
             }
-            mod.bridges.computeIfAbsent(rc.name, k -> new ArrayList<>()).add(body);
+            mod.bridges.computeIfAbsent(impl.getOwner(), k -> new ArrayList<>()).add(body);
             mod.change("lambda moved to its interface method's new parameter types");
         }
     }
 
-    /** The moved body of a lambda for iface.name(sam), now moved[2], or null when its method cannot move. */
+    /**
+     * The moved body of a lambda for iface.name(sam), now moved[2], or null when its method cannot move: the lambda's own
+     * private method, or a static method of any of the mod's classes (Hud::render), which no class can override.
+     */
     Bridge lambdaBody(Mod mod, GameDiff.RawCls rc, Handle impl, String captured, String iface, String name, String sam, String[] moved) {
-        GameDiff.RawMeth m = impl.getOwner().equals(rc.name) ? rc.methods.get(impl.getName() + impl.getDesc()) : null;
-        if (m == null || (m.flags & (Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC)) == 0 || (m.flags & Opcodes.ACC_ABSTRACT) != 0
-            || mod.bridges.getOrDefault(rc.name, List.of()).stream().anyMatch(br -> br.target().equals(m.name) && br.targetDesc().equals(m.desc))) {
+        GameDiff.RawCls holder = mod.classes.get(impl.getOwner());
+        GameDiff.RawMeth m = holder == null ? null : holder.methods.get(impl.getName() + impl.getDesc());
+        if (m == null || (m.flags & Opcodes.ACC_STATIC) == 0 && ((m.flags & Opcodes.ACC_PRIVATE) == 0 || holder != rc) || (m.flags & Opcodes.ACC_ABSTRACT) != 0
+            || mod.bytes.get(holder.name) == null || (new ClassReader(mod.bytes.get(holder.name)).readShort(6) & 0xFFFF) < Opcodes.V1_6
+            || mod.bridges.getOrDefault(holder.name, List.of()).stream().anyMatch(br -> br.target().equals(m.name) && br.targetDesc().equals(m.desc))) {
             return null;
         }
         Type[] caps = Type.getArgumentTypes(captured), was = Type.getArgumentTypes(desc(sam)), now = Type.getArgumentTypes(moved[2]);
@@ -5124,7 +5129,7 @@ public final class JarPort {
                 return;
             }
             for (Object o : args) {
-                if (o instanceof Handle h && h.getOwner().equals(mod.self) && mod.bridges.getOrDefault(mod.self, List.of()).stream()
+                if (o instanceof Handle h && mod.bridges.getOrDefault(h.getOwner(), List.of()).stream()
                     .anyMatch(br -> br.via() != null && br.target().equals(h.getName()) && br.targetDesc().equals(h.getDesc()))) {
                     mod.kept.add(h.getName() + h.getDesc()); // a lambda body that moved stays too for this lambda, made where it cannot follow
                 }
@@ -5151,7 +5156,7 @@ public final class JarPort {
         /** A lambda for an interface method whose parameters changed type, made for its moved body (JarPort.lambdas). */
         boolean callback(String name, String desc, Handle bsm, Object[] args) {
             if (!bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory") || args.length < 3 || !(args[0] instanceof Type sam)
-                || !(args[1] instanceof Handle impl) || !impl.getOwner().equals(mod.self)) {
+                || !(args[1] instanceof Handle impl) || !mod.classes.containsKey(impl.getOwner())) {
                 return false;
             }
             String iface = Type.getReturnType(desc).getInternalName();
@@ -5159,7 +5164,7 @@ public final class JarPort {
                 || Exposure.declaring(b, cls(iface), 'm', name, desc(sam.getDescriptor())) != null) {
                 return false;
             }
-            Bridge body = mod.bridges.getOrDefault(mod.self, List.of()).stream()
+            Bridge body = mod.bridges.getOrDefault(impl.getOwner(), List.of()).stream()
                 .filter(br -> br.via() != null && br.target().equals(impl.getName()) && br.targetDesc().equals(impl.getDesc())).findFirst().orElse(null);
             String[] now = route.method(iface, name, sam.getDescriptor());
             if (body == null || !now[1].equals(name)) {
