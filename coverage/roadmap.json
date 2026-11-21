@@ -901,6 +901,24 @@
      ],
      "result": "PR #151, tools/cloud-run exposure https://github.com/Noisemaker111/minecraft-modding-tools/actions/runs/44879101068. Type finishes 68 -> 0 and appears in 328 -> 0 mod ports: the real breaks (fields the game removed or retyped, mostly redesigns: Explosion, WeightedBakedModel, MapRenderer) now count under field, game: ..., with the learner's evidence, which answers about 2% of them so far. Every update 5,979 -> 6,044 of 9,423, big updates 1,917 -> 1,924, newest 15 -> 15, no update lower (main's numbers before #149's successors). Real NeoForge 1.21.3 (bench/exposure/load-linked-neoforge-1.21.2-1.21.3.json): 69 of 81 standalone ports load on the server; Sodium, Fusion and Architectury, freed here, load on the server and in the client. pack-check now names a jar the loader refuses as not a mod file and the mod that declares another incompatible.",
      "next": "The learner answers few removed private fields; pack-check's blame of every mixin a failing stack carries was fixed in PR #153."
+    },
+    {
+     "id": "74",
+     "title": "Game fields the update retyped: read as the new type or through its holder",
+     "part": "Port by type of break",
+     "status": "done",
+     "done": "2026-11-21",
+     "text": "The type `field, game: linked`, after #156 left reads of another type than the old release's as written. A read of a field the update retyped is taken as the new type where every use of its value means the same of it (calls the new type has with the same arguments, game calls whose parameter changed with it, typed arguments, null tests; not ==, instanceof, stores, values a jump carries, or Object arguments), as Level.random became a RandomSource. Otherwise it is turned into the old type as the game's own code gets what a holder of the new type holds (holder.value(), option.get() unboxed), learned from the new release's classes. A nested platform module's version and a name the old platform answered to (Fabric API's 'fabric', dropped in 26.3) are asked of the new platform, read by the port itself from the two Fabric API jars.",
+     "start": "2026-11-21",
+     "target": "2026-11-22",
+     "finish": "the type's finishes and mods counts fall, newest and big-updates up, load on a real server and client where it frees the most",
+     "wrongIf": "a mod this frees fails in a real game",
+     "measures": [
+      "port.jar-links.every-update",
+      "port.jar-links.big-updates",
+      "port.jar-links.newest"
+     ],
+     "result": "On main at #156: type finishes 19 -> 13, mods 536 -> 392 (references 791 -> 567). Every update 6,118 -> 6,124, big updates 1,952 -> 1,958, newest 17 -> 18 (AttributeFix on Fabric 1.20.1 -> 26.3), none lower. AttributeFix ported to 26.3 loads on a real server and client and applies its 40 attributes; Comforts ported to 1.19 (Level.random) loads on a real server."
     }
    ]
   },

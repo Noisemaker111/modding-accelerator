@@ -395,10 +395,6 @@ def jar_port(loader, frm, to, jars, out_dir, report, runtime=False):
     out_dir.mkdir(parents=True, exist_ok=True)
     args = [java(), "-Xmx10g", "-cp", classpath, "JarPort", "--from", frm, "--to", to, "--map", str(route), "--fixes", str(ROOT / "knowledge" / "fixes.json"), "--out", str(out_dir),
             "--loader", loader] + (["--runtime-names"] if runtime else [])
-    # Fabric Loader runs the newest copy of each mod id, so a Fabric API module a mod nests is the platform's there.
-    platform = sorted(i for i in platform_ids(loader, to) if i)
-    if platform:
-        args += ["--platform", ",".join(platform)]
     rows = side_by_side(args, jars, report)
     counts = {}
     for m in rows:

@@ -1,0 +1,32 @@
+{
+ "loader": "fabric",
+ "from": "1.20.1",
+ "to": "26.3",
+ "mods": 5,
+ "loaded": 2,
+ "linkedAndLoaded": 2,
+ "linked": 5,
+ "failedButLinked": [],
+ "clashOnly": [],
+ "failedDataOnly": [
+  "dungeons-and-taverns--dungeons-and-taverns-3.0.3.f.jar",
+  "terralith--Terralith_1.20.x_v2.5.4.jar"
+ ],
+ "verdicts": {
+  "fast-ip-ping--fast-ip-ping-v1.0.8-mc1.20.4-fabric.jar": "client-only: client-only (folder, its own metadata)",
+  "terralith--Terralith_1.20.x_v2.5.4.jar": "failed: its data fails on this release: Failed to parse terralith:witch_hut from pack terralith",
+  "dungeons-and-taverns--dungeons-and-taverns-3.0.3.f.jar": "failed: its data fails on this release: Failed to parse nova_structures:witch_villa/plot from pack mr_dungeons_andtaverns",
+  "fabric-language-kotlin--fabric-language-kotlin-1.14.2+kotlin.2.4.21.jar": "loaded",
+  "yosbr--yosbr-0.1.2.jar": "loaded"
+ },
+ "client": {
+  "mods": 3,
+  "loaded": 3,
+  "verdicts": {
+   "fabric-language-kotlin--fabric-language-kotlin-1.14.2+kotlin.2.4.21.jar": "loaded",
+   "fast-ip-ping--fast-ip-ping-v1.0.8-mc1.20.4-fabric.jar": "loaded",
+   "yosbr--yosbr-0.1.2.jar": "loaded"
+  }
+ },
+ "loadedOnServerFailedInClient": []
+}
