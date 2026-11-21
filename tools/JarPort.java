@@ -2951,7 +2951,8 @@ public final class JarPort {
     /**
      * Whether every parameter of a handler after its CallbackInfo (at ci) is MixinExtras sugar that still finds what it
      * names in the target's new signature: @Share and @Cancellable name nothing of it; a @Local of a type that is one of
-     * the target's parameters, once in the old signature and once in the new one, took that parameter (or says argsOnly).
+     * the target's parameters, once in the old signature and once in the new one, and of no local the new method stores,
+     * took that parameter (or says argsOnly).
      */
     boolean sugarFollows(Mod mod, String key, GameDiff.RawMeth handler, int ci, Found into, Injector inj) {
         String owner = key.substring(0, key.indexOf('.'));
@@ -2992,6 +2993,8 @@ public final class JarPort {
             }
         }, ClassReader.SKIP_CODE);
         List<Type> was = Arrays.stream(Type.getArgumentTypes(desc(before.desc))).toList(), now = Arrays.asList(Type.getArgumentTypes(after.desc));
+        GameCode code = code(b);
+        Set<Integer> stores = code == null ? null : code.localStores(into.owner(), into.name(), into.desc());
         for (int i = ci + 1; i < params.length; i++) {
             if (sugar[i] == null) {
                 return false;
@@ -3002,6 +3005,11 @@ public final class JarPort {
             Type t = Type.getType(desc(params[i].getDescriptor()));
             if (!sugar[i].equals(SUGAR + "Local;") || picked[i] || !argsOnly[i] && (Collections.frequency(was, t) != 1 || Collections.frequency(now, t) != 1)
                 || argsOnly[i] && Collections.frequency(now, t) != 1) {
+                return false;
+            }
+            // Without argsOnly a @Local also sees the method's own locals, so one the new method stores of that kind
+            // could make the capture ambiguous (reference locals are not told apart by type here).
+            if (!argsOnly[i] && (stores == null || stores.contains(t.getOpcode(Opcodes.ISTORE)))) {
                 return false;
             }
         }
@@ -3324,7 +3332,7 @@ public final class JarPort {
             int arity = arguments(outer.group(3));
             List<GameDiff.Meth> fits = named(b, as, outer.group(2)).stream().filter(x -> Type.getArgumentTypes(x.desc).length == arity && !x.isStatic()).toList();
             if (fits.size() == 1) {
-                calls.add(new String[] { Exposure.declaring(b, as, 'm', fits.get(0).name, fits.get(0).desc).name, fits.get(0).name, fits.get(0).desc });
+                calls.add(new String[] { as, fits.get(0).name, fits.get(0).desc });
             }
         }
         if (calls.size() != 1) {
@@ -3363,7 +3371,8 @@ public final class JarPort {
      */
     boolean pointKept(String[] point, Found at, GameDiff.Meth[] method) {
         char kind = at.kind() == 's' || at.kind() == 'r' ? 'm' : at.kind();
-        int now = uses(code(b), b, method[0], kind, at.owner(), at.name(), at.desc());
+        // Mixin matches a call by the owner its instruction names, so a replacement written by the porter counts only those.
+        int now = uses(code(b), b, method[0], kind, at.owner(), at.name(), at.desc(), at.kind() == 'r');
         if (now < 1) {
             return false;
         }
@@ -3399,6 +3408,11 @@ public final class JarPort {
      * jar; -1 when they cannot be read.
      */
     int uses(GameCode code, GameDiff.Snap s, GameDiff.Meth m, char kind, String owner, String name, String desc) {
+        return uses(code, s, m, kind, owner, name, desc, false);
+    }
+
+    /** As above; exact counts only instructions naming owner itself, not another class the member resolves to. */
+    int uses(GameCode code, GameDiff.Snap s, GameDiff.Meth m, char kind, String owner, String name, String desc, boolean exact) {
         List<String[]> refs = code == null ? null : code.refs(m.owner.name, m.name, m.desc);
         if (refs == null) {
             return -1;
@@ -3410,7 +3424,7 @@ public final class JarPort {
                 continue;
             }
             GameDiff.Cls at = Exposure.declaring(s, r[1], kind, r[2], kind == 'f' ? null : r[3]);
-            if (owner == null || r[1].equals(owner) || decl != null && at != null && decl.name.equals(at.name)) {
+            if (owner == null || r[1].equals(owner) || !exact && decl != null && at != null && decl.name.equals(at.name)) {
                 n++;
             }
         }
@@ -3536,7 +3550,32 @@ public final class JarPort {
 
                         @Override
                         public void visitInvokeDynamicInsn(String n2, String d2, Handle bsm, Object... args) {
-                            sb.append("indy:").append(n2).append(desc.apply(d2)).append(';');
+                            sb.append("indy:").append(n2).append(desc.apply(d2)).append(':').append(handle(bsm));
+                            for (Object arg : args) {
+                                sb.append(':').append(arg instanceof Handle h ? handle(h) : arg instanceof Type t ? desc.apply(t.getDescriptor()) : arg);
+                            }
+                            sb.append(';');
+                        }
+
+                        // A nested lambda is named by its enclosing method, not its number, which a release may change.
+                        String handle(Handle h) {
+                            return type.apply(h.getOwner()) + "." + names.method(h.getOwner(), h.getName(), h.getDesc()).replaceAll("^(lambda\\$.*\\$)\\d+$", "$1")
+                                + desc.apply(h.getDesc());
+                        }
+
+                        @Override
+                        public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
+                            sb.append("switch:").append(min).append(':').append(max).append(';');
+                        }
+
+                        @Override
+                        public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
+                            sb.append("switch:").append(Arrays.toString(keys)).append(';');
+                        }
+
+                        @Override
+                        public void visitMultiANewArrayInsn(String d2, int dims) {
+                            sb.append("multianewarray:").append(desc.apply(d2)).append(':').append(dims).append(';');
                         }
 
                         @Override
@@ -3547,6 +3586,39 @@ public final class JarPort {
                 }
             }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
             return out;
+        }
+
+        /**
+         * The store instructions (ISTORE, ASTORE, ...) a method uses for its own locals, beyond its parameters; null when
+         * it cannot be read.
+         */
+        Set<Integer> localStores(String owner, String name, String desc) {
+            String jarOwner = toJar.getOrDefault(owner, owner);
+            byte[] file = bytes.apply(jarOwner);
+            if (file == null) {
+                return null;
+            }
+            Set<Integer> out = new HashSet<>();
+            boolean[] seen = { false };
+            new ClassReader(file).accept(new ClassVisitor(Opcodes.ASM9) {
+                @Override
+                public MethodVisitor visitMethod(int access, String n, String d, String signature, String[] exceptions) {
+                    if (!(names.method(jarOwner, n, d) + names.desc(d)).equals(name + desc)) {
+                        return null;
+                    }
+                    seen[0] = true;
+                    int first = (Type.getArgumentsAndReturnSizes(d) >> 2) - ((access & Opcodes.ACC_STATIC) != 0 ? 1 : 0);
+                    return new MethodVisitor(Opcodes.ASM9) {
+                        @Override
+                        public void visitVarInsn(int op, int v) {
+                            if (op >= Opcodes.ISTORE && op <= Opcodes.ASTORE && v >= first) {
+                                out.add(op);
+                            }
+                        }
+                    };
+                }
+            }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            return seen[0] ? out : null;
         }
 
         /** A descriptor with each class name passed through rename. */
