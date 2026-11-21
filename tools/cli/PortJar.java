@@ -63,14 +63,15 @@ final class PortJar {
         String cp = classes + File.pathSeparator + home.resolve("tools/perf/lib/asm-9.9.jar") + File.pathSeparator + home.resolve("tools/perf/lib/asm-commons-9.9.jar");
         Path cache = Path.of(System.getProperty("user.home"), ".mmt", "jar-port");
         List<String> chain = Route.plan(home, from, to).versions;
-        String differ = Fingerprints.files(List.of(home.resolve("tools/GameDiff.java"), home.resolve("tools/VersionMap.java")));
+        // The map reads the loader's own classes too (Exposure, ModNames) and carries learned expressions (FixExpr).
+        String differ = Fingerprints.files(List.of(home.resolve("tools/GameDiff.java"), home.resolve("tools/VersionMap.java"), home.resolve("tools/Exposure.java"),
+            home.resolve("tools/ModNames.java"), home.resolve("tools/FixExpr.java")));
         Path map = cache.resolve("maps").resolve(loader + "-" + String.join("_", chain) + "-" + differ + ".json");
         if (!Files.isRegularFile(map)) {
             Files.createDirectories(map.getParent());
             List<String> differCommand = new ArrayList<>(List.of(jdk.java().toString(), "-Xmx6g", "-cp", cp, "GameDiff", "--chain", String.join(",", chain), "--out", map.toString()));
-            if (loader.equals("neoforge")) {
-                differCommand.addAll(List.of("--loader", "neoforge"));
-            }
+            // Fabric's map is learned with Fabric API's own code as NeoForge's is with NeoForge's, as the scoreboard builds it.
+            differCommand.addAll(List.of("--loader", loader));
             var diff = Run.command(differCommand, report.root, Map.of(), report.log("route-map"), 900);
             report.stage("route-map", diff, Map.of("chain", chain));
             if (diff.exit() != 0) {

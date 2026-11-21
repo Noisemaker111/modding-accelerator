@@ -638,6 +638,23 @@
      "result": "Every update 5,865 -> 5,883 of 9,423 (15 updates up, none lower), big updates 1,878 -> 1,896 of 5,149, newest 11 -> 15 of 294 (NeoForge 1.21.1 -> 26.3 6 -> 10). Mostly other injectors aimed at retyped HUD and screen methods (Zoomify) and tooltip rewrites reading Screen.font (Controlling, which loads in a real 1.20 client). Real Fabric 1.20: 21 load on the server, 34 of 34 in the client; Krypton loads alone and clashes with e4mc as on 1.19.4."
     },
     {
+     "id": "64",
+     "title": "The jump to the newest game keeps what each update taught, NeoForge side",
+     "part": "Port by changed game part",
+     "status": "doing",
+     "text": "Worked from the nearest-to-done list of NeoForge 1.21.1 -> 26.3. Its biggest kind was references the game had already answered at one update whose answer a later update renamed: 282 of them, 1,440 uses, refused because JarPort compiles a learned expression against the release it ports to. Each learned expression and switched-to call is now carried through every later update of the chain as a mod's own call is (GameDiff.Carry). Also: a call whose method now returns nothing is written where the mod popped the value anyway (1.21.6's drawString, 41 mods); a static call to what is now an instance method is no longer linked (the JVM refuses it; FerriteCore on 1.21.9), so what the loader's own code writes takes its place; a @ModifyVariable's own ordinal is read and counts the target's parameters, and a method string on a loader-patched signature whose name the new release dropped is reported (Yeetus Experimentus on 1.20.5).",
+     "start": "2026-11-20",
+     "target": "2026-11-22",
+     "finish": "port.jar-links.newest and port.jar-links.big-updates up from 15 and 1,896, port.jar-links.every-update no lower than 5,883 except named false links, and load on NeoForge 26.3 showing every newly linked standalone mod loads",
+     "wrongIf": "a mod that links through a carried expression, a dropped value or a learned instance call fails in a real game",
+     "measures": [
+      "port.jar-links.newest",
+      "port.jar-links.big-updates",
+      "port.jar-links.every-update"
+     ],
+     "result": "2026-11-21: finish line not reached. port.jar-links.newest 15 -> 15 and big-updates 1,896 -> 1,896; every update 5,883 -> 5,884. Newest-jump broken uses NeoForge 18,179 -> 17,764 and Fabric 16,188 -> 15,693 without a whole mod freed: the nearest NeoForge mods each still need one kind with no general answer from the game yet (CycleButton.builder needs an initial value the old call never gave, NBT getString/getList, 1.21.9's permission levels, ClickEvent/HoverEvent by action, mixins on save-data methods). 1.21.5 -> 1.21.6 +3 (drawString); offset in the big updates by three false links now refused: Spark on 1.21.1 -> 1.21.2 (NeoForge and Fabric, a static call to what became an instance method) and Yeetus Experimentus on NeoForge 1.20.4 -> 1.20.5. Real servers: NeoForge 26.3 7 of 8 linked standalone mods load (Dungeons and Taverns fails on its data), 1.21.6 26 of 30 (4 client-only); pack-check's NeoForge client fails with an empty pack on both releases."
+    },
+    {
      "id": "56",
      "title": "The porter learns members the game closed, moved or made generic",
      "part": "Port by changed game part",
@@ -688,7 +705,7 @@
      "id": "62",
      "title": "The porter learns loader API changes from the loaders' own code",
      "part": "Port by changed game part",
-     "status": "doing",
+     "status": "done",
      "text": "Since #127 the link check counts the loader's API, and 148 mods are held back only by the loader (FMLEnvironment.dist in 1.21.9, the 1.20.5 payload and config-screen APIs, Fabric API networking). The learner's snapshots now carry the loader as a mod runs on it, the classes the link check reads: NeoForge's universal jar with FML and its other net.neoforged libraries, or Fabric Loader with Fabric API's modules, in Mojang names. The loader's own code uses its own API, so a change to it is learned like the game's. Also: a one-line static wrapper and its body are one reading, and a bare call with no operands has nothing to check a pairing by (why RenderSystem.disableBlend() in 1.21.5 and enableTexture() in 1.19.4 stayed unlearned).",
      "start": "2026-11-20",
      "target": "2026-11-27",
@@ -697,7 +714,8 @@
      "measures": [
       "port.jar-links.every-update"
      ],
-     "result": "2026-11-20: port.jar-links.every-update 5,846 -> 5,865 of 9,423, every update reading the same mods, none lower; mods held back only by the loader 148 -> 132. NeoForge 1.21.8 -> 1.21.9 28 -> 35 (FMLEnvironment.dist is FMLLoader.getCurrent().getDist(), learned from FML's own code), Fabric 1.21.11 -> 26.1 32 -> 36, Fabric 1.19.3 -> 1.19.4 56 -> 59 (enableTexture() dropped). Real NeoForge 1.21.9 server: the 6 standalone mods this newly links all load (18 of 22 in all; FerriteCore fails as on main). Real 1.20.5: server 12 of 13, client 11 of 12, the same link set as main (Euphoria Patcher needs Commons Compress, which only the client has; Yeetus Experimentus has a @ModifyVariable on WorldOpenFlows.loadLevel, which 1.20.5 changed). The 1.21.9 client can't be proven yet: even an empty NeoForge 21.9 pack ends in a broken mod state in pack-check's client, without the game's asset files. Not learned: the 1.20.5 NeoForge payload, config-screen and display-test APIs and Fabric's payload registries are redesigns (new registration types, lambdas of another interface), with no loader code that lines up."
+     "result": "2026-11-20: port.jar-links.every-update 5,846 -> 5,865 of 9,423, every update reading the same mods, none lower; mods held back only by the loader 148 -> 132. NeoForge 1.21.8 -> 1.21.9 28 -> 35 (FMLEnvironment.dist is FMLLoader.getCurrent().getDist(), learned from FML's own code), Fabric 1.21.11 -> 26.1 32 -> 36, Fabric 1.19.3 -> 1.19.4 56 -> 59 (enableTexture() dropped). Real NeoForge 1.21.9 server: the 6 standalone mods this newly links all load (18 of 22 in all; FerriteCore fails as on main). Real 1.20.5: server 12 of 13, client 11 of 12, the same link set as main (Euphoria Patcher needs Commons Compress, which only the client has; Yeetus Experimentus has a @ModifyVariable on WorldOpenFlows.loadLevel, which 1.20.5 changed). The 1.21.9 client can't be proven yet: even an empty NeoForge 21.9 pack ends in a broken mod state in pack-check's client, without the game's asset files. Not learned: the 1.20.5 NeoForge payload, config-screen and display-test APIs and Fabric's payload registries are redesigns (new registration types, lambdas of another interface), with no loader code that lines up.",
+     "done": "2026-11-20"
     },
     {
      "id": "54",
