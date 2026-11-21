@@ -775,7 +775,7 @@ public final class JarPort {
                             };
                         }
                         if (INJECTORS.contains(annotation)) {
-                            Injector inj = new Injector(annotation, new ArrayList<>(), new ArrayList<>(), new int[] { -1 });
+                            Injector inj = new Injector(annotation, new ArrayList<>(), new ArrayList<>(), new int[] { -1 }, new int[] { -1 });
                             mod.injectors.put(rc.name + "." + name + desc, inj);
                             return injection(inj, null);
                         }
@@ -821,7 +821,8 @@ public final class JarPort {
      * A handler's injector (its annotation): the target method strings, each @At's {value, target, ordinal} (in @Slice
      * too), and its require (-1: the mixin config's defaultRequire).
      */
-    record Injector(String kind, List<String> methods, List<String[]> ats, int[] require) {}
+    /** ordinal: the injector's own (a @ModifyVariable's nth local of its type), -1 when it gives none; an @At's is in ats. */
+    record Injector(String kind, List<String> methods, List<String[]> ats, int[] require, int[] ordinal) {}
 
     /**
      * A handler re-declared with its target's new parameters (desc, new names) and the original body moved to name$mmt:
@@ -846,6 +847,8 @@ public final class JarPort {
             public void visit(String n, Object v) {
                 if (at == null && "require".equals(n) && v instanceof Integer i) {
                     inj.require()[0] = i;
+                } else if (at == null && "ordinal".equals(n) && v instanceof Integer i && i >= 0) {
+                    inj.ordinal()[0] = i;
                 } else if (at != null && v instanceof String s && ("value".equals(n) || "target".equals(n))) {
                     at["value".equals(n) ? 0 : 1] = s;
                 } else if (at != null && "ordinal".equals(n) && v instanceof Integer i && i >= 0) {
@@ -1356,6 +1359,17 @@ public final class JarPort {
      * (a subtype; a field read may also now hold a subtype). Anything else (an added, removed or narrowed
      * parameter, another return type) does not link here; dropped arguments are handled at the call site.
      */
+    /**
+     * t, or null where the game made the method static or an instance one: the old call's instruction no longer fits and
+     * the JVM refuses it (IncompatibleClassChangeError: NeoForge 1.21.9's FMLLoader.getLoadingModList() is an instance
+     * method of FMLLoader.getCurrent()), so the call is not linked; a replacement learned for it may still take its place.
+     */
+    String[] sameKind(Decl decl, String name, String desc, String[] t) {
+        GameDiff.Cls was = Exposure.declaring(a, decl.owner(), 'm', name, desc), now = Exposure.declaring(b, t[0], 'm', t[1], t[2]);
+        GameDiff.Meth x = was == null ? null : was.methods.get(name + desc), y = now == null ? null : now.methods.get(t[1] + t[2]);
+        return x != null && y != null && x.isStatic() != y.isStatic() ? null : t;
+    }
+
     String[] target(Mod mod, List<String> callers, String siteOwner, char kind, String name, String desc, Decl decl) {
         String newSite = cls(siteOwner);
         if (unchangedLibrary(kind, decl.owner(), name, desc)) {
@@ -1383,18 +1397,18 @@ public final class JarPort {
         String[] moved = route.method(decl.owner(), name, desc);
         String mapped = desc(desc);
         if (linksNew(mod, callers, newSite, 'm', name, mapped)) {
-            return new String[] { newSite, name, mapped };
+            return sameKind(decl, name, desc, new String[] { newSite, name, mapped });
         }
         // The same method, closed to the mod now: opened through the mod's access transformer.
         if (moved[1].equals(name) && moved[2].equals(mapped) && opened(mod, callers, newSite, 'm', name, mapped)) {
-            return new String[] { newSite, name, mapped };
+            return sameKind(decl, name, desc, new String[] { newSite, name, mapped });
         }
         if (moved[2].equals(mapped) || widens(mapped, moved[2])) {
             if (linksNew(mod, callers, newSite, 'm', moved[1], moved[2])) {
-                return new String[] { newSite, moved[1], moved[2] };
+                return sameKind(decl, name, desc, new String[] { newSite, moved[1], moved[2] });
             }
             if (linksNew(mod, callers, moved[0], 'm', moved[1], moved[2])) {
-                return moved;
+                return sameKind(decl, name, desc, moved);
             }
         }
         // Parameters that became supertypes (1.21.2: NonNullList -> List) with the same return: the old arguments still fit.
@@ -1402,7 +1416,7 @@ public final class JarPort {
         for (GameDiff.Cls c = holder; c != null; c = c.sup == null ? null : b.classes.get(c.sup)) {
             for (GameDiff.Meth m : c.methods.values()) {
                 if (m.name.equals(moved[1]) && widens(mapped, m.desc) && linksNew(mod, callers, newSite, 'm', m.name, m.desc)) {
-                    return new String[] { newSite, m.name, m.desc };
+                    return sameKind(decl, name, desc, new String[] { newSite, m.name, m.desc });
                 }
             }
         }
@@ -2462,6 +2476,12 @@ public final class JarPort {
                 }
             }
             if (descs.isEmpty()) {
+                // A descriptor the old game jar lacks (the loader patched that method's parameters, as NeoForge 1.20.4 did
+                // WorldOpenFlows.loadLevel): the string is kept as written, so Mixin finds it only if the new class has a
+                // method of that name at all.
+                if (mdesc != null && !named(a, o, name).isEmpty() && named(b, cls(o), name).isEmpty()) {
+                    return new Found(text, "mixin target gone: " + Exposure.dotted(o) + "." + name + mdesc, null, (char) 0, null, null, null, null);
+                }
                 continue;
             }
             String d = descs.get(0);
@@ -2695,7 +2715,24 @@ public final class JarPort {
             return -1;
         }
         int op = t.getOpcode(store ? Opcodes.ISTORE : Opcodes.ILOAD);
-        return counts[op];
+        return counts[op] + params(m, t);
+    }
+
+    /**
+     * The parameters (and receiver) of m that are locals a @ModifyVariable of type t could pick, by the instruction that
+     * loads them: Mixin's ordinal counts them with the body's own locals (Yeetus Experimentus' "STORE, ordinal 3" boolean
+     * of loadLevel was its fourth boolean after three boolean parameters), so leaving them out let a target that lost
+     * them pass.
+     */
+    static int params(GameDiff.Meth m, Type t) {
+        int op = t.getOpcode(Opcodes.ILOAD);
+        int n = !m.isStatic() && op == Opcodes.ALOAD ? 1 : 0;
+        for (Type p : Type.getArgumentTypes(m.desc)) {
+            if (p.getOpcode(Opcodes.ILOAD) == op) {
+                n++;
+            }
+        }
+        return n;
     }
 
     void pointsGone(Mod mod, String mixin, List<String> targets, Injector inj, String handlerDesc) {
@@ -2708,14 +2745,17 @@ public final class JarPort {
             for (String[] point : inj.ats()) {
                 String gone = null;
                 int needed = point[2] == null ? 1 : Integer.parseInt(point[2]) + 1;
-                if (point[0] != null && Set.of("LOAD", "STORE").contains(point[0]) && inj.kind().equals(MODIFY_VARIABLE) && point[2] != null) {
-                    // @ModifyVariable at the nth load or store of a local of its type: the new method must still have
+                // A @ModifyVariable's ordinal is its own (the nth local of its type); older handlers gave it on the @At.
+                String nth = inj.kind().equals(MODIFY_VARIABLE) && inj.ordinal()[0] >= 0 ? Integer.toString(inj.ordinal()[0]) : point[2];
+                if (point[0] != null && Set.of("LOAD", "STORE").contains(point[0]) && inj.kind().equals(MODIFY_VARIABLE) && nth != null) {
+                    // @ModifyVariable at a load or store of its nth local of its type: the new method must still have
                     // that many of them at all (an upper bound, so a place it reports gone is gone).
+                    int wanted = Integer.parseInt(nth) + 1;
                     Type local = Type.getReturnType(handlerDesc);
                     boolean store = point[0].equals("STORE");
                     int had = most(before, m -> locals(code(a), m, store, local)), has = most(now, m -> locals(code(b), m, store, local));
-                    if (had >= needed && has >= 0 && has < needed) {
-                        gone = point[0] + " #" + point[2] + " of a " + local.getClassName() + " local";
+                    if (had >= wanted && has >= 0 && has < wanted) {
+                        gone = point[0] + " #" + nth + " of a " + local.getClassName() + " local";
                     }
                 } else if (point[0] != null && point[1] != null && Set.of("INVOKE", "INVOKE_ASSIGN", "FIELD").contains(point[0])) {
                     Found at = find(targets, "target", point[1]);
@@ -3926,17 +3966,196 @@ public final class JarPort {
     }
 
     /** Call sites, field access, method references and the types named inside one method body. */
+    /**
+     * A call to a method that now returns nothing (1.21.6's GuiGraphics.drawString returned where the text ended and
+     * returns void), written as the new call only where the mod threw the value away: the instruction after the call pops
+     * it, and the pop goes with it. Anywhere else the value is used, so the old call stays and is reported unlinked. Sites
+     * offers the new call just before it writes the old one; this decides on the next instruction.
+     */
+    static final class Dropped extends MethodVisitor {
+
+        final Mod mod;
+        String[] offer, held; // {opcode, owner, name, desc, itf} of the new call, and of the old call held back
+        String heldUnlinked, offerUnlinked;
+        int offerSize, heldSize;
+
+        Dropped(Mod mod, MethodVisitor mv) {
+            super(Opcodes.ASM9, mv);
+            this.mod = mod;
+        }
+
+        void offer(int opcode, String owner, String name, String desc, boolean itf, int size, String unlinked) {
+            offer = new String[] { Integer.toString(opcode), owner, name, desc, Boolean.toString(itf) };
+            offerSize = size;
+            offerUnlinked = unlinked;
+        }
+
+        String[] alternative;
+
+        void flush() {
+            if (held != null) {
+                String[] h = held;
+                held = null;
+                mod.unlinked.add(heldUnlinked);
+                super.visitMethodInsn(Integer.parseInt(h[0]), h[1], h[2], h[3], Boolean.parseBoolean(h[4]));
+            }
+        }
+
+        @Override
+        public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+            flush();
+            if (offer != null) {
+                alternative = offer;
+                offer = null;
+                held = new String[] { Integer.toString(opcode), owner, name, desc, Boolean.toString(itf) };
+                heldSize = offerSize;
+                heldUnlinked = offerUnlinked;
+                return;
+            }
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
+        }
+
+        @Override
+        public void visitInsn(int opcode) {
+            if (held != null && (opcode == Opcodes.POP && heldSize == 1 || opcode == Opcodes.POP2 && heldSize == 2)) {
+                held = null;
+                String[] w = alternative;
+                super.visitMethodInsn(Integer.parseInt(w[0]), w[1], w[2], w[3], Boolean.parseBoolean(w[4]));
+                mod.change("call whose value the mod dropped, now returning nothing");
+                return;
+            }
+            flush();
+            super.visitInsn(opcode);
+        }
+
+        @Override
+        public void visitIntInsn(int opcode, int operand) {
+            flush();
+            super.visitIntInsn(opcode, operand);
+        }
+
+        @Override
+        public void visitVarInsn(int opcode, int var) {
+            flush();
+            super.visitVarInsn(opcode, var);
+        }
+
+        @Override
+        public void visitTypeInsn(int opcode, String type) {
+            flush();
+            super.visitTypeInsn(opcode, type);
+        }
+
+        @Override
+        public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+            flush();
+            super.visitFieldInsn(opcode, owner, name, desc);
+        }
+
+        @Override
+        public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... args) {
+            flush();
+            super.visitInvokeDynamicInsn(name, desc, bsm, args);
+        }
+
+        @Override
+        public void visitJumpInsn(int opcode, Label label) {
+            flush();
+            super.visitJumpInsn(opcode, label);
+        }
+
+        @Override
+        public void visitLabel(Label label) {
+            flush();
+            super.visitLabel(label);
+        }
+
+        @Override
+        public void visitLdcInsn(Object value) {
+            flush();
+            super.visitLdcInsn(value);
+        }
+
+        @Override
+        public void visitIincInsn(int var, int increment) {
+            flush();
+            super.visitIincInsn(var, increment);
+        }
+
+        @Override
+        public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
+            flush();
+            super.visitTableSwitchInsn(min, max, dflt, labels);
+        }
+
+        @Override
+        public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
+            flush();
+            super.visitLookupSwitchInsn(dflt, keys, labels);
+        }
+
+        @Override
+        public void visitMultiANewArrayInsn(String desc, int dims) {
+            flush();
+            super.visitMultiANewArrayInsn(desc, dims);
+        }
+
+        @Override
+        public AnnotationVisitor visitInsnAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+            flush();
+            return super.visitInsnAnnotation(typeRef, typePath, desc, visible);
+        }
+
+        @Override
+        public void visitFrame(int type, int numLocal, Object[] local, int numStack, Object[] stack) {
+            flush();
+            super.visitFrame(type, numLocal, local, numStack, stack);
+        }
+
+        @Override
+        public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
+            flush();
+            super.visitTryCatchBlock(start, end, handler, type);
+        }
+
+        @Override
+        public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
+            flush();
+            super.visitLocalVariable(name, desc, signature, start, end, index);
+        }
+
+        @Override
+        public void visitLineNumber(int line, Label start) {
+            flush();
+            super.visitLineNumber(line, start);
+        }
+
+        @Override
+        public void visitMaxs(int maxStack, int maxLocals) {
+            flush();
+            super.visitMaxs(maxStack, maxLocals);
+        }
+
+        @Override
+        public void visitEnd() {
+            flush();
+            super.visitEnd();
+        }
+    }
+
     final class Sites extends MethodVisitor {
         final Mod mod;
         final List<String> targets;
         final List<String> callers;
         final String key;
         final String where;
+        final Dropped dropped;
         int nextLocal;
         int extraStack; // what code written in place of an instruction may push beyond it
 
         Sites(Mod mod, MethodVisitor mv, int locals, List<String> targets, List<String> callers, String key, String where) {
-            super(Opcodes.ASM9, mv);
+            super(Opcodes.ASM9, new Dropped(mod, mv));
+            dropped = (Dropped) this.mv;
             this.mod = mod;
             this.nextLocal = locals;
             this.targets = targets;
@@ -4180,7 +4399,10 @@ public final class JarPort {
                         return;
                     }
                 }
-                mod.unlinked.add("call: " + Exposure.dotted(decl.owner()) + "." + name + desc + (WHERE ? " @ " + where + (Sites.this.moved != null ? " (moved)" : "") : ""));
+                String unlinked = "call: " + Exposure.dotted(decl.owner()) + "." + name + desc + (WHERE ? " @ " + where + (Sites.this.moved != null ? " (moved)" : "") : "");
+                if (!voided(opcode, owner, decl.owner(), key, name, desc, unlinked)) {
+                    mod.unlinked.add(unlinked);
+                }
                 super.visitMethodInsn(opcode, owner, name, desc, itf);
                 return;
             }
@@ -4216,6 +4438,41 @@ public final class JarPort {
                 }
                 invoke(isStatic, c);
                 mod.change("call rewritten from the game's code");
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Offers Dropped the call that took this one's place and returns nothing (the route's counterpart, or the call the
+         * game's code switched to), where the old one returned a value and the arguments still fit: written if the mod
+         * pops the value. A moved body's stack is read as it is written (Track), so it is not held back there.
+         */
+        boolean voided(int opcode, String owner, String declOwner, String key, String name, String desc, String unlinked) {
+            Type ret = Type.getReturnType(desc);
+            if (moved != null || opcode == Opcodes.INVOKESPECIAL || ret.getSort() == Type.VOID) {
+                return false;
+            }
+            boolean isStatic = opcode == Opcodes.INVOKESTATIC;
+            String wanted = Type.getMethodDescriptor(Type.VOID_TYPE, Type.getArgumentTypes(desc(desc)));
+            List<String[]> now = new ArrayList<>();
+            now.add(route.method(declOwner, name, desc));
+            for (Call c : rewrites.getOrDefault(key, List.of())) {
+                now.add(new String[] { c.owner(), c.name(), c.desc() });
+            }
+            for (String[] c : now) {
+                if (Type.getReturnType(c[2]).getSort() != Type.VOID || !widens(wanted, c[2]) || !isStatic && !isA(cls(owner), c[0])) {
+                    continue;
+                }
+                GameDiff.Cls holder = Exposure.declaring(b, c[0], 'm', c[1], c[2]);
+                GameDiff.Meth m = holder == null ? null : holder.methods.get(c[1] + c[2]);
+                if (m == null || m.isStatic() != isStatic || !linksNew(mod, callers, c[0], 'm', c[1], c[2])) {
+                    continue;
+                }
+                GameDiff.Cls named = b.classes.getOrDefault(c[0], holder);
+                boolean itf = (named.flags & Opcodes.ACC_INTERFACE) != 0;
+                int op = isStatic ? Opcodes.INVOKESTATIC : itf ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL;
+                dropped.offer(op, inverse.getOrDefault(c[0], c[0]), c[1], oldDesc(c[2]), itf, ret.getSize(), unlinked);
                 return true;
             }
             return false;
