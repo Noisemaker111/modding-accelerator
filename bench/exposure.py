@@ -959,7 +959,8 @@ def standalone(jar, platform=frozenset(), adapters=frozenset()):
         own = {meta.get("id")} | set(meta.get("provides") or [])
         if any(e.get("adapter", "default") not in adapters | {"default"} for es in (meta.get("entrypoints") or {}).values() for e in es if isinstance(e, dict)):
             return False
-        return all(d in ("minecraft", "fabricloader", "java") or d in own or d in platform for d in (meta.get("depends") or {}))
+        # Fabric Loader provides MixinExtras itself (since 0.15), as it does the game, itself and Java.
+        return all(d in ("minecraft", "fabricloader", "java", "mixinextras") or d in own or d in platform for d in (meta.get("depends") or {}))
     with zipfile.ZipFile(jar) as z:
         names = [n for n in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml") if n in z.namelist()]
         if not names:
