@@ -3715,36 +3715,42 @@ public final class GameDiff {
                     // nearly every use and is written v or v.immutable() there; one use with a MutableBlockPos is new
                     // BlockPos(v.getX(), v.getY(), v.getZ())). A mod's argument is only known to be the declared type, so
                     // where a use's operand was narrower, only its readings that still compile for the declared types
-                    // count, and a use with none says nothing about a declared-type value.
+                    // count, and a use with none says nothing about a declared-type value. That holds only once the game
+                    // shows it: some narrower use's every reading fails to compile for the declared types. Without that
+                    // (find(o) with a String o, rewritten find(o, this)), an unread use still counts against. Only for a
+                    // member of one argument: with more, nearly every use passes something narrower for one of them, and
+                    // what is left to vote is too few places to tell an argument from a value they happened to share.
                     String[] declared = declared(old);
+                    String[] asked = declared != null && declared.length == 2 ? declared : null;
                     Map<Node, Set<String>> wide = new IdentityHashMap<>();
-                    boolean[] narrowed = { false };
-                    if (declared != null) {
+                    boolean[] specialized = { false };
+                    if (asked != null) {
                         uses.forEach((u, r) -> {
                             int first = u.op == 'v' || u.op == 'f' ? 0 : 1;
                             boolean exact = true;
-                            for (int i = 0; i < u.kids.length && i + first < declared.length; i++) {
-                                exact &= declared[i + first] == null || declared[i + first].equals(u.kids[i].type);
+                            // The receiver is nearly always narrower (a call on this): only the arguments are asked.
+                            for (int i = 1 - first; i < u.kids.length && i + first < asked.length; i++) {
+                                exact &= asked[i + first] == null || asked[i + first].equals(u.kids[i].type);
                             }
                             if (exact) {
                                 wide.put(u, r);
                                 return;
                             }
-                            narrowed[0] = true;
                             Set<String> keep = new LinkedHashSet<>();
                             for (String one : r) {
-                                if (compiles(one, declared, old)) {
+                                if (compiles(one, asked, old)) {
                                     keep.add(one);
                                 }
                             }
+                            specialized[0] |= keep.isEmpty() && !r.isEmpty();
                             if (!keep.isEmpty()) {
                                 wide.put(u, keep);
                             }
                         });
                     }
                     int[] general = new int[2];
-                    String g = narrowed[0] && !wide.isEmpty() ? vote(wide.values(), general) : null;
-                    if (g != null && (general[0] >= 2 && general[0] * 10 >= general[1] * 8 || general[0] == 1 && general[1] == 1 && usesAll(g, old, operands(old)))
+                    String g = specialized[0] && !wide.isEmpty() ? vote(wide.values(), general) : null;
+                    if (g != null && (general[0] >= 2 && general[0] * 10 >= general[1] * 8 || general[0] == 1 && general[1] == 1) && usesAll(g, old, operands(old))
                         && beyondLiterals(g, wide)) {
                         best = g;
                         top = general[0];
@@ -3773,7 +3779,6 @@ public final class GameDiff {
                 && c.y().desc().equals(l.desc())));
             out.addAll(sameMeaning(out, log));
             out.addAll(throughAccessor(out));
-            out.addAll(byTypes(out));
             out.addAll(throughClassMap(out));
             out.addAll(renamedFamily(out));
             // A chain both of whose members are learned alone is already ported member by member.
@@ -3785,6 +3790,8 @@ public final class GameDiff {
                 && alone.contains(c.y().owner() + "." + c.y().name() + c.y().desc()));
             out.addAll(accessors(out));
             out.addAll(overrides(out));
+            // Last, for what nothing of the game's own code answered.
+            out.addAll(byTypes(out));
             out.sort(Comparator.comparing(Learned::owner).thenComparing(Learned::name).thenComparing(Learned::desc));
             if (log != null) {
                 try {
@@ -3960,7 +3967,8 @@ public final class GameDiff {
             for (Meth q : instanceMethods(cls)) {
                 List<ClassDesc> qs = MethodTypeDesc.ofDescriptor(q.desc).parameterList();
                 if (!q.name.equals(name) || qs.size() != 1 || (q.flags & ACC_PUBLIC) == 0 || (q.flags & ACC_SYNTHETIC) != 0
-                    || !MethodTypeDesc.ofDescriptor(q.desc).returnType().descriptorString().equals(result) || qs.get(0).descriptorString().equals(param)) {
+                    || !MethodTypeDesc.ofDescriptor(q.desc).returnType().descriptorString().equals(result) || qs.get(0).descriptorString().equals(param)
+                    || qs.get(0).descriptorString().equals("Ljava/lang/Object;")) {
                     continue;
                 }
                 for (String made : makes(param, qs.get(0).descriptorString(), "$1", 2)) {
@@ -4029,7 +4037,8 @@ public final class GameDiff {
                     // registry's key, not a recipe's).
                     boolean factory = m.isStatic() && MethodTypeDesc.ofDescriptor(m.desc).returnType().descriptorString().equals("L" + k.name + ";")
                         && !m.name.equals("valueOf") && (from.length() == 1 || from.equals("Ljava/lang/String;"));
-                    if (!ctor && !factory || from.equals(want)) {
+                    // A maker taking any object (Holder.Direct(T)) holds whatever it is given, so it says nothing of what it is made from.
+                    if (!ctor && !factory || from.equals(want) || from.equals("Ljava/lang/Object;")) {
                         continue;
                     }
                     for (String inner : makes(have, from, expr, depth - 1)) {
@@ -4860,11 +4869,13 @@ public final class GameDiff {
                 return List.of(reading);
             }
             List<String> out = new ArrayList<>();
+            List<String> rests = ways(reading.substring(c.end()), limit);
             for (String option : c.group(1).split(String.valueOf(OR))) {
-                for (String rest : ways(reading.substring(c.end()), limit)) {
-                    if (out.size() < limit) {
-                        out.add(reading.substring(0, c.start()) + option + rest);
+                for (String rest : rests) {
+                    if (out.size() == limit) {
+                        return out;
                     }
+                    out.add(reading.substring(0, c.start()) + option + rest);
                 }
             }
             return out;
@@ -4928,10 +4939,16 @@ public final class GameDiff {
             return results.size() == 1 ? results.iterator().next() : null;
         }
 
-        /** A value of type got (b's descriptors) can be passed where want is taken. */
+        /**
+         * A value of type got (b's descriptors) can be passed where want is taken. A parameter taking any object is most
+         * often an erased type variable (Cat's setVariant(Object) from VariantHolder wants a Holder) and takes only an Object.
+         */
         boolean fitsIn(String got, String want) {
             if (got.equals(want)) {
                 return true;
+            }
+            if (want.equals("Ljava/lang/Object;")) {
+                return got.equals("null");
             }
             if (got.equals("null")) {
                 return want.startsWith("L") || want.startsWith("[");
